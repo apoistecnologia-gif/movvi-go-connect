@@ -175,11 +175,12 @@ function OriginActionsSheet({
   onTypeAddress: () => void;
   gpsRequesting: boolean;
 }) {
+  const isExact = geo?.precision === "exact";
   const rua = geo?.components.rua;
   const numero = geo?.components.numero;
   const bairro = geo?.components.bairro || geo?.components.povoado;
   const region = geo?.region;
-  const ruaLine = rua ? (numero ? `${rua}, ${numero}` : rua) : geo?.friendly || "";
+  const ruaLine = isExact && rua ? (numero ? `${rua}, ${numero}` : rua) : "";
 
   return (
     <div className="fixed inset-0 z-[60] flex items-end" onClick={onClose}>
@@ -198,16 +199,28 @@ function OriginActionsSheet({
               Local de partida
             </div>
             {ruaLine ? (
-              <div className="mt-0.5 truncate text-[15px] font-bold text-foreground">{ruaLine}</div>
+              <>
+                <div className="mt-0.5 truncate text-[15px] font-bold text-foreground">{ruaLine}</div>
+                {bairro && <div className="truncate text-[12.5px] text-foreground/80">{bairro}</div>}
+                {region && <div className="truncate text-[12px] text-muted-foreground">{region}</div>}
+              </>
             ) : position ? (
-              <div className="mt-0.5 truncate font-mono text-[12px] font-semibold text-foreground">
-                {position.lat.toFixed(6)}, {position.lng.toFixed(6)}
-              </div>
+              <>
+                <div className="mt-0.5 text-[13px] font-semibold text-amber-400">
+                  Localização aproximada
+                </div>
+                <div className="mt-0.5 font-mono text-[12px] text-foreground">
+                  Lat: {position.lat.toFixed(6)} • Lng: {position.lng.toFixed(6)}
+                </div>
+                {region && (
+                  <div className="truncate text-[12px] text-muted-foreground">
+                    Referência: {region}
+                  </div>
+                )}
+              </>
             ) : (
               <div className="mt-0.5 text-[13px] text-muted-foreground">Sem endereço identificado</div>
             )}
-            {bairro && <div className="truncate text-[12.5px] text-foreground/80">{bairro}</div>}
-            {region && <div className="truncate text-[12px] text-muted-foreground">{region}</div>}
           </div>
         </div>
 
@@ -483,7 +496,14 @@ function PassageiroApp() {
     callReverseGeocode({ data: { lat: position.lat, lng: position.lng } })
       .then((r) => {
         if (!active) return;
-        console.log("[MOVVI] Reverse geocoding concluído");
+        console.log("[MOVVI] Endereço retornado pelo Google:", r.address || "(vazio)");
+        console.log("[MOVVI] Tipo de precisão:", r.locationType || "(desconhecido)", r.partialMatch ? "(partial_match)" : "");
+        console.log(
+          r.precision === "exact"
+            ? "[MOVVI] Endereço considerado confiável"
+            : "[MOVVI] Endereço considerado aproximado — exibindo coordenadas reais",
+        );
+        console.log("[MOVVI] Coordenadas reais mantidas para rota:", position.lat, position.lng);
         setGeo(r);
         setAddressStatus("resolved");
       })
@@ -1350,15 +1370,16 @@ function SheetContent({
     [activeGroup],
   );
 
+  const isExact = geo?.precision === "exact";
   const rua = geo?.components.rua;
   const numero = geo?.components.numero;
   const bairro = geo?.components.bairro || geo?.components.povoado;
   const region = geo?.region || "";
-  const friendly = geo?.friendly || "";
-  // Primeira linha: "Rua X, 123" → senão povoado/bairro → senão coords (failed) → senão vazio
-  const streetLine = rua ? (numero ? `${rua}, ${numero}` : rua) : friendly;
-  const showCoords =
-    !streetLine && !bairro && !region && addressStatus === "failed" && hasPosition && position;
+  // Só exibimos rua/número como origem se o Google indicou ROOFTOP sem partial_match.
+  // Caso contrário (APPROXIMATE/GEOMETRIC_CENTER/RANGE_INTERPOLATED) mostramos coords + referência.
+  const streetLine = isExact && rua ? (numero ? `${rua}, ${numero}` : rua) : "";
+  const hasApproxAddress = !!geo && !isExact;
+  const showApprox = hasApproxAddress && hasPosition && !!position;
 
   return (
     <div className="pt-1">
@@ -1395,24 +1416,25 @@ function SheetContent({
             <MapPin className="h-4 w-4" />
           </span>
           <div className="min-w-0 flex-1">
-            <div className="text-[9px] font-semibold uppercase tracking-widest text-primary leading-none">
-              📍 Local de partida
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-[9px] font-semibold uppercase tracking-widest text-primary leading-none">
+                📍 Local de partida
+              </div>
+              {hasPosition && (
+                <span className="text-[9px] font-bold uppercase tracking-wider text-primary/80">
+                  Ajustar local
+                </span>
+              )}
             </div>
-            {addressStatus === "loading" && !streetLine && !region ? (
+            {addressStatus === "loading" && !streetLine && !showApprox ? (
               <div className="mt-0.5 truncate text-[12px] font-medium leading-tight text-muted-foreground">
                 Obtendo seu endereço...
               </div>
-            ) : showCoords && position ? (
-              <div className="mt-0.5 truncate font-mono text-[12px] font-semibold text-foreground">
-                {position.lat.toFixed(6)}, {position.lng.toFixed(6)}
-              </div>
-            ) : streetLine || bairro || region ? (
+            ) : streetLine ? (
               <>
-                {streetLine && (
-                  <div className="mt-0.5 truncate text-[13.5px] font-bold leading-tight text-foreground">
-                    {streetLine}
-                  </div>
-                )}
+                <div className="mt-0.5 truncate text-[13.5px] font-bold leading-tight text-foreground">
+                  {streetLine}
+                </div>
                 {bairro && (
                   <div className="truncate text-[12px] leading-tight text-foreground/80">
                     {bairro}
@@ -1424,15 +1446,34 @@ function SheetContent({
                   </div>
                 )}
               </>
+            ) : showApprox && position ? (
+              <>
+                <div className="mt-0.5 truncate text-[12.5px] font-bold leading-tight text-amber-400">
+                  Localização aproximada
+                </div>
+                <div className="truncate font-mono text-[11.5px] leading-tight text-foreground">
+                  Lat: {position.lat.toFixed(6)} • Lng: {position.lng.toFixed(6)}
+                </div>
+                {region && (
+                  <div className="truncate text-[11.5px] leading-tight text-muted-foreground">
+                    Referência: {region}
+                  </div>
+                )}
+              </>
+            ) : hasPosition && position ? (
+              <div className="mt-0.5 truncate font-mono text-[12px] font-semibold text-foreground">
+                {position.lat.toFixed(6)}, {position.lng.toFixed(6)}
+              </div>
             ) : (
               <div className="mt-0.5 truncate text-[12px] font-medium leading-tight text-muted-foreground">
-                {hasPosition ? "Toque para ajustar a partida" : "Localização indisponível"}
+                Localização indisponível
               </div>
             )}
           </div>
           <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
         </button>
       )}
+
 
 
 
