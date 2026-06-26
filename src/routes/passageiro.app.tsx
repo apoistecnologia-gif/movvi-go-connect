@@ -203,6 +203,31 @@ function PassageiroApp() {
     });
   }
 
+  /* ---------------------- reverse geocode (endereço atual) ---------------------- */
+  const lastGeocodedRef = useRef<LatLng | null>(null);
+  useEffect(() => {
+    if (!position) return;
+    const last = lastGeocodedRef.current;
+    if (
+      last &&
+      Math.abs(last.lat - position.lat) < 0.002 &&
+      Math.abs(last.lng - position.lng) < 0.002
+    )
+      return;
+    lastGeocodedRef.current = position;
+    let active = true;
+    callReverseGeocode({ data: { lat: position.lat, lng: position.lng } })
+      .then((r) => {
+        if (active) setCurrentAddress(r.address ?? "");
+      })
+      .catch(() => {
+        if (active) setCurrentAddress("");
+      });
+    return () => {
+      active = false;
+    };
+  }, [position, callReverseGeocode]);
+
   /* ---------------------- GPS ---------------------- */
   const useDevTestLocation = useCallback(() => {
     console.log("[MOVVI] Usando localização de teste:", DEV_TEST_LABEL);
