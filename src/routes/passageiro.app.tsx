@@ -1889,26 +1889,26 @@ function StepFlow({
         </div>
       )}
 
-      {/* ETAPA 4 — confirmação + botão fixo */}
+      {/* ETAPA 4 — confirmação + botão inline */}
       {step === 4 && route && selectedFare != null && (
-        <div className="animate-in fade-in slide-in-from-bottom-2 duration-200 space-y-2.5 pb-[calc(env(safe-area-inset-bottom)+76px)]">
-          <div className="flex items-center gap-3 rounded-2xl bg-primary/5 px-3 py-3 ring-1 ring-primary/30">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground">
+        <div className="animate-in fade-in slide-in-from-bottom-2 duration-200 space-y-2">
+          <div className="flex items-center gap-2.5 rounded-2xl bg-primary/5 px-3 py-2.5 ring-1 ring-primary/30">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground">
               <selectedCategory.icon className="h-5 w-5" />
             </span>
             <div className="min-w-0 flex-1">
-              <div className="text-[10px] font-semibold uppercase tracking-widest text-primary">
+              <div className="text-[9.5px] font-semibold uppercase tracking-widest text-primary leading-none">
                 Categoria
               </div>
-              <div className="truncate text-[15px] font-extrabold text-foreground">
+              <div className="mt-0.5 truncate text-[14px] font-extrabold text-foreground leading-tight">
                 {selectedCategory.label}
               </div>
             </div>
             <div className="text-right">
-              <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+              <div className="text-[9.5px] font-semibold uppercase tracking-widest text-muted-foreground leading-none">
                 Estimado
               </div>
-              <div className="text-[17px] font-extrabold text-foreground">
+              <div className="mt-0.5 text-[16px] font-extrabold text-foreground leading-none">
                 {formatBRL(selectedFare)}
               </div>
             </div>
@@ -1916,38 +1916,32 @@ function StepFlow({
 
           <button
             type="button"
-            className="flex w-full items-center gap-3 rounded-2xl bg-background/60 px-3 py-3 text-left ring-1 ring-border transition hover:bg-accent/20"
+            className="flex w-full items-center gap-2.5 rounded-2xl bg-background/60 px-3 py-2.5 text-left ring-1 ring-border transition hover:bg-accent/20"
           >
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
               <CreditCard className="h-4 w-4" />
             </span>
             <div className="min-w-0 flex-1">
-              <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+              <div className="text-[9.5px] font-semibold uppercase tracking-widest text-muted-foreground leading-none">
                 Forma de pagamento
               </div>
-              <div className="truncate text-[13.5px] font-bold text-foreground">
+              <div className="mt-0.5 truncate text-[13px] font-bold text-foreground leading-tight">
                 Dinheiro
               </div>
             </div>
             <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
           </button>
 
-          {/* Botão fixo no rodapé */}
-          <div
-            className="fixed inset-x-0 bottom-0 z-30 border-t border-border/60 bg-surface/95 px-4 pt-3 backdrop-blur-md"
-            style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 12px)" }}
+          <button
+            type="button"
+            disabled={busy}
+            onClick={onSubmit}
+            className="mt-1 w-full rounded-2xl bg-primary py-3.5 text-[15px] font-extrabold text-primary-foreground shadow-xl shadow-primary/30 transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <button
-              type="button"
-              disabled={busy}
-              onClick={onSubmit}
-              className="w-full rounded-2xl bg-primary py-3.5 text-[15px] font-bold text-primary-foreground shadow-xl shadow-primary/25 transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {busy
-                ? "Solicitando..."
-                : `Solicitar MOVVI ${selectedCategory.label}`}
-            </button>
-          </div>
+            {busy
+              ? "Solicitando..."
+              : `Solicitar MOVVI ${selectedCategory.label}`}
+          </button>
         </div>
       )}
     </div>
