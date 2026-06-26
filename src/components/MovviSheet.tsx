@@ -199,7 +199,6 @@ export const MovviSheet = forwardRef<MovviSheetHandle, Props>(function MovviShee
         height: `${height}vh`,
         boxShadow:
           "0 -20px 60px -20px rgba(0,0,0,0.7), 0 -2px 0 0 rgba(255,255,255,0.04) inset",
-        touchAction: "none",
       }}
     >
       {/* drag handle area */}
