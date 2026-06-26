@@ -478,7 +478,15 @@ function PassageiroApp() {
 
   /* ---------------------- GPS denied screen ---------------------- */
   if (gpsState === "denied" || gpsState === "unavailable") {
-    return <GpsDeniedScreen onRetry={requestGps} onHome={() => navigate({ to: "/" })} />;
+    return (
+      <GpsDeniedScreen
+        onRetry={requestGps}
+        onHome={() => navigate({ to: "/" })}
+        onManual={setManualLocation}
+        errorMessage={gpsErrorMsg}
+        requesting={gpsState === "requesting"}
+      />
+    );
   }
 
   return (
