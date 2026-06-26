@@ -966,9 +966,9 @@ function PassageiroApp() {
         onManual={setManualLocation}
         errorMessage={gpsErrorMsg}
         requesting={gpsState === "requesting"}
-        devMode={isDevelopmentEnvironment()}
       />
     );
+
   }
   const gpsFailed = (gpsState === "denied" || gpsState === "unavailable") && !!gpsErrorMsg;
 
