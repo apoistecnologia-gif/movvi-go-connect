@@ -1,10 +1,11 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Marker, Polyline } from "@react-google-maps/api";
-import { Clock, LogOut, MapPin, Navigation2, Route as RouteIcon, Search, X } from "lucide-react";
+import { Clock, MapPin, Navigation2, Route as RouteIcon, Search, X } from "lucide-react";
 import { MovviMap } from "@/components/MovviMap";
-import { MovviLogo } from "@/components/MovviLogo";
+import { MovviHeader } from "@/components/MovviHeader";
+import { BottomNav, PASSENGER_NAV } from "@/components/BottomNav";
 import { supabase } from "@/integrations/supabase/client";
 import { BRASILIA_CENTER } from "@/lib/googleMaps";
 import { computeRoute, type RouteResult } from "@/lib/routes.functions";
@@ -49,7 +50,6 @@ function PassageiroApp() {
   const navigate = useNavigate();
   const callComputeRoute = useServerFn(computeRoute);
 
-  const [userEmail, setUserEmail] = useState<string | null>(null);
   const [position, setPosition] = useState<LatLng | null>(null);
   const [gpsError, setGpsError] = useState<string | null>(null);
 
@@ -66,11 +66,7 @@ function PassageiroApp() {
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) {
-        navigate({ to: "/passageiro/login" });
-        return;
-      }
-      setUserEmail(data.user.email ?? null);
+      if (!data.user) navigate({ to: "/passageiro/login" });
     });
   }, [navigate]);
 
@@ -187,10 +183,6 @@ function PassageiroApp() {
     setSuggestions([]);
   }
 
-  async function handleLogout() {
-    await supabase.auth.signOut();
-    navigate({ to: "/passageiro/login" });
-  }
 
   const path = useMemo(
     () => (route ? decodePolyline(route.encodedPolyline) : []),
@@ -249,21 +241,7 @@ function PassageiroApp() {
         </MovviMap>
       </div>
 
-      <header className="absolute left-0 right-0 top-0 z-10 flex items-center justify-between gap-3 p-4">
-        <Link to="/passageiro/app" className="flex items-center gap-2 rounded-full bg-card/90 px-4 py-2 backdrop-blur-md shadow-lg ring-1 ring-border">
-          <MovviLogo className="h-6 w-auto" />
-        </Link>
-        <div className="flex items-center gap-2">
-          {userEmail && (
-            <span className="hidden sm:inline-flex rounded-full bg-card/90 px-3 py-2 text-xs text-muted-foreground backdrop-blur-md ring-1 ring-border">
-              {userEmail}
-            </span>
-          )}
-          <button onClick={handleLogout} className="inline-flex items-center gap-1.5 rounded-full bg-card/90 px-3 py-2 text-xs font-medium text-foreground backdrop-blur-md ring-1 ring-border hover:bg-card transition">
-            <LogOut className="h-3.5 w-3.5" /> Sair
-          </button>
-        </div>
-      </header>
+      <MovviHeader variant="floating" logoutRedirect="/" />
 
       {gpsError && (
         <div className="absolute left-1/2 top-20 z-10 -translate-x-1/2 rounded-full bg-destructive/90 px-4 py-1.5 text-xs text-destructive-foreground shadow-lg backdrop-blur">
@@ -271,7 +249,7 @@ function PassageiroApp() {
         </div>
       )}
 
-      <div className="absolute bottom-0 left-0 right-0 z-10 px-4 pb-6 pt-4">
+      <div className="absolute bottom-20 left-0 right-0 z-20 px-4 pt-4 sm:bottom-24">
         <div className="mx-auto max-w-xl rounded-3xl bg-card/95 p-5 shadow-2xl ring-1 ring-border backdrop-blur-xl">
           <div className="mb-4 flex items-center gap-2">
             <Navigation2 className="h-5 w-5 text-primary" />
@@ -364,6 +342,8 @@ function PassageiroApp() {
           </button>
         </div>
       </div>
+
+      <BottomNav items={PASSENGER_NAV} floating />
     </div>
   );
 }

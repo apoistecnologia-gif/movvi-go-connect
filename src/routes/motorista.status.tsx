@@ -1,11 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MovviLogo } from "@/components/MovviLogo";
-import { Clock, CheckCircle2, XCircle, ShieldAlert, Loader2 } from "lucide-react";
+import { MovviHeader } from "@/components/MovviHeader";
+import { Clock, CheckCircle2, XCircle, ShieldAlert, Loader2, LogIn } from "lucide-react";
 
 export const Route = createFileRoute("/motorista/status")({
   head: () => ({ meta: [{ title: "Status do Cadastro — MOVVI DRIVE" }] }),
@@ -63,68 +63,63 @@ function DriverStatusPage() {
       setStatus((data?.approval_status as Status) ?? "pending_approval");
       setLoading(false);
     })();
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, [navigate]);
 
   const meta = status ? STATUS_META[status] : null;
   const Icon = meta?.icon ?? Clock;
 
+  async function switchAccount() {
+    await supabase.auth.signOut();
+    navigate({ to: "/motorista/login" });
+  }
+
   return (
-    <div className="min-h-screen bg-background py-10">
-      <div className="container mx-auto max-w-xl px-4">
-        <Link to="/" className="mb-6 inline-flex items-center gap-2">
-          <MovviLogo className="h-8 w-auto" />
-        </Link>
+    <div className="flex min-h-screen flex-col bg-background">
+      <MovviHeader logoutRedirect="/" />
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl">Status do cadastro</CardTitle>
-            <CardDescription>Acompanhe a análise do seu cadastro de motorista.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {loading || !meta ? (
-              <div className="flex items-center gap-3 text-muted-foreground">
-                <Loader2 className="h-5 w-5 animate-spin" /> Carregando...
-              </div>
-            ) : (
-              <>
-                <div className="flex flex-col items-center gap-4 py-6 text-center">
-                  <div className={`rounded-full border p-4 ${meta.tone}`}>
-                    <Icon className="h-10 w-10" />
-                  </div>
-                  <Badge variant="outline" className={meta.tone}>
-                    {meta.label}
-                  </Badge>
-                  <p className="max-w-md text-sm text-muted-foreground">{meta.desc}</p>
+      <main className="flex-1 px-4 py-8">
+        <div className="container mx-auto max-w-xl">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-2xl">Status do cadastro</CardTitle>
+              <CardDescription>Acompanhe a análise do seu cadastro de motorista.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {loading || !meta ? (
+                <div className="flex items-center gap-3 text-muted-foreground">
+                  <Loader2 className="h-5 w-5 animate-spin" /> Carregando...
                 </div>
+              ) : (
+                <>
+                  <div className="flex flex-col items-center gap-4 py-6 text-center">
+                    <div className={`rounded-full border p-4 ${meta.tone}`}>
+                      <Icon className="h-10 w-10" />
+                    </div>
+                    <Badge variant="outline" className={meta.tone}>{meta.label}</Badge>
+                    <p className="max-w-md text-sm text-muted-foreground">{meta.desc}</p>
+                  </div>
 
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  {status === "approved" ? (
-                    <Button asChild className="flex-1">
-                      <Link to="/motorista/app">Abrir app do motorista</Link>
-                    </Button>
-                  ) : (
-                    <Button asChild variant="secondary" className="flex-1">
+                  <div className="flex flex-col gap-2">
+                    {status === "approved" && (
+                      <Button asChild className="w-full">
+                        <Link to="/motorista/app">Abrir app do motorista</Link>
+                      </Button>
+                    )}
+                    <Button asChild variant="secondary" className="w-full">
                       <Link to="/">Voltar ao início</Link>
                     </Button>
-                  )}
-                  <Button
-                    variant="ghost"
-                    onClick={async () => {
-                      await supabase.auth.signOut();
-                      navigate({ to: "/motorista/login" });
-                    }}
-                  >
-                    Sair
-                  </Button>
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+                    <Button onClick={switchAccount} variant="outline" className="w-full">
+                      <LogIn className="mr-2 h-4 w-4" />
+                      Entrar com outra conta
+                    </Button>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </main>
     </div>
   );
 }

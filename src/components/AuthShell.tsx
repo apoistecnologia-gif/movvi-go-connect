@@ -1,5 +1,6 @@
 import { useState, type FormEvent, type ReactNode } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate, useRouter } from "@tanstack/react-router";
+import { ArrowLeft, Home } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MovviLogo } from "@/components/MovviLogo";
 
@@ -11,9 +12,28 @@ interface AuthShellProps {
 }
 
 export function AuthShell({ title, description, children, footer }: AuthShellProps) {
+  const router = useRouter();
+  const navigate = useNavigate();
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
-      <div className="w-full max-w-md space-y-6">
+    <div className="flex min-h-screen flex-col bg-background px-4 py-6">
+      <div className="mx-auto flex w-full max-w-md items-center justify-between">
+        <button
+          type="button"
+          onClick={() => (window.history.length > 1 ? router.history.back() : navigate({ to: "/" }))}
+          className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-medium text-muted-foreground transition hover:bg-accent/40 hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" /> Voltar
+        </button>
+        <Link
+          to="/"
+          aria-label="Home"
+          className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-medium text-muted-foreground transition hover:bg-accent/40 hover:text-foreground"
+        >
+          <Home className="h-4 w-4" /> Início
+        </Link>
+      </div>
+
+      <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center space-y-6">
         <Link to="/" className="flex justify-center">
           <MovviLogo size={56} />
         </Link>
