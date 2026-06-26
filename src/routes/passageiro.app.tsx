@@ -48,7 +48,7 @@ import {
   formatBRL,
   type RideCategory,
 } from "@/lib/rideCategories";
-import { Skeleton } from "@/components/ui/skeleton";
+
 import type { Database } from "@/integrations/supabase/types";
 
 /** Saudação dinâmica com base no horário local (pt-BR). */
@@ -324,7 +324,7 @@ function PassageiroApp() {
     "idle" | "requesting" | "granted" | "denied" | "unavailable"
   >("idle");
   const [gpsErrorMsg, setGpsErrorMsg] = useState<string>("");
-  const [devNotice, setDevNotice] = useState<string | null>(null);
+  
 
   const [destinationText, setDestinationText] = useState("");
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
@@ -806,19 +806,6 @@ function PassageiroApp() {
 
   return (
     <div className="relative h-[100dvh] w-screen overflow-hidden bg-background text-foreground">
-      {devNotice && (
-        <div className="pointer-events-auto absolute left-1/2 top-2 z-[60] flex max-w-[92vw] -translate-x-1/2 items-center gap-2 rounded-full bg-amber-500/15 px-3 py-1.5 text-[11px] text-amber-200 ring-1 ring-amber-500/40 backdrop-blur">
-          <span className="font-semibold">DEV</span>
-          <span className="truncate">{devNotice}</span>
-          <button
-            onClick={() => setDevNotice(null)}
-            className="ml-1 rounded-full p-0.5 hover:bg-amber-500/20"
-            aria-label="Fechar aviso"
-          >
-            <X className="h-3 w-3" />
-          </button>
-        </div>
-      )}
       {/* MAPA — sempre presente, ~70% da tela */}
       <div className="absolute inset-0">
         <MovviMap
@@ -1073,7 +1060,7 @@ function SheetContent({
   const region = geo?.region || "";
   const approximate = !!geo?.approximate;
   const primaryLine = friendly || (approximate ? "Localização aproximada" : "");
-  const showSkeleton = geoLoading && !primaryLine && !region;
+  
 
   return (
     <div className="pt-1">
@@ -1090,12 +1077,7 @@ function SheetContent({
           <div className="text-[9px] font-semibold uppercase tracking-widest text-primary leading-none">
             Você está em
           </div>
-          {showSkeleton ? (
-            <div className="mt-1 space-y-1">
-              <div className="h-3 w-2/3 animate-pulse rounded bg-foreground/10" />
-              <div className="h-2.5 w-1/3 animate-pulse rounded bg-foreground/10" />
-            </div>
-          ) : primaryLine || region ? (
+          {primaryLine || region ? (
             <>
               {primaryLine && (
                 <div
@@ -1113,8 +1095,8 @@ function SheetContent({
               )}
             </>
           ) : (
-            <div className="mt-0.5 truncate text-[12px] font-semibold leading-tight text-foreground">
-              {hasPosition ? "Aguardando localização..." : "Localização indisponível"}
+            <div className="mt-0.5 truncate text-[12px] font-medium leading-tight text-muted-foreground">
+              {hasPosition || geoLoading ? "Obtendo localização..." : "Localização indisponível"}
             </div>
           )}
         </div>
