@@ -91,6 +91,7 @@ function PassageiroApp() {
   const [gpsState, setGpsState] = useState<
     "idle" | "requesting" | "granted" | "denied" | "unavailable"
   >("idle");
+  const [gpsErrorMsg, setGpsErrorMsg] = useState<string>("");
 
   const [destinationText, setDestinationText] = useState("");
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
