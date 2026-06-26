@@ -37,6 +37,7 @@ import {
   isBrazilCoordinate,
   purgeForeignMapCache,
 } from "@/lib/googleMaps";
+import { isDevEnvironment } from "@/lib/environment";
 
 import { computeRoute, type RouteResult } from "@/lib/routes.functions";
 import { reverseGeocode, type GeocodeResult } from "@/lib/geocode.functions";
@@ -468,16 +469,18 @@ function PassageiroApp() {
     gpsStateRef.current = gpsState;
   }, [gpsState]);
   const watchIdRef = useRef<number | null>(null);
+  const gpsRequestInFlightRef = useRef(false);
 
   const requestGps = useCallback(() => {
     // Guarda: não permitir cliques duplicados enquanto há uma solicitação em curso.
-    if (gpsStateRef.current === "requesting") {
+    if (gpsStateRef.current === "requesting" || gpsRequestInFlightRef.current) {
       console.log("[MOVVI] Ignorando clique — já existe uma solicitação de GPS em andamento.");
       return;
     }
     console.log("[MOVVI] Solicitando localização do dispositivo...");
     const fail = (msg: string) => {
       setGpsState("unavailable");
+      gpsStateRef.current = "unavailable";
       setGpsErrorMsg(msg);
     };
     if (typeof window !== "undefined" && !window.isSecureContext) {
@@ -489,27 +492,30 @@ function PassageiroApp() {
       return;
     }
     setGpsState("requesting");
+    gpsStateRef.current = "requesting";
+    gpsRequestInFlightRef.current = true;
     setGpsErrorMsg("");
     try {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
+          gpsRequestInFlightRef.current = false;
           const lat = pos.coords.latitude;
           const lng = pos.coords.longitude;
           console.log("[MOVVI] GPS recebido:", lat, lng);
           if (!isBrazilCoordinate(lat, lng)) {
             setGpsState("unavailable");
+            gpsStateRef.current = "unavailable";
             setGpsErrorMsg(
-              `O navegador retornou uma coordenada fora do Brasil (lat ${lat.toFixed(
-                4,
-              )}, lng ${lng.toFixed(
-                4,
-              )}). Informe seu endereço manualmente para continuar.`,
+              isDevEnvironment()
+                ? "Ambiente de teste detectado. Informe sua localização manualmente."
+                : "A localização recebida está fora do Brasil. Informe sua localização manualmente.",
             );
             return;
           }
           setPosition({ lat, lng });
           setGpsAccuracy(pos.coords.accuracy ?? null);
           setGpsState("granted");
+          gpsStateRef.current = "granted";
           setGpsErrorMsg("");
           console.log("[MOVVI] GPS obtido", { lat, lng });
           // Evita múltiplos watchers acumulados em re-tentativas.
@@ -530,11 +536,13 @@ function PassageiroApp() {
           );
         },
         (err) => {
+          gpsRequestInFlightRef.current = false;
           console.error("[MOVVI] Erro ao obter localização:", err);
           setGpsState("denied");
+          gpsStateRef.current = "denied";
           if (err.code === err.PERMISSION_DENIED) {
             setGpsErrorMsg(
-              "Permissão de localização negada. Clique no cadeado ao lado do endereço do site e permita o acesso, ou use a localização manual.",
+              "Permissão de localização negada.",
             );
           } else if (err.code === err.POSITION_UNAVAILABLE) {
             setGpsErrorMsg(
@@ -553,6 +561,7 @@ function PassageiroApp() {
         { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 },
       );
     } catch (e) {
+      gpsRequestInFlightRef.current = false;
       console.error("[MOVVI] Falha ao iniciar geolocalização:", e);
       fail("A geolocalização foi bloqueada neste ambiente. Use a localização manual.");
     }
@@ -573,6 +582,7 @@ function PassageiroApp() {
     console.log("Localização manual definida:", p);
     setPosition(p);
     setGpsState("granted");
+    gpsStateRef.current = "granted";
     setGpsErrorMsg("");
   }, []);
 
@@ -586,6 +596,7 @@ function PassageiroApp() {
   useEffect(() => {
     purgeForeignMapCache();
     let cancelled = false;
+    const previewLikeEnvironment = isDevEnvironment();
 
     if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
       setPermissionStatus("unsupported");
@@ -611,13 +622,22 @@ function PassageiroApp() {
         const apply = (s: PermissionState) => {
           if (s === "granted") {
             setPermissionStatus("granted");
-            // Já liberado — pedir GPS de imediato (não dispara prompt).
+            // Já liberado — em produção podemos obter o GPS imediatamente.
+            // Em preview/iframe/dev, alguns navegadores retornam coordenadas simuladas
+            // sem interação do usuário; por isso exigimos o clique explícito no botão.
+            if (previewLikeEnvironment && !gpsRequestInFlightRef.current) {
+              setPermissionStatus("prompt");
+              setGpsState("idle");
+              gpsStateRef.current = "idle";
+              setGpsErrorMsg("");
+              return;
+            }
             requestGps();
           } else if (s === "denied") {
             setPermissionStatus("denied");
             setGpsState("denied");
             setGpsErrorMsg(
-              "Permissão de localização negada. Você pode continuar utilizando a MOVVI informando sua localização manualmente.",
+              "Permissão de localização negada.",
             );
           } else {
             setPermissionStatus("prompt");
@@ -1804,7 +1824,7 @@ function GpsDeniedScreen({
     ? "Ative sua localização"
     : "Não foi possível obter sua localização.";
   const description = isPrompt
-    ? "A MOVVI utiliza sua localização para encontrar motoristas próximos, calcular rotas e estimar valores da corrida."
+    ? "A MOVVI precisa da sua localização para encontrar motoristas próximos e calcular sua corrida."
     : errorMessage ||
       "Você pode continuar utilizando a MOVVI informando sua localização manualmente.";
   const primaryLabel = requesting
@@ -1939,7 +1959,7 @@ function GpsDeniedScreen({
           onClick={() => setManualOpen((v) => !v)}
           className="inline-flex items-center justify-center gap-2 rounded-2xl bg-card px-6 py-4 text-sm font-semibold text-foreground ring-1 ring-border active:scale-95"
         >
-          <Search className="h-4 w-4" /> USAR LOCALIZAÇÃO MANUAL
+          <Search className="h-4 w-4" /> INFORMAR LOCALIZAÇÃO MANUAL
         </button>
 
       </div>
