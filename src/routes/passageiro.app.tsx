@@ -906,7 +906,7 @@ function PassageiroApp() {
       setSuggestions([]);
       sessionTokenRef.current = null;
       pushRecent({ placeId: s.placeId, label: s.primary, secondary: s.secondary });
-      sheetRef.current?.snapTo(72);
+      sheetRef.current?.snapTo(55);
       searchInputRef.current?.blur();
       await calcRoute(point);
     } catch (e) {
