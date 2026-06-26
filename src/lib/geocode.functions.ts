@@ -113,11 +113,6 @@ export const reverseGeocode = createServerFn({ method: "POST" })
       estadoSigla: estado?.short,
       pais: pais?.long,
     };
-      cidade: cidade?.long,
-      estado: estado?.long,
-      estadoSigla: estado?.short,
-      pais: pais?.long,
-    };
 
     // Friendly = só povoado/bairro. Nunca repetir o município aqui.
     const cityName = cidade?.long?.toLowerCase() ?? "";
