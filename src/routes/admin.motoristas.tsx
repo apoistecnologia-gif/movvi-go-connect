@@ -1,0 +1,442 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  Loader2,
+  ShieldAlert,
+  XCircle,
+  Eye,
+  FileText,
+  RefreshCw,
+} from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { MovviHeader } from "@/components/MovviHeader";
+import { AdminGuard } from "@/components/AdminGuard";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
+import type { Database } from "@/integrations/supabase/types";
+
+export const Route = createFileRoute("/admin/motoristas")({
+  head: () => ({ meta: [{ title: "Motoristas — Admin MOVVI" }] }),
+  component: () => (
+    <AdminGuard>
+      <AdminMotoristas />
+    </AdminGuard>
+  ),
+});
+
+type Driver = Database["public"]["Tables"]["drivers"]["Row"];
+type Status = Driver["approval_status"];
+
+const TAB_META: Record<Status, { label: string; tone: string }> = {
+  pending_approval: { label: "Em análise", tone: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30" },
+  approved: { label: "Aprovados", tone: "bg-primary/15 text-primary border-primary/30" },
+  rejected: { label: "Reprovados", tone: "bg-destructive/15 text-destructive border-destructive/30" },
+  blocked: { label: "Bloqueados", tone: "bg-destructive/15 text-destructive border-destructive/30" },
+};
+
+const BUCKETS = {
+  selfie_url: "driver-selfies",
+  cnh_url: "driver-cnh",
+  vehicle_document_url: "vehicle-documents",
+} as const;
+
+function fmtDate(d: string | null) {
+  if (!d) return "—";
+  return new Date(d).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+}
+
+function AdminMotoristas() {
+  const [drivers, setDrivers] = useState<Driver[] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<Status>("pending_approval");
+  const [detail, setDetail] = useState<Driver | null>(null);
+  const [rejectFor, setRejectFor] = useState<Driver | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  async function load() {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("drivers")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (error) {
+      toast.error("Erro ao carregar motoristas: " + error.message);
+      setDrivers([]);
+    } else {
+      setDrivers(data ?? []);
+    }
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    load();
+    const ch = supabase
+      .channel("admin-drivers")
+      .on("postgres_changes", { event: "*", schema: "public", table: "drivers" }, () => load())
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, []);
+
+  const grouped = useMemo(() => {
+    const g: Record<Status, Driver[]> = {
+      pending_approval: [],
+      approved: [],
+      rejected: [],
+      blocked: [],
+    };
+    (drivers ?? []).forEach((d) => g[d.approval_status]?.push(d));
+    return g;
+  }, [drivers]);
+
+  async function updateStatus(d: Driver, status: Status, reason?: string | null) {
+    setBusyId(d.id);
+    const patch: Database["public"]["Tables"]["drivers"]["Update"] = {
+      approval_status: status,
+      rejection_reason: status === "rejected" ? reason ?? null : null,
+      approved_at: status === "approved" ? new Date().toISOString() : null,
+      blocked_at: status === "blocked" ? new Date().toISOString() : null,
+    };
+    const { error } = await supabase.from("drivers").update(patch).eq("id", d.id);
+    setBusyId(null);
+    if (error) {
+      toast.error("Erro ao atualizar status: " + error.message);
+      return;
+    }
+    if (status === "approved") toast.success("Motorista aprovado com sucesso");
+    if (status === "rejected") toast.success("Motorista reprovado");
+    if (status === "blocked") toast.success("Motorista bloqueado");
+    setRejectFor(null);
+    setRejectReason("");
+    if (detail?.id === d.id) setDetail({ ...d, ...patch } as Driver);
+  }
+
+  return (
+    <div className="flex min-h-screen flex-col bg-background">
+      <MovviHeader logoutRedirect="/admin/login" />
+      <main className="flex-1 px-4 py-6">
+        <div className="container mx-auto max-w-6xl">
+          <div className="mb-6 flex items-center justify-between gap-3">
+            <div>
+              <Button asChild variant="ghost" size="sm" className="mb-2 -ml-2">
+                <Link to="/admin/dashboard">
+                  <ArrowLeft className="mr-1 h-4 w-4" /> Voltar ao dashboard
+                </Link>
+              </Button>
+              <h1 className="font-display text-2xl font-bold">Gestão de Motoristas</h1>
+              <p className="text-sm text-muted-foreground">
+                Aprovação, reprovação e bloqueio de cadastros.
+              </p>
+            </div>
+            <Button variant="outline" size="sm" onClick={load} disabled={loading}>
+              <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+              Atualizar
+            </Button>
+          </div>
+
+          {loading && !drivers ? (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /> Carregando...
+            </div>
+          ) : (
+            <Tabs value={tab} onValueChange={(v) => setTab(v as Status)}>
+              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
+                {(Object.keys(TAB_META) as Status[]).map((s) => (
+                  <TabsTrigger key={s} value={s}>
+                    {TAB_META[s].label}
+                    <Badge variant="secondary" className="ml-2">
+                      {grouped[s].length}
+                    </Badge>
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+
+              {(Object.keys(TAB_META) as Status[]).map((s) => (
+                <TabsContent key={s} value={s} className="mt-4 space-y-3">
+                  {grouped[s].length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-border bg-card/40 p-8 text-center text-sm text-muted-foreground">
+                      Nenhum motorista nesta lista.
+                    </div>
+                  ) : (
+                    grouped[s].map((d) => (
+                      <DriverCard
+                        key={d.id}
+                        driver={d}
+                        busy={busyId === d.id}
+                        onDetails={() => setDetail(d)}
+                        onApprove={() => updateStatus(d, "approved")}
+                        onReject={() => {
+                          setRejectFor(d);
+                          setRejectReason(d.rejection_reason ?? "");
+                        }}
+                        onBlock={() => updateStatus(d, "blocked")}
+                        onReinstate={() => updateStatus(d, "pending_approval")}
+                      />
+                    ))
+                  )}
+                </TabsContent>
+              ))}
+            </Tabs>
+          )}
+        </div>
+      </main>
+
+      <DetailsDialog driver={detail} onClose={() => setDetail(null)} />
+
+      <Dialog open={!!rejectFor} onOpenChange={(o) => !o && setRejectFor(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reprovar motorista</DialogTitle>
+            <DialogDescription>
+              Informe o motivo da reprovação. Será exibido ao motorista.
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+            placeholder="Ex.: CNH ilegível, documento do veículo vencido..."
+            rows={4}
+          />
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setRejectFor(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={!rejectReason.trim() || busyId === rejectFor?.id}
+              onClick={() => rejectFor && updateStatus(rejectFor, "rejected", rejectReason.trim())}
+            >
+              {busyId === rejectFor?.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Confirmar reprovação
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function DriverCard({
+  driver,
+  busy,
+  onDetails,
+  onApprove,
+  onReject,
+  onBlock,
+  onReinstate,
+}: {
+  driver: Driver;
+  busy: boolean;
+  onDetails: () => void;
+  onApprove: () => void;
+  onReject: () => void;
+  onBlock: () => void;
+  onReinstate: () => void;
+}) {
+  const meta = TAB_META[driver.approval_status];
+  return (
+    <div className="rounded-2xl border border-border bg-card p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="font-semibold">{driver.name}</h3>
+            <Badge variant="outline" className={meta.tone}>
+              {meta.label}
+            </Badge>
+            <Badge variant="secondary" className="capitalize">
+              {driver.category}
+            </Badge>
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {driver.phone} · {driver.city}/{driver.state} · Cadastro {fmtDate(driver.created_at)}
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Veículo: {driver.vehicle_model} · Placa {driver.vehicle_plate} · {driver.vehicle_color} ·{" "}
+            {driver.vehicle_year}
+          </p>
+          {driver.approval_status === "rejected" && driver.rejection_reason && (
+            <p className="mt-2 rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">
+              Motivo: {driver.rejection_reason}
+            </p>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" onClick={onDetails}>
+            <Eye className="mr-1 h-4 w-4" /> Detalhes
+          </Button>
+          {driver.approval_status !== "approved" && (
+            <Button size="sm" onClick={onApprove} disabled={busy}>
+              <CheckCircle2 className="mr-1 h-4 w-4" /> Aprovar
+            </Button>
+          )}
+          {driver.approval_status !== "rejected" && (
+            <Button size="sm" variant="destructive" onClick={onReject} disabled={busy}>
+              <XCircle className="mr-1 h-4 w-4" /> Reprovar
+            </Button>
+          )}
+          {driver.approval_status !== "blocked" ? (
+            <Button size="sm" variant="outline" onClick={onBlock} disabled={busy}>
+              <ShieldAlert className="mr-1 h-4 w-4" /> Bloquear
+            </Button>
+          ) : (
+            <Button size="sm" variant="outline" onClick={onReinstate} disabled={busy}>
+              Desbloquear
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DetailsDialog({ driver, onClose }: { driver: Driver | null; onClose: () => void }) {
+  const [urls, setUrls] = useState<Record<string, string | null>>({});
+
+  useEffect(() => {
+    if (!driver) return;
+    let cancelled = false;
+    (async () => {
+      const out: Record<string, string | null> = {};
+      for (const [field, bucket] of Object.entries(BUCKETS) as [keyof typeof BUCKETS, string][]) {
+        const path = driver[field];
+        if (!path) {
+          out[field] = null;
+          continue;
+        }
+        const { data } = await supabase.storage.from(bucket).createSignedUrl(path, 600);
+        out[field] = data?.signedUrl ?? null;
+      }
+      if (!cancelled) setUrls(out);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [driver]);
+
+  if (!driver) return null;
+  const meta = TAB_META[driver.approval_status];
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            {driver.name}
+            <Badge variant="outline" className={meta.tone}>
+              {meta.label}
+            </Badge>
+          </DialogTitle>
+          <DialogDescription>Cadastro completo do motorista</DialogDescription>
+        </DialogHeader>
+
+        <div className="max-h-[65vh] space-y-5 overflow-y-auto pr-2 text-sm">
+          <Section title="Dados pessoais">
+            <Row label="E-mail" value={driver.email} />
+            <Row label="Telefone" value={driver.phone} />
+            <Row label="CPF" value={driver.cpf} />
+            <Row label="Nascimento" value={driver.birth_date ?? "—"} />
+            <Row label="Cidade/UF" value={`${driver.city}/${driver.state}`} />
+          </Section>
+
+          <Section title="Veículo">
+            <Row label="Categoria" value={driver.category} />
+            <Row label="Modelo" value={driver.vehicle_model} />
+            <Row label="Placa" value={driver.vehicle_plate} />
+            <Row label="Cor" value={driver.vehicle_color} />
+            <Row label="Ano" value={String(driver.vehicle_year)} />
+          </Section>
+
+          <Section title="Documentos">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <DocCard label="Selfie" url={urls.selfie_url} />
+              <DocCard label="CNH" url={urls.cnh_url} />
+              <DocCard label="Doc. Veículo" url={urls.vehicle_document_url} />
+            </div>
+          </Section>
+
+          <Section title="Assinatura / Pagamento">
+            <Row label="Status assinatura" value={driver.subscription_status} />
+          </Section>
+
+          <Section title="Status">
+            <Row label="Cadastro em" value={fmtDate(driver.created_at)} />
+            <Row label="Aprovado em" value={fmtDate(driver.approved_at)} />
+            <Row label="Bloqueado em" value={fmtDate(driver.blocked_at)} />
+            {driver.rejection_reason && (
+              <Row label="Motivo reprovação" value={driver.rejection_reason} />
+            )}
+          </Section>
+        </div>
+
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>
+            Fechar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-primary">{title}</h4>
+      <div className="space-y-1">{children}</div>
+    </div>
+  );
+}
+
+function Row({ label, value }: { label: string; value: string | null }) {
+  return (
+    <div className="flex justify-between gap-3 border-b border-border/40 py-1.5">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="text-right font-medium">{value ?? "—"}</span>
+    </div>
+  );
+}
+
+function DocCard({ label, url }: { label: string; url: string | null }) {
+  if (!url) {
+    return (
+      <div className="rounded-xl border border-dashed border-border bg-card/40 p-4 text-center text-xs text-muted-foreground">
+        {label}
+        <div className="mt-2">Não enviado</div>
+      </div>
+    );
+  }
+  const isImg = /\.(png|jpe?g|webp|gif)(\?|$)/i.test(url);
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noreferrer"
+      className="block rounded-xl border border-border bg-card p-2 transition hover:border-primary"
+    >
+      <div className="mb-2 text-xs font-medium text-muted-foreground">{label}</div>
+      {isImg ? (
+        <img src={url} alt={label} className="h-32 w-full rounded-md object-cover" />
+      ) : (
+        <div className="flex h-32 flex-col items-center justify-center gap-2 rounded-md bg-muted/30 text-xs text-muted-foreground">
+          <FileText className="h-6 w-6" />
+          Abrir arquivo
+        </div>
+      )}
+    </a>
+  );
+}
