@@ -124,7 +124,7 @@ function MotoristaApp() {
     const start = new Date(); start.setHours(0, 0, 0, 0);
     const { data } = await supabase.from("rides")
       .select("final_price, estimated_price")
-      .eq("driver_id", uid).eq("status", "completed")
+      .eq("driver_id", uid).eq("status", "finalizada")
       .gte("completed_at", start.toISOString());
     const rides = data?.length ?? 0;
     const earnings = (data ?? []).reduce((s, r) => s + Number(r.final_price ?? r.estimated_price ?? 0), 0);
@@ -161,7 +161,7 @@ function MotoristaApp() {
         { event: "UPDATE", schema: "public", table: "rides", filter: `current_offer_driver_id=eq.${userId}` },
         (p) => {
           const r = p.new as RideRow;
-          if (r.status === "offered_to_driver" && !active && !incoming && !ratingRide) {
+          if (r.status === "procurar_motorista" && !active && !incoming && !ratingRide) {
             setIncoming(r); setCountdown(15);
             if (navigator.vibrate) navigator.vibrate([280, 120, 280, 120, 280]);
           }
@@ -170,10 +170,10 @@ function MotoristaApp() {
         { event: "UPDATE", schema: "public", table: "rides", filter: `driver_id=eq.${userId}` },
         (p) => {
           const r = p.new as RideRow;
-          if (r.status === "completed") {
+          if (r.status === "finalizada") {
             setActive(null); setPolyline([]); setRatingRide(r); setStars(5); setRatingComment("");
             if (userId) loadTodayStats(userId);
-          } else if (r.status === "cancelled") {
+          } else if ((r.status === "cancelada_passageiro" || r.status === "cancelada_motorista")) {
             setActive(null); setPolyline([]);
           } else {
             setActive(r);
@@ -217,10 +217,10 @@ function MotoristaApp() {
   // rota dinâmica
   useEffect(() => {
     if (!active || !position) { setPolyline([]); setEtaSeconds(null); setLegKm(null); return; }
-    const toPickup = active.status === "driver_assigned" || active.status === "driver_arrived";
+    const toPickup = active.status === "motorista_a_caminho" || active.status === "motorista_chegou";
     const dest = toPickup
       ? { lat: active.origin_lat, lng: active.origin_lng }
-      : active.status === "in_progress"
+      : active.status === "em_viagem"
         ? { lat: active.destination_lat, lng: active.destination_lng }
         : null;
     if (!dest) { setPolyline([]); return; }
@@ -342,15 +342,15 @@ function MotoristaApp() {
               passenger={passenger}
               etaSeconds={etaSeconds}
               legKm={legKm}
-              onArrive={async () => { await callPhase({ data: { rideId: active.id, status: "driver_arrived" } }); }}
-              onStart={async () => { await callPhase({ data: { rideId: active.id, status: "in_progress" } }); }}
+              onArrive={async () => { await callPhase({ data: { rideId: active.id, status: "motorista_chegou" } }); }}
+              onStart={async () => { await callPhase({ data: { rideId: active.id, status: "em_viagem" } }); }}
               onComplete={async () => {
                 await callPhase({ data: {
-                  rideId: active.id, status: "completed",
+                  rideId: active.id, status: "finalizada",
                   final_price: active.estimated_price ? Number(active.estimated_price) : undefined,
                 } });
               }}
-              onCancel={async () => { await callPhase({ data: { rideId: active.id, status: "cancelled" } }); }}
+              onCancel={async () => { await callPhase({ data: { rideId: active.id, status: "cancelada_motorista" } }); }}
             />
           ) : (
             <IdlePanel
@@ -564,12 +564,12 @@ function ActiveRidePanel({
   onCancel: () => Promise<void> | void;
 }) {
   const phase = ride.status;
-  const toPickup = phase === "driver_assigned" || phase === "driver_arrived";
+  const toPickup = phase === "motorista_a_caminho" || phase === "motorista_chegou";
 
   const header = useMemo(() => {
-    if (phase === "driver_assigned") return { title: "A caminho do passageiro", tone: "text-primary" };
-    if (phase === "driver_arrived")  return { title: "Aguardando passageiro",   tone: "text-yellow-400" };
-    if (phase === "in_progress")     return { title: "Em viagem",               tone: "text-primary" };
+    if (phase === "motorista_a_caminho") return { title: "A caminho do passageiro", tone: "text-primary" };
+    if (phase === "motorista_chegou")  return { title: "Aguardando passageiro",   tone: "text-yellow-400" };
+    if (phase === "em_viagem")     return { title: "Em viagem",               tone: "text-primary" };
     return { title: "", tone: "" };
   }, [phase]);
 
@@ -586,7 +586,7 @@ function ActiveRidePanel({
           </span>
           <span className={`text-[11px] font-bold uppercase tracking-widest ${header.tone}`}>{header.title}</span>
         </div>
-        {phase === "driver_assigned" && (
+        {phase === "motorista_a_caminho" && (
           <button onClick={onCancel}
             className="rounded-full p-1.5 text-muted-foreground hover:bg-muted/30 hover:text-destructive">
             <X className="h-4 w-4" />
@@ -642,12 +642,12 @@ function ActiveRidePanel({
         <div className="ml-[7px] h-3 w-px bg-border" />
         <div className="flex items-start gap-3">
           <span className={`mt-1 h-3 w-3 shrink-0 rounded-full ring-2 ring-card ${
-            phase === "in_progress" ? "bg-destructive animate-pulse" : "bg-destructive/60"}`} />
+            phase === "em_viagem" ? "bg-destructive animate-pulse" : "bg-destructive/60"}`} />
           <div className="min-w-0 flex-1">
             <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Destino</div>
             <div className="line-clamp-2 text-sm font-medium">{ride.destination_name}</div>
           </div>
-          {phase === "in_progress" && (
+          {phase === "em_viagem" && (
             <a target="_blank" rel="noreferrer"
               href={`https://www.google.com/maps/dir/?api=1&destination=${ride.destination_lat},${ride.destination_lng}&travelmode=driving`}
               className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground shadow shadow-primary/30">
@@ -658,13 +658,13 @@ function ActiveRidePanel({
       </div>
 
       {/* CTA conforme fase */}
-      {phase === "driver_assigned" && (
+      {phase === "motorista_a_caminho" && (
         <ActionButton label="Cheguei ao local" onClick={onArrive} icon={MapPin} />
       )}
-      {phase === "driver_arrived" && (
+      {phase === "motorista_chegou" && (
         <ActionButton label="Iniciar corrida" onClick={onStart} icon={ChevronRight} />
       )}
-      {phase === "in_progress" && (
+      {phase === "em_viagem" && (
         <ActionButton label="Finalizar corrida" onClick={onComplete} icon={CheckCircle2} variant="success" />
       )}
     </div>

@@ -459,14 +459,13 @@ export type Database = {
       payment_status: "pending" | "paid" | "failed" | "refunded"
       ride_category: "carros" | "motos" | "fretes" | "guincho" | "envios"
       ride_status:
-        | "searching_driver"
-        | "offered_to_driver"
-        | "driver_assigned"
-        | "driver_arrived"
-        | "in_progress"
-        | "completed"
-        | "cancelled"
-        | "no_driver_available"
+        | "procurar_motorista"
+        | "motorista_a_caminho"
+        | "motorista_chegou"
+        | "em_viagem"
+        | "finalizada"
+        | "cancelada_passageiro"
+        | "cancelada_motorista"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -605,14 +604,13 @@ export const Constants = {
       payment_status: ["pending", "paid", "failed", "refunded"],
       ride_category: ["carros", "motos", "fretes", "guincho", "envios"],
       ride_status: [
-        "searching_driver",
-        "offered_to_driver",
-        "driver_assigned",
-        "driver_arrived",
-        "in_progress",
-        "completed",
-        "cancelled",
-        "no_driver_available",
+        "procurar_motorista",
+        "motorista_a_caminho",
+        "motorista_chegou",
+        "em_viagem",
+        "finalizada",
+        "cancelada_passageiro",
+        "cancelada_motorista",
       ],
     },
   },

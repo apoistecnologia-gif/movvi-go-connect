@@ -1065,7 +1065,7 @@ function PassageiroApp() {
     await supabase
       .from("rides")
       .update({
-        status: "cancelled",
+        status: "cancelada_passageiro",
         cancelled_at: new Date().toISOString(),
         cancelled_by: userId,
       })
@@ -1297,7 +1297,7 @@ function PassageiroApp() {
         userName={userName}
         gpsState={gpsState}
         drivers={drivers.length}
-        searching={!!ride && (ride.status === "searching_driver" || ride.status === "offered_to_driver")}
+        searching={!!ride && (ride.status === "procurar_motorista" || ride.status === "procurar_motorista")}
         onLogout={handleLogout}
       />
 
@@ -1397,7 +1397,7 @@ function PassageiroApp() {
       )}
 
 
-      {ride && (phase === "searching_driver" || phase === "offered_to_driver") && (
+      {ride && (phase === "procurar_motorista" || phase === "procurar_motorista") && (
         <MovviSheet snaps={[50]} initial={50}>
           <SearchingPanel
             category={category}
@@ -1409,15 +1409,15 @@ function PassageiroApp() {
 
       {ride &&
         driverInfo &&
-        (phase === "driver_assigned" ||
-          phase === "driver_arrived" ||
-          phase === "in_progress") && (
+        (phase === "motorista_a_caminho" ||
+          phase === "motorista_chegou" ||
+          phase === "em_viagem") && (
           <MovviSheet snaps={[40, 65]} initial={40}>
             <DriverEnRoute ride={ride} driver={driverInfo} onCancel={cancelRide} />
           </MovviSheet>
         )}
 
-      {ride && phase === "completed" && (
+      {ride && phase === "finalizada" && (
         <MovviSheet snaps={[40]} initial={40}>
           <div className="pt-2 text-center">
             <div className="mx-auto mb-3 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/15 text-primary text-3xl">
@@ -2169,14 +2169,14 @@ function DriverEnRoute({
   onCancel: () => void;
 }) {
   const phaseLabel =
-    ride.status === "driver_arrived"
+    ride.status === "motorista_chegou"
       ? "Seu motorista chegou"
-      : ride.status === "in_progress"
+      : ride.status === "em_viagem"
         ? "Em viagem para o destino"
         : "Motorista a caminho";
   // ETA animado para fase "motorista a caminho"
-  const isArriving = ride.status === "driver_assigned" || ride.status === "offered_to_driver";
-  const isInTrip = ride.status === "in_progress";
+  const isArriving = ride.status === "motorista_a_caminho" || ride.status === "procurar_motorista";
+  const isInTrip = ride.status === "em_viagem";
   const [eta, setEta] = useState(() => Math.floor(Math.random() * 4) + 3);
   useEffect(() => {
     if (!isArriving) return;
