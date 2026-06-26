@@ -111,7 +111,14 @@ function DriverStatusPage() {
                     </div>
                     <Badge variant="outline" className={meta.tone}>{meta.label}</Badge>
                     <p className="max-w-md text-sm text-muted-foreground">{meta.desc}</p>
+                    {status === "rejected" && rejectionReason && (
+                      <div className="w-full rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-left text-sm text-destructive">
+                        <strong className="block text-xs uppercase tracking-wide">Motivo</strong>
+                        {rejectionReason}
+                      </div>
+                    )}
                   </div>
+
 
                   <div className="flex flex-col gap-2">
                     {status === "approved" && (
