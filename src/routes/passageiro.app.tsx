@@ -1120,28 +1120,6 @@ function CategoryCard({
 /*                         SUB COMPONENTS                       */
 /* ============================================================ */
 
-function ShortcutChip({
-  icon,
-  label,
-  onClick,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex flex-col items-center gap-1.5 rounded-2xl bg-background/60 py-3 ring-1 ring-border transition hover:ring-primary/50 active:scale-95"
-    >
-      <span className="grid h-9 w-9 place-items-center rounded-full bg-primary/15 text-primary">
-        {icon}
-      </span>
-      <span className="text-[12px] font-medium">{label}</span>
-    </button>
-  );
-}
 
 function Stat({
   icon,
