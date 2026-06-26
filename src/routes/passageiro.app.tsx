@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Marker, Polyline } from "@react-google-maps/api";
+import { Marker, Polyline, useJsApiLoader } from "@react-google-maps/api";
 import {
   ArrowLeft,
   Briefcase,
@@ -21,7 +21,13 @@ import {
 import { MovviMap } from "@/components/MovviMap";
 import { MovviSheet, type MovviSheetHandle } from "@/components/MovviSheet";
 import { supabase } from "@/integrations/supabase/client";
-import { BRAZIL_CENTER, isBrazilCoordinate, purgeForeignMapCache } from "@/lib/googleMaps";
+import {
+  BRAZIL_CENTER,
+  GOOGLE_MAPS_API_KEY,
+  GOOGLE_MAPS_LIBRARIES,
+  isBrazilCoordinate,
+  purgeForeignMapCache,
+} from "@/lib/googleMaps";
 import { computeRoute, type RouteResult } from "@/lib/routes.functions";
 import { requestRide } from "@/lib/ride.functions";
 import { useNearbyDrivers } from "@/hooks/useNearbyDrivers";
@@ -186,9 +192,9 @@ function PassageiroApp() {
           const ok = isBrazilCoordinate(lat, lng);
           console.log("É Brasil?", ok);
           if (!ok) {
-            setGpsState("denied");
+            setGpsState("unavailable");
             setGpsErrorMsg(
-              `Sua localização parece estar fora do Brasil (lat ${lat.toFixed(4)}, lng ${lng.toFixed(4)}). Use a localização manual para continuar.`,
+              `O navegador retornou uma coordenada fora do Brasil (lat ${lat.toFixed(4)}, lng ${lng.toFixed(4)}). Isso costuma acontecer no ambiente de pré-visualização. Informe sua cidade ou endereço no Brasil para continuar.`,
             );
             return;
           }
@@ -1170,15 +1176,25 @@ function GpsDeniedScreen({
   const [query, setQuery] = useState("");
   const [items, setItems] = useState<{ placeId: string; primary: string; secondary: string }[]>([]);
   const [searching, setSearching] = useState(false);
+  const [manualError, setManualError] = useState("");
   const debounceRef = useRef<number | null>(null);
+  const { isLoaded: mapsReady, loadError: mapsLoadError } = useJsApiLoader({
+    id: "movvi-google-maps",
+    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
+    libraries: GOOGLE_MAPS_LIBRARIES,
+    language: "pt-BR",
+    region: "BR",
+  });
 
   useEffect(() => {
     if (debounceRef.current) window.clearTimeout(debounceRef.current);
     const q = query.trim();
+    setManualError("");
     if (q.length < 2) {
       setItems([]);
       return;
     }
+    if (!mapsReady) return;
     debounceRef.current = window.setTimeout(async () => {
       try {
         setSearching(true);
@@ -1200,28 +1216,47 @@ function GpsDeniedScreen({
               placeId: p!.placeId,
               primary: p!.mainText?.text ?? p!.text?.text ?? "",
               secondary: p!.secondaryText?.text ?? "",
-            })),
+            }))
+            .slice(0, 6),
         );
       } catch (e) {
         console.error("Erro no autocomplete manual:", e);
+        setManualError("Não foi possível buscar endereços agora. Tente novamente em alguns segundos.");
       } finally {
         setSearching(false);
       }
     }, 250);
-  }, [query]);
+  }, [query, mapsReady]);
 
   async function choose(placeId: string, label: string) {
     try {
+      setManualError("");
       const { Place } = (await google.maps.importLibrary("places")) as google.maps.PlacesLibrary;
       const place = new Place({ id: placeId });
       await place.fetchFields({ fields: ["location"] });
       const loc = place.location;
       if (!loc) throw new Error("Sem coordenadas");
-      onManual({ lat: loc.lat(), lng: loc.lng() });
-      console.log("Manual selecionado:", label, loc.lat(), loc.lng());
+      const point = { lat: loc.lat(), lng: loc.lng() };
+      console.log("Manual selecionado:", label, point.lat, point.lng);
+      if (!isBrazilCoordinate(point.lat, point.lng)) {
+        setManualError("Escolha uma cidade ou endereço dentro do Brasil.");
+        return;
+      }
+      onManual(point);
     } catch (e) {
       console.error("Erro ao obter coordenadas do lugar:", e);
+      setManualError("Não foi possível obter as coordenadas desse endereço.");
     }
+  }
+
+  async function submitManualSearch() {
+    const first = items[0];
+    if (first) {
+      await choose(first.placeId, `${first.primary} ${first.secondary}`);
+      return;
+    }
+    if (!mapsReady || query.trim().length < 2) return;
+    setManualError("Digite um endereço no Brasil e selecione uma opção da lista.");
   }
 
   return (
@@ -1277,9 +1312,18 @@ function GpsDeniedScreen({
             autoFocus
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") void submitManualSearch();
+            }}
             placeholder="Ex: Petrolina PE"
             className="mt-2 w-full rounded-xl bg-background px-3 py-3 text-sm outline-none ring-1 ring-border focus:ring-primary"
           />
+          {mapsLoadError && (
+            <p className="mt-2 text-xs text-destructive">Falha ao carregar a busca do Google Maps.</p>
+          )}
+          {!mapsReady && !mapsLoadError && (
+            <p className="mt-2 text-xs text-muted-foreground">Carregando busca...</p>
+          )}
           {searching && (
             <p className="mt-2 text-xs text-muted-foreground">Buscando...</p>
           )}
@@ -1297,6 +1341,20 @@ function GpsDeniedScreen({
               </li>
             ))}
           </ul>
+          {query.trim().length >= 2 && !searching && mapsReady && items.length === 0 && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              Continue digitando ou tente incluir cidade e estado, como “Petrolina PE”.
+            </p>
+          )}
+          {manualError && <p className="mt-3 text-xs text-destructive">{manualError}</p>}
+          <button
+            type="button"
+            onClick={() => void submitManualSearch()}
+            disabled={!mapsReady || searching || query.trim().length < 2}
+            className="mt-3 w-full rounded-xl bg-primary px-4 py-3 text-sm font-bold text-primary-foreground disabled:opacity-50"
+          >
+            CONFIRMAR LOCALIZAÇÃO
+          </button>
         </div>
       )}
     </div>
