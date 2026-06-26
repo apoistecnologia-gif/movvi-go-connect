@@ -1397,7 +1397,7 @@ function PassageiroApp() {
       )}
 
 
-      {ride && (phase === "procurar_motorista" || phase === "procurar_motorista") && (
+      {ride && ride.status === "procurar_motorista" && (
         <MovviSheet snaps={[50]} initial={50}>
           <SearchingPanel
             category={category}
