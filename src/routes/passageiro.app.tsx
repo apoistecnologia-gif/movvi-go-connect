@@ -4,19 +4,25 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Marker, Polyline, useJsApiLoader } from "@react-google-maps/api";
 import {
   ArrowLeft,
-  Briefcase,
+  Bike,
+  Box,
+  Car,
   Clock,
   Crosshair,
   Home as HomeIcon,
   LogOut,
   MapPin,
   Navigation2,
+  Package,
   Phone,
   Search,
+  Send,
   Shield,
   Star,
+  Truck,
   X,
   Zap,
+  type LucideIcon,
 } from "lucide-react";
 import { MovviMap } from "@/components/MovviMap";
 import { MovviSheet, type MovviSheetHandle } from "@/components/MovviSheet";
@@ -34,6 +40,7 @@ import {
   DEV_TEST_LABEL,
 } from "@/lib/environment";
 import { computeRoute, type RouteResult } from "@/lib/routes.functions";
+import { reverseGeocode } from "@/lib/geocode.functions";
 import { requestRide } from "@/lib/ride.functions";
 import { useNearbyDrivers } from "@/hooks/useNearbyDrivers";
 import {
@@ -55,6 +62,23 @@ type RideRow = Database["public"]["Tables"]["rides"]["Row"];
 type DriverRow = Database["public"]["Tables"]["drivers"]["Row"];
 
 const RECENT_KEY = "movvi.recent_destinations";
+
+/** Catálogo visual de categorias da MOVVI (mapeia para o enum backend). */
+type UiCategory = {
+  key: string;
+  label: string;
+  icon: LucideIcon;
+  backend: RideCategory;
+  tagline: string;
+};
+const UI_CATEGORIES: UiCategory[] = [
+  { key: "carro",    label: "Carro",    icon: Car,     backend: "carros",  tagline: "Viagem do dia a dia" },
+  { key: "moto",     label: "Moto",     icon: Bike,    backend: "motos",   tagline: "Rápido e econômico" },
+  { key: "guincho",  label: "Guincho",  icon: Truck,   backend: "guincho", tagline: "Reboque 24h" },
+  { key: "fretes",   label: "Fretes",   icon: Package, backend: "fretes",  tagline: "Cargas e volumes" },
+  { key: "mudancas", label: "Mudanças", icon: Box,     backend: "fretes",  tagline: "Móveis e residencial" },
+  { key: "entregas", label: "Entregas", icon: Send,    backend: "envios",  tagline: "Pequenos envios" },
+];
 
 const fmtMin = (s: number) => `${Math.max(1, Math.round(s / 60))} min`;
 const fmtKm = (m: number) =>
@@ -94,11 +118,13 @@ function PassageiroApp() {
   const navigate = useNavigate();
   const callComputeRoute = useServerFn(computeRoute);
   const callRequestRide = useServerFn(requestRide);
+  const callReverseGeocode = useServerFn(reverseGeocode);
 
   const [userId, setUserId] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>("");
 
   const [position, setPosition] = useState<LatLng | null>(null);
+  const [currentAddress, setCurrentAddress] = useState<string>("");
   const [gpsState, setGpsState] = useState<
     "idle" | "requesting" | "granted" | "denied" | "unavailable"
   >("idle");
@@ -113,7 +139,12 @@ function PassageiroApp() {
     label: string;
   } | null>(null);
   const [route, setRoute] = useState<RouteResult | null>(null);
-  const [category, setCategory] = useState<RideCategory>("carros");
+  const [uiCategoryKey, setUiCategoryKey] = useState<string>("carro");
+  const category: RideCategory = useMemo(
+    () =>
+      UI_CATEGORIES.find((c) => c.key === uiCategoryKey)?.backend ?? "carros",
+    [uiCategoryKey],
+  );
   const [recent, setRecent] = useState<Recent[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -171,6 +202,31 @@ function PassageiroApp() {
       return next;
     });
   }
+
+  /* ---------------------- reverse geocode (endereço atual) ---------------------- */
+  const lastGeocodedRef = useRef<LatLng | null>(null);
+  useEffect(() => {
+    if (!position) return;
+    const last = lastGeocodedRef.current;
+    if (
+      last &&
+      Math.abs(last.lat - position.lat) < 0.002 &&
+      Math.abs(last.lng - position.lng) < 0.002
+    )
+      return;
+    lastGeocodedRef.current = position;
+    let active = true;
+    callReverseGeocode({ data: { lat: position.lat, lng: position.lng } })
+      .then((r) => {
+        if (active) setCurrentAddress(r.address ?? "");
+      })
+      .catch(() => {
+        if (active) setCurrentAddress("");
+      });
+    return () => {
+      active = false;
+    };
+  }, [position, callReverseGeocode]);
 
   /* ---------------------- GPS ---------------------- */
   const useDevTestLocation = useCallback(() => {
@@ -702,21 +758,22 @@ function PassageiroApp() {
 
       {/* BOTTOM SHEET — novo, próprio do MOVVI */}
       {!ride && (
-        <MovviSheet ref={sheetRef} snaps={[32, 62, 86]} initial={32}>
+        <MovviSheet ref={sheetRef} snaps={[38, 68, 90]} initial={38}>
           <SheetContent
+            currentAddress={currentAddress}
+            hasPosition={!!position}
             destination={destination}
             destinationText={destinationText}
             setDestinationText={setDestinationText}
             suggestions={suggestions}
-            recent={recent}
             onFocusSearch={focusSearch}
             onPick={pickSuggestion}
             onClearDestination={clearDestination}
             route={route}
             busy={busy}
             error={error}
-            category={category}
-            setCategory={setCategory}
+            uiCategoryKey={uiCategoryKey}
+            setUiCategoryKey={setUiCategoryKey}
             driversCount={drivers.length}
             onSubmit={submitRide}
             searchInputRef={searchInputRef}
@@ -770,45 +827,67 @@ function PassageiroApp() {
 /* ============================================================ */
 
 function SheetContent({
+  currentAddress,
+  hasPosition,
   destination,
   destinationText,
   setDestinationText,
   suggestions,
-  recent,
   onFocusSearch,
   onPick,
   onClearDestination,
   route,
   busy,
   error,
-  category,
-  setCategory,
+  uiCategoryKey,
+  setUiCategoryKey,
   driversCount,
   onSubmit,
   searchInputRef,
 }: {
+  currentAddress: string;
+  hasPosition: boolean;
   destination: { point: LatLng; label: string } | null;
   destinationText: string;
   setDestinationText: (s: string) => void;
   suggestions: Suggestion[];
-  recent: Recent[];
   onFocusSearch: () => void;
   onPick: (s: Suggestion) => void;
   onClearDestination: () => void;
   route: RouteResult | null;
   busy: boolean;
   error: string | null;
-  category: RideCategory;
-  setCategory: (c: RideCategory) => void;
+  uiCategoryKey: string;
+  setUiCategoryKey: (k: string) => void;
   driversCount: number;
   onSubmit: () => void;
   searchInputRef: React.RefObject<HTMLInputElement | null>;
 }) {
   const km = route ? route.distanceMeters / 1000 : 0;
   const min = route ? route.durationSeconds / 60 : 0;
+  const activeBackend =
+    UI_CATEGORIES.find((c) => c.key === uiCategoryKey)?.backend ?? "carros";
 
   return (
     <div className="pt-1">
+      {/* Endereço atual — Você está em: */}
+      <div className="mb-3 flex items-start gap-3 rounded-2xl bg-primary/10 px-4 py-3 ring-1 ring-primary/30">
+        <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground shadow-md shadow-primary/30">
+          <MapPin className="h-4 w-4" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="text-[10px] font-semibold uppercase tracking-widest text-primary">
+            Você está em
+          </div>
+          <div className="line-clamp-2 text-[13px] font-semibold leading-snug text-foreground">
+            {currentAddress ||
+              (hasPosition
+                ? "Localização aproximada detectada"
+                : "Detectando sua localização...")}
+          </div>
+        </div>
+      </div>
+
       {/* Search bar (sempre visível) */}
       <div className="mb-3">
         <div className="flex items-center gap-3 rounded-2xl bg-background/80 px-4 py-3 ring-1 ring-border focus-within:ring-primary/60">
@@ -821,7 +900,7 @@ function SheetContent({
               setDestinationText(e.target.value);
             }}
             onFocus={onFocusSearch}
-            placeholder="📍 Para onde você vai?"
+            placeholder="Para onde você vai?"
             className="min-w-0 flex-1 bg-transparent text-[15px] font-medium outline-none placeholder:text-muted-foreground/80"
           />
           {destinationText && (
@@ -870,81 +949,26 @@ function SheetContent({
         </ul>
       )}
 
-      {/* Quando NÃO há destino e NÃO há sugestões: atalhos + recentes + categorias */}
+      {/* Quando NÃO há destino: grid grande de categorias MOVVI */}
       {!destination && suggestions.length === 0 && (
         <>
-          <div className="mb-4 grid grid-cols-3 gap-2">
-            <ShortcutChip
-              icon={<HomeIcon className="h-4 w-4" />}
-              label="Casa"
-              onClick={onFocusSearch}
-            />
-            <ShortcutChip
-              icon={<Briefcase className="h-4 w-4" />}
-              label="Trabalho"
-              onClick={onFocusSearch}
-            />
-            <ShortcutChip
-              icon={<Star className="h-4 w-4" />}
-              label="Favoritos"
-              onClick={onFocusSearch}
-            />
-          </div>
-
-          {recent.length > 0 && (
-            <>
-              <h3 className="mb-1 px-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Recentes
-              </h3>
-              <ul className="mb-4 space-y-1">
-                {recent.map((r) => (
-                  <li key={r.placeId}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setDestinationText(r.label);
-                        onFocusSearch();
-                      }}
-                      className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left transition hover:bg-accent/30"
-                    >
-                      <span className="grid h-9 w-9 place-items-center rounded-full bg-muted text-muted-foreground">
-                        <Clock className="h-4 w-4" />
-                      </span>
-                      <span className="flex min-w-0 flex-col">
-                        <span className="truncate text-sm font-medium">
-                          {r.label}
-                        </span>
-                        {r.secondary && (
-                          <span className="truncate text-xs text-muted-foreground">
-                            {r.secondary}
-                          </span>
-                        )}
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
-
           <h3 className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Categorias
+            Escolha o serviço
           </h3>
-          <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-            {RIDE_CATEGORIES.map((c) => (
-              <div
+          <div className="grid grid-cols-2 gap-3 pb-2">
+            {UI_CATEGORIES.map((c) => (
+              <CategoryCard
                 key={c.key}
-                className="flex w-[88px] shrink-0 flex-col items-center gap-1 rounded-2xl bg-background/60 px-2 py-3 ring-1 ring-border"
-              >
-                <span className="text-2xl">{c.emoji}</span>
-                <span className="text-[11px] font-semibold">{c.label}</span>
-              </div>
+                category={c}
+                active={c.key === uiCategoryKey}
+                onClick={() => setUiCategoryKey(c.key)}
+              />
             ))}
           </div>
         </>
       )}
 
-      {/* Quando há destino: rota + categorias + botão solicitar */}
+      {/* Quando há destino: rota + categorias horizontais com preço + botão */}
       {destination && (
         <>
           <div className="mb-3 flex items-center gap-2 rounded-xl bg-background/60 px-3 py-2 ring-1 ring-border">
@@ -986,21 +1010,22 @@ function SheetContent({
             Escolha a categoria
           </h3>
           <div className="-mx-1 mb-3 flex gap-2 overflow-x-auto px-1 pb-1">
-            {RIDE_CATEGORIES.map((c) => {
-              const active = c.key === category;
-              const fare = route ? estimateFare(c.key, km, min) : null;
+            {UI_CATEGORIES.map((c) => {
+              const active = c.key === uiCategoryKey;
+              const fare = route ? estimateFare(c.backend, km, min) : null;
+              const Icon = c.icon;
               return (
                 <button
                   key={c.key}
                   type="button"
-                  onClick={() => setCategory(c.key)}
-                  className={`flex w-[108px] shrink-0 flex-col items-center gap-1 rounded-2xl border-2 px-2 py-3 transition active:scale-95 ${
+                  onClick={() => setUiCategoryKey(c.key)}
+                  className={`flex w-[112px] shrink-0 flex-col items-center gap-1 rounded-2xl border-2 px-2 py-3 transition active:scale-95 ${
                     active
                       ? "border-primary bg-primary/10 shadow-lg shadow-primary/15"
                       : "border-border bg-background/60 hover:border-primary/40"
                   }`}
                 >
-                  <span className="text-2xl">{c.emoji}</span>
+                  <Icon className={`h-6 w-6 ${active ? "text-primary" : "text-foreground"}`} />
                   <span className="text-[11px] font-semibold">{c.label}</span>
                   {fare != null && (
                     <span
@@ -1028,40 +1053,73 @@ function SheetContent({
             onClick={onSubmit}
             className="w-full rounded-2xl bg-primary py-4 text-[15px] font-bold text-primary-foreground shadow-xl shadow-primary/25 transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {busy ? "Solicitando..." : "Solicitar MOVVI"}
+            {busy
+              ? "Solicitando..."
+              : `Solicitar ${UI_CATEGORIES.find((c) => c.key === uiCategoryKey)?.label ?? "MOVVI"}`}
           </button>
+          <p className="mt-2 text-center text-[10px] uppercase tracking-widest text-muted-foreground">
+            Categoria backend: {activeBackend}
+          </p>
         </>
       )}
     </div>
   );
 }
 
-/* ============================================================ */
-/*                         SUB COMPONENTS                       */
-/* ============================================================ */
-
-function ShortcutChip({
-  icon,
-  label,
+function CategoryCard({
+  category,
+  active,
   onClick,
 }: {
-  icon: React.ReactNode;
-  label: string;
+  category: UiCategory;
+  active: boolean;
   onClick: () => void;
 }) {
+  const Icon = category.icon;
   return (
     <button
       type="button"
       onClick={onClick}
-      className="flex flex-col items-center gap-1.5 rounded-2xl bg-background/60 py-3 ring-1 ring-border transition hover:ring-primary/50 active:scale-95"
+      className={`group relative flex flex-col items-start gap-2 overflow-hidden rounded-2xl border-2 px-4 py-4 text-left transition-all duration-200 active:scale-[0.97] ${
+        active
+          ? "border-primary bg-gradient-to-br from-primary/20 via-primary/10 to-transparent shadow-xl shadow-primary/20"
+          : "border-border bg-card hover:border-primary/50 hover:-translate-y-0.5"
+      }`}
     >
-      <span className="grid h-9 w-9 place-items-center rounded-full bg-primary/15 text-primary">
-        {icon}
+      <span
+        className={`grid h-11 w-11 place-items-center rounded-xl transition ${
+          active
+            ? "bg-primary text-primary-foreground shadow-md shadow-primary/40"
+            : "bg-primary/10 text-primary group-hover:bg-primary/20"
+        }`}
+      >
+        <Icon className="h-5 w-5" />
       </span>
-      <span className="text-[12px] font-medium">{label}</span>
+      <div className="min-w-0">
+        <div
+          className={`text-[15px] font-bold leading-tight ${
+            active ? "text-primary" : "text-foreground"
+          }`}
+        >
+          {category.label}
+        </div>
+        <div className="mt-0.5 truncate text-[11px] text-muted-foreground">
+          {category.tagline}
+        </div>
+      </div>
+      {active && (
+        <span className="absolute right-3 top-3 inline-flex h-2 w-2 animate-pulse rounded-full bg-primary" />
+      )}
     </button>
   );
 }
+
+
+
+/* ============================================================ */
+/*                         SUB COMPONENTS                       */
+/* ============================================================ */
+
 
 function Stat({
   icon,
