@@ -436,37 +436,23 @@ function PassageiroApp() {
   void tick;
 
   /* ---------------------- GPS ---------------------- */
-  const useDevTestLocation = useCallback(() => {
-    console.log("[MOVVI] Usando localização de teste:", DEV_TEST_LABEL);
-    setPosition(DEV_TEST_LOCATION);
-    setGpsState("granted");
-    setGpsErrorMsg("");
-    setDevNotice(`Usando ${DEV_TEST_LABEL}.`);
-  }, []);
+  // REGRA: nenhuma cidade fixa pode ser usada como fallback. Se o GPS falhar
+  // ou retornar uma coordenada fora do Brasil, o app deve exibir "Localização
+  // indisponível" e oferecer a entrada manual (Google Places).
 
   const requestGps = useCallback(() => {
-    console.log("Solicitando localização...");
-    const bail = (msg: string) => {
-      if (isDev) {
-        console.warn("[MOVVI] Dev fallback:", msg);
-        setPosition(DEV_TEST_LOCATION);
-        setGpsState("granted");
-        setGpsErrorMsg("");
-        setDevNotice(
-          `Ambiente de desenvolvimento detectado. ${msg} Usando ${DEV_TEST_LABEL}.`,
-        );
-        return true;
-      }
+    console.log("[MOVVI] Solicitando localização do dispositivo...");
+    setDevNotice("");
+    const fail = (msg: string) => {
       setGpsState("unavailable");
       setGpsErrorMsg(msg);
-      return false;
     };
     if (typeof window !== "undefined" && !window.isSecureContext) {
-      bail("Geolocalização requer HTTPS.");
+      fail("Geolocalização requer HTTPS.");
       return;
     }
     if (!("geolocation" in navigator)) {
-      bail("Seu navegador não oferece geolocalização.");
+      fail("Seu navegador não oferece geolocalização.");
       return;
     }
     setGpsState("requesting");
@@ -476,26 +462,15 @@ function PassageiroApp() {
         (pos) => {
           const lat = pos.coords.latitude;
           const lng = pos.coords.longitude;
-          console.log("Latitude recebida:", lat);
-          console.log("Longitude recebida:", lng);
-          const ok = isBrazilCoordinate(lat, lng);
-          console.log("É Brasil?", ok);
-          if (!ok) {
-            if (isDev) {
-              console.warn(
-                "[MOVVI] Ambiente de desenvolvimento: GPS retornou coordenada estrangeira, usando Petrolina/PE.",
-              );
-              setPosition(DEV_TEST_LOCATION);
-              setGpsState("granted");
-              setGpsErrorMsg("");
-              setDevNotice(
-                `Ambiente de desenvolvimento detectado. A localização retornada pelo navegador (lat ${lat.toFixed(2)}, lng ${lng.toFixed(2)}) parece simulada — usando ${DEV_TEST_LABEL}.`,
-              );
-              return;
-            }
+          console.log("[MOVVI] GPS recebido:", lat, lng);
+          if (!isBrazilCoordinate(lat, lng)) {
             setGpsState("unavailable");
             setGpsErrorMsg(
-              `O navegador retornou uma coordenada fora do Brasil (lat ${lat.toFixed(4)}, lng ${lng.toFixed(4)}). Informe sua cidade ou endereço no Brasil para continuar.`,
+              `O navegador retornou uma coordenada fora do Brasil (lat ${lat.toFixed(
+                4,
+              )}, lng ${lng.toFixed(
+                4,
+              )}). Informe seu endereço manualmente para continuar.`,
             );
             return;
           }
@@ -517,17 +492,7 @@ function PassageiroApp() {
           );
         },
         (err) => {
-          console.error("Erro ao obter localização:", err);
-          if (isDev) {
-            console.warn("[MOVVI] Dev: GPS falhou, usando Petrolina/PE.");
-            setPosition(DEV_TEST_LOCATION);
-            setGpsState("granted");
-            setGpsErrorMsg("");
-            setDevNotice(
-              `Ambiente de desenvolvimento detectado. Não foi possível obter o GPS — usando ${DEV_TEST_LABEL}.`,
-            );
-            return;
-          }
+          console.error("[MOVVI] Erro ao obter localização:", err);
           setGpsState("denied");
           if (err.code === err.PERMISSION_DENIED) {
             setGpsErrorMsg(
@@ -550,21 +515,11 @@ function PassageiroApp() {
         { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 },
       );
     } catch (e) {
-      console.error("Erro ao iniciar solicitação de localização:", e);
-      if (isDev) {
-        setPosition(DEV_TEST_LOCATION);
-        setGpsState("granted");
-        setDevNotice(
-          `Geolocalização bloqueada no ambiente. Usando ${DEV_TEST_LABEL}.`,
-        );
-      } else {
-        setGpsState("unavailable");
-        setGpsErrorMsg(
-          "A geolocalização foi bloqueada neste ambiente. Use a localização manual.",
-        );
-      }
+      console.error("[MOVVI] Falha ao iniciar geolocalização:", e);
+      fail("A geolocalização foi bloqueada neste ambiente. Use a localização manual.");
     }
-  }, [isDev]);
+  }, []);
+
 
   const setManualLocation = useCallback((p: LatLng) => {
     if (!isBrazilCoordinate(p.lat, p.lng)) return;
