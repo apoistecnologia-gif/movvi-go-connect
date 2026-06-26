@@ -178,6 +178,8 @@ export const reverseGeocode = createServerFn({ method: "POST" })
       partialMatch,
       plusCode,
       types: topTypes,
+      geocodedLat: top.geometry?.location?.lat,
+      geocodedLng: top.geometry?.location?.lng,
       components,
     };
   });
