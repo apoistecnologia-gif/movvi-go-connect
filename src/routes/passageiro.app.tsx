@@ -1440,16 +1440,7 @@ function PassageiroApp() {
 /*                         SHEET CONTENT                        */
 /* ============================================================ */
 
-/* ---------------- Grupos de serviço ---------------- */
-type GroupKey = "corridas" | "envios" | "servicos";
-const GROUPS: { key: GroupKey; label: string; items: string[] }[] = [
-  { key: "corridas", label: "Corridas", items: ["carro", "moto"] },
-  { key: "envios",   label: "Envios",   items: ["entregas"] },
-  { key: "servicos", label: "Serviços", items: ["guincho", "fretes", "mudancas"] },
-];
-function groupOf(uiKey: string): GroupKey {
-  return GROUPS.find((g) => g.items.includes(uiKey))?.key ?? "corridas";
-}
+/* (Grupos antigos removidos — agora exibimos as 5 categorias flat conforme spec MOVVI.) */
 
 function SheetContent({
   geo,
