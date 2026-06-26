@@ -898,18 +898,42 @@ function PassageiroApp() {
   const phase = ride?.status;
 
   /* ---------------------- GPS initial loading ---------------------- */
-  // Só mostra a tela de ativação na PRIMEIRA solicitação (sem posição ainda).
-  // Se já estamos pedindo/idle e não há posição, exibimos a tela com botão.
-  // Quando há erro (denied/unavailable) e o usuário já viu a tela inicial,
-  // mantemos o app montado e mostramos o erro inline no cartão de endereço.
-  const showGpsScreen =
+  // Padrão Uber/99/InDrive:
+  //  1) Enquanto a Permissions API ainda responde, mostramos um loader curto.
+  //  2) Se a permissão é "prompt" / desconhecida → tela explicativa com botão
+  //     "Permitir localização" (só aí chamamos getCurrentPosition).
+  //  3) Se foi negada / indisponível → tela com retry + localização manual.
+  //  4) Se concedida → o app abre normalmente assim que as coordenadas chegam.
+  if (!position && permissionStatus === "checking") {
+    return (
+      <div className="flex min-h-[100dvh] items-center justify-center bg-background text-foreground">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-10 w-10 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+          <p className="text-sm text-muted-foreground">Preparando a MOVVI...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const needsPermissionScreen =
     !position &&
-    (gpsState === "idle" ||
-      gpsState === "requesting" ||
-      ((gpsState === "denied" || gpsState === "unavailable") && !gpsErrorMsg));
-  if (showGpsScreen) {
+    (permissionStatus === "prompt" ||
+      permissionStatus === "unsupported" ||
+      permissionStatus === "denied" ||
+      gpsState === "denied" ||
+      gpsState === "unavailable" ||
+      gpsState === "requesting");
+
+  if (needsPermissionScreen) {
+    const mode: "prompt" | "denied" =
+      permissionStatus === "denied" ||
+      gpsState === "denied" ||
+      gpsState === "unavailable"
+        ? "denied"
+        : "prompt";
     return (
       <GpsDeniedScreen
+        mode={mode}
         onRetry={requestGps}
         onHome={() => { void navigate({ to: "/" }); }}
         onManual={setManualLocation}
@@ -919,6 +943,7 @@ function PassageiroApp() {
     );
   }
   const gpsFailed = (gpsState === "denied" || gpsState === "unavailable") && !!gpsErrorMsg;
+
 
 
   return (
