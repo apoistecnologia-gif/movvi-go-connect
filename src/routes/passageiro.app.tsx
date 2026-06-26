@@ -1982,13 +1982,15 @@ function GpsDeniedScreen({
         </button>
 
 
-        <button
-          type="button"
-          onClick={() => setManualOpen((v) => !v)}
-          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-card px-6 py-4 text-sm font-semibold text-foreground ring-1 ring-border active:scale-95"
-        >
-          <Search className="h-4 w-4" /> INFORMAR LOCALIZAÇÃO MANUAL
-        </button>
+        {!devMode && (
+          <button
+            type="button"
+            onClick={() => setManualOpen((v) => !v)}
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-card px-6 py-4 text-sm font-semibold text-foreground ring-1 ring-border active:scale-95"
+          >
+            <Search className="h-4 w-4" /> INFORMAR LOCALIZAÇÃO MANUAL
+          </button>
+        )}
 
       </div>
 
