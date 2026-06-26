@@ -220,6 +220,8 @@ export type Database = {
           destination_name: string
           distance_km: number | null
           driver_id: string | null
+          driver_rating: number | null
+          driver_rating_comment: string | null
           duration_min: number | null
           estimated_price: number | null
           final_price: number | null
@@ -228,6 +230,9 @@ export type Database = {
           origin_lng: number
           origin_name: string
           passenger_id: string
+          passenger_rating: number | null
+          passenger_rating_comment: string | null
+          payment_method: string | null
           rejected_driver_ids: string[]
           started_at: string | null
           status: Database["public"]["Enums"]["ride_status"]
@@ -247,6 +252,8 @@ export type Database = {
           destination_name: string
           distance_km?: number | null
           driver_id?: string | null
+          driver_rating?: number | null
+          driver_rating_comment?: string | null
           duration_min?: number | null
           estimated_price?: number | null
           final_price?: number | null
@@ -255,6 +262,9 @@ export type Database = {
           origin_lng: number
           origin_name: string
           passenger_id: string
+          passenger_rating?: number | null
+          passenger_rating_comment?: string | null
+          payment_method?: string | null
           rejected_driver_ids?: string[]
           started_at?: string | null
           status?: Database["public"]["Enums"]["ride_status"]
@@ -274,6 +284,8 @@ export type Database = {
           destination_name?: string
           distance_km?: number | null
           driver_id?: string | null
+          driver_rating?: number | null
+          driver_rating_comment?: string | null
           duration_min?: number | null
           estimated_price?: number | null
           final_price?: number | null
@@ -282,6 +294,9 @@ export type Database = {
           origin_lng?: number
           origin_name?: string
           passenger_id?: string
+          passenger_rating?: number | null
+          passenger_rating_comment?: string | null
+          payment_method?: string | null
           rejected_driver_ids?: string[]
           started_at?: string | null
           status?: Database["public"]["Enums"]["ride_status"]
