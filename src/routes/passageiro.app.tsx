@@ -1297,7 +1297,7 @@ function PassageiroApp() {
         userName={userName}
         gpsState={gpsState}
         drivers={drivers.length}
-        searching={!!ride && (ride.status === "procurar_motorista" || ride.status === "procurar_motorista")}
+        searching={!!ride && ride.status === "procurar_motorista"}
         onLogout={handleLogout}
       />
 
@@ -1397,7 +1397,7 @@ function PassageiroApp() {
       )}
 
 
-      {ride && (phase === "procurar_motorista" || phase === "procurar_motorista") && (
+      {ride && ride.status === "procurar_motorista" && (
         <MovviSheet snaps={[50]} initial={50}>
           <SearchingPanel
             category={category}
