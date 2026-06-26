@@ -648,8 +648,21 @@ function PassageiroApp() {
   }
 
   async function calcRoute(dest: LatLng) {
-    if (!position) {
-      setError("Aguardando GPS para calcular a rota.");
+    // REGRA: a origem é SEMPRE as coordenadas reais do GPS. Texto de endereço
+    // serve apenas para exibição — nunca como origem da rota.
+    if (
+      !position ||
+      !Number.isFinite(position.lat) ||
+      !Number.isFinite(position.lng) ||
+      !isBrazilCoordinate(position.lat, position.lng) ||
+      !dest ||
+      !Number.isFinite(dest.lat) ||
+      !Number.isFinite(dest.lng) ||
+      !isBrazilCoordinate(dest.lat, dest.lng)
+    ) {
+      setError(
+        "Não foi possível calcular a rota. Confirme a localização de origem e destino.",
+      );
       return;
     }
     setBusy(true);
@@ -657,7 +670,10 @@ function PassageiroApp() {
     setRoute(null);
     try {
       const result = await callComputeRoute({
-        data: { origin: position, destination: dest },
+        data: {
+          origin: { lat: position.lat, lng: position.lng },
+          destination: { lat: dest.lat, lng: dest.lng },
+        },
       });
       setRoute(result);
       if (mapRef.current) {
@@ -688,17 +704,33 @@ function PassageiroApp() {
 
   async function submitRide() {
     if (!position || !destination || !route) return;
+    if (
+      !isBrazilCoordinate(position.lat, position.lng) ||
+      !isBrazilCoordinate(destination.point.lat, destination.point.lng)
+    ) {
+      setError(
+        "Não foi possível calcular a rota. Confirme a localização de origem e destino.",
+      );
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
       const km = route.distanceMeters / 1000;
       const min = route.durationSeconds / 60;
       const fare = estimateFare(category, km, min);
+      // Texto da origem — apenas para exibição. As coordenadas reais é que
+      // vão para o cálculo/rastreio. Se o Google não tiver nome, usamos as
+      // coordenadas como rótulo.
+      const originLabel =
+        geo?.friendly ||
+        geo?.region ||
+        `GPS ${position.lat.toFixed(6)}, ${position.lng.toFixed(6)}`;
       const { rideId: newId } = await callRequestRide({
         data: {
-          origin: position,
-          origin_name: "Localização atual",
-          destination: destination.point,
+          origin: { lat: position.lat, lng: position.lng },
+          origin_name: originLabel,
+          destination: { lat: destination.point.lat, lng: destination.point.lng },
           destination_name: destination.label,
           category,
           distance_km: Math.round(km * 100) / 100,
@@ -926,6 +958,7 @@ function PassageiroApp() {
             geo={geo}
             addressStatus={addressStatus}
             hasPosition={!!position}
+            position={position}
             onOpenAddressDetails={() => setAddressDetailsOpen(true)}
             destination={destination}
             destinationText={destinationText}
@@ -1020,6 +1053,7 @@ function SheetContent({
   geo,
   addressStatus,
   hasPosition,
+  position,
   onOpenAddressDetails,
   destination,
   destinationText,
@@ -1044,6 +1078,7 @@ function SheetContent({
   geo: GeocodeResult | null;
   addressStatus: "idle" | "loading" | "resolved" | "failed";
   hasPosition: boolean;
+  position: LatLng | null;
   onOpenAddressDetails: () => void;
   destination: { point: LatLng; label: string } | null;
   destinationText: string;
@@ -1152,13 +1187,13 @@ function SheetContent({
                   <div className="truncate text-[11px] font-semibold text-foreground">{region}</div>
                 )}
               </>
-            ) : addressStatus === "failed" && hasPosition ? (
+            ) : addressStatus === "failed" && hasPosition && position ? (
               <>
                 <div className="mt-0.5 truncate text-[13px] font-medium leading-tight text-muted-foreground">
-                  Localização aproximada
+                  Coordenadas GPS
                 </div>
-                <div className="truncate text-[11px] font-semibold text-foreground">
-                  Cidade não identificada
+                <div className="truncate font-mono text-[11px] font-semibold text-foreground">
+                  lat: {position.lat.toFixed(6)} · lng: {position.lng.toFixed(6)}
                 </div>
               </>
             ) : (
