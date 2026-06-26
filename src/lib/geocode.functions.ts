@@ -4,6 +4,8 @@ import { z } from "zod";
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/google_maps";
 
 export type GeocodeComponents = {
+  rua?: string;
+  numero?: string;
   povoado?: string;
   bairro?: string;
   cidade?: string;
@@ -93,6 +95,8 @@ export const reverseGeocode = createServerFn({ method: "POST" })
       if (povoado) break;
     }
 
+    const rua = pick(results, ["route"]);
+    const numero = pick(results, ["street_number"]);
     const bairro = pick(results, ["neighborhood"]);
     const cidade =
       pick(results, ["locality"]) ?? pick(results, ["administrative_area_level_2"]);
@@ -100,6 +104,8 @@ export const reverseGeocode = createServerFn({ method: "POST" })
     const pais = pick(results, ["country"]);
 
     const components: GeocodeComponents = {
+      rua: rua?.long,
+      numero: numero?.long,
       povoado: povoado?.long,
       bairro: bairro?.long,
       cidade: cidade?.long,

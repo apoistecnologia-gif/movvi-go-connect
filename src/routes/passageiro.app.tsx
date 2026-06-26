@@ -158,89 +158,135 @@ function PulsingUserMarker({ position }: { position: LatLng }) {
   );
 }
 
-function AddressDetailsSheet({
+function OriginActionsSheet({
   geo,
   position,
-  accuracy,
   onClose,
+  onUseGps,
+  onPickOnMap,
+  onTypeAddress,
+  gpsRequesting,
 }: {
   geo: GeocodeResult | null;
   position: LatLng | null;
-  accuracy: number | null;
   onClose: () => void;
+  onUseGps: () => void;
+  onPickOnMap: () => void;
+  onTypeAddress: () => void;
+  gpsRequesting: boolean;
 }) {
+  const rua = geo?.components.rua;
+  const numero = geo?.components.numero;
+  const bairro = geo?.components.bairro || geo?.components.povoado;
+  const region = geo?.region;
+  const ruaLine = rua ? (numero ? `${rua}, ${numero}` : rua) : geo?.friendly || "";
+
   return (
     <div className="fixed inset-0 z-[60] flex items-end" onClick={onClose}>
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" />
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full rounded-t-3xl bg-card p-5 pb-[calc(env(safe-area-inset-bottom)+24px)] shadow-2xl ring-1 ring-border animate-in slide-in-from-bottom duration-300"
+        className="relative w-full rounded-t-3xl bg-card p-5 pb-[calc(env(safe-area-inset-bottom)+20px)] shadow-2xl ring-1 ring-border animate-in slide-in-from-bottom duration-300"
       >
         <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-foreground/15" />
-        <div className="mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="grid h-9 w-9 place-items-center rounded-full bg-primary text-primary-foreground">
-              <MapPin className="h-4 w-4" />
-            </span>
-            <div>
-              <div className="text-[10px] font-semibold uppercase tracking-widest text-primary">
-                Detalhes do local
-              </div>
-              <div className="text-[14px] font-semibold">{geo?.friendly || "Localização atual"}</div>
+        <div className="mb-4 flex items-start gap-3">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
+            <MapPin className="h-4 w-4" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="text-[10px] font-semibold uppercase tracking-widest text-primary">
+              Local de partida
             </div>
+            {ruaLine ? (
+              <div className="mt-0.5 truncate text-[15px] font-bold text-foreground">{ruaLine}</div>
+            ) : position ? (
+              <div className="mt-0.5 truncate font-mono text-[12px] font-semibold text-foreground">
+                {position.lat.toFixed(6)}, {position.lng.toFixed(6)}
+              </div>
+            ) : (
+              <div className="mt-0.5 text-[13px] text-muted-foreground">Sem endereço identificado</div>
+            )}
+            {bairro && <div className="truncate text-[12.5px] text-foreground/80">{bairro}</div>}
+            {region && <div className="truncate text-[12px] text-muted-foreground">{region}</div>}
           </div>
+        </div>
+
+        <div className="space-y-2">
+          <OriginAction
+            icon={<Crosshair className="h-4 w-4" />}
+            label="Usar minha localização novamente"
+            description="Recapturar GPS do aparelho"
+            onClick={onUseGps}
+            disabled={gpsRequesting}
+            primary
+          />
+          <OriginAction
+            icon={<Navigation2 className="h-4 w-4" />}
+            label="Escolher outro local no mapa"
+            description="Arraste o mapa e confirme o ponto"
+            onClick={onPickOnMap}
+          />
+          <OriginAction
+            icon={<Search className="h-4 w-4" />}
+            label="Digitar outro endereço"
+            description="Buscar pelo nome da rua, bairro ou CEP"
+            onClick={onTypeAddress}
+          />
           <button
+            type="button"
             onClick={onClose}
-            aria-label="Fechar"
-            className="grid h-9 w-9 place-items-center rounded-full bg-accent/30 text-foreground transition active:scale-90"
+            className="w-full rounded-2xl bg-background/60 py-3 text-sm font-semibold text-muted-foreground ring-1 ring-border transition active:scale-[0.98]"
           >
-            <X className="h-4 w-4" />
+            Cancelar
           </button>
         </div>
-
-        <div className="space-y-2.5 text-sm">
-          {geo?.address && (
-            <DetailRow label="Endereço completo" value={geo.address} />
-          )}
-          {geo?.region && <DetailRow label="Região" value={geo.region} />}
-          {position && (
-            <>
-              <DetailRow
-                label="Latitude"
-                value={position.lat.toFixed(6)}
-                mono
-              />
-              <DetailRow
-                label="Longitude"
-                value={position.lng.toFixed(6)}
-                mono
-              />
-            </>
-          )}
-          {accuracy != null && (
-            <DetailRow
-              label="Precisão do GPS"
-              value={`± ${Math.round(accuracy)} metros`}
-            />
-          )}
-        </div>
       </div>
     </div>
   );
 }
 
-function DetailRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+function OriginAction({
+  icon,
+  label,
+  description,
+  onClick,
+  disabled,
+  primary,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  description: string;
+  onClick: () => void;
+  disabled?: boolean;
+  primary?: boolean;
+}) {
   return (
-    <div className="rounded-xl bg-background/60 px-3 py-2 ring-1 ring-border">
-      <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-        {label}
-      </div>
-      <div className={`mt-0.5 break-words text-[13px] text-foreground ${mono ? "font-mono" : ""}`}>
-        {value}
-      </div>
-    </div>
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition active:scale-[0.98] disabled:opacity-60 ${
+        primary
+          ? "bg-primary/15 ring-1 ring-primary/40 hover:bg-primary/20"
+          : "bg-background/60 ring-1 ring-border hover:bg-background"
+      }`}
+    >
+      <span
+        className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${
+          primary ? "bg-primary text-primary-foreground" : "bg-primary/15 text-primary"
+        }`}
+      >
+        {icon}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[13.5px] font-bold text-foreground">{label}</span>
+        <span className="block truncate text-[11.5px] text-muted-foreground">{description}</span>
+      </span>
+      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+    </button>
   );
 }
+
 
 
 export const Route = createFileRoute("/passageiro/app")({
@@ -322,6 +368,9 @@ function PassageiroApp() {
     "idle" | "loading" | "resolved" | "failed"
   >("idle");
   const [addressDetailsOpen, setAddressDetailsOpen] = useState(false);
+  const [originPickOnMap, setOriginPickOnMap] = useState(false);
+  const [originManualOpen, setOriginManualOpen] = useState(false);
+  const [originPickCenter, setOriginPickCenter] = useState<LatLng | null>(null);
   const [tick, setTick] = useState(0); // re-render para saudação dinâmica
   const [gpsState, setGpsState] = useState<
     "idle" | "requesting" | "granted" | "denied" | "unavailable"
@@ -1120,15 +1169,57 @@ function PassageiroApp() {
         </MovviSheet>
       )}
 
-      {/* Detalhes do endereço — modal premium */}
+      {/* Sheet de ações para o Local de partida */}
       {addressDetailsOpen && (
-        <AddressDetailsSheet
+        <OriginActionsSheet
           geo={geo}
           position={position}
-          accuracy={gpsAccuracy}
+          gpsRequesting={gpsState === "requesting"}
           onClose={() => setAddressDetailsOpen(false)}
+          onUseGps={() => {
+            setAddressDetailsOpen(false);
+            requestGps();
+          }}
+          onPickOnMap={() => {
+            setAddressDetailsOpen(false);
+            setOriginPickCenter(position ?? BRAZIL_CENTER);
+            setOriginPickOnMap(true);
+            if (mapRef.current && position) {
+              mapRef.current.panTo(position);
+              mapRef.current.setZoom(17);
+            }
+          }}
+          onTypeAddress={() => {
+            setAddressDetailsOpen(false);
+            setOriginManualOpen(true);
+          }}
         />
       )}
+
+      {/* Seletor no mapa — overlay com crosshair fixo + botão confirmar */}
+      {originPickOnMap && (
+        <OriginMapPickerOverlay
+          mapRef={mapRef}
+          initialCenter={originPickCenter ?? position ?? BRAZIL_CENTER}
+          onCancel={() => setOriginPickOnMap(false)}
+          onConfirm={(p) => {
+            setOriginPickOnMap(false);
+            setManualLocation(p);
+          }}
+        />
+      )}
+
+      {/* Busca manual de endereço para a origem */}
+      {originManualOpen && (
+        <OriginManualSearchOverlay
+          onCancel={() => setOriginManualOpen(false)}
+          onConfirm={(p) => {
+            setOriginManualOpen(false);
+            setManualLocation(p);
+          }}
+        />
+      )}
+
 
       {ride && (phase === "searching_driver" || phase === "offered_to_driver") && (
         <MovviSheet snaps={[40]} initial={40}>
@@ -1259,15 +1350,19 @@ function SheetContent({
     [activeGroup],
   );
 
-  const friendly = geo?.friendly || "";
+  const rua = geo?.components.rua;
+  const numero = geo?.components.numero;
+  const bairro = geo?.components.bairro || geo?.components.povoado;
   const region = geo?.region || "";
-  const approximate = !!geo?.approximate;
-  const primaryLine = friendly || (approximate ? "Localização aproximada" : "");
-  
+  const friendly = geo?.friendly || "";
+  // Primeira linha: "Rua X, 123" → senão povoado/bairro → senão coords (failed) → senão vazio
+  const streetLine = rua ? (numero ? `${rua}, ${numero}` : rua) : friendly;
+  const showCoords =
+    !streetLine && !bairro && !region && addressStatus === "failed" && hasPosition && position;
 
   return (
     <div className="pt-1">
-      {/* Endereço atual — toque abre detalhes. Em caso de falha de GPS, mostra erro inline com retry. */}
+      {/* Endereço atual — toque abre sheet de ações. Em caso de falha de GPS, mostra erro inline com retry. */}
       {gpsFailed ? (
         <div className="mb-2.5 flex w-full items-start gap-2.5 rounded-2xl bg-destructive/10 px-3 py-2.5 ring-1 ring-destructive/40">
           <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-destructive/80 text-destructive-foreground">
@@ -1278,7 +1373,7 @@ function SheetContent({
               Localização indisponível
             </div>
             <div className="mt-0.5 text-[12px] leading-snug text-foreground/90">
-              {gpsErrorMsg || "Não foi possível obter sua localização."}
+              {gpsErrorMsg || "Não foi possível identificar sua localização."}
             </div>
           </div>
           <button
@@ -1296,52 +1391,49 @@ function SheetContent({
           onClick={onOpenAddressDetails}
           className="mb-2.5 flex w-full items-center gap-2.5 rounded-2xl bg-primary/10 px-3 py-2 text-left ring-1 ring-primary/30 transition active:scale-[0.99] hover:bg-primary/15"
         >
-          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
-            <MapPin className="h-3.5 w-3.5" />
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
+            <MapPin className="h-4 w-4" />
           </span>
           <div className="min-w-0 flex-1">
             <div className="text-[9px] font-semibold uppercase tracking-widest text-primary leading-none">
-              Você está em
+              📍 Local de partida
             </div>
-            {addressStatus === "loading" && !primaryLine && !region ? (
+            {addressStatus === "loading" && !streetLine && !region ? (
               <div className="mt-0.5 truncate text-[12px] font-medium leading-tight text-muted-foreground">
-                Obtendo localização...
+                Obtendo seu endereço...
               </div>
-            ) : primaryLine || region ? (
+            ) : showCoords && position ? (
+              <div className="mt-0.5 truncate font-mono text-[12px] font-semibold text-foreground">
+                {position.lat.toFixed(6)}, {position.lng.toFixed(6)}
+              </div>
+            ) : streetLine || bairro || region ? (
               <>
-                {primaryLine && (
-                  <div
-                    className={`mt-0.5 truncate text-[13px] leading-tight ${
-                      approximate && !friendly
-                        ? "font-medium text-muted-foreground"
-                        : "font-semibold text-foreground"
-                    }`}
-                  >
-                    {primaryLine}
+                {streetLine && (
+                  <div className="mt-0.5 truncate text-[13.5px] font-bold leading-tight text-foreground">
+                    {streetLine}
+                  </div>
+                )}
+                {bairro && (
+                  <div className="truncate text-[12px] leading-tight text-foreground/80">
+                    {bairro}
                   </div>
                 )}
                 {region && (
-                  <div className="truncate text-[11px] font-semibold text-foreground">{region}</div>
+                  <div className="truncate text-[11.5px] font-medium leading-tight text-muted-foreground">
+                    {region}
+                  </div>
                 )}
-              </>
-            ) : addressStatus === "failed" && hasPosition && position ? (
-              <>
-                <div className="mt-0.5 truncate text-[13px] font-medium leading-tight text-muted-foreground">
-                  Coordenadas GPS
-                </div>
-                <div className="truncate font-mono text-[11px] font-semibold text-foreground">
-                  lat: {position.lat.toFixed(6)} · lng: {position.lng.toFixed(6)}
-                </div>
               </>
             ) : (
               <div className="mt-0.5 truncate text-[12px] font-medium leading-tight text-muted-foreground">
-                {hasPosition ? "Localização aproximada" : "Localização indisponível"}
+                {hasPosition ? "Toque para ajustar a partida" : "Localização indisponível"}
               </div>
             )}
           </div>
           <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
         </button>
       )}
+
 
 
       {/* "Para onde você vai?" — sempre em destaque */}
@@ -2049,6 +2141,229 @@ function GpsDeniedScreen({
           </button>
         </div>
       )}
+    </div>
+  );
+}
+
+function OriginMapPickerOverlay({
+  mapRef,
+  initialCenter,
+  onCancel,
+  onConfirm,
+}: {
+  mapRef: React.MutableRefObject<google.maps.Map | null>;
+  initialCenter: LatLng;
+  onCancel: () => void;
+  onConfirm: (p: LatLng) => void;
+}) {
+  const [center, setCenter] = useState<LatLng>(initialCenter);
+  const [valid, setValid] = useState<boolean>(isBrazilCoordinate(initialCenter.lat, initialCenter.lng));
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const update = () => {
+      const c = map.getCenter();
+      if (!c) return;
+      const p = { lat: c.lat(), lng: c.lng() };
+      setCenter(p);
+      setValid(isBrazilCoordinate(p.lat, p.lng));
+    };
+    update();
+    const l1 = map.addListener("center_changed", update);
+    return () => {
+      l1.remove();
+    };
+  }, [mapRef]);
+
+  return (
+    <>
+      {/* Crosshair fixo no centro */}
+      <div className="pointer-events-none absolute inset-0 z-[55] flex items-center justify-center">
+        <div className="relative -translate-y-2">
+          <div className="h-10 w-10 rounded-full bg-primary/20 ring-2 ring-primary/60" />
+          <div className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary ring-2 ring-white" />
+          <div className="absolute left-1/2 top-full h-4 w-0.5 -translate-x-1/2 bg-primary/70" />
+        </div>
+      </div>
+
+      {/* Barra superior com instrução */}
+      <div className="absolute inset-x-0 top-0 z-[56] flex justify-center px-3 pt-[calc(env(safe-area-inset-top)+10px)]">
+        <div className="flex max-w-md items-center gap-2 rounded-2xl bg-card/95 px-3 py-2 text-[12.5px] font-medium shadow-xl ring-1 ring-border backdrop-blur">
+          <MapPin className="h-4 w-4 text-primary" />
+          Arraste o mapa e ajuste o ponto de partida
+        </div>
+      </div>
+
+      {/* Card inferior com confirmação */}
+      <div className="absolute inset-x-0 bottom-0 z-[56] px-3 pb-[calc(env(safe-area-inset-bottom)+16px)]">
+        <div className="mx-auto max-w-md rounded-2xl bg-card p-4 shadow-2xl ring-1 ring-border">
+          <div className="text-[10px] font-semibold uppercase tracking-widest text-primary">
+            Novo local de partida
+          </div>
+          <div className="mt-1 font-mono text-[12px] text-foreground/80">
+            {center.lat.toFixed(6)}, {center.lng.toFixed(6)}
+          </div>
+          {!valid && (
+            <p className="mt-2 rounded-xl bg-destructive/15 px-2 py-1.5 text-[11.5px] text-destructive-foreground ring-1 ring-destructive/40">
+              Selecione um ponto dentro do Brasil.
+            </p>
+          )}
+          <div className="mt-3 flex gap-2">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="flex-1 rounded-xl bg-background/60 py-3 text-[13px] font-semibold ring-1 ring-border active:scale-[0.98]"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={() => onConfirm(center)}
+              disabled={!valid}
+              className="flex-1 rounded-xl bg-primary py-3 text-[13px] font-bold text-primary-foreground shadow-md shadow-primary/20 active:scale-[0.98] disabled:opacity-50"
+            >
+              Confirmar partida
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function OriginManualSearchOverlay({
+  onCancel,
+  onConfirm,
+}: {
+  onCancel: () => void;
+  onConfirm: (p: LatLng) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const [items, setItems] = useState<{ placeId: string; primary: string; secondary: string }[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const debounceRef = useRef<number | null>(null);
+  const sessionRef = useRef<google.maps.places.AutocompleteSessionToken | null>(null);
+
+  useEffect(() => {
+    if (debounceRef.current) window.clearTimeout(debounceRef.current);
+    const q = query.trim();
+    setErr("");
+    if (q.length < 2) {
+      setItems([]);
+      return;
+    }
+    debounceRef.current = window.setTimeout(async () => {
+      try {
+        setBusy(true);
+        const places = (await google.maps.importLibrary("places")) as google.maps.PlacesLibrary;
+        if (!sessionRef.current) sessionRef.current = new places.AutocompleteSessionToken();
+        const { suggestions } = await places.AutocompleteSuggestion.fetchAutocompleteSuggestions({
+          input: q,
+          sessionToken: sessionRef.current,
+          includedRegionCodes: ["br"],
+          language: "pt-BR",
+          region: "BR",
+        });
+        setItems(
+          suggestions
+            .map((s) => s.placePrediction)
+            .filter((p): p is google.maps.places.PlacePrediction => !!p)
+            .slice(0, 6)
+            .map((p) => ({
+              placeId: p.placeId,
+              primary: p.mainText?.toString() ?? p.text.toString(),
+              secondary: p.secondaryText?.toString() ?? "",
+            })),
+        );
+      } catch (e) {
+        console.error("[MOVVI] autocomplete origem manual", e);
+        setErr("Falha na busca. Tente novamente em alguns segundos.");
+      } finally {
+        setBusy(false);
+      }
+    }, 220);
+  }, [query]);
+
+  async function choose(placeId: string) {
+    try {
+      setErr("");
+      const places = (await google.maps.importLibrary("places")) as google.maps.PlacesLibrary;
+      const place = new places.Place({ id: placeId });
+      await place.fetchFields({ fields: ["location"] });
+      const loc = place.location;
+      if (!loc) throw new Error("Sem coordenadas");
+      const p = { lat: loc.lat(), lng: loc.lng() };
+      if (!isBrazilCoordinate(p.lat, p.lng)) {
+        setErr("Selecione um endereço dentro do Brasil.");
+        return;
+      }
+      sessionRef.current = null;
+      onConfirm(p);
+    } catch (e) {
+      console.error("[MOVVI] falha origem manual", e);
+      setErr("Não foi possível obter as coordenadas desse endereço.");
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[60] flex flex-col bg-background text-foreground">
+      <div className="flex items-center gap-2 border-b border-border bg-card px-4 py-3 pt-[calc(env(safe-area-inset-top)+12px)]">
+        <button
+          type="button"
+          onClick={onCancel}
+          aria-label="Voltar"
+          className="grid h-9 w-9 place-items-center rounded-full bg-background/60 ring-1 ring-border active:scale-90"
+        >
+          <X className="h-4 w-4" />
+        </button>
+        <div className="flex flex-1 items-center gap-2 rounded-xl bg-background/70 px-3 py-2 ring-1 ring-border focus-within:ring-primary/60">
+          <Search className="h-4 w-4 text-primary" />
+          <input
+            autoFocus
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Digite rua, bairro, cidade ou CEP"
+            className="min-w-0 flex-1 bg-transparent text-[14px] outline-none placeholder:text-muted-foreground"
+          />
+          {busy && <span className="text-[11px] text-muted-foreground">...</span>}
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-2 py-2">
+        {err && (
+          <p className="mx-2 my-2 rounded-xl bg-destructive/10 px-3 py-2 text-[12px] text-destructive-foreground ring-1 ring-destructive/40">
+            {err}
+          </p>
+        )}
+        {items.length === 0 && query.trim().length >= 2 && !busy && (
+          <p className="px-3 py-6 text-center text-[12.5px] text-muted-foreground">
+            Nenhum resultado. Tente outro termo.
+          </p>
+        )}
+        <ul>
+          {items.map((it) => (
+            <li key={it.placeId}>
+              <button
+                type="button"
+                onClick={() => void choose(it.placeId)}
+                className="flex w-full items-start gap-3 rounded-xl px-3 py-3 text-left transition hover:bg-accent/30 active:scale-[0.99]"
+              >
+                <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/15 text-primary">
+                  <MapPin className="h-4 w-4" />
+                </span>
+                <span className="flex min-w-0 flex-col">
+                  <span className="truncate text-[13.5px] font-semibold">{it.primary}</span>
+                  {it.secondary && (
+                    <span className="truncate text-[11.5px] text-muted-foreground">{it.secondary}</span>
+                  )}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }
