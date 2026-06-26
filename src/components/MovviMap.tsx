@@ -106,9 +106,10 @@ export function MovviMap({
   return (
     <div className={className} style={containerStyle}>
       <GoogleMap
+        key={mapKey}
         mapContainerStyle={{ width: "100%", height: "100%" }}
         center={effectiveCenter}
-        zoom={zoom}
+        zoom={effectiveZoom}
         onLoad={onLoad}
         options={{
           styles: MOVVI_DARK_MAP_STYLE,
@@ -117,6 +118,10 @@ export function MovviMap({
           gestureHandling: "greedy",
           clickableIcons: false,
           backgroundColor: "#121826",
+          restriction: {
+            latLngBounds: { north: 6, south: -34, east: -34, west: -74 },
+            strictBounds: false,
+          },
         }}
       >
         {children}
