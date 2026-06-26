@@ -1045,6 +1045,10 @@ function SheetContent({
   driversCount: number;
   onSubmit: () => void;
   searchInputRef: React.RefObject<HTMLInputElement | null>;
+  gpsFailed: boolean;
+  gpsErrorMsg: string;
+  gpsRequesting: boolean;
+  onRetryGps: () => void;
 }) {
   const km = route ? route.distanceMeters / 1000 : 0;
   const min = route ? route.durationSeconds / 60 : 0;
