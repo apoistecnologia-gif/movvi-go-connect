@@ -1461,6 +1461,7 @@ function SheetContent({
   uiCategoryKey,
   setUiCategoryKey,
   driversCount,
+  tariffs,
   onSubmit,
   searchInputRef,
   gpsFailed,
