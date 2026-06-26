@@ -1500,6 +1500,7 @@ function SheetContent({
   gpsErrorMsg: string;
   gpsRequesting: boolean;
   onRetryGps: () => void;
+  onExpandSheet: (p: number) => void;
 }) {
   const km = route ? route.distanceMeters / 1000 : 0;
   const min = route ? route.durationSeconds / 60 : 0;
