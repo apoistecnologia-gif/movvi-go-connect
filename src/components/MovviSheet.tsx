@@ -203,18 +203,18 @@ export const MovviSheet = forwardRef<MovviSheetHandle, Props>(function MovviShee
     >
       {/* drag handle area */}
       <div
-        className="flex shrink-0 cursor-grab touch-none flex-col items-center pb-1 pt-3 active:cursor-grabbing"
+        className="flex shrink-0 cursor-grab touch-none flex-col items-center pb-1 pt-2 active:cursor-grabbing"
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
       >
-        <span className="h-1.5 w-12 rounded-full bg-muted-foreground/30 transition group-active:bg-muted-foreground/60" />
+        <span className="h-1 w-10 rounded-full bg-muted-foreground/30 transition group-active:bg-muted-foreground/60" />
       </div>
 
       <div
         ref={scrollRef}
-        className="flex-1 px-5 pb-6"
+        className="flex-1 px-4 pb-4"
         style={{
           overflowY: isFull ? "auto" : "hidden",
           overscrollBehavior: "contain",
