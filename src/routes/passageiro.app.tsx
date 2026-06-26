@@ -480,6 +480,7 @@ function PassageiroApp() {
     console.log("[MOVVI] Solicitando localização do dispositivo...");
     const fail = (msg: string) => {
       setGpsState("unavailable");
+      gpsStateRef.current = "unavailable";
       setGpsErrorMsg(msg);
     };
     if (typeof window !== "undefined" && !window.isSecureContext) {
@@ -581,6 +582,7 @@ function PassageiroApp() {
     console.log("Localização manual definida:", p);
     setPosition(p);
     setGpsState("granted");
+    gpsStateRef.current = "granted";
     setGpsErrorMsg("");
   }, []);
 
@@ -623,9 +625,10 @@ function PassageiroApp() {
             // Já liberado — em produção podemos obter o GPS imediatamente.
             // Em preview/iframe/dev, alguns navegadores retornam coordenadas simuladas
             // sem interação do usuário; por isso exigimos o clique explícito no botão.
-            if (previewLikeEnvironment) {
+            if (previewLikeEnvironment && !gpsRequestInFlightRef.current) {
               setPermissionStatus("prompt");
               setGpsState("idle");
+              gpsStateRef.current = "idle";
               setGpsErrorMsg("");
               return;
             }
