@@ -2144,6 +2144,229 @@ function GpsDeniedScreen({
   );
 }
 
+function OriginMapPickerOverlay({
+  mapRef,
+  initialCenter,
+  onCancel,
+  onConfirm,
+}: {
+  mapRef: React.MutableRefObject<google.maps.Map | null>;
+  initialCenter: LatLng;
+  onCancel: () => void;
+  onConfirm: (p: LatLng) => void;
+}) {
+  const [center, setCenter] = useState<LatLng>(initialCenter);
+  const [valid, setValid] = useState<boolean>(isBrazilCoordinate(initialCenter.lat, initialCenter.lng));
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const update = () => {
+      const c = map.getCenter();
+      if (!c) return;
+      const p = { lat: c.lat(), lng: c.lng() };
+      setCenter(p);
+      setValid(isBrazilCoordinate(p.lat, p.lng));
+    };
+    update();
+    const l1 = map.addListener("center_changed", update);
+    return () => {
+      l1.remove();
+    };
+  }, [mapRef]);
+
+  return (
+    <>
+      {/* Crosshair fixo no centro */}
+      <div className="pointer-events-none absolute inset-0 z-[55] flex items-center justify-center">
+        <div className="relative -translate-y-2">
+          <div className="h-10 w-10 rounded-full bg-primary/20 ring-2 ring-primary/60" />
+          <div className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary ring-2 ring-white" />
+          <div className="absolute left-1/2 top-full h-4 w-0.5 -translate-x-1/2 bg-primary/70" />
+        </div>
+      </div>
+
+      {/* Barra superior com instrução */}
+      <div className="absolute inset-x-0 top-0 z-[56] flex justify-center px-3 pt-[calc(env(safe-area-inset-top)+10px)]">
+        <div className="flex max-w-md items-center gap-2 rounded-2xl bg-card/95 px-3 py-2 text-[12.5px] font-medium shadow-xl ring-1 ring-border backdrop-blur">
+          <MapPin className="h-4 w-4 text-primary" />
+          Arraste o mapa e ajuste o ponto de partida
+        </div>
+      </div>
+
+      {/* Card inferior com confirmação */}
+      <div className="absolute inset-x-0 bottom-0 z-[56] px-3 pb-[calc(env(safe-area-inset-bottom)+16px)]">
+        <div className="mx-auto max-w-md rounded-2xl bg-card p-4 shadow-2xl ring-1 ring-border">
+          <div className="text-[10px] font-semibold uppercase tracking-widest text-primary">
+            Novo local de partida
+          </div>
+          <div className="mt-1 font-mono text-[12px] text-foreground/80">
+            {center.lat.toFixed(6)}, {center.lng.toFixed(6)}
+          </div>
+          {!valid && (
+            <p className="mt-2 rounded-xl bg-destructive/15 px-2 py-1.5 text-[11.5px] text-destructive-foreground ring-1 ring-destructive/40">
+              Selecione um ponto dentro do Brasil.
+            </p>
+          )}
+          <div className="mt-3 flex gap-2">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="flex-1 rounded-xl bg-background/60 py-3 text-[13px] font-semibold ring-1 ring-border active:scale-[0.98]"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={() => onConfirm(center)}
+              disabled={!valid}
+              className="flex-1 rounded-xl bg-primary py-3 text-[13px] font-bold text-primary-foreground shadow-md shadow-primary/20 active:scale-[0.98] disabled:opacity-50"
+            >
+              Confirmar partida
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function OriginManualSearchOverlay({
+  onCancel,
+  onConfirm,
+}: {
+  onCancel: () => void;
+  onConfirm: (p: LatLng) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const [items, setItems] = useState<{ placeId: string; primary: string; secondary: string }[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const debounceRef = useRef<number | null>(null);
+  const sessionRef = useRef<google.maps.places.AutocompleteSessionToken | null>(null);
+
+  useEffect(() => {
+    if (debounceRef.current) window.clearTimeout(debounceRef.current);
+    const q = query.trim();
+    setErr("");
+    if (q.length < 2) {
+      setItems([]);
+      return;
+    }
+    debounceRef.current = window.setTimeout(async () => {
+      try {
+        setBusy(true);
+        const places = (await google.maps.importLibrary("places")) as google.maps.PlacesLibrary;
+        if (!sessionRef.current) sessionRef.current = new places.AutocompleteSessionToken();
+        const { suggestions } = await places.AutocompleteSuggestion.fetchAutocompleteSuggestions({
+          input: q,
+          sessionToken: sessionRef.current,
+          includedRegionCodes: ["br"],
+          language: "pt-BR",
+          region: "BR",
+        });
+        setItems(
+          suggestions
+            .map((s) => s.placePrediction)
+            .filter((p): p is google.maps.places.PlacePrediction => !!p)
+            .slice(0, 6)
+            .map((p) => ({
+              placeId: p.placeId,
+              primary: p.mainText?.toString() ?? p.text.toString(),
+              secondary: p.secondaryText?.toString() ?? "",
+            })),
+        );
+      } catch (e) {
+        console.error("[MOVVI] autocomplete origem manual", e);
+        setErr("Falha na busca. Tente novamente em alguns segundos.");
+      } finally {
+        setBusy(false);
+      }
+    }, 220);
+  }, [query]);
+
+  async function choose(placeId: string) {
+    try {
+      setErr("");
+      const places = (await google.maps.importLibrary("places")) as google.maps.PlacesLibrary;
+      const place = new places.Place({ id: placeId });
+      await place.fetchFields({ fields: ["location"] });
+      const loc = place.location;
+      if (!loc) throw new Error("Sem coordenadas");
+      const p = { lat: loc.lat(), lng: loc.lng() };
+      if (!isBrazilCoordinate(p.lat, p.lng)) {
+        setErr("Selecione um endereço dentro do Brasil.");
+        return;
+      }
+      sessionRef.current = null;
+      onConfirm(p);
+    } catch (e) {
+      console.error("[MOVVI] falha origem manual", e);
+      setErr("Não foi possível obter as coordenadas desse endereço.");
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[60] flex flex-col bg-background text-foreground">
+      <div className="flex items-center gap-2 border-b border-border bg-card px-4 py-3 pt-[calc(env(safe-area-inset-top)+12px)]">
+        <button
+          type="button"
+          onClick={onCancel}
+          aria-label="Voltar"
+          className="grid h-9 w-9 place-items-center rounded-full bg-background/60 ring-1 ring-border active:scale-90"
+        >
+          <X className="h-4 w-4" />
+        </button>
+        <div className="flex flex-1 items-center gap-2 rounded-xl bg-background/70 px-3 py-2 ring-1 ring-border focus-within:ring-primary/60">
+          <Search className="h-4 w-4 text-primary" />
+          <input
+            autoFocus
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Digite rua, bairro, cidade ou CEP"
+            className="min-w-0 flex-1 bg-transparent text-[14px] outline-none placeholder:text-muted-foreground"
+          />
+          {busy && <span className="text-[11px] text-muted-foreground">...</span>}
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-2 py-2">
+        {err && (
+          <p className="mx-2 my-2 rounded-xl bg-destructive/10 px-3 py-2 text-[12px] text-destructive-foreground ring-1 ring-destructive/40">
+            {err}
+          </p>
+        )}
+        {items.length === 0 && query.trim().length >= 2 && !busy && (
+          <p className="px-3 py-6 text-center text-[12.5px] text-muted-foreground">
+            Nenhum resultado. Tente outro termo.
+          </p>
+        )}
+        <ul>
+          {items.map((it) => (
+            <li key={it.placeId}>
+              <button
+                type="button"
+                onClick={() => void choose(it.placeId)}
+                className="flex w-full items-start gap-3 rounded-xl px-3 py-3 text-left transition hover:bg-accent/30 active:scale-[0.99]"
+              >
+                <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/15 text-primary">
+                  <MapPin className="h-4 w-4" />
+                </span>
+                <span className="flex min-w-0 flex-col">
+                  <span className="truncate text-[13.5px] font-semibold">{it.primary}</span>
+                  {it.secondary && (
+                    <span className="truncate text-[11.5px] text-muted-foreground">{it.secondary}</span>
+                  )}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
 function LogoMark() {
   return (
     <svg width={22} height={22} viewBox="0 0 120 120" aria-hidden>
