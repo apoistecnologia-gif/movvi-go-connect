@@ -14,16 +14,441 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      admin_settings: {
+        Row: {
+          description: string | null
+          id: string
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          description?: string | null
+          id?: string
+          key: string
+          updated_at?: string
+          value?: Json
+        }
+        Update: {
+          description?: string | null
+          id?: string
+          key?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
+      }
+      drivers: {
+        Row: {
+          approval_status: Database["public"]["Enums"]["driver_approval_status"]
+          approved_at: string | null
+          birth_date: string | null
+          blocked_at: string | null
+          category: Database["public"]["Enums"]["ride_category"]
+          city: string
+          cnh_url: string | null
+          cpf: string
+          created_at: string
+          current_lat: number | null
+          current_lng: number | null
+          email: string
+          id: string
+          is_online: boolean
+          last_location_at: string | null
+          name: string
+          phone: string
+          rating: number
+          selfie_url: string | null
+          state: string
+          subscription_status: Database["public"]["Enums"]["driver_subscription_status"]
+          updated_at: string
+          user_id: string
+          vehicle_color: string
+          vehicle_document_url: string | null
+          vehicle_model: string
+          vehicle_plate: string
+          vehicle_year: number
+        }
+        Insert: {
+          approval_status?: Database["public"]["Enums"]["driver_approval_status"]
+          approved_at?: string | null
+          birth_date?: string | null
+          blocked_at?: string | null
+          category: Database["public"]["Enums"]["ride_category"]
+          city: string
+          cnh_url?: string | null
+          cpf: string
+          created_at?: string
+          current_lat?: number | null
+          current_lng?: number | null
+          email: string
+          id?: string
+          is_online?: boolean
+          last_location_at?: string | null
+          name: string
+          phone: string
+          rating?: number
+          selfie_url?: string | null
+          state: string
+          subscription_status?: Database["public"]["Enums"]["driver_subscription_status"]
+          updated_at?: string
+          user_id: string
+          vehicle_color: string
+          vehicle_document_url?: string | null
+          vehicle_model: string
+          vehicle_plate: string
+          vehicle_year: number
+        }
+        Update: {
+          approval_status?: Database["public"]["Enums"]["driver_approval_status"]
+          approved_at?: string | null
+          birth_date?: string | null
+          blocked_at?: string | null
+          category?: Database["public"]["Enums"]["ride_category"]
+          city?: string
+          cnh_url?: string | null
+          cpf?: string
+          created_at?: string
+          current_lat?: number | null
+          current_lng?: number | null
+          email?: string
+          id?: string
+          is_online?: boolean
+          last_location_at?: string | null
+          name?: string
+          phone?: string
+          rating?: number
+          selfie_url?: string | null
+          state?: string
+          subscription_status?: Database["public"]["Enums"]["driver_subscription_status"]
+          updated_at?: string
+          user_id?: string
+          vehicle_color?: string
+          vehicle_document_url?: string | null
+          vehicle_model?: string
+          vehicle_plate?: string
+          vehicle_year?: number
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          data: Json
+          id: string
+          read_at: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          data?: Json
+          id?: string
+          read_at?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          data?: Json
+          id?: string
+          read_at?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          method: string | null
+          provider_reference: string | null
+          ride_id: string
+          status: Database["public"]["Enums"]["payment_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          method?: string | null
+          provider_reference?: string | null
+          ride_id: string
+          status?: Database["public"]["Enums"]["payment_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          method?: string | null
+          provider_reference?: string | null
+          ride_id?: string
+          status?: Database["public"]["Enums"]["payment_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "rides"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rides: {
+        Row: {
+          accepted_at: string | null
+          cancel_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          category: Database["public"]["Enums"]["ride_category"]
+          completed_at: string | null
+          created_at: string
+          current_offer_driver_id: string | null
+          destination_lat: number
+          destination_lng: number
+          destination_name: string
+          distance_km: number | null
+          driver_id: string | null
+          duration_min: number | null
+          estimated_price: number | null
+          final_price: number | null
+          id: string
+          origin_lat: number
+          origin_lng: number
+          origin_name: string
+          passenger_id: string
+          rejected_driver_ids: string[]
+          started_at: string | null
+          status: Database["public"]["Enums"]["ride_status"]
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          category: Database["public"]["Enums"]["ride_category"]
+          completed_at?: string | null
+          created_at?: string
+          current_offer_driver_id?: string | null
+          destination_lat: number
+          destination_lng: number
+          destination_name: string
+          distance_km?: number | null
+          driver_id?: string | null
+          duration_min?: number | null
+          estimated_price?: number | null
+          final_price?: number | null
+          id?: string
+          origin_lat: number
+          origin_lng: number
+          origin_name: string
+          passenger_id: string
+          rejected_driver_ids?: string[]
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["ride_status"]
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          category?: Database["public"]["Enums"]["ride_category"]
+          completed_at?: string | null
+          created_at?: string
+          current_offer_driver_id?: string | null
+          destination_lat?: number
+          destination_lng?: number
+          destination_name?: string
+          distance_km?: number | null
+          driver_id?: string | null
+          duration_min?: number | null
+          estimated_price?: number | null
+          final_price?: number | null
+          id?: string
+          origin_lat?: number
+          origin_lng?: number
+          origin_name?: string
+          passenger_id?: string
+          rejected_driver_ids?: string[]
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["ride_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sos_alerts: {
+        Row: {
+          created_at: string
+          id: string
+          lat: number | null
+          lng: number | null
+          message: string | null
+          resolved_at: string | null
+          ride_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          message?: string | null
+          resolved_at?: string | null
+          ride_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          message?: string | null
+          resolved_at?: string | null
+          ride_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sos_alerts_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "rides"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscriptions: {
+        Row: {
+          amount: number
+          created_at: string
+          driver_id: string
+          id: string
+          period_end: string | null
+          period_start: string | null
+          provider_reference: string | null
+          status: Database["public"]["Enums"]["driver_subscription_status"]
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          driver_id: string
+          id?: string
+          period_end?: string | null
+          period_start?: string | null
+          provider_reference?: string | null
+          status?: Database["public"]["Enums"]["driver_subscription_status"]
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          driver_id?: string
+          id?: string
+          period_end?: string | null
+          period_start?: string | null
+          provider_reference?: string | null
+          status?: Database["public"]["Enums"]["driver_subscription_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      users: {
+        Row: {
+          auth_user_id: string
+          created_at: string
+          email: string
+          id: string
+          name: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          auth_user_id: string
+          created_at?: string
+          email: string
+          id?: string
+          name: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          auth_user_id?: string
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "passenger" | "driver" | "admin"
+      driver_approval_status:
+        | "pending_approval"
+        | "approved"
+        | "rejected"
+        | "blocked"
+      driver_subscription_status: "active" | "inactive" | "overdue"
+      payment_status: "pending" | "paid" | "failed" | "refunded"
+      ride_category: "carros" | "motos" | "fretes" | "guincho" | "envios"
+      ride_status:
+        | "searching_driver"
+        | "offered_to_driver"
+        | "driver_assigned"
+        | "driver_arrived"
+        | "in_progress"
+        | "completed"
+        | "cancelled"
+        | "no_driver_available"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +575,27 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["passenger", "driver", "admin"],
+      driver_approval_status: [
+        "pending_approval",
+        "approved",
+        "rejected",
+        "blocked",
+      ],
+      driver_subscription_status: ["active", "inactive", "overdue"],
+      payment_status: ["pending", "paid", "failed", "refunded"],
+      ride_category: ["carros", "motos", "fretes", "guincho", "envios"],
+      ride_status: [
+        "searching_driver",
+        "offered_to_driver",
+        "driver_assigned",
+        "driver_arrived",
+        "in_progress",
+        "completed",
+        "cancelled",
+        "no_driver_available",
+      ],
+    },
   },
 } as const

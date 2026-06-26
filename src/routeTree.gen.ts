@@ -9,38 +9,179 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as MapTestRouteImport } from './routes/map-test'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PassageiroLoginRouteImport } from './routes/passageiro.login'
+import { Route as PassageiroCadastroRouteImport } from './routes/passageiro.cadastro'
+import { Route as PassageiroAppRouteImport } from './routes/passageiro.app'
+import { Route as MotoristaStatusRouteImport } from './routes/motorista.status'
+import { Route as MotoristaLoginRouteImport } from './routes/motorista.login'
+import { Route as MotoristaCadastroRouteImport } from './routes/motorista.cadastro'
+import { Route as MotoristaAppRouteImport } from './routes/motorista.app'
+import { Route as AdminLoginRouteImport } from './routes/admin.login'
+import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
 
+const MapTestRoute = MapTestRouteImport.update({
+  id: '/map-test',
+  path: '/map-test',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PassageiroLoginRoute = PassageiroLoginRouteImport.update({
+  id: '/passageiro/login',
+  path: '/passageiro/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PassageiroCadastroRoute = PassageiroCadastroRouteImport.update({
+  id: '/passageiro/cadastro',
+  path: '/passageiro/cadastro',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PassageiroAppRoute = PassageiroAppRouteImport.update({
+  id: '/passageiro/app',
+  path: '/passageiro/app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MotoristaStatusRoute = MotoristaStatusRouteImport.update({
+  id: '/motorista/status',
+  path: '/motorista/status',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MotoristaLoginRoute = MotoristaLoginRouteImport.update({
+  id: '/motorista/login',
+  path: '/motorista/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MotoristaCadastroRoute = MotoristaCadastroRouteImport.update({
+  id: '/motorista/cadastro',
+  path: '/motorista/cadastro',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MotoristaAppRoute = MotoristaAppRouteImport.update({
+  id: '/motorista/app',
+  path: '/motorista/app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminLoginRoute = AdminLoginRouteImport.update({
+  id: '/admin/login',
+  path: '/admin/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminDashboardRoute = AdminDashboardRouteImport.update({
+  id: '/admin/dashboard',
+  path: '/admin/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/map-test': typeof MapTestRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/login': typeof AdminLoginRoute
+  '/motorista/app': typeof MotoristaAppRoute
+  '/motorista/cadastro': typeof MotoristaCadastroRoute
+  '/motorista/login': typeof MotoristaLoginRoute
+  '/motorista/status': typeof MotoristaStatusRoute
+  '/passageiro/app': typeof PassageiroAppRoute
+  '/passageiro/cadastro': typeof PassageiroCadastroRoute
+  '/passageiro/login': typeof PassageiroLoginRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/map-test': typeof MapTestRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/login': typeof AdminLoginRoute
+  '/motorista/app': typeof MotoristaAppRoute
+  '/motorista/cadastro': typeof MotoristaCadastroRoute
+  '/motorista/login': typeof MotoristaLoginRoute
+  '/motorista/status': typeof MotoristaStatusRoute
+  '/passageiro/app': typeof PassageiroAppRoute
+  '/passageiro/cadastro': typeof PassageiroCadastroRoute
+  '/passageiro/login': typeof PassageiroLoginRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/map-test': typeof MapTestRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/login': typeof AdminLoginRoute
+  '/motorista/app': typeof MotoristaAppRoute
+  '/motorista/cadastro': typeof MotoristaCadastroRoute
+  '/motorista/login': typeof MotoristaLoginRoute
+  '/motorista/status': typeof MotoristaStatusRoute
+  '/passageiro/app': typeof PassageiroAppRoute
+  '/passageiro/cadastro': typeof PassageiroCadastroRoute
+  '/passageiro/login': typeof PassageiroLoginRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/map-test'
+    | '/admin/dashboard'
+    | '/admin/login'
+    | '/motorista/app'
+    | '/motorista/cadastro'
+    | '/motorista/login'
+    | '/motorista/status'
+    | '/passageiro/app'
+    | '/passageiro/cadastro'
+    | '/passageiro/login'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/map-test'
+    | '/admin/dashboard'
+    | '/admin/login'
+    | '/motorista/app'
+    | '/motorista/cadastro'
+    | '/motorista/login'
+    | '/motorista/status'
+    | '/passageiro/app'
+    | '/passageiro/cadastro'
+    | '/passageiro/login'
+  id:
+    | '__root__'
+    | '/'
+    | '/map-test'
+    | '/admin/dashboard'
+    | '/admin/login'
+    | '/motorista/app'
+    | '/motorista/cadastro'
+    | '/motorista/login'
+    | '/motorista/status'
+    | '/passageiro/app'
+    | '/passageiro/cadastro'
+    | '/passageiro/login'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  MapTestRoute: typeof MapTestRoute
+  AdminDashboardRoute: typeof AdminDashboardRoute
+  AdminLoginRoute: typeof AdminLoginRoute
+  MotoristaAppRoute: typeof MotoristaAppRoute
+  MotoristaCadastroRoute: typeof MotoristaCadastroRoute
+  MotoristaLoginRoute: typeof MotoristaLoginRoute
+  MotoristaStatusRoute: typeof MotoristaStatusRoute
+  PassageiroAppRoute: typeof PassageiroAppRoute
+  PassageiroCadastroRoute: typeof PassageiroCadastroRoute
+  PassageiroLoginRoute: typeof PassageiroLoginRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/map-test': {
+      id: '/map-test'
+      path: '/map-test'
+      fullPath: '/map-test'
+      preLoaderRoute: typeof MapTestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,11 +189,84 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/passageiro/login': {
+      id: '/passageiro/login'
+      path: '/passageiro/login'
+      fullPath: '/passageiro/login'
+      preLoaderRoute: typeof PassageiroLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/passageiro/cadastro': {
+      id: '/passageiro/cadastro'
+      path: '/passageiro/cadastro'
+      fullPath: '/passageiro/cadastro'
+      preLoaderRoute: typeof PassageiroCadastroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/passageiro/app': {
+      id: '/passageiro/app'
+      path: '/passageiro/app'
+      fullPath: '/passageiro/app'
+      preLoaderRoute: typeof PassageiroAppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/motorista/status': {
+      id: '/motorista/status'
+      path: '/motorista/status'
+      fullPath: '/motorista/status'
+      preLoaderRoute: typeof MotoristaStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/motorista/login': {
+      id: '/motorista/login'
+      path: '/motorista/login'
+      fullPath: '/motorista/login'
+      preLoaderRoute: typeof MotoristaLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/motorista/cadastro': {
+      id: '/motorista/cadastro'
+      path: '/motorista/cadastro'
+      fullPath: '/motorista/cadastro'
+      preLoaderRoute: typeof MotoristaCadastroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/motorista/app': {
+      id: '/motorista/app'
+      path: '/motorista/app'
+      fullPath: '/motorista/app'
+      preLoaderRoute: typeof MotoristaAppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/login': {
+      id: '/admin/login'
+      path: '/admin/login'
+      fullPath: '/admin/login'
+      preLoaderRoute: typeof AdminLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/dashboard': {
+      id: '/admin/dashboard'
+      path: '/admin/dashboard'
+      fullPath: '/admin/dashboard'
+      preLoaderRoute: typeof AdminDashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  MapTestRoute: MapTestRoute,
+  AdminDashboardRoute: AdminDashboardRoute,
+  AdminLoginRoute: AdminLoginRoute,
+  MotoristaAppRoute: MotoristaAppRoute,
+  MotoristaCadastroRoute: MotoristaCadastroRoute,
+  MotoristaLoginRoute: MotoristaLoginRoute,
+  MotoristaStatusRoute: MotoristaStatusRoute,
+  PassageiroAppRoute: PassageiroAppRoute,
+  PassageiroCadastroRoute: PassageiroCadastroRoute,
+  PassageiroLoginRoute: PassageiroLoginRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
