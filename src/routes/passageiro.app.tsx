@@ -2077,29 +2077,87 @@ function Stat({
 
 function SearchingPanel({
   category,
+  driversCount,
   onCancel,
 }: {
   category: RideCategory;
+  driversCount: number;
   onCancel: () => void;
 }) {
   const cat = RIDE_CATEGORIES.find((c) => c.key === category)!;
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    const i = setInterval(() => setElapsed((s) => s + 1), 1000);
+    return () => clearInterval(i);
+  }, []);
+  // raio em km cresce com o tempo (cap 8km), animado
+  const radiusKm = Math.min(8, 1 + elapsed * 0.25);
+  const mm = Math.floor(elapsed / 60)
+    .toString()
+    .padStart(2, "0");
+  const ss = (elapsed % 60).toString().padStart(2, "0");
+
   return (
-    <div className="text-center">
-      <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-primary/15">
-        <span className="relative flex h-14 w-14 items-center justify-center text-4xl">
-          <span className="absolute inset-0 animate-ping rounded-full bg-primary/30" />
-          <span className="relative">{cat.emoji}</span>
+    <div className="px-1 pt-1 text-center">
+      {/* Pulso multi-anel */}
+      <div className="relative mx-auto mb-3 grid h-28 w-28 place-items-center">
+        <span className="absolute inset-0 animate-ping rounded-full bg-primary/20 [animation-duration:1.8s]" />
+        <span className="absolute inset-3 animate-ping rounded-full bg-primary/30 [animation-duration:1.4s]" />
+        <span className="absolute inset-6 animate-ping rounded-full bg-primary/40 [animation-duration:1s]" />
+        <span className="relative grid h-16 w-16 place-items-center rounded-full bg-primary text-3xl shadow-2xl shadow-primary/40">
+          {cat.emoji}
         </span>
       </div>
-      <h2 className="font-display text-lg font-bold">
-        Procurando motoristas próximos…
+
+      <h2 className="font-display text-[17px] font-extrabold leading-tight">
+        Procurando motoristas...
       </h2>
-      <p className="mt-1 text-xs text-muted-foreground">
-        Avisaremos assim que alguém aceitar sua corrida.
+      <p className="mt-0.5 text-[11.5px] text-muted-foreground">
+        Conectando com {cat.label} próximos a você
       </p>
+
+      {/* Métricas em tempo real */}
+      <div className="mt-3 grid grid-cols-3 gap-1.5">
+        <div className="rounded-xl bg-primary/10 px-1.5 py-2 ring-1 ring-primary/30">
+          <div className="text-[16px] font-extrabold tabular-nums leading-none text-primary">
+            {driversCount}
+          </div>
+          <div className="mt-0.5 text-[9.5px] uppercase tracking-wider text-muted-foreground">
+            Motoristas
+          </div>
+        </div>
+        <div className="rounded-xl bg-background/60 px-1.5 py-2 ring-1 ring-border">
+          <div className="text-[16px] font-extrabold tabular-nums leading-none text-foreground">
+            {radiusKm.toFixed(1)}<span className="text-[10px] font-bold">km</span>
+          </div>
+          <div className="mt-0.5 text-[9.5px] uppercase tracking-wider text-muted-foreground">
+            Raio
+          </div>
+        </div>
+        <div className="rounded-xl bg-background/60 px-1.5 py-2 ring-1 ring-border">
+          <div className="text-[16px] font-extrabold tabular-nums leading-none text-foreground">
+            {mm}:{ss}
+          </div>
+          <div className="mt-0.5 text-[9.5px] uppercase tracking-wider text-muted-foreground">
+            Tempo
+          </div>
+        </div>
+      </div>
+
+      {/* Barra de progresso do raio */}
+      <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-background/80 ring-1 ring-border">
+        <div
+          className="h-full rounded-full bg-gradient-to-r from-primary via-primary to-primary/60 transition-[width] duration-700 ease-out"
+          style={{ width: `${(radiusKm / 8) * 100}%` }}
+        />
+      </div>
+      <p className="mt-1.5 text-[10.5px] text-muted-foreground">
+        Expandindo busca em tempo real...
+      </p>
+
       <button
         onClick={onCancel}
-        className="mt-5 w-full rounded-2xl border border-destructive/40 bg-destructive/10 py-3 text-sm font-semibold text-destructive-foreground hover:bg-destructive/20"
+        className="mt-3 w-full rounded-2xl border border-destructive/40 bg-destructive/10 py-2.5 text-[13px] font-semibold text-destructive-foreground transition active:scale-[0.98] hover:bg-destructive/20"
       >
         Cancelar solicitação
       </button>
