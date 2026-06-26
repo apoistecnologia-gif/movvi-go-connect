@@ -906,7 +906,7 @@ function PassageiroApp() {
       setSuggestions([]);
       sessionTokenRef.current = null;
       pushRecent({ placeId: s.placeId, label: s.primary, secondary: s.secondary });
-      sheetRef.current?.snapTo(72);
+      sheetRef.current?.snapTo(55);
       searchInputRef.current?.blur();
       await calcRoute(point);
     } catch (e) {
@@ -962,7 +962,7 @@ function PassageiroApp() {
     setRoute(null);
     setError(null);
     setSuggestions([]);
-    sheetRef.current?.snapTo(30);
+    sheetRef.current?.snapTo(32);
     if (mapRef.current && position) {
       mapRef.current.panTo(position);
       mapRef.current.setZoom(16);
@@ -1086,7 +1086,7 @@ function PassageiroApp() {
   }
 
   function focusSearch() {
-    sheetRef.current?.snapTo(92);
+    sheetRef.current?.snapTo(70);
     setTimeout(() => searchInputRef.current?.focus(), 220);
   }
 
@@ -1302,7 +1302,7 @@ function PassageiroApp() {
       />
 
       {/* Floating controls */}
-      <div className="pointer-events-none absolute right-3 z-30" style={{ bottom: "calc(32vh + 16px)" }}>
+      <div className="pointer-events-none absolute right-3 z-30" style={{ bottom: "calc(32vh + 12px)" }}>
         <button
           onClick={recenter}
           className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-card text-foreground shadow-2xl ring-1 ring-border transition active:scale-90 hover:scale-105"
@@ -1314,7 +1314,7 @@ function PassageiroApp() {
 
       {/* BOTTOM SHEET — novo, próprio do MOVVI */}
       {!ride && (
-        <MovviSheet ref={sheetRef} snaps={[30, 72, 92]} initial={30}>
+        <MovviSheet ref={sheetRef} snaps={[32, 55, 70]} initial={32}>
           <SheetContent
             geo={geo}
             addressStatus={addressStatus}
@@ -1398,8 +1398,12 @@ function PassageiroApp() {
 
 
       {ride && (phase === "searching_driver" || phase === "offered_to_driver") && (
-        <MovviSheet snaps={[40]} initial={40}>
-          <SearchingPanel category={category} onCancel={cancelRide} />
+        <MovviSheet snaps={[50]} initial={50}>
+          <SearchingPanel
+            category={category}
+            driversCount={drivers.length}
+            onCancel={cancelRide}
+          />
         </MovviSheet>
       )}
 
@@ -1408,7 +1412,7 @@ function PassageiroApp() {
         (phase === "driver_assigned" ||
           phase === "driver_arrived" ||
           phase === "in_progress") && (
-          <MovviSheet snaps={[44, 80]} initial={44}>
+          <MovviSheet snaps={[40, 65]} initial={40}>
             <DriverEnRoute ride={ride} driver={driverInfo} onCancel={cancelRide} />
           </MovviSheet>
         )}
@@ -1885,26 +1889,26 @@ function StepFlow({
         </div>
       )}
 
-      {/* ETAPA 4 — confirmação + botão fixo */}
+      {/* ETAPA 4 — confirmação + botão inline */}
       {step === 4 && route && selectedFare != null && (
-        <div className="animate-in fade-in slide-in-from-bottom-2 duration-200 space-y-2.5 pb-[calc(env(safe-area-inset-bottom)+76px)]">
-          <div className="flex items-center gap-3 rounded-2xl bg-primary/5 px-3 py-3 ring-1 ring-primary/30">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground">
+        <div className="animate-in fade-in slide-in-from-bottom-2 duration-200 space-y-2">
+          <div className="flex items-center gap-2.5 rounded-2xl bg-primary/5 px-3 py-2.5 ring-1 ring-primary/30">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground">
               <selectedCategory.icon className="h-5 w-5" />
             </span>
             <div className="min-w-0 flex-1">
-              <div className="text-[10px] font-semibold uppercase tracking-widest text-primary">
+              <div className="text-[9.5px] font-semibold uppercase tracking-widest text-primary leading-none">
                 Categoria
               </div>
-              <div className="truncate text-[15px] font-extrabold text-foreground">
+              <div className="mt-0.5 truncate text-[14px] font-extrabold text-foreground leading-tight">
                 {selectedCategory.label}
               </div>
             </div>
             <div className="text-right">
-              <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+              <div className="text-[9.5px] font-semibold uppercase tracking-widest text-muted-foreground leading-none">
                 Estimado
               </div>
-              <div className="text-[17px] font-extrabold text-foreground">
+              <div className="mt-0.5 text-[16px] font-extrabold text-foreground leading-none">
                 {formatBRL(selectedFare)}
               </div>
             </div>
@@ -1912,38 +1916,32 @@ function StepFlow({
 
           <button
             type="button"
-            className="flex w-full items-center gap-3 rounded-2xl bg-background/60 px-3 py-3 text-left ring-1 ring-border transition hover:bg-accent/20"
+            className="flex w-full items-center gap-2.5 rounded-2xl bg-background/60 px-3 py-2.5 text-left ring-1 ring-border transition hover:bg-accent/20"
           >
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
               <CreditCard className="h-4 w-4" />
             </span>
             <div className="min-w-0 flex-1">
-              <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+              <div className="text-[9.5px] font-semibold uppercase tracking-widest text-muted-foreground leading-none">
                 Forma de pagamento
               </div>
-              <div className="truncate text-[13.5px] font-bold text-foreground">
+              <div className="mt-0.5 truncate text-[13px] font-bold text-foreground leading-tight">
                 Dinheiro
               </div>
             </div>
             <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
           </button>
 
-          {/* Botão fixo no rodapé */}
-          <div
-            className="fixed inset-x-0 bottom-0 z-30 border-t border-border/60 bg-surface/95 px-4 pt-3 backdrop-blur-md"
-            style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 12px)" }}
+          <button
+            type="button"
+            disabled={busy}
+            onClick={onSubmit}
+            className="mt-1 w-full rounded-2xl bg-primary py-3.5 text-[15px] font-extrabold text-primary-foreground shadow-xl shadow-primary/30 transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <button
-              type="button"
-              disabled={busy}
-              onClick={onSubmit}
-              className="w-full rounded-2xl bg-primary py-3.5 text-[15px] font-bold text-primary-foreground shadow-xl shadow-primary/25 transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {busy
-                ? "Solicitando..."
-                : `Solicitar MOVVI ${selectedCategory.label}`}
-            </button>
-          </div>
+            {busy
+              ? "Solicitando..."
+              : `Solicitar MOVVI ${selectedCategory.label}`}
+          </button>
         </div>
       )}
     </div>
@@ -2073,29 +2071,87 @@ function Stat({
 
 function SearchingPanel({
   category,
+  driversCount,
   onCancel,
 }: {
   category: RideCategory;
+  driversCount: number;
   onCancel: () => void;
 }) {
   const cat = RIDE_CATEGORIES.find((c) => c.key === category)!;
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    const i = setInterval(() => setElapsed((s) => s + 1), 1000);
+    return () => clearInterval(i);
+  }, []);
+  // raio em km cresce com o tempo (cap 8km), animado
+  const radiusKm = Math.min(8, 1 + elapsed * 0.25);
+  const mm = Math.floor(elapsed / 60)
+    .toString()
+    .padStart(2, "0");
+  const ss = (elapsed % 60).toString().padStart(2, "0");
+
   return (
-    <div className="text-center">
-      <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-primary/15">
-        <span className="relative flex h-14 w-14 items-center justify-center text-4xl">
-          <span className="absolute inset-0 animate-ping rounded-full bg-primary/30" />
-          <span className="relative">{cat.emoji}</span>
+    <div className="px-1 pt-1 text-center">
+      {/* Pulso multi-anel */}
+      <div className="relative mx-auto mb-3 grid h-28 w-28 place-items-center">
+        <span className="absolute inset-0 animate-ping rounded-full bg-primary/20 [animation-duration:1.8s]" />
+        <span className="absolute inset-3 animate-ping rounded-full bg-primary/30 [animation-duration:1.4s]" />
+        <span className="absolute inset-6 animate-ping rounded-full bg-primary/40 [animation-duration:1s]" />
+        <span className="relative grid h-16 w-16 place-items-center rounded-full bg-primary text-3xl shadow-2xl shadow-primary/40">
+          {cat.emoji}
         </span>
       </div>
-      <h2 className="font-display text-lg font-bold">
-        Procurando motoristas próximos…
+
+      <h2 className="font-display text-[17px] font-extrabold leading-tight">
+        Procurando motoristas...
       </h2>
-      <p className="mt-1 text-xs text-muted-foreground">
-        Avisaremos assim que alguém aceitar sua corrida.
+      <p className="mt-0.5 text-[11.5px] text-muted-foreground">
+        Conectando com {cat.label} próximos a você
       </p>
+
+      {/* Métricas em tempo real */}
+      <div className="mt-3 grid grid-cols-3 gap-1.5">
+        <div className="rounded-xl bg-primary/10 px-1.5 py-2 ring-1 ring-primary/30">
+          <div className="text-[16px] font-extrabold tabular-nums leading-none text-primary">
+            {driversCount}
+          </div>
+          <div className="mt-0.5 text-[9.5px] uppercase tracking-wider text-muted-foreground">
+            Motoristas
+          </div>
+        </div>
+        <div className="rounded-xl bg-background/60 px-1.5 py-2 ring-1 ring-border">
+          <div className="text-[16px] font-extrabold tabular-nums leading-none text-foreground">
+            {radiusKm.toFixed(1)}<span className="text-[10px] font-bold">km</span>
+          </div>
+          <div className="mt-0.5 text-[9.5px] uppercase tracking-wider text-muted-foreground">
+            Raio
+          </div>
+        </div>
+        <div className="rounded-xl bg-background/60 px-1.5 py-2 ring-1 ring-border">
+          <div className="text-[16px] font-extrabold tabular-nums leading-none text-foreground">
+            {mm}:{ss}
+          </div>
+          <div className="mt-0.5 text-[9.5px] uppercase tracking-wider text-muted-foreground">
+            Tempo
+          </div>
+        </div>
+      </div>
+
+      {/* Barra de progresso do raio */}
+      <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-background/80 ring-1 ring-border">
+        <div
+          className="h-full rounded-full bg-gradient-to-r from-primary via-primary to-primary/60 transition-[width] duration-700 ease-out"
+          style={{ width: `${(radiusKm / 8) * 100}%` }}
+        />
+      </div>
+      <p className="mt-1.5 text-[10.5px] text-muted-foreground">
+        Expandindo busca em tempo real...
+      </p>
+
       <button
         onClick={onCancel}
-        className="mt-5 w-full rounded-2xl border border-destructive/40 bg-destructive/10 py-3 text-sm font-semibold text-destructive-foreground hover:bg-destructive/20"
+        className="mt-3 w-full rounded-2xl border border-destructive/40 bg-destructive/10 py-2.5 text-[13px] font-semibold text-destructive-foreground transition active:scale-[0.98] hover:bg-destructive/20"
       >
         Cancelar solicitação
       </button>
@@ -2118,41 +2174,78 @@ function DriverEnRoute({
       : ride.status === "in_progress"
         ? "Em viagem para o destino"
         : "Motorista a caminho";
+  // ETA animado para fase "motorista a caminho"
+  const isArriving = ride.status === "driver_assigned" || ride.status === "offered_to_driver";
+  const isInTrip = ride.status === "in_progress";
+  const [eta, setEta] = useState(() => Math.floor(Math.random() * 4) + 3);
+  useEffect(() => {
+    if (!isArriving) return;
+    const i = setInterval(() => setEta((e) => (e > 1 ? e - 1 : 1)), 30000);
+    return () => clearInterval(i);
+  }, [isArriving]);
+
   return (
-    <div>
-      <div className="mb-2 text-center text-[11px] font-semibold uppercase tracking-widest text-primary">
+    <div className="pt-1 animate-in fade-in slide-in-from-bottom-2 duration-300">
+      <div className="mb-2 flex items-center justify-center gap-2 text-[10.5px] font-bold uppercase tracking-widest text-primary">
+        <span className="relative flex h-2 w-2">
+          <span className="absolute inset-0 animate-ping rounded-full bg-primary/70" />
+          <span className="relative h-2 w-2 rounded-full bg-primary" />
+        </span>
         {phaseLabel}
       </div>
-      <div className="flex items-center gap-3 rounded-2xl bg-background/60 p-3 ring-1 ring-border">
-        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/15 text-2xl">
+
+      {/* ETA destacado */}
+      {!isInTrip && (
+        <div className="mb-2 flex items-center justify-between gap-3 rounded-2xl bg-primary/10 px-3 py-2.5 ring-1 ring-primary/30">
+          <div>
+            <div className="text-[9.5px] font-semibold uppercase tracking-widest text-primary leading-none">
+              Chegando em
+            </div>
+            <div className="mt-0.5 text-[22px] font-extrabold leading-none text-foreground tabular-nums">
+              {eta} <span className="text-[12px] font-bold">min</span>
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="text-[9.5px] font-semibold uppercase tracking-widest text-muted-foreground leading-none">
+              Distância
+            </div>
+            <div className="mt-0.5 text-[15px] font-extrabold leading-none text-foreground tabular-nums">
+              {(eta * 0.45).toFixed(1)} <span className="text-[10px] font-bold">km</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="flex items-center gap-2.5 rounded-2xl bg-background/60 p-2.5 ring-1 ring-border">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/15 text-2xl">
           {driver.selfie_url ? (
             <img
               src={driver.selfie_url}
               alt={driver.name}
-              className="h-14 w-14 rounded-full object-cover"
+              className="h-12 w-12 rounded-full object-cover"
             />
           ) : (
             "👤"
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="truncate font-semibold">{driver.name}</span>
-            <span className="inline-flex items-center gap-0.5 text-xs text-yellow-400">
-              <Star className="h-3 w-3 fill-current" />{" "}
+          <div className="flex items-center gap-1.5">
+            <span className="truncate text-[13.5px] font-bold">{driver.name}</span>
+            <span className="inline-flex shrink-0 items-center gap-0.5 text-[11px] text-yellow-400">
+              <Star className="h-3 w-3 fill-current" />
               {driver.rating?.toFixed(1) ?? "5.0"}
             </span>
           </div>
-          <div className="truncate text-xs text-muted-foreground">
+          <div className="truncate text-[11.5px] text-muted-foreground">
             {driver.vehicle_color} · {driver.vehicle_model}
           </div>
-          <div className="mt-1 inline-flex items-center rounded bg-white px-1.5 py-0.5 text-[10px] font-bold tracking-widest text-black">
+          <div className="mt-0.5 inline-flex items-center rounded bg-white px-1.5 py-0.5 text-[10px] font-extrabold tracking-widest text-black">
             {driver.vehicle_plate}
           </div>
         </div>
       </div>
 
-      <div className="mt-3 grid grid-cols-4 gap-2 text-xs">
+      <div className="mt-2 grid grid-cols-4 gap-1.5 text-xs">
         <Action icon={<Phone className="h-4 w-4" />} label="Ligar" />
         <Action icon={<Navigation2 className="h-4 w-4" />} label="Compartilhar" />
         <Action
@@ -2162,22 +2255,22 @@ function DriverEnRoute({
         />
         <button
           onClick={onCancel}
-          className="flex flex-col items-center gap-1 rounded-xl bg-background/60 py-3 ring-1 ring-border hover:ring-destructive/50"
+          className="flex flex-col items-center gap-1 rounded-xl bg-background/60 py-2.5 ring-1 ring-border transition active:scale-95 hover:ring-destructive/50"
         >
           <X className="h-4 w-4" />
-          <span className="text-[11px]">Cancelar</span>
+          <span className="text-[10.5px]">Cancelar</span>
         </button>
       </div>
 
-      <div className="mt-3 rounded-xl bg-background/60 px-3 py-2 text-xs ring-1 ring-border">
-        <div className="truncate">
-          <span className="text-muted-foreground">Destino:</span>{" "}
-          {ride.destination_name}
+      <div className="mt-2 rounded-xl bg-background/60 px-3 py-2 text-[11.5px] ring-1 ring-border">
+        <div className="flex items-center gap-1.5">
+          <MapPin className="h-3 w-3 shrink-0 text-destructive" />
+          <span className="truncate">{ride.destination_name}</span>
         </div>
         {ride.estimated_price && (
-          <div className="mt-1 text-muted-foreground">
-            Estimativa:{" "}
-            <span className="font-semibold text-foreground">
+          <div className="mt-0.5 flex items-center justify-between text-muted-foreground">
+            <span>Estimativa</span>
+            <span className="font-bold text-primary">
               {formatBRL(Number(ride.estimated_price))}
             </span>
           </div>
