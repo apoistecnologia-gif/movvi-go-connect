@@ -167,12 +167,21 @@ function PassageiroApp() {
     setGpsState("requesting");
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        if (!isBrazilCoordinate(lat, lng)) {
+          console.warn("[MOVVI] GPS fora do Brasil — ignorando", { lat, lng });
+          setGpsState("denied");
+          return;
+        }
+        setPosition({ lat, lng });
         setGpsState("granted");
-        // após obter, manter watch
         navigator.geolocation.watchPosition(
-          (p) =>
-            setPosition({ lat: p.coords.latitude, lng: p.coords.longitude }),
+          (p) => {
+            const la = p.coords.latitude;
+            const ln = p.coords.longitude;
+            if (isBrazilCoordinate(la, ln)) setPosition({ lat: la, lng: ln });
+          },
           () => undefined,
           { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 },
         );
@@ -186,6 +195,7 @@ function PassageiroApp() {
   }, []);
 
   useEffect(() => {
+    purgeForeignMapCache();
     requestGps();
   }, [requestGps]);
 
