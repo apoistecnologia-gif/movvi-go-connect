@@ -41,11 +41,13 @@ type Driver = Database["public"]["Tables"]["drivers"]["Row"];
 type Status = Driver["approval_status"];
 
 const TAB_META: Record<Status, { label: string; tone: string }> = {
-  pending_approval: { label: "Em análise", tone: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30" },
-  approved: { label: "Aprovados", tone: "bg-primary/15 text-primary border-primary/30" },
-  rejected: { label: "Reprovados", tone: "bg-destructive/15 text-destructive border-destructive/30" },
-  blocked: { label: "Bloqueados", tone: "bg-destructive/15 text-destructive border-destructive/30" },
+  em_analise: { label: "Em análise", tone: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30" },
+  aprovado: { label: "Aprovados", tone: "bg-primary/15 text-primary border-primary/30" },
+  reprovado: { label: "Reprovados", tone: "bg-destructive/15 text-destructive border-destructive/30" },
+  bloqueado: { label: "Bloqueados", tone: "bg-destructive/15 text-destructive border-destructive/30" },
 };
+
+const STATUS_ORDER: Status[] = ["em_analise", "aprovado", "reprovado", "bloqueado"];
 
 const BUCKETS = {
   selfie_url: "driver-selfies",
@@ -61,22 +63,28 @@ function fmtDate(d: string | null) {
 function AdminMotoristas() {
   const [drivers, setDrivers] = useState<Driver[] | null>(null);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<Status>("pending_approval");
+  const [tab, setTab] = useState<Status>("em_analise");
   const [detail, setDetail] = useState<Driver | null>(null);
   const [rejectFor, setRejectFor] = useState<Driver | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [adminEmail, setAdminEmail] = useState<string>("—");
+  const [dbError, setDbError] = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
+    const { data: auth } = await supabase.auth.getUser();
+    setAdminEmail(auth.user?.email ?? "—");
     const { data, error } = await supabase
       .from("drivers")
       .select("*")
       .order("created_at", { ascending: false });
     if (error) {
+      setDbError(error.message);
       toast.error("Erro ao carregar motoristas: " + error.message);
       setDrivers([]);
     } else {
+      setDbError(null);
       setDrivers(data ?? []);
     }
     setLoading(false);
@@ -95,35 +103,43 @@ function AdminMotoristas() {
 
   const grouped = useMemo(() => {
     const g: Record<Status, Driver[]> = {
-      pending_approval: [],
-      approved: [],
-      rejected: [],
-      blocked: [],
+      em_analise: [],
+      aprovado: [],
+      reprovado: [],
+      bloqueado: [],
     };
     (drivers ?? []).forEach((d) => g[d.approval_status]?.push(d));
     return g;
   }, [drivers]);
 
+  const statusCounts = useMemo(
+    () => Object.fromEntries(STATUS_ORDER.map((s) => [s, grouped[s].length])) as Record<Status, number>,
+    [grouped],
+  );
+
   async function updateStatus(d: Driver, status: Status, reason?: string | null) {
     setBusyId(d.id);
     const patch: Database["public"]["Tables"]["drivers"]["Update"] = {
       approval_status: status,
-      rejection_reason: status === "rejected" ? reason ?? null : null,
-      approved_at: status === "approved" ? new Date().toISOString() : null,
-      blocked_at: status === "blocked" ? new Date().toISOString() : null,
+      motivo_reprovacao: status === "reprovado" ? reason ?? null : null,
+      approved_at: status === "aprovado" ? new Date().toISOString() : null,
+      blocked_at: status === "bloqueado" ? new Date().toISOString() : null,
     };
     const { error } = await supabase.from("drivers").update(patch).eq("id", d.id);
     setBusyId(null);
     if (error) {
+      setDbError(error.message);
       toast.error("Erro ao atualizar status: " + error.message);
       return;
     }
-    if (status === "approved") toast.success("Motorista aprovado com sucesso");
-    if (status === "rejected") toast.success("Motorista reprovado");
-    if (status === "blocked") toast.success("Motorista bloqueado");
+    setDbError(null);
+    if (status === "aprovado") toast.success("Motorista aprovado com sucesso");
+    if (status === "reprovado") toast.success("Motorista reprovado");
+    if (status === "bloqueado") toast.success("Motorista bloqueado");
     setRejectFor(null);
     setRejectReason("");
     if (detail?.id === d.id) setDetail({ ...d, ...patch } as Driver);
+    load();
   }
 
   return (
@@ -156,7 +172,7 @@ function AdminMotoristas() {
           ) : (
             <Tabs value={tab} onValueChange={(v) => setTab(v as Status)}>
               <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
-                {(Object.keys(TAB_META) as Status[]).map((s) => (
+                {STATUS_ORDER.map((s) => (
                   <TabsTrigger key={s} value={s}>
                     {TAB_META[s].label}
                     <Badge variant="secondary" className="ml-2">
@@ -166,7 +182,7 @@ function AdminMotoristas() {
                 ))}
               </TabsList>
 
-              {(Object.keys(TAB_META) as Status[]).map((s) => (
+              {STATUS_ORDER.map((s) => (
                 <TabsContent key={s} value={s} className="mt-4 space-y-3">
                   {grouped[s].length === 0 ? (
                     <div className="rounded-2xl border border-dashed border-border bg-card/40 p-8 text-center text-sm text-muted-foreground">
@@ -179,13 +195,13 @@ function AdminMotoristas() {
                         driver={d}
                         busy={busyId === d.id}
                         onDetails={() => setDetail(d)}
-                        onApprove={() => updateStatus(d, "approved")}
+                        onApprove={() => updateStatus(d, "aprovado")}
                         onReject={() => {
                           setRejectFor(d);
-                          setRejectReason(d.rejection_reason ?? "");
+                          setRejectReason(d.motivo_reprovacao ?? "");
                         }}
-                        onBlock={() => updateStatus(d, "blocked")}
-                        onReinstate={() => updateStatus(d, "pending_approval")}
+                        onBlock={() => updateStatus(d, "bloqueado")}
+                        onReinstate={() => updateStatus(d, "em_analise")}
                       />
                     ))
                   )}
@@ -193,6 +209,13 @@ function AdminMotoristas() {
               ))}
             </Tabs>
           )}
+
+          <DiagnosticsPanel
+            drivers={drivers ?? []}
+            counts={statusCounts}
+            adminEmail={adminEmail}
+            dbError={dbError}
+          />
         </div>
       </main>
 
@@ -219,7 +242,7 @@ function AdminMotoristas() {
             <Button
               variant="destructive"
               disabled={!rejectReason.trim() || busyId === rejectFor?.id}
-              onClick={() => rejectFor && updateStatus(rejectFor, "rejected", rejectReason.trim())}
+              onClick={() => rejectFor && updateStatus(rejectFor, "reprovado", rejectReason.trim())}
             >
               {busyId === rejectFor?.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Confirmar reprovação
@@ -269,9 +292,9 @@ function DriverCard({
             Veículo: {driver.vehicle_model} · Placa {driver.vehicle_plate} · {driver.vehicle_color} ·{" "}
             {driver.vehicle_year}
           </p>
-          {driver.approval_status === "rejected" && driver.rejection_reason && (
+          {driver.approval_status === "reprovado" && driver.motivo_reprovacao && (
             <p className="mt-2 rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">
-              Motivo: {driver.rejection_reason}
+              Motivo: {driver.motivo_reprovacao}
             </p>
           )}
         </div>
@@ -279,17 +302,17 @@ function DriverCard({
           <Button size="sm" variant="outline" onClick={onDetails}>
             <Eye className="mr-1 h-4 w-4" /> Detalhes
           </Button>
-          {driver.approval_status !== "approved" && (
+          {driver.approval_status !== "aprovado" && (
             <Button size="sm" onClick={onApprove} disabled={busy}>
               <CheckCircle2 className="mr-1 h-4 w-4" /> Aprovar
             </Button>
           )}
-          {driver.approval_status !== "rejected" && (
+          {driver.approval_status !== "reprovado" && (
             <Button size="sm" variant="destructive" onClick={onReject} disabled={busy}>
               <XCircle className="mr-1 h-4 w-4" /> Reprovar
             </Button>
           )}
-          {driver.approval_status !== "blocked" ? (
+          {driver.approval_status !== "bloqueado" ? (
             <Button size="sm" variant="outline" onClick={onBlock} disabled={busy}>
               <ShieldAlert className="mr-1 h-4 w-4" /> Bloquear
             </Button>
@@ -377,8 +400,8 @@ function DetailsDialog({ driver, onClose }: { driver: Driver | null; onClose: ()
             <Row label="Cadastro em" value={fmtDate(driver.created_at)} />
             <Row label="Aprovado em" value={fmtDate(driver.approved_at)} />
             <Row label="Bloqueado em" value={fmtDate(driver.blocked_at)} />
-            {driver.rejection_reason && (
-              <Row label="Motivo reprovação" value={driver.rejection_reason} />
+            {driver.motivo_reprovacao && (
+              <Row label="Motivo reprovação" value={driver.motivo_reprovacao} />
             )}
           </Section>
         </div>
@@ -390,6 +413,56 @@ function DetailsDialog({ driver, onClose }: { driver: Driver | null; onClose: ()
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function DiagnosticsPanel({
+  drivers,
+  counts,
+  adminEmail,
+  dbError,
+}: {
+  drivers: Driver[];
+  counts: Record<Status, number>;
+  adminEmail: string;
+  dbError: string | null;
+}) {
+  return (
+    <section className="mt-6 rounded-2xl border border-dashed border-primary/30 bg-card/50 p-4 text-xs">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div>
+          <h2 className="font-semibold text-primary">Diagnóstico temporário — Motoristas</h2>
+          <p className="text-muted-foreground">Conexão real entre cadastro, app do motorista e admin.</p>
+        </div>
+        <Badge variant="outline">RLS ativo</Badge>
+      </div>
+      <div className="grid gap-3 md:grid-cols-2">
+        <div className="space-y-1 rounded-xl border border-border/60 bg-background/50 p-3">
+          <DiagRow label="Tabela usada" value="public.drivers" />
+          <DiagRow label="Campo de status" value="approval_status" />
+          <DiagRow label="Campo motivo" value="motivo_reprovacao" />
+          <DiagRow label="Total encontrado" value={String(drivers.length)} />
+          <DiagRow label="Admin logado" value={adminEmail} />
+          <DiagRow label="Erro do banco" value={dbError ?? "Nenhum erro retornado"} />
+        </div>
+        <div className="space-y-1 rounded-xl border border-border/60 bg-background/50 p-3">
+          <DiagRow label="em_analise" value={String(counts.em_analise)} />
+          <DiagRow label="aprovado" value={String(counts.aprovado)} />
+          <DiagRow label="reprovado" value={String(counts.reprovado)} />
+          <DiagRow label="bloqueado" value={String(counts.bloqueado)} />
+          <DiagRow label="Permissões/RLS" value="Admin lê/atualiza via role admin; motorista lê/edita o próprio registro; passageiro só vê motorista aprovado e online." />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function DiagRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between gap-3 border-b border-border/30 py-1 last:border-b-0">
+      <span className="shrink-0 text-muted-foreground">{label}</span>
+      <span className="text-right font-medium">{value}</span>
+    </div>
   );
 }
 

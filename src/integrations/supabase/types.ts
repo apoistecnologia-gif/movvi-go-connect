@@ -55,10 +55,10 @@ export type Database = {
           id: string
           is_online: boolean
           last_location_at: string | null
+          motivo_reprovacao: string | null
           name: string
           phone: string
           rating: number
-          rejection_reason: string | null
           selfie_url: string | null
           state: string
           subscription_status: Database["public"]["Enums"]["driver_subscription_status"]
@@ -86,10 +86,10 @@ export type Database = {
           id?: string
           is_online?: boolean
           last_location_at?: string | null
+          motivo_reprovacao?: string | null
           name: string
           phone: string
           rating?: number
-          rejection_reason?: string | null
           selfie_url?: string | null
           state: string
           subscription_status?: Database["public"]["Enums"]["driver_subscription_status"]
@@ -117,10 +117,10 @@ export type Database = {
           id?: string
           is_online?: boolean
           last_location_at?: string | null
+          motivo_reprovacao?: string | null
           name?: string
           phone?: string
           rating?: number
-          rejection_reason?: string | null
           selfie_url?: string | null
           state?: string
           subscription_status?: Database["public"]["Enums"]["driver_subscription_status"]
@@ -451,10 +451,10 @@ export type Database = {
     Enums: {
       app_role: "passenger" | "driver" | "admin"
       driver_approval_status:
-        | "pending_approval"
-        | "approved"
-        | "rejected"
-        | "blocked"
+        | "em_analise"
+        | "aprovado"
+        | "reprovado"
+        | "bloqueado"
       driver_subscription_status: "active" | "inactive" | "overdue"
       payment_status: "pending" | "paid" | "failed" | "refunded"
       ride_category: "carros" | "motos" | "fretes" | "guincho" | "envios"
@@ -596,10 +596,10 @@ export const Constants = {
     Enums: {
       app_role: ["passenger", "driver", "admin"],
       driver_approval_status: [
-        "pending_approval",
-        "approved",
-        "rejected",
-        "blocked",
+        "em_analise",
+        "aprovado",
+        "reprovado",
+        "bloqueado",
       ],
       driver_subscription_status: ["active", "inactive", "overdue"],
       payment_status: ["pending", "paid", "failed", "refunded"],

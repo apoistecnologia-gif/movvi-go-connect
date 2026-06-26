@@ -33,7 +33,7 @@ function DriverLoginPage() {
       .eq("user_id", data.user.id)
       .maybeSingle();
 
-    if (driver?.approval_status === "approved") {
+    if (driver?.approval_status === "aprovado") {
       navigate({ to: "/motorista/app" });
     } else {
       navigate({ to: "/motorista/status" });
