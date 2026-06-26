@@ -393,7 +393,8 @@ type Recent = { label: string; secondary?: string; placeId: string };
 function PassageiroApp() {
   const navigate = useNavigate();
   const callComputeRoute = useServerFn(computeRoute);
-  const callRequestRide = useServerFn(requestRide);
+  const callRequestRide = useServerFn(criarCorrida);
+  const callCancelByPassenger = useServerFn(cancelarPeloPassageiro);
   const callReverseGeocode = useServerFn(reverseGeocode);
 
   const [userId, setUserId] = useState<string | null>(null);
