@@ -179,14 +179,16 @@ function PassageiroApp() {
     try {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          console.log("Localização obtida:", pos.coords);
           const lat = pos.coords.latitude;
           const lng = pos.coords.longitude;
-          if (!isBrazilCoordinate(lat, lng)) {
-            console.warn("[MOVVI] GPS fora do Brasil — ignorando", { lat, lng });
+          console.log("Latitude recebida:", lat);
+          console.log("Longitude recebida:", lng);
+          const ok = isBrazilCoordinate(lat, lng);
+          console.log("É Brasil?", ok);
+          if (!ok) {
             setGpsState("denied");
             setGpsErrorMsg(
-              "Sua localização parece estar fora do Brasil. Use a localização manual para continuar.",
+              `Sua localização parece estar fora do Brasil (lat ${lat.toFixed(4)}, lng ${lng.toFixed(4)}). Use a localização manual para continuar.`,
             );
             return;
           }
