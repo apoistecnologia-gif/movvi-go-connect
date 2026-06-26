@@ -1236,12 +1236,16 @@ function GpsDeniedScreen({
   onManual,
   errorMessage,
   requesting,
+  isDev,
+  onUseTestLocation,
 }: {
   onRetry: () => void;
   onHome: () => void;
   onManual: (p: LatLng) => void;
   errorMessage: string;
   requesting: boolean;
+  isDev: boolean;
+  onUseTestLocation: () => void;
 }) {
   const [manualOpen, setManualOpen] = useState(true);
   const [query, setQuery] = useState("");
