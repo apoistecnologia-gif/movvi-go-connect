@@ -412,20 +412,32 @@ function PassageiroApp() {
       return;
     lastGeocodedRef.current = position;
     let active = true;
-    setGeoLoading(true);
+    setAddressStatus("loading");
+    console.log("[MOVVI] Reverse geocoding iniciado");
+    // Timeout de segurança: nunca deixar o cartão preso em "Obtendo localização...".
+    const timeoutId = window.setTimeout(() => {
+      if (!active) return;
+      console.warn("[MOVVI] Timeout de localização aplicado");
+      setAddressStatus((s) => (s === "loading" ? "failed" : s));
+    }, 8000);
     callReverseGeocode({ data: { lat: position.lat, lng: position.lng } })
       .then((r) => {
         if (!active) return;
+        console.log("[MOVVI] Reverse geocoding concluído");
         setGeo(r);
+        setAddressStatus("resolved");
       })
-      .catch(() => {
-        if (active) setGeo(null);
+      .catch((e) => {
+        if (!active) return;
+        console.error("[MOVVI] Reverse geocoding falhou", e);
+        setAddressStatus("failed");
       })
       .finally(() => {
-        if (active) setGeoLoading(false);
+        window.clearTimeout(timeoutId);
       });
     return () => {
       active = false;
+      window.clearTimeout(timeoutId);
     };
   }, [position, callReverseGeocode]);
 
