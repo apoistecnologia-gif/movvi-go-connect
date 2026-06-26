@@ -70,10 +70,13 @@ function haversineKm(a: LatLng, b: LatLng) {
 
 function MotoristaApp() {
   const navigate = useNavigate();
-  const callAccept = useServerFn(acceptRide);
-  const callReject = useServerFn(rejectRide);
-  const callPhase  = useServerFn(updateRidePhase);
-  const callRoute  = useServerFn(computeRoute);
+  const callAccept   = useServerFn(aceitarCorrida);
+  const callReject   = useServerFn(recusarCorrida);
+  const callArrive   = useServerFn(informarChegada);
+  const callStart    = useServerFn(iniciarCorrida);
+  const callComplete = useServerFn(finalizarCorrida);
+  const callCancel   = useServerFn(cancelarPeloMotorista);
+  const callRoute    = useServerFn(computeRoute);
 
   const [userId, setUserId] = useState<string | null>(null);
   const [driverName, setDriverName] = useState<string>("");
