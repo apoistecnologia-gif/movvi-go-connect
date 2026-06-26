@@ -1021,6 +1021,10 @@ function SheetContent({
   driversCount,
   onSubmit,
   searchInputRef,
+  gpsFailed,
+  gpsErrorMsg,
+  gpsRequesting,
+  onRetryGps,
 }: {
   geo: GeocodeResult | null;
   geoLoading: boolean;
