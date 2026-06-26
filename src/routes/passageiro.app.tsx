@@ -983,7 +983,7 @@ function PassageiroApp() {
     try {
       const km = route.distanceMeters / 1000;
       const min = route.durationSeconds / 60;
-      const fare = estimateFare(category, km, min);
+      const fare = estimateFare(category, km, min, tariffs);
       // Texto da origem — apenas para exibição. As coordenadas reais é que
       // vão para o cálculo/rastreio. Se o Google não tiver nome, usamos as
       // coordenadas como rótulo.
