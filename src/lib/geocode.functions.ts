@@ -158,5 +158,22 @@ export const reverseGeocode = createServerFn({ method: "POST" })
 
     const approximate = !friendly && !!region;
 
-    return { address, friendly, region, approximate, components };
+    // ROOFTOP é o único nível considerado endereço exato no Brasil.
+    // RANGE_INTERPOLATED interpola entre números → não confiável para zona rural.
+    // GEOMETRIC_CENTER/APPROXIMATE são área/poligono → nunca apresentar como rua exata.
+    const precision: "exact" | "approximate" =
+      locationType === "ROOFTOP" && !partialMatch ? "exact" : "approximate";
+
+    return {
+      address,
+      friendly,
+      region,
+      approximate,
+      precision,
+      locationType,
+      partialMatch,
+      plusCode,
+      types: topTypes,
+      components,
+    };
   });
