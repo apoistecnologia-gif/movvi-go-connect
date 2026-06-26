@@ -69,14 +69,19 @@ export function BottomNav({ items, floating = false }: BottomNavProps) {
             <li key={item.to} className="flex-1">
               <Link
                 to={item.to}
-                className={`flex flex-col items-center gap-0.5 rounded-xl px-1 py-1.5 text-[10px] font-medium transition ${
+                className={`relative flex flex-col items-center gap-0.5 rounded-xl px-1 py-1.5 text-[10px] font-medium transition-all duration-300 ease-out ${
                   active
-                    ? "text-primary"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "text-primary scale-105"
+                    : "text-muted-foreground hover:text-foreground active:scale-95"
                 }`}
               >
+                {active && (
+                  <span className="absolute -top-0.5 h-0.5 w-6 rounded-full bg-primary shadow-[0_0_8px_rgba(141,217,43,0.7)] animate-in fade-in slide-in-from-top-1 duration-300" />
+                )}
                 <Icon
-                  className={`h-[18px] w-[18px] ${active ? "drop-shadow-[0_0_8px_rgba(141,217,43,0.45)]" : ""}`}
+                  className={`h-[18px] w-[18px] transition-transform duration-300 ${
+                    active ? "drop-shadow-[0_0_8px_rgba(141,217,43,0.55)] scale-110" : ""
+                  }`}
                 />
                 <span className="leading-none">{item.label}</span>
               </Link>
