@@ -1740,7 +1740,7 @@ function GpsDeniedScreen({
           </ul>
           {query.trim().length >= 2 && !searching && mapsReady && items.length === 0 && (
             <p className="mt-2 text-xs text-muted-foreground">
-              Continue digitando ou tente incluir cidade e estado, como “Petrolina PE”.
+              Continue digitando seu endereço e selecione uma sugestão da lista.
             </p>
           )}
           {manualError && <p className="mt-3 text-xs text-destructive">{manualError}</p>}
