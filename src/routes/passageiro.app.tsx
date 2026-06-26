@@ -1339,6 +1339,7 @@ function PassageiroApp() {
             gpsErrorMsg={gpsErrorMsg}
             gpsRequesting={gpsState === "requesting"}
             onRetryGps={requestGps}
+            onExpandSheet={(p) => sheetRef.current?.snapTo(p)}
           />
         </MovviSheet>
       )}
