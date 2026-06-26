@@ -1073,7 +1073,7 @@ function SheetContent({
             </>
           ) : (
             <div className="mt-0.5 truncate text-[12px] font-semibold leading-tight text-foreground">
-              {hasPosition ? "Localização detectada" : "Detectando localização..."}
+              {hasPosition ? "Aguardando localização..." : "Localização indisponível"}
             </div>
           )}
         </div>
