@@ -30,6 +30,9 @@ export type GeocodeResult = {
   partialMatch: boolean;
   plusCode?: string;     // global_code do plus_code, se houver
   types: string[];       // types do primeiro resultado
+  /** Coordenadas retornadas pelo Google (geometry.location) — usadas para medir distância do GPS. */
+  geocodedLat?: number;
+  geocodedLng?: number;
   components: GeocodeComponents;
 };
 
