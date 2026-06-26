@@ -37,7 +37,7 @@ import {
   isBrazilCoordinate,
   purgeForeignMapCache,
 } from "@/lib/googleMaps";
-import { isDevelopmentEnvironment, isDevEnvironment } from "@/lib/environment";
+import { isDevelopmentEnvironment } from "@/lib/environment";
 
 import { computeRoute, type RouteResult } from "@/lib/routes.functions";
 import { reverseGeocode, type GeocodeResult } from "@/lib/geocode.functions";
@@ -506,12 +506,11 @@ function PassageiroApp() {
             setGpsState("unavailable");
             gpsStateRef.current = "unavailable";
             setGpsErrorMsg(
-              isDevEnvironment()
-                ? "Ambiente de teste detectado. Informe sua localização manualmente."
-                : "A localização recebida está fora do Brasil. Informe sua localização manualmente.",
+              "Não conseguimos acessar sua localização automaticamente. Digite sua origem manualmente.",
             );
             return;
           }
+
           setPosition({ lat, lng });
           setGpsAccuracy(pos.coords.accuracy ?? null);
           setGpsState("granted");
@@ -596,7 +595,6 @@ function PassageiroApp() {
   useEffect(() => {
     purgeForeignMapCache();
     let cancelled = false;
-    const previewLikeEnvironment = isDevEnvironment();
 
     if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
       setPermissionStatus("unsupported");
@@ -622,23 +620,14 @@ function PassageiroApp() {
         const apply = (s: PermissionState) => {
           if (s === "granted") {
             setPermissionStatus("granted");
-            // Já liberado — em produção podemos obter o GPS imediatamente.
-            // Em preview/iframe/dev, alguns navegadores retornam coordenadas simuladas
-            // sem interação do usuário; por isso exigimos o clique explícito no botão.
-            if (previewLikeEnvironment && !gpsRequestInFlightRef.current) {
-              setPermissionStatus("prompt");
-              setGpsState("idle");
-              gpsStateRef.current = "idle";
-              setGpsErrorMsg("");
-              return;
-            }
+            // Permissão já concedida em qualquer ambiente (inclusive preview):
+            // tentamos obter o GPS real imediatamente. Se vier coordenada inválida
+            // (fora do Brasil) o próprio requestGps cai para o fluxo manual.
             requestGps();
           } else if (s === "denied") {
             setPermissionStatus("denied");
             setGpsState("denied");
-            setGpsErrorMsg(
-              "Permissão de localização negada.",
-            );
+            setGpsErrorMsg("Permissão de localização negada.");
           } else {
             setPermissionStatus("prompt");
           }
@@ -656,6 +645,7 @@ function PassageiroApp() {
       if (statusRef) statusRef.onchange = null;
     };
   }, [requestGps]);
+
 
   /* ---------------------- autocomplete (Places API New) ---------------------- */
   useEffect(() => {
@@ -976,9 +966,9 @@ function PassageiroApp() {
         onManual={setManualLocation}
         errorMessage={gpsErrorMsg}
         requesting={gpsState === "requesting"}
-        devMode={isDevelopmentEnvironment()}
       />
     );
+
   }
   const gpsFailed = (gpsState === "denied" || gpsState === "unavailable") && !!gpsErrorMsg;
 
@@ -1812,7 +1802,6 @@ function GpsDeniedScreen({
   onManual,
   errorMessage,
   requesting,
-  devMode = false,
 }: {
   mode?: "prompt" | "denied";
   onRetry: () => void;
@@ -1820,28 +1809,21 @@ function GpsDeniedScreen({
   onManual: (p: LatLng) => void;
   errorMessage: string;
   requesting: boolean;
-  devMode?: boolean;
 }) {
   const isPrompt = mode === "prompt";
-  const title = devMode
-    ? "Modo Desenvolvedor"
-    : isPrompt
+  const title = isPrompt
     ? "Ative sua localização"
-    : "Não foi possível obter sua localização.";
-  const description = devMode
-    ? "No Preview, a localização real pode ser simulada. Use uma origem de teste para continuar."
-    : isPrompt
+    : "Não foi possível obter sua localização";
+  const description = isPrompt
     ? "A MOVVI precisa da sua localização para encontrar motoristas próximos e calcular sua corrida."
     : errorMessage ||
-      "Você pode continuar utilizando a MOVVI informando sua localização manualmente.";
-  const primaryLabel = devMode
-    ? "USAR ORIGEM DE TESTE"
-    : requesting
+      "Não conseguimos acessar sua localização automaticamente. Digite sua origem manualmente.";
+  const primaryLabel = requesting
     ? "Solicitando..."
     : isPrompt
-    ? "PERMITIR LOCALIZAÇÃO"
-    : "TENTAR NOVAMENTE";
-  const [manualOpen, setManualOpen] = useState(!isPrompt || devMode);
+    ? "Permitir acesso à minha localização"
+    : "Tentar novamente";
+  const [manualOpen, setManualOpen] = useState(!isPrompt);
   const [query, setQuery] = useState("");
   const [items, setItems] = useState<{ placeId: string; primary: string; secondary: string }[]>([]);
   const [searching, setSearching] = useState(false);
@@ -1894,7 +1876,7 @@ function GpsDeniedScreen({
         );
       } catch (e) {
         console.error("Erro no autocomplete manual:", e);
-        setManualError("Não foi possível buscar endereços agora. Tente novamente em alguns segundos.");
+        setManualError("Falha temporária na busca de endereços. Tente novamente em alguns segundos.");
       } finally {
         setSearching(false);
       }
@@ -1932,6 +1914,8 @@ function GpsDeniedScreen({
     setManualError("Digite um endereço no Brasil e selecione uma opção da lista.");
   }
 
+  const showDevBadge = isDevelopmentEnvironment();
+
   return (
     <div className="relative flex min-h-[100dvh] flex-col items-center justify-center bg-background px-6 text-center text-foreground">
       <div className="absolute left-4 top-4 flex items-center gap-2">
@@ -1941,13 +1925,13 @@ function GpsDeniedScreen({
         >
           ← Início
         </button>
-        {devMode && (
+        {showDevBadge && (
           <a
             href="/dev-diagnostics"
             className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-amber-400 ring-1 ring-amber-500/40"
             title="Ambiente de desenvolvimento — abrir diagnóstico"
           >
-            🧪 Modo Desenvolvedor
+            🧪 Diagnóstico
           </a>
         )}
       </div>
@@ -1956,10 +1940,9 @@ function GpsDeniedScreen({
       </div>
       <h1 className="font-display text-2xl font-bold">{title}</h1>
       <p className="mt-2 max-w-sm text-sm text-muted-foreground">{description}</p>
-      {devMode && isPrompt && (
-        <p className="mt-3 max-w-sm rounded-xl bg-amber-500/10 px-3 py-2 text-[12px] text-amber-300 ring-1 ring-amber-500/30">
-          Ambiente de preview detectado. Em produção o GPS real do dispositivo é usado automaticamente após a permissão.
-          Aqui você pode definir uma origem de teste manualmente.
+      {mapsLoadError && (
+        <p className="mt-3 max-w-sm rounded-xl bg-destructive/10 px-3 py-2 text-[12px] text-destructive ring-1 ring-destructive/30">
+          Falha temporária ao carregar o mapa. Verifique sua conexão e toque em tentar novamente.
         </p>
       )}
 
@@ -1968,31 +1951,25 @@ function GpsDeniedScreen({
           type="button"
           onClick={() => {
             console.log("[MOVVI] Clique em", primaryLabel);
-            if (devMode) {
-              setManualOpen(true);
-              return;
-            }
             onRetry();
           }}
-          disabled={!devMode && requesting}
+          disabled={requesting}
           className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-4 text-sm font-bold text-primary-foreground shadow-xl shadow-primary/30 active:scale-95 disabled:opacity-60"
         >
-          {devMode ? <Search className="h-4 w-4" /> : <Crosshair className="h-4 w-4" />}
+          <Crosshair className="h-4 w-4" />
           {primaryLabel}
         </button>
 
-
-        {!devMode && (
-          <button
-            type="button"
-            onClick={() => setManualOpen((v) => !v)}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-card px-6 py-4 text-sm font-semibold text-foreground ring-1 ring-border active:scale-95"
-          >
-            <Search className="h-4 w-4" /> INFORMAR LOCALIZAÇÃO MANUAL
-          </button>
-        )}
-
+        <button
+          type="button"
+          onClick={() => setManualOpen((v) => !v)}
+          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-card px-6 py-4 text-sm font-semibold text-foreground ring-1 ring-border active:scale-95"
+        >
+          <Search className="h-4 w-4" /> Digitar origem manualmente
+        </button>
       </div>
+
+
 
       {manualOpen && (
         <div className="mt-4 w-full max-w-sm rounded-2xl bg-card p-4 ring-1 ring-border text-left">
