@@ -1752,6 +1752,7 @@ function StepFlow({
   selectedFare,
   onClearDestination,
   onSubmit,
+  onExpandSheet,
 }: StepFlowProps) {
   // 1 = aguardando rota, 2 = resumo (tempo/dist/valor), 3 = categorias, 4 = confirmação
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
@@ -1759,6 +1760,12 @@ function StepFlow({
   useEffect(() => {
     if (route && step === 1) setStep(2);
   }, [route, step]);
+
+  // Sempre que entrar no passo de categorias ou confirmação, expandir o sheet
+  // — sem isso as categorias ficam abaixo da área visível em telas pequenas.
+  useEffect(() => {
+    if (step === 3 || step === 4) onExpandSheet(70);
+  }, [step, onExpandSheet]);
 
   // Preço de prévia (categoria padrão = carro) para a Etapa 2
   const previewFare = route
