@@ -27,7 +27,14 @@ import {
 } from "@/lib/googleMaps";
 import { useDriverBroadcast } from "@/hooks/useDriverBroadcast";
 import { computeRoute } from "@/lib/routes.functions";
-import { acceptRide, rejectRide, updateRidePhase } from "@/lib/ride.functions";
+import {
+  aceitarCorrida,
+  recusarCorrida,
+  informarChegada,
+  iniciarCorrida,
+  finalizarCorrida,
+  cancelarPeloMotorista,
+} from "@/lib/rideLifecycle";
 import { formatBRL } from "@/lib/rideCategories";
 import type { Database } from "@/integrations/supabase/types";
 
