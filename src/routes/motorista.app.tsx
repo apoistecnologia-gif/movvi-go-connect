@@ -166,30 +166,51 @@ function MotoristaApp() {
   // realtime: ofertas + corrida ativa
   useEffect(() => {
     if (!userId) return;
+
+    const presentOffer = (r: RideRow) => {
+      if (r.status !== "procurar_motorista") return;
+      if (active || incoming || ratingRide) return;
+      setIncoming(r); setCountdown(15);
+      if (navigator.vibrate) navigator.vibrate([280, 120, 280, 120, 280]);
+    };
+
+    const applyActive = (r: RideRow) => {
+      if (r.status === "finalizada") {
+        setActive(null); setPolyline([]); setRatingRide(r); setStars(5); setRatingComment("");
+        loadTodayStats(userId);
+      } else if (r.status === "cancelada_passageiro" || r.status === "cancelada_motorista") {
+        setActive(null); setPolyline([]);
+      } else {
+        setActive(r);
+      }
+    };
+
     const ch = supabase.channel(`driver-rides-${userId}`)
       .on("postgres_changes",
         { event: "UPDATE", schema: "public", table: "rides", filter: `current_offer_driver_id=eq.${userId}` },
-        (p) => {
-          const r = p.new as RideRow;
-          if (r.status === "procurar_motorista" && !active && !incoming && !ratingRide) {
-            setIncoming(r); setCountdown(15);
-            if (navigator.vibrate) navigator.vibrate([280, 120, 280, 120, 280]);
-          }
-        })
+        (p) => presentOffer(p.new as RideRow))
       .on("postgres_changes",
         { event: "UPDATE", schema: "public", table: "rides", filter: `driver_id=eq.${userId}` },
-        (p) => {
-          const r = p.new as RideRow;
-          if (r.status === "finalizada") {
-            setActive(null); setPolyline([]); setRatingRide(r); setStars(5); setRatingComment("");
-            if (userId) loadTodayStats(userId);
-          } else if ((r.status === "cancelada_passageiro" || r.status === "cancelada_motorista")) {
-            setActive(null); setPolyline([]);
-          } else {
-            setActive(r);
-          }
-        })
-      .subscribe();
+        (p) => applyActive(p.new as RideRow))
+      .subscribe(async (status) => {
+        if (status !== "SUBSCRIBED") return;
+        // pega oferta pendente que o realtime não entregou (driver acabou de entrar)
+        const pending = await supabase
+          .from("rides").select("*")
+          .eq("current_offer_driver_id", userId)
+          .eq("status", "procurar_motorista")
+          .order("created_at", { ascending: false })
+          .limit(1).maybeSingle();
+        if (pending.data) presentOffer(pending.data as RideRow);
+        // recupera corrida ativa em andamento
+        const ongoing = await supabase
+          .from("rides").select("*")
+          .eq("driver_id", userId)
+          .in("status", ["motorista_a_caminho", "motorista_chegou", "em_viagem"])
+          .order("created_at", { ascending: false })
+          .limit(1).maybeSingle();
+        if (ongoing.data) applyActive(ongoing.data as RideRow);
+      });
     return () => { supabase.removeChannel(ch); };
   }, [userId, active, incoming, ratingRide, loadTodayStats]);
 
