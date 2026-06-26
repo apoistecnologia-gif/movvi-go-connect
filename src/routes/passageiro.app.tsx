@@ -981,9 +981,20 @@ function PassageiroApp() {
 
 
 
+  const inPreview = isDevelopmentEnvironment();
   return (
     <div className="relative h-[100dvh] w-screen overflow-hidden bg-background text-foreground">
+      {inPreview && (
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 z-50 flex justify-center px-3 pt-[max(env(safe-area-inset-top),0px)]"
+        >
+          <div className="pointer-events-auto mt-2 max-w-[92%] rounded-full bg-amber-500/15 px-3 py-1.5 text-center text-[11px] font-medium text-amber-300 ring-1 ring-amber-500/30 backdrop-blur">
+            Ambiente de teste detectado. A localização real pode não funcionar aqui.
+          </div>
+        </div>
+      )}
       {/* MAPA — sempre presente, ~70% da tela */}
+
       <div className="absolute inset-0">
         <MovviMap
           center={center}
@@ -1947,11 +1958,17 @@ function GpsDeniedScreen({
       </div>
       <h1 className="font-display text-2xl font-bold">{title}</h1>
       <p className="mt-2 max-w-sm text-sm text-muted-foreground">{description}</p>
+      {showDevBadge && (
+        <p className="mt-3 max-w-sm rounded-xl bg-amber-500/10 px-3 py-2 text-[12px] text-amber-300 ring-1 ring-amber-500/30">
+          Ambiente de teste detectado. A localização real pode não funcionar corretamente aqui — use a busca manual abaixo.
+        </p>
+      )}
       {mapsLoadError && (
         <p className="mt-3 max-w-sm rounded-xl bg-destructive/10 px-3 py-2 text-[12px] text-destructive ring-1 ring-destructive/30">
           Falha temporária ao carregar o mapa. Verifique sua conexão e toque em tentar novamente.
         </p>
       )}
+
 
       <div className="mt-6 flex w-full max-w-sm flex-col gap-3">
         <button
