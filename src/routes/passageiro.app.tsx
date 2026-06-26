@@ -74,7 +74,7 @@ function PremiumTopBar({
   onLogout,
 }: {
   userName: string;
-  gpsState: "idle" | "requesting" | "granted" | "unavailable";
+  gpsState: "idle" | "requesting" | "granted" | "denied" | "unavailable";
   drivers: number;
   searching: boolean;
   onLogout: () => void;
