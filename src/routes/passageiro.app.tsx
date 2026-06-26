@@ -91,6 +91,7 @@ function PassageiroApp() {
   const [gpsState, setGpsState] = useState<
     "idle" | "requesting" | "granted" | "denied" | "unavailable"
   >("idle");
+  const [gpsErrorMsg, setGpsErrorMsg] = useState<string>("");
 
   const [destinationText, setDestinationText] = useState("");
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
@@ -160,38 +161,86 @@ function PassageiroApp() {
 
   /* ---------------------- GPS ---------------------- */
   const requestGps = useCallback(() => {
+    console.log("Solicitando localização...");
+    if (typeof window !== "undefined" && !window.isSecureContext) {
+      setGpsState("unavailable");
+      setGpsErrorMsg(
+        "Geolocalização requer HTTPS. Abra o app em uma conexão segura ou use a localização manual.",
+      );
+      return;
+    }
     if (!("geolocation" in navigator)) {
       setGpsState("unavailable");
+      setGpsErrorMsg("Seu navegador não oferece geolocalização. Use a localização manual.");
       return;
     }
     setGpsState("requesting");
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-        if (!isBrazilCoordinate(lat, lng)) {
-          console.warn("[MOVVI] GPS fora do Brasil — ignorando", { lat, lng });
+    setGpsErrorMsg("");
+    try {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          console.log("Localização obtida:", pos.coords);
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          if (!isBrazilCoordinate(lat, lng)) {
+            console.warn("[MOVVI] GPS fora do Brasil — ignorando", { lat, lng });
+            setGpsState("denied");
+            setGpsErrorMsg(
+              "Sua localização parece estar fora do Brasil. Use a localização manual para continuar.",
+            );
+            return;
+          }
+          setPosition({ lat, lng });
+          setGpsState("granted");
+          setGpsErrorMsg("");
+          navigator.geolocation.watchPosition(
+            (p) => {
+              const la = p.coords.latitude;
+              const ln = p.coords.longitude;
+              if (isBrazilCoordinate(la, ln)) setPosition({ lat: la, lng: ln });
+            },
+            () => undefined,
+            { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 },
+          );
+        },
+        (err) => {
+          console.error("Erro ao obter localização:", err);
           setGpsState("denied");
-          return;
-        }
-        setPosition({ lat, lng });
-        setGpsState("granted");
-        navigator.geolocation.watchPosition(
-          (p) => {
-            const la = p.coords.latitude;
-            const ln = p.coords.longitude;
-            if (isBrazilCoordinate(la, ln)) setPosition({ lat: la, lng: ln });
-          },
-          () => undefined,
-          { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 },
-        );
-      },
-      (err) => {
-        if (err.code === err.PERMISSION_DENIED) setGpsState("denied");
-        else setGpsState("denied");
-      },
-      { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 },
-    );
+          if (err.code === err.PERMISSION_DENIED) {
+            setGpsErrorMsg(
+              "Permissão de localização negada. Clique no cadeado ao lado do endereço do site e permita o acesso, ou use a localização manual.",
+            );
+          } else if (err.code === err.POSITION_UNAVAILABLE) {
+            setGpsErrorMsg(
+              "Não conseguimos detectar sua posição. Verifique se o GPS está ativo ou use a localização manual.",
+            );
+          } else if (err.code === err.TIMEOUT) {
+            setGpsErrorMsg(
+              "Tempo esgotado ao tentar obter sua localização. Tente novamente ou use a localização manual.",
+            );
+          } else {
+            setGpsErrorMsg(
+              "Não foi possível obter sua localização. Use a localização manual para continuar.",
+            );
+          }
+        },
+        { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 },
+      );
+    } catch (e) {
+      console.error("Erro ao iniciar solicitação de localização:", e);
+      setGpsState("unavailable");
+      setGpsErrorMsg(
+        "A geolocalização foi bloqueada neste ambiente (ex: pré-visualização em iframe). Use a localização manual.",
+      );
+    }
+  }, []);
+
+  const setManualLocation = useCallback((p: LatLng) => {
+    if (!isBrazilCoordinate(p.lat, p.lng)) return;
+    console.log("Localização manual definida:", p);
+    setPosition(p);
+    setGpsState("granted");
+    setGpsErrorMsg("");
   }, []);
 
   useEffect(() => {
@@ -429,7 +478,15 @@ function PassageiroApp() {
 
   /* ---------------------- GPS denied screen ---------------------- */
   if (gpsState === "denied" || gpsState === "unavailable") {
-    return <GpsDeniedScreen onRetry={requestGps} onHome={() => navigate({ to: "/" })} />;
+    return (
+      <GpsDeniedScreen
+        onRetry={requestGps}
+        onHome={() => navigate({ to: "/" })}
+        onManual={setManualLocation}
+        errorMessage={gpsErrorMsg}
+        requesting={false}
+      />
+    );
   }
 
   return (
@@ -1097,10 +1154,74 @@ function Action({
 function GpsDeniedScreen({
   onRetry,
   onHome,
+  onManual,
+  errorMessage,
+  requesting,
 }: {
   onRetry: () => void;
   onHome: () => void;
+  onManual: (p: LatLng) => void;
+  errorMessage: string;
+  requesting: boolean;
 }) {
+  const [manualOpen, setManualOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [items, setItems] = useState<{ placeId: string; primary: string; secondary: string }[]>([]);
+  const [searching, setSearching] = useState(false);
+  const debounceRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (debounceRef.current) window.clearTimeout(debounceRef.current);
+    const q = query.trim();
+    if (q.length < 2) {
+      setItems([]);
+      return;
+    }
+    debounceRef.current = window.setTimeout(async () => {
+      try {
+        setSearching(true);
+        const { AutocompleteSuggestion, AutocompleteSessionToken } =
+          (await google.maps.importLibrary("places")) as google.maps.PlacesLibrary;
+        const sessionToken = new AutocompleteSessionToken();
+        const { suggestions } = await AutocompleteSuggestion.fetchAutocompleteSuggestions({
+          input: q,
+          sessionToken,
+          includedRegionCodes: ["br"],
+          language: "pt-BR",
+          region: "BR",
+        });
+        setItems(
+          suggestions
+            .map((s) => s.placePrediction)
+            .filter(Boolean)
+            .map((p) => ({
+              placeId: p!.placeId,
+              primary: p!.mainText?.text ?? p!.text?.text ?? "",
+              secondary: p!.secondaryText?.text ?? "",
+            })),
+        );
+      } catch (e) {
+        console.error("Erro no autocomplete manual:", e);
+      } finally {
+        setSearching(false);
+      }
+    }, 250);
+  }, [query]);
+
+  async function choose(placeId: string, label: string) {
+    try {
+      const { Place } = (await google.maps.importLibrary("places")) as google.maps.PlacesLibrary;
+      const place = new Place({ id: placeId });
+      await place.fetchFields({ fields: ["location"] });
+      const loc = place.location;
+      if (!loc) throw new Error("Sem coordenadas");
+      onManual({ lat: loc.lat(), lng: loc.lng() });
+      console.log("Manual selecionado:", label, loc.lat(), loc.lng());
+    } catch (e) {
+      console.error("Erro ao obter coordenadas do lugar:", e);
+    }
+  }
+
   return (
     <div className="relative flex min-h-[100dvh] flex-col items-center justify-center bg-background px-6 text-center text-foreground">
       <div className="absolute left-4 top-4">
@@ -1118,15 +1239,64 @@ function GpsDeniedScreen({
         Não foi possível obter sua localização.
       </h1>
       <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-        A MOVVI precisa do seu GPS para mostrar os motoristas próximos e calcular
-        sua corrida. Ative a permissão de localização do navegador e tente novamente.
+        {errorMessage ||
+          "A MOVVI precisa do seu GPS para mostrar motoristas próximos e calcular sua corrida."}
       </p>
-      <button
-        onClick={onRetry}
-        className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-primary px-6 py-4 text-sm font-bold text-primary-foreground shadow-xl shadow-primary/30 active:scale-95"
-      >
-        <Crosshair className="h-4 w-4" /> ATIVAR LOCALIZAÇÃO
-      </button>
+
+      <div className="mt-6 flex w-full max-w-sm flex-col gap-3">
+        <button
+          type="button"
+          onClick={() => {
+            console.log("Clique em ATIVAR LOCALIZAÇÃO");
+            onRetry();
+          }}
+          disabled={requesting}
+          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-4 text-sm font-bold text-primary-foreground shadow-xl shadow-primary/30 active:scale-95 disabled:opacity-60"
+        >
+          <Crosshair className="h-4 w-4" />
+          {requesting ? "Solicitando..." : "ATIVAR LOCALIZAÇÃO"}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setManualOpen((v) => !v)}
+          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-card px-6 py-4 text-sm font-semibold text-foreground ring-1 ring-border active:scale-95"
+        >
+          <Search className="h-4 w-4" /> USAR LOCALIZAÇÃO MANUAL
+        </button>
+      </div>
+
+      {manualOpen && (
+        <div className="mt-4 w-full max-w-sm rounded-2xl bg-card p-4 ring-1 ring-border text-left">
+          <label className="text-xs font-medium text-muted-foreground">
+            Digite cidade ou endereço
+          </label>
+          <input
+            autoFocus
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Ex: Petrolina PE"
+            className="mt-2 w-full rounded-xl bg-background px-3 py-3 text-sm outline-none ring-1 ring-border focus:ring-primary"
+          />
+          {searching && (
+            <p className="mt-2 text-xs text-muted-foreground">Buscando...</p>
+          )}
+          <ul className="mt-2 max-h-64 overflow-y-auto">
+            {items.map((it) => (
+              <li key={it.placeId}>
+                <button
+                  type="button"
+                  onClick={() => choose(it.placeId, `${it.primary} ${it.secondary}`)}
+                  className="flex w-full flex-col items-start gap-0.5 rounded-lg px-2 py-2 text-left hover:bg-background"
+                >
+                  <span className="text-sm font-medium">{it.primary}</span>
+                  <span className="text-xs text-muted-foreground">{it.secondary}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
