@@ -1332,6 +1332,7 @@ function PassageiroApp() {
             uiCategoryKey={uiCategoryKey}
             setUiCategoryKey={setUiCategoryKey}
             driversCount={drivers.length}
+            tariffs={tariffs}
             onSubmit={submitRide}
             searchInputRef={searchInputRef}
             gpsFailed={gpsFailed}
