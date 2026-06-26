@@ -1380,6 +1380,16 @@ function GpsDeniedScreen({
         >
           <Search className="h-4 w-4" /> USAR LOCALIZAÇÃO MANUAL
         </button>
+
+        {isDev && (
+          <button
+            type="button"
+            onClick={onUseTestLocation}
+            className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-amber-500/50 bg-amber-500/10 px-6 py-3 text-xs font-semibold text-amber-200 active:scale-95"
+          >
+            <Zap className="h-4 w-4" /> Usar localização de teste (Petrolina/PE)
+          </button>
+        )}
       </div>
 
       {manualOpen && (
