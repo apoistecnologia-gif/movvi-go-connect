@@ -317,7 +317,9 @@ function PassageiroApp() {
   const [position, setPosition] = useState<LatLng | null>(null);
   const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
   const [geo, setGeo] = useState<GeocodeResult | null>(null);
-  const [geoLoading, setGeoLoading] = useState(false);
+  const [addressStatus, setAddressStatus] = useState<
+    "idle" | "loading" | "resolved" | "failed"
+  >("idle");
   const [addressDetailsOpen, setAddressDetailsOpen] = useState(false);
   const [tick, setTick] = useState(0); // re-render para saudação dinâmica
   const [gpsState, setGpsState] = useState<
@@ -410,20 +412,32 @@ function PassageiroApp() {
       return;
     lastGeocodedRef.current = position;
     let active = true;
-    setGeoLoading(true);
+    setAddressStatus("loading");
+    console.log("[MOVVI] Reverse geocoding iniciado");
+    // Timeout de segurança: nunca deixar o cartão preso em "Obtendo localização...".
+    const timeoutId = window.setTimeout(() => {
+      if (!active) return;
+      console.warn("[MOVVI] Timeout de localização aplicado");
+      setAddressStatus((s) => (s === "loading" ? "failed" : s));
+    }, 8000);
     callReverseGeocode({ data: { lat: position.lat, lng: position.lng } })
       .then((r) => {
         if (!active) return;
+        console.log("[MOVVI] Reverse geocoding concluído");
         setGeo(r);
+        setAddressStatus("resolved");
       })
-      .catch(() => {
-        if (active) setGeo(null);
+      .catch((e) => {
+        if (!active) return;
+        console.error("[MOVVI] Reverse geocoding falhou", e);
+        setAddressStatus("failed");
       })
       .finally(() => {
-        if (active) setGeoLoading(false);
+        window.clearTimeout(timeoutId);
       });
     return () => {
       active = false;
+      window.clearTimeout(timeoutId);
     };
   }, [position, callReverseGeocode]);
 
@@ -487,6 +501,7 @@ function PassageiroApp() {
           setGpsAccuracy(pos.coords.accuracy ?? null);
           setGpsState("granted");
           setGpsErrorMsg("");
+          console.log("[MOVVI] GPS obtido", { lat, lng });
           // Evita múltiplos watchers acumulados em re-tentativas.
           if (watchIdRef.current != null) {
             navigator.geolocation.clearWatch(watchIdRef.current);
@@ -909,7 +924,7 @@ function PassageiroApp() {
         <MovviSheet ref={sheetRef} snaps={[30, 72, 92]} initial={30}>
           <SheetContent
             geo={geo}
-            geoLoading={geoLoading}
+            addressStatus={addressStatus}
             hasPosition={!!position}
             onOpenAddressDetails={() => setAddressDetailsOpen(true)}
             destination={destination}
@@ -1003,7 +1018,7 @@ function groupOf(uiKey: string): GroupKey {
 
 function SheetContent({
   geo,
-  geoLoading,
+  addressStatus,
   hasPosition,
   onOpenAddressDetails,
   destination,
@@ -1027,7 +1042,7 @@ function SheetContent({
   onRetryGps,
 }: {
   geo: GeocodeResult | null;
-  geoLoading: boolean;
+  addressStatus: "idle" | "loading" | "resolved" | "failed";
   hasPosition: boolean;
   onOpenAddressDetails: () => void;
   destination: { point: LatLng; label: string } | null;
@@ -1116,7 +1131,11 @@ function SheetContent({
             <div className="text-[9px] font-semibold uppercase tracking-widest text-primary leading-none">
               Você está em
             </div>
-            {primaryLine || region ? (
+            {addressStatus === "loading" && !primaryLine && !region ? (
+              <div className="mt-0.5 truncate text-[12px] font-medium leading-tight text-muted-foreground">
+                Obtendo localização...
+              </div>
+            ) : primaryLine || region ? (
               <>
                 {primaryLine && (
                   <div
@@ -1133,9 +1152,18 @@ function SheetContent({
                   <div className="truncate text-[11px] font-semibold text-foreground">{region}</div>
                 )}
               </>
+            ) : addressStatus === "failed" && hasPosition ? (
+              <>
+                <div className="mt-0.5 truncate text-[13px] font-medium leading-tight text-muted-foreground">
+                  Localização aproximada
+                </div>
+                <div className="truncate text-[11px] font-semibold text-foreground">
+                  Cidade não identificada
+                </div>
+              </>
             ) : (
               <div className="mt-0.5 truncate text-[12px] font-medium leading-tight text-muted-foreground">
-                {hasPosition || geoLoading ? "Obtendo localização..." : "Localização indisponível"}
+                {hasPosition ? "Localização aproximada" : "Localização indisponível"}
               </div>
             )}
           </div>
