@@ -40,6 +40,7 @@ import {
   DEV_TEST_LABEL,
 } from "@/lib/environment";
 import { computeRoute, type RouteResult } from "@/lib/routes.functions";
+import { reverseGeocode } from "@/lib/geocode.functions";
 import { requestRide } from "@/lib/ride.functions";
 import { useNearbyDrivers } from "@/hooks/useNearbyDrivers";
 import {
