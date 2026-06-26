@@ -48,7 +48,9 @@ import {
   estimateFare,
   formatBRL,
   type RideCategory,
+  type TariffMap,
 } from "@/lib/rideCategories";
+import { loadTariffs } from "@/lib/tariffs";
 
 import type { Database } from "@/integrations/supabase/types";
 
