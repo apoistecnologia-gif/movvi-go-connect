@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as MapTestRouteImport } from './routes/map-test'
+import { Route as DevDiagnosticsRouteImport } from './routes/dev-diagnostics'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PassageiroPerfilRouteImport } from './routes/passageiro.perfil'
 import { Route as PassageiroLoginRouteImport } from './routes/passageiro.login'
@@ -31,6 +32,11 @@ import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
 const MapTestRoute = MapTestRouteImport.update({
   id: '/map-test',
   path: '/map-test',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DevDiagnosticsRoute = DevDiagnosticsRouteImport.update({
+  id: '/dev-diagnostics',
+  path: '/dev-diagnostics',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -121,6 +127,7 @@ const AdminDashboardRoute = AdminDashboardRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/dev-diagnostics': typeof DevDiagnosticsRoute
   '/map-test': typeof MapTestRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/login': typeof AdminLoginRoute
@@ -141,6 +148,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/dev-diagnostics': typeof DevDiagnosticsRoute
   '/map-test': typeof MapTestRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/login': typeof AdminLoginRoute
@@ -162,6 +170,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/dev-diagnostics': typeof DevDiagnosticsRoute
   '/map-test': typeof MapTestRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/login': typeof AdminLoginRoute
@@ -184,6 +193,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/dev-diagnostics'
     | '/map-test'
     | '/admin/dashboard'
     | '/admin/login'
@@ -204,6 +214,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/dev-diagnostics'
     | '/map-test'
     | '/admin/dashboard'
     | '/admin/login'
@@ -224,6 +235,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/dev-diagnostics'
     | '/map-test'
     | '/admin/dashboard'
     | '/admin/login'
@@ -245,6 +257,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DevDiagnosticsRoute: typeof DevDiagnosticsRoute
   MapTestRoute: typeof MapTestRoute
   AdminDashboardRoute: typeof AdminDashboardRoute
   AdminLoginRoute: typeof AdminLoginRoute
@@ -271,6 +284,13 @@ declare module '@tanstack/react-router' {
       path: '/map-test'
       fullPath: '/map-test'
       preLoaderRoute: typeof MapTestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dev-diagnostics': {
+      id: '/dev-diagnostics'
+      path: '/dev-diagnostics'
+      fullPath: '/dev-diagnostics'
+      preLoaderRoute: typeof DevDiagnosticsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -397,6 +417,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DevDiagnosticsRoute: DevDiagnosticsRoute,
   MapTestRoute: MapTestRoute,
   AdminDashboardRoute: AdminDashboardRoute,
   AdminLoginRoute: AdminLoginRoute,
