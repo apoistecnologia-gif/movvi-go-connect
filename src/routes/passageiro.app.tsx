@@ -1473,6 +1473,7 @@ function SheetContent({
   gpsErrorMsg,
   gpsRequesting,
   onRetryGps,
+  onExpandSheet,
 }: {
   geo: GeocodeResult | null;
   addressStatus: "idle" | "loading" | "resolved" | "failed";
