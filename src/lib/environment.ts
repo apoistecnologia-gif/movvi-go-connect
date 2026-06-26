@@ -1,5 +1,6 @@
-// Detecta ambientes de desenvolvimento/preview onde a geolocalização
-// frequentemente é simulada ou bloqueada pelo navegador.
+// Detecta ambientes de desenvolvimento/preview (localhost, iframes, previews).
+// Usado apenas para fins de logging — NUNCA para fornecer cidades de exemplo
+// como localização real do usuário.
 export function isDevEnvironment(): boolean {
   if (typeof window === "undefined") return false;
   if (import.meta.env.DEV) return true;
@@ -18,7 +19,3 @@ export function isDevEnvironment(): boolean {
     return false;
   }
 }
-
-// Localização de teste padrão (Petrolina/PE).
-export const DEV_TEST_LOCATION = { lat: -9.3891, lng: -40.5027 };
-export const DEV_TEST_LABEL = "Petrolina, PE (teste)";

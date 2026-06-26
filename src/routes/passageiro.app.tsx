@@ -37,11 +37,7 @@ import {
   isBrazilCoordinate,
   purgeForeignMapCache,
 } from "@/lib/googleMaps";
-import {
-  isDevEnvironment,
-  DEV_TEST_LOCATION,
-  DEV_TEST_LABEL,
-} from "@/lib/environment";
+
 import { computeRoute, type RouteResult } from "@/lib/routes.functions";
 import { reverseGeocode, type GeocodeResult } from "@/lib/geocode.functions";
 import { requestRide } from "@/lib/ride.functions";
@@ -329,7 +325,6 @@ function PassageiroApp() {
   >("idle");
   const [gpsErrorMsg, setGpsErrorMsg] = useState<string>("");
   const [devNotice, setDevNotice] = useState<string | null>(null);
-  const isDev = useMemo(() => isDevEnvironment(), []);
 
   const [destinationText, setDestinationText] = useState("");
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
@@ -440,37 +435,23 @@ function PassageiroApp() {
   void tick;
 
   /* ---------------------- GPS ---------------------- */
-  const useDevTestLocation = useCallback(() => {
-    console.log("[MOVVI] Usando localização de teste:", DEV_TEST_LABEL);
-    setPosition(DEV_TEST_LOCATION);
-    setGpsState("granted");
-    setGpsErrorMsg("");
-    setDevNotice(`Usando ${DEV_TEST_LABEL}.`);
-  }, []);
+  // REGRA: nenhuma cidade fixa pode ser usada como fallback. Se o GPS falhar
+  // ou retornar uma coordenada fora do Brasil, o app deve exibir "Localização
+  // indisponível" e oferecer a entrada manual (Google Places).
 
   const requestGps = useCallback(() => {
-    console.log("Solicitando localização...");
-    const bail = (msg: string) => {
-      if (isDev) {
-        console.warn("[MOVVI] Dev fallback:", msg);
-        setPosition(DEV_TEST_LOCATION);
-        setGpsState("granted");
-        setGpsErrorMsg("");
-        setDevNotice(
-          `Ambiente de desenvolvimento detectado. ${msg} Usando ${DEV_TEST_LABEL}.`,
-        );
-        return true;
-      }
+    console.log("[MOVVI] Solicitando localização do dispositivo...");
+    setDevNotice("");
+    const fail = (msg: string) => {
       setGpsState("unavailable");
       setGpsErrorMsg(msg);
-      return false;
     };
     if (typeof window !== "undefined" && !window.isSecureContext) {
-      bail("Geolocalização requer HTTPS.");
+      fail("Geolocalização requer HTTPS.");
       return;
     }
     if (!("geolocation" in navigator)) {
-      bail("Seu navegador não oferece geolocalização.");
+      fail("Seu navegador não oferece geolocalização.");
       return;
     }
     setGpsState("requesting");
@@ -480,26 +461,15 @@ function PassageiroApp() {
         (pos) => {
           const lat = pos.coords.latitude;
           const lng = pos.coords.longitude;
-          console.log("Latitude recebida:", lat);
-          console.log("Longitude recebida:", lng);
-          const ok = isBrazilCoordinate(lat, lng);
-          console.log("É Brasil?", ok);
-          if (!ok) {
-            if (isDev) {
-              console.warn(
-                "[MOVVI] Ambiente de desenvolvimento: GPS retornou coordenada estrangeira, usando Petrolina/PE.",
-              );
-              setPosition(DEV_TEST_LOCATION);
-              setGpsState("granted");
-              setGpsErrorMsg("");
-              setDevNotice(
-                `Ambiente de desenvolvimento detectado. A localização retornada pelo navegador (lat ${lat.toFixed(2)}, lng ${lng.toFixed(2)}) parece simulada — usando ${DEV_TEST_LABEL}.`,
-              );
-              return;
-            }
+          console.log("[MOVVI] GPS recebido:", lat, lng);
+          if (!isBrazilCoordinate(lat, lng)) {
             setGpsState("unavailable");
             setGpsErrorMsg(
-              `O navegador retornou uma coordenada fora do Brasil (lat ${lat.toFixed(4)}, lng ${lng.toFixed(4)}). Informe sua cidade ou endereço no Brasil para continuar.`,
+              `O navegador retornou uma coordenada fora do Brasil (lat ${lat.toFixed(
+                4,
+              )}, lng ${lng.toFixed(
+                4,
+              )}). Informe seu endereço manualmente para continuar.`,
             );
             return;
           }
@@ -521,17 +491,7 @@ function PassageiroApp() {
           );
         },
         (err) => {
-          console.error("Erro ao obter localização:", err);
-          if (isDev) {
-            console.warn("[MOVVI] Dev: GPS falhou, usando Petrolina/PE.");
-            setPosition(DEV_TEST_LOCATION);
-            setGpsState("granted");
-            setGpsErrorMsg("");
-            setDevNotice(
-              `Ambiente de desenvolvimento detectado. Não foi possível obter o GPS — usando ${DEV_TEST_LABEL}.`,
-            );
-            return;
-          }
+          console.error("[MOVVI] Erro ao obter localização:", err);
           setGpsState("denied");
           if (err.code === err.PERMISSION_DENIED) {
             setGpsErrorMsg(
@@ -554,21 +514,11 @@ function PassageiroApp() {
         { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 },
       );
     } catch (e) {
-      console.error("Erro ao iniciar solicitação de localização:", e);
-      if (isDev) {
-        setPosition(DEV_TEST_LOCATION);
-        setGpsState("granted");
-        setDevNotice(
-          `Geolocalização bloqueada no ambiente. Usando ${DEV_TEST_LABEL}.`,
-        );
-      } else {
-        setGpsState("unavailable");
-        setGpsErrorMsg(
-          "A geolocalização foi bloqueada neste ambiente. Use a localização manual.",
-        );
-      }
+      console.error("[MOVVI] Falha ao iniciar geolocalização:", e);
+      fail("A geolocalização foi bloqueada neste ambiente. Use a localização manual.");
     }
-  }, [isDev]);
+  }, []);
+
 
   const setManualLocation = useCallback((p: LatLng) => {
     if (!isBrazilCoordinate(p.lat, p.lng)) return;
@@ -820,8 +770,6 @@ function PassageiroApp() {
         onManual={setManualLocation}
         errorMessage={gpsErrorMsg}
         requesting={false}
-        isDev={isDev}
-        onUseTestLocation={useDevTestLocation}
       />
     );
   }
@@ -1125,7 +1073,7 @@ function SheetContent({
             </>
           ) : (
             <div className="mt-0.5 truncate text-[12px] font-semibold leading-tight text-foreground">
-              {hasPosition ? "Localização detectada" : "Detectando localização..."}
+              {hasPosition ? "Aguardando localização..." : "Localização indisponível"}
             </div>
           )}
         </div>
@@ -1608,16 +1556,12 @@ function GpsDeniedScreen({
   onManual,
   errorMessage,
   requesting,
-  isDev,
-  onUseTestLocation,
 }: {
   onRetry: () => void;
   onHome: () => void;
   onManual: (p: LatLng) => void;
   errorMessage: string;
   requesting: boolean;
-  isDev: boolean;
-  onUseTestLocation: () => void;
 }) {
   const [manualOpen, setManualOpen] = useState(true);
   const [query, setQuery] = useState("");
@@ -1753,15 +1697,6 @@ function GpsDeniedScreen({
           <Search className="h-4 w-4" /> USAR LOCALIZAÇÃO MANUAL
         </button>
 
-        {isDev && (
-          <button
-            type="button"
-            onClick={onUseTestLocation}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-amber-500/50 bg-amber-500/10 px-6 py-3 text-xs font-semibold text-amber-200 active:scale-95"
-          >
-            <Zap className="h-4 w-4" /> Usar localização de teste (Petrolina/PE)
-          </button>
-        )}
       </div>
 
       {manualOpen && (
@@ -1776,7 +1711,7 @@ function GpsDeniedScreen({
             onKeyDown={(e) => {
               if (e.key === "Enter") void submitManualSearch();
             }}
-            placeholder="Ex: Petrolina PE"
+            placeholder="Digite seu endereço, bairro ou cidade"
             className="mt-2 w-full rounded-xl bg-background px-3 py-3 text-sm outline-none ring-1 ring-border focus:ring-primary"
           />
           {mapsLoadError && (
@@ -1804,7 +1739,7 @@ function GpsDeniedScreen({
           </ul>
           {query.trim().length >= 2 && !searching && mapsReady && items.length === 0 && (
             <p className="mt-2 text-xs text-muted-foreground">
-              Continue digitando ou tente incluir cidade e estado, como “Petrolina PE”.
+              Continue digitando seu endereço e selecione uma sugestão da lista.
             </p>
           )}
           {manualError && <p className="mt-3 text-xs text-destructive">{manualError}</p>}

@@ -14,11 +14,10 @@ export const GOOGLE_MAPS_LIBRARIES = ["places", "routes", "geometry", "marker"] 
 export const BRAZIL_CENTER = { lat: -14.235, lng: -51.9253 };
 export const BRAZIL_ZOOM = 5;
 
-// Fallback regional preferencial (Petrolina/PE).
-export const PETROLINA_CENTER = { lat: -9.3891, lng: -40.5027 };
-export const PETROLINA_ZOOM = 14;
-
-// Alias legado — apontado para o Brasil para evitar qualquer carga estrangeira.
+// Alias legado — apontado para o centro geográfico do Brasil. Não representa
+// uma cidade específica; usado apenas como enquadramento inicial do mapa
+// enquanto a localização real do usuário (GPS / Geocoding / entrada manual)
+// ainda não chegou.
 export const BRASILIA_CENTER = BRAZIL_CENTER;
 
 // Bounding box aproximado do território brasileiro.
