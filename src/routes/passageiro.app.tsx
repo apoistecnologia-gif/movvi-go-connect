@@ -1169,15 +1169,57 @@ function PassageiroApp() {
         </MovviSheet>
       )}
 
-      {/* Detalhes do endereço — modal premium */}
+      {/* Sheet de ações para o Local de partida */}
       {addressDetailsOpen && (
-        <AddressDetailsSheet
+        <OriginActionsSheet
           geo={geo}
           position={position}
-          accuracy={gpsAccuracy}
+          gpsRequesting={gpsState === "requesting"}
           onClose={() => setAddressDetailsOpen(false)}
+          onUseGps={() => {
+            setAddressDetailsOpen(false);
+            requestGps();
+          }}
+          onPickOnMap={() => {
+            setAddressDetailsOpen(false);
+            setOriginPickCenter(position ?? BRAZIL_CENTER);
+            setOriginPickOnMap(true);
+            if (mapRef.current && position) {
+              mapRef.current.panTo(position);
+              mapRef.current.setZoom(17);
+            }
+          }}
+          onTypeAddress={() => {
+            setAddressDetailsOpen(false);
+            setOriginManualOpen(true);
+          }}
         />
       )}
+
+      {/* Seletor no mapa — overlay com crosshair fixo + botão confirmar */}
+      {originPickOnMap && (
+        <OriginMapPickerOverlay
+          mapRef={mapRef}
+          initialCenter={originPickCenter ?? position ?? BRAZIL_CENTER}
+          onCancel={() => setOriginPickOnMap(false)}
+          onConfirm={(p) => {
+            setOriginPickOnMap(false);
+            setManualLocation(p);
+          }}
+        />
+      )}
+
+      {/* Busca manual de endereço para a origem */}
+      {originManualOpen && (
+        <OriginManualSearchOverlay
+          onCancel={() => setOriginManualOpen(false)}
+          onConfirm={(p) => {
+            setOriginManualOpen(false);
+            setManualLocation(p);
+          }}
+        />
+      )}
+
 
       {ride && (phase === "searching_driver" || phase === "offered_to_driver") && (
         <MovviSheet snaps={[40]} initial={40}>
