@@ -8,7 +8,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
  * Suporta arrastar verticalmente para alternar.
  */
 type Snap = "peek" | "mid" | "full";
-const HEIGHTS: Record<Snap, number> = { peek: 18, mid: 50, full: 82 };
+const HEIGHTS: Record<Snap, number> = { peek: 22, mid: 52, full: 84 };
 
 export function BottomSheet({
   children,
