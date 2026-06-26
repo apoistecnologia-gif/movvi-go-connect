@@ -63,6 +63,23 @@ type DriverRow = Database["public"]["Tables"]["drivers"]["Row"];
 
 const RECENT_KEY = "movvi.recent_destinations";
 
+/** Catálogo visual de categorias da MOVVI (mapeia para o enum backend). */
+type UiCategory = {
+  key: string;
+  label: string;
+  icon: LucideIcon;
+  backend: RideCategory;
+  tagline: string;
+};
+const UI_CATEGORIES: UiCategory[] = [
+  { key: "carro",    label: "Carro",    icon: Car,     backend: "carros",  tagline: "Viagem do dia a dia" },
+  { key: "moto",     label: "Moto",     icon: Bike,    backend: "motos",   tagline: "Rápido e econômico" },
+  { key: "guincho",  label: "Guincho",  icon: Truck,   backend: "guincho", tagline: "Reboque 24h" },
+  { key: "fretes",   label: "Fretes",   icon: Package, backend: "fretes",  tagline: "Cargas e volumes" },
+  { key: "mudancas", label: "Mudanças", icon: Box,     backend: "fretes",  tagline: "Móveis e residencial" },
+  { key: "entregas", label: "Entregas", icon: Send,    backend: "envios",  tagline: "Pequenos envios" },
+];
+
 const fmtMin = (s: number) => `${Math.max(1, Math.round(s / 60))} min`;
 const fmtKm = (m: number) =>
   m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(1)} km`;
