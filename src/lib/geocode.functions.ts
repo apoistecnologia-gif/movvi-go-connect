@@ -39,6 +39,7 @@ type GResult = {
   types?: string[];
   geometry?: {
     location_type?: string;
+    location?: { lat: number; lng: number };
   };
   plus_code?: {
     global_code?: string;
