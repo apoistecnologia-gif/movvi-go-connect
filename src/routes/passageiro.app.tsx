@@ -48,7 +48,7 @@ import {
   formatBRL,
   type RideCategory,
 } from "@/lib/rideCategories";
-import { Skeleton } from "@/components/ui/skeleton";
+
 import type { Database } from "@/integrations/supabase/types";
 
 /** Saudação dinâmica com base no horário local (pt-BR). */
