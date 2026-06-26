@@ -1339,6 +1339,7 @@ function PassageiroApp() {
             gpsErrorMsg={gpsErrorMsg}
             gpsRequesting={gpsState === "requesting"}
             onRetryGps={requestGps}
+            onExpandSheet={(p) => sheetRef.current?.snapTo(p)}
           />
         </MovviSheet>
       )}
@@ -1472,6 +1473,7 @@ function SheetContent({
   gpsErrorMsg,
   gpsRequesting,
   onRetryGps,
+  onExpandSheet,
 }: {
   geo: GeocodeResult | null;
   addressStatus: "idle" | "loading" | "resolved" | "failed";
@@ -1498,6 +1500,7 @@ function SheetContent({
   gpsErrorMsg: string;
   gpsRequesting: boolean;
   onRetryGps: () => void;
+  onExpandSheet: (p: number) => void;
 }) {
   const km = route ? route.distanceMeters / 1000 : 0;
   const min = route ? route.durationSeconds / 60 : 0;
@@ -1707,6 +1710,7 @@ function SheetContent({
           selectedFare={selectedFare}
           onClearDestination={onClearDestination}
           onSubmit={onSubmit}
+          onExpandSheet={onExpandSheet}
         />
       )}
     </div>
@@ -1731,6 +1735,7 @@ type StepFlowProps = {
   selectedFare: number | null;
   onClearDestination: () => void;
   onSubmit: () => void;
+  onExpandSheet: (p: number) => void;
 };
 
 function StepFlow({
@@ -1747,6 +1752,7 @@ function StepFlow({
   selectedFare,
   onClearDestination,
   onSubmit,
+  onExpandSheet,
 }: StepFlowProps) {
   // 1 = aguardando rota, 2 = resumo (tempo/dist/valor), 3 = categorias, 4 = confirmação
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
@@ -1754,6 +1760,12 @@ function StepFlow({
   useEffect(() => {
     if (route && step === 1) setStep(2);
   }, [route, step]);
+
+  // Sempre que entrar no passo de categorias ou confirmação, expandir o sheet
+  // — sem isso as categorias ficam abaixo da área visível em telas pequenas.
+  useEffect(() => {
+    if (step === 3 || step === 4) onExpandSheet(70);
+  }, [step, onExpandSheet]);
 
   // Preço de prévia (categoria padrão = carro) para a Etapa 2
   const previewFare = route
