@@ -284,12 +284,20 @@ function PassageiroApp() {
       );
     } catch (e) {
       console.error("Erro ao iniciar solicitação de localização:", e);
-      setGpsState("unavailable");
-      setGpsErrorMsg(
-        "A geolocalização foi bloqueada neste ambiente (ex: pré-visualização em iframe). Use a localização manual.",
-      );
+      if (isDev) {
+        setPosition(DEV_TEST_LOCATION);
+        setGpsState("granted");
+        setDevNotice(
+          `Geolocalização bloqueada no ambiente. Usando ${DEV_TEST_LABEL}.`,
+        );
+      } else {
+        setGpsState("unavailable");
+        setGpsErrorMsg(
+          "A geolocalização foi bloqueada neste ambiente. Use a localização manual.",
+        );
+      }
     }
-  }, []);
+  }, [isDev]);
 
   const setManualLocation = useCallback((p: LatLng) => {
     if (!isBrazilCoordinate(p.lat, p.lng)) return;
