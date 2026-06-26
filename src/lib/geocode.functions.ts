@@ -30,6 +30,9 @@ export type GeocodeResult = {
   partialMatch: boolean;
   plusCode?: string;     // global_code do plus_code, se houver
   types: string[];       // types do primeiro resultado
+  /** Coordenadas retornadas pelo Google (geometry.location) — usadas para medir distância do GPS. */
+  geocodedLat?: number;
+  geocodedLng?: number;
   components: GeocodeComponents;
 };
 
@@ -39,6 +42,7 @@ type GResult = {
   types?: string[];
   geometry?: {
     location_type?: string;
+    location?: { lat: number; lng: number };
   };
   plus_code?: {
     global_code?: string;
@@ -174,6 +178,8 @@ export const reverseGeocode = createServerFn({ method: "POST" })
       partialMatch,
       plusCode,
       types: topTypes,
+      geocodedLat: top.geometry?.location?.lat,
+      geocodedLng: top.geometry?.location?.lng,
       components,
     };
   });
