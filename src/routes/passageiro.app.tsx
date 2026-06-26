@@ -826,6 +826,17 @@ function PassageiroApp() {
 /*                         SHEET CONTENT                        */
 /* ============================================================ */
 
+/* ---------------- Grupos de serviço ---------------- */
+type GroupKey = "corridas" | "envios" | "servicos";
+const GROUPS: { key: GroupKey; label: string; items: string[] }[] = [
+  { key: "corridas", label: "Corridas", items: ["carro", "moto"] },
+  { key: "envios",   label: "Envios",   items: ["entregas"] },
+  { key: "servicos", label: "Serviços", items: ["guincho", "fretes", "mudancas"] },
+];
+function groupOf(uiKey: string): GroupKey {
+  return GROUPS.find((g) => g.items.includes(uiKey))?.key ?? "corridas";
+}
+
 function SheetContent({
   currentAddress,
   hasPosition,
@@ -865,32 +876,47 @@ function SheetContent({
 }) {
   const km = route ? route.distanceMeters / 1000 : 0;
   const min = route ? route.durationSeconds / 60 : 0;
-  const activeBackend =
-    UI_CATEGORIES.find((c) => c.key === uiCategoryKey)?.backend ?? "carros";
+
+  const [activeGroup, setActiveGroup] = useState<GroupKey>(() => groupOf(uiCategoryKey));
+  const [envioMode, setEnvioMode] = useState<"enviar" | "receber">("enviar");
+  const [envioSize, setEnvioSize] = useState<"P" | "M" | "G">("P");
+
+  // Quando o usuário define um destino, garantimos uma categoria válida no grupo ativo.
+  useEffect(() => {
+    if (!destination) return;
+    const items = GROUPS.find((g) => g.key === activeGroup)?.items ?? [];
+    if (!items.includes(uiCategoryKey) && items[0]) setUiCategoryKey(items[0]);
+  }, [destination, activeGroup, uiCategoryKey, setUiCategoryKey]);
+
+  const groupItems = useMemo(
+    () =>
+      (GROUPS.find((g) => g.key === activeGroup)?.items ?? [])
+        .map((k) => UI_CATEGORIES.find((c) => c.key === k))
+        .filter((c): c is UiCategory => !!c),
+    [activeGroup],
+  );
 
   return (
     <div className="pt-1">
-      {/* Endereço atual — Você está em: */}
-      <div className="mb-3 flex items-start gap-3 rounded-2xl bg-primary/10 px-4 py-3 ring-1 ring-primary/30">
-        <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground shadow-md shadow-primary/30">
-          <MapPin className="h-4 w-4" />
+      {/* Endereço atual — compacto */}
+      <div className="mb-2.5 flex items-center gap-2.5 rounded-2xl bg-primary/10 px-3 py-2 ring-1 ring-primary/30">
+        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
+          <MapPin className="h-3.5 w-3.5" />
         </span>
         <div className="min-w-0 flex-1">
-          <div className="text-[10px] font-semibold uppercase tracking-widest text-primary">
+          <div className="text-[9px] font-semibold uppercase tracking-widest text-primary leading-none">
             Você está em
           </div>
-          <div className="line-clamp-2 text-[13px] font-semibold leading-snug text-foreground">
+          <div className="mt-0.5 truncate text-[12px] font-semibold leading-tight text-foreground">
             {currentAddress ||
-              (hasPosition
-                ? "Localização aproximada detectada"
-                : "Detectando sua localização...")}
+              (hasPosition ? "Localização detectada" : "Detectando localização...")}
           </div>
         </div>
       </div>
 
-      {/* Search bar (sempre visível) */}
-      <div className="mb-3">
-        <div className="flex items-center gap-3 rounded-2xl bg-background/80 px-4 py-3 ring-1 ring-border focus-within:ring-primary/60">
+      {/* "Para onde você vai?" — sempre em destaque */}
+      <div className="mb-2">
+        <div className="flex items-center gap-3 rounded-2xl bg-background/80 px-4 py-3.5 ring-1 ring-border focus-within:ring-primary/60">
           <Search className="h-5 w-5 shrink-0 text-primary" />
           <input
             ref={searchInputRef}
@@ -901,7 +927,7 @@ function SheetContent({
             }}
             onFocus={onFocusSearch}
             placeholder="Para onde você vai?"
-            className="min-w-0 flex-1 bg-transparent text-[15px] font-medium outline-none placeholder:text-muted-foreground/80"
+            className="min-w-0 flex-1 bg-transparent text-[15px] font-semibold outline-none placeholder:text-muted-foreground/80"
           />
           {destinationText && (
             <button
@@ -920,7 +946,7 @@ function SheetContent({
         </div>
       </div>
 
-      {/* Suggestions live */}
+      {/* Sugestões ao vivo */}
       {suggestions.length > 0 && !destination && (
         <ul className="-mx-1 mb-2 space-y-1">
           {suggestions.map((s) => (
@@ -934,9 +960,7 @@ function SheetContent({
                   <MapPin className="h-4 w-4" />
                 </span>
                 <span className="flex min-w-0 flex-col">
-                  <span className="truncate text-sm font-semibold">
-                    {s.primary}
-                  </span>
+                  <span className="truncate text-sm font-semibold">{s.primary}</span>
                   {s.secondary && (
                     <span className="truncate text-xs text-muted-foreground">
                       {s.secondary}
@@ -949,31 +973,25 @@ function SheetContent({
         </ul>
       )}
 
-      {/* Quando NÃO há destino: grid grande de categorias MOVVI */}
+      {/* SEM destino: dica discreta — sem categorias aqui */}
       {!destination && suggestions.length === 0 && (
-        <>
-          <h3 className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Escolha o serviço
-          </h3>
-          <div className="grid grid-cols-2 gap-3 pb-2">
-            {UI_CATEGORIES.map((c) => (
-              <CategoryCard
-                key={c.key}
-                category={c}
-                active={c.key === uiCategoryKey}
-                onClick={() => setUiCategoryKey(c.key)}
-              />
-            ))}
-          </div>
-        </>
+        <div className="mb-1 mt-1 rounded-2xl border border-dashed border-border/70 bg-background/40 px-4 py-3 text-center">
+          <p className="text-[12px] leading-snug text-muted-foreground">
+            Informe o destino para ver as opções de{" "}
+            <span className="font-semibold text-foreground">Corridas</span>,{" "}
+            <span className="font-semibold text-foreground">Envios</span> e{" "}
+            <span className="font-semibold text-foreground">Serviços</span>{" "}
+            disponíveis no trajeto.
+          </p>
+        </div>
       )}
 
-      {/* Quando há destino: rota + categorias horizontais com preço + botão */}
+      {/* COM destino: rota + grupos + opções */}
       {destination && (
         <>
-          <div className="mb-3 flex items-center gap-2 rounded-xl bg-background/60 px-3 py-2 ring-1 ring-border">
+          <div className="mb-2.5 flex items-center gap-2 rounded-xl bg-background/60 px-3 py-2 ring-1 ring-border">
             <MapPin className="h-4 w-4 shrink-0 text-destructive" />
-            <span className="line-clamp-2 flex-1 text-[13px] font-medium">
+            <span className="line-clamp-2 flex-1 text-[12.5px] font-medium">
               {destination.label}
             </span>
             <button
@@ -986,7 +1004,7 @@ function SheetContent({
           </div>
 
           {route && (
-            <div className="mb-3 grid grid-cols-3 gap-2">
+            <div className="mb-2.5 grid grid-cols-3 gap-2">
               <Stat
                 icon={<Clock className="h-3.5 w-3.5" />}
                 label="Tempo"
@@ -1006,43 +1024,81 @@ function SheetContent({
             </div>
           )}
 
-          <h3 className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Escolha a categoria
-          </h3>
-          <div className="-mx-1 mb-3 flex gap-2 overflow-x-auto px-1 pb-1">
-            {UI_CATEGORIES.map((c) => {
-              const active = c.key === uiCategoryKey;
-              const fare = route ? estimateFare(c.backend, km, min) : null;
-              const Icon = c.icon;
+          {/* Tabs dos grupos */}
+          <div className="mb-2.5 flex gap-1 rounded-2xl bg-background/60 p-1 ring-1 ring-border">
+            {GROUPS.map((g) => {
+              const active = activeGroup === g.key;
               return (
                 <button
-                  key={c.key}
+                  key={g.key}
                   type="button"
-                  onClick={() => setUiCategoryKey(c.key)}
-                  className={`flex w-[112px] shrink-0 flex-col items-center gap-1 rounded-2xl border-2 px-2 py-3 transition active:scale-95 ${
+                  onClick={() => setActiveGroup(g.key)}
+                  className={`flex-1 rounded-xl px-2 py-2 text-[12px] font-bold transition ${
                     active
-                      ? "border-primary bg-primary/10 shadow-lg shadow-primary/15"
-                      : "border-border bg-background/60 hover:border-primary/40"
+                      ? "bg-primary text-primary-foreground shadow-md shadow-primary/30"
+                      : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  <Icon className={`h-6 w-6 ${active ? "text-primary" : "text-foreground"}`} />
-                  <span className="text-[11px] font-semibold">{c.label}</span>
-                  {fare != null && (
-                    <span
-                      className={`text-[13px] font-bold ${
-                        active ? "text-primary" : "text-foreground"
-                      }`}
-                    >
-                      {formatBRL(fare)}
-                    </span>
-                  )}
+                  {g.label}
                 </button>
               );
             })}
           </div>
 
+          {/* Conteúdo do grupo */}
+          {activeGroup === "envios" ? (
+            <EnviosBlock
+              mode={envioMode}
+              setMode={setEnvioMode}
+              size={envioSize}
+              setSize={setEnvioSize}
+              fare={route ? estimateFare("envios", km, min) : null}
+            />
+          ) : (
+            <div className="-mx-1 mb-2.5 flex gap-2 overflow-x-auto px-1 pb-1">
+              {groupItems.map((c) => {
+                const active = c.key === uiCategoryKey;
+                const fare = route ? estimateFare(c.backend, km, min) : null;
+                const Icon = c.icon;
+                return (
+                  <button
+                    key={c.key}
+                    type="button"
+                    onClick={() => setUiCategoryKey(c.key)}
+                    className={`flex w-[120px] shrink-0 flex-col items-start gap-1 rounded-2xl border-2 px-3 py-2.5 text-left transition active:scale-95 ${
+                      active
+                        ? "border-primary bg-primary/10 shadow-md shadow-primary/15"
+                        : "border-border bg-background/60 hover:border-primary/40"
+                    }`}
+                  >
+                    <span
+                      className={`grid h-8 w-8 place-items-center rounded-lg ${
+                        active ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary"
+                      }`}
+                    >
+                      <Icon className="h-4 w-4" />
+                    </span>
+                    <span className="text-[12px] font-semibold leading-tight">{c.label}</span>
+                    <span className="text-[10px] text-muted-foreground leading-tight">
+                      {c.tagline}
+                    </span>
+                    {fare != null && (
+                      <span
+                        className={`mt-0.5 text-[13px] font-bold ${
+                          active ? "text-primary" : "text-foreground"
+                        }`}
+                      >
+                        {formatBRL(fare)}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           {error && (
-            <p className="mb-3 rounded-xl bg-destructive/15 px-3 py-2 text-xs text-destructive-foreground ring-1 ring-destructive/40">
+            <p className="mb-2 rounded-xl bg-destructive/15 px-3 py-2 text-xs text-destructive-foreground ring-1 ring-destructive/40">
               {error}
             </p>
           )}
@@ -1051,66 +1107,105 @@ function SheetContent({
             type="button"
             disabled={!route || busy}
             onClick={onSubmit}
-            className="w-full rounded-2xl bg-primary py-4 text-[15px] font-bold text-primary-foreground shadow-xl shadow-primary/25 transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+            className="w-full rounded-2xl bg-primary py-3.5 text-[14px] font-bold text-primary-foreground shadow-xl shadow-primary/25 transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {busy
               ? "Solicitando..."
-              : `Solicitar ${UI_CATEGORIES.find((c) => c.key === uiCategoryKey)?.label ?? "MOVVI"}`}
+              : activeGroup === "envios"
+                ? envioMode === "enviar"
+                  ? "Solicitar entrega"
+                  : "Solicitar coleta"
+                : `Solicitar ${UI_CATEGORIES.find((c) => c.key === uiCategoryKey)?.label ?? "MOVVI"}`}
           </button>
-          <p className="mt-2 text-center text-[10px] uppercase tracking-widest text-muted-foreground">
-            Categoria backend: {activeBackend}
-          </p>
         </>
       )}
     </div>
   );
 }
 
-function CategoryCard({
-  category,
-  active,
-  onClick,
+function EnviosBlock({
+  mode,
+  setMode,
+  size,
+  setSize,
+  fare,
 }: {
-  category: UiCategory;
-  active: boolean;
-  onClick: () => void;
+  mode: "enviar" | "receber";
+  setMode: (m: "enviar" | "receber") => void;
+  size: "P" | "M" | "G";
+  setSize: (s: "P" | "M" | "G") => void;
+  fare: number | null;
 }) {
-  const Icon = category.icon;
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`group relative flex flex-col items-start gap-2 overflow-hidden rounded-2xl border-2 px-4 py-4 text-left transition-all duration-200 active:scale-[0.97] ${
-        active
-          ? "border-primary bg-gradient-to-br from-primary/20 via-primary/10 to-transparent shadow-xl shadow-primary/20"
-          : "border-border bg-card hover:border-primary/50 hover:-translate-y-0.5"
-      }`}
-    >
-      <span
-        className={`grid h-11 w-11 place-items-center rounded-xl transition ${
-          active
-            ? "bg-primary text-primary-foreground shadow-md shadow-primary/40"
-            : "bg-primary/10 text-primary group-hover:bg-primary/20"
-        }`}
-      >
-        <Icon className="h-5 w-5" />
-      </span>
-      <div className="min-w-0">
-        <div
-          className={`text-[15px] font-bold leading-tight ${
-            active ? "text-primary" : "text-foreground"
+    <div className="mb-2.5 space-y-2.5">
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={() => setMode("enviar")}
+          className={`flex-1 rounded-xl border-2 px-3 py-2.5 text-left transition ${
+            mode === "enviar"
+              ? "border-primary bg-primary/10"
+              : "border-border bg-background/60"
           }`}
         >
-          {category.label}
+          <div className="flex items-center gap-2">
+            <Send className="h-4 w-4 text-primary" />
+            <span className="text-[12.5px] font-bold">Enviar pacote</span>
+          </div>
+          <p className="mt-0.5 text-[10.5px] text-muted-foreground">
+            Você despacha no endereço atual
+          </p>
+        </button>
+        <button
+          type="button"
+          onClick={() => setMode("receber")}
+          className={`flex-1 rounded-xl border-2 px-3 py-2.5 text-left transition ${
+            mode === "receber"
+              ? "border-primary bg-primary/10"
+              : "border-border bg-background/60"
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <Package className="h-4 w-4 text-primary" />
+            <span className="text-[12.5px] font-bold">Receber pacote</span>
+          </div>
+          <p className="mt-0.5 text-[10.5px] text-muted-foreground">
+            Coleta na origem indicada
+          </p>
+        </button>
+      </div>
+
+      <div>
+        <div className="mb-1 px-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Tamanho do pacote
         </div>
-        <div className="mt-0.5 truncate text-[11px] text-muted-foreground">
-          {category.tagline}
+        <div className="flex gap-2">
+          {(["P", "M", "G"] as const).map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => setSize(s)}
+              className={`flex-1 rounded-xl border-2 py-2 text-[12px] font-bold transition ${
+                size === s
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border bg-background/60 text-muted-foreground"
+              }`}
+            >
+              {s === "P" ? "Pequeno" : s === "M" ? "Médio" : "Grande"}
+            </button>
+          ))}
         </div>
       </div>
-      {active && (
-        <span className="absolute right-3 top-3 inline-flex h-2 w-2 animate-pulse rounded-full bg-primary" />
+
+      {fare != null && (
+        <div className="flex items-center justify-between rounded-xl bg-background/60 px-3 py-2 ring-1 ring-border">
+          <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
+            Valor estimado
+          </span>
+          <span className="text-base font-bold text-primary">{formatBRL(fare)}</span>
+        </div>
       )}
-    </button>
+    </div>
   );
 }
 
