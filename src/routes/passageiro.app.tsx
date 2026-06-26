@@ -199,9 +199,21 @@ function PassageiroApp() {
           const ok = isBrazilCoordinate(lat, lng);
           console.log("É Brasil?", ok);
           if (!ok) {
+            if (isDev) {
+              console.warn(
+                "[MOVVI] Ambiente de desenvolvimento: GPS retornou coordenada estrangeira, usando Petrolina/PE.",
+              );
+              setPosition(DEV_TEST_LOCATION);
+              setGpsState("granted");
+              setGpsErrorMsg("");
+              setDevNotice(
+                `Ambiente de desenvolvimento detectado. A localização retornada pelo navegador (lat ${lat.toFixed(2)}, lng ${lng.toFixed(2)}) parece simulada — usando ${DEV_TEST_LABEL}.`,
+              );
+              return;
+            }
             setGpsState("unavailable");
             setGpsErrorMsg(
-              `O navegador retornou uma coordenada fora do Brasil (lat ${lat.toFixed(4)}, lng ${lng.toFixed(4)}). Isso costuma acontecer no ambiente de pré-visualização. Informe sua cidade ou endereço no Brasil para continuar.`,
+              `O navegador retornou uma coordenada fora do Brasil (lat ${lat.toFixed(4)}, lng ${lng.toFixed(4)}). Informe sua cidade ou endereço no Brasil para continuar.`,
             );
             return;
           }
