@@ -545,7 +545,7 @@ function PassageiroApp() {
     return (
       <GpsDeniedScreen
         onRetry={requestGps}
-        onHome={() => navigate({ to: "/" })}
+        onHome={() => { void navigate({ to: "/" }); }}
         onManual={setManualLocation}
         errorMessage={gpsErrorMsg}
         requesting={false}
