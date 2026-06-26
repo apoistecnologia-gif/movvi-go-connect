@@ -68,6 +68,184 @@ function firstName(full: string): string {
   return (full || "").trim().split(/\s+/)[0] || "";
 }
 
+// ====== COMPONENTES PREMIUM ======
+
+function PremiumTopBar({
+  userName,
+  gpsState,
+  drivers,
+  searching,
+  onLogout,
+}: {
+  userName: string;
+  gpsState: "idle" | "requesting" | "granted" | "unavailable";
+  drivers: number;
+  searching: boolean;
+  onLogout: () => void;
+}) {
+  const { text: greet, icon: GIcon } = getGreeting();
+  const fname = firstName(userName) || "passageiro";
+
+  let statusIcon = "🔎";
+  let statusText = "Procurando motoristas próximos";
+  if (gpsState === "requesting" || gpsState === "idle") {
+    statusIcon = "📍";
+    statusText = "Obtendo sua localização...";
+  } else if (gpsState === "unavailable") {
+    statusIcon = "⚠️";
+    statusText = "Ative sua localização";
+  } else if (searching) {
+    statusIcon = "🔎";
+    statusText = "Procurando motoristas próximos";
+  } else if (drivers > 0) {
+    statusIcon = "🚗";
+    statusText = `${drivers} ${drivers === 1 ? "motorista próximo" : "motoristas próximos"}`;
+  }
+
+  return (
+    <div className="absolute inset-x-0 top-0 z-40 px-3 pt-[calc(env(safe-area-inset-top)+10px)]">
+      <div className="mx-auto flex max-w-5xl items-center gap-3 rounded-2xl bg-card/90 px-3 py-2.5 shadow-xl ring-1 ring-border/60 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-500">
+        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/15 text-primary ring-1 ring-primary/30">
+          <GIcon className="h-5 w-5" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-[14px] font-semibold leading-tight text-foreground">
+            {greet}, {fname} <span className="opacity-90">👋</span>
+          </div>
+          <div className="mt-0.5 flex items-center gap-1.5 truncate text-[11px] text-muted-foreground">
+            <span className="text-[12px] leading-none">{statusIcon}</span>
+            <span className="truncate">{statusText}</span>
+          </div>
+        </div>
+        <button
+          onClick={onLogout}
+          aria-label="Sair"
+          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-destructive/15 text-destructive ring-1 ring-destructive/30 transition hover:bg-destructive/25 active:scale-90"
+        >
+          <LogOut className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function PulsingUserMarker({ position }: { position: LatLng }) {
+  const pulseIcon = useMemo(
+    () => ({
+      path: google.maps.SymbolPath.CIRCLE,
+      scale: 22,
+      fillColor: "#3b82f6",
+      fillOpacity: 0.18,
+      strokeColor: "#3b82f6",
+      strokeOpacity: 0.35,
+      strokeWeight: 1,
+    }),
+    [],
+  );
+  const dotIcon = useMemo(
+    () => ({
+      path: google.maps.SymbolPath.CIRCLE,
+      scale: 8,
+      fillColor: "#3b82f6",
+      fillOpacity: 1,
+      strokeColor: "#ffffff",
+      strokeWeight: 3,
+    }),
+    [],
+  );
+  return (
+    <>
+      <Marker position={position} icon={pulseIcon} clickable={false} zIndex={9998} />
+      <Marker position={position} icon={dotIcon} zIndex={9999} />
+    </>
+  );
+}
+
+function AddressDetailsSheet({
+  geo,
+  position,
+  accuracy,
+  onClose,
+}: {
+  geo: GeocodeResult | null;
+  position: LatLng | null;
+  accuracy: number | null;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-[60] flex items-end" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" />
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full rounded-t-3xl bg-card p-5 pb-[calc(env(safe-area-inset-bottom)+24px)] shadow-2xl ring-1 ring-border animate-in slide-in-from-bottom duration-300"
+      >
+        <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-foreground/15" />
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="grid h-9 w-9 place-items-center rounded-full bg-primary text-primary-foreground">
+              <MapPin className="h-4 w-4" />
+            </span>
+            <div>
+              <div className="text-[10px] font-semibold uppercase tracking-widest text-primary">
+                Detalhes do local
+              </div>
+              <div className="text-[14px] font-semibold">{geo?.friendly || "Localização atual"}</div>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            aria-label="Fechar"
+            className="grid h-9 w-9 place-items-center rounded-full bg-accent/30 text-foreground transition active:scale-90"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="space-y-2.5 text-sm">
+          {geo?.address && (
+            <DetailRow label="Endereço completo" value={geo.address} />
+          )}
+          {geo?.region && <DetailRow label="Região" value={geo.region} />}
+          {position && (
+            <>
+              <DetailRow
+                label="Latitude"
+                value={position.lat.toFixed(6)}
+                mono
+              />
+              <DetailRow
+                label="Longitude"
+                value={position.lng.toFixed(6)}
+                mono
+              />
+            </>
+          )}
+          {accuracy != null && (
+            <DetailRow
+              label="Precisão do GPS"
+              value={`± ${Math.round(accuracy)} metros`}
+            />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DetailRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div className="rounded-xl bg-background/60 px-3 py-2 ring-1 ring-border">
+      <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+        {label}
+      </div>
+      <div className={`mt-0.5 break-words text-[13px] text-foreground ${mono ? "font-mono" : ""}`}>
+        {value}
+      </div>
+    </div>
+  );
+}
+
+
 export const Route = createFileRoute("/passageiro/app")({
   head: () => ({ meta: [{ title: "MOVVI Drive — Passageiro" }] }),
   component: PassageiroApp,
