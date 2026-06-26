@@ -1090,12 +1090,7 @@ function SheetContent({
           <div className="text-[9px] font-semibold uppercase tracking-widest text-primary leading-none">
             Você está em
           </div>
-          {showSkeleton ? (
-            <div className="mt-1 space-y-1">
-              <div className="h-3 w-2/3 animate-pulse rounded bg-foreground/10" />
-              <div className="h-2.5 w-1/3 animate-pulse rounded bg-foreground/10" />
-            </div>
-          ) : primaryLine || region ? (
+          {primaryLine || region ? (
             <>
               {primaryLine && (
                 <div
@@ -1113,8 +1108,8 @@ function SheetContent({
               )}
             </>
           ) : (
-            <div className="mt-0.5 truncate text-[12px] font-semibold leading-tight text-foreground">
-              {hasPosition ? "Aguardando localização..." : "Localização indisponível"}
+            <div className="mt-0.5 truncate text-[12px] font-medium leading-tight text-muted-foreground">
+              {hasPosition || geoLoading ? "Obtendo localização..." : "Localização indisponível"}
             </div>
           )}
         </div>
