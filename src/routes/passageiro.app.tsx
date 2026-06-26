@@ -1172,7 +1172,7 @@ function GpsDeniedScreen({
   errorMessage: string;
   requesting: boolean;
 }) {
-  const [manualOpen, setManualOpen] = useState(false);
+  const [manualOpen, setManualOpen] = useState(() => Boolean(errorMessage));
   const [query, setQuery] = useState("");
   const [items, setItems] = useState<{ placeId: string; primary: string; secondary: string }[]>([]);
   const [searching, setSearching] = useState(false);
@@ -1185,6 +1185,10 @@ function GpsDeniedScreen({
     language: "pt-BR",
     region: "BR",
   });
+
+  useEffect(() => {
+    if (errorMessage) setManualOpen(true);
+  }, [errorMessage]);
 
   useEffect(() => {
     if (debounceRef.current) window.clearTimeout(debounceRef.current);
