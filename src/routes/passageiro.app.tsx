@@ -161,38 +161,86 @@ function PassageiroApp() {
 
   /* ---------------------- GPS ---------------------- */
   const requestGps = useCallback(() => {
+    console.log("Solicitando localização...");
+    if (typeof window !== "undefined" && !window.isSecureContext) {
+      setGpsState("unavailable");
+      setGpsErrorMsg(
+        "Geolocalização requer HTTPS. Abra o app em uma conexão segura ou use a localização manual.",
+      );
+      return;
+    }
     if (!("geolocation" in navigator)) {
       setGpsState("unavailable");
+      setGpsErrorMsg("Seu navegador não oferece geolocalização. Use a localização manual.");
       return;
     }
     setGpsState("requesting");
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-        if (!isBrazilCoordinate(lat, lng)) {
-          console.warn("[MOVVI] GPS fora do Brasil — ignorando", { lat, lng });
+    setGpsErrorMsg("");
+    try {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          console.log("Localização obtida:", pos.coords);
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          if (!isBrazilCoordinate(lat, lng)) {
+            console.warn("[MOVVI] GPS fora do Brasil — ignorando", { lat, lng });
+            setGpsState("denied");
+            setGpsErrorMsg(
+              "Sua localização parece estar fora do Brasil. Use a localização manual para continuar.",
+            );
+            return;
+          }
+          setPosition({ lat, lng });
+          setGpsState("granted");
+          setGpsErrorMsg("");
+          navigator.geolocation.watchPosition(
+            (p) => {
+              const la = p.coords.latitude;
+              const ln = p.coords.longitude;
+              if (isBrazilCoordinate(la, ln)) setPosition({ lat: la, lng: ln });
+            },
+            () => undefined,
+            { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 },
+          );
+        },
+        (err) => {
+          console.error("Erro ao obter localização:", err);
           setGpsState("denied");
-          return;
-        }
-        setPosition({ lat, lng });
-        setGpsState("granted");
-        navigator.geolocation.watchPosition(
-          (p) => {
-            const la = p.coords.latitude;
-            const ln = p.coords.longitude;
-            if (isBrazilCoordinate(la, ln)) setPosition({ lat: la, lng: ln });
-          },
-          () => undefined,
-          { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 },
-        );
-      },
-      (err) => {
-        if (err.code === err.PERMISSION_DENIED) setGpsState("denied");
-        else setGpsState("denied");
-      },
-      { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 },
-    );
+          if (err.code === err.PERMISSION_DENIED) {
+            setGpsErrorMsg(
+              "Permissão de localização negada. Clique no cadeado ao lado do endereço do site e permita o acesso, ou use a localização manual.",
+            );
+          } else if (err.code === err.POSITION_UNAVAILABLE) {
+            setGpsErrorMsg(
+              "Não conseguimos detectar sua posição. Verifique se o GPS está ativo ou use a localização manual.",
+            );
+          } else if (err.code === err.TIMEOUT) {
+            setGpsErrorMsg(
+              "Tempo esgotado ao tentar obter sua localização. Tente novamente ou use a localização manual.",
+            );
+          } else {
+            setGpsErrorMsg(
+              "Não foi possível obter sua localização. Use a localização manual para continuar.",
+            );
+          }
+        },
+        { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 },
+      );
+    } catch (e) {
+      console.error("Erro ao iniciar solicitação de localização:", e);
+      setGpsState("unavailable");
+      setGpsErrorMsg(
+        "A geolocalização foi bloqueada neste ambiente (ex: pré-visualização em iframe). Use a localização manual.",
+      );
+    }
+  }, []);
+
+  const setManualLocation = useCallback((p: LatLng) => {
+    if (!isBrazilCoordinate(p.lat, p.lng)) return;
+    console.log("Localização manual definida:", p);
+    setPosition(p);
+    setGpsState("granted");
+    setGpsErrorMsg("");
   }, []);
 
   useEffect(() => {
