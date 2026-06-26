@@ -1131,7 +1131,11 @@ function SheetContent({
             <div className="text-[9px] font-semibold uppercase tracking-widest text-primary leading-none">
               Você está em
             </div>
-            {primaryLine || region ? (
+            {addressStatus === "loading" && !primaryLine && !region ? (
+              <div className="mt-0.5 truncate text-[12px] font-medium leading-tight text-muted-foreground">
+                Obtendo localização...
+              </div>
+            ) : primaryLine || region ? (
               <>
                 {primaryLine && (
                   <div
@@ -1148,9 +1152,18 @@ function SheetContent({
                   <div className="truncate text-[11px] font-semibold text-foreground">{region}</div>
                 )}
               </>
+            ) : addressStatus === "failed" && hasPosition ? (
+              <>
+                <div className="mt-0.5 truncate text-[13px] font-medium leading-tight text-muted-foreground">
+                  Localização aproximada
+                </div>
+                <div className="truncate text-[11px] font-semibold text-foreground">
+                  Cidade não identificada
+                </div>
+              </>
             ) : (
               <div className="mt-0.5 truncate text-[12px] font-medium leading-tight text-muted-foreground">
-                {hasPosition || geoLoading ? "Obtendo localização..." : "Localização indisponível"}
+                {hasPosition ? "Localização aproximada" : "Localização indisponível"}
               </div>
             )}
           </div>
