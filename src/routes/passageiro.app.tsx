@@ -249,7 +249,7 @@ function PassageiroApp() {
         </div>
       )}
 
-      <div className="absolute bottom-0 left-0 right-0 z-10 px-4 pb-6 pt-4">
+      <div className="absolute bottom-20 left-0 right-0 z-20 px-4 pt-4 sm:bottom-24">
         <div className="mx-auto max-w-xl rounded-3xl bg-card/95 p-5 shadow-2xl ring-1 ring-border backdrop-blur-xl">
           <div className="mb-4 flex items-center gap-2">
             <Navigation2 className="h-5 w-5 text-primary" />
