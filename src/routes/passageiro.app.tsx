@@ -501,6 +501,7 @@ function PassageiroApp() {
           setGpsAccuracy(pos.coords.accuracy ?? null);
           setGpsState("granted");
           setGpsErrorMsg("");
+          console.log("[MOVVI] GPS obtido", { lat, lng });
           // Evita múltiplos watchers acumulados em re-tentativas.
           if (watchIdRef.current != null) {
             navigator.geolocation.clearWatch(watchIdRef.current);
