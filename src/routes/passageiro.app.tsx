@@ -301,8 +301,18 @@ function PassageiroApp() {
 
       <MovviHeader variant="floating" logoutRedirect="/" />
 
+      {/* Badge motoristas próximos */}
+      {!ride && (
+        <div className="pointer-events-none absolute left-1/2 top-[68px] z-20 -translate-x-1/2 animate-fade-in">
+          <div className="rounded-full bg-card/90 px-3 py-1 text-[11px] font-semibold text-foreground shadow-lg ring-1 ring-border backdrop-blur-md">
+            <span className="mr-1 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-primary align-middle" />
+            {drivers.length} {drivers.length === 1 ? "motorista" : "motoristas"} próximos
+          </div>
+        </div>
+      )}
+
       {gpsError && (
-        <div className="absolute left-1/2 top-20 z-10 -translate-x-1/2 rounded-full bg-destructive/90 px-4 py-1.5 text-xs text-destructive-foreground shadow-lg backdrop-blur">
+        <div className="absolute left-1/2 top-[100px] z-10 -translate-x-1/2 rounded-full bg-destructive/90 px-4 py-1.5 text-xs text-destructive-foreground shadow-lg backdrop-blur">
           GPS: {gpsError}
         </div>
       )}
