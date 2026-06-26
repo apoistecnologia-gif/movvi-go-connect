@@ -1187,13 +1187,13 @@ function SheetContent({
                   <div className="truncate text-[11px] font-semibold text-foreground">{region}</div>
                 )}
               </>
-            ) : addressStatus === "failed" && hasPosition ? (
+            ) : addressStatus === "failed" && hasPosition && position ? (
               <>
                 <div className="mt-0.5 truncate text-[13px] font-medium leading-tight text-muted-foreground">
-                  Localização aproximada
+                  Coordenadas GPS
                 </div>
-                <div className="truncate text-[11px] font-semibold text-foreground">
-                  Cidade não identificada
+                <div className="truncate font-mono text-[11px] font-semibold text-foreground">
+                  lat: {position.lat.toFixed(6)} · lng: {position.lng.toFixed(6)}
                 </div>
               </>
             ) : (
