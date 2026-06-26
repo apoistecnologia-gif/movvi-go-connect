@@ -14,8 +14,9 @@ export type GeocodeComponents = {
 
 export type GeocodeResult = {
   address: string;       // endereço completo formatado
-  friendly: string;      // primeira linha amigável (povoado/bairro/cidade)
+  friendly: string;      // primeira linha (povoado/bairro). Vazio se não houver.
   region: string;        // "Cidade - UF"
+  approximate: boolean;  // true quando só temos município (sem bairro/povoado)
   components: GeocodeComponents;
 };
 
@@ -36,13 +37,6 @@ function pick(results: GResult[], types: string[]): { long: string; short: strin
       }
     }
   }
-  for (const r of results) {
-    for (const c of r.address_components ?? []) {
-      if (types.some((t) => c.types.includes(t))) {
-        return { long: c.long_name, short: c.short_name };
-      }
-    }
-  }
   return undefined;
 }
 
@@ -56,7 +50,13 @@ export const reverseGeocode = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data }): Promise<GeocodeResult> => {
-    const empty: GeocodeResult = { address: "", friendly: "", region: "", components: {} };
+    const empty: GeocodeResult = {
+      address: "",
+      friendly: "",
+      region: "",
+      approximate: false,
+      components: {},
+    };
     const lovableKey = process.env.LOVABLE_API_KEY;
     const connKey = process.env.GOOGLE_MAPS_API_KEY;
     if (!lovableKey || !connKey) return empty;
@@ -75,19 +75,24 @@ export const reverseGeocode = createServerFn({ method: "POST" })
 
     const address = results[0].formatted_address ?? "";
 
-    // Povoado / comunidade / distrito / sublocality / neighborhood
-    const povoadoTypes = [
-      "sublocality_level_1",
-      "sublocality",
-      "neighborhood",
-      "administrative_area_level_4",
-      "administrative_area_level_3",
+    // Prioridade conforme exigência: sublocality_level_1, sublocality_level_2,
+    // neighborhood, locality, administrative_area_level_2, administrative_area_level_1.
+    // Para a primeira linha (friendly), só usamos níveis MENORES que o município
+    // (povoado / bairro / distrito). Município vai sempre para a segunda linha.
+    const povoadoCandidates = [
+      ["sublocality_level_1"],
+      ["sublocality_level_2"],
+      ["sublocality"],
+      ["neighborhood"],
+      ["administrative_area_level_4"],
+      ["administrative_area_level_3"],
     ];
     let povoado: { long: string; short: string } | undefined;
-    for (const t of povoadoTypes) {
-      povoado = pick(results, [t]);
+    for (const types of povoadoCandidates) {
+      povoado = pick(results, types);
       if (povoado) break;
     }
+
     const bairro = pick(results, ["neighborhood"]);
     const cidade =
       pick(results, ["locality"]) ?? pick(results, ["administrative_area_level_2"]);
@@ -103,10 +108,18 @@ export const reverseGeocode = createServerFn({ method: "POST" })
       pais: pais?.long,
     };
 
+    // Friendly = só povoado/bairro. Nunca repetir o município aqui.
+    const cityName = cidade?.long?.toLowerCase() ?? "";
+    const candidate = povoado?.long ?? bairro?.long ?? "";
     const friendly =
-      povoado?.long ?? bairro?.long ?? cidade?.long ?? address.split(",")[0] ?? "";
-    const region =
-      cidade && estado ? `${cidade.long} - ${estado.short}` : (cidade?.long ?? estado?.long ?? "");
+      candidate && candidate.toLowerCase() !== cityName ? candidate : "";
 
-    return { address, friendly, region, components };
+    const region =
+      cidade && estado
+        ? `${cidade.long} - ${estado.short}`
+        : (cidade?.long ?? estado?.long ?? "");
+
+    const approximate = !friendly && !!region;
+
+    return { address, friendly, region, approximate, components };
   });

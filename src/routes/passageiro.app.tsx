@@ -1041,6 +1041,9 @@ function SheetContent({
 
   const friendly = geo?.friendly || "";
   const region = geo?.region || "";
+  const approximate = !!geo?.approximate;
+  const primaryLine = friendly || (approximate ? "Localização aproximada" : "");
+  const showSkeleton = geoLoading && !primaryLine && !region;
 
   return (
     <div className="pt-1">
@@ -1057,18 +1060,26 @@ function SheetContent({
           <div className="text-[9px] font-semibold uppercase tracking-widest text-primary leading-none">
             Você está em
           </div>
-          {geoLoading && !friendly ? (
+          {showSkeleton ? (
             <div className="mt-1 space-y-1">
               <div className="h-3 w-2/3 animate-pulse rounded bg-foreground/10" />
               <div className="h-2.5 w-1/3 animate-pulse rounded bg-foreground/10" />
             </div>
-          ) : friendly ? (
+          ) : primaryLine || region ? (
             <>
-              <div className="mt-0.5 truncate text-[13px] font-semibold leading-tight text-foreground">
-                {friendly}
-              </div>
+              {primaryLine && (
+                <div
+                  className={`mt-0.5 truncate text-[13px] leading-tight ${
+                    approximate && !friendly
+                      ? "font-medium text-muted-foreground"
+                      : "font-semibold text-foreground"
+                  }`}
+                >
+                  {primaryLine}
+                </div>
+              )}
               {region && (
-                <div className="truncate text-[10px] text-muted-foreground">{region}</div>
+                <div className="truncate text-[11px] font-semibold text-foreground">{region}</div>
               )}
             </>
           ) : (
