@@ -19,6 +19,17 @@ export type GeocodeResult = {
   friendly: string;      // primeira linha (povoado/bairro). Vazio se não houver.
   region: string;        // "Cidade - UF"
   approximate: boolean;  // true quando só temos município (sem bairro/povoado)
+  /**
+   * Confiabilidade do endereço retornado pelo Google.
+   * - "exact": location_type=ROOFTOP, endereço é o ponto exato.
+   * - "approximate": location_type ∈ {APPROXIMATE, GEOMETRIC_CENTER, RANGE_INTERPOLATED}
+   *   ou partial_match=true. NÃO mostrar rua/número como exato — preferir coordenadas + referência.
+   */
+  precision: "exact" | "approximate";
+  locationType: string;  // ROOFTOP | RANGE_INTERPOLATED | GEOMETRIC_CENTER | APPROXIMATE | ""
+  partialMatch: boolean;
+  plusCode?: string;     // global_code do plus_code, se houver
+  types: string[];       // types do primeiro resultado
   components: GeocodeComponents;
 };
 
