@@ -8,7 +8,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
  * Suporta arrastar verticalmente para alternar.
  */
 type Snap = "peek" | "mid" | "full";
-const HEIGHTS: Record<Snap, number> = { peek: 26, mid: 52, full: 78 };
+const HEIGHTS: Record<Snap, number> = { peek: 18, mid: 50, full: 82 };
 
 export function BottomSheet({
   children,
@@ -73,27 +73,27 @@ export function BottomSheet({
   return (
     <div
       ref={sheetRef}
-      className="absolute inset-x-0 bottom-0 z-30 flex flex-col rounded-t-3xl bg-card text-foreground shadow-[0_-24px_60px_-12px_rgba(0,0,0,0.55)] ring-1 ring-border/70 backdrop-blur-xl transition-[height] duration-200 ease-out"
+      className="absolute inset-x-0 bottom-0 z-30 flex flex-col rounded-t-3xl bg-card/95 text-foreground shadow-[0_-24px_60px_-12px_rgba(0,0,0,0.55)] ring-1 ring-border/70 backdrop-blur-xl transition-[height] duration-300 ease-out animate-in slide-in-from-bottom-4 fade-in"
       style={{
         height: `${height}vh`,
         transitionProperty: dragH == null ? "height" : "none",
       }}
     >
       <div
-        className="flex cursor-grab flex-col items-center pb-1 pt-3 active:cursor-grabbing"
+        className="flex cursor-grab touch-none select-none flex-col items-center pb-1 pt-2 active:cursor-grabbing"
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
       >
-        <span className="h-1.5 w-12 rounded-full bg-muted-foreground/30" />
+        <span className="h-1.5 w-12 rounded-full bg-muted-foreground/40" />
         {handleLabel && (
-          <span className="mt-2 text-[11px] uppercase tracking-widest text-muted-foreground">
+          <span className="mt-1.5 text-[10px] uppercase tracking-widest text-muted-foreground">
             {handleLabel}
           </span>
         )}
       </div>
-      <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-6 pt-2">
+      <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-6 pt-1">
         {children}
       </div>
     </div>
