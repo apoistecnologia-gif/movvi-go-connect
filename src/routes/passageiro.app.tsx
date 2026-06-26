@@ -628,14 +628,39 @@ function PassageiroApp() {
     gpsRequestInFlightRef.current = true;
     setGpsErrorMsg("");
     try {
+      console.log("[MOVVI][DIAG] userAgent:", navigator.userAgent);
+      console.log("[MOVVI][DIAG] platform:", navigator.platform);
+      console.log("[MOVVI][DIAG] isSecureContext:", window.isSecureContext);
+      console.log("[MOVVI][DIAG] origin:", document.location.origin);
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           gpsRequestInFlightRef.current = false;
           const lat = pos.coords.latitude;
           const lng = pos.coords.longitude;
+          console.log("[MOVVI][DIAG] Position completo:", pos);
+          console.log("[MOVVI][DIAG] coords:", {
+            latitude: lat,
+            longitude: lng,
+            accuracy: pos.coords.accuracy,
+            altitude: pos.coords.altitude,
+            heading: pos.coords.heading,
+            speed: pos.coords.speed,
+            timestamp: pos.timestamp,
+          });
           console.log("[MOVVI] GPS recebido:", lat, lng);
           if (!isBrazilCoordinate(lat, lng)) {
             console.warn("[MOVVI] GPS rejeitado: fora do Brasil", { lat, lng });
+            setGpsDiag({
+              status: "rejected-outside-br",
+              lat,
+              lng,
+              accuracy: pos.coords.accuracy ?? null,
+              altitude: pos.coords.altitude ?? null,
+              heading: pos.coords.heading ?? null,
+              speed: pos.coords.speed ?? null,
+              timestamp: pos.timestamp,
+              reason: "Coordenada fora do bounding box do Brasil",
+            });
             setGpsState("denied");
             gpsStateRef.current = "denied";
             setGpsErrorMsg(
@@ -646,6 +671,16 @@ function PassageiroApp() {
 
           setPosition({ lat, lng });
           setGpsAccuracy(pos.coords.accuracy ?? null);
+          setGpsDiag({
+            status: "ok",
+            lat,
+            lng,
+            accuracy: pos.coords.accuracy ?? null,
+            altitude: pos.coords.altitude ?? null,
+            heading: pos.coords.heading ?? null,
+            speed: pos.coords.speed ?? null,
+            timestamp: pos.timestamp,
+          });
           setGpsState("granted");
           gpsStateRef.current = "granted";
           setGpsErrorMsg("");
