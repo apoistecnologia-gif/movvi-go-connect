@@ -326,6 +326,16 @@ function PassageiroApp() {
     "idle" | "requesting" | "granted" | "denied" | "unavailable"
   >("idle");
   const [gpsErrorMsg, setGpsErrorMsg] = useState<string>("");
+  // Status da permissão de geolocalização (Permissions API).
+  // - checking: ainda consultando a Permissions API
+  // - prompt: navegador ainda não decidiu — precisa de ação do usuário
+  // - granted: usuário já liberou; podemos pedir GPS imediatamente
+  // - denied: usuário negou; mostrar fluxo manual
+  // - unsupported: Permissions API ausente (Safari antigo etc.) — tratamos como "prompt"
+  const [permissionStatus, setPermissionStatus] = useState<
+    "checking" | "prompt" | "granted" | "denied" | "unsupported"
+  >("checking");
+  
   
 
   const [destinationText, setDestinationText] = useState("");
