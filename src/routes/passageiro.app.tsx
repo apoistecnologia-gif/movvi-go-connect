@@ -325,7 +325,7 @@ function PassageiroApp() {
   >("idle");
   const [gpsErrorMsg, setGpsErrorMsg] = useState<string>("");
   const [devNotice, setDevNotice] = useState<string | null>(null);
-  const isDev = useMemo(() => isDevEnvironment(), []);
+  void isDevEnvironment;
 
   const [destinationText, setDestinationText] = useState("");
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
