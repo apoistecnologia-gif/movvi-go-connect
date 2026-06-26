@@ -1712,7 +1712,7 @@ function GpsDeniedScreen({
             onKeyDown={(e) => {
               if (e.key === "Enter") void submitManualSearch();
             }}
-            placeholder="Ex: Petrolina PE"
+            placeholder="Digite seu endereço, bairro ou cidade"
             className="mt-2 w-full rounded-xl bg-background px-3 py-3 text-sm outline-none ring-1 ring-border focus:ring-primary"
           />
           {mapsLoadError && (
