@@ -4,19 +4,25 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Marker, Polyline, useJsApiLoader } from "@react-google-maps/api";
 import {
   ArrowLeft,
-  Briefcase,
+  Bike,
+  Box,
+  Car,
   Clock,
   Crosshair,
   Home as HomeIcon,
   LogOut,
   MapPin,
   Navigation2,
+  Package,
   Phone,
   Search,
+  Send,
   Shield,
   Star,
+  Truck,
   X,
   Zap,
+  type LucideIcon,
 } from "lucide-react";
 import { MovviMap } from "@/components/MovviMap";
 import { MovviSheet, type MovviSheetHandle } from "@/components/MovviSheet";
