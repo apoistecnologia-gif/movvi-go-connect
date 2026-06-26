@@ -179,7 +179,7 @@ function MotoristaApp() {
     if (position && mapRef.current) { mapRef.current.panTo(position); mapRef.current.setZoom(16); }
   }
 
-  const center = position ?? BRASILIA_CENTER;
+  const center = position ?? BRAZIL_CENTER;
   const showActive = active && (active.status === "driver_assigned"
     || active.status === "driver_arrived" || active.status === "in_progress"
     || active.status === "completed" || active.status === "cancelled");
