@@ -411,6 +411,18 @@ function PassageiroApp() {
     "idle" | "requesting" | "granted" | "denied" | "unavailable"
   >("idle");
   const [gpsErrorMsg, setGpsErrorMsg] = useState<string>("");
+  // 🔧 Painel temporário de diagnóstico de geolocalização (DEV)
+  const [gpsDiag, setGpsDiag] = useState<{
+    status: "ok" | "rejected-outside-br";
+    lat: number;
+    lng: number;
+    accuracy: number | null;
+    altitude: number | null;
+    heading: number | null;
+    speed: number | null;
+    timestamp: number;
+    reason?: string;
+  } | null>(null);
   // Status da permissão de geolocalização (Permissions API).
   // - checking: ainda consultando a Permissions API
   // - prompt: navegador ainda não decidiu — precisa de ação do usuário
@@ -616,14 +628,39 @@ function PassageiroApp() {
     gpsRequestInFlightRef.current = true;
     setGpsErrorMsg("");
     try {
+      console.log("[MOVVI][DIAG] userAgent:", navigator.userAgent);
+      console.log("[MOVVI][DIAG] platform:", navigator.platform);
+      console.log("[MOVVI][DIAG] isSecureContext:", window.isSecureContext);
+      console.log("[MOVVI][DIAG] origin:", document.location.origin);
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           gpsRequestInFlightRef.current = false;
           const lat = pos.coords.latitude;
           const lng = pos.coords.longitude;
+          console.log("[MOVVI][DIAG] Position completo:", pos);
+          console.log("[MOVVI][DIAG] coords:", {
+            latitude: lat,
+            longitude: lng,
+            accuracy: pos.coords.accuracy,
+            altitude: pos.coords.altitude,
+            heading: pos.coords.heading,
+            speed: pos.coords.speed,
+            timestamp: pos.timestamp,
+          });
           console.log("[MOVVI] GPS recebido:", lat, lng);
           if (!isBrazilCoordinate(lat, lng)) {
             console.warn("[MOVVI] GPS rejeitado: fora do Brasil", { lat, lng });
+            setGpsDiag({
+              status: "rejected-outside-br",
+              lat,
+              lng,
+              accuracy: pos.coords.accuracy ?? null,
+              altitude: pos.coords.altitude ?? null,
+              heading: pos.coords.heading ?? null,
+              speed: pos.coords.speed ?? null,
+              timestamp: pos.timestamp,
+              reason: "Coordenada fora do bounding box do Brasil",
+            });
             setGpsState("denied");
             gpsStateRef.current = "denied";
             setGpsErrorMsg(
@@ -634,6 +671,16 @@ function PassageiroApp() {
 
           setPosition({ lat, lng });
           setGpsAccuracy(pos.coords.accuracy ?? null);
+          setGpsDiag({
+            status: "ok",
+            lat,
+            lng,
+            accuracy: pos.coords.accuracy ?? null,
+            altitude: pos.coords.altitude ?? null,
+            heading: pos.coords.heading ?? null,
+            speed: pos.coords.speed ?? null,
+            timestamp: pos.timestamp,
+          });
           setGpsState("granted");
           gpsStateRef.current = "granted";
           setGpsErrorMsg("");
@@ -1110,6 +1157,46 @@ function PassageiroApp() {
         >
           <div className="pointer-events-auto mt-2 max-w-[92%] rounded-full bg-amber-500/15 px-3 py-1.5 text-center text-[11px] font-medium text-amber-300 ring-1 ring-amber-500/30 backdrop-blur">
             Ambiente de teste detectado. A localização real pode não funcionar aqui.
+          </div>
+        </div>
+      )}
+      {gpsDiag && (
+        <div className="pointer-events-auto absolute left-2 top-14 z-50 max-w-[280px] rounded-lg bg-black/85 p-3 font-mono text-[10px] leading-tight text-white ring-1 ring-white/20 backdrop-blur">
+          <div className="mb-1 flex items-center justify-between gap-2">
+            <span className={`font-bold ${gpsDiag.status === "ok" ? "text-emerald-400" : "text-red-400"}`}>
+              {gpsDiag.status === "ok" ? "🛰️ GPS OK" : "⛔ GPS REJEITADO"}
+            </span>
+            <button
+              onClick={() => setGpsDiag(null)}
+              className="rounded px-1.5 text-white/60 hover:text-white"
+              aria-label="Fechar"
+            >
+              ✕
+            </button>
+          </div>
+          {gpsDiag.status === "rejected-outside-br" ? (
+            <div className="space-y-0.5">
+              <div>Latitude recebida: {gpsDiag.lat.toFixed(6)}</div>
+              <div>Longitude recebida: {gpsDiag.lng.toFixed(6)}</div>
+              <div>Accuracy: {gpsDiag.accuracy != null ? `${Math.round(gpsDiag.accuracy)} m` : "—"}</div>
+              <div>Motivo: {gpsDiag.reason}</div>
+            </div>
+          ) : (
+            <div className="space-y-0.5">
+              <div>Latitude: {gpsDiag.lat.toFixed(6)}</div>
+              <div>Longitude: {gpsDiag.lng.toFixed(6)}</div>
+              <div>Accuracy: {gpsDiag.accuracy != null ? `${Math.round(gpsDiag.accuracy)} m` : "—"}</div>
+              <div>Altitude: {gpsDiag.altitude != null ? `${gpsDiag.altitude.toFixed(1)} m` : "—"}</div>
+              <div>Heading: {gpsDiag.heading != null ? `${gpsDiag.heading.toFixed(1)}°` : "—"}</div>
+              <div>Speed: {gpsDiag.speed != null ? `${gpsDiag.speed.toFixed(2)} m/s` : "—"}</div>
+              <div>Timestamp: {new Date(gpsDiag.timestamp).toISOString()}</div>
+            </div>
+          )}
+          <div className="mt-2 border-t border-white/10 pt-1.5 text-white/60">
+            <div className="truncate">UA: {typeof navigator !== "undefined" ? navigator.userAgent : ""}</div>
+            <div>Platform: {typeof navigator !== "undefined" ? navigator.platform : ""}</div>
+            <div>secureContext: {typeof window !== "undefined" && window.isSecureContext ? "true" : "false"}</div>
+            <div className="truncate">origin: {typeof document !== "undefined" ? document.location.origin : ""}</div>
           </div>
         </div>
       )}
