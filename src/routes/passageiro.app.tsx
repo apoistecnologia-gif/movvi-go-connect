@@ -1812,6 +1812,7 @@ function GpsDeniedScreen({
   onManual,
   errorMessage,
   requesting,
+  devMode = false,
 }: {
   mode?: "prompt" | "denied";
   onRetry: () => void;
@@ -1819,6 +1820,7 @@ function GpsDeniedScreen({
   onManual: (p: LatLng) => void;
   errorMessage: string;
   requesting: boolean;
+  devMode?: boolean;
 }) {
   const isPrompt = mode === "prompt";
   const title = isPrompt
