@@ -758,21 +758,22 @@ function PassageiroApp() {
 
       {/* BOTTOM SHEET — novo, próprio do MOVVI */}
       {!ride && (
-        <MovviSheet ref={sheetRef} snaps={[32, 62, 86]} initial={32}>
+        <MovviSheet ref={sheetRef} snaps={[38, 68, 90]} initial={38}>
           <SheetContent
+            currentAddress={currentAddress}
+            hasPosition={!!position}
             destination={destination}
             destinationText={destinationText}
             setDestinationText={setDestinationText}
             suggestions={suggestions}
-            recent={recent}
             onFocusSearch={focusSearch}
             onPick={pickSuggestion}
             onClearDestination={clearDestination}
             route={route}
             busy={busy}
             error={error}
-            category={category}
-            setCategory={setCategory}
+            uiCategoryKey={uiCategoryKey}
+            setUiCategoryKey={setUiCategoryKey}
             driversCount={drivers.length}
             onSubmit={submitRide}
             searchInputRef={searchInputRef}
