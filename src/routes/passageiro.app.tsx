@@ -3,11 +3,13 @@ import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Circle, Marker, Polyline, useJsApiLoader } from "@react-google-maps/api";
 import {
+  ArrowLeft,
   Bike,
   Box,
   Car,
   ChevronRight,
   Clock,
+  CreditCard,
   Crosshair,
   LogOut,
   MapPin,
@@ -1687,125 +1689,262 @@ function SheetContent({
         </div>
       )}
 
-      {/* COM destino: rota + grupos + opções */}
+      {/* COM destino: fluxo em 4 etapas (estilo Uber/99/InDrive) */}
       {destination && (
-        <>
-          <div className="mb-2.5 flex items-center gap-2 rounded-xl bg-background/60 px-3 py-2 ring-1 ring-border">
-            <MapPin className="h-4 w-4 shrink-0 text-destructive" />
-            <span className="line-clamp-2 flex-1 text-[12.5px] font-medium">
-              {destination.label}
-            </span>
-            <button
-              onClick={onClearDestination}
-              aria-label="Remover destino"
-              className="rounded-full p-1 text-muted-foreground hover:bg-accent/40"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
+        <StepFlow
+          destination={destination}
+          route={route}
+          busy={busy}
+          error={error}
+          km={km}
+          min={min}
+          tariffs={tariffs}
+          uiCategoryKey={uiCategoryKey}
+          setUiCategoryKey={setUiCategoryKey}
+          selectedCategory={selectedCategory}
+          selectedFare={selectedFare}
+          onClearDestination={onClearDestination}
+          onSubmit={onSubmit}
+        />
+      )}
+    </div>
+  );
+}
 
-          {route && (
-            <div className="mb-2.5 grid grid-cols-3 gap-2">
-              <Stat
-                icon={<Clock className="h-3.5 w-3.5" />}
-                label="Tempo"
-                value={fmtMin(route.durationSeconds)}
-                highlight
-              />
-              <Stat
-                icon={<Navigation2 className="h-3.5 w-3.5" />}
-                label="Distância"
-                value={fmtKm(route.distanceMeters)}
-              />
-              <Stat
-                icon={<Zap className="h-3.5 w-3.5" />}
-                label="Motoristas"
-                value={`${driversCount}`}
-              />
+// ──────────────────────────────────────────────────────────────
+// Fluxo em etapas após o destino
+// ──────────────────────────────────────────────────────────────
+
+type StepFlowProps = {
+  destination: { point: LatLng; label: string };
+  route: RouteResult | null;
+  busy: boolean;
+  error: string | null;
+  km: number;
+  min: number;
+  tariffs: TariffMap;
+  uiCategoryKey: string;
+  setUiCategoryKey: (k: string) => void;
+  selectedCategory: UiCategory;
+  selectedFare: number | null;
+  onClearDestination: () => void;
+  onSubmit: () => void;
+};
+
+function StepFlow({
+  destination,
+  route,
+  busy,
+  error,
+  km,
+  min,
+  tariffs,
+  uiCategoryKey,
+  setUiCategoryKey,
+  selectedCategory,
+  selectedFare,
+  onClearDestination,
+  onSubmit,
+}: StepFlowProps) {
+  // 1 = aguardando rota, 2 = resumo (tempo/dist/valor), 3 = categorias, 4 = confirmação
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
+
+  useEffect(() => {
+    if (route && step === 1) setStep(2);
+  }, [route, step]);
+
+  // Preço de prévia (categoria padrão = carro) para a Etapa 2
+  const previewFare = route
+    ? estimateFare(UI_CATEGORIES[0].backend, km, min, tariffs)
+    : null;
+
+  return (
+    <div className="animate-in fade-in duration-200">
+      {/* Cabeçalho do destino com voltar */}
+      <div className="mb-3 flex items-center gap-2 rounded-xl bg-background/60 px-2.5 py-2 ring-1 ring-border">
+        {step > 2 && (
+          <button
+            type="button"
+            onClick={() => setStep((s) => (s === 4 ? 3 : 2) as 2 | 3)}
+            aria-label="Voltar"
+            className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-accent/40"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </button>
+        )}
+        <MapPin className="h-4 w-4 shrink-0 text-destructive" />
+        <span className="line-clamp-1 flex-1 text-[12.5px] font-medium">
+          {destination.label}
+        </span>
+        <button
+          onClick={onClearDestination}
+          aria-label="Remover destino"
+          className="rounded-full p-1 text-muted-foreground hover:bg-accent/40"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+
+      {error && (
+        <p className="mb-2 rounded-xl bg-destructive/15 px-3 py-2 text-xs text-destructive-foreground ring-1 ring-destructive/40">
+          {error}
+        </p>
+      )}
+
+      {/* ETAPA 1 — calculando rota */}
+      {step === 1 && (
+        <div className="flex items-center justify-center gap-3 rounded-2xl bg-background/60 px-4 py-6 ring-1 ring-border">
+          <span className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <span className="text-sm font-medium text-muted-foreground">
+            Calculando rota...
+          </span>
+        </div>
+      )}
+
+      {/* ETAPA 2 — resumo em uma linha + Continuar */}
+      {step === 2 && route && (
+        <div className="animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <div className="mb-3 rounded-2xl bg-primary/5 px-4 py-4 ring-1 ring-primary/30">
+            <div className="flex flex-wrap items-baseline justify-center gap-x-2 gap-y-1 text-center">
+              <span className="text-[15px] font-extrabold text-foreground">
+                {fmtMin(route.durationSeconds)}
+              </span>
+              <span className="text-muted-foreground">•</span>
+              <span className="text-[15px] font-extrabold text-foreground">
+                {fmtKm(route.distanceMeters)}
+              </span>
+              <span className="text-muted-foreground">•</span>
+              <span className="text-[15px] font-extrabold text-primary">
+                {previewFare != null ? formatBRL(previewFare) : "Valor estimado"}
+              </span>
             </div>
-          )}
+            <p className="mt-1.5 text-center text-[10.5px] text-muted-foreground">
+              Valor estimado. Pode variar conforme rota e disponibilidade.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setStep(3)}
+            className="w-full rounded-2xl bg-primary py-3.5 text-[14px] font-bold text-primary-foreground shadow-xl shadow-primary/25 transition active:scale-[0.98]"
+          >
+            Continuar
+          </button>
+        </div>
+      )}
 
-          {/* Seleção de categoria — grid flat com as 5 opções MOVVI */}
-          <div className="mb-2.5 grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {UI_CATEGORIES.map((c) => {
-              const active = c.key === uiCategoryKey;
-              const fare = route ? estimateFare(c.backend, km, min, tariffs) : null;
-              const Icon = c.icon;
-              return (
-                <button
-                  key={c.key}
-                  type="button"
-                  onClick={() => setUiCategoryKey(c.key)}
-                  aria-pressed={active}
-                  className={`flex flex-col items-start gap-1 rounded-2xl border-2 px-3 py-3 text-left transition active:scale-95 ${
-                    active
-                      ? "border-primary bg-primary/10 shadow-md shadow-primary/20"
-                      : "border-border bg-background/60 hover:border-primary/40"
-                  }`}
-                >
-                  <span
-                    className={`grid h-9 w-9 place-items-center rounded-xl ${
-                      active ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary"
+      {/* ETAPA 3 — carrossel horizontal de categorias */}
+      {step === 3 && route && (
+        <div className="animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+            Escolha a categoria
+          </div>
+          <div className="-mx-4 mb-3 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="flex snap-x snap-mandatory gap-2.5 pb-1">
+              {UI_CATEGORIES.map((c) => {
+                const active = c.key === uiCategoryKey;
+                const fare = estimateFare(c.backend, km, min, tariffs);
+                const Icon = c.icon;
+                return (
+                  <button
+                    key={c.key}
+                    type="button"
+                    onClick={() => {
+                      setUiCategoryKey(c.key);
+                      setStep(4);
+                    }}
+                    aria-pressed={active}
+                    className={`flex w-[120px] shrink-0 snap-start flex-col items-center gap-1.5 rounded-2xl border-2 px-3 py-3 text-center transition active:scale-95 ${
+                      active
+                        ? "border-primary bg-primary/10 shadow-md shadow-primary/20"
+                        : "border-border bg-background/60 hover:border-primary/40"
                     }`}
                   >
-                    <Icon className="h-4.5 w-4.5" />
-                  </span>
-                  <span className="text-[13px] font-bold leading-tight">{c.label}</span>
-                  <span className="text-[10.5px] leading-tight text-muted-foreground">
-                    {c.tagline}
-                  </span>
-                  {fare != null ? (
                     <span
-                      className={`mt-0.5 text-[13px] font-extrabold ${
-                        active ? "text-primary" : "text-foreground"
+                      className={`grid h-10 w-10 place-items-center rounded-xl ${
+                        active
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-primary/10 text-primary"
                       }`}
                     >
+                      <Icon className="h-5 w-5" />
+                    </span>
+                    <span className="text-[12.5px] font-bold leading-none">
+                      {c.label}
+                    </span>
+                    <span className="text-[10px] leading-none text-muted-foreground">
+                      {fmtMin(route.durationSeconds)}
+                    </span>
+                    <span className="text-[12.5px] font-extrabold leading-none text-primary">
                       {formatBRL(fare)}
                     </span>
-                  ) : (
-                    <span className="mt-0.5 text-[10px] text-muted-foreground">
-                      Calculando...
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Cartão de estimativa */}
-          {route && selectedFare != null && (
-            <div className="mb-2.5 rounded-2xl bg-primary/5 px-3 py-3 ring-1 ring-primary/30">
-              <div className="flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="text-[10px] font-semibold uppercase tracking-widest text-primary">
-                    {selectedCategory.label} • {fmtKm(route.distanceMeters)} • {fmtMin(route.durationSeconds)}
-                  </div>
-                  <div className="mt-0.5 text-[22px] font-extrabold leading-none text-foreground">
-                    {formatBRL(selectedFare)}
-                  </div>
-                </div>
-              </div>
-              <p className="mt-2 text-[10.5px] leading-snug text-muted-foreground">
-                Valor estimado. O preço final pode variar conforme a rota e disponibilidade.
-              </p>
+                  </button>
+                );
+              })}
             </div>
-          )}
+          </div>
+        </div>
+      )}
 
-          {error && (
-            <p className="mb-2 rounded-xl bg-destructive/15 px-3 py-2 text-xs text-destructive-foreground ring-1 ring-destructive/40">
-              {error}
-            </p>
-          )}
+      {/* ETAPA 4 — confirmação + botão fixo */}
+      {step === 4 && route && selectedFare != null && (
+        <div className="animate-in fade-in slide-in-from-bottom-2 duration-200 space-y-2.5 pb-[calc(env(safe-area-inset-bottom)+76px)]">
+          <div className="flex items-center gap-3 rounded-2xl bg-primary/5 px-3 py-3 ring-1 ring-primary/30">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground">
+              <selectedCategory.icon className="h-5 w-5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="text-[10px] font-semibold uppercase tracking-widest text-primary">
+                Categoria
+              </div>
+              <div className="truncate text-[15px] font-extrabold text-foreground">
+                {selectedCategory.label}
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                Estimado
+              </div>
+              <div className="text-[17px] font-extrabold text-foreground">
+                {formatBRL(selectedFare)}
+              </div>
+            </div>
+          </div>
 
           <button
             type="button"
-            disabled={!route || busy}
-            onClick={onSubmit}
-            className="w-full rounded-2xl bg-primary py-3.5 text-[14px] font-bold text-primary-foreground shadow-xl shadow-primary/25 transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex w-full items-center gap-3 rounded-2xl bg-background/60 px-3 py-3 text-left ring-1 ring-border transition hover:bg-accent/20"
           >
-            {busy ? "Solicitando..." : `Solicitar MOVVI ${selectedCategory.label}`}
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+              <CreditCard className="h-4 w-4" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                Forma de pagamento
+              </div>
+              <div className="truncate text-[13.5px] font-bold text-foreground">
+                Dinheiro
+              </div>
+            </div>
+            <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
           </button>
-        </>
+
+          {/* Botão fixo no rodapé */}
+          <div
+            className="fixed inset-x-0 bottom-0 z-30 border-t border-border/60 bg-surface/95 px-4 pt-3 backdrop-blur-md"
+            style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 12px)" }}
+          >
+            <button
+              type="button"
+              disabled={busy}
+              onClick={onSubmit}
+              className="w-full rounded-2xl bg-primary py-3.5 text-[15px] font-bold text-primary-foreground shadow-xl shadow-primary/25 transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {busy
+                ? "Solicitando..."
+                : `Solicitar MOVVI ${selectedCategory.label}`}
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
