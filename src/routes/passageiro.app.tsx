@@ -484,7 +484,7 @@ function PassageiroApp() {
         onHome={() => navigate({ to: "/" })}
         onManual={setManualLocation}
         errorMessage={gpsErrorMsg}
-        requesting={gpsState === "requesting"}
+        requesting={false}
       />
     );
   }
