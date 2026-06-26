@@ -27,7 +27,14 @@ import {
 } from "@/lib/googleMaps";
 import { useDriverBroadcast } from "@/hooks/useDriverBroadcast";
 import { computeRoute } from "@/lib/routes.functions";
-import { acceptRide, rejectRide, updateRidePhase } from "@/lib/ride.functions";
+import {
+  aceitarCorrida,
+  recusarCorrida,
+  informarChegada,
+  iniciarCorrida,
+  finalizarCorrida,
+  cancelarPeloMotorista,
+} from "@/lib/rideLifecycle";
 import { formatBRL } from "@/lib/rideCategories";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -63,10 +70,13 @@ function haversineKm(a: LatLng, b: LatLng) {
 
 function MotoristaApp() {
   const navigate = useNavigate();
-  const callAccept = useServerFn(acceptRide);
-  const callReject = useServerFn(rejectRide);
-  const callPhase  = useServerFn(updateRidePhase);
-  const callRoute  = useServerFn(computeRoute);
+  const callAccept   = useServerFn(aceitarCorrida);
+  const callReject   = useServerFn(recusarCorrida);
+  const callArrive   = useServerFn(informarChegada);
+  const callStart    = useServerFn(iniciarCorrida);
+  const callComplete = useServerFn(finalizarCorrida);
+  const callCancel   = useServerFn(cancelarPeloMotorista);
+  const callRoute    = useServerFn(computeRoute);
 
   const [userId, setUserId] = useState<string | null>(null);
   const [driverName, setDriverName] = useState<string>("");
@@ -342,15 +352,15 @@ function MotoristaApp() {
               passenger={passenger}
               etaSeconds={etaSeconds}
               legKm={legKm}
-              onArrive={async () => { await callPhase({ data: { rideId: active.id, status: "motorista_chegou" } }); }}
-              onStart={async () => { await callPhase({ data: { rideId: active.id, status: "em_viagem" } }); }}
+              onArrive={async () => { await callArrive({ data: { rideId: active.id } }); }}
+              onStart={async () => { await callStart({ data: { rideId: active.id } }); }}
               onComplete={async () => {
-                await callPhase({ data: {
-                  rideId: active.id, status: "finalizada",
+                await callComplete({ data: {
+                  rideId: active.id,
                   final_price: active.estimated_price ? Number(active.estimated_price) : undefined,
                 } });
               }}
-              onCancel={async () => { await callPhase({ data: { rideId: active.id, status: "cancelada_motorista" } }); }}
+              onCancel={async () => { await callCancel({ data: { rideId: active.id } }); }}
             />
           ) : (
             <IdlePanel
