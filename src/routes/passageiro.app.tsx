@@ -1314,7 +1314,7 @@ function PassageiroApp() {
 
       {/* BOTTOM SHEET — novo, próprio do MOVVI */}
       {!ride && (
-        <MovviSheet ref={sheetRef} snaps={[30, 72, 92]} initial={30}>
+        <MovviSheet ref={sheetRef} snaps={[32, 55, 70]} initial={32}>
           <SheetContent
             geo={geo}
             addressStatus={addressStatus}
