@@ -4,6 +4,8 @@ import { z } from "zod";
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/google_maps";
 
 export type GeocodeComponents = {
+  rua?: string;
+  numero?: string;
   povoado?: string;
   bairro?: string;
   cidade?: string;
