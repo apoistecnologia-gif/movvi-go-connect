@@ -476,7 +476,7 @@ function PassageiroApp() {
     setRoute(null);
     setError(null);
     setSuggestions([]);
-    sheetRef.current?.snapTo(32);
+    sheetRef.current?.snapTo(30);
     if (mapRef.current && position) {
       mapRef.current.panTo(position);
       mapRef.current.setZoom(16);
