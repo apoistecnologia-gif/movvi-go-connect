@@ -976,6 +976,7 @@ function PassageiroApp() {
         onManual={setManualLocation}
         errorMessage={gpsErrorMsg}
         requesting={gpsState === "requesting"}
+        devMode={isDevelopmentEnvironment()}
       />
     );
   }
