@@ -1018,7 +1018,7 @@ function groupOf(uiKey: string): GroupKey {
 
 function SheetContent({
   geo,
-  geoLoading,
+  addressStatus,
   hasPosition,
   onOpenAddressDetails,
   destination,
