@@ -28,6 +28,11 @@ import {
   isBrazilCoordinate,
   purgeForeignMapCache,
 } from "@/lib/googleMaps";
+import {
+  isDevEnvironment,
+  DEV_TEST_LOCATION,
+  DEV_TEST_LABEL,
+} from "@/lib/environment";
 import { computeRoute, type RouteResult } from "@/lib/routes.functions";
 import { requestRide } from "@/lib/ride.functions";
 import { useNearbyDrivers } from "@/hooks/useNearbyDrivers";
