@@ -158,89 +158,135 @@ function PulsingUserMarker({ position }: { position: LatLng }) {
   );
 }
 
-function AddressDetailsSheet({
+function OriginActionsSheet({
   geo,
   position,
-  accuracy,
   onClose,
+  onUseGps,
+  onPickOnMap,
+  onTypeAddress,
+  gpsRequesting,
 }: {
   geo: GeocodeResult | null;
   position: LatLng | null;
-  accuracy: number | null;
   onClose: () => void;
+  onUseGps: () => void;
+  onPickOnMap: () => void;
+  onTypeAddress: () => void;
+  gpsRequesting: boolean;
 }) {
+  const rua = geo?.components.rua;
+  const numero = geo?.components.numero;
+  const bairro = geo?.components.bairro || geo?.components.povoado;
+  const region = geo?.region;
+  const ruaLine = rua ? (numero ? `${rua}, ${numero}` : rua) : geo?.friendly || "";
+
   return (
     <div className="fixed inset-0 z-[60] flex items-end" onClick={onClose}>
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" />
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full rounded-t-3xl bg-card p-5 pb-[calc(env(safe-area-inset-bottom)+24px)] shadow-2xl ring-1 ring-border animate-in slide-in-from-bottom duration-300"
+        className="relative w-full rounded-t-3xl bg-card p-5 pb-[calc(env(safe-area-inset-bottom)+20px)] shadow-2xl ring-1 ring-border animate-in slide-in-from-bottom duration-300"
       >
         <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-foreground/15" />
-        <div className="mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="grid h-9 w-9 place-items-center rounded-full bg-primary text-primary-foreground">
-              <MapPin className="h-4 w-4" />
-            </span>
-            <div>
-              <div className="text-[10px] font-semibold uppercase tracking-widest text-primary">
-                Detalhes do local
-              </div>
-              <div className="text-[14px] font-semibold">{geo?.friendly || "Localização atual"}</div>
+        <div className="mb-4 flex items-start gap-3">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
+            <MapPin className="h-4 w-4" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="text-[10px] font-semibold uppercase tracking-widest text-primary">
+              Local de partida
             </div>
+            {ruaLine ? (
+              <div className="mt-0.5 truncate text-[15px] font-bold text-foreground">{ruaLine}</div>
+            ) : position ? (
+              <div className="mt-0.5 truncate font-mono text-[12px] font-semibold text-foreground">
+                {position.lat.toFixed(6)}, {position.lng.toFixed(6)}
+              </div>
+            ) : (
+              <div className="mt-0.5 text-[13px] text-muted-foreground">Sem endereço identificado</div>
+            )}
+            {bairro && <div className="truncate text-[12.5px] text-foreground/80">{bairro}</div>}
+            {region && <div className="truncate text-[12px] text-muted-foreground">{region}</div>}
           </div>
+        </div>
+
+        <div className="space-y-2">
+          <OriginAction
+            icon={<Crosshair className="h-4 w-4" />}
+            label="Usar minha localização novamente"
+            description="Recapturar GPS do aparelho"
+            onClick={onUseGps}
+            disabled={gpsRequesting}
+            primary
+          />
+          <OriginAction
+            icon={<Navigation2 className="h-4 w-4" />}
+            label="Escolher outro local no mapa"
+            description="Arraste o mapa e confirme o ponto"
+            onClick={onPickOnMap}
+          />
+          <OriginAction
+            icon={<Search className="h-4 w-4" />}
+            label="Digitar outro endereço"
+            description="Buscar pelo nome da rua, bairro ou CEP"
+            onClick={onTypeAddress}
+          />
           <button
+            type="button"
             onClick={onClose}
-            aria-label="Fechar"
-            className="grid h-9 w-9 place-items-center rounded-full bg-accent/30 text-foreground transition active:scale-90"
+            className="w-full rounded-2xl bg-background/60 py-3 text-sm font-semibold text-muted-foreground ring-1 ring-border transition active:scale-[0.98]"
           >
-            <X className="h-4 w-4" />
+            Cancelar
           </button>
         </div>
-
-        <div className="space-y-2.5 text-sm">
-          {geo?.address && (
-            <DetailRow label="Endereço completo" value={geo.address} />
-          )}
-          {geo?.region && <DetailRow label="Região" value={geo.region} />}
-          {position && (
-            <>
-              <DetailRow
-                label="Latitude"
-                value={position.lat.toFixed(6)}
-                mono
-              />
-              <DetailRow
-                label="Longitude"
-                value={position.lng.toFixed(6)}
-                mono
-              />
-            </>
-          )}
-          {accuracy != null && (
-            <DetailRow
-              label="Precisão do GPS"
-              value={`± ${Math.round(accuracy)} metros`}
-            />
-          )}
-        </div>
       </div>
     </div>
   );
 }
 
-function DetailRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+function OriginAction({
+  icon,
+  label,
+  description,
+  onClick,
+  disabled,
+  primary,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  description: string;
+  onClick: () => void;
+  disabled?: boolean;
+  primary?: boolean;
+}) {
   return (
-    <div className="rounded-xl bg-background/60 px-3 py-2 ring-1 ring-border">
-      <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-        {label}
-      </div>
-      <div className={`mt-0.5 break-words text-[13px] text-foreground ${mono ? "font-mono" : ""}`}>
-        {value}
-      </div>
-    </div>
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition active:scale-[0.98] disabled:opacity-60 ${
+        primary
+          ? "bg-primary/15 ring-1 ring-primary/40 hover:bg-primary/20"
+          : "bg-background/60 ring-1 ring-border hover:bg-background"
+      }`}
+    >
+      <span
+        className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${
+          primary ? "bg-primary text-primary-foreground" : "bg-primary/15 text-primary"
+        }`}
+      >
+        {icon}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[13.5px] font-bold text-foreground">{label}</span>
+        <span className="block truncate text-[11.5px] text-muted-foreground">{description}</span>
+      </span>
+      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+    </button>
   );
 }
+
 
 
 export const Route = createFileRoute("/passageiro/app")({
