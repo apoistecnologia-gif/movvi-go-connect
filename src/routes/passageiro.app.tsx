@@ -326,6 +326,16 @@ function PassageiroApp() {
     "idle" | "requesting" | "granted" | "denied" | "unavailable"
   >("idle");
   const [gpsErrorMsg, setGpsErrorMsg] = useState<string>("");
+  // Status da permissão de geolocalização (Permissions API).
+  // - checking: ainda consultando a Permissions API
+  // - prompt: navegador ainda não decidiu — precisa de ação do usuário
+  // - granted: usuário já liberou; podemos pedir GPS imediatamente
+  // - denied: usuário negou; mostrar fluxo manual
+  // - unsupported: Permissions API ausente (Safari antigo etc.) — tratamos como "prompt"
+  const [permissionStatus, setPermissionStatus] = useState<
+    "checking" | "prompt" | "granted" | "denied" | "unsupported"
+  >("checking");
+  
   
 
   const [destinationText, setDestinationText] = useState("");
@@ -566,9 +576,65 @@ function PassageiroApp() {
     setGpsErrorMsg("");
   }, []);
 
+  // Verifica a permissão de geolocalização ANTES de chamar getCurrentPosition.
+  // - Se já estiver "granted", pedimos o GPS imediatamente (sem prompt do navegador).
+  // - Se for "prompt" / Permissions API indisponível, NÃO pedimos nada agora —
+  //   o usuário precisa tocar em "Permitir localização" para acionar o prompt
+  //   oficial do navegador.
+  // - Se for "denied", mostramos o fluxo manual sem nunca tentar de novo
+  //   automaticamente (evita loops).
   useEffect(() => {
     purgeForeignMapCache();
-    requestGps();
+    let cancelled = false;
+
+    if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
+      setPermissionStatus("unsupported");
+      setGpsState("unavailable");
+      setGpsErrorMsg("Seu navegador não oferece geolocalização.");
+      return;
+    }
+
+    const perms = (navigator as Navigator).permissions;
+    if (!perms || typeof perms.query !== "function") {
+      // Sem Permissions API (Safari iOS antigo etc.): tratamos como prompt,
+      // o usuário precisa tocar no botão para disparar a solicitação.
+      setPermissionStatus("unsupported");
+      return;
+    }
+
+    let statusRef: PermissionStatus | null = null;
+    perms
+      .query({ name: "geolocation" as PermissionName })
+      .then((status) => {
+        if (cancelled) return;
+        statusRef = status;
+        const apply = (s: PermissionState) => {
+          if (s === "granted") {
+            setPermissionStatus("granted");
+            // Já liberado — pedir GPS de imediato (não dispara prompt).
+            requestGps();
+          } else if (s === "denied") {
+            setPermissionStatus("denied");
+            setGpsState("denied");
+            setGpsErrorMsg(
+              "Permissão de localização negada. Você pode continuar utilizando a MOVVI informando sua localização manualmente.",
+            );
+          } else {
+            setPermissionStatus("prompt");
+          }
+        };
+        apply(status.state);
+        status.onchange = () => apply(status.state);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setPermissionStatus("unsupported");
+      });
+
+    return () => {
+      cancelled = true;
+      if (statusRef) statusRef.onchange = null;
+    };
   }, [requestGps]);
 
   /* ---------------------- autocomplete (Places API New) ---------------------- */
@@ -832,18 +898,59 @@ function PassageiroApp() {
   const phase = ride?.status;
 
   /* ---------------------- GPS initial loading ---------------------- */
-  // Só mostra a tela de ativação na PRIMEIRA solicitação (sem posição ainda).
-  // Se já estamos pedindo/idle e não há posição, exibimos a tela com botão.
-  // Quando há erro (denied/unavailable) e o usuário já viu a tela inicial,
-  // mantemos o app montado e mostramos o erro inline no cartão de endereço.
-  const showGpsScreen =
+  // Padrão Uber/99/InDrive:
+  //  1) Enquanto a Permissions API ainda responde, mostramos um loader curto.
+  //  2) Se a permissão é "prompt" / desconhecida → tela explicativa com botão
+  //     "Permitir localização" (só aí chamamos getCurrentPosition).
+  //  3) Se foi negada / indisponível → tela com retry + localização manual.
+  //  4) Se concedida → o app abre normalmente assim que as coordenadas chegam.
+  if (!position && permissionStatus === "checking") {
+    return (
+      <div className="flex min-h-[100dvh] items-center justify-center bg-background text-foreground">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-10 w-10 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+          <p className="text-sm text-muted-foreground">Preparando a MOVVI...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Quando a permissão já está concedida e estamos só esperando o GPS responder,
+  // mostramos um loader curto em vez da tela de "permitir localização".
+  if (
     !position &&
-    (gpsState === "idle" ||
-      gpsState === "requesting" ||
-      ((gpsState === "denied" || gpsState === "unavailable") && !gpsErrorMsg));
-  if (showGpsScreen) {
+    permissionStatus === "granted" &&
+    gpsState !== "denied" &&
+    gpsState !== "unavailable"
+  ) {
+    return (
+      <div className="flex min-h-[100dvh] items-center justify-center bg-background text-foreground">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-10 w-10 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+          <p className="text-sm text-muted-foreground">Obtendo sua localização...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const needsPermissionScreen =
+    !position &&
+    (permissionStatus === "prompt" ||
+      permissionStatus === "unsupported" ||
+      permissionStatus === "denied" ||
+      gpsState === "denied" ||
+      gpsState === "unavailable");
+
+  if (needsPermissionScreen) {
+    const mode: "prompt" | "denied" =
+      permissionStatus === "denied" ||
+      gpsState === "denied" ||
+      gpsState === "unavailable"
+        ? "denied"
+        : "prompt";
     return (
       <GpsDeniedScreen
+        mode={mode}
         onRetry={requestGps}
         onHome={() => { void navigate({ to: "/" }); }}
         onManual={setManualLocation}
@@ -853,6 +960,7 @@ function PassageiroApp() {
     );
   }
   const gpsFailed = (gpsState === "denied" || gpsState === "unavailable") && !!gpsErrorMsg;
+
 
 
   return (
@@ -1677,19 +1785,34 @@ function Action({
 }
 
 function GpsDeniedScreen({
+  mode = "denied",
   onRetry,
   onHome,
   onManual,
   errorMessage,
   requesting,
 }: {
+  mode?: "prompt" | "denied";
   onRetry: () => void;
   onHome: () => void;
   onManual: (p: LatLng) => void;
   errorMessage: string;
   requesting: boolean;
 }) {
-  const [manualOpen, setManualOpen] = useState(true);
+  const isPrompt = mode === "prompt";
+  const title = isPrompt
+    ? "Ative sua localização"
+    : "Não foi possível obter sua localização.";
+  const description = isPrompt
+    ? "A MOVVI utiliza sua localização para encontrar motoristas próximos, calcular rotas e estimar valores da corrida."
+    : errorMessage ||
+      "Você pode continuar utilizando a MOVVI informando sua localização manualmente.";
+  const primaryLabel = requesting
+    ? "Solicitando..."
+    : isPrompt
+    ? "PERMITIR LOCALIZAÇÃO"
+    : "TENTAR NOVAMENTE";
+  const [manualOpen, setManualOpen] = useState(!isPrompt);
   const [query, setQuery] = useState("");
   const [items, setItems] = useState<{ placeId: string; primary: string; secondary: string }[]>([]);
   const [searching, setSearching] = useState(false);
@@ -1793,27 +1916,23 @@ function GpsDeniedScreen({
       <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-primary/15 text-primary">
         <MapPin className="h-9 w-9" />
       </div>
-      <h1 className="font-display text-2xl font-bold">
-        Não foi possível obter sua localização.
-      </h1>
-      <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-        {errorMessage ||
-          "A MOVVI precisa do seu GPS para mostrar motoristas próximos e calcular sua corrida."}
-      </p>
+      <h1 className="font-display text-2xl font-bold">{title}</h1>
+      <p className="mt-2 max-w-sm text-sm text-muted-foreground">{description}</p>
 
       <div className="mt-6 flex w-full max-w-sm flex-col gap-3">
         <button
           type="button"
           onClick={() => {
-            console.log("Clique em ATIVAR LOCALIZAÇÃO");
+            console.log("[MOVVI] Clique em", primaryLabel);
             onRetry();
           }}
           disabled={requesting}
           className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-4 text-sm font-bold text-primary-foreground shadow-xl shadow-primary/30 active:scale-95 disabled:opacity-60"
         >
           <Crosshair className="h-4 w-4" />
-          {requesting ? "Solicitando..." : "ATIVAR LOCALIZAÇÃO"}
+          {primaryLabel}
         </button>
+
 
         <button
           type="button"
