@@ -26,6 +26,7 @@ import { Route as MotoristaCorridasRouteImport } from './routes/motorista.corrid
 import { Route as MotoristaConfiguracoesRouteImport } from './routes/motorista.configuracoes'
 import { Route as MotoristaCadastroRouteImport } from './routes/motorista.cadastro'
 import { Route as MotoristaAppRouteImport } from './routes/motorista.app'
+import { Route as AdminMotoristasRouteImport } from './routes/admin.motoristas'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
 
@@ -114,6 +115,11 @@ const MotoristaAppRoute = MotoristaAppRouteImport.update({
   path: '/motorista/app',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminMotoristasRoute = AdminMotoristasRouteImport.update({
+  id: '/admin/motoristas',
+  path: '/admin/motoristas',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminLoginRoute = AdminLoginRouteImport.update({
   id: '/admin/login',
   path: '/admin/login',
@@ -131,6 +137,7 @@ export interface FileRoutesByFullPath {
   '/map-test': typeof MapTestRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/motoristas': typeof AdminMotoristasRoute
   '/motorista/app': typeof MotoristaAppRoute
   '/motorista/cadastro': typeof MotoristaCadastroRoute
   '/motorista/configuracoes': typeof MotoristaConfiguracoesRoute
@@ -152,6 +159,7 @@ export interface FileRoutesByTo {
   '/map-test': typeof MapTestRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/motoristas': typeof AdminMotoristasRoute
   '/motorista/app': typeof MotoristaAppRoute
   '/motorista/cadastro': typeof MotoristaCadastroRoute
   '/motorista/configuracoes': typeof MotoristaConfiguracoesRoute
@@ -174,6 +182,7 @@ export interface FileRoutesById {
   '/map-test': typeof MapTestRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/motoristas': typeof AdminMotoristasRoute
   '/motorista/app': typeof MotoristaAppRoute
   '/motorista/cadastro': typeof MotoristaCadastroRoute
   '/motorista/configuracoes': typeof MotoristaConfiguracoesRoute
@@ -197,6 +206,7 @@ export interface FileRouteTypes {
     | '/map-test'
     | '/admin/dashboard'
     | '/admin/login'
+    | '/admin/motoristas'
     | '/motorista/app'
     | '/motorista/cadastro'
     | '/motorista/configuracoes'
@@ -218,6 +228,7 @@ export interface FileRouteTypes {
     | '/map-test'
     | '/admin/dashboard'
     | '/admin/login'
+    | '/admin/motoristas'
     | '/motorista/app'
     | '/motorista/cadastro'
     | '/motorista/configuracoes'
@@ -239,6 +250,7 @@ export interface FileRouteTypes {
     | '/map-test'
     | '/admin/dashboard'
     | '/admin/login'
+    | '/admin/motoristas'
     | '/motorista/app'
     | '/motorista/cadastro'
     | '/motorista/configuracoes'
@@ -261,6 +273,7 @@ export interface RootRouteChildren {
   MapTestRoute: typeof MapTestRoute
   AdminDashboardRoute: typeof AdminDashboardRoute
   AdminLoginRoute: typeof AdminLoginRoute
+  AdminMotoristasRoute: typeof AdminMotoristasRoute
   MotoristaAppRoute: typeof MotoristaAppRoute
   MotoristaCadastroRoute: typeof MotoristaCadastroRoute
   MotoristaConfiguracoesRoute: typeof MotoristaConfiguracoesRoute
@@ -398,6 +411,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MotoristaAppRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/motoristas': {
+      id: '/admin/motoristas'
+      path: '/admin/motoristas'
+      fullPath: '/admin/motoristas'
+      preLoaderRoute: typeof AdminMotoristasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/login': {
       id: '/admin/login'
       path: '/admin/login'
@@ -421,6 +441,7 @@ const rootRouteChildren: RootRouteChildren = {
   MapTestRoute: MapTestRoute,
   AdminDashboardRoute: AdminDashboardRoute,
   AdminLoginRoute: AdminLoginRoute,
+  AdminMotoristasRoute: AdminMotoristasRoute,
   MotoristaAppRoute: MotoristaAppRoute,
   MotoristaCadastroRoute: MotoristaCadastroRoute,
   MotoristaConfiguracoesRoute: MotoristaConfiguracoesRoute,
