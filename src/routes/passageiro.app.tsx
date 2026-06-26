@@ -1968,12 +1968,16 @@ function GpsDeniedScreen({
           type="button"
           onClick={() => {
             console.log("[MOVVI] Clique em", primaryLabel);
+            if (devMode) {
+              setManualOpen(true);
+              return;
+            }
             onRetry();
           }}
-          disabled={requesting}
+          disabled={!devMode && requesting}
           className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-4 text-sm font-bold text-primary-foreground shadow-xl shadow-primary/30 active:scale-95 disabled:opacity-60"
         >
-          <Crosshair className="h-4 w-4" />
+          {devMode ? <Search className="h-4 w-4" /> : <Crosshair className="h-4 w-4" />}
           {primaryLabel}
         </button>
 
