@@ -1297,7 +1297,7 @@ function PassageiroApp() {
         userName={userName}
         gpsState={gpsState}
         drivers={drivers.length}
-        searching={!!ride && (ride.status === "procurar_motorista" || ride.status === "procurar_motorista")}
+        searching={!!ride && ride.status === "procurar_motorista"}
         onLogout={handleLogout}
       />
 
