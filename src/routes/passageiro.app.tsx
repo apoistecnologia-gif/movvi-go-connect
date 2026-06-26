@@ -958,6 +958,7 @@ function PassageiroApp() {
             geo={geo}
             addressStatus={addressStatus}
             hasPosition={!!position}
+            position={position}
             onOpenAddressDetails={() => setAddressDetailsOpen(true)}
             destination={destination}
             destinationText={destinationText}
