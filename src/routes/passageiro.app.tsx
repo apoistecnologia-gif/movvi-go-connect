@@ -141,7 +141,11 @@ function PassageiroApp() {
   const [userName, setUserName] = useState<string>("");
 
   const [position, setPosition] = useState<LatLng | null>(null);
-  const [currentAddress, setCurrentAddress] = useState<string>("");
+  const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
+  const [geo, setGeo] = useState<GeocodeResult | null>(null);
+  const [geoLoading, setGeoLoading] = useState(false);
+  const [addressDetailsOpen, setAddressDetailsOpen] = useState(false);
+  const [tick, setTick] = useState(0); // re-render para saudação dinâmica
   const [gpsState, setGpsState] = useState<
     "idle" | "requesting" | "granted" | "denied" | "unavailable"
   >("idle");
@@ -233,17 +237,29 @@ function PassageiroApp() {
       return;
     lastGeocodedRef.current = position;
     let active = true;
+    setGeoLoading(true);
     callReverseGeocode({ data: { lat: position.lat, lng: position.lng } })
       .then((r) => {
-        if (active) setCurrentAddress(r.address ?? "");
+        if (!active) return;
+        setGeo(r);
       })
       .catch(() => {
-        if (active) setCurrentAddress("");
+        if (active) setGeo(null);
+      })
+      .finally(() => {
+        if (active) setGeoLoading(false);
       });
     return () => {
       active = false;
     };
   }, [position, callReverseGeocode]);
+
+  // Atualiza saudação a cada minuto.
+  useEffect(() => {
+    const id = window.setInterval(() => setTick((t) => t + 1), 60_000);
+    return () => window.clearInterval(id);
+  }, []);
+  void tick;
 
   /* ---------------------- GPS ---------------------- */
   const useDevTestLocation = useCallback(() => {
@@ -1515,7 +1531,7 @@ function GpsDeniedScreen({
           onClick={onHome}
           className="inline-flex items-center gap-2 rounded-full bg-card px-3 py-2 text-xs font-medium ring-1 ring-border"
         >
-          <ArrowLeft className="h-4 w-4" /> Início
+          ← Início
         </button>
       </div>
       <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-primary/15 text-primary">
