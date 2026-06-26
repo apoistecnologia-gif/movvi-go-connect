@@ -48,7 +48,9 @@ import {
   estimateFare,
   formatBRL,
   type RideCategory,
+  type TariffMap,
 } from "@/lib/rideCategories";
+import { loadTariffs } from "@/lib/tariffs";
 
 import type { Database } from "@/integrations/supabase/types";
 
@@ -345,12 +347,11 @@ type UiCategory = {
   tagline: string;
 };
 const UI_CATEGORIES: UiCategory[] = [
-  { key: "carro",    label: "Carro",    icon: Car,     backend: "carros",  tagline: "Viagem do dia a dia" },
-  { key: "moto",     label: "Moto",     icon: Bike,    backend: "motos",   tagline: "Rápido e econômico" },
-  { key: "guincho",  label: "Guincho",  icon: Truck,   backend: "guincho", tagline: "Reboque 24h" },
-  { key: "fretes",   label: "Fretes",   icon: Package, backend: "fretes",  tagline: "Cargas e volumes" },
-  { key: "mudancas", label: "Mudanças", icon: Box,     backend: "fretes",  tagline: "Móveis e residencial" },
-  { key: "entregas", label: "Entregas", icon: Send,    backend: "envios",  tagline: "Pequenos envios" },
+  { key: "carro",   label: "Carro",    icon: Car,     backend: "carros",  tagline: "Viagens urbanas com conforto" },
+  { key: "moto",    label: "Moto",     icon: Bike,    backend: "motos",   tagline: "Viagens rápidas e econômicas" },
+  { key: "entrega", label: "Entrega",  icon: Send,    backend: "envios",  tagline: "Envio de objetos e pequenos volumes" },
+  { key: "guincho", label: "Guincho",  icon: Truck,   backend: "guincho", tagline: "Remoção e transporte de veículos" },
+  { key: "mudanca", label: "Mudança",  icon: Box,     backend: "fretes",  tagline: "Transporte de móveis e cargas maiores" },
 ];
 
 const fmtMin = (s: number) => `${Math.max(1, Math.round(s / 60))} min`;
@@ -451,6 +452,20 @@ function PassageiroApp() {
   const [recent, setRecent] = useState<Recent[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [tariffs, setTariffs] = useState<TariffMap>({});
+
+  /* ---------------------- tariffs (admin_settings) ---------------------- */
+  useEffect(() => {
+    let active = true;
+    loadTariffs()
+      .then((t) => {
+        if (active) setTariffs(t);
+      })
+      .catch((e) => console.warn("[MOVVI] loadTariffs falhou:", e));
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // ride lifecycle
   const [rideId, setRideId] = useState<string | null>(null);
@@ -968,7 +983,7 @@ function PassageiroApp() {
     try {
       const km = route.distanceMeters / 1000;
       const min = route.durationSeconds / 60;
-      const fare = estimateFare(category, km, min);
+      const fare = estimateFare(category, km, min, tariffs);
       // Texto da origem — apenas para exibição. As coordenadas reais é que
       // vão para o cálculo/rastreio. Se o Google não tiver nome, usamos as
       // coordenadas como rótulo.
@@ -1317,6 +1332,7 @@ function PassageiroApp() {
             uiCategoryKey={uiCategoryKey}
             setUiCategoryKey={setUiCategoryKey}
             driversCount={drivers.length}
+            tariffs={tariffs}
             onSubmit={submitRide}
             searchInputRef={searchInputRef}
             gpsFailed={gpsFailed}
@@ -1424,16 +1440,7 @@ function PassageiroApp() {
 /*                         SHEET CONTENT                        */
 /* ============================================================ */
 
-/* ---------------- Grupos de serviço ---------------- */
-type GroupKey = "corridas" | "envios" | "servicos";
-const GROUPS: { key: GroupKey; label: string; items: string[] }[] = [
-  { key: "corridas", label: "Corridas", items: ["carro", "moto"] },
-  { key: "envios",   label: "Envios",   items: ["entregas"] },
-  { key: "servicos", label: "Serviços", items: ["guincho", "fretes", "mudancas"] },
-];
-function groupOf(uiKey: string): GroupKey {
-  return GROUPS.find((g) => g.items.includes(uiKey))?.key ?? "corridas";
-}
+/* (Grupos antigos removidos — agora exibimos as 5 categorias flat conforme spec MOVVI.) */
 
 function SheetContent({
   geo,
@@ -1454,6 +1461,7 @@ function SheetContent({
   uiCategoryKey,
   setUiCategoryKey,
   driversCount,
+  tariffs,
   onSubmit,
   searchInputRef,
   gpsFailed,
@@ -1479,6 +1487,7 @@ function SheetContent({
   uiCategoryKey: string;
   setUiCategoryKey: (k: string) => void;
   driversCount: number;
+  tariffs: TariffMap;
   onSubmit: () => void;
   searchInputRef: React.RefObject<HTMLInputElement | null>;
   gpsFailed: boolean;
@@ -1489,24 +1498,15 @@ function SheetContent({
   const km = route ? route.distanceMeters / 1000 : 0;
   const min = route ? route.durationSeconds / 60 : 0;
 
-  const [activeGroup, setActiveGroup] = useState<GroupKey>(() => groupOf(uiCategoryKey));
-  const [envioMode, setEnvioMode] = useState<"enviar" | "receber">("enviar");
-  const [envioSize, setEnvioSize] = useState<"P" | "M" | "G">("P");
-
-  // Quando o usuário define um destino, garantimos uma categoria válida no grupo ativo.
-  useEffect(() => {
-    if (!destination) return;
-    const items = GROUPS.find((g) => g.key === activeGroup)?.items ?? [];
-    if (!items.includes(uiCategoryKey) && items[0]) setUiCategoryKey(items[0]);
-  }, [destination, activeGroup, uiCategoryKey, setUiCategoryKey]);
-
-  const groupItems = useMemo(
-    () =>
-      (GROUPS.find((g) => g.key === activeGroup)?.items ?? [])
-        .map((k) => UI_CATEGORIES.find((c) => c.key === k))
-        .filter((c): c is UiCategory => !!c),
-    [activeGroup],
+  // Categoria atualmente selecionada (objeto UI).
+  const selectedCategory = useMemo(
+    () => UI_CATEGORIES.find((c) => c.key === uiCategoryKey) ?? UI_CATEGORIES[0],
+    [uiCategoryKey],
   );
+  const selectedFare = route
+    ? estimateFare(selectedCategory.backend, km, min, tariffs)
+    : null;
+
 
   const isExact = geo?.precision === "exact";
   const rua = geo?.components.rua;
@@ -1725,76 +1725,69 @@ function SheetContent({
             </div>
           )}
 
-          {/* Tabs dos grupos */}
-          <div className="mb-2.5 flex gap-1 rounded-2xl bg-background/60 p-1 ring-1 ring-border">
-            {GROUPS.map((g) => {
-              const active = activeGroup === g.key;
+          {/* Seleção de categoria — grid flat com as 5 opções MOVVI */}
+          <div className="mb-2.5 grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {UI_CATEGORIES.map((c) => {
+              const active = c.key === uiCategoryKey;
+              const fare = route ? estimateFare(c.backend, km, min, tariffs) : null;
+              const Icon = c.icon;
               return (
                 <button
-                  key={g.key}
+                  key={c.key}
                   type="button"
-                  onClick={() => setActiveGroup(g.key)}
-                  className={`flex-1 rounded-xl px-2 py-2 text-[12px] font-bold transition ${
+                  onClick={() => setUiCategoryKey(c.key)}
+                  aria-pressed={active}
+                  className={`flex flex-col items-start gap-1 rounded-2xl border-2 px-3 py-3 text-left transition active:scale-95 ${
                     active
-                      ? "bg-primary text-primary-foreground shadow-md shadow-primary/30"
-                      : "text-muted-foreground hover:text-foreground"
+                      ? "border-primary bg-primary/10 shadow-md shadow-primary/20"
+                      : "border-border bg-background/60 hover:border-primary/40"
                   }`}
                 >
-                  {g.label}
+                  <span
+                    className={`grid h-9 w-9 place-items-center rounded-xl ${
+                      active ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary"
+                    }`}
+                  >
+                    <Icon className="h-4.5 w-4.5" />
+                  </span>
+                  <span className="text-[13px] font-bold leading-tight">{c.label}</span>
+                  <span className="text-[10.5px] leading-tight text-muted-foreground">
+                    {c.tagline}
+                  </span>
+                  {fare != null ? (
+                    <span
+                      className={`mt-0.5 text-[13px] font-extrabold ${
+                        active ? "text-primary" : "text-foreground"
+                      }`}
+                    >
+                      {formatBRL(fare)}
+                    </span>
+                  ) : (
+                    <span className="mt-0.5 text-[10px] text-muted-foreground">
+                      Calculando...
+                    </span>
+                  )}
                 </button>
               );
             })}
           </div>
 
-          {/* Conteúdo do grupo */}
-          {activeGroup === "envios" ? (
-            <EnviosBlock
-              mode={envioMode}
-              setMode={setEnvioMode}
-              size={envioSize}
-              setSize={setEnvioSize}
-              fare={route ? estimateFare("envios", km, min) : null}
-            />
-          ) : (
-            <div className="-mx-1 mb-2.5 flex gap-2 overflow-x-auto px-1 pb-1">
-              {groupItems.map((c) => {
-                const active = c.key === uiCategoryKey;
-                const fare = route ? estimateFare(c.backend, km, min) : null;
-                const Icon = c.icon;
-                return (
-                  <button
-                    key={c.key}
-                    type="button"
-                    onClick={() => setUiCategoryKey(c.key)}
-                    className={`flex w-[120px] shrink-0 flex-col items-start gap-1 rounded-2xl border-2 px-3 py-2.5 text-left transition active:scale-95 ${
-                      active
-                        ? "border-primary bg-primary/10 shadow-md shadow-primary/15"
-                        : "border-border bg-background/60 hover:border-primary/40"
-                    }`}
-                  >
-                    <span
-                      className={`grid h-8 w-8 place-items-center rounded-lg ${
-                        active ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary"
-                      }`}
-                    >
-                      <Icon className="h-4 w-4" />
-                    </span>
-                    <span className="text-[12px] font-semibold leading-tight">{c.label}</span>
-                    <span className="text-[10px] text-muted-foreground leading-tight">
-                      {c.tagline}
-                    </span>
-                    {fare != null && (
-                      <span
-                        className={`mt-0.5 text-[13px] font-bold ${
-                          active ? "text-primary" : "text-foreground"
-                        }`}
-                      >
-                        {formatBRL(fare)}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
+          {/* Cartão de estimativa */}
+          {route && selectedFare != null && (
+            <div className="mb-2.5 rounded-2xl bg-primary/5 px-3 py-3 ring-1 ring-primary/30">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="text-[10px] font-semibold uppercase tracking-widest text-primary">
+                    {selectedCategory.label} • {fmtKm(route.distanceMeters)} • {fmtMin(route.durationSeconds)}
+                  </div>
+                  <div className="mt-0.5 text-[22px] font-extrabold leading-none text-foreground">
+                    {formatBRL(selectedFare)}
+                  </div>
+                </div>
+              </div>
+              <p className="mt-2 text-[10.5px] leading-snug text-muted-foreground">
+                Valor estimado. O preço final pode variar conforme a rota e disponibilidade.
+              </p>
             </div>
           )}
 
@@ -1810,13 +1803,7 @@ function SheetContent({
             onClick={onSubmit}
             className="w-full rounded-2xl bg-primary py-3.5 text-[14px] font-bold text-primary-foreground shadow-xl shadow-primary/25 transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {busy
-              ? "Solicitando..."
-              : activeGroup === "envios"
-                ? envioMode === "enviar"
-                  ? "Solicitar entrega"
-                  : "Solicitar coleta"
-                : `Solicitar ${UI_CATEGORIES.find((c) => c.key === uiCategoryKey)?.label ?? "MOVVI"}`}
+            {busy ? "Solicitando..." : `Solicitar MOVVI ${selectedCategory.label}`}
           </button>
         </>
       )}
