@@ -704,17 +704,33 @@ function PassageiroApp() {
 
   async function submitRide() {
     if (!position || !destination || !route) return;
+    if (
+      !isBrazilCoordinate(position.lat, position.lng) ||
+      !isBrazilCoordinate(destination.point.lat, destination.point.lng)
+    ) {
+      setError(
+        "Não foi possível calcular a rota. Confirme a localização de origem e destino.",
+      );
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
       const km = route.distanceMeters / 1000;
       const min = route.durationSeconds / 60;
       const fare = estimateFare(category, km, min);
+      // Texto da origem — apenas para exibição. As coordenadas reais é que
+      // vão para o cálculo/rastreio. Se o Google não tiver nome, usamos as
+      // coordenadas como rótulo.
+      const originLabel =
+        geo?.friendly ||
+        geo?.region ||
+        `GPS ${position.lat.toFixed(6)}, ${position.lng.toFixed(6)}`;
       const { rideId: newId } = await callRequestRide({
         data: {
-          origin: position,
-          origin_name: "Localização atual",
-          destination: destination.point,
+          origin: { lat: position.lat, lng: position.lng },
+          origin_name: originLabel,
+          destination: { lat: destination.point.lat, lng: destination.point.lng },
           destination_name: destination.label,
           category,
           distance_km: Math.round(km * 100) / 100,
