@@ -1795,7 +1795,7 @@ function GpsDeniedScreen({
     : isPrompt
     ? "PERMITIR LOCALIZAÇÃO"
     : "TENTAR NOVAMENTE";
-  const [manualOpen, setManualOpen] = useState(true);
+  const [manualOpen, setManualOpen] = useState(!isPrompt);
   const [query, setQuery] = useState("");
   const [items, setItems] = useState<{ placeId: string; primary: string; secondary: string }[]>([]);
   const [searching, setSearching] = useState(false);
