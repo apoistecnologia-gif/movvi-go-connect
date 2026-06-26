@@ -576,9 +576,65 @@ function PassageiroApp() {
     setGpsErrorMsg("");
   }, []);
 
+  // Verifica a permissão de geolocalização ANTES de chamar getCurrentPosition.
+  // - Se já estiver "granted", pedimos o GPS imediatamente (sem prompt do navegador).
+  // - Se for "prompt" / Permissions API indisponível, NÃO pedimos nada agora —
+  //   o usuário precisa tocar em "Permitir localização" para acionar o prompt
+  //   oficial do navegador.
+  // - Se for "denied", mostramos o fluxo manual sem nunca tentar de novo
+  //   automaticamente (evita loops).
   useEffect(() => {
     purgeForeignMapCache();
-    requestGps();
+    let cancelled = false;
+
+    if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
+      setPermissionStatus("unsupported");
+      setGpsState("unavailable");
+      setGpsErrorMsg("Seu navegador não oferece geolocalização.");
+      return;
+    }
+
+    const perms = (navigator as Navigator).permissions;
+    if (!perms || typeof perms.query !== "function") {
+      // Sem Permissions API (Safari iOS antigo etc.): tratamos como prompt,
+      // o usuário precisa tocar no botão para disparar a solicitação.
+      setPermissionStatus("unsupported");
+      return;
+    }
+
+    let statusRef: PermissionStatus | null = null;
+    perms
+      .query({ name: "geolocation" as PermissionName })
+      .then((status) => {
+        if (cancelled) return;
+        statusRef = status;
+        const apply = (s: PermissionState) => {
+          if (s === "granted") {
+            setPermissionStatus("granted");
+            // Já liberado — pedir GPS de imediato (não dispara prompt).
+            requestGps();
+          } else if (s === "denied") {
+            setPermissionStatus("denied");
+            setGpsState("denied");
+            setGpsErrorMsg(
+              "Permissão de localização negada. Você pode continuar utilizando a MOVVI informando sua localização manualmente.",
+            );
+          } else {
+            setPermissionStatus("prompt");
+          }
+        };
+        apply(status.state);
+        status.onchange = () => apply(status.state);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setPermissionStatus("unsupported");
+      });
+
+    return () => {
+      cancelled = true;
+      if (statusRef) statusRef.onchange = null;
+    };
   }, [requestGps]);
 
   /* ---------------------- autocomplete (Places API New) ---------------------- */
