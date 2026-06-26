@@ -1,17 +1,17 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Marker, Polyline, useJsApiLoader } from "@react-google-maps/api";
+import { Circle, Marker, Polyline, useJsApiLoader } from "@react-google-maps/api";
 import {
-  ArrowLeft,
   Bike,
   Box,
   Car,
+  ChevronRight,
   Clock,
   Crosshair,
-  Home as HomeIcon,
   LogOut,
   MapPin,
+  Moon,
   Navigation2,
   Package,
   Phone,
@@ -19,6 +19,9 @@ import {
   Send,
   Shield,
   Star,
+  Sun,
+  Sunrise,
+  Sunset,
   Truck,
   X,
   Zap,
@@ -40,7 +43,7 @@ import {
   DEV_TEST_LABEL,
 } from "@/lib/environment";
 import { computeRoute, type RouteResult } from "@/lib/routes.functions";
-import { reverseGeocode } from "@/lib/geocode.functions";
+import { reverseGeocode, type GeocodeResult } from "@/lib/geocode.functions";
 import { requestRide } from "@/lib/ride.functions";
 import { useNearbyDrivers } from "@/hooks/useNearbyDrivers";
 import {
@@ -49,7 +52,21 @@ import {
   formatBRL,
   type RideCategory,
 } from "@/lib/rideCategories";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { Database } from "@/integrations/supabase/types";
+
+/** Saudação dinâmica com base no horário local (pt-BR). */
+function getGreeting(): { text: string; icon: LucideIcon } {
+  const h = new Date().getHours();
+  if (h >= 5 && h < 12) return { text: "Bom dia", icon: Sunrise };
+  if (h >= 12 && h < 18) return { text: "Boa tarde", icon: Sun };
+  if (h >= 18 && h < 22) return { text: "Boa noite", icon: Sunset };
+  return { text: "Boa noite", icon: Moon };
+}
+
+function firstName(full: string): string {
+  return (full || "").trim().split(/\s+/)[0] || "";
+}
 
 export const Route = createFileRoute("/passageiro/app")({
   head: () => ({ meta: [{ title: "MOVVI Drive — Passageiro" }] }),
