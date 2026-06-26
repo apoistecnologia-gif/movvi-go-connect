@@ -10,7 +10,7 @@ import { MovviHeader } from "@/components/MovviHeader";
 import { BottomNav, DRIVER_NAV } from "@/components/BottomNav";
 import { BottomSheet } from "@/components/BottomSheet";
 import { supabase } from "@/integrations/supabase/client";
-import { BRASILIA_CENTER } from "@/lib/googleMaps";
+import { BRAZIL_CENTER, isBrazilCoordinate, purgeForeignMapCache } from "@/lib/googleMaps";
 import { useDriverBroadcast } from "@/hooks/useDriverBroadcast";
 import { computeRoute } from "@/lib/routes.functions";
 import { acceptRide, rejectRide, updateRidePhase } from "@/lib/ride.functions";
