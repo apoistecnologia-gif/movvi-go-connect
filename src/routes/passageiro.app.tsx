@@ -915,14 +915,31 @@ function PassageiroApp() {
     );
   }
 
+  // Quando a permissão já está concedida e estamos só esperando o GPS responder,
+  // mostramos um loader curto em vez da tela de "permitir localização".
+  if (
+    !position &&
+    permissionStatus === "granted" &&
+    gpsState !== "denied" &&
+    gpsState !== "unavailable"
+  ) {
+    return (
+      <div className="flex min-h-[100dvh] items-center justify-center bg-background text-foreground">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-10 w-10 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+          <p className="text-sm text-muted-foreground">Obtendo sua localização...</p>
+        </div>
+      </div>
+    );
+  }
+
   const needsPermissionScreen =
     !position &&
     (permissionStatus === "prompt" ||
       permissionStatus === "unsupported" ||
       permissionStatus === "denied" ||
       gpsState === "denied" ||
-      gpsState === "unavailable" ||
-      gpsState === "requesting");
+      gpsState === "unavailable");
 
   if (needsPermissionScreen) {
     const mode: "prompt" | "denied" =
