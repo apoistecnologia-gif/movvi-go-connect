@@ -74,7 +74,7 @@ function PremiumTopBar({
   onLogout,
 }: {
   userName: string;
-  gpsState: "idle" | "requesting" | "granted" | "unavailable";
+  gpsState: "idle" | "requesting" | "granted" | "denied" | "unavailable";
   drivers: number;
   searching: boolean;
   onLogout: () => void;
@@ -87,9 +87,9 @@ function PremiumTopBar({
   if (gpsState === "requesting" || gpsState === "idle") {
     statusIcon = "📍";
     statusText = "Obtendo sua localização...";
-  } else if (gpsState === "unavailable") {
+  } else if (gpsState === "unavailable" || gpsState === "denied") {
     statusIcon = "⚠️";
-    statusText = "Ative sua localização";
+    statusText = "Localização indisponível";
   } else if (searching) {
     statusIcon = "🔎";
     statusText = "Procurando motoristas próximos";
@@ -784,13 +784,16 @@ function PassageiroApp() {
   const center = position && isBrazilCoordinate(position.lat, position.lng) ? position : BRAZIL_CENTER;
   const phase = ride?.status;
 
-  /* ---------------------- GPS denied screen ---------------------- */
-  // Mantém a tela de ativação montada também durante "requesting" para que o
-  // botão exiba o spinner sem desmontar/remontar (causa do "preciso clicar várias vezes").
+  /* ---------------------- GPS initial loading ---------------------- */
+  // Só mostra a tela de ativação na PRIMEIRA solicitação (sem posição ainda).
+  // Se já estamos pedindo/idle e não há posição, exibimos a tela com botão.
+  // Quando há erro (denied/unavailable) e o usuário já viu a tela inicial,
+  // mantemos o app montado e mostramos o erro inline no cartão de endereço.
   const showGpsScreen =
-    gpsState === "denied" ||
-    gpsState === "unavailable" ||
-    ((gpsState === "requesting" || gpsState === "idle") && !position);
+    !position &&
+    (gpsState === "idle" ||
+      gpsState === "requesting" ||
+      ((gpsState === "denied" || gpsState === "unavailable") && !gpsErrorMsg));
   if (showGpsScreen) {
     return (
       <GpsDeniedScreen
@@ -802,6 +805,7 @@ function PassageiroApp() {
       />
     );
   }
+  const gpsFailed = (gpsState === "denied" || gpsState === "unavailable") && !!gpsErrorMsg;
 
 
   return (
@@ -923,6 +927,10 @@ function PassageiroApp() {
             driversCount={drivers.length}
             onSubmit={submitRide}
             searchInputRef={searchInputRef}
+            gpsFailed={gpsFailed}
+            gpsErrorMsg={gpsErrorMsg}
+            gpsRequesting={gpsState === "requesting"}
+            onRetryGps={requestGps}
           />
         </MovviSheet>
       )}
@@ -1013,6 +1021,10 @@ function SheetContent({
   driversCount,
   onSubmit,
   searchInputRef,
+  gpsFailed,
+  gpsErrorMsg,
+  gpsRequesting,
+  onRetryGps,
 }: {
   geo: GeocodeResult | null;
   geoLoading: boolean;
@@ -1033,6 +1045,10 @@ function SheetContent({
   driversCount: number;
   onSubmit: () => void;
   searchInputRef: React.RefObject<HTMLInputElement | null>;
+  gpsFailed: boolean;
+  gpsErrorMsg: string;
+  gpsRequesting: boolean;
+  onRetryGps: () => void;
 }) {
   const km = route ? route.distanceMeters / 1000 : 0;
   const min = route ? route.durationSeconds / 60 : 0;
@@ -1064,44 +1080,68 @@ function SheetContent({
 
   return (
     <div className="pt-1">
-      {/* Endereço atual — toque abre detalhes */}
-      <button
-        type="button"
-        onClick={onOpenAddressDetails}
-        className="mb-2.5 flex w-full items-center gap-2.5 rounded-2xl bg-primary/10 px-3 py-2 text-left ring-1 ring-primary/30 transition active:scale-[0.99] hover:bg-primary/15"
-      >
-        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
-          <MapPin className="h-3.5 w-3.5" />
-        </span>
-        <div className="min-w-0 flex-1">
-          <div className="text-[9px] font-semibold uppercase tracking-widest text-primary leading-none">
-            Você está em
-          </div>
-          {primaryLine || region ? (
-            <>
-              {primaryLine && (
-                <div
-                  className={`mt-0.5 truncate text-[13px] leading-tight ${
-                    approximate && !friendly
-                      ? "font-medium text-muted-foreground"
-                      : "font-semibold text-foreground"
-                  }`}
-                >
-                  {primaryLine}
-                </div>
-              )}
-              {region && (
-                <div className="truncate text-[11px] font-semibold text-foreground">{region}</div>
-              )}
-            </>
-          ) : (
-            <div className="mt-0.5 truncate text-[12px] font-medium leading-tight text-muted-foreground">
-              {hasPosition || geoLoading ? "Obtendo localização..." : "Localização indisponível"}
+      {/* Endereço atual — toque abre detalhes. Em caso de falha de GPS, mostra erro inline com retry. */}
+      {gpsFailed ? (
+        <div className="mb-2.5 flex w-full items-start gap-2.5 rounded-2xl bg-destructive/10 px-3 py-2.5 ring-1 ring-destructive/40">
+          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-destructive/80 text-destructive-foreground">
+            <MapPin className="h-3.5 w-3.5" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="text-[9px] font-semibold uppercase tracking-widest text-destructive leading-none">
+              Localização indisponível
             </div>
-          )}
+            <div className="mt-0.5 text-[12px] leading-snug text-foreground/90">
+              {gpsErrorMsg || "Não foi possível obter sua localização."}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onRetryGps}
+            disabled={gpsRequesting}
+            className="shrink-0 self-center rounded-full bg-primary px-3 py-1.5 text-[11px] font-bold text-primary-foreground shadow-md shadow-primary/20 transition active:scale-95 disabled:opacity-60"
+          >
+            {gpsRequesting ? "..." : "Tentar novamente"}
+          </button>
         </div>
-        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-      </button>
+      ) : (
+        <button
+          type="button"
+          onClick={onOpenAddressDetails}
+          className="mb-2.5 flex w-full items-center gap-2.5 rounded-2xl bg-primary/10 px-3 py-2 text-left ring-1 ring-primary/30 transition active:scale-[0.99] hover:bg-primary/15"
+        >
+          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
+            <MapPin className="h-3.5 w-3.5" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="text-[9px] font-semibold uppercase tracking-widest text-primary leading-none">
+              Você está em
+            </div>
+            {primaryLine || region ? (
+              <>
+                {primaryLine && (
+                  <div
+                    className={`mt-0.5 truncate text-[13px] leading-tight ${
+                      approximate && !friendly
+                        ? "font-medium text-muted-foreground"
+                        : "font-semibold text-foreground"
+                    }`}
+                  >
+                    {primaryLine}
+                  </div>
+                )}
+                {region && (
+                  <div className="truncate text-[11px] font-semibold text-foreground">{region}</div>
+                )}
+              </>
+            ) : (
+              <div className="mt-0.5 truncate text-[12px] font-medium leading-tight text-muted-foreground">
+                {hasPosition || geoLoading ? "Obtendo localização..." : "Localização indisponível"}
+              </div>
+            )}
+          </div>
+          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+        </button>
+      )}
 
 
       {/* "Para onde você vai?" — sempre em destaque */}
