@@ -506,12 +506,11 @@ function PassageiroApp() {
             setGpsState("unavailable");
             gpsStateRef.current = "unavailable";
             setGpsErrorMsg(
-              isDevEnvironment()
-                ? "Ambiente de teste detectado. Informe sua localização manualmente."
-                : "A localização recebida está fora do Brasil. Informe sua localização manualmente.",
+              "Não conseguimos acessar sua localização automaticamente. Digite sua origem manualmente.",
             );
             return;
           }
+
           setPosition({ lat, lng });
           setGpsAccuracy(pos.coords.accuracy ?? null);
           setGpsState("granted");
