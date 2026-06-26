@@ -1160,6 +1160,46 @@ function PassageiroApp() {
           </div>
         </div>
       )}
+      {gpsDiag && (
+        <div className="pointer-events-auto absolute left-2 top-14 z-50 max-w-[280px] rounded-lg bg-black/85 p-3 font-mono text-[10px] leading-tight text-white ring-1 ring-white/20 backdrop-blur">
+          <div className="mb-1 flex items-center justify-between gap-2">
+            <span className={`font-bold ${gpsDiag.status === "ok" ? "text-emerald-400" : "text-red-400"}`}>
+              {gpsDiag.status === "ok" ? "🛰️ GPS OK" : "⛔ GPS REJEITADO"}
+            </span>
+            <button
+              onClick={() => setGpsDiag(null)}
+              className="rounded px-1.5 text-white/60 hover:text-white"
+              aria-label="Fechar"
+            >
+              ✕
+            </button>
+          </div>
+          {gpsDiag.status === "rejected-outside-br" ? (
+            <div className="space-y-0.5">
+              <div>Latitude recebida: {gpsDiag.lat.toFixed(6)}</div>
+              <div>Longitude recebida: {gpsDiag.lng.toFixed(6)}</div>
+              <div>Accuracy: {gpsDiag.accuracy != null ? `${Math.round(gpsDiag.accuracy)} m` : "—"}</div>
+              <div>Motivo: {gpsDiag.reason}</div>
+            </div>
+          ) : (
+            <div className="space-y-0.5">
+              <div>Latitude: {gpsDiag.lat.toFixed(6)}</div>
+              <div>Longitude: {gpsDiag.lng.toFixed(6)}</div>
+              <div>Accuracy: {gpsDiag.accuracy != null ? `${Math.round(gpsDiag.accuracy)} m` : "—"}</div>
+              <div>Altitude: {gpsDiag.altitude != null ? `${gpsDiag.altitude.toFixed(1)} m` : "—"}</div>
+              <div>Heading: {gpsDiag.heading != null ? `${gpsDiag.heading.toFixed(1)}°` : "—"}</div>
+              <div>Speed: {gpsDiag.speed != null ? `${gpsDiag.speed.toFixed(2)} m/s` : "—"}</div>
+              <div>Timestamp: {new Date(gpsDiag.timestamp).toISOString()}</div>
+            </div>
+          )}
+          <div className="mt-2 border-t border-white/10 pt-1.5 text-white/60">
+            <div className="truncate">UA: {typeof navigator !== "undefined" ? navigator.userAgent : ""}</div>
+            <div>Platform: {typeof navigator !== "undefined" ? navigator.platform : ""}</div>
+            <div>secureContext: {typeof window !== "undefined" && window.isSecureContext ? "true" : "false"}</div>
+            <div className="truncate">origin: {typeof document !== "undefined" ? document.location.origin : ""}</div>
+          </div>
+        </div>
+      )}
       {/* MAPA — sempre presente, ~70% da tela */}
 
       <div className="absolute inset-0">
