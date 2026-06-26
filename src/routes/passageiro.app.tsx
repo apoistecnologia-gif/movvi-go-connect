@@ -1302,7 +1302,7 @@ function PassageiroApp() {
       />
 
       {/* Floating controls */}
-      <div className="pointer-events-none absolute right-3 z-30" style={{ bottom: "calc(32vh + 16px)" }}>
+      <div className="pointer-events-none absolute right-3 z-30" style={{ bottom: "calc(32vh + 12px)" }}>
         <button
           onClick={recenter}
           className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-card text-foreground shadow-2xl ring-1 ring-border transition active:scale-90 hover:scale-105"
