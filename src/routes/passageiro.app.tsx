@@ -757,22 +757,14 @@ function PassageiroApp() {
         </button>
       </div>
 
-      {/* Nearby drivers pill */}
-      {!ride && gpsState === "granted" && (
-        <div className="pointer-events-none absolute left-1/2 top-[calc(env(safe-area-inset-top)+74px)] z-30 -translate-x-1/2">
-          <div className="flex items-center gap-1.5 rounded-full bg-background/85 px-3 py-1 text-[11px] font-semibold shadow-lg ring-1 ring-border backdrop-blur-md">
-            <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
-            {drivers.length} {drivers.length === 1 ? "motorista" : "motoristas"} por perto
-          </div>
-        </div>
-      )}
-
       {/* BOTTOM SHEET — novo, próprio do MOVVI */}
       {!ride && (
         <MovviSheet ref={sheetRef} snaps={[30, 72, 92]} initial={30}>
           <SheetContent
-            currentAddress={currentAddress}
+            geo={geo}
+            geoLoading={geoLoading}
             hasPosition={!!position}
+            onOpenAddressDetails={() => setAddressDetailsOpen(true)}
             destination={destination}
             destinationText={destinationText}
             setDestinationText={setDestinationText}
@@ -790,6 +782,16 @@ function PassageiroApp() {
             searchInputRef={searchInputRef}
           />
         </MovviSheet>
+      )}
+
+      {/* Detalhes do endereço — modal premium */}
+      {addressDetailsOpen && (
+        <AddressDetailsSheet
+          geo={geo}
+          position={position}
+          accuracy={gpsAccuracy}
+          onClose={() => setAddressDetailsOpen(false)}
+        />
       )}
 
       {ride && (phase === "searching_driver" || phase === "offered_to_driver") && (
