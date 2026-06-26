@@ -326,13 +326,17 @@ function PassageiroApp() {
             return;
           }
           setPosition({ lat, lng });
+          setGpsAccuracy(pos.coords.accuracy ?? null);
           setGpsState("granted");
           setGpsErrorMsg("");
           navigator.geolocation.watchPosition(
             (p) => {
               const la = p.coords.latitude;
               const ln = p.coords.longitude;
-              if (isBrazilCoordinate(la, ln)) setPosition({ lat: la, lng: ln });
+              if (isBrazilCoordinate(la, ln)) {
+                setPosition({ lat: la, lng: ln });
+                setGpsAccuracy(p.coords.accuracy ?? null);
+              }
             },
             () => undefined,
             { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 },
