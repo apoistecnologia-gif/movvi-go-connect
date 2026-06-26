@@ -483,7 +483,14 @@ function PassageiroApp() {
     callReverseGeocode({ data: { lat: position.lat, lng: position.lng } })
       .then((r) => {
         if (!active) return;
-        console.log("[MOVVI] Reverse geocoding concluído");
+        console.log("[MOVVI] Endereço retornado pelo Google:", r.address || "(vazio)");
+        console.log("[MOVVI] Tipo de precisão:", r.locationType || "(desconhecido)", r.partialMatch ? "(partial_match)" : "");
+        console.log(
+          r.precision === "exact"
+            ? "[MOVVI] Endereço considerado confiável"
+            : "[MOVVI] Endereço considerado aproximado — exibindo coordenadas reais",
+        );
+        console.log("[MOVVI] Coordenadas reais mantidas para rota:", position.lat, position.lng);
         setGeo(r);
         setAddressStatus("resolved");
       })
