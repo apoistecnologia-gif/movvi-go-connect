@@ -1154,10 +1154,74 @@ function Action({
 function GpsDeniedScreen({
   onRetry,
   onHome,
+  onManual,
+  errorMessage,
+  requesting,
 }: {
   onRetry: () => void;
   onHome: () => void;
+  onManual: (p: LatLng) => void;
+  errorMessage: string;
+  requesting: boolean;
 }) {
+  const [manualOpen, setManualOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [items, setItems] = useState<{ placeId: string; primary: string; secondary: string }[]>([]);
+  const [searching, setSearching] = useState(false);
+  const debounceRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (debounceRef.current) window.clearTimeout(debounceRef.current);
+    const q = query.trim();
+    if (q.length < 2) {
+      setItems([]);
+      return;
+    }
+    debounceRef.current = window.setTimeout(async () => {
+      try {
+        setSearching(true);
+        const { AutocompleteSuggestion, AutocompleteSessionToken } =
+          (await google.maps.importLibrary("places")) as google.maps.PlacesLibrary;
+        const sessionToken = new AutocompleteSessionToken();
+        const { suggestions } = await AutocompleteSuggestion.fetchAutocompleteSuggestions({
+          input: q,
+          sessionToken,
+          includedRegionCodes: ["br"],
+          language: "pt-BR",
+          region: "BR",
+        });
+        setItems(
+          suggestions
+            .map((s) => s.placePrediction)
+            .filter(Boolean)
+            .map((p) => ({
+              placeId: p!.placeId,
+              primary: p!.mainText?.text ?? p!.text?.text ?? "",
+              secondary: p!.secondaryText?.text ?? "",
+            })),
+        );
+      } catch (e) {
+        console.error("Erro no autocomplete manual:", e);
+      } finally {
+        setSearching(false);
+      }
+    }, 250);
+  }, [query]);
+
+  async function choose(placeId: string, label: string) {
+    try {
+      const { Place } = (await google.maps.importLibrary("places")) as google.maps.PlacesLibrary;
+      const place = new Place({ id: placeId });
+      await place.fetchFields({ fields: ["location"] });
+      const loc = place.location;
+      if (!loc) throw new Error("Sem coordenadas");
+      onManual({ lat: loc.lat(), lng: loc.lng() });
+      console.log("Manual selecionado:", label, loc.lat(), loc.lng());
+    } catch (e) {
+      console.error("Erro ao obter coordenadas do lugar:", e);
+    }
+  }
+
   return (
     <div className="relative flex min-h-[100dvh] flex-col items-center justify-center bg-background px-6 text-center text-foreground">
       <div className="absolute left-4 top-4">
@@ -1175,15 +1239,64 @@ function GpsDeniedScreen({
         Não foi possível obter sua localização.
       </h1>
       <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-        A MOVVI precisa do seu GPS para mostrar os motoristas próximos e calcular
-        sua corrida. Ative a permissão de localização do navegador e tente novamente.
+        {errorMessage ||
+          "A MOVVI precisa do seu GPS para mostrar motoristas próximos e calcular sua corrida."}
       </p>
-      <button
-        onClick={onRetry}
-        className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-primary px-6 py-4 text-sm font-bold text-primary-foreground shadow-xl shadow-primary/30 active:scale-95"
-      >
-        <Crosshair className="h-4 w-4" /> ATIVAR LOCALIZAÇÃO
-      </button>
+
+      <div className="mt-6 flex w-full max-w-sm flex-col gap-3">
+        <button
+          type="button"
+          onClick={() => {
+            console.log("Clique em ATIVAR LOCALIZAÇÃO");
+            onRetry();
+          }}
+          disabled={requesting}
+          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-4 text-sm font-bold text-primary-foreground shadow-xl shadow-primary/30 active:scale-95 disabled:opacity-60"
+        >
+          <Crosshair className="h-4 w-4" />
+          {requesting ? "Solicitando..." : "ATIVAR LOCALIZAÇÃO"}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setManualOpen((v) => !v)}
+          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-card px-6 py-4 text-sm font-semibold text-foreground ring-1 ring-border active:scale-95"
+        >
+          <Search className="h-4 w-4" /> USAR LOCALIZAÇÃO MANUAL
+        </button>
+      </div>
+
+      {manualOpen && (
+        <div className="mt-4 w-full max-w-sm rounded-2xl bg-card p-4 ring-1 ring-border text-left">
+          <label className="text-xs font-medium text-muted-foreground">
+            Digite cidade ou endereço
+          </label>
+          <input
+            autoFocus
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Ex: Petrolina PE"
+            className="mt-2 w-full rounded-xl bg-background px-3 py-3 text-sm outline-none ring-1 ring-border focus:ring-primary"
+          />
+          {searching && (
+            <p className="mt-2 text-xs text-muted-foreground">Buscando...</p>
+          )}
+          <ul className="mt-2 max-h-64 overflow-y-auto">
+            {items.map((it) => (
+              <li key={it.placeId}>
+                <button
+                  type="button"
+                  onClick={() => choose(it.placeId, `${it.primary} ${it.secondary}`)}
+                  className="flex w-full flex-col items-start gap-0.5 rounded-lg px-2 py-2 text-left hover:bg-background"
+                >
+                  <span className="text-sm font-medium">{it.primary}</span>
+                  <span className="text-xs text-muted-foreground">{it.secondary}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
