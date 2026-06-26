@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { MovviHeader } from "@/components/MovviHeader";
-import { BottomNav, PASSENGER_NAV } from "@/components/BottomNav";
+import { BottomNav, PASSENGER_NAV, DRIVER_NAV } from "@/components/BottomNav";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -78,7 +78,7 @@ export function ProfilePage({
     }
   }
 
-  const nav = role === "passenger" ? PASSENGER_NAV : null;
+  const nav = role === "passenger" ? PASSENGER_NAV : DRIVER_NAV;
 
   return (
     <div className="flex min-h-screen flex-col bg-background">

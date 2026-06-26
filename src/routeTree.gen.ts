@@ -11,10 +11,12 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as MapTestRouteImport } from './routes/map-test'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PassageiroPerfilRouteImport } from './routes/passageiro.perfil'
 import { Route as PassageiroLoginRouteImport } from './routes/passageiro.login'
 import { Route as PassageiroCadastroRouteImport } from './routes/passageiro.cadastro'
 import { Route as PassageiroAppRouteImport } from './routes/passageiro.app'
 import { Route as MotoristaStatusRouteImport } from './routes/motorista.status'
+import { Route as MotoristaPerfilRouteImport } from './routes/motorista.perfil'
 import { Route as MotoristaLoginRouteImport } from './routes/motorista.login'
 import { Route as MotoristaCadastroRouteImport } from './routes/motorista.cadastro'
 import { Route as MotoristaAppRouteImport } from './routes/motorista.app'
@@ -29,6 +31,11 @@ const MapTestRoute = MapTestRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PassageiroPerfilRoute = PassageiroPerfilRouteImport.update({
+  id: '/passageiro/perfil',
+  path: '/passageiro/perfil',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PassageiroLoginRoute = PassageiroLoginRouteImport.update({
@@ -49,6 +56,11 @@ const PassageiroAppRoute = PassageiroAppRouteImport.update({
 const MotoristaStatusRoute = MotoristaStatusRouteImport.update({
   id: '/motorista/status',
   path: '/motorista/status',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MotoristaPerfilRoute = MotoristaPerfilRouteImport.update({
+  id: '/motorista/perfil',
+  path: '/motorista/perfil',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MotoristaLoginRoute = MotoristaLoginRouteImport.update({
@@ -85,10 +97,12 @@ export interface FileRoutesByFullPath {
   '/motorista/app': typeof MotoristaAppRoute
   '/motorista/cadastro': typeof MotoristaCadastroRoute
   '/motorista/login': typeof MotoristaLoginRoute
+  '/motorista/perfil': typeof MotoristaPerfilRoute
   '/motorista/status': typeof MotoristaStatusRoute
   '/passageiro/app': typeof PassageiroAppRoute
   '/passageiro/cadastro': typeof PassageiroCadastroRoute
   '/passageiro/login': typeof PassageiroLoginRoute
+  '/passageiro/perfil': typeof PassageiroPerfilRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -98,10 +112,12 @@ export interface FileRoutesByTo {
   '/motorista/app': typeof MotoristaAppRoute
   '/motorista/cadastro': typeof MotoristaCadastroRoute
   '/motorista/login': typeof MotoristaLoginRoute
+  '/motorista/perfil': typeof MotoristaPerfilRoute
   '/motorista/status': typeof MotoristaStatusRoute
   '/passageiro/app': typeof PassageiroAppRoute
   '/passageiro/cadastro': typeof PassageiroCadastroRoute
   '/passageiro/login': typeof PassageiroLoginRoute
+  '/passageiro/perfil': typeof PassageiroPerfilRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -112,10 +128,12 @@ export interface FileRoutesById {
   '/motorista/app': typeof MotoristaAppRoute
   '/motorista/cadastro': typeof MotoristaCadastroRoute
   '/motorista/login': typeof MotoristaLoginRoute
+  '/motorista/perfil': typeof MotoristaPerfilRoute
   '/motorista/status': typeof MotoristaStatusRoute
   '/passageiro/app': typeof PassageiroAppRoute
   '/passageiro/cadastro': typeof PassageiroCadastroRoute
   '/passageiro/login': typeof PassageiroLoginRoute
+  '/passageiro/perfil': typeof PassageiroPerfilRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -127,10 +145,12 @@ export interface FileRouteTypes {
     | '/motorista/app'
     | '/motorista/cadastro'
     | '/motorista/login'
+    | '/motorista/perfil'
     | '/motorista/status'
     | '/passageiro/app'
     | '/passageiro/cadastro'
     | '/passageiro/login'
+    | '/passageiro/perfil'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -140,10 +160,12 @@ export interface FileRouteTypes {
     | '/motorista/app'
     | '/motorista/cadastro'
     | '/motorista/login'
+    | '/motorista/perfil'
     | '/motorista/status'
     | '/passageiro/app'
     | '/passageiro/cadastro'
     | '/passageiro/login'
+    | '/passageiro/perfil'
   id:
     | '__root__'
     | '/'
@@ -153,10 +175,12 @@ export interface FileRouteTypes {
     | '/motorista/app'
     | '/motorista/cadastro'
     | '/motorista/login'
+    | '/motorista/perfil'
     | '/motorista/status'
     | '/passageiro/app'
     | '/passageiro/cadastro'
     | '/passageiro/login'
+    | '/passageiro/perfil'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -167,10 +191,12 @@ export interface RootRouteChildren {
   MotoristaAppRoute: typeof MotoristaAppRoute
   MotoristaCadastroRoute: typeof MotoristaCadastroRoute
   MotoristaLoginRoute: typeof MotoristaLoginRoute
+  MotoristaPerfilRoute: typeof MotoristaPerfilRoute
   MotoristaStatusRoute: typeof MotoristaStatusRoute
   PassageiroAppRoute: typeof PassageiroAppRoute
   PassageiroCadastroRoute: typeof PassageiroCadastroRoute
   PassageiroLoginRoute: typeof PassageiroLoginRoute
+  PassageiroPerfilRoute: typeof PassageiroPerfilRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -187,6 +213,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/passageiro/perfil': {
+      id: '/passageiro/perfil'
+      path: '/passageiro/perfil'
+      fullPath: '/passageiro/perfil'
+      preLoaderRoute: typeof PassageiroPerfilRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/passageiro/login': {
@@ -215,6 +248,13 @@ declare module '@tanstack/react-router' {
       path: '/motorista/status'
       fullPath: '/motorista/status'
       preLoaderRoute: typeof MotoristaStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/motorista/perfil': {
+      id: '/motorista/perfil'
+      path: '/motorista/perfil'
+      fullPath: '/motorista/perfil'
+      preLoaderRoute: typeof MotoristaPerfilRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/motorista/login': {
@@ -263,10 +303,12 @@ const rootRouteChildren: RootRouteChildren = {
   MotoristaAppRoute: MotoristaAppRoute,
   MotoristaCadastroRoute: MotoristaCadastroRoute,
   MotoristaLoginRoute: MotoristaLoginRoute,
+  MotoristaPerfilRoute: MotoristaPerfilRoute,
   MotoristaStatusRoute: MotoristaStatusRoute,
   PassageiroAppRoute: PassageiroAppRoute,
   PassageiroCadastroRoute: PassageiroCadastroRoute,
   PassageiroLoginRoute: PassageiroLoginRoute,
+  PassageiroPerfilRoute: PassageiroPerfilRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
