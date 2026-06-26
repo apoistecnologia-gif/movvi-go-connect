@@ -1,13 +1,78 @@
 // Chave do Google Maps fornecida pelo conector Lovable (referrer-restricted: *.lovable.app).
-// Em desenvolvimento, é injetada como import.meta.env.VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY.
 export const GOOGLE_MAPS_API_KEY =
   (import.meta.env.VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY as string | undefined) ?? "";
 
-// Bibliotecas que usamos no app inteiro. IMPORTANTE: manter referência estável para evitar reload do script.
+// Bibliotecas que usamos no app inteiro. Manter referência estável para evitar reload do script.
 export const GOOGLE_MAPS_LIBRARIES: ("places" | "geometry" | "drawing")[] = ["places", "geometry"];
 
-// Centro padrão (Brasília) usado enquanto o GPS real do usuário não está disponível.
-export const BRASILIA_CENTER = { lat: -15.793889, lng: -47.882778 };
+// ─── COORDENADAS PERMITIDAS (somente Brasil) ─────────────────────────────
+// Centro geográfico do Brasil — usado quando o GPS ainda não respondeu.
+export const BRAZIL_CENTER = { lat: -14.235, lng: -51.9253 };
+export const BRAZIL_ZOOM = 5;
+
+// Fallback regional preferencial (Petrolina/PE).
+export const PETROLINA_CENTER = { lat: -9.3891, lng: -40.5027 };
+export const PETROLINA_ZOOM = 14;
+
+// Alias legado — apontado para o Brasil para evitar qualquer carga estrangeira.
+export const BRASILIA_CENTER = BRAZIL_CENTER;
+
+// Bounding box aproximado do território brasileiro.
+export function isBrazilCoordinate(lat: number, lng: number): boolean {
+  return (
+    Number.isFinite(lat) &&
+    Number.isFinite(lng) &&
+    lat >= -34 &&
+    lat <= 6 &&
+    lng >= -74 &&
+    lng <= -34
+  );
+}
+
+// Devolve a coordenada se for brasileira; caso contrário, devolve o centro do Brasil.
+export function sanitizeBrazilCenter(c?: { lat: number; lng: number } | null) {
+  if (!c || !isBrazilCoordinate(c.lat, c.lng)) {
+    if (c) {
+      // eslint-disable-next-line no-console
+      console.warn("[MOVVI] Coordenada fora do Brasil ignorada:", c);
+    }
+    return BRAZIL_CENTER;
+  }
+  return c;
+}
+
+// Limpa qualquer coordenada/cache de mapa antigos persistidos no navegador.
+export function purgeForeignMapCache() {
+  if (typeof window === "undefined") return;
+  try {
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const k = window.localStorage.key(i);
+      if (!k) continue;
+      if (/map|center|coords|gmaps|google|movvi\.map/i.test(k)) {
+        keysToRemove.push(k);
+      }
+    }
+    keysToRemove.forEach((k) => {
+      try {
+        const raw = window.localStorage.getItem(k);
+        if (!raw) return;
+        // Tenta interpretar como coordenada — se contiver lat/lng fora do Brasil, remove.
+        const parsed = JSON.parse(raw);
+        const lat = parsed?.lat ?? parsed?.center?.lat;
+        const lng = parsed?.lng ?? parsed?.center?.lng;
+        if (typeof lat === "number" && typeof lng === "number" && !isBrazilCoordinate(lat, lng)) {
+          window.localStorage.removeItem(k);
+        }
+      } catch {
+        // Se não for JSON mas a chave parece coordenada do mapa, remove por segurança.
+        if (/center|coords|gmaps/i.test(k)) window.localStorage.removeItem(k);
+      }
+    });
+  } catch {
+    /* ignore */
+  }
+}
 
 // Estilo escuro do mapa, alinhado com a identidade MOVVI.
 export const MOVVI_DARK_MAP_STYLE: google.maps.MapTypeStyle[] = [

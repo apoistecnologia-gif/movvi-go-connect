@@ -10,7 +10,7 @@ import { MovviHeader } from "@/components/MovviHeader";
 import { BottomNav, DRIVER_NAV } from "@/components/BottomNav";
 import { BottomSheet } from "@/components/BottomSheet";
 import { supabase } from "@/integrations/supabase/client";
-import { BRASILIA_CENTER } from "@/lib/googleMaps";
+import { BRAZIL_CENTER, isBrazilCoordinate, purgeForeignMapCache } from "@/lib/googleMaps";
 import { useDriverBroadcast } from "@/hooks/useDriverBroadcast";
 import { computeRoute } from "@/lib/routes.functions";
 import { acceptRide, rejectRide, updateRidePhase } from "@/lib/ride.functions";
@@ -81,9 +81,19 @@ function MotoristaApp() {
 
   // GPS
   useEffect(() => {
+    purgeForeignMapCache();
     if (!("geolocation" in navigator)) { setGpsError("GPS indisponível"); return; }
     const id = navigator.geolocation.watchPosition(
-      (pos) => { setPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude }); setGpsError(null); },
+      (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        if (!isBrazilCoordinate(lat, lng)) {
+          console.warn("[MOVVI] GPS fora do Brasil ignorado", { lat, lng });
+          return;
+        }
+        setPosition({ lat, lng });
+        setGpsError(null);
+      },
       (err) => setGpsError(err.message),
       { enableHighAccuracy: true, maximumAge: 4000, timeout: 10000 });
     return () => navigator.geolocation.clearWatch(id);
@@ -169,7 +179,7 @@ function MotoristaApp() {
     if (position && mapRef.current) { mapRef.current.panTo(position); mapRef.current.setZoom(16); }
   }
 
-  const center = position ?? BRASILIA_CENTER;
+  const center = position ?? BRAZIL_CENTER;
   const showActive = active && (active.status === "driver_assigned"
     || active.status === "driver_arrived" || active.status === "in_progress"
     || active.status === "completed" || active.status === "cancelled");

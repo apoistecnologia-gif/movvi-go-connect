@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Marker } from "@react-google-maps/api";
 import { MovviMap } from "@/components/MovviMap";
-import { BRASILIA_CENTER, GOOGLE_MAPS_API_KEY } from "@/lib/googleMaps";
+import { BRAZIL_CENTER, GOOGLE_MAPS_API_KEY } from "@/lib/googleMaps";
 import { ArrowLeft, CheckCircle2, XCircle } from "lucide-react";
 
 export const Route = createFileRoute("/map-test")({
@@ -47,14 +47,14 @@ function MapTest() {
         </header>
 
         <section className="mt-6 overflow-hidden rounded-2xl border border-border">
-          <MovviMap center={BRASILIA_CENTER} zoom={12} height={600}>
-            <Marker position={BRASILIA_CENTER} title="Brasília — DF" />
+          <MovviMap center={BRAZIL_CENTER} zoom={12} height={600}>
+            <Marker position={BRAZIL_CENTER} title="Brasília — DF" />
           </MovviMap>
         </section>
 
         <dl className="mt-6 grid grid-cols-2 gap-4 text-sm md:grid-cols-4">
-          <Info label="Latitude" value={BRASILIA_CENTER.lat.toString()} />
-          <Info label="Longitude" value={BRASILIA_CENTER.lng.toString()} />
+          <Info label="Latitude" value={BRAZIL_CENTER.lat.toString()} />
+          <Info label="Longitude" value={BRAZIL_CENTER.lng.toString()} />
           <Info label="Zoom" value="12" />
           <Info label="Altura" value="600 px" />
         </dl>

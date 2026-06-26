@@ -1,10 +1,13 @@
 import { useJsApiLoader, GoogleMap } from "@react-google-maps/api";
-import { useMemo, type ReactNode } from "react";
+import { useEffect, useMemo, type ReactNode } from "react";
 import {
   GOOGLE_MAPS_API_KEY,
   GOOGLE_MAPS_LIBRARIES,
-  BRASILIA_CENTER,
+  BRAZIL_CENTER,
+  BRAZIL_ZOOM,
   MOVVI_DARK_MAP_STYLE,
+  isBrazilCoordinate,
+  purgeForeignMapCache,
 } from "@/lib/googleMaps";
 
 interface MovviMapProps {
@@ -20,18 +23,22 @@ interface MovviMapProps {
  * Componente central de mapa do MOVVI DRIVE.
  *
  * REGRA CRÍTICA:
- *   O mapa SEMPRE renderiza. Se `center` for null/undefined, usa Brasília
- *   como fallback temporário e re-centraliza quando GPS real carregar.
- *   Nunca retornamos null por falta de localização.
+ *   - O mapa SEMPRE inicia dentro do Brasil. Coordenadas estrangeiras são ignoradas.
+ *   - Sem GPS → mostra o Brasil inteiro (zoom 5).
+ *   - Quando o GPS chega, re-centraliza apenas se a coordenada for brasileira.
  */
 export function MovviMap({
   center,
-  zoom = 14,
+  zoom,
   height = "100%",
   className,
   onLoad,
   children,
 }: MovviMapProps) {
+  useEffect(() => {
+    purgeForeignMapCache();
+  }, []);
+
   const { isLoaded, loadError } = useJsApiLoader({
     id: "movvi-google-maps",
     googleMapsApiKey: GOOGLE_MAPS_API_KEY,
@@ -40,10 +47,11 @@ export function MovviMap({
     region: "BR",
   });
 
-  const effectiveCenter = useMemo(
-    () => center ?? BRASILIA_CENTER,
-    [center],
-  );
+  const isValid = !!center && isBrazilCoordinate(center.lat, center.lng);
+  const effectiveCenter = isValid ? center! : BRAZIL_CENTER;
+  const effectiveZoom = isValid ? (zoom ?? 14) : BRAZIL_ZOOM;
+  // Key dinâmica garante recriação caso o centro precise ser corrigido.
+  const mapKey = `map-${effectiveCenter.lat.toFixed(3)}-${effectiveCenter.lng.toFixed(3)}`;
 
   const containerStyle = useMemo(
     () => ({
@@ -98,9 +106,10 @@ export function MovviMap({
   return (
     <div className={className} style={containerStyle}>
       <GoogleMap
+        key={mapKey}
         mapContainerStyle={{ width: "100%", height: "100%" }}
         center={effectiveCenter}
-        zoom={zoom}
+        zoom={effectiveZoom}
         onLoad={onLoad}
         options={{
           styles: MOVVI_DARK_MAP_STYLE,
@@ -109,6 +118,10 @@ export function MovviMap({
           gestureHandling: "greedy",
           clickableIcons: false,
           backgroundColor: "#121826",
+          restriction: {
+            latLngBounds: { north: 6, south: -34, east: -34, west: -74 },
+            strictBounds: false,
+          },
         }}
       >
         {children}
