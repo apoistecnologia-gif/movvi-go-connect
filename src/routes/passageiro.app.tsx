@@ -1899,27 +1899,23 @@ function GpsDeniedScreen({
       <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-primary/15 text-primary">
         <MapPin className="h-9 w-9" />
       </div>
-      <h1 className="font-display text-2xl font-bold">
-        Não foi possível obter sua localização.
-      </h1>
-      <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-        {errorMessage ||
-          "A MOVVI precisa do seu GPS para mostrar motoristas próximos e calcular sua corrida."}
-      </p>
+      <h1 className="font-display text-2xl font-bold">{title}</h1>
+      <p className="mt-2 max-w-sm text-sm text-muted-foreground">{description}</p>
 
       <div className="mt-6 flex w-full max-w-sm flex-col gap-3">
         <button
           type="button"
           onClick={() => {
-            console.log("Clique em ATIVAR LOCALIZAÇÃO");
+            console.log("[MOVVI] Clique em", primaryLabel);
             onRetry();
           }}
           disabled={requesting}
           className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-4 text-sm font-bold text-primary-foreground shadow-xl shadow-primary/30 active:scale-95 disabled:opacity-60"
         >
           <Crosshair className="h-4 w-4" />
-          {requesting ? "Solicitando..." : "ATIVAR LOCALIZAÇÃO"}
+          {primaryLabel}
         </button>
+
 
         <button
           type="button"
