@@ -1823,19 +1823,25 @@ function GpsDeniedScreen({
   devMode?: boolean;
 }) {
   const isPrompt = mode === "prompt";
-  const title = isPrompt
+  const title = devMode
+    ? "Modo Desenvolvedor"
+    : isPrompt
     ? "Ative sua localização"
     : "Não foi possível obter sua localização.";
-  const description = isPrompt
+  const description = devMode
+    ? "No Preview, a localização real pode ser simulada. Use uma origem de teste para continuar."
+    : isPrompt
     ? "A MOVVI precisa da sua localização para encontrar motoristas próximos e calcular sua corrida."
     : errorMessage ||
       "Você pode continuar utilizando a MOVVI informando sua localização manualmente.";
-  const primaryLabel = requesting
+  const primaryLabel = devMode
+    ? "USAR ORIGEM DE TESTE"
+    : requesting
     ? "Solicitando..."
     : isPrompt
     ? "PERMITIR LOCALIZAÇÃO"
     : "TENTAR NOVAMENTE";
-  const [manualOpen, setManualOpen] = useState(!isPrompt);
+  const [manualOpen, setManualOpen] = useState(!isPrompt || devMode);
   const [query, setQuery] = useState("");
   const [items, setItems] = useState<{ placeId: string; primary: string; secondary: string }[]>([]);
   const [searching, setSearching] = useState(false);
