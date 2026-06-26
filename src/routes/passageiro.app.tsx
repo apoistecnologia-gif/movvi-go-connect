@@ -414,7 +414,7 @@ function PassageiroApp() {
     [route],
   );
 
-  const center = position ?? BRASILIA_CENTER;
+  const center = position && isBrazilCoordinate(position.lat, position.lng) ? position : BRAZIL_CENTER;
   const phase = ride?.status;
 
   /* ---------------------- GPS denied screen ---------------------- */
