@@ -1078,6 +1078,7 @@ function SheetContent({
   geo: GeocodeResult | null;
   addressStatus: "idle" | "loading" | "resolved" | "failed";
   hasPosition: boolean;
+  position: LatLng | null;
   onOpenAddressDetails: () => void;
   destination: { point: LatLng; label: string } | null;
   destinationText: string;
