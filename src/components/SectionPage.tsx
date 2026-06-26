@@ -1,4 +1,3 @@
-import { createFileRoute } from "@tanstack/react-router";
 import type { LucideIcon } from "lucide-react";
 import { MovviHeader } from "@/components/MovviHeader";
 import { BottomNav, PASSENGER_NAV, DRIVER_NAV } from "@/components/BottomNav";
@@ -42,8 +41,3 @@ export function SectionPage({
     </div>
   );
 }
-
-export const Route = createFileRoute("/passageiro/corridas")({
-  head: () => ({ meta: [{ title: "Minhas Corridas — MOVVI DRIVE" }] }),
-  component: () => null, // overridden — placeholder for type
-});
