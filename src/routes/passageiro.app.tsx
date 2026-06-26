@@ -1725,76 +1725,69 @@ function SheetContent({
             </div>
           )}
 
-          {/* Tabs dos grupos */}
-          <div className="mb-2.5 flex gap-1 rounded-2xl bg-background/60 p-1 ring-1 ring-border">
-            {GROUPS.map((g) => {
-              const active = activeGroup === g.key;
+          {/* Seleção de categoria — grid flat com as 5 opções MOVVI */}
+          <div className="mb-2.5 grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {UI_CATEGORIES.map((c) => {
+              const active = c.key === uiCategoryKey;
+              const fare = route ? estimateFare(c.backend, km, min, tariffs) : null;
+              const Icon = c.icon;
               return (
                 <button
-                  key={g.key}
+                  key={c.key}
                   type="button"
-                  onClick={() => setActiveGroup(g.key)}
-                  className={`flex-1 rounded-xl px-2 py-2 text-[12px] font-bold transition ${
+                  onClick={() => setUiCategoryKey(c.key)}
+                  aria-pressed={active}
+                  className={`flex flex-col items-start gap-1 rounded-2xl border-2 px-3 py-3 text-left transition active:scale-95 ${
                     active
-                      ? "bg-primary text-primary-foreground shadow-md shadow-primary/30"
-                      : "text-muted-foreground hover:text-foreground"
+                      ? "border-primary bg-primary/10 shadow-md shadow-primary/20"
+                      : "border-border bg-background/60 hover:border-primary/40"
                   }`}
                 >
-                  {g.label}
+                  <span
+                    className={`grid h-9 w-9 place-items-center rounded-xl ${
+                      active ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary"
+                    }`}
+                  >
+                    <Icon className="h-4.5 w-4.5" />
+                  </span>
+                  <span className="text-[13px] font-bold leading-tight">{c.label}</span>
+                  <span className="text-[10.5px] leading-tight text-muted-foreground">
+                    {c.tagline}
+                  </span>
+                  {fare != null ? (
+                    <span
+                      className={`mt-0.5 text-[13px] font-extrabold ${
+                        active ? "text-primary" : "text-foreground"
+                      }`}
+                    >
+                      {formatBRL(fare)}
+                    </span>
+                  ) : (
+                    <span className="mt-0.5 text-[10px] text-muted-foreground">
+                      Calculando...
+                    </span>
+                  )}
                 </button>
               );
             })}
           </div>
 
-          {/* Conteúdo do grupo */}
-          {activeGroup === "envios" ? (
-            <EnviosBlock
-              mode={envioMode}
-              setMode={setEnvioMode}
-              size={envioSize}
-              setSize={setEnvioSize}
-              fare={route ? estimateFare("envios", km, min) : null}
-            />
-          ) : (
-            <div className="-mx-1 mb-2.5 flex gap-2 overflow-x-auto px-1 pb-1">
-              {groupItems.map((c) => {
-                const active = c.key === uiCategoryKey;
-                const fare = route ? estimateFare(c.backend, km, min) : null;
-                const Icon = c.icon;
-                return (
-                  <button
-                    key={c.key}
-                    type="button"
-                    onClick={() => setUiCategoryKey(c.key)}
-                    className={`flex w-[120px] shrink-0 flex-col items-start gap-1 rounded-2xl border-2 px-3 py-2.5 text-left transition active:scale-95 ${
-                      active
-                        ? "border-primary bg-primary/10 shadow-md shadow-primary/15"
-                        : "border-border bg-background/60 hover:border-primary/40"
-                    }`}
-                  >
-                    <span
-                      className={`grid h-8 w-8 place-items-center rounded-lg ${
-                        active ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary"
-                      }`}
-                    >
-                      <Icon className="h-4 w-4" />
-                    </span>
-                    <span className="text-[12px] font-semibold leading-tight">{c.label}</span>
-                    <span className="text-[10px] text-muted-foreground leading-tight">
-                      {c.tagline}
-                    </span>
-                    {fare != null && (
-                      <span
-                        className={`mt-0.5 text-[13px] font-bold ${
-                          active ? "text-primary" : "text-foreground"
-                        }`}
-                      >
-                        {formatBRL(fare)}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
+          {/* Cartão de estimativa */}
+          {route && selectedFare != null && (
+            <div className="mb-2.5 rounded-2xl bg-primary/5 px-3 py-3 ring-1 ring-primary/30">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="text-[10px] font-semibold uppercase tracking-widest text-primary">
+                    {selectedCategory.label} • {fmtKm(route.distanceMeters)} • {fmtMin(route.durationSeconds)}
+                  </div>
+                  <div className="mt-0.5 text-[22px] font-extrabold leading-none text-foreground">
+                    {formatBRL(selectedFare)}
+                  </div>
+                </div>
+              </div>
+              <p className="mt-2 text-[10.5px] leading-snug text-muted-foreground">
+                Valor estimado. O preço final pode variar conforme a rota e disponibilidade.
+              </p>
             </div>
           )}
 
@@ -1810,13 +1803,7 @@ function SheetContent({
             onClick={onSubmit}
             className="w-full rounded-2xl bg-primary py-3.5 text-[14px] font-bold text-primary-foreground shadow-xl shadow-primary/25 transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {busy
-              ? "Solicitando..."
-              : activeGroup === "envios"
-                ? envioMode === "enviar"
-                  ? "Solicitar entrega"
-                  : "Solicitar coleta"
-                : `Solicitar ${UI_CATEGORIES.find((c) => c.key === uiCategoryKey)?.label ?? "MOVVI"}`}
+            {busy ? "Solicitando..." : `Solicitar MOVVI ${selectedCategory.label}`}
           </button>
         </>
       )}
