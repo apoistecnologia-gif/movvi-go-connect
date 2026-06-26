@@ -37,11 +37,7 @@ import {
   isBrazilCoordinate,
   purgeForeignMapCache,
 } from "@/lib/googleMaps";
-import {
-  isDevEnvironment,
-  DEV_TEST_LOCATION,
-  DEV_TEST_LABEL,
-} from "@/lib/environment";
+import { isDevEnvironment } from "@/lib/environment";
 import { computeRoute, type RouteResult } from "@/lib/routes.functions";
 import { reverseGeocode, type GeocodeResult } from "@/lib/geocode.functions";
 import { requestRide } from "@/lib/ride.functions";
