@@ -44,11 +44,12 @@ const STATUS_META: Record<Status, { label: string; icon: typeof Clock; tone: str
 function DriverStatusPage() {
   const navigate = useNavigate();
   const [status, setStatus] = useState<Status | null>(null);
+  const [rejectionReason, setRejectionReason] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
-    (async () => {
+    async function fetchStatus() {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) {
         navigate({ to: "/motorista/login" });
@@ -56,15 +57,27 @@ function DriverStatusPage() {
       }
       const { data } = await supabase
         .from("drivers")
-        .select("approval_status")
+        .select("approval_status, rejection_reason")
         .eq("user_id", u.user.id)
         .maybeSingle();
       if (!mounted) return;
       setStatus((data?.approval_status as Status) ?? "pending_approval");
+      setRejectionReason(data?.rejection_reason ?? null);
       setLoading(false);
-    })();
-    return () => { mounted = false; };
+    }
+    fetchStatus();
+    const ch = supabase
+      .channel("driver-status-self")
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "drivers" }, () =>
+        fetchStatus(),
+      )
+      .subscribe();
+    return () => {
+      mounted = false;
+      supabase.removeChannel(ch);
+    };
   }, [navigate]);
+
 
   const meta = status ? STATUS_META[status] : null;
   const Icon = meta?.icon ?? Clock;
@@ -98,7 +111,14 @@ function DriverStatusPage() {
                     </div>
                     <Badge variant="outline" className={meta.tone}>{meta.label}</Badge>
                     <p className="max-w-md text-sm text-muted-foreground">{meta.desc}</p>
+                    {status === "rejected" && rejectionReason && (
+                      <div className="w-full rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-left text-sm text-destructive">
+                        <strong className="block text-xs uppercase tracking-wide">Motivo</strong>
+                        {rejectionReason}
+                      </div>
+                    )}
                   </div>
+
 
                   <div className="flex flex-col gap-2">
                     {status === "approved" && (
