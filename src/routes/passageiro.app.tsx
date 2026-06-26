@@ -368,6 +368,9 @@ function PassageiroApp() {
     "idle" | "loading" | "resolved" | "failed"
   >("idle");
   const [addressDetailsOpen, setAddressDetailsOpen] = useState(false);
+  const [originPickOnMap, setOriginPickOnMap] = useState(false);
+  const [originManualOpen, setOriginManualOpen] = useState(false);
+  const [originPickCenter, setOriginPickCenter] = useState<LatLng | null>(null);
   const [tick, setTick] = useState(0); // re-render para saudação dinâmica
   const [gpsState, setGpsState] = useState<
     "idle" | "requesting" | "granted" | "denied" | "unavailable"
