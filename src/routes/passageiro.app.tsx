@@ -411,6 +411,18 @@ function PassageiroApp() {
     "idle" | "requesting" | "granted" | "denied" | "unavailable"
   >("idle");
   const [gpsErrorMsg, setGpsErrorMsg] = useState<string>("");
+  // 🔧 Painel temporário de diagnóstico de geolocalização (DEV)
+  const [gpsDiag, setGpsDiag] = useState<{
+    status: "ok" | "rejected-outside-br";
+    lat: number;
+    lng: number;
+    accuracy: number | null;
+    altitude: number | null;
+    heading: number | null;
+    speed: number | null;
+    timestamp: number;
+    reason?: string;
+  } | null>(null);
   // Status da permissão de geolocalização (Permissions API).
   // - checking: ainda consultando a Permissions API
   // - prompt: navegador ainda não decidiu — precisa de ação do usuário
