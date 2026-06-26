@@ -317,7 +317,9 @@ function PassageiroApp() {
   const [position, setPosition] = useState<LatLng | null>(null);
   const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
   const [geo, setGeo] = useState<GeocodeResult | null>(null);
-  const [geoLoading, setGeoLoading] = useState(false);
+  const [addressStatus, setAddressStatus] = useState<
+    "idle" | "loading" | "resolved" | "failed"
+  >("idle");
   const [addressDetailsOpen, setAddressDetailsOpen] = useState(false);
   const [tick, setTick] = useState(0); // re-render para saudação dinâmica
   const [gpsState, setGpsState] = useState<
