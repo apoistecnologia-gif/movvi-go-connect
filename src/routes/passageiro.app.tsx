@@ -1498,24 +1498,15 @@ function SheetContent({
   const km = route ? route.distanceMeters / 1000 : 0;
   const min = route ? route.durationSeconds / 60 : 0;
 
-  const [activeGroup, setActiveGroup] = useState<GroupKey>(() => groupOf(uiCategoryKey));
-  const [envioMode, setEnvioMode] = useState<"enviar" | "receber">("enviar");
-  const [envioSize, setEnvioSize] = useState<"P" | "M" | "G">("P");
-
-  // Quando o usuário define um destino, garantimos uma categoria válida no grupo ativo.
-  useEffect(() => {
-    if (!destination) return;
-    const items = GROUPS.find((g) => g.key === activeGroup)?.items ?? [];
-    if (!items.includes(uiCategoryKey) && items[0]) setUiCategoryKey(items[0]);
-  }, [destination, activeGroup, uiCategoryKey, setUiCategoryKey]);
-
-  const groupItems = useMemo(
-    () =>
-      (GROUPS.find((g) => g.key === activeGroup)?.items ?? [])
-        .map((k) => UI_CATEGORIES.find((c) => c.key === k))
-        .filter((c): c is UiCategory => !!c),
-    [activeGroup],
+  // Categoria atualmente selecionada (objeto UI).
+  const selectedCategory = useMemo(
+    () => UI_CATEGORIES.find((c) => c.key === uiCategoryKey) ?? UI_CATEGORIES[0],
+    [uiCategoryKey],
   );
+  const selectedFare = route
+    ? estimateFare(selectedCategory.backend, km, min, tariffs)
+    : null;
+
 
   const isExact = geo?.precision === "exact";
   const rua = geo?.components.rua;
