@@ -927,6 +927,10 @@ function PassageiroApp() {
             driversCount={drivers.length}
             onSubmit={submitRide}
             searchInputRef={searchInputRef}
+            gpsFailed={gpsFailed}
+            gpsErrorMsg={gpsErrorMsg}
+            gpsRequesting={gpsState === "requesting"}
+            onRetryGps={requestGps}
           />
         </MovviSheet>
       )}
