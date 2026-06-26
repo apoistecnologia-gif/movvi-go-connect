@@ -1398,8 +1398,12 @@ function PassageiroApp() {
 
 
       {ride && (phase === "searching_driver" || phase === "offered_to_driver") && (
-        <MovviSheet snaps={[40]} initial={40}>
-          <SearchingPanel category={category} onCancel={cancelRide} />
+        <MovviSheet snaps={[50]} initial={50}>
+          <SearchingPanel
+            category={category}
+            driversCount={drivers.length}
+            onCancel={cancelRide}
+          />
         </MovviSheet>
       )}
 
@@ -1408,7 +1412,7 @@ function PassageiroApp() {
         (phase === "driver_assigned" ||
           phase === "driver_arrived" ||
           phase === "in_progress") && (
-          <MovviSheet snaps={[44, 80]} initial={44}>
+          <MovviSheet snaps={[40, 65]} initial={40}>
             <DriverEnRoute ride={ride} driver={driverInfo} onCancel={cancelRide} />
           </MovviSheet>
         )}
