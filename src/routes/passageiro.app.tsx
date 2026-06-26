@@ -173,18 +173,37 @@ function PassageiroApp() {
   }
 
   /* ---------------------- GPS ---------------------- */
+  const useDevTestLocation = useCallback(() => {
+    console.log("[MOVVI] Usando localização de teste:", DEV_TEST_LABEL);
+    setPosition(DEV_TEST_LOCATION);
+    setGpsState("granted");
+    setGpsErrorMsg("");
+    setDevNotice(`Usando ${DEV_TEST_LABEL}.`);
+  }, []);
+
   const requestGps = useCallback(() => {
     console.log("Solicitando localização...");
-    if (typeof window !== "undefined" && !window.isSecureContext) {
+    const bail = (msg: string) => {
+      if (isDev) {
+        console.warn("[MOVVI] Dev fallback:", msg);
+        setPosition(DEV_TEST_LOCATION);
+        setGpsState("granted");
+        setGpsErrorMsg("");
+        setDevNotice(
+          `Ambiente de desenvolvimento detectado. ${msg} Usando ${DEV_TEST_LABEL}.`,
+        );
+        return true;
+      }
       setGpsState("unavailable");
-      setGpsErrorMsg(
-        "Geolocalização requer HTTPS. Abra o app em uma conexão segura ou use a localização manual.",
-      );
+      setGpsErrorMsg(msg);
+      return false;
+    };
+    if (typeof window !== "undefined" && !window.isSecureContext) {
+      bail("Geolocalização requer HTTPS.");
       return;
     }
     if (!("geolocation" in navigator)) {
-      setGpsState("unavailable");
-      setGpsErrorMsg("Seu navegador não oferece geolocalização. Use a localização manual.");
+      bail("Seu navegador não oferece geolocalização.");
       return;
     }
     setGpsState("requesting");
