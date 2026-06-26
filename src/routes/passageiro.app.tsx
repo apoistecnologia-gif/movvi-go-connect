@@ -1710,6 +1710,7 @@ function SheetContent({
           selectedFare={selectedFare}
           onClearDestination={onClearDestination}
           onSubmit={onSubmit}
+          onExpandSheet={onExpandSheet}
         />
       )}
     </div>
