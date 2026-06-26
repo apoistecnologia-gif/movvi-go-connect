@@ -784,13 +784,16 @@ function PassageiroApp() {
   const center = position && isBrazilCoordinate(position.lat, position.lng) ? position : BRAZIL_CENTER;
   const phase = ride?.status;
 
-  /* ---------------------- GPS denied screen ---------------------- */
-  // Mantém a tela de ativação montada também durante "requesting" para que o
-  // botão exiba o spinner sem desmontar/remontar (causa do "preciso clicar várias vezes").
+  /* ---------------------- GPS initial loading ---------------------- */
+  // Só mostra a tela de ativação na PRIMEIRA solicitação (sem posição ainda).
+  // Se já estamos pedindo/idle e não há posição, exibimos a tela com botão.
+  // Quando há erro (denied/unavailable) e o usuário já viu a tela inicial,
+  // mantemos o app montado e mostramos o erro inline no cartão de endereço.
   const showGpsScreen =
-    gpsState === "denied" ||
-    gpsState === "unavailable" ||
-    ((gpsState === "requesting" || gpsState === "idle") && !position);
+    !position &&
+    (gpsState === "idle" ||
+      gpsState === "requesting" ||
+      ((gpsState === "denied" || gpsState === "unavailable") && !gpsErrorMsg));
   if (showGpsScreen) {
     return (
       <GpsDeniedScreen
@@ -802,6 +805,7 @@ function PassageiroApp() {
       />
     );
   }
+  const gpsFailed = (gpsState === "denied" || gpsState === "unavailable") && !!gpsErrorMsg;
 
 
   return (
