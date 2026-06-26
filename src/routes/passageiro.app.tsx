@@ -452,6 +452,20 @@ function PassageiroApp() {
   const [recent, setRecent] = useState<Recent[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [tariffs, setTariffs] = useState<TariffMap>({});
+
+  /* ---------------------- tariffs (admin_settings) ---------------------- */
+  useEffect(() => {
+    let active = true;
+    loadTariffs()
+      .then((t) => {
+        if (active) setTariffs(t);
+      })
+      .catch((e) => console.warn("[MOVVI] loadTariffs falhou:", e));
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // ride lifecycle
   const [rideId, setRideId] = useState<string | null>(null);
