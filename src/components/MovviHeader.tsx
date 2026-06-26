@@ -71,8 +71,8 @@ export function MovviHeader({
       <div
         className={
           isFloating
-            ? "mx-auto flex max-w-5xl items-center gap-2 rounded-2xl bg-card/90 px-2 py-2 shadow-lg ring-1 ring-border backdrop-blur-md"
-            : "mx-auto flex h-14 max-w-5xl items-center gap-2 px-3"
+            ? "mx-auto flex max-w-5xl items-center gap-1.5 rounded-2xl bg-card/85 px-2 py-1.5 shadow-lg ring-1 ring-border/70 backdrop-blur-xl"
+            : "mx-auto flex h-12 max-w-5xl items-center gap-1.5 px-3"
         }
       >
         {!hideBack && (
@@ -80,7 +80,7 @@ export function MovviHeader({
             type="button"
             onClick={handleBack}
             aria-label="Voltar"
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-foreground transition hover:bg-accent/40"
+            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-foreground transition hover:bg-accent/40 active:scale-95"
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
@@ -89,18 +89,15 @@ export function MovviHeader({
         <Link
           to="/"
           aria-label="Home MOVVI"
-          className="flex shrink-0 items-center gap-2 rounded-full px-2 py-1 transition hover:bg-accent/40"
+          className="flex shrink-0 items-center gap-1.5 rounded-full px-1.5 py-1 transition hover:bg-accent/40"
         >
           <MovviHeaderLogo />
-          <span className="hidden font-display text-sm font-bold tracking-wide sm:inline">
-            MOVVI <span className="text-primary">DRIVE</span>
-          </span>
         </Link>
 
-        <div className="min-w-0 flex-1 px-2 text-right sm:text-left">
+        <div className="min-w-0 flex-1 px-1">
           {name && (
-            <span className="block truncate text-xs text-muted-foreground">
-              Olá, <span className="font-medium text-foreground">{name}</span>
+            <span className="block text-[13px] font-medium leading-tight text-foreground">
+              {name}
             </span>
           )}
         </div>
@@ -108,7 +105,7 @@ export function MovviHeader({
         <Link
           to="/"
           aria-label="Home"
-          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-foreground transition hover:bg-accent/40"
+          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-foreground transition hover:bg-accent/40 active:scale-95"
         >
           <Home className="h-4 w-4" />
         </Link>
@@ -117,7 +114,7 @@ export function MovviHeader({
           type="button"
           onClick={handleLogout}
           aria-label="Sair"
-          className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-destructive/15 px-3 text-xs font-medium text-destructive ring-1 ring-destructive/30 transition hover:bg-destructive/25"
+          className="inline-flex h-8 shrink-0 items-center gap-1 rounded-full bg-destructive/15 px-2.5 text-xs font-medium text-destructive ring-1 ring-destructive/30 transition hover:bg-destructive/25 active:scale-95"
         >
           <LogOut className="h-3.5 w-3.5" />
           <span className="hidden sm:inline">Sair</span>
@@ -129,7 +126,7 @@ export function MovviHeader({
 
 function MovviHeaderLogo() {
   return (
-    <svg width={26} height={26} viewBox="0 0 120 120" aria-hidden>
+    <svg width={22} height={22} viewBox="0 0 120 120" aria-hidden>
       <path d="M18 100 L18 28 L40 28 L60 70 L60 100 Z" fill="white" />
       <path
         d="M60 28 Q100 28 100 64 Q100 100 60 100 L60 78 Q82 78 82 64 Q82 50 60 50 Z"
