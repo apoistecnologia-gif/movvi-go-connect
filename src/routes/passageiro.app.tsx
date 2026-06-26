@@ -232,6 +232,16 @@ function PassageiroApp() {
         },
         (err) => {
           console.error("Erro ao obter localização:", err);
+          if (isDev) {
+            console.warn("[MOVVI] Dev: GPS falhou, usando Petrolina/PE.");
+            setPosition(DEV_TEST_LOCATION);
+            setGpsState("granted");
+            setGpsErrorMsg("");
+            setDevNotice(
+              `Ambiente de desenvolvimento detectado. Não foi possível obter o GPS — usando ${DEV_TEST_LABEL}.`,
+            );
+            return;
+          }
           setGpsState("denied");
           if (err.code === err.PERMISSION_DENIED) {
             setGpsErrorMsg(
