@@ -1,13 +1,327 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { ComingSoonRoute } from "@/components/ComingSoonRoute";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { useState, type FormEvent } from "react";
+import { z } from "zod";
+import { supabase } from "@/lib/supabaseClient";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { MovviLogo } from "@/components/MovviLogo";
+import { Loader2, Upload } from "lucide-react";
 
 export const Route = createFileRoute("/motorista/cadastro")({
   head: () => ({ meta: [{ title: "Cadastro do Motorista — MOVVI DRIVE" }] }),
-  component: () => (
-    <ComingSoonRoute
-      phase="Fase 2"
-      title="Cadastro do Motorista"
-      description="Dados pessoais, veículo e upload de selfie, CNH e documento. Em construção."
-    />
-  ),
+  component: DriverSignUpPage,
 });
+
+const CATEGORIES = ["carros", "motos", "fretes", "guincho", "envios"] as const;
+
+const schema = z.object({
+  name: z.string().trim().min(3, "Nome muito curto").max(120),
+  email: z.string().trim().email("E-mail inválido").max(255),
+  phone: z.string().trim().min(10, "Telefone inválido").max(20),
+  password: z.string().min(8, "Mínimo 8 caracteres").max(72),
+  cpf: z.string().trim().min(11, "CPF inválido").max(14),
+  birth_date: z.string().optional(),
+  city: z.string().trim().min(2).max(80),
+  state: z.string().trim().length(2, "UF com 2 letras"),
+  category: z.enum(CATEGORIES),
+  vehicle_model: z.string().trim().min(2).max(80),
+  vehicle_plate: z.string().trim().min(6).max(10),
+  vehicle_color: z.string().trim().min(2).max(40),
+  vehicle_year: z.coerce.number().int().min(1980).max(new Date().getFullYear() + 1),
+});
+
+type UploadTarget = {
+  bucket: "driver-selfies" | "driver-cnh" | "vehicle-documents";
+  file: File;
+  label: string;
+};
+
+async function uploadFile(userId: string, t: UploadTarget): Promise<string> {
+  const ext = t.file.name.split(".").pop()?.toLowerCase() || "bin";
+  const path = `${userId}/${t.label}-${Date.now()}.${ext}`;
+  const { error } = await supabase.storage
+    .from(t.bucket)
+    .upload(path, t.file, { upsert: true, contentType: t.file.type });
+  if (error) throw new Error(`Falha no upload (${t.label}): ${error.message}`);
+  return path;
+}
+
+function FileField({
+  id,
+  label,
+  file,
+  onChange,
+  accept,
+}: {
+  id: string;
+  label: string;
+  file: File | null;
+  onChange: (f: File | null) => void;
+  accept: string;
+}) {
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={id}>{label}</Label>
+      <label
+        htmlFor={id}
+        className="flex cursor-pointer items-center gap-3 rounded-md border border-dashed border-border bg-muted/30 px-4 py-3 text-sm transition hover:border-primary hover:bg-muted/60"
+      >
+        <Upload className="h-4 w-4 text-primary" />
+        <span className="truncate text-muted-foreground">
+          {file ? file.name : "Selecionar arquivo"}
+        </span>
+      </label>
+      <input
+        id={id}
+        type="file"
+        accept={accept}
+        className="hidden"
+        onChange={(e) => onChange(e.target.files?.[0] ?? null)}
+      />
+    </div>
+  );
+}
+
+function DriverSignUpPage() {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const [selfie, setSelfie] = useState<File | null>(null);
+  const [cnh, setCnh] = useState<File | null>(null);
+  const [vehicleDoc, setVehicleDoc] = useState<File | null>(null);
+
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+
+    const form = new FormData(e.currentTarget);
+    const raw = Object.fromEntries(form.entries());
+    const parsed = schema.safeParse(raw);
+    if (!parsed.success) {
+      setError(parsed.error.issues[0]?.message ?? "Verifique os campos");
+      return;
+    }
+    if (!selfie || !cnh || !vehicleDoc) {
+      setError("Envie selfie, CNH e documento do veículo");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const data = parsed.data;
+
+      const { data: signUp, error: signUpError } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/motorista/status`,
+          data: { name: data.name, phone: data.phone, role: "driver" },
+        },
+      });
+      if (signUpError) throw signUpError;
+      const userId = signUp.user?.id;
+      if (!userId) throw new Error("Não foi possível criar a conta.");
+
+      // Garante sessão para satisfazer RLS de storage/drivers.
+      if (!signUp.session) {
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: data.email,
+          password: data.password,
+        });
+        if (signInError) throw signInError;
+      }
+
+      const [selfie_url, cnh_url, vehicle_document_url] = await Promise.all([
+        uploadFile(userId, { bucket: "driver-selfies", file: selfie, label: "selfie" }),
+        uploadFile(userId, { bucket: "driver-cnh", file: cnh, label: "cnh" }),
+        uploadFile(userId, { bucket: "vehicle-documents", file: vehicleDoc, label: "veiculo" }),
+      ]);
+
+      const { error: insertError } = await supabase.from("drivers").insert({
+        user_id: userId,
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        cpf: data.cpf,
+        birth_date: data.birth_date || null,
+        city: data.city,
+        state: data.state.toUpperCase(),
+        category: data.category,
+        vehicle_model: data.vehicle_model,
+        vehicle_plate: data.vehicle_plate.toUpperCase(),
+        vehicle_color: data.vehicle_color,
+        vehicle_year: data.vehicle_year,
+        selfie_url,
+        cnh_url,
+        vehicle_document_url,
+        approval_status: "pending_approval",
+      });
+      if (insertError) throw insertError;
+
+      navigate({ to: "/motorista/status" });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro inesperado");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-background py-10">
+      <div className="container mx-auto max-w-3xl px-4">
+        <Link to="/" className="mb-6 inline-flex items-center gap-2">
+          <MovviLogo className="h-8 w-auto" />
+        </Link>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl">Cadastro do Motorista</CardTitle>
+            <CardDescription>
+              Após enviar, seu cadastro entrará em análise pela equipe MOVVI.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={onSubmit} className="space-y-8">
+              <section className="space-y-4">
+                <h3 className="text-sm font-semibold uppercase text-primary">Dados pessoais</h3>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Nome completo</Label>
+                    <Input id="name" name="name" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="cpf">CPF</Label>
+                    <Input id="cpf" name="cpf" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">E-mail</Label>
+                    <Input id="email" name="email" type="email" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Telefone</Label>
+                    <Input id="phone" name="phone" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Senha</Label>
+                    <Input id="password" name="password" type="password" required minLength={8} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="birth_date">Data de nascimento</Label>
+                    <Input id="birth_date" name="birth_date" type="date" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="city">Cidade</Label>
+                    <Input id="city" name="city" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="state">UF</Label>
+                    <Input id="state" name="state" maxLength={2} required />
+                  </div>
+                </div>
+              </section>
+
+              <section className="space-y-4">
+                <h3 className="text-sm font-semibold uppercase text-primary">Veículo</h3>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="category">Categoria</Label>
+                    <Select name="category" defaultValue="carros">
+                      <SelectTrigger id="category">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CATEGORIES.map((c) => (
+                          <SelectItem key={c} value={c}>
+                            {c.charAt(0).toUpperCase() + c.slice(1)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="vehicle_model">Modelo</Label>
+                    <Input id="vehicle_model" name="vehicle_model" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="vehicle_plate">Placa</Label>
+                    <Input id="vehicle_plate" name="vehicle_plate" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="vehicle_color">Cor</Label>
+                    <Input id="vehicle_color" name="vehicle_color" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="vehicle_year">Ano</Label>
+                    <Input id="vehicle_year" name="vehicle_year" type="number" required />
+                  </div>
+                </div>
+              </section>
+
+              <section className="space-y-4">
+                <h3 className="text-sm font-semibold uppercase text-primary">Documentos</h3>
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <FileField
+                    id="selfie"
+                    label="Selfie"
+                    accept="image/*"
+                    file={selfie}
+                    onChange={setSelfie}
+                  />
+                  <FileField
+                    id="cnh"
+                    label="CNH"
+                    accept="image/*,application/pdf"
+                    file={cnh}
+                    onChange={setCnh}
+                  />
+                  <FileField
+                    id="vehicle_doc"
+                    label="Documento do veículo"
+                    accept="image/*,application/pdf"
+                    file={vehicleDoc}
+                    onChange={setVehicleDoc}
+                  />
+                </div>
+              </section>
+
+              {error && (
+                <Alert variant="destructive">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-xs text-muted-foreground">
+                  Já tem conta?{" "}
+                  <Link to="/motorista/login" className="text-primary hover:underline">
+                    Entrar
+                  </Link>
+                </p>
+                <Button type="submit" size="lg" disabled={loading} className="sm:min-w-48">
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Enviando...
+                    </>
+                  ) : (
+                    "Enviar cadastro"
+                  )}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
