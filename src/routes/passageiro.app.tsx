@@ -50,7 +50,6 @@ function PassageiroApp() {
   const navigate = useNavigate();
   const callComputeRoute = useServerFn(computeRoute);
 
-  const [userEmail, setUserEmail] = useState<string | null>(null);
   const [position, setPosition] = useState<LatLng | null>(null);
   const [gpsError, setGpsError] = useState<string | null>(null);
 
@@ -67,11 +66,7 @@ function PassageiroApp() {
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) {
-        navigate({ to: "/passageiro/login" });
-        return;
-      }
-      setUserEmail(data.user.email ?? null);
+      if (!data.user) navigate({ to: "/passageiro/login" });
     });
   }, [navigate]);
 
