@@ -1,10 +1,11 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Marker, Polyline } from "@react-google-maps/api";
-import { Clock, LogOut, MapPin, Navigation2, Route as RouteIcon, Search, X } from "lucide-react";
+import { Clock, MapPin, Navigation2, Route as RouteIcon, Search, X } from "lucide-react";
 import { MovviMap } from "@/components/MovviMap";
-import { MovviLogo } from "@/components/MovviLogo";
+import { MovviHeader } from "@/components/MovviHeader";
+import { BottomNav, PASSENGER_NAV } from "@/components/BottomNav";
 import { supabase } from "@/integrations/supabase/client";
 import { BRASILIA_CENTER } from "@/lib/googleMaps";
 import { computeRoute, type RouteResult } from "@/lib/routes.functions";
