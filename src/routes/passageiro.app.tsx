@@ -758,7 +758,7 @@ function PassageiroApp() {
 
       {/* BOTTOM SHEET — novo, próprio do MOVVI */}
       {!ride && (
-        <MovviSheet ref={sheetRef} snaps={[38, 68, 90]} initial={38}>
+        <MovviSheet ref={sheetRef} snaps={[30, 72, 92]} initial={30}>
           <SheetContent
             currentAddress={currentAddress}
             hasPosition={!!position}
