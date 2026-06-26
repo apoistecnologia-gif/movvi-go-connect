@@ -118,11 +118,13 @@ function PassageiroApp() {
   const navigate = useNavigate();
   const callComputeRoute = useServerFn(computeRoute);
   const callRequestRide = useServerFn(requestRide);
+  const callReverseGeocode = useServerFn(reverseGeocode);
 
   const [userId, setUserId] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>("");
 
   const [position, setPosition] = useState<LatLng | null>(null);
+  const [currentAddress, setCurrentAddress] = useState<string>("");
   const [gpsState, setGpsState] = useState<
     "idle" | "requesting" | "granted" | "denied" | "unavailable"
   >("idle");
@@ -137,7 +139,12 @@ function PassageiroApp() {
     label: string;
   } | null>(null);
   const [route, setRoute] = useState<RouteResult | null>(null);
-  const [category, setCategory] = useState<RideCategory>("carros");
+  const [uiCategoryKey, setUiCategoryKey] = useState<string>("carro");
+  const category: RideCategory = useMemo(
+    () =>
+      UI_CATEGORIES.find((c) => c.key === uiCategoryKey)?.backend ?? "carros",
+    [uiCategoryKey],
+  );
   const [recent, setRecent] = useState<Recent[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
