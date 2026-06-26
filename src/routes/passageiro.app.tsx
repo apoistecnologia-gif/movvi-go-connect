@@ -1735,6 +1735,7 @@ type StepFlowProps = {
   selectedFare: number | null;
   onClearDestination: () => void;
   onSubmit: () => void;
+  onExpandSheet: (p: number) => void;
 };
 
 function StepFlow({
