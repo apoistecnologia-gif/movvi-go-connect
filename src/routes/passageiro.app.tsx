@@ -924,7 +924,7 @@ function PassageiroApp() {
         <MovviSheet ref={sheetRef} snaps={[30, 72, 92]} initial={30}>
           <SheetContent
             geo={geo}
-            geoLoading={geoLoading}
+            addressStatus={addressStatus}
             hasPosition={!!position}
             onOpenAddressDetails={() => setAddressDetailsOpen(true)}
             destination={destination}
