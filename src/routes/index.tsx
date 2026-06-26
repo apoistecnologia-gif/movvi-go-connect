@@ -1,8 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { MovviLogo } from "@/components/MovviLogo";
-import { ArrowRight, Car, ShieldCheck, Steering } from "lucide-react";
-
-// Steering icon may not exist in lucide-react; fallback handled below.
+import { ArrowRight, Car, ShieldCheck } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -152,5 +150,3 @@ function DriverIcon() {
   );
 }
 
-// Aviso ao TS para o import opcional de Steering (caso não exista no runtime atual)
-void Steering;
