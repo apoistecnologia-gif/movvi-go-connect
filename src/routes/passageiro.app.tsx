@@ -1042,7 +1042,7 @@ function SheetContent({
   onRetryGps,
 }: {
   geo: GeocodeResult | null;
-  geoLoading: boolean;
+  addressStatus: "idle" | "loading" | "resolved" | "failed";
   hasPosition: boolean;
   onOpenAddressDetails: () => void;
   destination: { point: LatLng; label: string } | null;
