@@ -851,8 +851,10 @@ function groupOf(uiKey: string): GroupKey {
 }
 
 function SheetContent({
-  currentAddress,
+  geo,
+  geoLoading,
   hasPosition,
+  onOpenAddressDetails,
   destination,
   destinationText,
   setDestinationText,
@@ -869,8 +871,10 @@ function SheetContent({
   onSubmit,
   searchInputRef,
 }: {
-  currentAddress: string;
+  geo: GeocodeResult | null;
+  geoLoading: boolean;
   hasPosition: boolean;
+  onOpenAddressDetails: () => void;
   destination: { point: LatLng; label: string } | null;
   destinationText: string;
   setDestinationText: (s: string) => void;
@@ -909,10 +913,17 @@ function SheetContent({
     [activeGroup],
   );
 
+  const friendly = geo?.friendly || "";
+  const region = geo?.region || "";
+
   return (
     <div className="pt-1">
-      {/* Endereço atual — compacto */}
-      <div className="mb-2.5 flex items-center gap-2.5 rounded-2xl bg-primary/10 px-3 py-2 ring-1 ring-primary/30">
+      {/* Endereço atual — toque abre detalhes */}
+      <button
+        type="button"
+        onClick={onOpenAddressDetails}
+        className="mb-2.5 flex w-full items-center gap-2.5 rounded-2xl bg-primary/10 px-3 py-2 text-left ring-1 ring-primary/30 transition active:scale-[0.99] hover:bg-primary/15"
+      >
         <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
           <MapPin className="h-3.5 w-3.5" />
         </span>
@@ -920,12 +931,29 @@ function SheetContent({
           <div className="text-[9px] font-semibold uppercase tracking-widest text-primary leading-none">
             Você está em
           </div>
-          <div className="mt-0.5 truncate text-[12px] font-semibold leading-tight text-foreground">
-            {currentAddress ||
-              (hasPosition ? "Localização detectada" : "Detectando localização...")}
-          </div>
+          {geoLoading && !friendly ? (
+            <div className="mt-1 space-y-1">
+              <div className="h-3 w-2/3 animate-pulse rounded bg-foreground/10" />
+              <div className="h-2.5 w-1/3 animate-pulse rounded bg-foreground/10" />
+            </div>
+          ) : friendly ? (
+            <>
+              <div className="mt-0.5 truncate text-[13px] font-semibold leading-tight text-foreground">
+                {friendly}
+              </div>
+              {region && (
+                <div className="truncate text-[10px] text-muted-foreground">{region}</div>
+              )}
+            </>
+          ) : (
+            <div className="mt-0.5 truncate text-[12px] font-semibold leading-tight text-foreground">
+              {hasPosition ? "Localização detectada" : "Detectando localização..."}
+            </div>
+          )}
         </div>
-      </div>
+        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+      </button>
+
 
       {/* "Para onde você vai?" — sempre em destaque */}
       <div className="mb-2">
