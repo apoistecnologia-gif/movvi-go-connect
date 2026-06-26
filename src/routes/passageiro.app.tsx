@@ -737,49 +737,20 @@ function PassageiroApp() {
         </MovviMap>
       </div>
 
-      {/* TOP BAR — compacto, flutuante */}
-      <div className="absolute inset-x-0 top-0 z-40 px-3 pt-[calc(env(safe-area-inset-top)+10px)]">
-        <div className="mx-auto flex max-w-5xl items-center gap-2 rounded-2xl bg-card/90 px-2 py-1.5 shadow-xl ring-1 ring-border/60 backdrop-blur-xl">
-          <Link
-            to="/"
-            aria-label="Voltar"
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-foreground transition hover:bg-accent/40 active:scale-95"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-          <div className="flex shrink-0 items-center gap-1.5 px-1">
-            <LogoMark />
-          </div>
-          <div className="min-w-0 flex-1 px-1">
-            <div className="truncate text-[13px] font-semibold leading-tight">
-              {userName}
-            </div>
-            <div className="truncate text-[10px] uppercase tracking-widest text-primary">
-              Passageiro
-            </div>
-          </div>
-          <Link
-            to="/"
-            aria-label="Início"
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-foreground transition hover:bg-accent/40 active:scale-95"
-          >
-            <HomeIcon className="h-4 w-4" />
-          </Link>
-          <button
-            onClick={handleLogout}
-            aria-label="Sair"
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-destructive/15 text-destructive ring-1 ring-destructive/30 transition hover:bg-destructive/25 active:scale-95"
-          >
-            <LogOut className="h-4 w-4" />
-          </button>
-        </div>
-      </div>
+      {/* TOP BAR — premium: saudação + status dinâmico */}
+      <PremiumTopBar
+        userName={userName}
+        gpsState={gpsState}
+        drivers={drivers.length}
+        searching={!!ride && (ride.status === "searching_driver" || ride.status === "offered_to_driver")}
+        onLogout={handleLogout}
+      />
 
       {/* Floating controls */}
       <div className="pointer-events-none absolute right-3 z-30" style={{ bottom: "calc(32vh + 16px)" }}>
         <button
           onClick={recenter}
-          className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-card text-foreground shadow-2xl ring-1 ring-border transition active:scale-95"
+          className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-card text-foreground shadow-2xl ring-1 ring-border transition active:scale-90 hover:scale-105"
           aria-label="Recentralizar"
         >
           <Crosshair className="h-5 w-5 text-primary" />
