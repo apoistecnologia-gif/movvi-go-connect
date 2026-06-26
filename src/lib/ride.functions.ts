@@ -173,7 +173,8 @@ export const updateRidePhase = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const patch: Record<string, any> = { status: data.status };
+    const patch: import("@/integrations/supabase/types").Database["public"]["Tables"]["rides"]["Update"] =
+      { status: data.status };
     if (data.status === "in_progress") patch.started_at = new Date().toISOString();
     if (data.status === "completed") {
       patch.completed_at = new Date().toISOString();
