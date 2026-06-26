@@ -175,11 +175,12 @@ function OriginActionsSheet({
   onTypeAddress: () => void;
   gpsRequesting: boolean;
 }) {
+  const isExact = geo?.precision === "exact";
   const rua = geo?.components.rua;
   const numero = geo?.components.numero;
   const bairro = geo?.components.bairro || geo?.components.povoado;
   const region = geo?.region;
-  const ruaLine = rua ? (numero ? `${rua}, ${numero}` : rua) : geo?.friendly || "";
+  const ruaLine = isExact && rua ? (numero ? `${rua}, ${numero}` : rua) : "";
 
   return (
     <div className="fixed inset-0 z-[60] flex items-end" onClick={onClose}>
@@ -198,16 +199,28 @@ function OriginActionsSheet({
               Local de partida
             </div>
             {ruaLine ? (
-              <div className="mt-0.5 truncate text-[15px] font-bold text-foreground">{ruaLine}</div>
+              <>
+                <div className="mt-0.5 truncate text-[15px] font-bold text-foreground">{ruaLine}</div>
+                {bairro && <div className="truncate text-[12.5px] text-foreground/80">{bairro}</div>}
+                {region && <div className="truncate text-[12px] text-muted-foreground">{region}</div>}
+              </>
             ) : position ? (
-              <div className="mt-0.5 truncate font-mono text-[12px] font-semibold text-foreground">
-                {position.lat.toFixed(6)}, {position.lng.toFixed(6)}
-              </div>
+              <>
+                <div className="mt-0.5 text-[13px] font-semibold text-amber-400">
+                  Localização aproximada
+                </div>
+                <div className="mt-0.5 font-mono text-[12px] text-foreground">
+                  Lat: {position.lat.toFixed(6)} • Lng: {position.lng.toFixed(6)}
+                </div>
+                {region && (
+                  <div className="truncate text-[12px] text-muted-foreground">
+                    Referência: {region}
+                  </div>
+                )}
+              </>
             ) : (
               <div className="mt-0.5 text-[13px] text-muted-foreground">Sem endereço identificado</div>
             )}
-            {bairro && <div className="truncate text-[12.5px] text-foreground/80">{bairro}</div>}
-            {region && <div className="truncate text-[12px] text-muted-foreground">{region}</div>}
           </div>
         </div>
 
