@@ -477,7 +477,7 @@ function PassageiroApp() {
       console.log("[MOVVI] Ignorando clique — já existe uma solicitação de GPS em andamento.");
       return;
     }
-    console.log("[MOVVI] Solicitando localização do dispositivo...");
+    console.log("[MOVVI] Solicitando localização...");
     const fail = (msg: string) => {
       setGpsState("unavailable");
       gpsStateRef.current = "unavailable";
@@ -503,10 +503,11 @@ function PassageiroApp() {
           const lng = pos.coords.longitude;
           console.log("[MOVVI] GPS recebido:", lat, lng);
           if (!isBrazilCoordinate(lat, lng)) {
-            setGpsState("unavailable");
-            gpsStateRef.current = "unavailable";
+            console.warn("[MOVVI] GPS rejeitado: fora do Brasil", { lat, lng });
+            setGpsState("denied");
+            gpsStateRef.current = "denied";
             setGpsErrorMsg(
-              "Não conseguimos acessar sua localização automaticamente. Digite sua origem manualmente.",
+              "Recebemos uma localização incompatível com o Brasil. Digite sua origem manualmente ou tente novamente com a localização real ativada.",
             );
             return;
           }
@@ -516,7 +517,8 @@ function PassageiroApp() {
           setGpsState("granted");
           gpsStateRef.current = "granted";
           setGpsErrorMsg("");
-          console.log("[MOVVI] GPS obtido", { lat, lng });
+          console.log("[MOVVI] Origem válida confirmada", { lat, lng });
+
           // Evita múltiplos watchers acumulados em re-tentativas.
           if (watchIdRef.current != null) {
             navigator.geolocation.clearWatch(watchIdRef.current);
@@ -577,13 +579,18 @@ function PassageiroApp() {
 
 
   const setManualLocation = useCallback((p: LatLng) => {
-    if (!isBrazilCoordinate(p.lat, p.lng)) return;
-    console.log("Localização manual definida:", p);
+    if (!isBrazilCoordinate(p.lat, p.lng)) {
+      console.warn("[MOVVI] Origem manual rejeitada: fora do Brasil", p);
+      return;
+    }
+    console.log("[MOVVI] Origem manual selecionada", p);
     setPosition(p);
     setGpsState("granted");
     gpsStateRef.current = "granted";
     setGpsErrorMsg("");
+    console.log("[MOVVI] Origem válida confirmada", p);
   }, []);
+
 
   // Verifica a permissão de geolocalização ANTES de chamar getCurrentPosition.
   // - Se já estiver "granted", pedimos o GPS imediatamente (sem prompt do navegador).
