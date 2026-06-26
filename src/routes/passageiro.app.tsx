@@ -1053,6 +1053,7 @@ function SheetContent({
   geo,
   addressStatus,
   hasPosition,
+  position,
   onOpenAddressDetails,
   destination,
   destinationText,
