@@ -137,8 +137,13 @@ export const rejectRide = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ rideId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const cur = await supabase
+    const { userId } = context;
+    // admin client — após limpar current_offer_driver_id o motorista perde
+    // RLS sobre a corrida; precisamos prosseguir com privilégios elevados
+    // para repassar a oferta a outro motorista.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const cur = await supabaseAdmin
       .from("rides")
       .select("rejected_driver_ids")
       .eq("id", data.rideId)
@@ -147,11 +152,11 @@ export const rejectRide = createServerFn({ method: "POST" })
     const rejected = Array.from(
       new Set([...(cur.data.rejected_driver_ids ?? []), userId]),
     );
-    await supabase
+    await supabaseAdmin
       .from("rides")
       .update({ rejected_driver_ids: rejected, current_offer_driver_id: null })
       .eq("id", data.rideId);
-    await offerToNextDriver(supabase, data.rideId);
+    await offerToNextDriver(supabaseAdmin, data.rideId);
     return { ok: true };
   });
 
