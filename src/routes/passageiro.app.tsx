@@ -28,6 +28,11 @@ import {
   isBrazilCoordinate,
   purgeForeignMapCache,
 } from "@/lib/googleMaps";
+import {
+  isDevEnvironment,
+  DEV_TEST_LOCATION,
+  DEV_TEST_LABEL,
+} from "@/lib/environment";
 import { computeRoute, type RouteResult } from "@/lib/routes.functions";
 import { requestRide } from "@/lib/ride.functions";
 import { useNearbyDrivers } from "@/hooks/useNearbyDrivers";
@@ -98,6 +103,8 @@ function PassageiroApp() {
     "idle" | "requesting" | "granted" | "denied" | "unavailable"
   >("idle");
   const [gpsErrorMsg, setGpsErrorMsg] = useState<string>("");
+  const [devNotice, setDevNotice] = useState<string | null>(null);
+  const isDev = useMemo(() => isDevEnvironment(), []);
 
   const [destinationText, setDestinationText] = useState("");
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
@@ -166,18 +173,37 @@ function PassageiroApp() {
   }
 
   /* ---------------------- GPS ---------------------- */
+  const useDevTestLocation = useCallback(() => {
+    console.log("[MOVVI] Usando localização de teste:", DEV_TEST_LABEL);
+    setPosition(DEV_TEST_LOCATION);
+    setGpsState("granted");
+    setGpsErrorMsg("");
+    setDevNotice(`Usando ${DEV_TEST_LABEL}.`);
+  }, []);
+
   const requestGps = useCallback(() => {
     console.log("Solicitando localização...");
-    if (typeof window !== "undefined" && !window.isSecureContext) {
+    const bail = (msg: string) => {
+      if (isDev) {
+        console.warn("[MOVVI] Dev fallback:", msg);
+        setPosition(DEV_TEST_LOCATION);
+        setGpsState("granted");
+        setGpsErrorMsg("");
+        setDevNotice(
+          `Ambiente de desenvolvimento detectado. ${msg} Usando ${DEV_TEST_LABEL}.`,
+        );
+        return true;
+      }
       setGpsState("unavailable");
-      setGpsErrorMsg(
-        "Geolocalização requer HTTPS. Abra o app em uma conexão segura ou use a localização manual.",
-      );
+      setGpsErrorMsg(msg);
+      return false;
+    };
+    if (typeof window !== "undefined" && !window.isSecureContext) {
+      bail("Geolocalização requer HTTPS.");
       return;
     }
     if (!("geolocation" in navigator)) {
-      setGpsState("unavailable");
-      setGpsErrorMsg("Seu navegador não oferece geolocalização. Use a localização manual.");
+      bail("Seu navegador não oferece geolocalização.");
       return;
     }
     setGpsState("requesting");
@@ -192,9 +218,21 @@ function PassageiroApp() {
           const ok = isBrazilCoordinate(lat, lng);
           console.log("É Brasil?", ok);
           if (!ok) {
+            if (isDev) {
+              console.warn(
+                "[MOVVI] Ambiente de desenvolvimento: GPS retornou coordenada estrangeira, usando Petrolina/PE.",
+              );
+              setPosition(DEV_TEST_LOCATION);
+              setGpsState("granted");
+              setGpsErrorMsg("");
+              setDevNotice(
+                `Ambiente de desenvolvimento detectado. A localização retornada pelo navegador (lat ${lat.toFixed(2)}, lng ${lng.toFixed(2)}) parece simulada — usando ${DEV_TEST_LABEL}.`,
+              );
+              return;
+            }
             setGpsState("unavailable");
             setGpsErrorMsg(
-              `O navegador retornou uma coordenada fora do Brasil (lat ${lat.toFixed(4)}, lng ${lng.toFixed(4)}). Isso costuma acontecer no ambiente de pré-visualização. Informe sua cidade ou endereço no Brasil para continuar.`,
+              `O navegador retornou uma coordenada fora do Brasil (lat ${lat.toFixed(4)}, lng ${lng.toFixed(4)}). Informe sua cidade ou endereço no Brasil para continuar.`,
             );
             return;
           }
@@ -213,6 +251,16 @@ function PassageiroApp() {
         },
         (err) => {
           console.error("Erro ao obter localização:", err);
+          if (isDev) {
+            console.warn("[MOVVI] Dev: GPS falhou, usando Petrolina/PE.");
+            setPosition(DEV_TEST_LOCATION);
+            setGpsState("granted");
+            setGpsErrorMsg("");
+            setDevNotice(
+              `Ambiente de desenvolvimento detectado. Não foi possível obter o GPS — usando ${DEV_TEST_LABEL}.`,
+            );
+            return;
+          }
           setGpsState("denied");
           if (err.code === err.PERMISSION_DENIED) {
             setGpsErrorMsg(
@@ -236,12 +284,20 @@ function PassageiroApp() {
       );
     } catch (e) {
       console.error("Erro ao iniciar solicitação de localização:", e);
-      setGpsState("unavailable");
-      setGpsErrorMsg(
-        "A geolocalização foi bloqueada neste ambiente (ex: pré-visualização em iframe). Use a localização manual.",
-      );
+      if (isDev) {
+        setPosition(DEV_TEST_LOCATION);
+        setGpsState("granted");
+        setDevNotice(
+          `Geolocalização bloqueada no ambiente. Usando ${DEV_TEST_LABEL}.`,
+        );
+      } else {
+        setGpsState("unavailable");
+        setGpsErrorMsg(
+          "A geolocalização foi bloqueada neste ambiente. Use a localização manual.",
+        );
+      }
     }
-  }, []);
+  }, [isDev]);
 
   const setManualLocation = useCallback((p: LatLng) => {
     if (!isBrazilCoordinate(p.lat, p.lng)) return;
@@ -489,16 +545,31 @@ function PassageiroApp() {
     return (
       <GpsDeniedScreen
         onRetry={requestGps}
-        onHome={() => navigate({ to: "/" })}
+        onHome={() => { void navigate({ to: "/" }); }}
         onManual={setManualLocation}
         errorMessage={gpsErrorMsg}
         requesting={false}
+        isDev={isDev}
+        onUseTestLocation={useDevTestLocation}
       />
     );
   }
 
   return (
     <div className="relative h-[100dvh] w-screen overflow-hidden bg-background text-foreground">
+      {devNotice && (
+        <div className="pointer-events-auto absolute left-1/2 top-2 z-[60] flex max-w-[92vw] -translate-x-1/2 items-center gap-2 rounded-full bg-amber-500/15 px-3 py-1.5 text-[11px] text-amber-200 ring-1 ring-amber-500/40 backdrop-blur">
+          <span className="font-semibold">DEV</span>
+          <span className="truncate">{devNotice}</span>
+          <button
+            onClick={() => setDevNotice(null)}
+            className="ml-1 rounded-full p-0.5 hover:bg-amber-500/20"
+            aria-label="Fechar aviso"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </div>
+      )}
       {/* MAPA — sempre presente, ~70% da tela */}
       <div className="absolute inset-0">
         <MovviMap
@@ -1165,12 +1236,16 @@ function GpsDeniedScreen({
   onManual,
   errorMessage,
   requesting,
+  isDev,
+  onUseTestLocation,
 }: {
   onRetry: () => void;
   onHome: () => void;
   onManual: (p: LatLng) => void;
   errorMessage: string;
   requesting: boolean;
+  isDev: boolean;
+  onUseTestLocation: () => void;
 }) {
   const [manualOpen, setManualOpen] = useState(true);
   const [query, setQuery] = useState("");
@@ -1305,6 +1380,16 @@ function GpsDeniedScreen({
         >
           <Search className="h-4 w-4" /> USAR LOCALIZAÇÃO MANUAL
         </button>
+
+        {isDev && (
+          <button
+            type="button"
+            onClick={onUseTestLocation}
+            className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-amber-500/50 bg-amber-500/10 px-6 py-3 text-xs font-semibold text-amber-200 active:scale-95"
+          >
+            <Zap className="h-4 w-4" /> Usar localização de teste (Petrolina/PE)
+          </button>
+        )}
       </div>
 
       {manualOpen && (
