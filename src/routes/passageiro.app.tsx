@@ -183,10 +183,6 @@ function PassageiroApp() {
     setSuggestions([]);
   }
 
-  async function handleLogout() {
-    await supabase.auth.signOut();
-    navigate({ to: "/passageiro/login" });
-  }
 
   const path = useMemo(
     () => (route ? decodePolyline(route.encodedPolyline) : []),
