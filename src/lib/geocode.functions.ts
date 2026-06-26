@@ -35,6 +35,15 @@ export type GeocodeResult = {
 
 type GResult = {
   formatted_address?: string;
+  partial_match?: boolean;
+  types?: string[];
+  geometry?: {
+    location_type?: string;
+  };
+  plus_code?: {
+    global_code?: string;
+    compound_code?: string;
+  };
   address_components?: Array<{
     long_name: string;
     short_name: string;
@@ -53,6 +62,18 @@ function pick(results: GResult[], types: string[]): { long: string; short: strin
   return undefined;
 }
 
+const EMPTY_GEOCODE: GeocodeResult = {
+  address: "",
+  friendly: "",
+  region: "",
+  approximate: false,
+  precision: "approximate",
+  locationType: "",
+  partialMatch: false,
+  types: [],
+  components: {},
+};
+
 export const reverseGeocode = createServerFn({ method: "POST" })
   .inputValidator((data) =>
     z
@@ -63,16 +84,9 @@ export const reverseGeocode = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data }): Promise<GeocodeResult> => {
-    const empty: GeocodeResult = {
-      address: "",
-      friendly: "",
-      region: "",
-      approximate: false,
-      components: {},
-    };
     const lovableKey = process.env.LOVABLE_API_KEY;
     const connKey = process.env.GOOGLE_MAPS_API_KEY;
-    if (!lovableKey || !connKey) return empty;
+    if (!lovableKey || !connKey) return EMPTY_GEOCODE;
 
     const url = `${GATEWAY_URL}/maps/api/geocode/json?latlng=${data.lat},${data.lng}&language=pt-BR&region=br`;
     const res = await fetch(url, {
@@ -81,12 +95,18 @@ export const reverseGeocode = createServerFn({ method: "POST" })
         "X-Connection-Api-Key": connKey,
       },
     });
-    if (!res.ok) return empty;
+    if (!res.ok) return EMPTY_GEOCODE;
     const json = (await res.json()) as { results?: GResult[] };
     const results = json.results ?? [];
-    if (!results.length) return empty;
+    if (!results.length) return EMPTY_GEOCODE;
 
-    const address = results[0].formatted_address ?? "";
+    const top = results[0];
+    const address = top.formatted_address ?? "";
+    const locationType = top.geometry?.location_type ?? "";
+    const partialMatch = !!top.partial_match;
+    const plusCode = top.plus_code?.global_code;
+    const topTypes = top.types ?? [];
+
 
     // Prioridade conforme exigência: sublocality_level_1, sublocality_level_2,
     // neighborhood, locality, administrative_area_level_2, administrative_area_level_1.
