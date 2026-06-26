@@ -314,6 +314,28 @@ type DriverRow = Database["public"]["Tables"]["drivers"]["Row"];
 
 const RECENT_KEY = "movvi.recent_destinations";
 
+/**
+ * Em qualquer ambiente não-produção (Lovable Preview / dev), forçamos a origem
+ * a ser exibida como "Localização aproximada" mesmo que o Google retorne ROOFTOP.
+ * Isso evita mostrar uma rua incorreta como se fosse o ponto exato do usuário
+ * — comum em zonas rurais — quando o GPS do iframe é só um fallback por IP.
+ */
+const FORCE_APPROXIMATE_ORIGIN_IN_PREVIEW = true;
+
+/** Distância em metros entre dois pares lat/lng (Haversine). */
+function distanceMeters(a: LatLng, b: LatLng): number {
+  const R = 6371000;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(b.lat - a.lat);
+  const dLng = toRad(b.lng - a.lng);
+  const lat1 = toRad(a.lat);
+  const lat2 = toRad(b.lat);
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
 /** Catálogo visual de categorias da MOVVI (mapeia para o enum backend). */
 type UiCategory = {
   key: string;
