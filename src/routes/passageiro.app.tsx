@@ -518,15 +518,44 @@ function PassageiroApp() {
     callReverseGeocode({ data: { lat: position.lat, lng: position.lng } })
       .then((r) => {
         if (!active) return;
+        const inPreview = isDevelopmentEnvironment();
+        const hasRoute = !!r.components.rua;
+        const hasNumber = !!r.components.numero;
+        const fa = (r.address || "").toLowerCase();
+        const addressMentionsStreet =
+          hasRoute && (fa.includes((r.components.rua || "").toLowerCase()) || fa.match(/\d/) !== null);
+        // Resultados muito genéricos: apenas locality / political → não é endereço de rua.
+        const genericTypes = new Set(["locality", "political", "administrative_area_level_2", "administrative_area_level_1", "country", "plus_code"]);
+        const looksGeneric = r.types.length > 0 && r.types.every((t) => genericTypes.has(t));
+
+        let dist = Number.POSITIVE_INFINITY;
+        if (typeof r.geocodedLat === "number" && typeof r.geocodedLng === "number") {
+          dist = distanceMeters(position, { lat: r.geocodedLat, lng: r.geocodedLng });
+        }
+
+        const baseHighConfidence =
+          r.locationType === "ROOFTOP" &&
+          !r.partialMatch &&
+          hasRoute &&
+          hasNumber &&
+          addressMentionsStreet &&
+          !looksGeneric &&
+          dist < 30;
+
+        const highConfidence = inPreview && FORCE_APPROXIMATE_ORIGIN_IN_PREVIEW ? false : baseHighConfidence;
+        const finalPrecision: "exact" | "approximate" = highConfidence ? "exact" : "approximate";
+
         console.log("[MOVVI] Endereço retornado pelo Google:", r.address || "(vazio)");
         console.log("[MOVVI] Tipo de precisão:", r.locationType || "(desconhecido)", r.partialMatch ? "(partial_match)" : "");
-        console.log(
-          r.precision === "exact"
-            ? "[MOVVI] Endereço considerado confiável"
-            : "[MOVVI] Endereço considerado aproximado — exibindo coordenadas reais",
-        );
+        console.log("[MOVVI] Distância entre GPS e geocoding:", Number.isFinite(dist) ? `${dist.toFixed(1)} m` : "n/d");
+        console.log("[MOVVI] Preview detectado:", inPreview);
+        console.log("[MOVVI] Alta confiança:", highConfidence, baseHighConfidence === highConfidence ? "" : "(rebaixado pelo preview)");
+        if (finalPrecision === "approximate") {
+          console.log("[MOVVI] Exibindo origem aproximada:", `${position.lat.toFixed(6)}, ${position.lng.toFixed(6)}`, r.region || "(sem referência)");
+        }
         console.log("[MOVVI] Coordenadas reais mantidas para rota:", position.lat, position.lng);
-        setGeo(r);
+
+        setGeo({ ...r, precision: finalPrecision });
         setAddressStatus("resolved");
       })
       .catch((e) => {
