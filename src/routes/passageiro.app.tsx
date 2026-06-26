@@ -596,7 +596,6 @@ function PassageiroApp() {
   useEffect(() => {
     purgeForeignMapCache();
     let cancelled = false;
-    const previewLikeEnvironment = isDevEnvironment();
 
     if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
       setPermissionStatus("unsupported");
@@ -622,23 +621,14 @@ function PassageiroApp() {
         const apply = (s: PermissionState) => {
           if (s === "granted") {
             setPermissionStatus("granted");
-            // Já liberado — em produção podemos obter o GPS imediatamente.
-            // Em preview/iframe/dev, alguns navegadores retornam coordenadas simuladas
-            // sem interação do usuário; por isso exigimos o clique explícito no botão.
-            if (previewLikeEnvironment && !gpsRequestInFlightRef.current) {
-              setPermissionStatus("prompt");
-              setGpsState("idle");
-              gpsStateRef.current = "idle";
-              setGpsErrorMsg("");
-              return;
-            }
+            // Permissão já concedida em qualquer ambiente (inclusive preview):
+            // tentamos obter o GPS real imediatamente. Se vier coordenada inválida
+            // (fora do Brasil) o próprio requestGps cai para o fluxo manual.
             requestGps();
           } else if (s === "denied") {
             setPermissionStatus("denied");
             setGpsState("denied");
-            setGpsErrorMsg(
-              "Permissão de localização negada.",
-            );
+            setGpsErrorMsg("Permissão de localização negada.");
           } else {
             setPermissionStatus("prompt");
           }
@@ -656,6 +646,7 @@ function PassageiroApp() {
       if (statusRef) statusRef.onchange = null;
     };
   }, [requestGps]);
+
 
   /* ---------------------- autocomplete (Places API New) ---------------------- */
   useEffect(() => {
