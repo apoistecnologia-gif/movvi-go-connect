@@ -87,9 +87,9 @@ function PremiumTopBar({
   if (gpsState === "requesting" || gpsState === "idle") {
     statusIcon = "📍";
     statusText = "Obtendo sua localização...";
-  } else if (gpsState === "unavailable") {
+  } else if (gpsState === "unavailable" || gpsState === "denied") {
     statusIcon = "⚠️";
-    statusText = "Ative sua localização";
+    statusText = "Localização indisponível";
   } else if (searching) {
     statusIcon = "🔎";
     statusText = "Procurando motoristas próximos";
