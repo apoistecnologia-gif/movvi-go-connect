@@ -4,8 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { MovviLogo } from "@/components/MovviLogo";
 
 interface AuthShellProps {
-  title: string;
-  description: string;
+  title: ReactNode;
+  description: ReactNode;
   children: ReactNode;
   footer?: ReactNode;
 }

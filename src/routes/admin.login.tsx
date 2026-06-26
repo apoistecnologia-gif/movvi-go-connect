@@ -49,7 +49,7 @@ function AdminLoginPage() {
         <span className="flex items-center gap-2">
           <ShieldCheck className="h-6 w-6 text-primary" /> Painel administrativo
         </span>
-      as unknown as string}
+      }
       description="Acesso restrito à equipe MOVVI DRIVE."
     >
       <form onSubmit={onSubmit} className="space-y-4">
