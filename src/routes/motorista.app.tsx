@@ -352,15 +352,15 @@ function MotoristaApp() {
               passenger={passenger}
               etaSeconds={etaSeconds}
               legKm={legKm}
-              onArrive={async () => { await callPhase({ data: { rideId: active.id, status: "motorista_chegou" } }); }}
-              onStart={async () => { await callPhase({ data: { rideId: active.id, status: "em_viagem" } }); }}
+              onArrive={async () => { await callArrive({ data: { rideId: active.id } }); }}
+              onStart={async () => { await callStart({ data: { rideId: active.id } }); }}
               onComplete={async () => {
-                await callPhase({ data: {
-                  rideId: active.id, status: "finalizada",
+                await callComplete({ data: {
+                  rideId: active.id,
                   final_price: active.estimated_price ? Number(active.estimated_price) : undefined,
                 } });
               }}
-              onCancel={async () => { await callPhase({ data: { rideId: active.id, status: "cancelada_motorista" } }); }}
+              onCancel={async () => { await callCancel({ data: { rideId: active.id } }); }}
             />
           ) : (
             <IdlePanel
