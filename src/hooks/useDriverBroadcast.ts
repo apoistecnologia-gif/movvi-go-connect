@@ -13,15 +13,14 @@ export function useDriverBroadcast(
   // toggle online/offline
   useEffect(() => {
     if (!userId) return;
-    const patch: Record<string, unknown> = {
+    const patch = {
       is_online: online,
       last_location_at: new Date().toISOString(),
-    };
-    if (!online) {
-      patch.current_lat = null;
-      patch.current_lng = null;
-    }
-    supabase.from("drivers").update(patch).eq("user_id", userId).then();
+      ...(online ? {} : { current_lat: null, current_lng: null }),
+    } satisfies Parameters<typeof supabase.from<"drivers">>[0] extends never
+      ? never
+      : Record<string, unknown>;
+    supabase.from("drivers").update(patch as never).eq("user_id", userId).then();
   }, [userId, online]);
 
   // broadcast GPS
