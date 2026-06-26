@@ -81,9 +81,19 @@ function MotoristaApp() {
 
   // GPS
   useEffect(() => {
+    purgeForeignMapCache();
     if (!("geolocation" in navigator)) { setGpsError("GPS indisponível"); return; }
     const id = navigator.geolocation.watchPosition(
-      (pos) => { setPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude }); setGpsError(null); },
+      (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        if (!isBrazilCoordinate(lat, lng)) {
+          console.warn("[MOVVI] GPS fora do Brasil ignorado", { lat, lng });
+          return;
+        }
+        setPosition({ lat, lng });
+        setGpsError(null);
+      },
       (err) => setGpsError(err.message),
       { enableHighAccuracy: true, maximumAge: 4000, timeout: 10000 });
     return () => navigator.geolocation.clearWatch(id);
