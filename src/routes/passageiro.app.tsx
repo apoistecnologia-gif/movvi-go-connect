@@ -1768,18 +1768,33 @@ function Action({
 }
 
 function GpsDeniedScreen({
+  mode = "denied",
   onRetry,
   onHome,
   onManual,
   errorMessage,
   requesting,
 }: {
+  mode?: "prompt" | "denied";
   onRetry: () => void;
   onHome: () => void;
   onManual: (p: LatLng) => void;
   errorMessage: string;
   requesting: boolean;
 }) {
+  const isPrompt = mode === "prompt";
+  const title = isPrompt
+    ? "Ative sua localização"
+    : "Não foi possível obter sua localização.";
+  const description = isPrompt
+    ? "A MOVVI utiliza sua localização para encontrar motoristas próximos, calcular rotas e estimar valores da corrida."
+    : errorMessage ||
+      "Você pode continuar utilizando a MOVVI informando sua localização manualmente.";
+  const primaryLabel = requesting
+    ? "Solicitando..."
+    : isPrompt
+    ? "PERMITIR LOCALIZAÇÃO"
+    : "TENTAR NOVAMENTE";
   const [manualOpen, setManualOpen] = useState(true);
   const [query, setQuery] = useState("");
   const [items, setItems] = useState<{ placeId: string; primary: string; secondary: string }[]>([]);
