@@ -342,6 +342,8 @@ function PassageiroApp() {
           </button>
         </div>
       </div>
+
+      <BottomNav items={PASSENGER_NAV} floating />
     </div>
   );
 }
