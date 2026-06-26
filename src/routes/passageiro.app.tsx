@@ -674,18 +674,21 @@ function PassageiroApp() {
           }}
         >
           {position && (
-            <Marker
-              position={position}
-              zIndex={9999}
-              icon={{
-                path: google.maps.SymbolPath.CIRCLE,
-                scale: 9,
-                fillColor: "#3b82f6",
-                fillOpacity: 1,
-                strokeColor: "#ffffff",
-                strokeWeight: 3,
-              }}
-            />
+            <>
+              <Circle
+                center={position}
+                radius={Math.max(40, gpsAccuracy ?? 60)}
+                options={{
+                  strokeColor: "#3b82f6",
+                  strokeOpacity: 0.35,
+                  strokeWeight: 1,
+                  fillColor: "#3b82f6",
+                  fillOpacity: 0.12,
+                  clickable: false,
+                }}
+              />
+              <PulsingUserMarker position={position} />
+            </>
           )}
 
           {!ride &&
