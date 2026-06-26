@@ -1,17 +1,17 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Marker, Polyline, useJsApiLoader } from "@react-google-maps/api";
+import { Circle, Marker, Polyline, useJsApiLoader } from "@react-google-maps/api";
 import {
-  ArrowLeft,
   Bike,
   Box,
   Car,
+  ChevronRight,
   Clock,
   Crosshair,
-  Home as HomeIcon,
   LogOut,
   MapPin,
+  Moon,
   Navigation2,
   Package,
   Phone,
@@ -19,6 +19,9 @@ import {
   Send,
   Shield,
   Star,
+  Sun,
+  Sunrise,
+  Sunset,
   Truck,
   X,
   Zap,
@@ -40,7 +43,7 @@ import {
   DEV_TEST_LABEL,
 } from "@/lib/environment";
 import { computeRoute, type RouteResult } from "@/lib/routes.functions";
-import { reverseGeocode } from "@/lib/geocode.functions";
+import { reverseGeocode, type GeocodeResult } from "@/lib/geocode.functions";
 import { requestRide } from "@/lib/ride.functions";
 import { useNearbyDrivers } from "@/hooks/useNearbyDrivers";
 import {
@@ -49,7 +52,199 @@ import {
   formatBRL,
   type RideCategory,
 } from "@/lib/rideCategories";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { Database } from "@/integrations/supabase/types";
+
+/** Saudação dinâmica com base no horário local (pt-BR). */
+function getGreeting(): { text: string; icon: LucideIcon } {
+  const h = new Date().getHours();
+  if (h >= 5 && h < 12) return { text: "Bom dia", icon: Sunrise };
+  if (h >= 12 && h < 18) return { text: "Boa tarde", icon: Sun };
+  if (h >= 18 && h < 22) return { text: "Boa noite", icon: Sunset };
+  return { text: "Boa noite", icon: Moon };
+}
+
+function firstName(full: string): string {
+  return (full || "").trim().split(/\s+/)[0] || "";
+}
+
+// ====== COMPONENTES PREMIUM ======
+
+function PremiumTopBar({
+  userName,
+  gpsState,
+  drivers,
+  searching,
+  onLogout,
+}: {
+  userName: string;
+  gpsState: "idle" | "requesting" | "granted" | "unavailable";
+  drivers: number;
+  searching: boolean;
+  onLogout: () => void;
+}) {
+  const { text: greet, icon: GIcon } = getGreeting();
+  const fname = firstName(userName) || "passageiro";
+
+  let statusIcon = "🔎";
+  let statusText = "Procurando motoristas próximos";
+  if (gpsState === "requesting" || gpsState === "idle") {
+    statusIcon = "📍";
+    statusText = "Obtendo sua localização...";
+  } else if (gpsState === "unavailable") {
+    statusIcon = "⚠️";
+    statusText = "Ative sua localização";
+  } else if (searching) {
+    statusIcon = "🔎";
+    statusText = "Procurando motoristas próximos";
+  } else if (drivers > 0) {
+    statusIcon = "🚗";
+    statusText = `${drivers} ${drivers === 1 ? "motorista próximo" : "motoristas próximos"}`;
+  }
+
+  return (
+    <div className="absolute inset-x-0 top-0 z-40 px-3 pt-[calc(env(safe-area-inset-top)+10px)]">
+      <div className="mx-auto flex max-w-5xl items-center gap-3 rounded-2xl bg-card/90 px-3 py-2.5 shadow-xl ring-1 ring-border/60 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-500">
+        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/15 text-primary ring-1 ring-primary/30">
+          <GIcon className="h-5 w-5" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-[14px] font-semibold leading-tight text-foreground">
+            {greet}, {fname} <span className="opacity-90">👋</span>
+          </div>
+          <div className="mt-0.5 flex items-center gap-1.5 truncate text-[11px] text-muted-foreground">
+            <span className="text-[12px] leading-none">{statusIcon}</span>
+            <span className="truncate">{statusText}</span>
+          </div>
+        </div>
+        <button
+          onClick={onLogout}
+          aria-label="Sair"
+          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-destructive/15 text-destructive ring-1 ring-destructive/30 transition hover:bg-destructive/25 active:scale-90"
+        >
+          <LogOut className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function PulsingUserMarker({ position }: { position: LatLng }) {
+  const pulseIcon = useMemo(
+    () => ({
+      path: google.maps.SymbolPath.CIRCLE,
+      scale: 22,
+      fillColor: "#3b82f6",
+      fillOpacity: 0.18,
+      strokeColor: "#3b82f6",
+      strokeOpacity: 0.35,
+      strokeWeight: 1,
+    }),
+    [],
+  );
+  const dotIcon = useMemo(
+    () => ({
+      path: google.maps.SymbolPath.CIRCLE,
+      scale: 8,
+      fillColor: "#3b82f6",
+      fillOpacity: 1,
+      strokeColor: "#ffffff",
+      strokeWeight: 3,
+    }),
+    [],
+  );
+  return (
+    <>
+      <Marker position={position} icon={pulseIcon} clickable={false} zIndex={9998} />
+      <Marker position={position} icon={dotIcon} zIndex={9999} />
+    </>
+  );
+}
+
+function AddressDetailsSheet({
+  geo,
+  position,
+  accuracy,
+  onClose,
+}: {
+  geo: GeocodeResult | null;
+  position: LatLng | null;
+  accuracy: number | null;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-[60] flex items-end" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" />
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full rounded-t-3xl bg-card p-5 pb-[calc(env(safe-area-inset-bottom)+24px)] shadow-2xl ring-1 ring-border animate-in slide-in-from-bottom duration-300"
+      >
+        <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-foreground/15" />
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="grid h-9 w-9 place-items-center rounded-full bg-primary text-primary-foreground">
+              <MapPin className="h-4 w-4" />
+            </span>
+            <div>
+              <div className="text-[10px] font-semibold uppercase tracking-widest text-primary">
+                Detalhes do local
+              </div>
+              <div className="text-[14px] font-semibold">{geo?.friendly || "Localização atual"}</div>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            aria-label="Fechar"
+            className="grid h-9 w-9 place-items-center rounded-full bg-accent/30 text-foreground transition active:scale-90"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="space-y-2.5 text-sm">
+          {geo?.address && (
+            <DetailRow label="Endereço completo" value={geo.address} />
+          )}
+          {geo?.region && <DetailRow label="Região" value={geo.region} />}
+          {position && (
+            <>
+              <DetailRow
+                label="Latitude"
+                value={position.lat.toFixed(6)}
+                mono
+              />
+              <DetailRow
+                label="Longitude"
+                value={position.lng.toFixed(6)}
+                mono
+              />
+            </>
+          )}
+          {accuracy != null && (
+            <DetailRow
+              label="Precisão do GPS"
+              value={`± ${Math.round(accuracy)} metros`}
+            />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DetailRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div className="rounded-xl bg-background/60 px-3 py-2 ring-1 ring-border">
+      <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+        {label}
+      </div>
+      <div className={`mt-0.5 break-words text-[13px] text-foreground ${mono ? "font-mono" : ""}`}>
+        {value}
+      </div>
+    </div>
+  );
+}
+
 
 export const Route = createFileRoute("/passageiro/app")({
   head: () => ({ meta: [{ title: "MOVVI Drive — Passageiro" }] }),
@@ -124,7 +319,11 @@ function PassageiroApp() {
   const [userName, setUserName] = useState<string>("");
 
   const [position, setPosition] = useState<LatLng | null>(null);
-  const [currentAddress, setCurrentAddress] = useState<string>("");
+  const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
+  const [geo, setGeo] = useState<GeocodeResult | null>(null);
+  const [geoLoading, setGeoLoading] = useState(false);
+  const [addressDetailsOpen, setAddressDetailsOpen] = useState(false);
+  const [tick, setTick] = useState(0); // re-render para saudação dinâmica
   const [gpsState, setGpsState] = useState<
     "idle" | "requesting" | "granted" | "denied" | "unavailable"
   >("idle");
@@ -216,17 +415,29 @@ function PassageiroApp() {
       return;
     lastGeocodedRef.current = position;
     let active = true;
+    setGeoLoading(true);
     callReverseGeocode({ data: { lat: position.lat, lng: position.lng } })
       .then((r) => {
-        if (active) setCurrentAddress(r.address ?? "");
+        if (!active) return;
+        setGeo(r);
       })
       .catch(() => {
-        if (active) setCurrentAddress("");
+        if (active) setGeo(null);
+      })
+      .finally(() => {
+        if (active) setGeoLoading(false);
       });
     return () => {
       active = false;
     };
   }, [position, callReverseGeocode]);
+
+  // Atualiza saudação a cada minuto.
+  useEffect(() => {
+    const id = window.setInterval(() => setTick((t) => t + 1), 60_000);
+    return () => window.clearInterval(id);
+  }, []);
+  void tick;
 
   /* ---------------------- GPS ---------------------- */
   const useDevTestLocation = useCallback(() => {
@@ -293,13 +504,17 @@ function PassageiroApp() {
             return;
           }
           setPosition({ lat, lng });
+          setGpsAccuracy(pos.coords.accuracy ?? null);
           setGpsState("granted");
           setGpsErrorMsg("");
           navigator.geolocation.watchPosition(
             (p) => {
               const la = p.coords.latitude;
               const ln = p.coords.longitude;
-              if (isBrazilCoordinate(la, ln)) setPosition({ lat: la, lng: ln });
+              if (isBrazilCoordinate(la, ln)) {
+                setPosition({ lat: la, lng: ln });
+                setGpsAccuracy(p.coords.accuracy ?? null);
+              }
             },
             () => undefined,
             { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 },
@@ -637,18 +852,21 @@ function PassageiroApp() {
           }}
         >
           {position && (
-            <Marker
-              position={position}
-              zIndex={9999}
-              icon={{
-                path: google.maps.SymbolPath.CIRCLE,
-                scale: 9,
-                fillColor: "#3b82f6",
-                fillOpacity: 1,
-                strokeColor: "#ffffff",
-                strokeWeight: 3,
-              }}
-            />
+            <>
+              <Circle
+                center={position}
+                radius={Math.max(40, gpsAccuracy ?? 60)}
+                options={{
+                  strokeColor: "#3b82f6",
+                  strokeOpacity: 0.35,
+                  strokeWeight: 1,
+                  fillColor: "#3b82f6",
+                  fillOpacity: 0.12,
+                  clickable: false,
+                }}
+              />
+              <PulsingUserMarker position={position} />
+            </>
           )}
 
           {!ride &&
@@ -697,71 +915,34 @@ function PassageiroApp() {
         </MovviMap>
       </div>
 
-      {/* TOP BAR — compacto, flutuante */}
-      <div className="absolute inset-x-0 top-0 z-40 px-3 pt-[calc(env(safe-area-inset-top)+10px)]">
-        <div className="mx-auto flex max-w-5xl items-center gap-2 rounded-2xl bg-card/90 px-2 py-1.5 shadow-xl ring-1 ring-border/60 backdrop-blur-xl">
-          <Link
-            to="/"
-            aria-label="Voltar"
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-foreground transition hover:bg-accent/40 active:scale-95"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-          <div className="flex shrink-0 items-center gap-1.5 px-1">
-            <LogoMark />
-          </div>
-          <div className="min-w-0 flex-1 px-1">
-            <div className="truncate text-[13px] font-semibold leading-tight">
-              {userName}
-            </div>
-            <div className="truncate text-[10px] uppercase tracking-widest text-primary">
-              Passageiro
-            </div>
-          </div>
-          <Link
-            to="/"
-            aria-label="Início"
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-foreground transition hover:bg-accent/40 active:scale-95"
-          >
-            <HomeIcon className="h-4 w-4" />
-          </Link>
-          <button
-            onClick={handleLogout}
-            aria-label="Sair"
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-destructive/15 text-destructive ring-1 ring-destructive/30 transition hover:bg-destructive/25 active:scale-95"
-          >
-            <LogOut className="h-4 w-4" />
-          </button>
-        </div>
-      </div>
+      {/* TOP BAR — premium: saudação + status dinâmico */}
+      <PremiumTopBar
+        userName={userName}
+        gpsState={gpsState}
+        drivers={drivers.length}
+        searching={!!ride && (ride.status === "searching_driver" || ride.status === "offered_to_driver")}
+        onLogout={handleLogout}
+      />
 
       {/* Floating controls */}
       <div className="pointer-events-none absolute right-3 z-30" style={{ bottom: "calc(32vh + 16px)" }}>
         <button
           onClick={recenter}
-          className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-card text-foreground shadow-2xl ring-1 ring-border transition active:scale-95"
+          className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-card text-foreground shadow-2xl ring-1 ring-border transition active:scale-90 hover:scale-105"
           aria-label="Recentralizar"
         >
           <Crosshair className="h-5 w-5 text-primary" />
         </button>
       </div>
 
-      {/* Nearby drivers pill */}
-      {!ride && gpsState === "granted" && (
-        <div className="pointer-events-none absolute left-1/2 top-[calc(env(safe-area-inset-top)+74px)] z-30 -translate-x-1/2">
-          <div className="flex items-center gap-1.5 rounded-full bg-background/85 px-3 py-1 text-[11px] font-semibold shadow-lg ring-1 ring-border backdrop-blur-md">
-            <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
-            {drivers.length} {drivers.length === 1 ? "motorista" : "motoristas"} por perto
-          </div>
-        </div>
-      )}
-
       {/* BOTTOM SHEET — novo, próprio do MOVVI */}
       {!ride && (
         <MovviSheet ref={sheetRef} snaps={[30, 72, 92]} initial={30}>
           <SheetContent
-            currentAddress={currentAddress}
+            geo={geo}
+            geoLoading={geoLoading}
             hasPosition={!!position}
+            onOpenAddressDetails={() => setAddressDetailsOpen(true)}
             destination={destination}
             destinationText={destinationText}
             setDestinationText={setDestinationText}
@@ -779,6 +960,16 @@ function PassageiroApp() {
             searchInputRef={searchInputRef}
           />
         </MovviSheet>
+      )}
+
+      {/* Detalhes do endereço — modal premium */}
+      {addressDetailsOpen && (
+        <AddressDetailsSheet
+          geo={geo}
+          position={position}
+          accuracy={gpsAccuracy}
+          onClose={() => setAddressDetailsOpen(false)}
+        />
       )}
 
       {ride && (phase === "searching_driver" || phase === "offered_to_driver") && (
@@ -838,8 +1029,10 @@ function groupOf(uiKey: string): GroupKey {
 }
 
 function SheetContent({
-  currentAddress,
+  geo,
+  geoLoading,
   hasPosition,
+  onOpenAddressDetails,
   destination,
   destinationText,
   setDestinationText,
@@ -856,8 +1049,10 @@ function SheetContent({
   onSubmit,
   searchInputRef,
 }: {
-  currentAddress: string;
+  geo: GeocodeResult | null;
+  geoLoading: boolean;
   hasPosition: boolean;
+  onOpenAddressDetails: () => void;
   destination: { point: LatLng; label: string } | null;
   destinationText: string;
   setDestinationText: (s: string) => void;
@@ -896,10 +1091,17 @@ function SheetContent({
     [activeGroup],
   );
 
+  const friendly = geo?.friendly || "";
+  const region = geo?.region || "";
+
   return (
     <div className="pt-1">
-      {/* Endereço atual — compacto */}
-      <div className="mb-2.5 flex items-center gap-2.5 rounded-2xl bg-primary/10 px-3 py-2 ring-1 ring-primary/30">
+      {/* Endereço atual — toque abre detalhes */}
+      <button
+        type="button"
+        onClick={onOpenAddressDetails}
+        className="mb-2.5 flex w-full items-center gap-2.5 rounded-2xl bg-primary/10 px-3 py-2 text-left ring-1 ring-primary/30 transition active:scale-[0.99] hover:bg-primary/15"
+      >
         <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
           <MapPin className="h-3.5 w-3.5" />
         </span>
@@ -907,12 +1109,29 @@ function SheetContent({
           <div className="text-[9px] font-semibold uppercase tracking-widest text-primary leading-none">
             Você está em
           </div>
-          <div className="mt-0.5 truncate text-[12px] font-semibold leading-tight text-foreground">
-            {currentAddress ||
-              (hasPosition ? "Localização detectada" : "Detectando localização...")}
-          </div>
+          {geoLoading && !friendly ? (
+            <div className="mt-1 space-y-1">
+              <div className="h-3 w-2/3 animate-pulse rounded bg-foreground/10" />
+              <div className="h-2.5 w-1/3 animate-pulse rounded bg-foreground/10" />
+            </div>
+          ) : friendly ? (
+            <>
+              <div className="mt-0.5 truncate text-[13px] font-semibold leading-tight text-foreground">
+                {friendly}
+              </div>
+              {region && (
+                <div className="truncate text-[10px] text-muted-foreground">{region}</div>
+              )}
+            </>
+          ) : (
+            <div className="mt-0.5 truncate text-[12px] font-semibold leading-tight text-foreground">
+              {hasPosition ? "Localização detectada" : "Detectando localização..."}
+            </div>
+          )}
         </div>
-      </div>
+        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+      </button>
+
 
       {/* "Para onde você vai?" — sempre em destaque */}
       <div className="mb-2">
@@ -1498,7 +1717,7 @@ function GpsDeniedScreen({
           onClick={onHome}
           className="inline-flex items-center gap-2 rounded-full bg-card px-3 py-2 text-xs font-medium ring-1 ring-border"
         >
-          <ArrowLeft className="h-4 w-4" /> Início
+          ← Início
         </button>
       </div>
       <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-primary/15 text-primary">
