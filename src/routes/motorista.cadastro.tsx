@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { MovviLogo } from "@/components/MovviLogo";
-import { Loader2, Upload } from "lucide-react";
+import { ArrowLeft, Loader2, Upload } from "lucide-react";
 
 export const Route = createFileRoute("/motorista/cadastro")({
   head: () => ({ meta: [{ title: "Cadastro do Motorista — MOVVI DRIVE" }] }),
@@ -180,9 +180,21 @@ function DriverSignUpPage() {
   return (
     <div className="min-h-screen bg-background py-10">
       <div className="container mx-auto max-w-3xl px-4">
-        <Link to="/" className="mb-6 inline-flex items-center gap-2">
-          <MovviLogo className="h-8 w-auto" />
-        </Link>
+        <div className="mb-6 flex items-center justify-between gap-3">
+          <Link to="/" className="inline-flex items-center gap-2">
+            <MovviLogo className="h-8 w-auto" />
+          </Link>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate({ to: "/" })}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="mr-1 h-4 w-4" />
+            Sair do cadastro
+          </Button>
+        </div>
 
         <Card>
           <CardHeader>

@@ -43,7 +43,7 @@ import { isDevelopmentEnvironment } from "@/lib/environment";
 
 import { computeRoute, type RouteResult } from "@/lib/routes.functions";
 import { reverseGeocode, type GeocodeResult } from "@/lib/geocode.functions";
-import { requestRide } from "@/lib/ride.functions";
+import { criarCorrida, cancelarPeloPassageiro } from "@/lib/rideLifecycle";
 import { useNearbyDrivers } from "@/hooks/useNearbyDrivers";
 import {
   RIDE_CATEGORIES,
@@ -393,7 +393,8 @@ type Recent = { label: string; secondary?: string; placeId: string };
 function PassageiroApp() {
   const navigate = useNavigate();
   const callComputeRoute = useServerFn(computeRoute);
-  const callRequestRide = useServerFn(requestRide);
+  const callRequestRide = useServerFn(criarCorrida);
+  const callCancelByPassenger = useServerFn(cancelarPeloPassageiro);
   const callReverseGeocode = useServerFn(reverseGeocode);
 
   const [userId, setUserId] = useState<string | null>(null);
@@ -1062,14 +1063,11 @@ function PassageiroApp() {
 
   async function cancelRide() {
     if (!ride) return;
-    await supabase
-      .from("rides")
-      .update({
-        status: "cancelada_passageiro",
-        cancelled_at: new Date().toISOString(),
-        cancelled_by: userId,
-      })
-      .eq("id", ride.id);
+    try {
+      await callCancelByPassenger({ data: { rideId: ride.id } });
+    } catch (err) {
+      console.error("[MOVVI] cancelarPeloPassageiro falhou:", err);
+    }
     resetRide();
   }
 
