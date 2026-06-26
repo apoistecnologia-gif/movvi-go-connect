@@ -78,7 +78,7 @@ async function offerToNextDriver(
     .from("drivers")
     .select("user_id, current_lat, current_lng")
     .eq("is_online", true)
-    .eq("approval_status", "approved")
+    .eq("approval_status", "aprovado")
     .eq("category", r.category)
     .not("current_lat", "is", null)
     .not("current_lng", "is", null);

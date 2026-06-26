@@ -34,7 +34,7 @@ export function useNearbyDrivers({ category }: Filter = {}) {
           "user_id, name, category, current_lat, current_lng, vehicle_model, vehicle_color, rating",
         )
         .eq("is_online", true)
-        .eq("approval_status", "approved")
+        .eq("approval_status", "aprovado")
         .not("current_lat", "is", null)
         .not("current_lng", "is", null);
       if (category) q = q.eq("category", category);

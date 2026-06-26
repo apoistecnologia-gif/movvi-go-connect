@@ -5,45 +5,52 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MovviHeader } from "@/components/MovviHeader";
-import { Clock, CheckCircle2, XCircle, ShieldAlert, Loader2, LogIn } from "lucide-react";
+import { Clock, CheckCircle2, XCircle, ShieldAlert, Loader2, LogIn, UserX } from "lucide-react";
 
 export const Route = createFileRoute("/motorista/status")({
   head: () => ({ meta: [{ title: "Status do Cadastro — MOVVI DRIVE" }] }),
   component: DriverStatusPage,
 });
 
-type Status = "pending_approval" | "approved" | "rejected" | "blocked";
+type Status = "em_analise" | "aprovado" | "reprovado" | "bloqueado";
+type DisplayStatus = Status | "nao_encontrado";
 
-const STATUS_META: Record<Status, { label: string; icon: typeof Clock; tone: string; desc: string }> = {
-  pending_approval: {
-    label: "Em análise",
+const STATUS_META: Record<DisplayStatus, { label: string; icon: typeof Clock; tone: string; desc: string }> = {
+  em_analise: {
+    label: "Cadastro em análise",
     icon: Clock,
     tone: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30",
     desc: "Recebemos seu cadastro. Nossa equipe analisará seus documentos em até 48h.",
   },
-  approved: {
-    label: "Aprovado",
+  aprovado: {
+    label: "Cadastro aprovado",
     icon: CheckCircle2,
     tone: "bg-primary/15 text-primary border-primary/30",
     desc: "Você está aprovado! Acesse o app do motorista para começar a rodar.",
   },
-  rejected: {
-    label: "Recusado",
+  reprovado: {
+    label: "Cadastro reprovado",
     icon: XCircle,
     tone: "bg-destructive/15 text-destructive border-destructive/30",
     desc: "Seu cadastro foi recusado. Entre em contato com o suporte para mais detalhes.",
   },
-  blocked: {
-    label: "Bloqueado",
+  bloqueado: {
+    label: "Cadastro bloqueado",
     icon: ShieldAlert,
     tone: "bg-destructive/15 text-destructive border-destructive/30",
     desc: "Sua conta está bloqueada. Entre em contato com o suporte.",
+  },
+  nao_encontrado: {
+    label: "Cadastro não encontrado",
+    icon: UserX,
+    tone: "bg-muted text-muted-foreground border-border",
+    desc: "Não encontramos um cadastro de motorista vinculado a esta conta.",
   },
 };
 
 function DriverStatusPage() {
   const navigate = useNavigate();
-  const [status, setStatus] = useState<Status | null>(null);
+  const [status, setStatus] = useState<DisplayStatus | null>(null);
   const [rejectionReason, setRejectionReason] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -57,12 +64,12 @@ function DriverStatusPage() {
       }
       const { data } = await supabase
         .from("drivers")
-        .select("approval_status, rejection_reason")
+        .select("approval_status, motivo_reprovacao")
         .eq("user_id", u.user.id)
         .maybeSingle();
       if (!mounted) return;
-      setStatus((data?.approval_status as Status) ?? "pending_approval");
-      setRejectionReason(data?.rejection_reason ?? null);
+      setStatus((data?.approval_status as Status | undefined) ?? "nao_encontrado");
+      setRejectionReason(data?.motivo_reprovacao ?? null);
       setLoading(false);
     }
     fetchStatus();
@@ -111,7 +118,7 @@ function DriverStatusPage() {
                     </div>
                     <Badge variant="outline" className={meta.tone}>{meta.label}</Badge>
                     <p className="max-w-md text-sm text-muted-foreground">{meta.desc}</p>
-                    {status === "rejected" && rejectionReason && (
+                    {status === "reprovado" && rejectionReason && (
                       <div className="w-full rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-left text-sm text-destructive">
                         <strong className="block text-xs uppercase tracking-wide">Motivo</strong>
                         {rejectionReason}
@@ -121,7 +128,7 @@ function DriverStatusPage() {
 
 
                   <div className="flex flex-col gap-2">
-                    {status === "approved" && (
+                    {status === "aprovado" && (
                       <Button asChild className="w-full">
                         <Link to="/motorista/app">Abrir app do motorista</Link>
                       </Button>

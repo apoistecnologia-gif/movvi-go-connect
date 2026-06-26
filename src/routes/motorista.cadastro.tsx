@@ -165,7 +165,7 @@ function DriverSignUpPage() {
         selfie_url,
         cnh_url,
         vehicle_document_url,
-        approval_status: "pending_approval",
+        approval_status: "em_analise",
       });
       if (insertError) throw insertError;
 

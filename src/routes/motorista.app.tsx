@@ -108,12 +108,13 @@ function MotoristaApp() {
       setDriverName(((meta.name as string) || (meta.full_name as string) || u.user.email?.split("@")[0] || "").split(" ")[0]);
 
       const { data } = await supabase.from("drivers")
-        .select("approval_status").eq("user_id", u.user.id).maybeSingle();
-      if (!data || data.approval_status !== "approved") {
+        .select("approval_status, motivo_reprovacao").eq("user_id", u.user.id).maybeSingle();
+      if (!data || data.approval_status !== "aprovado") {
         setStatusBlock(
-          data?.approval_status === "rejected" ? "Seu cadastro foi recusado."
-          : data?.approval_status === "blocked" ? "Sua conta está bloqueada."
-          : "Seu cadastro está em análise.");
+          !data ? "Cadastro de motorista não encontrado."
+          : data.approval_status === "reprovado" ? `Cadastro reprovado.${data.motivo_reprovacao ? ` Motivo: ${data.motivo_reprovacao}` : ""}`
+          : data.approval_status === "bloqueado" ? "Cadastro bloqueado."
+          : "Cadastro em análise.");
       }
     })();
   }, [navigate]);
