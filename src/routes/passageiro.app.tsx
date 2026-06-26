@@ -439,9 +439,19 @@ function PassageiroApp() {
   // ou retornar uma coordenada fora do Brasil, o app deve exibir "Localização
   // indisponível" e oferecer a entrada manual (Google Places).
 
+  const gpsStateRef = useRef(gpsState);
+  useEffect(() => {
+    gpsStateRef.current = gpsState;
+  }, [gpsState]);
+  const watchIdRef = useRef<number | null>(null);
+
   const requestGps = useCallback(() => {
+    // Guarda: não permitir cliques duplicados enquanto há uma solicitação em curso.
+    if (gpsStateRef.current === "requesting") {
+      console.log("[MOVVI] Ignorando clique — já existe uma solicitação de GPS em andamento.");
+      return;
+    }
     console.log("[MOVVI] Solicitando localização do dispositivo...");
-    setDevNotice("");
     const fail = (msg: string) => {
       setGpsState("unavailable");
       setGpsErrorMsg(msg);
@@ -477,7 +487,11 @@ function PassageiroApp() {
           setGpsAccuracy(pos.coords.accuracy ?? null);
           setGpsState("granted");
           setGpsErrorMsg("");
-          navigator.geolocation.watchPosition(
+          // Evita múltiplos watchers acumulados em re-tentativas.
+          if (watchIdRef.current != null) {
+            navigator.geolocation.clearWatch(watchIdRef.current);
+          }
+          watchIdRef.current = navigator.geolocation.watchPosition(
             (p) => {
               const la = p.coords.latitude;
               const ln = p.coords.longitude;
@@ -518,6 +532,15 @@ function PassageiroApp() {
       fail("A geolocalização foi bloqueada neste ambiente. Use a localização manual.");
     }
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (watchIdRef.current != null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+      }
+    };
+  }, []);
+
 
 
   const setManualLocation = useCallback((p: LatLng) => {
@@ -762,17 +785,24 @@ function PassageiroApp() {
   const phase = ride?.status;
 
   /* ---------------------- GPS denied screen ---------------------- */
-  if (gpsState === "denied" || gpsState === "unavailable") {
+  // Mantém a tela de ativação montada também durante "requesting" para que o
+  // botão exiba o spinner sem desmontar/remontar (causa do "preciso clicar várias vezes").
+  const showGpsScreen =
+    gpsState === "denied" ||
+    gpsState === "unavailable" ||
+    (gpsState === "requesting" && !position);
+  if (showGpsScreen) {
     return (
       <GpsDeniedScreen
         onRetry={requestGps}
         onHome={() => { void navigate({ to: "/" }); }}
         onManual={setManualLocation}
         errorMessage={gpsErrorMsg}
-        requesting={false}
+        requesting={gpsState === "requesting"}
       />
     );
   }
+
 
   return (
     <div className="relative h-[100dvh] w-screen overflow-hidden bg-background text-foreground">
