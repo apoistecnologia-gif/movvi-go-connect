@@ -1823,19 +1823,25 @@ function GpsDeniedScreen({
   devMode?: boolean;
 }) {
   const isPrompt = mode === "prompt";
-  const title = isPrompt
+  const title = devMode
+    ? "Modo Desenvolvedor"
+    : isPrompt
     ? "Ative sua localização"
     : "Não foi possível obter sua localização.";
-  const description = isPrompt
+  const description = devMode
+    ? "No Preview, a localização real pode ser simulada. Use uma origem de teste para continuar."
+    : isPrompt
     ? "A MOVVI precisa da sua localização para encontrar motoristas próximos e calcular sua corrida."
     : errorMessage ||
       "Você pode continuar utilizando a MOVVI informando sua localização manualmente.";
-  const primaryLabel = requesting
+  const primaryLabel = devMode
+    ? "USAR ORIGEM DE TESTE"
+    : requesting
     ? "Solicitando..."
     : isPrompt
     ? "PERMITIR LOCALIZAÇÃO"
     : "TENTAR NOVAMENTE";
-  const [manualOpen, setManualOpen] = useState(!isPrompt);
+  const [manualOpen, setManualOpen] = useState(!isPrompt || devMode);
   const [query, setQuery] = useState("");
   const [items, setItems] = useState<{ placeId: string; primary: string; secondary: string }[]>([]);
   const [searching, setSearching] = useState(false);
@@ -1962,23 +1968,29 @@ function GpsDeniedScreen({
           type="button"
           onClick={() => {
             console.log("[MOVVI] Clique em", primaryLabel);
+            if (devMode) {
+              setManualOpen(true);
+              return;
+            }
             onRetry();
           }}
-          disabled={requesting}
+          disabled={!devMode && requesting}
           className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-4 text-sm font-bold text-primary-foreground shadow-xl shadow-primary/30 active:scale-95 disabled:opacity-60"
         >
-          <Crosshair className="h-4 w-4" />
+          {devMode ? <Search className="h-4 w-4" /> : <Crosshair className="h-4 w-4" />}
           {primaryLabel}
         </button>
 
 
-        <button
-          type="button"
-          onClick={() => setManualOpen((v) => !v)}
-          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-card px-6 py-4 text-sm font-semibold text-foreground ring-1 ring-border active:scale-95"
-        >
-          <Search className="h-4 w-4" /> INFORMAR LOCALIZAÇÃO MANUAL
-        </button>
+        {!devMode && (
+          <button
+            type="button"
+            onClick={() => setManualOpen((v) => !v)}
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-card px-6 py-4 text-sm font-semibold text-foreground ring-1 ring-border active:scale-95"
+          >
+            <Search className="h-4 w-4" /> INFORMAR LOCALIZAÇÃO MANUAL
+          </button>
+        )}
 
       </div>
 
