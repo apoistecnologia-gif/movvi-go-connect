@@ -648,8 +648,21 @@ function PassageiroApp() {
   }
 
   async function calcRoute(dest: LatLng) {
-    if (!position) {
-      setError("Aguardando GPS para calcular a rota.");
+    // REGRA: a origem é SEMPRE as coordenadas reais do GPS. Texto de endereço
+    // serve apenas para exibição — nunca como origem da rota.
+    if (
+      !position ||
+      !Number.isFinite(position.lat) ||
+      !Number.isFinite(position.lng) ||
+      !isBrazilCoordinate(position.lat, position.lng) ||
+      !dest ||
+      !Number.isFinite(dest.lat) ||
+      !Number.isFinite(dest.lng) ||
+      !isBrazilCoordinate(dest.lat, dest.lng)
+    ) {
+      setError(
+        "Não foi possível calcular a rota. Confirme a localização de origem e destino.",
+      );
       return;
     }
     setBusy(true);
@@ -657,7 +670,10 @@ function PassageiroApp() {
     setRoute(null);
     try {
       const result = await callComputeRoute({
-        data: { origin: position, destination: dest },
+        data: {
+          origin: { lat: position.lat, lng: position.lng },
+          destination: { lat: dest.lat, lng: dest.lng },
+        },
       });
       setRoute(result);
       if (mapRef.current) {
