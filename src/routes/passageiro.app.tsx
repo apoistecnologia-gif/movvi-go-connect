@@ -549,12 +549,27 @@ function PassageiroApp() {
         onManual={setManualLocation}
         errorMessage={gpsErrorMsg}
         requesting={false}
+        isDev={isDev}
+        onUseTestLocation={useDevTestLocation}
       />
     );
   }
 
   return (
     <div className="relative h-[100dvh] w-screen overflow-hidden bg-background text-foreground">
+      {devNotice && (
+        <div className="pointer-events-auto absolute left-1/2 top-2 z-[60] flex max-w-[92vw] -translate-x-1/2 items-center gap-2 rounded-full bg-amber-500/15 px-3 py-1.5 text-[11px] text-amber-200 ring-1 ring-amber-500/40 backdrop-blur">
+          <span className="font-semibold">DEV</span>
+          <span className="truncate">{devNotice}</span>
+          <button
+            onClick={() => setDevNotice(null)}
+            className="ml-1 rounded-full p-0.5 hover:bg-amber-500/20"
+            aria-label="Fechar aviso"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </div>
+      )}
       {/* MAPA — sempre presente, ~70% da tela */}
       <div className="absolute inset-0">
         <MovviMap
