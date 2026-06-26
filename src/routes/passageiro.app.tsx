@@ -1928,19 +1928,34 @@ function GpsDeniedScreen({
 
   return (
     <div className="relative flex min-h-[100dvh] flex-col items-center justify-center bg-background px-6 text-center text-foreground">
-      <div className="absolute left-4 top-4">
+      <div className="absolute left-4 top-4 flex items-center gap-2">
         <button
           onClick={onHome}
           className="inline-flex items-center gap-2 rounded-full bg-card px-3 py-2 text-xs font-medium ring-1 ring-border"
         >
           ← Início
         </button>
+        {devMode && (
+          <a
+            href="/dev-diagnostics"
+            className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-amber-400 ring-1 ring-amber-500/40"
+            title="Ambiente de desenvolvimento — abrir diagnóstico"
+          >
+            🧪 Modo Desenvolvedor
+          </a>
+        )}
       </div>
       <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-primary/15 text-primary">
         <MapPin className="h-9 w-9" />
       </div>
       <h1 className="font-display text-2xl font-bold">{title}</h1>
       <p className="mt-2 max-w-sm text-sm text-muted-foreground">{description}</p>
+      {devMode && isPrompt && (
+        <p className="mt-3 max-w-sm rounded-xl bg-amber-500/10 px-3 py-2 text-[12px] text-amber-300 ring-1 ring-amber-500/30">
+          Ambiente de preview detectado. Em produção o GPS real do dispositivo é usado automaticamente após a permissão.
+          Aqui você pode definir uma origem de teste manualmente.
+        </p>
+      )}
 
       <div className="mt-6 flex w-full max-w-sm flex-col gap-3">
         <button
