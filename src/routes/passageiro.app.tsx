@@ -1060,7 +1060,7 @@ function SheetContent({
   const region = geo?.region || "";
   const approximate = !!geo?.approximate;
   const primaryLine = friendly || (approximate ? "Localização aproximada" : "");
-  const showSkeleton = geoLoading && !primaryLine && !region;
+  
 
   return (
     <div className="pt-1">
