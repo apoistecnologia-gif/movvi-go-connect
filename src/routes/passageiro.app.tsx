@@ -579,13 +579,18 @@ function PassageiroApp() {
 
 
   const setManualLocation = useCallback((p: LatLng) => {
-    if (!isBrazilCoordinate(p.lat, p.lng)) return;
-    console.log("Localização manual definida:", p);
+    if (!isBrazilCoordinate(p.lat, p.lng)) {
+      console.warn("[MOVVI] Origem manual rejeitada: fora do Brasil", p);
+      return;
+    }
+    console.log("[MOVVI] Origem manual selecionada", p);
     setPosition(p);
     setGpsState("granted");
     gpsStateRef.current = "granted";
     setGpsErrorMsg("");
+    console.log("[MOVVI] Origem válida confirmada", p);
   }, []);
+
 
   // Verifica a permissão de geolocalização ANTES de chamar getCurrentPosition.
   // - Se já estiver "granted", pedimos o GPS imediatamente (sem prompt do navegador).
