@@ -1063,14 +1063,11 @@ function PassageiroApp() {
 
   async function cancelRide() {
     if (!ride) return;
-    await supabase
-      .from("rides")
-      .update({
-        status: "cancelada_passageiro",
-        cancelled_at: new Date().toISOString(),
-        cancelled_by: userId,
-      })
-      .eq("id", ride.id);
+    try {
+      await callCancelByPassenger({ data: { rideId: ride.id } });
+    } catch (err) {
+      console.error("[MOVVI] cancelarPeloPassageiro falhou:", err);
+    }
     resetRide();
   }
 
