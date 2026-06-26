@@ -58,6 +58,7 @@ export type Database = {
           name: string
           phone: string
           rating: number
+          rejection_reason: string | null
           selfie_url: string | null
           state: string
           subscription_status: Database["public"]["Enums"]["driver_subscription_status"]
@@ -88,6 +89,7 @@ export type Database = {
           name: string
           phone: string
           rating?: number
+          rejection_reason?: string | null
           selfie_url?: string | null
           state: string
           subscription_status?: Database["public"]["Enums"]["driver_subscription_status"]
@@ -118,6 +120,7 @@ export type Database = {
           name?: string
           phone?: string
           rating?: number
+          rejection_reason?: string | null
           selfie_url?: string | null
           state?: string
           subscription_status?: Database["public"]["Enums"]["driver_subscription_status"]
