@@ -584,7 +584,7 @@ function PassageiroApp() {
   }
 
   function focusSearch() {
-    sheetRef.current?.snapTo(86);
+    sheetRef.current?.snapTo(92);
     setTimeout(() => searchInputRef.current?.focus(), 220);
   }
 
