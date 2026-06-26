@@ -790,7 +790,7 @@ function PassageiroApp() {
   const showGpsScreen =
     gpsState === "denied" ||
     gpsState === "unavailable" ||
-    (gpsState === "requesting" && !position);
+    ((gpsState === "requesting" || gpsState === "idle") && !position);
   if (showGpsScreen) {
     return (
       <GpsDeniedScreen
