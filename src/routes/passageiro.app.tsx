@@ -1350,15 +1350,19 @@ function SheetContent({
     [activeGroup],
   );
 
-  const friendly = geo?.friendly || "";
+  const rua = geo?.components.rua;
+  const numero = geo?.components.numero;
+  const bairro = geo?.components.bairro || geo?.components.povoado;
   const region = geo?.region || "";
-  const approximate = !!geo?.approximate;
-  const primaryLine = friendly || (approximate ? "Localização aproximada" : "");
-  
+  const friendly = geo?.friendly || "";
+  // Primeira linha: "Rua X, 123" → senão povoado/bairro → senão coords (failed) → senão vazio
+  const streetLine = rua ? (numero ? `${rua}, ${numero}` : rua) : friendly;
+  const showCoords =
+    !streetLine && !bairro && !region && addressStatus === "failed" && hasPosition && position;
 
   return (
     <div className="pt-1">
-      {/* Endereço atual — toque abre detalhes. Em caso de falha de GPS, mostra erro inline com retry. */}
+      {/* Endereço atual — toque abre sheet de ações. Em caso de falha de GPS, mostra erro inline com retry. */}
       {gpsFailed ? (
         <div className="mb-2.5 flex w-full items-start gap-2.5 rounded-2xl bg-destructive/10 px-3 py-2.5 ring-1 ring-destructive/40">
           <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-destructive/80 text-destructive-foreground">
@@ -1369,7 +1373,7 @@ function SheetContent({
               Localização indisponível
             </div>
             <div className="mt-0.5 text-[12px] leading-snug text-foreground/90">
-              {gpsErrorMsg || "Não foi possível obter sua localização."}
+              {gpsErrorMsg || "Não foi possível identificar sua localização."}
             </div>
           </div>
           <button
@@ -1387,52 +1391,49 @@ function SheetContent({
           onClick={onOpenAddressDetails}
           className="mb-2.5 flex w-full items-center gap-2.5 rounded-2xl bg-primary/10 px-3 py-2 text-left ring-1 ring-primary/30 transition active:scale-[0.99] hover:bg-primary/15"
         >
-          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
-            <MapPin className="h-3.5 w-3.5" />
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
+            <MapPin className="h-4 w-4" />
           </span>
           <div className="min-w-0 flex-1">
             <div className="text-[9px] font-semibold uppercase tracking-widest text-primary leading-none">
-              Você está em
+              📍 Local de partida
             </div>
-            {addressStatus === "loading" && !primaryLine && !region ? (
+            {addressStatus === "loading" && !streetLine && !region ? (
               <div className="mt-0.5 truncate text-[12px] font-medium leading-tight text-muted-foreground">
-                Obtendo localização...
+                Obtendo seu endereço...
               </div>
-            ) : primaryLine || region ? (
+            ) : showCoords && position ? (
+              <div className="mt-0.5 truncate font-mono text-[12px] font-semibold text-foreground">
+                {position.lat.toFixed(6)}, {position.lng.toFixed(6)}
+              </div>
+            ) : streetLine || bairro || region ? (
               <>
-                {primaryLine && (
-                  <div
-                    className={`mt-0.5 truncate text-[13px] leading-tight ${
-                      approximate && !friendly
-                        ? "font-medium text-muted-foreground"
-                        : "font-semibold text-foreground"
-                    }`}
-                  >
-                    {primaryLine}
+                {streetLine && (
+                  <div className="mt-0.5 truncate text-[13.5px] font-bold leading-tight text-foreground">
+                    {streetLine}
+                  </div>
+                )}
+                {bairro && (
+                  <div className="truncate text-[12px] leading-tight text-foreground/80">
+                    {bairro}
                   </div>
                 )}
                 {region && (
-                  <div className="truncate text-[11px] font-semibold text-foreground">{region}</div>
+                  <div className="truncate text-[11.5px] font-medium leading-tight text-muted-foreground">
+                    {region}
+                  </div>
                 )}
-              </>
-            ) : addressStatus === "failed" && hasPosition && position ? (
-              <>
-                <div className="mt-0.5 truncate text-[13px] font-medium leading-tight text-muted-foreground">
-                  Coordenadas GPS
-                </div>
-                <div className="truncate font-mono text-[11px] font-semibold text-foreground">
-                  lat: {position.lat.toFixed(6)} · lng: {position.lng.toFixed(6)}
-                </div>
               </>
             ) : (
               <div className="mt-0.5 truncate text-[12px] font-medium leading-tight text-muted-foreground">
-                {hasPosition ? "Localização aproximada" : "Localização indisponível"}
+                {hasPosition ? "Toque para ajustar a partida" : "Localização indisponível"}
               </div>
             )}
           </div>
           <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
         </button>
       )}
+
 
 
       {/* "Para onde você vai?" — sempre em destaque */}
