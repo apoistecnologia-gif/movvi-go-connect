@@ -43,15 +43,20 @@ export function BottomNav({ items, floating = false }: BottomNavProps) {
     <nav
       className={
         floating
-          ? "fixed inset-x-0 bottom-0 z-30 px-3 pb-3"
+          ? "fixed inset-x-0 bottom-0 z-40 px-2"
           : "sticky bottom-0 z-30 border-t border-border bg-background/95 backdrop-blur-md"
+      }
+      style={
+        floating
+          ? { paddingBottom: "calc(env(safe-area-inset-bottom) + 6px)", paddingTop: 6 }
+          : undefined
       }
       aria-label="Navegação principal"
     >
       <ul
         className={
           floating
-            ? "mx-auto flex max-w-xl items-center justify-between gap-1 rounded-2xl bg-card/95 px-2 py-2 shadow-2xl ring-1 ring-border backdrop-blur-xl"
+            ? "mx-auto flex max-w-xl items-center justify-between gap-0.5 rounded-2xl bg-card/95 px-1.5 py-1 shadow-2xl ring-1 ring-border backdrop-blur-xl"
             : "mx-auto flex h-16 max-w-xl items-center justify-between px-2"
         }
       >
@@ -64,14 +69,14 @@ export function BottomNav({ items, floating = false }: BottomNavProps) {
             <li key={item.to} className="flex-1">
               <Link
                 to={item.to}
-                className={`flex flex-col items-center gap-1 rounded-xl px-2 py-1.5 text-[11px] font-medium transition ${
+                className={`flex flex-col items-center gap-0.5 rounded-xl px-1 py-1.5 text-[10px] font-medium transition ${
                   active
                     ? "text-primary"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 <Icon
-                  className={`h-5 w-5 ${active ? "drop-shadow-[0_0_8px_rgba(141,217,43,0.45)]" : ""}`}
+                  className={`h-[18px] w-[18px] ${active ? "drop-shadow-[0_0_8px_rgba(141,217,43,0.45)]" : ""}`}
                 />
                 <span className="leading-none">{item.label}</span>
               </Link>

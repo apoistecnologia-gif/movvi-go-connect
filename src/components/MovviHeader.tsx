@@ -96,7 +96,7 @@ export function MovviHeader({
 
         <div className="min-w-0 flex-1 px-1">
           {name && (
-            <span className="block text-[13px] font-medium leading-tight text-foreground">
+            <span className="block truncate text-[13px] font-semibold leading-tight text-foreground" title={name}>
               {name}
             </span>
           )}

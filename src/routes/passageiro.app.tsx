@@ -621,7 +621,7 @@ function SearchOverlay({
   onClose: () => void;
 }) {
   return (
-    <div className="absolute inset-0 z-40 flex flex-col bg-background">
+    <div className="absolute inset-0 z-50 flex flex-col bg-background">
       <div className="flex items-center gap-2 border-b border-border px-4 py-3">
         <button onClick={onClose} aria-label="Fechar"
           className="rounded-full p-2 hover:bg-accent/40">

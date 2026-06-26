@@ -8,7 +8,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
  * Suporta arrastar verticalmente para alternar.
  */
 type Snap = "peek" | "mid" | "full";
-const HEIGHTS: Record<Snap, number> = { peek: 18, mid: 50, full: 82 };
+const HEIGHTS: Record<Snap, number> = { peek: 22, mid: 52, full: 84 };
 
 export function BottomSheet({
   children,
@@ -73,8 +73,9 @@ export function BottomSheet({
   return (
     <div
       ref={sheetRef}
-      className="absolute inset-x-0 bottom-0 z-30 flex flex-col rounded-t-3xl bg-card/95 text-foreground shadow-[0_-24px_60px_-12px_rgba(0,0,0,0.55)] ring-1 ring-border/70 backdrop-blur-xl transition-[height] duration-300 ease-out animate-in slide-in-from-bottom-4 fade-in"
+      className="absolute inset-x-0 z-30 flex flex-col rounded-t-3xl bg-card/95 text-foreground shadow-[0_-24px_60px_-12px_rgba(0,0,0,0.55)] ring-1 ring-border/70 backdrop-blur-xl transition-[height] duration-300 ease-out animate-in slide-in-from-bottom-4 fade-in"
       style={{
+        bottom: "calc(76px + env(safe-area-inset-bottom))",
         height: `${height}vh`,
         transitionProperty: dragH == null ? "height" : "none",
       }}
@@ -93,7 +94,7 @@ export function BottomSheet({
           </span>
         )}
       </div>
-      <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-6 pt-1">
+      <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-4 pt-1">
         {children}
       </div>
     </div>
