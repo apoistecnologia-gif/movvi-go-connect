@@ -21,7 +21,7 @@ import {
 import { MovviMap } from "@/components/MovviMap";
 import { MovviSheet, type MovviSheetHandle } from "@/components/MovviSheet";
 import { supabase } from "@/integrations/supabase/client";
-import { BRASILIA_CENTER } from "@/lib/googleMaps";
+import { BRAZIL_CENTER, isBrazilCoordinate, purgeForeignMapCache } from "@/lib/googleMaps";
 import { computeRoute, type RouteResult } from "@/lib/routes.functions";
 import { requestRide } from "@/lib/ride.functions";
 import { useNearbyDrivers } from "@/hooks/useNearbyDrivers";
