@@ -1487,6 +1487,7 @@ function SheetContent({
   uiCategoryKey: string;
   setUiCategoryKey: (k: string) => void;
   driversCount: number;
+  tariffs: TariffMap;
   onSubmit: () => void;
   searchInputRef: React.RefObject<HTMLInputElement | null>;
   gpsFailed: boolean;
