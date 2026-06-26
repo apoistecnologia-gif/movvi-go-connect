@@ -2174,41 +2174,78 @@ function DriverEnRoute({
       : ride.status === "in_progress"
         ? "Em viagem para o destino"
         : "Motorista a caminho";
+  // ETA animado para fase "motorista a caminho"
+  const isArriving = ride.status === "driver_assigned" || ride.status === "offered_to_driver";
+  const isInTrip = ride.status === "in_progress";
+  const [eta, setEta] = useState(() => Math.floor(Math.random() * 4) + 3);
+  useEffect(() => {
+    if (!isArriving) return;
+    const i = setInterval(() => setEta((e) => (e > 1 ? e - 1 : 1)), 30000);
+    return () => clearInterval(i);
+  }, [isArriving]);
+
   return (
-    <div>
-      <div className="mb-2 text-center text-[11px] font-semibold uppercase tracking-widest text-primary">
+    <div className="pt-1 animate-in fade-in slide-in-from-bottom-2 duration-300">
+      <div className="mb-2 flex items-center justify-center gap-2 text-[10.5px] font-bold uppercase tracking-widest text-primary">
+        <span className="relative flex h-2 w-2">
+          <span className="absolute inset-0 animate-ping rounded-full bg-primary/70" />
+          <span className="relative h-2 w-2 rounded-full bg-primary" />
+        </span>
         {phaseLabel}
       </div>
-      <div className="flex items-center gap-3 rounded-2xl bg-background/60 p-3 ring-1 ring-border">
-        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/15 text-2xl">
+
+      {/* ETA destacado */}
+      {!isInTrip && (
+        <div className="mb-2 flex items-center justify-between gap-3 rounded-2xl bg-primary/10 px-3 py-2.5 ring-1 ring-primary/30">
+          <div>
+            <div className="text-[9.5px] font-semibold uppercase tracking-widest text-primary leading-none">
+              Chegando em
+            </div>
+            <div className="mt-0.5 text-[22px] font-extrabold leading-none text-foreground tabular-nums">
+              {eta} <span className="text-[12px] font-bold">min</span>
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="text-[9.5px] font-semibold uppercase tracking-widest text-muted-foreground leading-none">
+              Distância
+            </div>
+            <div className="mt-0.5 text-[15px] font-extrabold leading-none text-foreground tabular-nums">
+              {(eta * 0.45).toFixed(1)} <span className="text-[10px] font-bold">km</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="flex items-center gap-2.5 rounded-2xl bg-background/60 p-2.5 ring-1 ring-border">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/15 text-2xl">
           {driver.selfie_url ? (
             <img
               src={driver.selfie_url}
               alt={driver.name}
-              className="h-14 w-14 rounded-full object-cover"
+              className="h-12 w-12 rounded-full object-cover"
             />
           ) : (
             "👤"
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="truncate font-semibold">{driver.name}</span>
-            <span className="inline-flex items-center gap-0.5 text-xs text-yellow-400">
-              <Star className="h-3 w-3 fill-current" />{" "}
+          <div className="flex items-center gap-1.5">
+            <span className="truncate text-[13.5px] font-bold">{driver.name}</span>
+            <span className="inline-flex shrink-0 items-center gap-0.5 text-[11px] text-yellow-400">
+              <Star className="h-3 w-3 fill-current" />
               {driver.rating?.toFixed(1) ?? "5.0"}
             </span>
           </div>
-          <div className="truncate text-xs text-muted-foreground">
+          <div className="truncate text-[11.5px] text-muted-foreground">
             {driver.vehicle_color} · {driver.vehicle_model}
           </div>
-          <div className="mt-1 inline-flex items-center rounded bg-white px-1.5 py-0.5 text-[10px] font-bold tracking-widest text-black">
+          <div className="mt-0.5 inline-flex items-center rounded bg-white px-1.5 py-0.5 text-[10px] font-extrabold tracking-widest text-black">
             {driver.vehicle_plate}
           </div>
         </div>
       </div>
 
-      <div className="mt-3 grid grid-cols-4 gap-2 text-xs">
+      <div className="mt-2 grid grid-cols-4 gap-1.5 text-xs">
         <Action icon={<Phone className="h-4 w-4" />} label="Ligar" />
         <Action icon={<Navigation2 className="h-4 w-4" />} label="Compartilhar" />
         <Action
@@ -2218,22 +2255,22 @@ function DriverEnRoute({
         />
         <button
           onClick={onCancel}
-          className="flex flex-col items-center gap-1 rounded-xl bg-background/60 py-3 ring-1 ring-border hover:ring-destructive/50"
+          className="flex flex-col items-center gap-1 rounded-xl bg-background/60 py-2.5 ring-1 ring-border transition active:scale-95 hover:ring-destructive/50"
         >
           <X className="h-4 w-4" />
-          <span className="text-[11px]">Cancelar</span>
+          <span className="text-[10.5px]">Cancelar</span>
         </button>
       </div>
 
-      <div className="mt-3 rounded-xl bg-background/60 px-3 py-2 text-xs ring-1 ring-border">
-        <div className="truncate">
-          <span className="text-muted-foreground">Destino:</span>{" "}
-          {ride.destination_name}
+      <div className="mt-2 rounded-xl bg-background/60 px-3 py-2 text-[11.5px] ring-1 ring-border">
+        <div className="flex items-center gap-1.5">
+          <MapPin className="h-3 w-3 shrink-0 text-destructive" />
+          <span className="truncate">{ride.destination_name}</span>
         </div>
         {ride.estimated_price && (
-          <div className="mt-1 text-muted-foreground">
-            Estimativa:{" "}
-            <span className="font-semibold text-foreground">
+          <div className="mt-0.5 flex items-center justify-between text-muted-foreground">
+            <span>Estimativa</span>
+            <span className="font-bold text-primary">
               {formatBRL(Number(ride.estimated_price))}
             </span>
           </div>
