@@ -1172,7 +1172,7 @@ function GpsDeniedScreen({
   errorMessage: string;
   requesting: boolean;
 }) {
-  const [manualOpen, setManualOpen] = useState(() => Boolean(errorMessage));
+  const [manualOpen, setManualOpen] = useState(true);
   const [query, setQuery] = useState("");
   const [items, setItems] = useState<{ placeId: string; primary: string; secondary: string }[]>([]);
   const [searching, setSearching] = useState(false);
