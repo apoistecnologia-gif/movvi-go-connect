@@ -2783,6 +2783,29 @@ function DriverEnRoute({
         </button>
       </div>
 
+      {/* PIN de segurança — só antes de iniciar a viagem */}
+      {!isInTrip && ride.safety_code && (
+        <div className="mt-2 rounded-2xl bg-gradient-to-br from-primary/25 via-primary/10 to-transparent p-3 ring-1 ring-primary/40">
+          <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-primary">
+            <Shield className="h-3 w-3" />
+            Código de segurança da sua corrida
+          </div>
+          <div className="mt-1.5 flex items-center justify-center gap-2">
+            {ride.safety_code.split("").map((d, i) => (
+              <span
+                key={i}
+                className="grid h-12 w-10 place-items-center rounded-xl bg-background/80 text-2xl font-extrabold tabular-nums text-foreground ring-1 ring-primary/40 shadow-inner"
+              >
+                {d}
+              </span>
+            ))}
+          </div>
+          <p className="mt-1.5 text-center text-[11px] text-muted-foreground">
+            Informe este código ao motorista antes de iniciar a viagem.
+          </p>
+        </div>
+      )}
+
       <div className="mt-2 rounded-xl bg-background/60 px-3 py-2 text-[11.5px] ring-1 ring-border">
         <div className="flex items-center gap-1.5">
           <MapPin className="h-3 w-3 shrink-0 text-destructive" />
