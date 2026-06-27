@@ -313,34 +313,16 @@ function MotoristaApp() {
       if (!isBrazilCoordinate(rawLat, rawLng)) {
         console.warn("[MOVVI MOTORISTA] GPS fora do Brasil — bloqueando online:", { lat: rawLat, lng: rawLng });
         setGpsStatus("error");
-        setGpsMessage("Sua localização não parece estar no Brasil. Ative o GPS real do aparelho e tente novamente.");
+        setGpsMessage(
+          isDevelopmentEnvironment()
+            ? "Sua localização está fora do Brasil. Use a localização de teste para continuar."
+            : "Sua localização não parece estar no Brasil. Ative o GPS real do aparelho e tente novamente.",
+        );
         return;
       }
-      const lat = rawLat, lng = rawLng;
       const heading = Number.isFinite(pos.coords.heading as number) ? (pos.coords.heading as number) : null;
       const speed = Number.isFinite(pos.coords.speed as number) ? (pos.coords.speed as number) : null;
-      setPosition({ lat, lng, heading, speed });
-      setGpsStatus("granted");
-      setGpsMessage(null);
-      if (userId) {
-        supabase.from("drivers").update({
-          current_lat: lat, current_lng: lng,
-          current_heading: heading,
-          current_speed: speed,
-          last_location_at: new Date().toISOString(),
-        }).eq("user_id", userId).then(({ error }) => {
-          if (error) console.warn("[MOVVI MOTORISTA] erro salvando localização:", error.message);
-          else console.log("[MOVVI MOTORISTA] localização válida salva:", { lat, lng });
-        });
-      }
-      if (mapRef.current && !initialCenteredRef.current) {
-        mapRef.current.panTo({ lat, lng });
-        mapRef.current.setZoom(16);
-        initialCenteredRef.current = true;
-      }
-      startWatch();
-      setOnline(true);
-      console.log("[MOVVI MOTORISTA] online: true (coordenada válida no Brasil)");
+      activateOnlineWithCoords(rawLat, rawLng, heading, speed, false);
     };
 
 
