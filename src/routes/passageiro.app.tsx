@@ -1188,7 +1188,7 @@ function PassageiroApp() {
 
 
 
-  const inPreview = isDevelopmentEnvironment();
+  const inPreview = DEV_MODE && isDevelopmentEnvironment();
   return (
     <div className="relative h-[100dvh] w-screen overflow-hidden bg-background text-foreground">
       {inPreview && (
@@ -1200,7 +1200,7 @@ function PassageiroApp() {
           </div>
         </div>
       )}
-      {gpsDiag && (
+      {DEV_MODE && gpsDiag && (
         <div className="pointer-events-auto absolute left-2 top-14 z-50 max-w-[280px] rounded-lg bg-black/85 p-3 font-mono text-[10px] leading-tight text-white ring-1 ring-white/20 backdrop-blur">
           <div className="mb-1 flex items-center justify-between gap-2">
             <span className={`font-bold ${gpsDiag.status === "ok" ? "text-emerald-400" : "text-red-400"}`}>
