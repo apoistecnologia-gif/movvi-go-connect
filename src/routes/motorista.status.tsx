@@ -41,10 +41,10 @@ const STATUS_META: Record<DisplayStatus, { label: string; icon: typeof Clock; to
     desc: "Sua conta está bloqueada. Entre em contato com o suporte.",
   },
   nao_encontrado: {
-    label: "Cadastro não encontrado",
+    label: "Cadastro de motorista não encontrado",
     icon: UserX,
     tone: "bg-muted text-muted-foreground border-border",
-    desc: "Não encontramos um cadastro de motorista vinculado a esta conta.",
+    desc: "Cadastro de motorista não encontrado.",
   },
 };
 

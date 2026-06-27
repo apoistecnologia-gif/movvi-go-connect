@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useState, type FormEvent } from "react";
 import { z } from "zod";
 import { supabase } from "@/lib/supabaseClient";
@@ -17,6 +18,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { MovviLogo } from "@/components/MovviLogo";
 import { ArrowLeft, Loader2, Upload } from "lucide-react";
 import { translateAuthError } from "@/lib/authErrors";
+import { cadastrarMotorista } from "@/lib/driverAuth.functions";
 
 export const Route = createFileRoute("/motorista/cadastro")({
   head: () => ({ meta: [{ title: "Cadastro do Motorista — MOVVI DRIVE" }] }),
@@ -47,14 +49,18 @@ type UploadTarget = {
   label: string;
 };
 
-async function uploadFile(userId: string, t: UploadTarget): Promise<string> {
-  const ext = t.file.name.split(".").pop()?.toLowerCase() || "bin";
-  const path = `${userId}/${t.label}-${Date.now()}.${ext}`;
-  const { error } = await supabase.storage
-    .from(t.bucket)
-    .upload(path, t.file, { upsert: true, contentType: t.file.type });
-  if (error) throw new Error(`Falha no upload (${t.label}): ${error.message}`);
-  return path;
+async function fileToBase64(t: UploadTarget) {
+  const buffer = await t.file.arrayBuffer();
+  let binary = "";
+  const bytes = new Uint8Array(buffer);
+  for (let i = 0; i < bytes.length; i += 1) binary += String.fromCharCode(bytes[i]);
+  return {
+    bucket: t.bucket,
+    label: t.label,
+    fileName: t.file.name,
+    contentType: t.file.type || "application/octet-stream",
+    base64: window.btoa(binary),
+  };
 }
 
 function FileField({
@@ -95,8 +101,10 @@ function FileField({
 
 function DriverSignUpPage() {
   const navigate = useNavigate();
+  const callCadastrarMotorista = useServerFn(cadastrarMotorista);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   const [selfie, setSelfie] = useState<File | null>(null);
   const [cnh, setCnh] = useState<File | null>(null);
@@ -105,6 +113,7 @@ function DriverSignUpPage() {
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
+    setSuccess(null);
 
     const form = new FormData(e.currentTarget);
     const raw = Object.fromEntries(form.entries());
@@ -122,55 +131,30 @@ function DriverSignUpPage() {
     try {
       const data = parsed.data;
 
-      const { data: signUp, error: signUpError } = await supabase.auth.signUp({
-        email: data.email,
-        password: data.password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/motorista/status`,
-          data: { name: data.name, phone: data.phone, role: "driver" },
-        },
-      });
-      if (signUpError) throw signUpError;
-      const userId = signUp.user?.id;
-      if (!userId) throw new Error("Não foi possível criar a conta.");
-
-      // Garante sessão para satisfazer RLS de storage/drivers.
-      if (!signUp.session) {
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email: data.email,
-          password: data.password,
-        });
-        if (signInError) throw signInError;
-      }
-
-      const [selfie_url, cnh_url, vehicle_document_url] = await Promise.all([
-        uploadFile(userId, { bucket: "driver-selfies", file: selfie, label: "selfie" }),
-        uploadFile(userId, { bucket: "driver-cnh", file: cnh, label: "cnh" }),
-        uploadFile(userId, { bucket: "vehicle-documents", file: vehicleDoc, label: "veiculo" }),
+      const documents = await Promise.all([
+        fileToBase64({ bucket: "driver-selfies", file: selfie, label: "selfie" }),
+        fileToBase64({ bucket: "driver-cnh", file: cnh, label: "cnh" }),
+        fileToBase64({ bucket: "vehicle-documents", file: vehicleDoc, label: "veiculo" }),
       ]);
 
-      const { error: insertError } = await supabase.from("drivers").insert({
-        user_id: userId,
-        name: data.name,
-        email: data.email,
-        phone: data.phone,
-        cpf: data.cpf,
-        birth_date: data.birth_date || null,
-        city: data.city,
-        state: data.state.toUpperCase(),
-        category: data.category,
-        vehicle_model: data.vehicle_model,
-        vehicle_plate: data.vehicle_plate.toUpperCase(),
-        vehicle_color: data.vehicle_color,
-        vehicle_year: data.vehicle_year,
-        selfie_url,
-        cnh_url,
-        vehicle_document_url,
-        approval_status: "em_analise",
+      const result = await callCadastrarMotorista({
+        data: {
+          ...data,
+          email: data.email.toLowerCase(),
+          state: data.state.toUpperCase(),
+          vehicle_plate: data.vehicle_plate.toUpperCase(),
+          documents: documents as [typeof documents[0], typeof documents[1], typeof documents[2]],
+        },
       });
-      if (insertError) throw insertError;
 
-      navigate({ to: "/motorista/status" });
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: data.email.toLowerCase(),
+        password: data.password,
+      });
+      if (signInError) throw signInError;
+
+      setSuccess(result.message);
+      window.setTimeout(() => navigate({ to: "/motorista/status" }), 700);
     } catch (err) {
       setError(translateAuthError(err));
     } finally {
@@ -227,7 +211,7 @@ function DriverSignUpPage() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="password">Senha</Label>
-                    <Input id="password" name="password" type="password" required minLength={8} />
+                    <Input id="password" name="password" type="password" required minLength={4} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="birth_date">Data de nascimento</Label>
@@ -311,6 +295,12 @@ function DriverSignUpPage() {
               {error && (
                 <Alert variant="destructive">
                   <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              {success && (
+                <Alert>
+                  <AlertDescription>{success}</AlertDescription>
                 </Alert>
               )}
 
