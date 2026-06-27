@@ -204,9 +204,7 @@ function AdminDashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-base">Últimas solicitações</CardTitle>
-            <Link to="/admin/corridas" className="text-xs text-primary hover:underline">
-              Ver tudo <ArrowRight className="inline h-3 w-3" />
-            </Link>
+            <span className="text-xs text-muted-foreground">tempo real</span>
           </CardHeader>
           <CardContent className="space-y-2 p-3">
             {recent.length === 0 && !loading && (
