@@ -3,6 +3,7 @@ import { Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { ArrowLeft, Home } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MovviLogo } from "@/components/MovviLogo";
+import { translateAuthError } from "@/lib/authErrors";
 
 interface AuthShellProps {
   title: ReactNode;
