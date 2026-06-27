@@ -2401,6 +2401,7 @@ function RideCategorySelector({
   selectedCategoryKey: string | null;
   onSelect: (category: UiCategory) => void;
 }) {
+  const uiCategories = useUiCategories();
   return (
     <div className="animate-in fade-in slide-in-from-bottom-2 duration-200">
       <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
