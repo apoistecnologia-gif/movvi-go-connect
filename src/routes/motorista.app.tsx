@@ -83,7 +83,11 @@ function MotoristaApp() {
   const [position, setPosition] = useState<LatLng | null>(null);
   const [online, setOnline] = useState(false);
   const [statusBlock, setStatusBlock] = useState<string | null>(null);
-  const [gpsError, setGpsError] = useState<string | null>(null);
+  type GpsStatus = "prompt" | "loading" | "granted" | "denied" | "timeout" | "unavailable" | "error";
+  const [gpsStatus, setGpsStatus] = useState<GpsStatus>("prompt");
+  const [gpsMessage, setGpsMessage] = useState<string | null>(null);
+  const watchIdRef = useRef<number | null>(null);
+  const initialCenteredRef = useRef(false);
 
   const [incoming, setIncoming] = useState<RideRow | null>(null);
   const [active, setActive] = useState<RideRow | null>(null);
