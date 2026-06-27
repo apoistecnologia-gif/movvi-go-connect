@@ -495,7 +495,8 @@ function MotoristaApp() {
       {!incoming && !ratingRide && (
         <button onClick={recenter}
           className="absolute right-4 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-card/95 text-foreground shadow-lg ring-1 ring-border backdrop-blur hover:ring-primary/40"
-          style={{ bottom: active ? "calc(58vh + 16px)" : "calc(var(--driver-panel-h, 320px) + 16px)" }}>
+          style={{ bottom: active ? "calc(58vh + 16px)" : "calc(env(safe-area-inset-bottom) + 320px)" }}>
+
           <Crosshair className="h-5 w-5" />
         </button>
       )}
