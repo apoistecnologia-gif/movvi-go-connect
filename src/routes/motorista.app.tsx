@@ -447,12 +447,7 @@ function MotoristaApp() {
 
       <MovviHeader variant="floating" logoutRedirect="/" />
 
-      {/* GPS error */}
-      {gpsError && (
-        <div className="absolute left-1/2 top-20 z-30 -translate-x-1/2 rounded-full bg-destructive/95 px-4 py-1.5 text-xs font-medium text-destructive-foreground shadow-lg">
-          GPS: {gpsError}
-        </div>
-      )}
+      {/* (status de GPS é mostrado dentro do painel inferior) */}
 
       {/* Bloqueio aprovação */}
       {statusBlock && !hasRideUI && (
