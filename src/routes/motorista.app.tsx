@@ -418,7 +418,7 @@ function MotoristaApp() {
               driverName={driverName}
               online={online}
               disabled={!!statusBlock}
-              toggleOnline={() => setOnline((v) => !v)}
+              toggleOnline={toggleOnline}
               stats={todayStats}
             />
           )}
