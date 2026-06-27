@@ -1,12 +1,10 @@
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
   LayoutDashboard,
   Users,
   Car,
   Route as RouteIcon,
-  Tag,
   DollarSign,
-  CreditCard,
   Ticket,
   Bell,
   Settings,
@@ -15,25 +13,34 @@ import {
   ShieldCheck,
   LogOut,
   Layers,
+  CreditCard,
+  Wallet,
+  ScrollText,
   type LucideIcon,
 } from "lucide-react";
 import { MovviLogo } from "@/components/MovviLogo";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "@tanstack/react-router";
 
 type Item = { to: string; label: string; icon: LucideIcon };
 
 export const ADMIN_NAV: Item[] = [
   { to: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/admin/mapa", label: "Mapa ao vivo", icon: MapIcon },
   { to: "/admin/motoristas", label: "Motoristas", icon: Car },
+  { to: "/admin/passageiros", label: "Passageiros", icon: Users },
+  { to: "/admin/corridas", label: "Corridas", icon: RouteIcon },
   { to: "/admin/categorias", label: "Categorias", icon: Layers },
-  { to: "/admin/precos", label: "Preços", icon: DollarSign },
+  { to: "/admin/precos", label: "Tarifas", icon: DollarSign },
+  { to: "/admin/cupons", label: "Promoções", icon: Ticket },
+  { to: "/admin/assinaturas", label: "Assinaturas", icon: CreditCard },
+  { to: "/admin/financeiro", label: "Financeiro", icon: Wallet },
+  { to: "/admin/relatorios", label: "Relatórios", icon: FileBarChart },
+  { to: "/admin/notificacoes", label: "Notificações", icon: Bell },
+  { to: "/admin/configuracoes", label: "Configurações", icon: Settings },
+  { to: "/admin/administradores", label: "Administradores", icon: ShieldCheck },
+  { to: "/admin/logs", label: "Logs", icon: ScrollText },
 ];
-
-// Itens adicionais serão habilitados conforme cada módulo for finalizado.
-void Users; void RouteIcon; void Tag; void CreditCard;
-void Ticket; void Bell; void Settings; void FileBarChart; void MapIcon; void ShieldCheck;
 
 export function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
