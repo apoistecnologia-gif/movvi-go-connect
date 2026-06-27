@@ -172,7 +172,7 @@ function DriverSignUpPage() {
 
       navigate({ to: "/motorista/status" });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro inesperado");
+      setError(translateAuthError(err));
     } finally {
       setLoading(false);
     }
