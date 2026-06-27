@@ -6,7 +6,9 @@
 // /dev-diagnostics etc.). Em produção mantenha `false` — a interface
 // fica totalmente limpa e apenas o console registra logs.
 // ────────────────────────────────────────────────────────────────────────────
-export const DEV_MODE = true;
+export const DEV_MODE = false;
+/** Alias em português — mesma constante, mesmo comportamento. */
+export const MODO_DESENVOLVIMENTO = DEV_MODE;
 
 // ────────────────────────────────────────────────────────────────────────────
 // MOVVI — Detecção de ambiente
