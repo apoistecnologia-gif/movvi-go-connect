@@ -10,7 +10,7 @@ import {
   MapPin,
   Navigation2,
   Phone,
-  Power,
+
   Star,
   X,
   ChevronRight,
