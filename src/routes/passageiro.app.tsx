@@ -1062,11 +1062,12 @@ function PassageiroApp() {
     };
     const startPolling = () => {
       if (pollTimer != null || !active) return;
-      console.log("[MOVVI PASSAGEIRO] fallback polling rides (realtime indisponível)");
-      pollTimer = window.setInterval(() => { void load("poll"); }, 5000);
+      console.log("[MOVVI PASSAGEIRO] polling de segurança da corrida ativo");
+      pollTimer = window.setInterval(() => { void load("poll"); }, 3500);
     };
 
     void load("init");
+    startPolling();
 
     const ch = supabase
       .channel(`ride-${rideId}`)
@@ -1083,8 +1084,8 @@ function PassageiroApp() {
         console.log("[MOVVI PASSAGEIRO] canal ride-" + rideId + " status:", status);
         if (status === "SUBSCRIBED") {
           subscribed = true;
-          stopPolling();
-          // recarrega para capturar updates ocorridos durante o handshake
+          // recarrega para capturar updates ocorridos durante o handshake;
+          // o polling de segurança permanece ativo para não deixar o passageiro preso em "procurando".
           void load("subscribed");
         } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
           subscribed = false;
