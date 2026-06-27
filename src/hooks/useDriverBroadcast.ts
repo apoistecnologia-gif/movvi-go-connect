@@ -39,6 +39,10 @@ export function useDriverBroadcast(
   // broadcast GPS
   useEffect(() => {
     if (!userId || !online || !position) return;
+    if (!isBrazilCoordinate(position.lat, position.lng)) {
+      console.warn("[MOVVI MOTORISTA] broadcast ignorado — coordenada fora do Brasil:", position);
+      return;
+    }
     const t = window.setTimeout(() => {
       supabase
         .from("drivers")
@@ -53,5 +57,6 @@ export function useDriverBroadcast(
         .then();
     }, 600); // debounce
     return () => window.clearTimeout(t);
-  }, [userId, position?.lat, position?.lng, position?.heading, position?.speed]);
+  }, [userId, online, position?.lat, position?.lng, position?.heading, position?.speed]);
+
 }
