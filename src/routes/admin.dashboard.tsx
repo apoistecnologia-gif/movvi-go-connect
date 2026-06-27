@@ -106,7 +106,7 @@ function AdminDashboardPage() {
         supabase.from("rides").select("id", { count: "exact", head: true }).in("status", ACTIVE_STATUSES),
         supabase.from("rides").select("id", { count: "exact", head: true }).eq("status", "finalizada").gte("completed_at", todayIso),
         supabase.from("rides").select("id", { count: "exact", head: true }).like("status", "cancelada_%").gte("cancelled_at", todayIso),
-        supabase.from("subscriptions").select("id", { count: "exact", head: true }).eq("status", "ativa"),
+        supabase.from("subscriptions").select("id", { count: "exact", head: true }).eq("status", "active"),
         supabase.from("rides").select("final_price,estimated_price").eq("status", "finalizada").gte("completed_at", todayIso),
         supabase.from("rides").select("final_price,estimated_price").eq("status", "finalizada").gte("completed_at", monthIso),
         supabase.from("drivers").select("id,name,current_lat,current_lng").eq("is_online", true).not("current_lat", "is", null).limit(200),
