@@ -1488,10 +1488,12 @@ function SheetContent({
   onPick,
   onClearDestination,
   route,
+  uiStage,
+  setUiStage,
   busy,
   error,
-  uiCategoryKey,
-  setUiCategoryKey,
+  selectedCategoryKey,
+  setSelectedCategoryKey,
   driversCount,
   tariffs,
   onSubmit,
@@ -1515,10 +1517,12 @@ function SheetContent({
   onPick: (s: Suggestion) => void;
   onClearDestination: () => void;
   route: RouteResult | null;
+  uiStage: PassengerUiStage;
+  setUiStage: (stage: PassengerUiStage) => void;
   busy: boolean;
   error: string | null;
-  uiCategoryKey: string;
-  setUiCategoryKey: (k: string) => void;
+  selectedCategoryKey: string | null;
+  setSelectedCategoryKey: (k: string | null) => void;
   driversCount: number;
   tariffs: TariffMap;
   onSubmit: () => void;
@@ -1532,12 +1536,11 @@ function SheetContent({
   const km = route ? route.distanceMeters / 1000 : 0;
   const min = route ? route.durationSeconds / 60 : 0;
 
-  // Categoria atualmente selecionada (objeto UI).
   const selectedCategory = useMemo(
-    () => UI_CATEGORIES.find((c) => c.key === uiCategoryKey) ?? UI_CATEGORIES[0],
-    [uiCategoryKey],
+    () => UI_CATEGORIES.find((c) => c.key === selectedCategoryKey) ?? null,
+    [selectedCategoryKey],
   );
-  const selectedFare = route
+  const selectedFare = route && selectedCategory
     ? estimateFare(selectedCategory.backend, km, min, tariffs)
     : null;
 
@@ -1726,13 +1729,15 @@ function SheetContent({
         <StepFlow
           destination={destination}
           route={route}
+          uiStage={uiStage}
+          setUiStage={setUiStage}
           busy={busy}
           error={error}
           km={km}
           min={min}
           tariffs={tariffs}
-          uiCategoryKey={uiCategoryKey}
-          setUiCategoryKey={setUiCategoryKey}
+          selectedCategoryKey={selectedCategoryKey}
+          setSelectedCategoryKey={setSelectedCategoryKey}
           selectedCategory={selectedCategory}
           selectedFare={selectedFare}
           onClearDestination={onClearDestination}
