@@ -303,18 +303,18 @@ function MotoristaApp() {
     console.log("[MOVVI MOTORISTA] FICAR ONLINE clicado → solicitando GPS no clique");
 
     const onSuccess = (pos: GeolocationPosition) => {
-      const lat = pos.coords.latitude, lng = pos.coords.longitude;
-      console.log("[MOVVI MOTORISTA] GPS ok:", { lat, lng });
-      if (!isBrazilCoordinate(lat, lng)) {
-        setGpsStatus("error");
-        setGpsMessage("Não foi possível obter sua localização. Verifique se o GPS está ativo e tente novamente.");
-        return;
-      }
+      const rawLat = pos.coords.latitude, rawLng = pos.coords.longitude;
+      console.log("[MOVVI MOTORISTA] GPS ok:", { lat: rawLat, lng: rawLng });
+      // Aceita o fix do GPS mesmo fora do Brasil (ambientes de preview/desktop).
+      // Se a coordenada não for brasileira, ainda assim ficamos online e usamos
+      // BRAZIL_CENTER apenas para centralizar o mapa.
+      const inBrazil = isBrazilCoordinate(rawLat, rawLng);
+      const lat = rawLat, lng = rawLng;
       const heading = Number.isFinite(pos.coords.heading as number) ? (pos.coords.heading as number) : null;
       const speed = Number.isFinite(pos.coords.speed as number) ? (pos.coords.speed as number) : null;
       setPosition({ lat, lng, heading, speed });
       setGpsStatus("granted");
-      setGpsMessage(null);
+      setGpsMessage(inBrazil ? null : "Localização fora do Brasil — modo de teste.");
       if (userId) {
         supabase.from("drivers").update({
           current_lat: lat, current_lng: lng,
@@ -324,13 +324,14 @@ function MotoristaApp() {
         }).eq("user_id", userId).then();
       }
       if (mapRef.current && !initialCenteredRef.current) {
-        mapRef.current.panTo({ lat, lng });
-        mapRef.current.setZoom(16);
+        const focus = inBrazil ? { lat, lng } : BRAZIL_CENTER;
+        mapRef.current.panTo(focus);
+        mapRef.current.setZoom(inBrazil ? 16 : 5);
         initialCenteredRef.current = true;
       }
       startWatch();
       setOnline(true);
-      console.log("[MOVVI MOTORISTA] online: true");
+      console.log("[MOVVI MOTORISTA] online: true", { inBrazil });
     };
 
     const finalFail = (err: GeolocationPositionError) => {
