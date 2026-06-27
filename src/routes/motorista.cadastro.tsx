@@ -147,13 +147,13 @@ function DriverSignUpPage() {
         },
       });
 
-      setSuccess(result.message);
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: data.email.toLowerCase(),
         password: data.password,
       });
       if (signInError) throw signInError;
 
+      setSuccess(result.message);
       window.setTimeout(() => navigate({ to: "/motorista/status" }), 700);
     } catch (err) {
       setError(translateAuthError(err));
