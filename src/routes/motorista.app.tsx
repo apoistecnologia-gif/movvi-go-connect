@@ -163,11 +163,13 @@ function MotoristaApp() {
       (pos) => {
         const lat = pos.coords.latitude, lng = pos.coords.longitude;
         if (!isBrazilCoordinate(lat, lng)) return;
+        const heading = Number.isFinite(pos.coords.heading as number) ? (pos.coords.heading as number) : null;
+        const speed = Number.isFinite(pos.coords.speed as number) ? (pos.coords.speed as number) : null;
         setPosition((prev) => {
           if (!prev || Math.abs(prev.lat - lat) > 0.0001 || Math.abs(prev.lng - lng) > 0.0001) {
-            console.log("[MOVVI MOTORISTA] localização:", { lat, lng, accuracy: pos.coords.accuracy });
+            console.log("[MOVVI MOTORISTA] localização:", { lat, lng, heading, speed, accuracy: pos.coords.accuracy });
           }
-          return { lat, lng };
+          return { lat, lng, heading, speed };
         });
       },
       (err) => { console.warn("[MOVVI MOTORISTA] watch GPS:", err.message); },
