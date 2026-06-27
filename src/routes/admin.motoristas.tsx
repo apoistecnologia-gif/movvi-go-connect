@@ -332,6 +332,7 @@ function DriverCard({
 function DetailsDialog({ driver, onClose }: { driver: Driver | null; onClose: () => void }) {
   const [urls, setUrls] = useState<Record<string, string | null>>({});
   const [urlError, setUrlError] = useState<string | null>(null);
+  const [docsLoading, setDocsLoading] = useState(false);
   const fetchUrls = useServerFn(getDriverDocumentUrls);
 
   useEffect(() => {
@@ -339,6 +340,7 @@ function DetailsDialog({ driver, onClose }: { driver: Driver | null; onClose: ()
     let cancelled = false;
     setUrls({});
     setUrlError(null);
+    setDocsLoading(true);
     console.log("[MOVVI DOCS] admin lendo documentos:", {
       driverId: driver.id,
       selfie_url: driver.selfie_url,
@@ -356,12 +358,14 @@ function DetailsDialog({ driver, onClose }: { driver: Driver | null; onClose: ()
         const message = err instanceof Error ? err.message : "Falha ao gerar URLs.";
         console.error("[MOVVI DOCS] erro ao buscar urls:", message);
         setUrlError(message);
+      } finally {
+        if (!cancelled) setDocsLoading(false);
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [driver, fetchUrls]);
+  }, [driver?.id]);
 
   if (!driver) return null;
   const meta = TAB_META[driver.approval_status];
@@ -403,12 +407,14 @@ function DetailsDialog({ driver, onClose }: { driver: Driver | null; onClose: ()
               </p>
             )}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <DocCard label="Selfie" url={urls.selfie_url} rawPath={driver.selfie_url} />
-              <DocCard label="CNH" url={urls.cnh_url} rawPath={driver.cnh_url} />
+              <DocCard label="Selfie" url={urls.selfie_url} rawPath={driver.selfie_url} loading={docsLoading} failed={!!urlError} />
+              <DocCard label="CNH" url={urls.cnh_url} rawPath={driver.cnh_url} loading={docsLoading} failed={!!urlError} />
               <DocCard
                 label="Doc. Veículo"
                 url={urls.vehicle_document_url}
                 rawPath={driver.vehicle_document_url}
+                loading={docsLoading}
+                failed={!!urlError}
               />
             </div>
           </Section>
@@ -509,16 +515,22 @@ function DocCard({
   label,
   url,
   rawPath,
+  loading,
+  failed,
 }: {
   label: string;
   url: string | null;
   rawPath?: string | null;
+  loading?: boolean;
+  failed?: boolean;
 }) {
   if (!url) {
     return (
       <div className="rounded-xl border border-dashed border-border bg-card/40 p-4 text-center text-xs text-muted-foreground">
         {label}
-        <div className="mt-2">{rawPath ? "Carregando..." : "Não enviado"}</div>
+        <div className="mt-2">
+          {!rawPath ? "Não enviado" : failed ? "Falha ao carregar" : loading ? "Carregando..." : "Arquivo indisponível"}
+        </div>
       </div>
     );
   }

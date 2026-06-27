@@ -12,15 +12,22 @@ export const getDriverDocumentUrls = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ driverId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
-    const isAdmin = await context.supabase.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const isAdmin = await supabaseAdmin
+      .from("user_roles")
+      .select("id")
+      .eq("user_id", context.userId)
+      .eq("role", "admin")
+      .maybeSingle();
+
     if (isAdmin.error || !isAdmin.data) {
+      console.error("[MOVVI DOCS] acesso negado para documentos:", {
+        userId: context.userId,
+        error: isAdmin.error?.message ?? null,
+      });
       throw new Error("Apenas administradores podem visualizar documentos.");
     }
-
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const driver = await supabaseAdmin
       .from("drivers")
@@ -40,6 +47,7 @@ export const getDriverDocumentUrls = createServerFn({ method: "POST" })
         async ([field, bucket]) => {
           const path = driver.data?.[field];
           if (!path) return;
+          console.log("[MOVVI DOCS] gerando URL assinada:", { driverId: data.driverId, field, bucket, path });
           const signed = await supabaseAdmin.storage.from(bucket).createSignedUrl(path, 600);
           if (signed.error) {
             console.error(`[MOVVI DOCS] erro signed url ${field}:`, signed.error.message);
