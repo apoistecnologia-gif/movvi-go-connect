@@ -1473,7 +1473,7 @@ function PassageiroApp() {
       <PremiumTopBar
         userName={userName}
         gpsState={gpsState}
-        drivers={drivers.length}
+        drivers={nearbyCount}
         searching={!!ride && ride.status === "procurar_motorista"}
         onLogout={handleLogout}
       />
