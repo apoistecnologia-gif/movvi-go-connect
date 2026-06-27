@@ -309,6 +309,23 @@ function OriginAction({
 export const Route = createFileRoute("/passageiro/app")({
   head: () => ({ meta: [{ title: "MOVVI Drive — Passageiro" }] }),
   component: PassageiroApp,
+  errorComponent: ({ error, reset }) => {
+    console.error("[MOVVI] Erro na tela do passageiro:", error);
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background p-6 text-center">
+        <h1 className="font-display text-2xl font-bold">Tivemos um problema ao abrir o mapa</h1>
+        <p className="text-sm text-muted-foreground max-w-md">
+          O app continua disponível. Recarregue para tentar novamente — sua localização e seu cadastro estão preservados.
+        </p>
+        <button
+          onClick={() => { try { reset(); } catch { /* ignore */ } if (typeof window !== "undefined") window.location.reload(); }}
+          className="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground"
+        >
+          Tentar novamente
+        </button>
+      </div>
+    );
+  },
 });
 
 type LatLng = { lat: number; lng: number };
