@@ -3,10 +3,11 @@ export const GOOGLE_MAPS_API_KEY =
   (import.meta.env.VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY as string | undefined) ?? "";
 
 // Bibliotecas que usamos no app inteiro. Manter referência estável para evitar reload do script.
-export const GOOGLE_MAPS_LIBRARIES = ["places", "routes", "geometry", "marker"] as unknown as (
+export const GOOGLE_MAPS_LIBRARIES = ["places", "routes", "geometry", "marker", "visualization"] as unknown as (
   | "places"
   | "geometry"
   | "drawing"
+  | "visualization"
 )[];
 
 // ─── COORDENADAS PERMITIDAS (somente Brasil) ─────────────────────────────
