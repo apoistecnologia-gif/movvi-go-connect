@@ -153,7 +153,7 @@ export const cadastrarMotorista = createServerFn({ method: "POST" })
     }
     const finalAuthUserId = created.data.user.id;
 
-    const uploaded: Array<{ bucket: (typeof Buckets)[number]; path: string }> = [];
+    const uploaded: Array<{ bucket: string; path: string }> = [];
 
     try {
       const uploadedDocs = await Promise.all(
@@ -170,12 +170,38 @@ export const cadastrarMotorista = createServerFn({ method: "POST" })
           }
           uploaded.push({ bucket: doc.bucket, path });
           console.log("[MOVVI DOCS] upload concluído:", { bucket: doc.bucket, path });
-          return [doc.label, path] as const;
+          return [doc.label, { path, body, contentType: doc.contentType, fileName: doc.fileName }] as const;
         }),
       );
 
-      const docPaths = Object.fromEntries(uploadedDocs) as Record<"selfie" | "cnh" | "veiculo", string>;
-      console.log("[MOVVI DOCS] path salvo:", docPaths);
+      const docMap = Object.fromEntries(uploadedDocs) as Record<
+        "selfie" | "cnh" | "veiculo",
+        { path: string; body: ArrayBuffer; contentType: string; fileName: string }
+      >;
+      console.log("[MOVVI DOCS] path salvo:", {
+        selfie: docMap.selfie.path,
+        cnh: docMap.cnh.path,
+        veiculo: docMap.veiculo.path,
+      });
+
+      // Profile photo: copy selfie to public-readable bucket so passengers can view it.
+      let photoUrl: string | null = null;
+      try {
+        const selfie = docMap.selfie;
+        const photoPath = `${finalAuthUserId}/avatar-${Date.now()}.${cleanExt(selfie.fileName)}`;
+        const photoUpload = await supabaseAdmin.storage
+          .from("profile-photos")
+          .upload(photoPath, selfie.body, { upsert: true, contentType: selfie.contentType });
+        if (photoUpload.error) throw photoUpload.error;
+        uploaded.push({ bucket: "profile-photos", path: photoPath });
+        const signed = await supabaseAdmin.storage
+          .from("profile-photos")
+          .createSignedUrl(photoPath, 60 * 60 * 24 * 365);
+        if (signed.error) throw signed.error;
+        photoUrl = signed.data?.signedUrl ?? null;
+      } catch (photoErr) {
+        console.error("[MOVVI PHOTO] falha ao gerar foto pública do motorista:", photoErr);
+      }
 
       const profile = await supabaseAdmin.from("users").upsert(
         {
@@ -183,6 +209,7 @@ export const cadastrarMotorista = createServerFn({ method: "POST" })
           name: data.name,
           email,
           phone: data.phone,
+          avatar_url: photoUrl,
         },
         { onConflict: "auth_user_id" },
       );
@@ -207,12 +234,14 @@ export const cadastrarMotorista = createServerFn({ method: "POST" })
         vehicle_plate: data.vehicle_plate.toUpperCase(),
         vehicle_color: data.vehicle_color,
         vehicle_year: data.vehicle_year,
-        selfie_url: docPaths.selfie,
-        cnh_url: docPaths.cnh,
-        vehicle_document_url: docPaths.veiculo,
+        selfie_url: docMap.selfie.path,
+        cnh_url: docMap.cnh.path,
+        vehicle_document_url: docMap.veiculo.path,
+        photo_url: photoUrl,
         approval_status: "em_analise",
       });
       if (driver.error) throw new Error("Falha ao criar cadastro de motorista.");
+
 
       return {
         ok: true,
