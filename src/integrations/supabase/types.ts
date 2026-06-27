@@ -158,6 +158,45 @@ export type Database = {
         }
         Relationships: []
       }
+      backups: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          error: string | null
+          file_path: string | null
+          id: string
+          size_bytes: number | null
+          status: string
+          tables: Json | null
+          type: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          error?: string | null
+          file_path?: string | null
+          id?: string
+          size_bytes?: number | null
+          status?: string
+          tables?: Json | null
+          type?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          error?: string | null
+          file_path?: string | null
+          id?: string
+          size_bytes?: number | null
+          status?: string
+          tables?: Json | null
+          type?: string
+        }
+        Relationships: []
+      }
       coupon_redemptions: {
         Row: {
           amount: number
@@ -394,6 +433,45 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_channels: {
+        Row: {
+          channel: string
+          created_at: string
+          credentials_secret_name: string | null
+          display_name: string
+          enabled: boolean
+          extra: Json
+          from_address: string | null
+          id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          channel: string
+          created_at?: string
+          credentials_secret_name?: string | null
+          display_name: string
+          enabled?: boolean
+          extra?: Json
+          from_address?: string | null
+          id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          credentials_secret_name?: string | null
+          display_name?: string
+          enabled?: boolean
+          extra?: Json
+          from_address?: string | null
+          id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           body: string | null
@@ -454,6 +532,54 @@ export type Database = {
           sent_at?: string
           sent_by?: string | null
           title?: string
+        }
+        Relationships: []
+      }
+      payment_gateways: {
+        Row: {
+          api_key_secret_name: string | null
+          created_at: string
+          display_name: string
+          enabled: boolean
+          extra: Json
+          id: string
+          mode: string
+          pix_key: string | null
+          pix_key_type: string | null
+          provider: string
+          updated_at: string
+          updated_by: string | null
+          webhook_url: string | null
+        }
+        Insert: {
+          api_key_secret_name?: string | null
+          created_at?: string
+          display_name: string
+          enabled?: boolean
+          extra?: Json
+          id?: string
+          mode?: string
+          pix_key?: string | null
+          pix_key_type?: string | null
+          provider: string
+          updated_at?: string
+          updated_by?: string | null
+          webhook_url?: string | null
+        }
+        Update: {
+          api_key_secret_name?: string | null
+          created_at?: string
+          display_name?: string
+          enabled?: boolean
+          extra?: Json
+          id?: string
+          mode?: string
+          pix_key?: string | null
+          pix_key_type?: string | null
+          provider?: string
+          updated_at?: string
+          updated_by?: string | null
+          webhook_url?: string | null
         }
         Relationships: []
       }
@@ -682,6 +808,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      security_settings: {
+        Row: {
+          audit_logs_enabled: boolean
+          id: number
+          max_login_attempts: number
+          password_policy: Json
+          require_2fa: boolean
+          session_timeout_minutes: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          audit_logs_enabled?: boolean
+          id?: number
+          max_login_attempts?: number
+          password_policy?: Json
+          require_2fa?: boolean
+          session_timeout_minutes?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          audit_logs_enabled?: boolean
+          id?: number
+          max_login_attempts?: number
+          password_policy?: Json
+          require_2fa?: boolean
+          session_timeout_minutes?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
       }
       sos_alerts: {
         Row: {
