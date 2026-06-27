@@ -1418,11 +1418,11 @@ function PassageiroApp() {
             (ride.status === "motorista_a_caminho" ||
               ride.status === "motorista_chegou" ||
               ride.status === "em_viagem") &&
-            driverInfo &&
-            typeof driverInfo.current_lat === "number" &&
-            typeof driverInfo.current_lng === "number" && (
+            rideDriverInfo &&
+            typeof rideDriverInfo.current_lat === "number" &&
+            typeof rideDriverInfo.current_lng === "number" && (
               <Marker
-                position={{ lat: driverInfo.current_lat, lng: driverInfo.current_lng }}
+                position={{ lat: rideDriverInfo.current_lat, lng: rideDriverInfo.current_lng }}
                 icon={{
                   path: "M5 11l1.5-4.5h11L19 11M6 14h12M7.5 17a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Zm12 0a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0ZM5 11h14v4H5z",
                   fillColor: "#8DD92B",
@@ -1430,7 +1430,7 @@ function PassageiroApp() {
                   strokeColor: "#05070D",
                   strokeWeight: 1.6,
                   scale: 1.6,
-                  rotation: typeof driverInfo.current_heading === "number" ? driverInfo.current_heading : 0,
+                  rotation: typeof rideDriverInfo.current_heading === "number" ? rideDriverInfo.current_heading : 0,
                   anchor: new google.maps.Point(12, 14),
                 }}
                 zIndex={9999}
@@ -1570,12 +1570,12 @@ function PassageiroApp() {
       )}
 
       {ride &&
-        driverInfo &&
+        rideDriverInfo &&
         (phase === "motorista_a_caminho" ||
           phase === "motorista_chegou" ||
           phase === "em_viagem") && (
           <MovviSheet snaps={[40, 65]} initial={40}>
-            <DriverEnRoute ride={ride} driver={driverInfo} onCancel={cancelRide} />
+            <DriverEnRoute ride={ride} driver={rideDriverInfo} onCancel={cancelRide} />
           </MovviSheet>
         )}
 
