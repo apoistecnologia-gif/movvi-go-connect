@@ -1,85 +1,104 @@
-# MOVVI Admin — Plano de Conclusão
 
-A entrega é gigantesca (13 módulos novos, todos com CRUD + realtime + exportação). Vou dividir em fases pequenas e verificáveis para não quebrar nada do que já está pronto (Dashboard, Motoristas, Categorias, Preços).
+# Refinamento Enterprise do Painel Administrativo MOVVI
 
-Regras gerais aplicadas a todas as fases:
-- Reuso de `AdminLayout`, `AdminSidebar`, `AdminGuard`, `useRealtimeTable`, `logAdminAction`, `useAppSettings`, `formatBRL`.
-- Zero dado mockado; todas as listagens leem do Supabase.
-- Sidebar é incrementada a cada fase (item habilitado só quando a página existir).
-- Realtime via canais Supabase nas tabelas relevantes.
-- Sem alterar Dashboard, Categorias e Preços existentes.
+Objetivo: elevar o painel ao padrão Uber/99/InDrive, com **tudo persistido no Supabase**, **zero dados mock**, **propagação em tempo real** ao app do passageiro e do motorista, e UI/UX polida — sem quebrar nada do que já funciona.
 
-## Fase A — Migrações de schema que faltam
-Uma única migration cobrindo:
-- `passengers_admin_view` (view leve com agregados: total_rides, completed, cancelled, total_spent, avg_rating, last_login) — calculada por SQL function `get_passenger_stats(uuid)`.
-- Colunas `suspended_at`, `blocked_at`, `block_reason` em `users` (passageiros) — se ainda não existirem.
-- Tabela `admin_users_meta` (role já vive em `user_roles`; aqui só `display_name`, `phone`, `last_login_at`).
-- Atualizar `app_settings` com chaves padrão de "Platform Settings" (platform_name, support_email, support_phone, whatsapp, currency, country, timezone, allow_cash, allow_pix, allow_credit_card, allow_scheduled, require_gps, require_driver_approval, enable_promotions, enable_notifications).
-- Cron `auto_suspend_overdue_subscriptions()` já existe — adicionar `pg_cron` schedule diário.
-- Grants + RLS nas novas estruturas.
-
-## Fase B — Passageiros (`/admin/passageiros`)
-- Lista com busca (nome/email/telefone), filtros (ativo/suspenso/bloqueado), paginação server-side.
-- Drawer de detalhes: perfil, agregados (KPIs), histórico de corridas (últimas 50), avaliação média.
-- Ações: editar, suspender, bloquear, excluir (todos auditados via `logAdminAction`).
-
-## Fase C — Corridas (`/admin/corridas`)
-- Tabela com filtros rápidos (Hoje / Ontem / Semana / Mês / por status) + busca (ID, passageiro, motorista, categoria, cidade).
-- Drawer com mapa Google (`MovviMap`) renderizando origem/destino + polyline, timeline de status, dados completos, ação "Cancelar corrida".
-
-## Fase D — Mapa Operacional (`/admin/mapa`)
-- Mapa fullscreen com camadas alternáveis: motoristas online/offline, solicitações ativas, corridas em andamento.
-- Atualização via Supabase Realtime (`drivers`, `rides`).
-
-## Fase E — Preços (renomear para "Tarifas")
-- Renomear item da sidebar para "Tarifas"; rota `/admin/precos` mantida (já indexada).
-- Ampliar campos editáveis: `base_fare, min_fare, per_km, per_min, free_wait_min, wait_per_min, cancel_fee, extra_stop_fee, airport_fee, toll_fee, night_mult, peak_mult, max_search_radius_km, max_pickup_km, max_wait_min, max_stops`.
-- Botão "Resetar para padrão" e "Pré-visualizar tarifa" (calcula via `src/lib/tariffs.ts`).
-
-## Fase F — Promoções (`/admin/cupons`)
-- CRUD em `coupons`: tipo (percent/fixed/first_ride/free_delivery), max_discount, expires_at, usage_limit, enabled.
-- Listagem de resgates via `coupon_redemptions`.
-
-## Fase G — Assinaturas (`/admin/assinaturas`)
-- CRUD `subscription_plans` (preço mensal, preço promocional, grace period).
-- Lista de `subscriptions` ativas/vencidas, ação "suspender manualmente".
-- Confirmação de que `auto_suspend_overdue_subscriptions` está agendado.
-
-## Fase H — Financeiro (`/admin/financeiro`)
-- Cards de receita (hoje/mês/ano), assinaturas pagas/vencidas, pagamentos pendentes (de `payments`).
-- Gráficos com `recharts` (já é dep do shadcn chart).
-- Export CSV/Excel (via `xlsx` lib) e PDF (via `jspdf`).
-
-## Fase I — Relatórios (`/admin/relatorios`)
-- Geração por tipo (motoristas, passageiros, corridas, receita, assinaturas, categorias).
-- Exportação CSV/Excel/PDF.
-
-## Fase J — Notificações (`/admin/notificacoes`)
-- Form de broadcast → grava em `notifications_broadcast` + fanout para `notifications` (todos / motoristas / passageiros / cidade / categoria / específico).
-- Histórico dos broadcasts.
-
-## Fase K — Configurações da plataforma (`/admin/configuracoes`)
-- Formulário lendo/gravando `app_settings` (campos listados na Fase A).
-
-## Fase L — Administradores (`/admin/administradores`)
-- CRUD de admins: criar via Supabase Admin (server fn protegida com `requireSupabaseAuth` + checagem `has_role('super_admin')`).
-- Atribuição de papéis (`super_admin`, `operations`, `financial`, `support`, `readonly`).
-- Sidebar/Guards passam a respeitar permissões por papel.
-
-## Fase M — Logs do sistema (`/admin/logs`)
-- Lista paginada + filtros (entity, action, actor) sobre `admin_audit_logs` e `admin_login_history`.
-- Trigger de `admin_login_history` no login do admin (`/admin/login`).
+Como é um escopo muito grande, vou entregar em **8 fases sequenciais**, cada uma testável de forma independente. Cada fase termina com o painel funcionando, só com mais recursos do que antes.
 
 ---
 
-**Sequência sugerida de entrega (por turno):**
-1. Fase A (migration) — bloqueante para B/K/L.
-2. Fase B + sidebar update.
-3. Fase C + Fase D (módulos operacionais).
-4. Fase E (expansão Tarifas) + Fase F (Cupons).
-5. Fase G (Assinaturas) + Fase K (Configurações).
-6. Fase H (Financeiro) + Fase I (Relatórios) — exigem `bun add xlsx jspdf jspdf-autotable recharts(?)`.
-7. Fase J (Notificações).
-8. Fase L (Administradores) + Fase M (Logs) — finaliza com governança.
+## Fase 1 — Fundação de dados e Realtime
 
-Confirma que devo seguir nessa ordem (começando agora pela Fase A)? Se preferir priorizar algum módulo específico (ex.: pular direto para Passageiros + Corridas), me diga e ajusto a fila.
+Antes de qualquer UI nova, preciso garantir que tudo tenha onde ser salvo e que mude no app em tempo real.
+
+- Expandir `app_settings` com **todas** as chaves novas (suporte, empresa, Google, regras operacionais, segurança, etc.) com defaults seguros.
+- Nova tabela `payment_gateways` (Mercado Pago, Stripe, Asaas, PagSeguro): `provider`, `enabled`, `mode (sandbox/live)`, `api_key` (criptografada / referência a secret), `webhook_url`, `pix_key`, `extra jsonb`.
+- Nova tabela `notification_channels` (firebase_push, sms, whatsapp, email): credenciais + enabled.
+- Nova tabela `security_settings` (1 linha singleton): max_login_attempts, session_timeout, require_2fa, password_policy jsonb.
+- Nova tabela `backups`: id, type (manual/auto), status, file_path, size, created_at.
+- Expandir `tariff_rules` para cobrir **todos** os campos por categoria (base, mínima, km, min, espera, cancelamento, parada extra, noturno, pico, aeroporto, pedágio, carga, ajudante, escada, peso máx, dist máx).
+- Adicionar a publicação realtime (`ALTER PUBLICATION supabase_realtime ADD TABLE ...`) em `app_settings`, `tariff_rules`, `payment_gateways`, `notification_channels`, `ride_categories` — para que mudanças no admin reflitam **imediatamente** nos apps.
+- Criar hook global `useAppSettings()` (já existe — estender) e `useTariffs(category)` (já existe — estender) que assinam realtime e cacheiam.
+- RLS: leitura pública apenas das chaves não-sensíveis; escrita só para admin.
+
+## Fase 2 — Configurações da Plataforma (reescrita)
+
+Substituir `admin.configuracoes.tsx` por uma página com **abas**:
+- Empresa & Suporte
+- Google & Integrações (mascarando chaves; botão "Testar conexão")
+- Regras Operacionais
+- Recursos (switches)
+- Segurança
+
+Componentes polidos: cards densos, labels com tooltip explicativo, validação Zod por campo, estados de loading/saving por seção, toast de sucesso/erro consistente, mobile responsivo.
+
+## Fase 3 — Pagamentos
+
+Nova rota `/admin/pagamentos`:
+- Toggles por método (Dinheiro, PIX, Crédito, Débito, Carteira) — persistem em `app_settings`.
+- Card por gateway (Mercado Pago, Stripe, Asaas, PagSeguro) com modo sandbox/live, API key (via secrets), webhook URL gerada e copiável, status de conexão.
+- Configuração de PIX (chave + tipo).
+- Assinatura mensal: preço, período de graça, suspensão automática (já existe parcialmente em `subscription_plans` — integrar).
+
+## Fase 4 — Tarifas por categoria (reescrita)
+
+Reescrever `admin.precos.tsx`:
+- Seletor de categoria no topo (Carro, Moto, Entrega, Guincho, Mudança…).
+- Formulário com **todos** os campos da requisição.
+- **Preview de cálculo ao vivo**: usuário digita distância/tempo/horário → mostra o valor final aplicando todas as regras (reaproveita `src/lib/tariffs.ts`).
+- Salvar publica via realtime → app do passageiro recalcula instantaneamente.
+
+## Fase 5 — Mapa Operacional Aprimorado
+
+Reescrever `admin.mapa.tsx`:
+- Toggles de camadas: Motoristas online, Motoristas offline, Solicitações, Corridas aceitas, Passageiros, Heatmap de demanda, Densidade de motoristas, Tráfego (Google `TrafficLayer`).
+- Heatmap via `google.maps.visualization.HeatmapLayer` baseado em corridas dos últimos N minutos.
+- Painel lateral com contadores em tempo real e filtro por cidade/categoria.
+
+## Fase 6 — Relatórios & Dashboards
+
+Expandir `admin.relatorios.tsx` + dashboards dedicados em `/admin/financeiro`:
+- Receita, Assinaturas, Motoristas, Passageiros, Categorias, Demanda por hora, Horários de pico, Top motoristas, Top cidades.
+- Gráficos `recharts` (line, bar, pie, heatmap-like).
+- Filtros de período, exportação CSV mantida.
+
+## Fase 7 — Segurança, Notificações, Backups
+
+- **Notificações**: rota expandida com cards por canal (Firebase, SMS, WhatsApp, Email) + credenciais + teste de envio.
+- **Segurança**: rota nova `/admin/seguranca` com política de senha, 2FA toggle, timeout, tentativas máx, link para logs de auditoria existentes.
+- **Backups**: rota `/admin/backups`. Backup manual aciona uma server function que exporta tabelas críticas para JSON em Storage (`backups` bucket). Backup automático via `pg_cron` diário. Histórico listado, download via signed URL. Restore manual (apenas super_admin) com confirmação dupla.
+
+## Fase 8 — Polimento de UX/UI global
+
+Passe final em **todas** as páginas admin:
+- Skeleton loaders consistentes (substituir spinners genéricos).
+- Empty states ilustrados (ícone + título + descrição + CTA).
+- Mensagens de sucesso/erro padronizadas via `sonner` com ícones.
+- Espaçamento, tipografia (escala consistente: 12/14/16/20/24/32), densidade dos cards.
+- Responsividade mobile: sidebar vira drawer, tabelas viram cards empilhados.
+- Atalho global de busca (⌘K) para navegar entre módulos.
+
+---
+
+## Detalhes técnicos
+
+- Stack mantida: TanStack Start, Supabase, Tailwind, Google Maps connector.
+- Persistência: 100% Supabase (tabelas novas + `app_settings` ampliado).
+- Realtime: publicação Supabase + hooks que reassinam.
+- Chaves sensíveis (Stripe, MP, Firebase, etc.): armazenadas via `add_secret`, nunca no banco em texto puro — o banco guarda apenas referência ao nome da secret.
+- Migrações em SQL único por fase, com `GRANT` obrigatório em toda nova tabela pública.
+- Sem quebrar rotas existentes: as páginas atuais continuam acessíveis durante a migração; a substituição é feita arquivo-a-arquivo.
+
+---
+
+## Confirmação antes de começar
+
+Esse escopo é grande (estimo ~25-35 arquivos novos/editados e ~5 migrações). Posso:
+
+**(A)** Executar tudo sequencialmente sem parar entre fases — vou levar vários turnos e você verá o painel evoluindo a cada commit.
+
+**(B)** Executar fase por fase e te mostrar o resultado entre cada uma, para você validar antes de continuar.
+
+**(C)** Priorizar um subconjunto (ex.: só Fases 1, 2, 4 e 8 agora — as que mais mudam a percepção de qualidade — e deixar Pagamentos/Backups/Segurança para depois).
+
+Qual você prefere? Se não responder, sigo com **(B)** começando pela Fase 1.
