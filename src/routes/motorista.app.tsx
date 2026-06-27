@@ -53,7 +53,7 @@ export const Route = createFileRoute("/motorista/app")({
 
 type LatLng = { lat: number; lng: number };
 type RideRow = Database["public"]["Tables"]["rides"]["Row"];
-type Passenger = { name: string | null; phone: string | null };
+type Passenger = { name: string | null; phone: string | null; avatar_url: string | null };
 
 function decodePolyline(encoded: string): LatLng[] {
   const points: LatLng[] = []; let index = 0, lat = 0, lng = 0;
@@ -527,11 +527,11 @@ function MotoristaApp() {
 
   // carrega dados do passageiro
   useEffect(() => {
-    const pid = active?.passenger_id ?? ratingRide?.passenger_id;
+    const pid = active?.passenger_id ?? ratingRide?.passenger_id ?? incoming?.passenger_id;
     if (!pid) { setPassenger(null); return; }
-    supabase.from("users").select("name, phone").eq("auth_user_id", pid).maybeSingle()
-      .then(({ data }) => setPassenger(data ?? { name: null, phone: null }));
-  }, [active?.passenger_id, ratingRide?.passenger_id]);
+    supabase.from("users").select("name, phone, avatar_url").eq("auth_user_id", pid).maybeSingle()
+      .then(({ data }) => setPassenger(data ?? { name: null, phone: null, avatar_url: null }));
+  }, [active?.passenger_id, ratingRide?.passenger_id, incoming?.passenger_id]);
 
   // countdown da oferta
   useEffect(() => {
