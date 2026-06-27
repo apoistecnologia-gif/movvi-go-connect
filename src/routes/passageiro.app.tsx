@@ -1125,8 +1125,37 @@ function PassageiroApp() {
     };
   }, [rideId]);
 
-
+  /* ---- Re-despacho periódico enquanto a corrida está procurando motorista ---- */
+  const [dispatchDiag, setDispatchDiag] = useState<any>(null);
   useEffect(() => {
+    if (!ride || ride.status !== "procurar_motorista") return;
+    if (ride.current_offer_driver_id) return; // já ofertada — apenas aguardar resposta
+    let cancelled = false;
+    let timer: number | null = null;
+    const tick = async () => {
+      if (cancelled) return;
+      try {
+        const r = await callRedispatch({ data: { rideId: ride.id } });
+        console.log("[MOVVI PASSAGEIRO] re-despacho:", r);
+      } catch (e) {
+        console.warn("[MOVVI PASSAGEIRO] re-despacho falhou:", (e as Error).message);
+      }
+      if (DEV_MODE || isDevelopmentEnvironment()) {
+        try {
+          const diag = await callDiagnose({ data: { rideId: ride.id } });
+          if (!cancelled) setDispatchDiag(diag);
+        } catch { /* silencioso */ }
+      }
+      if (!cancelled) timer = window.setTimeout(tick, 5000);
+    };
+    void tick();
+    return () => {
+      cancelled = true;
+      if (timer != null) window.clearTimeout(timer);
+    };
+  }, [ride?.id, ride?.status, ride?.current_offer_driver_id, callRedispatch, callDiagnose]);
+
+
     const driverId = ride?.driver_id;
     if (!driverId) {
       setDriverInfo(null);
