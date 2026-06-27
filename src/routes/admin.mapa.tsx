@@ -79,8 +79,8 @@ function AdminMapaPage() {
   async function loadCategories() {
     const { data } = await supabase
       .from("ride_categories")
-      .select("slug,name")
-      .order("name");
+      .select("key,label")
+      .order("label");
     setCategories((data ?? []) as RideCategory[]);
   }
 
