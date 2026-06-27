@@ -1,0 +1,235 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+
+const DRIVER_TABLE = "drivers" as const;
+const DRIVER_AUTH_LINK_FIELD = "user_id" as const;
+
+const Categories = ["carros", "motos", "fretes", "guincho", "envios"] as const;
+const Buckets = ["driver-selfies", "driver-cnh", "vehicle-documents"] as const;
+
+const DriverDocumentSchema = z.object({
+  bucket: z.enum(Buckets),
+  label: z.enum(["selfie", "cnh", "veiculo"]),
+  fileName: z.string().min(1),
+  contentType: z.string().min(1),
+  base64: z.string().min(1),
+});
+
+const DriverSignupSchema = z.object({
+  name: z.string().trim().min(3).max(120),
+  email: z.string().trim().email().max(255),
+  phone: z.string().trim().min(10).max(20),
+  password: z.string().min(4).max(72),
+  cpf: z.string().trim().min(11).max(14),
+  birth_date: z.string().optional().nullable(),
+  city: z.string().trim().min(2).max(80),
+  state: z.string().trim().length(2),
+  category: z.enum(Categories),
+  vehicle_model: z.string().trim().min(2).max(80),
+  vehicle_plate: z.string().trim().min(6).max(10),
+  vehicle_color: z.string().trim().min(2).max(40),
+  vehicle_year: z.coerce.number().int().min(1980).max(new Date().getFullYear() + 1),
+  documents: z.tuple([
+    DriverDocumentSchema.extend({ bucket: z.literal("driver-selfies"), label: z.literal("selfie") }),
+    DriverDocumentSchema.extend({ bucket: z.literal("driver-cnh"), label: z.literal("cnh") }),
+    DriverDocumentSchema.extend({ bucket: z.literal("vehicle-documents"), label: z.literal("veiculo") }),
+  ]),
+});
+
+const DriverDiagnosticSchema = z.object({
+  email: z.string().trim().email(),
+});
+
+function isDuplicateAuthError(message: string) {
+  return /already|registered|exists|duplicate/i.test(message);
+}
+
+function authErrorMessage(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  if (isDuplicateAuthError(message)) return "Este e-mail já está cadastrado.";
+  if (/password/i.test(message)) return "Senha inválida. Use no mínimo 4 caracteres.";
+  if (/email/i.test(message)) return "E-mail inválido.";
+  return "Não foi possível criar a conta de autenticação.";
+}
+
+function cleanExt(fileName: string) {
+  return fileName.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "bin";
+}
+
+function decodeBase64(base64: string) {
+  const binary = globalThis.atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+  return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+}
+
+async function removeUploadedFiles(
+  supabaseAdmin: any,
+  uploaded: Array<{ bucket: (typeof Buckets)[number]; path: string }>,
+) {
+  await Promise.allSettled(
+    uploaded.map((item) => supabaseAdmin.storage.from(item.bucket).remove([item.path])),
+  );
+}
+
+function isDevHost(host: string) {
+  return /localhost|127\.0\.0\.1|0\.0\.0\.0|id-preview--|lovableproject\.com|lovable\.app/i.test(host);
+}
+
+export const cadastrarMotorista = createServerFn({ method: "POST" })
+  .inputValidator((input) => DriverSignupSchema.parse(input))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const email = data.email.toLowerCase();
+
+    const created = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password: data.password,
+      email_confirm: true,
+      user_metadata: { name: data.name, phone: data.phone, role: "driver" },
+    });
+
+    if (created.error || !created.data.user) {
+      throw new Error(authErrorMessage(created.error));
+    }
+
+    const authUserId = created.data.user.id;
+    const uploaded: Array<{ bucket: (typeof Buckets)[number]; path: string }> = [];
+
+    try {
+      const uploadedDocs = await Promise.all(
+        data.documents.map(async (doc) => {
+          const path = `${authUserId}/${doc.label}-${Date.now()}.${cleanExt(doc.fileName)}`;
+          const body = decodeBase64(doc.base64);
+          const { error } = await supabaseAdmin.storage
+            .from(doc.bucket)
+            .upload(path, body, { upsert: true, contentType: doc.contentType });
+          if (error) throw new Error(`Falha no upload de ${doc.label}.`);
+          uploaded.push({ bucket: doc.bucket, path });
+          return [doc.label, path] as const;
+        }),
+      );
+
+      const docPaths = Object.fromEntries(uploadedDocs) as Record<"selfie" | "cnh" | "veiculo", string>;
+
+      const profile = await supabaseAdmin.from("users").upsert(
+        {
+          auth_user_id: authUserId,
+          name: data.name,
+          email,
+          phone: data.phone,
+        },
+        { onConflict: "auth_user_id" },
+      );
+      if (profile.error) throw new Error("Falha ao criar perfil do usuário.");
+
+      const role = await supabaseAdmin
+        .from("user_roles")
+        .upsert({ user_id: authUserId, role: "driver" }, { onConflict: "user_id,role" });
+      if (role.error) throw new Error("Falha ao definir perfil de motorista.");
+
+      const driver = await supabaseAdmin.from(DRIVER_TABLE).insert({
+        user_id: authUserId,
+        name: data.name,
+        email,
+        phone: data.phone,
+        cpf: data.cpf,
+        birth_date: data.birth_date || null,
+        city: data.city,
+        state: data.state.toUpperCase(),
+        category: data.category,
+        vehicle_model: data.vehicle_model,
+        vehicle_plate: data.vehicle_plate.toUpperCase(),
+        vehicle_color: data.vehicle_color,
+        vehicle_year: data.vehicle_year,
+        selfie_url: docPaths.selfie,
+        cnh_url: docPaths.cnh,
+        vehicle_document_url: docPaths.veiculo,
+        approval_status: "em_analise",
+      });
+      if (driver.error) throw new Error("Falha ao criar cadastro de motorista.");
+
+      return {
+        ok: true,
+        message: "Cadastro enviado para análise.",
+        table: DRIVER_TABLE,
+        auth_link_field: DRIVER_AUTH_LINK_FIELD,
+        auth_user_id: authUserId,
+        status: "em_analise" as const,
+      };
+    } catch (error) {
+      await removeUploadedFiles(supabaseAdmin, uploaded);
+      await Promise.allSettled([
+        supabaseAdmin.from(DRIVER_TABLE).delete().eq("user_id", authUserId),
+        supabaseAdmin.from("user_roles").delete().eq("user_id", authUserId).eq("role", "driver"),
+        supabaseAdmin.from("users").delete().eq("auth_user_id", authUserId),
+        supabaseAdmin.auth.admin.deleteUser(authUserId),
+      ]);
+      throw new Error(error instanceof Error ? error.message : "Não foi possível concluir o cadastro.");
+    }
+  });
+
+export const diagnosticarAuthMotorista = createServerFn({ method: "POST" })
+  .inputValidator((input) => DriverDiagnosticSchema.parse(input))
+  .handler(async ({ data }) => {
+    const { getRequest } = await import("@tanstack/react-start/server");
+    const host = getRequest()?.headers.get("host") ?? "";
+    if (host && !isDevHost(host)) {
+      return { error: "Diagnóstico disponível apenas em ambiente de desenvolvimento." };
+    }
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const email = data.email.toLowerCase();
+    const result: {
+      auth_exists: boolean;
+      driver_exists: boolean;
+      auth_user_id: string | null;
+      status: string | null;
+      table: string;
+      auth_link_field: string;
+      related_profile_exists: boolean;
+      related_profile_table: string;
+      error: string | null;
+    } = {
+      auth_exists: false,
+      driver_exists: false,
+      auth_user_id: null,
+      status: null,
+      table: DRIVER_TABLE,
+      auth_link_field: DRIVER_AUTH_LINK_FIELD,
+      related_profile_exists: false,
+      related_profile_table: "users",
+      error: null,
+    };
+
+    try {
+      const users = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+      if (users.error) throw users.error;
+      const authUser = users.data.users.find((u) => u.email?.toLowerCase() === email) ?? null;
+      result.auth_exists = !!authUser;
+      result.auth_user_id = authUser?.id ?? null;
+
+      let driverQuery = supabaseAdmin
+        .from(DRIVER_TABLE)
+        .select("user_id, email, approval_status, motivo_reprovacao, created_at")
+        .eq("email", email);
+      if (authUser?.id) driverQuery = driverQuery.or(`user_id.eq.${authUser.id},email.eq.${email}`);
+      const driver = await driverQuery.maybeSingle();
+      if (driver.error) throw driver.error;
+      result.driver_exists = !!driver.data;
+      result.auth_user_id = result.auth_user_id ?? driver.data?.user_id ?? null;
+      result.status = driver.data?.approval_status ?? null;
+
+      const profile = await supabaseAdmin
+        .from("users")
+        .select("auth_user_id")
+        .or(`auth_user_id.eq.${result.auth_user_id ?? "00000000-0000-0000-0000-000000000000"},email.eq.${email}`)
+        .maybeSingle();
+      if (profile.error) throw profile.error;
+      result.related_profile_exists = !!profile.data;
+    } catch (error) {
+      result.error = error instanceof Error ? error.message : "Erro desconhecido.";
+    }
+
+    return result;
+  });

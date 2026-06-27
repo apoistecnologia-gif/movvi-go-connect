@@ -20,24 +20,32 @@ const schema = z.object({
 
 function DriverLoginPage() {
   const navigate = useNavigate();
-  const { error, loading, handle } = useAuthForm();
+  const { error, setError, loading, handle } = useAuthForm();
 
   const onSubmit = handle(async (form) => {
     const parsed = schema.parse(Object.fromEntries(form.entries()));
     const { data, error: e } = await supabase.auth.signInWithPassword(parsed);
-    if (e || !data.user) throw new Error("E-mail ou senha inválidos");
+    if (e || !data.user) throw e ?? new Error("E-mail ou senha inválidos.");
 
-    const { data: driver } = await supabase
+    const { data: driver, error: driverError } = await supabase
       .from("drivers")
-      .select("approval_status")
+      .select("approval_status, motivo_reprovacao")
       .eq("user_id", data.user.id)
       .maybeSingle();
+    if (driverError) throw new Error("Falha ao consultar cadastro de motorista.");
 
-    if (driver?.approval_status === "aprovado") {
-      navigate({ to: "/motorista/app" });
-    } else {
-      navigate({ to: "/motorista/status" });
+    if (!driver) {
+      await supabase.auth.signOut();
+      setError("Cadastro de motorista não encontrado.");
+      return;
     }
+
+    if (driver.approval_status === "aprovado") {
+      navigate({ to: "/motorista/app" });
+      return;
+    }
+
+    navigate({ to: "/motorista/status" });
   });
 
   return (
