@@ -37,7 +37,7 @@ type Ride = {
   driver_lng: number | null;
   driver_id: string | null;
 };
-type RideCategory = { slug: string; name: string };
+type RideCategory = { key: string; label: string };
 
 const ACCEPTED_STATUSES = new Set(["motorista_a_caminho", "motorista_chegou"]);
 const ALL = "__all__";
