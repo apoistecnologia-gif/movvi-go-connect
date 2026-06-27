@@ -85,6 +85,10 @@ const CriarCorridaInput = z.object({
   estimated_price: z.number().nullable().optional(),
 });
 const RideIdInput = z.object({ rideId: z.string().uuid() });
+const IniciarCorridaInput = z.object({
+  rideId: z.string().uuid(),
+  safety_code: z.string().trim().regex(/^\d{4}$/, "Código deve ter 4 dígitos"),
+});
 const FinalizarInput = z.object({ rideId: z.string().uuid(), final_price: z.number().optional() });
 const CancelarInput = z.object({ rideId: z.string().uuid(), motivo: z.string().optional() });
 const AvaliarPassageiroInput = z.object({
