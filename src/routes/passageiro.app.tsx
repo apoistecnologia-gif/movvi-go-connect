@@ -1174,7 +1174,7 @@ function PassageiroApp() {
     gpsState !== "unavailable"
   ) {
     return (
-      <div className="flex min-h-[100dvh] items-center justify-center bg-background text-foreground">
+      <div className="mx-auto flex h-[100dvh] w-full max-w-[430px] items-center justify-center bg-background text-foreground">
         <div className="flex flex-col items-center gap-3">
           <div className="h-10 w-10 rounded-full border-2 border-primary border-t-transparent animate-spin" />
           <p className="text-sm text-muted-foreground">Obtendo sua localização...</p>
@@ -1183,34 +1183,25 @@ function PassageiroApp() {
     );
   }
 
-  const needsPermissionScreen =
-    !position &&
-    (permissionStatus === "prompt" ||
-      permissionStatus === "unsupported" ||
-      permissionStatus === "denied" ||
-      gpsState === "denied" ||
-      gpsState === "unavailable");
-
-  if (needsPermissionScreen) {
-    const mode: "prompt" | "denied" =
-      permissionStatus === "denied" ||
-      gpsState === "denied" ||
-      gpsState === "unavailable"
-        ? "denied"
-        : "prompt";
+  // Permissão pendente (prompt) e ainda não tentamos nada → tela de explicação.
+  // Se o GPS falhou ou foi negado mas o usuário já interagiu, NÃO bloqueamos
+  // mais a tela: deixamos o app abrir com o mapa centralizado no Brasil e
+  // permitimos digitar a origem manualmente.
+  if (!position && (permissionStatus === "prompt" || permissionStatus === "unsupported") && gpsState === "idle") {
     return (
       <GpsDeniedScreen
-        mode={mode}
+        mode="prompt"
         onRetry={requestGps}
         onHome={() => { void navigate({ to: "/" }); }}
         onManual={setManualLocation}
         errorMessage={gpsErrorMsg}
-        requesting={gpsState === "requesting"}
+        requesting={false}
       />
     );
 
   }
   const gpsFailed = (gpsState === "denied" || gpsState === "unavailable") && !!gpsErrorMsg;
+
 
 
 
