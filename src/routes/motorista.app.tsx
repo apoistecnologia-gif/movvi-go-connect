@@ -976,10 +976,38 @@ function ActiveRidePanel({
   ride: RideRow; passenger: Passenger | null;
   etaSeconds: number | null; legKm: number | null;
   onArrive: () => Promise<void> | void;
-  onStart: () => Promise<void> | void;
+  onStart: (code: string) => Promise<void> | void;
   onComplete: () => Promise<void> | void;
   onCancel: () => Promise<void> | void;
 }) {
+  const [pinOpen, setPinOpen] = useState(false);
+  const [pinCode, setPinCode] = useState("");
+  const [pinError, setPinError] = useState<string | null>(null);
+  const [pinBusy, setPinBusy] = useState(false);
+
+  async function submitPin() {
+    if (pinBusy) return;
+    if (!/^\d{4}$/.test(pinCode)) {
+      setPinError("Digite os 4 dígitos do código.");
+      return;
+    }
+    setPinBusy(true);
+    setPinError(null);
+    try {
+      await onStart(pinCode);
+      setPinOpen(false);
+      setPinCode("");
+    } catch (e) {
+      const msg = (e as Error)?.message ?? "";
+      setPinError(
+        /[Cc]ódigo incorreto/.test(msg)
+          ? "Código incorreto. Peça o código ao passageiro e tente novamente."
+          : msg || "Não foi possível iniciar a corrida.",
+      );
+    } finally {
+      setPinBusy(false);
+    }
+  }
   const phase = ride.status;
   const toPickup = phase === "motorista_a_caminho" || phase === "motorista_chegou";
 
