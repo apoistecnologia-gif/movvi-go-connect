@@ -26,6 +26,8 @@ import {
   purgeForeignMapCache,
 } from "@/lib/googleMaps";
 import { useDriverBroadcast } from "@/hooks/useDriverBroadcast";
+import { loadDriverProfile } from "@/lib/driverProfile";
+
 import { computeRoute } from "@/lib/routes.functions";
 import {
   aceitarCorrida,
