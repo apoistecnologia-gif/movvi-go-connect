@@ -114,9 +114,6 @@ export const cadastrarMotorista = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const email = data.email.toLowerCase();
 
-    let authUserId: string | null = null;
-    let createdNewAuth = false;
-
     const created = await supabaseAdmin.auth.admin.createUser({
       email,
       password: data.password,
@@ -139,13 +136,11 @@ export const cadastrarMotorista = createServerFn({ method: "POST" })
       if (existingDriver.error) throw new Error("Falha ao verificar cadastro existente.");
       if (existingDriver.data) throw new Error("Este e-mail já está cadastrado.");
 
-      authUserId = existingAuthUser.id;
-    } else {
-      authUserId = created.data.user.id;
-      createdNewAuth = true;
+      throw new Error(
+        "Já existe uma conta de autenticação com este e-mail, mas sem cadastro de motorista. Use o diagnóstico temporário para localizar o registro.",
+      );
     }
-    if (!authUserId) throw new Error("Não foi possível identificar o usuário de autenticação.");
-    const finalAuthUserId = authUserId;
+    const finalAuthUserId = created.data.user.id;
 
     const uploaded: Array<{ bucket: (typeof Buckets)[number]; path: string }> = [];
 
@@ -180,13 +175,6 @@ export const cadastrarMotorista = createServerFn({ method: "POST" })
         .from("user_roles")
         .upsert({ user_id: finalAuthUserId, role: "driver" }, { onConflict: "user_id,role" });
       if (role.error) throw new Error("Falha ao definir perfil de motorista.");
-
-      const authUpdate = await supabaseAdmin.auth.admin.updateUserById(finalAuthUserId, {
-        password: data.password,
-        email_confirm: true,
-        user_metadata: { name: data.name, phone: data.phone, role: "driver" },
-      });
-      if (authUpdate.error) throw new Error("Falha ao preparar login do motorista.");
 
       const driver = await supabaseAdmin.from(DRIVER_TABLE).insert({
         user_id: finalAuthUserId,
@@ -223,7 +211,7 @@ export const cadastrarMotorista = createServerFn({ method: "POST" })
         supabaseAdmin.from(DRIVER_TABLE).delete().eq("user_id", finalAuthUserId),
         supabaseAdmin.from("user_roles").delete().eq("user_id", finalAuthUserId).eq("role", "driver"),
         supabaseAdmin.from("users").delete().eq("auth_user_id", finalAuthUserId),
-        ...(createdNewAuth ? [supabaseAdmin.auth.admin.deleteUser(finalAuthUserId)] : []),
+        supabaseAdmin.auth.admin.deleteUser(finalAuthUserId),
       ]);
       throw new Error(error instanceof Error ? error.message : "Não foi possível concluir o cadastro.");
     }
