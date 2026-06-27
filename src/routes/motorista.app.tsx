@@ -764,8 +764,10 @@ function MotoristaApp() {
           comment={ratingComment} setComment={setRatingComment}
           submitting={submittingRating}
           submitted={ratingSubmitted}
+          errorMessage={ratingError}
           onSubmit={submitRating}
           onDismiss={dismissRating}
+          onSkip={skipRating}
         />
       )}
 
