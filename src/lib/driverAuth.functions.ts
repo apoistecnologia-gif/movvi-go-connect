@@ -144,13 +144,15 @@ export const cadastrarMotorista = createServerFn({ method: "POST" })
       authUserId = created.data.user.id;
       createdNewAuth = true;
     }
+    if (!authUserId) throw new Error("Não foi possível identificar o usuário de autenticação.");
+    const finalAuthUserId = authUserId;
 
     const uploaded: Array<{ bucket: (typeof Buckets)[number]; path: string }> = [];
 
     try {
       const uploadedDocs = await Promise.all(
         data.documents.map(async (doc) => {
-          const path = `${authUserId}/${doc.label}-${Date.now()}.${cleanExt(doc.fileName)}`;
+          const path = `${finalAuthUserId}/${doc.label}-${Date.now()}.${cleanExt(doc.fileName)}`;
           const body = decodeBase64(doc.base64);
           const { error } = await supabaseAdmin.storage
             .from(doc.bucket)
@@ -165,7 +167,7 @@ export const cadastrarMotorista = createServerFn({ method: "POST" })
 
       const profile = await supabaseAdmin.from("users").upsert(
         {
-          auth_user_id: authUserId,
+          auth_user_id: finalAuthUserId,
           name: data.name,
           email,
           phone: data.phone,
@@ -176,10 +178,10 @@ export const cadastrarMotorista = createServerFn({ method: "POST" })
 
       const role = await supabaseAdmin
         .from("user_roles")
-        .upsert({ user_id: authUserId, role: "driver" }, { onConflict: "user_id,role" });
+        .upsert({ user_id: finalAuthUserId, role: "driver" }, { onConflict: "user_id,role" });
       if (role.error) throw new Error("Falha ao definir perfil de motorista.");
 
-      const authUpdate = await supabaseAdmin.auth.admin.updateUserById(authUserId, {
+      const authUpdate = await supabaseAdmin.auth.admin.updateUserById(finalAuthUserId, {
         password: data.password,
         email_confirm: true,
         user_metadata: { name: data.name, phone: data.phone, role: "driver" },
@@ -187,7 +189,7 @@ export const cadastrarMotorista = createServerFn({ method: "POST" })
       if (authUpdate.error) throw new Error("Falha ao preparar login do motorista.");
 
       const driver = await supabaseAdmin.from(DRIVER_TABLE).insert({
-        user_id: authUserId,
+        user_id: finalAuthUserId,
         name: data.name,
         email,
         phone: data.phone,
@@ -212,16 +214,16 @@ export const cadastrarMotorista = createServerFn({ method: "POST" })
         message: "Cadastro enviado para análise.",
         table: DRIVER_TABLE,
         auth_link_field: DRIVER_AUTH_LINK_FIELD,
-        auth_user_id: authUserId,
+        auth_user_id: finalAuthUserId,
         status: "em_analise" as const,
       };
     } catch (error) {
       await removeUploadedFiles(supabaseAdmin, uploaded);
       await Promise.allSettled([
-        supabaseAdmin.from(DRIVER_TABLE).delete().eq("user_id", authUserId),
-        supabaseAdmin.from("user_roles").delete().eq("user_id", authUserId).eq("role", "driver"),
-        supabaseAdmin.from("users").delete().eq("auth_user_id", authUserId),
-        ...(createdNewAuth ? [supabaseAdmin.auth.admin.deleteUser(authUserId)] : []),
+        supabaseAdmin.from(DRIVER_TABLE).delete().eq("user_id", finalAuthUserId),
+        supabaseAdmin.from("user_roles").delete().eq("user_id", finalAuthUserId).eq("role", "driver"),
+        supabaseAdmin.from("users").delete().eq("auth_user_id", finalAuthUserId),
+        ...(createdNewAuth ? [supabaseAdmin.auth.admin.deleteUser(finalAuthUserId)] : []),
       ]);
       throw new Error(error instanceof Error ? error.message : "Não foi possível concluir o cadastro.");
     }
