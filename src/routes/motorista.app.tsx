@@ -259,13 +259,19 @@ function MotoristaApp() {
     if (!incoming) return;
     try {
       const r = await callAccept({ data: { rideId: incoming.id } });
+      console.log("[MOVVI MOTORISTA] corrida aceita:", incoming.id);
       setActive(r as RideRow); setIncoming(null);
       sheetRef.current?.snapTo(55);
-    } catch (e) { console.error(e); setIncoming(null); }
+    } catch (e) {
+      console.error("[MOVVI MOTORISTA] erro ao aceitar:", e);
+      setIncoming(null);
+    }
   }
   async function handleReject() {
     if (!incoming) return;
+    console.log("[MOVVI MOTORISTA] corrida recusada:", incoming.id);
     try { await callReject({ data: { rideId: incoming.id } }); }
+    catch (e) { console.error("[MOVVI MOTORISTA] erro ao recusar:", e); }
     finally { setIncoming(null); }
   }
 
