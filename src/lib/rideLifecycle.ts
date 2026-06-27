@@ -385,3 +385,27 @@ export const cancelarPeloMotorista = createServerFn({ method: "POST" })
       { column: "driver_id", value: userId },
     );
   });
+
+/**
+ * Motorista avalia o passageiro após a corrida finalizada.
+ * Não altera status, mas centraliza updates na tabela `rides`.
+ */
+export const avaliarPassageiro = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => AvaliarPassageiroInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const upd = await supabase
+      .from("rides")
+      .update({
+        passenger_rating: data.stars,
+        passenger_rating_comment: data.comment ?? null,
+      })
+      .eq("id", data.rideId)
+      .eq("driver_id", userId)
+      .eq("status", RIDE_STATUS.FINALIZADA)
+      .select("id")
+      .single();
+    if (upd.error) throw new Error("Não foi possível registrar a avaliação: " + upd.error.message);
+    return { ok: true };
+  });
