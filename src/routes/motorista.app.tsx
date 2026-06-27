@@ -263,19 +263,62 @@ function MotoristaApp() {
     };
   }, [requestLocation]);
 
-  // Toggle Online/Offline — se faltar GPS, solicita antes
+  // Toggle Online/Offline.
+  // IMPORTANTE: a chamada a navigator.geolocation.getCurrentPosition é feita
+  // SINCRONAMENTE dentro do click handler para preservar o gesto do usuário
+  // (alguns navegadores bloqueiam o prompt se houver await antes).
   const toggleOnline = useCallback(() => {
-    if (!position) {
-      console.log("[MOVVI MOTORISTA] tentou ficar online sem GPS, solicitando permissão");
-      requestLocation();
+    // Se já está online → fica offline imediatamente
+    if (online) {
+      console.log("[MOVVI MOTORISTA] indo offline");
+      setOnline(false);
       return;
     }
-    setOnline((prev) => {
-      const next = !prev;
-      console.log("[MOVVI MOTORISTA] online:", next, "userId:", userId, "pos:", position);
-      return next;
-    });
-  }, [position, userId, requestLocation]);
+    // Offline → tentar ficar online
+    if (!("geolocation" in navigator)) {
+      setGpsMessage("Não foi possível obter sua localização. Ative o GPS e permita o acesso.");
+      return;
+    }
+    if (statusBlock) return;
+    setGpsStatus("loading");
+    setGpsMessage(null);
+    console.log("[MOVVI MOTORISTA] FICAR ONLINE clicado → solicitando GPS");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = pos.coords.latitude, lng = pos.coords.longitude;
+        console.log("[MOVVI MOTORISTA] GPS ok:", { lat, lng });
+        if (!isBrazilCoordinate(lat, lng)) {
+          setGpsStatus("error");
+          setGpsMessage("Não foi possível obter sua localização. Ative o GPS e permita o acesso.");
+          return;
+        }
+        setPosition({ lat, lng });
+        setGpsStatus("granted");
+        setGpsMessage(null);
+        // persiste localização imediatamente
+        if (userId) {
+          supabase.from("drivers").update({
+            current_lat: lat, current_lng: lng,
+            last_location_at: new Date().toISOString(),
+          }).eq("user_id", userId).then();
+        }
+        if (mapRef.current && !initialCenteredRef.current) {
+          mapRef.current.panTo({ lat, lng });
+          mapRef.current.setZoom(16);
+          initialCenteredRef.current = true;
+        }
+        startWatch();
+        setOnline(true);
+        console.log("[MOVVI MOTORISTA] online: true");
+      },
+      (err) => {
+        console.warn("[MOVVI MOTORISTA] GPS erro:", err.code, err.message);
+        setGpsStatus(err.code === err.PERMISSION_DENIED ? "denied" : err.code === err.TIMEOUT ? "timeout" : "error");
+        setGpsMessage("Não foi possível obter sua localização. Ative o GPS e permita o acesso.");
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
+    );
+  }, [online, statusBlock, userId, startWatch]);
 
   // offline ao desmontar
   useEffect(() => () => { if (online && userId)
