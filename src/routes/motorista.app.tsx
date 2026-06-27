@@ -117,6 +117,7 @@ function MotoristaApp() {
   const [ratingComment, setRatingComment] = useState("");
   const [submittingRating, setSubmittingRating] = useState(false);
   const [ratingSubmitted, setRatingSubmitted] = useState(false);
+  const [ratingError, setRatingError] = useState<string | null>(null);
   const ratedRidesRef = useRef<Set<string>>(new Set());
 
   const mapRef = useRef<google.maps.Map | null>(null);
