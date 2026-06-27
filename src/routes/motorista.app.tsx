@@ -185,7 +185,7 @@ function MotoristaApp() {
     }
     setGpsStatus("loading");
     setGpsMessage(null);
-    console.log("[MOVVI MOTORISTA] solicitando permissão de GPS");
+    console.log("[MOVVI MOTORISTA] solicitando GPS manualmente");
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const lat = pos.coords.latitude, lng = pos.coords.longitude;
@@ -230,11 +230,12 @@ function MotoristaApp() {
           setGpsMessage("Erro ao obter localização. Tente novamente.");
         }
       },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
+      { enableHighAccuracy: false, timeout: 20000, maximumAge: 300000 },
     );
   }, [startWatch]);
 
-  // Verifica permissão ao montar; se já concedida, busca imediatamente
+  // Verifica permissão ao montar sem solicitar localização automaticamente.
+  // A captura real do GPS deve acontecer somente no clique em FICAR ONLINE.
   useEffect(() => {
     purgeForeignMapCache();
     if (!("geolocation" in navigator)) {
@@ -246,8 +247,10 @@ function MotoristaApp() {
     if (permsApi?.query) {
       permsApi.query({ name: "geolocation" as PermissionName }).then((st) => {
         console.log("[MOVVI MOTORISTA] permissão GPS:", st.state);
-        if (st.state === "granted") requestLocation();
-        else if (st.state === "denied") {
+        if (st.state === "granted") {
+          setGpsStatus("granted");
+          setGpsMessage(null);
+        } else if (st.state === "denied") {
           setGpsStatus("denied");
           setGpsMessage("Localização negada. Ative a permissão do navegador para receber corridas.");
         } else {
@@ -263,7 +266,7 @@ function MotoristaApp() {
         watchIdRef.current = null;
       }
     };
-  }, [requestLocation]);
+  }, []);
 
   // Toggle Online/Offline.
   // IMPORTANTE: a chamada a navigator.geolocation.getCurrentPosition é feita
@@ -283,8 +286,8 @@ function MotoristaApp() {
     }
     if (statusBlock) return;
     setGpsStatus("loading");
-    setGpsMessage(null);
-    console.log("[MOVVI MOTORISTA] FICAR ONLINE clicado → solicitando GPS");
+    setGpsMessage("Obtendo sua localização...");
+    console.log("[MOVVI MOTORISTA] FICAR ONLINE clicado → solicitando GPS no clique");
 
     const onSuccess = (pos: GeolocationPosition) => {
       const lat = pos.coords.latitude, lng = pos.coords.longitude;
@@ -294,12 +297,16 @@ function MotoristaApp() {
         setGpsMessage("Não foi possível obter sua localização. Verifique se o GPS está ativo e tente novamente.");
         return;
       }
-      setPosition({ lat, lng });
+      const heading = Number.isFinite(pos.coords.heading as number) ? (pos.coords.heading as number) : null;
+      const speed = Number.isFinite(pos.coords.speed as number) ? (pos.coords.speed as number) : null;
+      setPosition({ lat, lng, heading, speed });
       setGpsStatus("granted");
       setGpsMessage(null);
       if (userId) {
         supabase.from("drivers").update({
           current_lat: lat, current_lng: lng,
+          current_heading: heading,
+          current_speed: speed,
           last_location_at: new Date().toISOString(),
         }).eq("user_id", userId).then();
       }
@@ -319,23 +326,41 @@ function MotoristaApp() {
       setGpsMessage("Não foi possível obter sua localização. Verifique se o GPS está ativo e tente novamente.");
     };
 
-    navigator.geolocation.getCurrentPosition(
-      onSuccess,
-      (err) => {
-        console.warn("[MOVVI MOTORISTA] GPS tentativa 1 falhou:", err.code, err.message);
-        if (err.code === err.TIMEOUT) {
-          // retry com baixa precisão
+    const requestFastLocation = () => {
+      navigator.geolocation.getCurrentPosition(
+        onSuccess,
+        (err) => {
+          console.warn("[MOVVI MOTORISTA] GPS tentativa rápida falhou:", err.code, err.message);
+          if (err.code === err.PERMISSION_DENIED) {
+            finalFail(err);
+            return;
+          }
           navigator.geolocation.getCurrentPosition(
             onSuccess,
             finalFail,
-            { enableHighAccuracy: false, timeout: 20000, maximumAge: 10000 },
+            { enableHighAccuracy: true, timeout: 30000, maximumAge: 300000 },
           );
-        } else {
-          finalFail(err);
-        }
-      },
-      { enableHighAccuracy: true, timeout: 20000, maximumAge: 10000 },
-    );
+        },
+        { enableHighAccuracy: false, timeout: 12000, maximumAge: 300000 },
+      );
+    };
+
+    const permsApi = (navigator as Navigator & { permissions?: { query: (p: { name: PermissionName }) => Promise<PermissionStatus> } }).permissions;
+    if (permsApi?.query) {
+      permsApi.query({ name: "geolocation" as PermissionName })
+        .then((st) => {
+          console.log("[MOVVI MOTORISTA] permissão GPS no clique:", st.state);
+          if (st.state === "denied") {
+            setGpsStatus("denied");
+            setGpsMessage("Localização negada. Ative a permissão do navegador para receber corridas.");
+            return;
+          }
+          requestFastLocation();
+        })
+        .catch(requestFastLocation);
+    } else {
+      requestFastLocation();
+    }
   }, [online, statusBlock, userId, startWatch]);
 
   // offline ao desmontar
