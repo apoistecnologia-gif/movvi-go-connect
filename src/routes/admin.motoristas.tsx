@@ -11,6 +11,8 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
+import { getDriverDocumentUrls } from "@/lib/driverDocs.functions";
 import { MovviHeader } from "@/components/MovviHeader";
 import { AdminGuard } from "@/components/AdminGuard";
 import { Button } from "@/components/ui/button";
@@ -329,27 +331,37 @@ function DriverCard({
 
 function DetailsDialog({ driver, onClose }: { driver: Driver | null; onClose: () => void }) {
   const [urls, setUrls] = useState<Record<string, string | null>>({});
+  const [urlError, setUrlError] = useState<string | null>(null);
+  const fetchUrls = useServerFn(getDriverDocumentUrls);
 
   useEffect(() => {
     if (!driver) return;
     let cancelled = false;
+    setUrls({});
+    setUrlError(null);
+    console.log("[MOVVI DOCS] admin lendo documentos:", {
+      driverId: driver.id,
+      selfie_url: driver.selfie_url,
+      cnh_url: driver.cnh_url,
+      vehicle_document_url: driver.vehicle_document_url,
+    });
     (async () => {
-      const out: Record<string, string | null> = {};
-      for (const [field, bucket] of Object.entries(BUCKETS) as [keyof typeof BUCKETS, string][]) {
-        const path = driver[field];
-        if (!path) {
-          out[field] = null;
-          continue;
-        }
-        const { data } = await supabase.storage.from(bucket).createSignedUrl(path, 600);
-        out[field] = data?.signedUrl ?? null;
+      try {
+        const result = await fetchUrls({ data: { driverId: driver.id } });
+        if (cancelled) return;
+        console.log("[MOVVI DOCS] URLs assinadas:", result);
+        setUrls(result);
+      } catch (err) {
+        if (cancelled) return;
+        const message = err instanceof Error ? err.message : "Falha ao gerar URLs.";
+        console.error("[MOVVI DOCS] erro ao buscar urls:", message);
+        setUrlError(message);
       }
-      if (!cancelled) setUrls(out);
     })();
     return () => {
       cancelled = true;
     };
-  }, [driver]);
+  }, [driver, fetchUrls]);
 
   if (!driver) return null;
   const meta = TAB_META[driver.approval_status];
