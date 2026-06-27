@@ -40,7 +40,11 @@ const schema = z.object({
   vehicle_model: z.string().trim().min(2).max(80),
   vehicle_plate: z.string().trim().min(6).max(10),
   vehicle_color: z.string().trim().min(2).max(40),
-  vehicle_year: z.coerce.number().int().min(1980).max(new Date().getFullYear() + 1),
+  vehicle_year: z.coerce
+    .number({ invalid_type_error: "Informe um ano válido." })
+    .int({ message: "Informe um ano válido." })
+    .min(1971, { message: "O veículo é muito antigo." })
+    .max(new Date().getFullYear() + 1, { message: "O ano informado é maior que o permitido." }),
 });
 
 type UploadTarget = {
