@@ -902,6 +902,7 @@ function PassageiroApp() {
       console.warn("[MOVVI] Origem manual fora do Brasil — aceitando assim mesmo.", p);
     }
     console.log("[MOVVI] Origem manual selecionada", p);
+    void logGpsTelemetry("manual_origin_set", { extra: { lat: p.lat, lng: p.lng } });
     setPosition(p);
     setGpsState("granted");
     gpsStateRef.current = "granted";
