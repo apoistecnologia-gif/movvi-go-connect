@@ -962,6 +962,7 @@ function PassageiroApp() {
         statusRef = status;
         const apply = (s: PermissionState) => {
           try {
+            void logGpsTelemetry("permissions_query_ok", { extra: { state: s } });
             if (s === "granted") {
               console.log("[MOVVI] Permissão de localização concedida");
               setPermissionStatus("granted");
@@ -986,6 +987,7 @@ function PassageiroApp() {
         if (cancelled) return;
         window.clearTimeout(watchdog);
         console.warn("[MOVVI] permissions.query falhou:", err);
+        void logGpsTelemetry("permissions_query_error", { message: (err as Error)?.message ?? String(err) });
         setPermissionStatus("prompt");
         try { requestGps(); } catch (e) { console.warn("[MOVVI] requestGps catch falhou:", e); }
       });
