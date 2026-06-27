@@ -53,6 +53,7 @@ import {
   type TariffMap,
 } from "@/lib/rideCategories";
 import { loadTariffs } from "@/lib/tariffs";
+import { logGpsTelemetry } from "@/lib/gpsTelemetry";
 
 import type { Database } from "@/integrations/supabase/types";
 
@@ -754,6 +755,7 @@ function PassageiroApp() {
     gpsStateRef.current = "requesting";
     gpsRequestInFlightRef.current = true;
     setGpsErrorMsg("");
+    void logGpsTelemetry("retry_clicked");
 
     const onSuccess = (pos: GeolocationPosition) => {
       gpsRequestInFlightRef.current = false;
@@ -761,6 +763,7 @@ function PassageiroApp() {
         const lat = pos?.coords?.latitude;
         const lng = pos?.coords?.longitude;
         console.log("[MOVVI] Permissão concedida — coordenadas recebidas:", lat, lng, "accuracy:", pos?.coords?.accuracy);
+        void logGpsTelemetry("getcurrentposition_success", { extra: { lat, lng, accuracy: pos?.coords?.accuracy } });
 
         if (
           typeof lat !== "number" ||
@@ -839,6 +842,7 @@ function PassageiroApp() {
           (err) => {
             gpsRequestInFlightRef.current = false;
             console.error("[MOVVI] Erro (low accuracy):", err);
+            void logGpsTelemetry("getcurrentposition_error", { code: err.code, message: err.message, extra: { phase: "low_accuracy" } });
             setGpsState("denied");
             gpsStateRef.current = "denied";
             if (err.code === err.PERMISSION_DENIED) {
@@ -863,6 +867,7 @@ function PassageiroApp() {
         onSuccess,
         (err) => {
           console.warn("[MOVVI] Erro (high accuracy):", err);
+          void logGpsTelemetry("getcurrentposition_error", { code: err.code, message: err.message, extra: { phase: "high_accuracy" } });
           if (err.code === err.PERMISSION_DENIED) {
             gpsRequestInFlightRef.current = false;
             setGpsState("denied");
@@ -897,6 +902,7 @@ function PassageiroApp() {
       console.warn("[MOVVI] Origem manual fora do Brasil — aceitando assim mesmo.", p);
     }
     console.log("[MOVVI] Origem manual selecionada", p);
+    void logGpsTelemetry("manual_origin_set", { extra: { lat: p.lat, lng: p.lng } });
     setPosition(p);
     setGpsState("granted");
     gpsStateRef.current = "granted";
@@ -925,6 +931,7 @@ function PassageiroApp() {
       setPermissionStatus("unsupported");
       setGpsState("unavailable");
       setGpsErrorMsg("Seu navegador não oferece geolocalização.");
+      void logGpsTelemetry("geolocation_unsupported");
       return;
     }
 
@@ -956,6 +963,7 @@ function PassageiroApp() {
         statusRef = status;
         const apply = (s: PermissionState) => {
           try {
+            void logGpsTelemetry("permissions_query_ok", { extra: { state: s } });
             if (s === "granted") {
               console.log("[MOVVI] Permissão de localização concedida");
               setPermissionStatus("granted");
@@ -980,6 +988,7 @@ function PassageiroApp() {
         if (cancelled) return;
         window.clearTimeout(watchdog);
         console.warn("[MOVVI] permissions.query falhou:", err);
+        void logGpsTelemetry("permissions_query_error", { message: (err as Error)?.message ?? String(err) });
         setPermissionStatus("prompt");
         try { requestGps(); } catch (e) { console.warn("[MOVVI] requestGps catch falhou:", e); }
       });
@@ -1481,7 +1490,22 @@ function PassageiroApp() {
         requesting={false}
       />
     );
+  }
 
+  // Permissão negada / indisponível e ainda SEM origem: mostra a tela dedicada
+  // com o seletor manual de endereço (origem). O usuário pode escolher cidade
+  // ou endereço para liberar o mapa e calcular a rota normalmente.
+  if (!position && (permissionStatus === "denied" || gpsState === "denied" || gpsState === "unavailable")) {
+    return (
+      <GpsDeniedScreen
+        mode="denied"
+        onRetry={requestGps}
+        onHome={() => { void navigate({ to: "/" }); }}
+        onManual={setManualLocation}
+        errorMessage={gpsErrorMsg || "Não conseguimos acessar sua localização. Selecione sua origem manualmente abaixo."}
+        requesting={gpsState === "requesting"}
+      />
+    );
   }
   const gpsFailed = (gpsState === "denied" || gpsState === "unavailable") && !!gpsErrorMsg;
 

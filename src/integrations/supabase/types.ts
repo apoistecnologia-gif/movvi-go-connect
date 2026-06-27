@@ -140,6 +140,42 @@ export type Database = {
         }
         Relationships: []
       }
+      gps_diagnostics: {
+        Row: {
+          code: string | null
+          created_at: string
+          event: string
+          extra: Json | null
+          id: string
+          message: string | null
+          url: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          code?: string | null
+          created_at?: string
+          event: string
+          extra?: Json | null
+          id?: string
+          message?: string | null
+          url?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          code?: string | null
+          created_at?: string
+          event?: string
+          extra?: Json | null
+          id?: string
+          message?: string | null
+          url?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           body: string | null
