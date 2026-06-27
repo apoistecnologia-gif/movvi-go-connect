@@ -40,6 +40,16 @@ function AdminLoginPage() {
       throw new Error("Acesso restrito a administradores.");
     }
 
+    await supabase.from("admin_login_history").insert({
+      user_id: data.user.id,
+      email: data.user.email ?? parsed.email,
+      user_agent: navigator.userAgent,
+      success: true,
+    });
+    await supabase.from("admin_users_meta").upsert(
+      { user_id: data.user.id, last_login_at: new Date().toISOString() },
+      { onConflict: "user_id" },
+    );
     navigate({ to: "/admin/dashboard" });
   });
 
