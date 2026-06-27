@@ -43,7 +43,7 @@ import { DEV_MODE, isDevelopmentEnvironment } from "@/lib/environment";
 
 import { computeRoute, type RouteResult } from "@/lib/routes.functions";
 import { reverseGeocode, type GeocodeResult } from "@/lib/geocode.functions";
-import { criarCorrida, cancelarPeloPassageiro } from "@/lib/rideLifecycle";
+import { criarCorrida, cancelarPeloPassageiro, redispatchRide, diagnoseDispatch } from "@/lib/rideLifecycle";
 import { useNearbyDrivers } from "@/hooks/useNearbyDrivers";
 import {
   RIDE_CATEGORIES,
@@ -402,6 +402,8 @@ function PassageiroApp() {
   const callRequestRide = useServerFn(criarCorrida);
   const callCancelByPassenger = useServerFn(cancelarPeloPassageiro);
   const callReverseGeocode = useServerFn(reverseGeocode);
+  const callRedispatch = useServerFn(redispatchRide);
+  const callDiagnose = useServerFn(diagnoseDispatch);
 
   const [userId, setUserId] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>("");
@@ -1123,6 +1125,36 @@ function PassageiroApp() {
     };
   }, [rideId]);
 
+  /* ---- Re-despacho periódico enquanto a corrida está procurando motorista ---- */
+  const [dispatchDiag, setDispatchDiag] = useState<any>(null);
+  useEffect(() => {
+    if (!ride || ride.status !== "procurar_motorista") return;
+    if (ride.current_offer_driver_id) return; // já ofertada — apenas aguardar resposta
+    let cancelled = false;
+    let timer: number | null = null;
+    const tick = async () => {
+      if (cancelled) return;
+      try {
+        const r = await callRedispatch({ data: { rideId: ride.id } });
+        console.log("[MOVVI PASSAGEIRO] re-despacho:", r);
+      } catch (e) {
+        console.warn("[MOVVI PASSAGEIRO] re-despacho falhou:", (e as Error).message);
+      }
+      if (DEV_MODE || isDevelopmentEnvironment()) {
+        try {
+          const diag = await callDiagnose({ data: { rideId: ride.id } });
+          if (!cancelled) setDispatchDiag(diag);
+        } catch { /* silencioso */ }
+      }
+      if (!cancelled) timer = window.setTimeout(tick, 5000);
+    };
+    void tick();
+    return () => {
+      cancelled = true;
+      if (timer != null) window.clearTimeout(timer);
+    };
+  }, [ride?.id, ride?.status, ride?.current_offer_driver_id, callRedispatch, callDiagnose]);
+
 
   useEffect(() => {
     const driverId = ride?.driver_id;
@@ -1585,6 +1617,30 @@ function PassageiroApp() {
             onCancel={cancelRide}
           />
         </MovviSheet>
+      )}
+
+      {(DEV_MODE || isDevelopmentEnvironment()) && ride && ride.status === "procurar_motorista" && dispatchDiag && (
+        <div className="pointer-events-auto absolute left-2 top-20 z-50 max-w-[280px] rounded-lg bg-black/85 p-2 font-mono text-[10px] text-white ring-1 ring-white/20">
+          <div className="mb-1 font-bold text-primary">[DEV] DISPATCH</div>
+          <div>category: {dispatchDiag.ride?.category}</div>
+          <div>offer_driver: {dispatchDiag.ride?.current_offer_driver_id ?? "—"}</div>
+          <div>total: {dispatchDiag.totals?.total} · online: {dispatchDiag.totals?.online} · aprov: {dispatchDiag.totals?.aprovados}</div>
+          <div>com GPS: {dispatchDiag.totals?.com_gps} · cat match: {dispatchDiag.totals?.categoria_match} · elegíveis: {dispatchDiag.totals?.elegiveis}</div>
+          <div className="mt-1 border-t border-white/20 pt-1">
+            {dispatchDiag.radii?.map((r: any) => (
+              <div key={r.km}>raio {r.km}km → {r.count}</div>
+            ))}
+          </div>
+          {dispatchDiag.drivers?.length > 0 && (
+            <div className="mt-1 border-t border-white/20 pt-1">
+              {dispatchDiag.drivers.slice(0, 5).map((d: any) => (
+                <div key={d.user_id} className="truncate">
+                  {d.name ?? d.user_id.slice(0, 6)} · {d.dist_km != null ? `${d.dist_km.toFixed(1)}km` : "?"} · {d.reasons.length ? d.reasons.join(",") : "OK"}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       )}
 
       {ride &&
