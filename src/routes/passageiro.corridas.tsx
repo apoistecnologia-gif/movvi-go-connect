@@ -1,16 +1,186 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ClipboardList } from "lucide-react";
-import { SectionPage } from "@/components/SectionPage";
+import { useEffect, useState } from "react";
+import { ClipboardList, Star, MapPin, Navigation2 } from "lucide-react";
+import { MovviHeader } from "@/components/MovviHeader";
+import { BottomNav, PASSENGER_NAV } from "@/components/BottomNav";
+import { supabase } from "@/integrations/supabase/client";
+
+type RideRow = {
+  id: string;
+  status: string;
+  origin_name: string;
+  destination_name: string;
+  final_price: number | null;
+  estimated_price: number | null;
+  distance_km: number | null;
+  duration_min: number | null;
+  completed_at: string | null;
+  created_at: string;
+  driver_name: string | null;
+  driver_rating: number | null;
+  driver_rating_comment: string | null;
+  passenger_rated_at: string | null;
+};
+
+function StarRow({ value }: { value: number }) {
+  return (
+    <div className="flex items-center gap-0.5" aria-label={`Avaliação: ${value} de 5`}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <Star
+          key={n}
+          className={`h-3.5 w-3.5 ${n <= value ? "fill-primary text-primary" : "text-muted-foreground/40"}`}
+        />
+      ))}
+    </div>
+  );
+}
+
+function RideCard({ ride }: { ride: RideRow }) {
+  const price = ride.final_price ?? ride.estimated_price;
+  const date = ride.completed_at ?? ride.created_at;
+  return (
+    <article
+      data-testid="ride-card"
+      className="rounded-2xl border border-border bg-card p-4 text-sm"
+    >
+      <header className="mb-3 flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs text-muted-foreground">
+            {new Date(date).toLocaleString("pt-BR")}
+          </p>
+          {ride.driver_name && (
+            <p className="font-medium">Motorista: {ride.driver_name}</p>
+          )}
+        </div>
+        {price !== null && (
+          <p className="text-base font-bold text-primary">
+            R$ {Number(price).toFixed(2)}
+          </p>
+        )}
+      </header>
+
+      <div className="space-y-1.5 text-xs">
+        <p className="flex items-start gap-2">
+          <MapPin className="mt-0.5 h-3.5 w-3.5 text-primary" />
+          <span className="truncate">{ride.origin_name}</span>
+        </p>
+        <p className="flex items-start gap-2">
+          <Navigation2 className="mt-0.5 h-3.5 w-3.5 text-primary" />
+          <span className="truncate">{ride.destination_name}</span>
+        </p>
+      </div>
+
+      {ride.status === "finalizada" && (
+        <div
+          data-testid="rating-info"
+          className="mt-3 rounded-xl border border-border/60 bg-background/40 p-3"
+        >
+          {ride.passenger_rated_at && ride.driver_rating ? (
+            <>
+              <p className="mb-1 text-xs font-medium text-foreground">
+                Avaliação enviada ao motorista
+              </p>
+              <div className="flex items-center gap-2">
+                <StarRow value={ride.driver_rating} />
+                <span className="text-xs text-muted-foreground">
+                  {ride.driver_rating}/5
+                </span>
+              </div>
+              {ride.driver_rating_comment && (
+                <p className="mt-1.5 text-xs italic text-muted-foreground">
+                  “{ride.driver_rating_comment}”
+                </p>
+              )}
+            </>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Você ainda não avaliou esta corrida.
+            </p>
+          )}
+        </div>
+      )}
+    </article>
+  );
+}
+
+function PassengerRidesPage() {
+  const [rides, setRides] = useState<RideRow[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const { data: auth } = await supabase.auth.getUser();
+      const uid = auth?.user?.id;
+      if (!uid) {
+        if (active) setRides([]);
+        return;
+      }
+      const { data, error } = await supabase
+        .from("rides")
+        .select(
+          "id,status,origin_name,destination_name,final_price,estimated_price,distance_km,duration_min,completed_at,created_at,driver_name,driver_rating,driver_rating_comment,passenger_rated_at",
+        )
+        .eq("passenger_id", uid)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (!active) return;
+      if (error) setError(error.message);
+      else setRides((data ?? []) as RideRow[]);
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  return (
+    <div className="flex min-h-screen flex-col bg-background">
+      <MovviHeader logoutRedirect="/" />
+      <main className="flex-1 px-4 py-6 pb-24">
+        <div className="container mx-auto max-w-xl">
+          <header className="mb-5 flex items-center gap-3">
+            <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/15 text-primary">
+              <ClipboardList className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="font-display text-xl font-bold">Minhas corridas</h1>
+              <p className="text-xs text-muted-foreground">
+                Histórico das suas viagens com a MOVVI.
+              </p>
+            </div>
+          </header>
+
+          {error && (
+            <p className="rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
+              {error}
+            </p>
+          )}
+
+          {rides === null && (
+            <p className="text-sm text-muted-foreground">Carregando…</p>
+          )}
+
+          {rides && rides.length === 0 && (
+            <p className="rounded-2xl border border-dashed border-border bg-card/40 p-5 text-sm text-muted-foreground">
+              Você ainda não realizou nenhuma corrida.
+            </p>
+          )}
+
+          {rides && rides.length > 0 && (
+            <div className="space-y-3">
+              {rides.map((r) => (
+                <RideCard key={r.id} ride={r} />
+              ))}
+            </div>
+          )}
+        </div>
+      </main>
+      <BottomNav items={PASSENGER_NAV} />
+    </div>
+  );
+}
 
 export const Route = createFileRoute("/passageiro/corridas")({
   head: () => ({ meta: [{ title: "Minhas Corridas — MOVVI DRIVE" }] }),
-  component: () => (
-    <SectionPage
-      role="passenger"
-      title="Minhas corridas"
-      description="Seu histórico de viagens aparecerá aqui."
-      icon={ClipboardList}
-      next="Quando você concluir sua primeira corrida na MOVVI, ela aparecerá aqui com origem, destino, motorista, valor e avaliação."
-    />
-  ),
+  component: PassengerRidesPage,
 });
