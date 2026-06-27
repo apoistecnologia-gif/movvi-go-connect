@@ -31,8 +31,15 @@ const DriverSignupSchema = z.object({
   vehicle_year: z.coerce
     .number({ invalid_type_error: "Informe um ano válido." })
     .int({ message: "Informe um ano válido." })
-    .min(1971, { message: "O veículo é muito antigo." })
-    .max(new Date().getFullYear() + 1, { message: "O ano informado é maior que o permitido." }),
+    .superRefine((val, ctx) => {
+      if (val < 1971) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "O veículo é muito antigo." });
+      }
+      const maxYear = Math.max(new Date().getFullYear() + 1, 2026);
+      if (val > maxYear) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "O ano informado é maior que o permitido." });
+      }
+    }),
   documents: z.tuple([
     DriverDocumentSchema.extend({ bucket: z.literal("driver-selfies"), label: z.literal("selfie") }),
     DriverDocumentSchema.extend({ bucket: z.literal("driver-cnh"), label: z.literal("cnh") }),
