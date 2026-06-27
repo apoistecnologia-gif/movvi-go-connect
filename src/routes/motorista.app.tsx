@@ -286,6 +286,47 @@ function MotoristaApp() {
     };
   }, []);
 
+  // Ativa o motorista como ONLINE com uma coordenada brasileira válida.
+  // Usado tanto pelo GPS real quanto pelo modo teste (preview/dev).
+  const activateOnlineWithCoords = useCallback(
+    (lat: number, lng: number, heading: number | null, speed: number | null, isTest: boolean) => {
+      if (!isBrazilCoordinate(lat, lng)) {
+        console.warn("[MOVVI MOTORISTA] activate ignorado — coord inválida:", { lat, lng });
+        return;
+      }
+      setPosition({ lat, lng, heading, speed });
+      setGpsStatus("granted");
+      setGpsMessage(isTest ? "Modo teste ativo com localização no Brasil." : null);
+      if (userId) {
+        supabase.from("drivers").update({
+          current_lat: lat, current_lng: lng,
+          current_heading: heading,
+          current_speed: speed,
+          last_location_at: new Date().toISOString(),
+        }).eq("user_id", userId).then(({ error }) => {
+          if (error) console.warn("[MOVVI MOTORISTA] erro salvando localização:", error.message);
+          else console.log("[MOVVI MOTORISTA] localização salva:", { lat, lng, isTest });
+        });
+      }
+      if (mapRef.current) {
+        mapRef.current.panTo({ lat, lng });
+        mapRef.current.setZoom(16);
+        initialCenteredRef.current = true;
+      }
+      if (!isTest) startWatch();
+      setOnline(true);
+      console.log(`[MOVVI MOTORISTA] online: true (${isTest ? "modo teste" : "GPS real"})`);
+    },
+    [userId, startWatch],
+  );
+
+  // Modo teste (apenas preview/dev): usa coordenada de Itainópolis/PI.
+  const useTestLocation = useCallback(() => {
+    if (!isDevelopmentEnvironment()) return;
+    console.log("[MOVVI MOTORISTA] ativando modo teste com coordenada do Brasil");
+    activateOnlineWithCoords(TEST_LOCATION_BR.lat, TEST_LOCATION_BR.lng, null, null, true);
+  }, [activateOnlineWithCoords]);
+
   // Toggle Online/Offline.
   // IMPORTANTE: a chamada a navigator.geolocation.getCurrentPosition é feita
   // SINCRONAMENTE dentro do click handler para preservar o gesto do usuário
