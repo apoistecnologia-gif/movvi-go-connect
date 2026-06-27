@@ -708,11 +708,14 @@ function MotoristaApp() {
    ============================================================ */
 function IdleBottomPanel({
   driverName, online, disabled, toggleOnline, stats, gpsMessage, loading,
+  canUseTestLocation, onUseTestLocation,
 }: {
   driverName: string; online: boolean; disabled: boolean;
   toggleOnline: () => void; stats: { rides: number; earnings: number };
   gpsMessage: string | null;
   loading: boolean;
+  canUseTestLocation: boolean;
+  onUseTestLocation: () => void;
 }) {
   // Espaço para BottomNav flutuante (~84px + safe-area).
   const navReserve = "calc(env(safe-area-inset-bottom) + 84px)";
