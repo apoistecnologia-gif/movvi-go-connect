@@ -110,6 +110,16 @@ function MotoristaApp() {
   const mapRef = useRef<google.maps.Map | null>(null);
   const sheetRef = useRef<MovviSheetHandle | null>(null);
 
+  // Refs para evitar recriação do canal Realtime e impedir loop de oferta
+  const activeRef = useRef<RideRow | null>(null);
+  const incomingRef = useRef<RideRow | null>(null);
+  const ratingRef = useRef<RideRow | null>(null);
+  // Corridas que o motorista já tratou (aceitou/recusou) — NUNCA reabrir
+  const handledRidesRef = useRef<Set<string>>(new Set());
+  useEffect(() => { activeRef.current = active; }, [active]);
+  useEffect(() => { incomingRef.current = incoming; }, [incoming]);
+  useEffect(() => { ratingRef.current = ratingRide; }, [ratingRide]);
+
   useDriverBroadcast(userId, online, position);
 
   // sessão + aprovação + perfil
