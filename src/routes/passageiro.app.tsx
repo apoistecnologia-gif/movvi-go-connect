@@ -2521,7 +2521,7 @@ function GpsDeniedScreen({
     setManualError("Digite um endereço no Brasil e selecione uma opção da lista.");
   }
 
-  const showDevBadge = isDevelopmentEnvironment();
+  const showDevBadge = DEV_MODE && isDevelopmentEnvironment();
 
   return (
     <div className="relative flex min-h-[100dvh] flex-col items-center justify-center bg-background px-6 text-center text-foreground">
