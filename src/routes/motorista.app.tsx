@@ -608,10 +608,18 @@ function MotoristaApp() {
     setSubmittingRating(true);
     try {
       await callRate({ data: { rideId: ratingRide.id, stars, comment: ratingComment || null } });
-      setRatingRide(null); setRatingComment(""); setStars(5);
+      ratedRidesRef.current.add(ratingRide.id);
+      setRatingSubmitted(true);
     } catch (e) {
       console.warn("[MOVVI MOTORISTA] erro ao avaliar:", (e as Error).message);
     } finally { setSubmittingRating(false); }
+  }
+
+  function dismissRating() {
+    setRatingRide(null);
+    setRatingSubmitted(false);
+    setRatingComment("");
+    setStars(5);
   }
 
   const center = position ?? BRAZIL_CENTER;
