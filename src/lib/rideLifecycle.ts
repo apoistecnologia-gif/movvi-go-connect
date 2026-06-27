@@ -234,20 +234,45 @@ export const criarCorrida = createServerFn({ method: "POST" })
     return { rideId: ins.data.id };
   });
 
-/** Motorista aceita uma oferta. Só vale se a corrida estava ofertada a ele. */
+/** Motorista aceita uma oferta. Só vale se a corrida estava ofertada a ele.
+ *  Também grava um snapshot dos dados do motorista na própria corrida
+ *  (driver_name, driver_phone, driver_vehicle, driver_lat, driver_lng),
+ *  para o passageiro renderizar imediatamente sem depender de outra leitura. */
 export const aceitarCorrida = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => RideIdInput.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     await assertDriverApproved(supabase, userId);
+
+    // snapshot do motorista
+    const drv = await supabase
+      .from("drivers")
+      .select("name, phone, vehicle_model, vehicle_plate, vehicle_color, current_lat, current_lng")
+      .eq("user_id", userId)
+      .maybeSingle();
+    const d = drv.data;
+    const vehicle =
+      d && (d.vehicle_model || d.vehicle_plate)
+        ? [d.vehicle_color, d.vehicle_model, d.vehicle_plate]
+            .filter((x): x is string => !!x && String(x).trim().length > 0)
+            .join(" • ")
+        : null;
+
+    const patch: Partial<RideUpdate> = {
+      driver_id: userId,
+      status: RIDE_STATUS.MOTORISTA_A_CAMINHO,
+      accepted_at: new Date().toISOString(),
+      driver_name: d?.name ?? null,
+      driver_phone: d?.phone ?? null,
+      driver_vehicle: vehicle,
+      driver_lat: d?.current_lat ?? null,
+      driver_lng: d?.current_lng ?? null,
+    };
+
     const upd = await supabase
       .from("rides")
-      .update({
-        driver_id: userId,
-        status: RIDE_STATUS.MOTORISTA_A_CAMINHO,
-        accepted_at: new Date().toISOString(),
-      })
+      .update(patch)
       .eq("id", data.rideId)
       .eq("status", RIDE_STATUS.PROCURAR_MOTORISTA)
       .eq("current_offer_driver_id", userId)
@@ -409,3 +434,16 @@ export const avaliarPassageiro = createServerFn({ method: "POST" })
     if (upd.error) throw new Error("Não foi possível registrar a avaliação: " + upd.error.message);
     return { ok: true };
   });
+
+// ---------- Aliases oficiais (nomes em inglês) ----------
+// Mesma máquina de estados — uma única fonte de verdade para a tabela `rides`.
+// Use estes nomes a partir de novos call sites; os nomes em português continuam
+// válidos para não quebrar telas existentes.
+export const acceptRide        = aceitarCorrida;
+export const rejectRide        = recusarCorrida;
+export const markDriverEnRoute = aceitarCorrida;   // procurar_motorista → motorista_a_caminho
+export const markDriverArrived = informarChegada;  // motorista_a_caminho → motorista_chegou
+export const startRide         = iniciarCorrida;   // motorista_chegou   → em_viagem
+export const finishRide        = finalizarCorrida; // em_viagem          → finalizada
+export const cancelRideByPassenger = cancelarPeloPassageiro;
+export const cancelRideByDriver    = cancelarPeloMotorista;
