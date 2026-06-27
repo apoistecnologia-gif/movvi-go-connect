@@ -28,7 +28,7 @@ const schema = z.object({
   name: z.string().trim().min(3, "Nome muito curto").max(120),
   email: z.string().trim().email("E-mail inválido").max(255),
   phone: z.string().trim().min(10, "Telefone inválido").max(20),
-  password: z.string().min(8, "Mínimo 8 caracteres").max(72),
+  password: z.string().min(4, "Mínimo 4 caracteres").max(72),
   cpf: z.string().trim().min(11, "CPF inválido").max(14),
   birth_date: z.string().optional(),
   city: z.string().trim().min(2).max(80),
