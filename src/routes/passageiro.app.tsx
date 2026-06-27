@@ -1512,7 +1512,7 @@ function PassageiroApp() {
             error={error}
             selectedCategoryKey={selectedCategoryKey}
             setSelectedCategoryKey={setSelectedCategoryKey}
-            driversCount={drivers.length}
+            driversCount={nearbyCount}
             tariffs={tariffs}
             onSubmit={submitRide}
             searchInputRef={searchInputRef}
