@@ -461,6 +461,52 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_ride_as_driver: {
+        Args: { _ride_id: string }
+        Returns: {
+          accepted_at: string | null
+          cancel_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          category: Database["public"]["Enums"]["ride_category"]
+          completed_at: string | null
+          created_at: string
+          current_offer_driver_id: string | null
+          destination_lat: number
+          destination_lng: number
+          destination_name: string
+          distance_km: number | null
+          driver_id: string | null
+          driver_lat: number | null
+          driver_lng: number | null
+          driver_name: string | null
+          driver_phone: string | null
+          driver_rating: number | null
+          driver_rating_comment: string | null
+          driver_vehicle: string | null
+          duration_min: number | null
+          estimated_price: number | null
+          final_price: number | null
+          id: string
+          origin_lat: number
+          origin_lng: number
+          origin_name: string
+          passenger_id: string
+          passenger_rating: number | null
+          passenger_rating_comment: string | null
+          payment_method: string | null
+          rejected_driver_ids: string[]
+          started_at: string | null
+          status: Database["public"]["Enums"]["ride_status"]
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "rides"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
