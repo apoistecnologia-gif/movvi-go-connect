@@ -526,10 +526,10 @@ function MotoristaApp() {
     if (!ratingRide) return;
     setSubmittingRating(true);
     try {
-      await supabase.from("rides")
-        .update({ passenger_rating: stars, passenger_rating_comment: ratingComment || null })
-        .eq("id", ratingRide.id);
+      await callRate({ data: { rideId: ratingRide.id, stars, comment: ratingComment || null } });
       setRatingRide(null); setRatingComment(""); setStars(5);
+    } catch (e) {
+      console.warn("[MOVVI MOTORISTA] erro ao avaliar:", (e as Error).message);
     } finally { setSubmittingRating(false); }
   }
 
