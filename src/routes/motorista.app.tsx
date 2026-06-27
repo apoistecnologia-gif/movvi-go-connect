@@ -27,6 +27,11 @@ import {
 } from "@/lib/googleMaps";
 import { useDriverBroadcast } from "@/hooks/useDriverBroadcast";
 import { loadDriverProfile } from "@/lib/driverProfile";
+import { isDevelopmentEnvironment } from "@/lib/environment";
+
+// Coordenada de teste (Itainópolis/PI) — usada apenas em ambientes de preview/dev
+// quando o GPS real do navegador não retorna uma coordenada brasileira válida.
+const TEST_LOCATION_BR = { lat: -7.446, lng: -41.478 } as const;
 
 import { computeRoute } from "@/lib/routes.functions";
 import {
@@ -281,6 +286,47 @@ function MotoristaApp() {
     };
   }, []);
 
+  // Ativa o motorista como ONLINE com uma coordenada brasileira válida.
+  // Usado tanto pelo GPS real quanto pelo modo teste (preview/dev).
+  const activateOnlineWithCoords = useCallback(
+    (lat: number, lng: number, heading: number | null, speed: number | null, isTest: boolean) => {
+      if (!isBrazilCoordinate(lat, lng)) {
+        console.warn("[MOVVI MOTORISTA] activate ignorado — coord inválida:", { lat, lng });
+        return;
+      }
+      setPosition({ lat, lng, heading, speed });
+      setGpsStatus("granted");
+      setGpsMessage(isTest ? "Modo teste ativo com localização no Brasil." : null);
+      if (userId) {
+        supabase.from("drivers").update({
+          current_lat: lat, current_lng: lng,
+          current_heading: heading,
+          current_speed: speed,
+          last_location_at: new Date().toISOString(),
+        }).eq("user_id", userId).then(({ error }) => {
+          if (error) console.warn("[MOVVI MOTORISTA] erro salvando localização:", error.message);
+          else console.log("[MOVVI MOTORISTA] localização salva:", { lat, lng, isTest });
+        });
+      }
+      if (mapRef.current) {
+        mapRef.current.panTo({ lat, lng });
+        mapRef.current.setZoom(16);
+        initialCenteredRef.current = true;
+      }
+      if (!isTest) startWatch();
+      setOnline(true);
+      console.log(`[MOVVI MOTORISTA] online: true (${isTest ? "modo teste" : "GPS real"})`);
+    },
+    [userId, startWatch],
+  );
+
+  // Modo teste (apenas preview/dev): usa coordenada de Itainópolis/PI.
+  const useTestLocation = useCallback(() => {
+    if (!isDevelopmentEnvironment()) return;
+    console.log("[MOVVI MOTORISTA] ativando modo teste com coordenada do Brasil");
+    activateOnlineWithCoords(TEST_LOCATION_BR.lat, TEST_LOCATION_BR.lng, null, null, true);
+  }, [activateOnlineWithCoords]);
+
   // Toggle Online/Offline.
   // IMPORTANTE: a chamada a navigator.geolocation.getCurrentPosition é feita
   // SINCRONAMENTE dentro do click handler para preservar o gesto do usuário
@@ -308,34 +354,16 @@ function MotoristaApp() {
       if (!isBrazilCoordinate(rawLat, rawLng)) {
         console.warn("[MOVVI MOTORISTA] GPS fora do Brasil — bloqueando online:", { lat: rawLat, lng: rawLng });
         setGpsStatus("error");
-        setGpsMessage("Sua localização não parece estar no Brasil. Ative o GPS real do aparelho e tente novamente.");
+        setGpsMessage(
+          isDevelopmentEnvironment()
+            ? "Sua localização está fora do Brasil. Use a localização de teste para continuar."
+            : "Sua localização não parece estar no Brasil. Ative o GPS real do aparelho e tente novamente.",
+        );
         return;
       }
-      const lat = rawLat, lng = rawLng;
       const heading = Number.isFinite(pos.coords.heading as number) ? (pos.coords.heading as number) : null;
       const speed = Number.isFinite(pos.coords.speed as number) ? (pos.coords.speed as number) : null;
-      setPosition({ lat, lng, heading, speed });
-      setGpsStatus("granted");
-      setGpsMessage(null);
-      if (userId) {
-        supabase.from("drivers").update({
-          current_lat: lat, current_lng: lng,
-          current_heading: heading,
-          current_speed: speed,
-          last_location_at: new Date().toISOString(),
-        }).eq("user_id", userId).then(({ error }) => {
-          if (error) console.warn("[MOVVI MOTORISTA] erro salvando localização:", error.message);
-          else console.log("[MOVVI MOTORISTA] localização válida salva:", { lat, lng });
-        });
-      }
-      if (mapRef.current && !initialCenteredRef.current) {
-        mapRef.current.panTo({ lat, lng });
-        mapRef.current.setZoom(16);
-        initialCenteredRef.current = true;
-      }
-      startWatch();
-      setOnline(true);
-      console.log("[MOVVI MOTORISTA] online: true (coordenada válida no Brasil)");
+      activateOnlineWithCoords(rawLat, rawLng, heading, speed, false);
     };
 
 
@@ -638,6 +666,12 @@ function MotoristaApp() {
           stats={todayStats}
           gpsMessage={gpsMessage}
           loading={gpsStatus === "loading"}
+          canUseTestLocation={
+            !online &&
+            isDevelopmentEnvironment() &&
+            (gpsStatus === "error" || gpsStatus === "denied" || gpsStatus === "timeout")
+          }
+          onUseTestLocation={useTestLocation}
         />
       )}
 
@@ -674,11 +708,14 @@ function MotoristaApp() {
    ============================================================ */
 function IdleBottomPanel({
   driverName, online, disabled, toggleOnline, stats, gpsMessage, loading,
+  canUseTestLocation, onUseTestLocation,
 }: {
   driverName: string; online: boolean; disabled: boolean;
   toggleOnline: () => void; stats: { rides: number; earnings: number };
   gpsMessage: string | null;
   loading: boolean;
+  canUseTestLocation: boolean;
+  onUseTestLocation: () => void;
 }) {
   // Espaço para BottomNav flutuante (~84px + safe-area).
   const navReserve = "calc(env(safe-area-inset-bottom) + 84px)";
@@ -723,6 +760,17 @@ function IdleBottomPanel({
           <div className="rounded-lg bg-destructive/10 px-3 py-1.5 text-[11px] text-destructive ring-1 ring-destructive/30">
             {gpsMessage}
           </div>
+        )}
+
+        {/* Botão de modo teste — apenas em preview/dev quando o GPS real falha */}
+        {canUseTestLocation && (
+          <button
+            type="button"
+            onClick={onUseTestLocation}
+            className="w-full rounded-xl border border-dashed border-primary/60 bg-primary/10 px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-primary transition hover:bg-primary/20"
+          >
+            Usar localização de teste no Brasil
+          </button>
         )}
 
         {/* Botão principal — SEMPRE FICAR ONLINE / FICAR OFFLINE */}
