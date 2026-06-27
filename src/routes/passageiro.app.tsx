@@ -692,49 +692,78 @@ function PassageiroApp() {
 
     const onSuccess = (pos: GeolocationPosition) => {
       gpsRequestInFlightRef.current = false;
-      const lat = pos.coords.latitude;
-      const lng = pos.coords.longitude;
-      console.log("[MOVVI] GPS recebido:", lat, lng, "accuracy:", pos.coords.accuracy);
+      try {
+        const lat = pos?.coords?.latitude;
+        const lng = pos?.coords?.longitude;
+        console.log("[MOVVI] Permissão concedida — coordenadas recebidas:", lat, lng, "accuracy:", pos?.coords?.accuracy);
 
-      const insideBR = isBrazilCoordinate(lat, lng);
-      if (!insideBR) {
-        console.warn("[MOVVI] Aviso: coordenada fora do Brasil — aceitando mesmo assim.", { lat, lng });
-        setGpsErrorMsg(
-          "Sua localização parece estar fora do Brasil. Você pode digitar a origem manualmente se preferir.",
-        );
-      } else {
-        setGpsErrorMsg("");
+        if (
+          typeof lat !== "number" ||
+          typeof lng !== "number" ||
+          !Number.isFinite(lat) ||
+          !Number.isFinite(lng)
+        ) {
+          console.warn("[MOVVI] Coordenadas inválidas recebidas do GPS — ignorando.", { lat, lng });
+          setGpsState("unavailable");
+          gpsStateRef.current = "unavailable";
+          setGpsErrorMsg("Coordenadas inválidas recebidas do GPS.");
+          return;
+        }
+
+        const insideBR = isBrazilCoordinate(lat, lng);
+        if (!insideBR) {
+          console.warn("[MOVVI] Aviso: coordenada fora do Brasil — aceitando mesmo assim.", { lat, lng });
+          setGpsErrorMsg(
+            "Sua localização parece estar fora do Brasil. Você pode digitar a origem manualmente se preferir.",
+          );
+        } else {
+          setGpsErrorMsg("");
+        }
+
+        console.log("[MOVVI] Atualizando centro do mapa para:", lat, lng);
+        setPosition({ lat, lng });
+        setGpsAccuracy(pos.coords.accuracy ?? null);
+        setGpsDiag({
+          status: insideBR ? "ok" : "rejected-outside-br",
+          lat,
+          lng,
+          accuracy: pos.coords.accuracy ?? null,
+          altitude: pos.coords.altitude ?? null,
+          heading: pos.coords.heading ?? null,
+          speed: pos.coords.speed ?? null,
+          timestamp: pos.timestamp,
+          reason: insideBR ? undefined : "Fora do bounding box do Brasil (aviso)",
+        });
+        setGpsState("granted");
+        gpsStateRef.current = "granted";
+
+        try {
+          if (watchIdRef.current != null) {
+            navigator.geolocation.clearWatch(watchIdRef.current);
+          }
+          watchIdRef.current = navigator.geolocation.watchPosition(
+            (p) => {
+              try {
+                const la = p?.coords?.latitude;
+                const ln = p?.coords?.longitude;
+                if (typeof la !== "number" || typeof ln !== "number" || !Number.isFinite(la) || !Number.isFinite(ln)) return;
+                setPosition({ lat: la, lng: ln });
+                setGpsAccuracy(p.coords.accuracy ?? null);
+              } catch (err) {
+                console.warn("[MOVVI] watchPosition callback falhou:", err);
+              }
+            },
+            (err) => { console.warn("[MOVVI] watchPosition erro:", err); },
+            { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 },
+          );
+        } catch (err) {
+          console.warn("[MOVVI] Falha ao iniciar watchPosition:", err);
+        }
+      } catch (err) {
+        console.error("[MOVVI] Erro no onSuccess do GPS:", err);
+        setGpsState("unavailable");
+        gpsStateRef.current = "unavailable";
       }
-
-      setPosition({ lat, lng });
-      setGpsAccuracy(pos.coords.accuracy ?? null);
-      setGpsDiag({
-        status: insideBR ? "ok" : "rejected-outside-br",
-        lat,
-        lng,
-        accuracy: pos.coords.accuracy ?? null,
-        altitude: pos.coords.altitude ?? null,
-        heading: pos.coords.heading ?? null,
-        speed: pos.coords.speed ?? null,
-        timestamp: pos.timestamp,
-        reason: insideBR ? undefined : "Fora do bounding box do Brasil (aviso)",
-      });
-      setGpsState("granted");
-      gpsStateRef.current = "granted";
-
-      if (watchIdRef.current != null) {
-        navigator.geolocation.clearWatch(watchIdRef.current);
-      }
-      watchIdRef.current = navigator.geolocation.watchPosition(
-        (p) => {
-          const la = p.coords.latitude;
-          const ln = p.coords.longitude;
-          setPosition({ lat: la, lng: ln });
-          setGpsAccuracy(p.coords.accuracy ?? null);
-        },
-        () => undefined,
-        { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 },
-      );
     };
 
     const tryLowAccuracy = () => {
