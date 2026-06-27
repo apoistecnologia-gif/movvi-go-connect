@@ -947,6 +947,8 @@ function PassageiroApp() {
     setBusy(true);
     setError(null);
     setRoute(null);
+    setSelectedCategoryKey(null);
+    setPassengerUiStage("route_preview");
     try {
       const result = await callComputeRoute({
         data: {
@@ -954,7 +956,9 @@ function PassageiroApp() {
           destination: { lat: dest.lat, lng: dest.lng },
         },
       });
+      console.log("[MOVVI UI] rota calculada:", result);
       setRoute(result);
+      setPassengerUiStage("route_preview");
       if (mapRef.current) {
         const bounds = new google.maps.LatLngBounds();
         bounds.extend(position);
@@ -973,6 +977,8 @@ function PassageiroApp() {
     setDestinationText("");
     setRoute(null);
     setError(null);
+    setSelectedCategoryKey(null);
+    setPassengerUiStage("selecting_destination");
     setSuggestions([]);
     sheetRef.current?.snapTo(32);
     if (mapRef.current && position) {
@@ -983,6 +989,12 @@ function PassageiroApp() {
 
   async function submitRide() {
     if (!position || !destination || !route) return;
+    if (!selectedUiCategory) {
+      setError("Escolha uma categoria antes de solicitar a MOVVI.");
+      setPassengerUiStage("selecting_category");
+      sheetRef.current?.snapTo(70);
+      return;
+    }
     if (
       !isBrazilCoordinate(position.lat, position.lng) ||
       !isBrazilCoordinate(destination.point.lat, destination.point.lng)
@@ -997,7 +1009,7 @@ function PassageiroApp() {
     try {
       const km = route.distanceMeters / 1000;
       const min = route.durationSeconds / 60;
-      const fare = estimateFare(category, km, min, tariffs);
+      const fare = estimateFare(selectedUiCategory.backend, km, min, tariffs);
       // Texto da origem — apenas para exibição. As coordenadas reais é que
       // vão para o cálculo/rastreio. Se o Google não tiver nome, usamos as
       // coordenadas como rótulo.
@@ -1011,13 +1023,14 @@ function PassageiroApp() {
           origin_name: originLabel,
           destination: { lat: destination.point.lat, lng: destination.point.lng },
           destination_name: destination.label,
-          category,
+          category: selectedUiCategory.backend,
           distance_km: Math.round(km * 100) / 100,
           duration_min: Math.round(min),
           estimated_price: fare,
         },
       });
       setRideId(newId);
+      setPassengerUiStage("searching_driver");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Falha ao solicitar corrida.");
     } finally {
