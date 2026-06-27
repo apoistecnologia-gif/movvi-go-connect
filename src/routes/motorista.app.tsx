@@ -10,8 +10,8 @@ import {
   MapPin,
   Navigation2,
   Phone,
-  Power,
   Star,
+
   X,
   ChevronRight,
 } from "lucide-react";
@@ -109,6 +109,16 @@ function MotoristaApp() {
 
   const mapRef = useRef<google.maps.Map | null>(null);
   const sheetRef = useRef<MovviSheetHandle | null>(null);
+
+  // Refs para evitar recriação do canal Realtime e impedir loop de oferta
+  const activeRef = useRef<RideRow | null>(null);
+  const incomingRef = useRef<RideRow | null>(null);
+  const ratingRef = useRef<RideRow | null>(null);
+  // Corridas que o motorista já tratou (aceitou/recusou) — NUNCA reabrir
+  const handledRidesRef = useRef<Set<string>>(new Set());
+  useEffect(() => { activeRef.current = active; }, [active]);
+  useEffect(() => { incomingRef.current = incoming; }, [incoming]);
+  useEffect(() => { ratingRef.current = ratingRide; }, [ratingRide]);
 
   useDriverBroadcast(userId, online, position);
 
@@ -272,25 +282,34 @@ function MotoristaApp() {
     supabase.from("drivers").update({ is_online: false }).eq("user_id", userId).then();
   }, [online, userId]);
 
-  // realtime: ofertas + corrida ativa
+  // realtime: ofertas + corrida ativa — canal estável (não recria a cada estado)
   useEffect(() => {
     if (!userId) return;
 
     const presentOffer = (r: RideRow) => {
       if (r.status !== "procurar_motorista") return;
-      if (active || incoming || ratingRide) return;
+      if (r.current_offer_driver_id !== userId) return;
+      if (handledRidesRef.current.has(r.id)) {
+        console.log("[MOVVI MOTORISTA] oferta ignorada (já tratada):", r.id);
+        return;
+      }
+      if (activeRef.current || incomingRef.current || ratingRef.current) return;
       console.log("[MOVVI MOTORISTA] corrida recebida:", r.id, r.category, r.origin_name, "→", r.destination_name);
       setIncoming(r); setCountdown(15);
       if (navigator.vibrate) navigator.vibrate([280, 120, 280, 120, 280]);
     };
 
     const applyActive = (r: RideRow) => {
+      if (r.driver_id !== userId) return;
       if (r.status === "finalizada") {
         setActive(null); setPolyline([]); setRatingRide(r); setStars(5); setRatingComment("");
         loadTodayStats(userId);
       } else if (r.status === "cancelada_passageiro" || r.status === "cancelada_motorista") {
         setActive(null); setPolyline([]);
-      } else {
+      } else if (r.status === "motorista_a_caminho" || r.status === "motorista_chegou" || r.status === "em_viagem") {
+        // se está chegando uma corrida que assumimos, fecha qualquer modal de oferta para esta corrida
+        if (incomingRef.current?.id === r.id) setIncoming(null);
+        handledRidesRef.current.add(r.id);
         setActive(r);
       }
     };
@@ -306,7 +325,15 @@ function MotoristaApp() {
       .subscribe(async (status) => {
         console.log("[MOVVI MOTORISTA] status do canal:", status);
         if (status !== "SUBSCRIBED") return;
-        // pega oferta pendente que o realtime não entregou (driver acabou de entrar)
+        // recupera corrida ativa em andamento primeiro
+        const ongoing = await supabase
+          .from("rides").select("*")
+          .eq("driver_id", userId)
+          .in("status", ["motorista_a_caminho", "motorista_chegou", "em_viagem"])
+          .order("created_at", { ascending: false })
+          .limit(1).maybeSingle();
+        if (ongoing.data) { applyActive(ongoing.data as RideRow); return; }
+        // só então tenta pegar oferta pendente
         const pending = await supabase
           .from("rides").select("*")
           .eq("current_offer_driver_id", userId)
@@ -314,17 +341,9 @@ function MotoristaApp() {
           .order("created_at", { ascending: false })
           .limit(1).maybeSingle();
         if (pending.data) presentOffer(pending.data as RideRow);
-        // recupera corrida ativa em andamento
-        const ongoing = await supabase
-          .from("rides").select("*")
-          .eq("driver_id", userId)
-          .in("status", ["motorista_a_caminho", "motorista_chegou", "em_viagem"])
-          .order("created_at", { ascending: false })
-          .limit(1).maybeSingle();
-        if (ongoing.data) applyActive(ongoing.data as RideRow);
       });
     return () => { supabase.removeChannel(ch); };
-  }, [userId, active, incoming, ratingRide, loadTodayStats]);
+  }, [userId, loadTodayStats]);
 
   // carrega dados do passageiro
   useEffect(() => {
@@ -337,30 +356,38 @@ function MotoristaApp() {
   // countdown da oferta
   useEffect(() => {
     if (!incoming) return;
-    if (countdown <= 0) { handleReject(); return; }
+    if (countdown <= 0) { void handleReject(); return; }
     const t = window.setTimeout(() => setCountdown((c) => c - 1), 1000);
     return () => window.clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [incoming, countdown]);
 
   async function handleAccept() {
-    if (!incoming) return;
+    const offer = incomingRef.current;
+    if (!offer) return;
+    // bloqueia imediatamente para não reabrir via realtime
+    handledRidesRef.current.add(offer.id);
+    setIncoming(null);
     try {
-      const r = await callAccept({ data: { rideId: incoming.id } });
-      console.log("[MOVVI MOTORISTA] corrida aceita:", incoming.id);
-      setActive(r as RideRow); setIncoming(null);
+      const r = await callAccept({ data: { rideId: offer.id } });
+      console.log("[MOVVI MOTORISTA] corrida aceita:", offer.id);
+      setActive(r as RideRow);
       sheetRef.current?.snapTo(55);
     } catch (e) {
       console.error("[MOVVI MOTORISTA] erro ao aceitar:", e);
-      setIncoming(null);
+      // libera para tentar de novo no próximo ciclo
+      handledRidesRef.current.delete(offer.id);
     }
   }
   async function handleReject() {
-    if (!incoming) return;
-    console.log("[MOVVI MOTORISTA] corrida recusada:", incoming.id);
-    try { await callReject({ data: { rideId: incoming.id } }); }
+    const offer = incomingRef.current;
+    if (!offer) return;
+    // marca como tratada e fecha o card imediatamente
+    handledRidesRef.current.add(offer.id);
+    setIncoming(null);
+    console.log("[MOVVI MOTORISTA] corrida recusada:", offer.id);
+    try { await callReject({ data: { rideId: offer.id } }); }
     catch (e) { console.error("[MOVVI MOTORISTA] erro ao recusar:", e); }
-    finally { setIncoming(null); }
   }
 
   // rota dinâmica
@@ -468,7 +495,8 @@ function MotoristaApp() {
       {!incoming && !ratingRide && (
         <button onClick={recenter}
           className="absolute right-4 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-card/95 text-foreground shadow-lg ring-1 ring-border backdrop-blur hover:ring-primary/40"
-          style={{ bottom: active ? "calc(58vh + 16px)" : "calc(var(--driver-panel-h, 320px) + 16px)" }}>
+          style={{ bottom: active ? "calc(58vh + 16px)" : "calc(env(safe-area-inset-bottom) + 320px)" }}>
+
           <Crosshair className="h-5 w-5" />
         </button>
       )}
@@ -554,75 +582,61 @@ function IdleBottomPanel({
   // Espaço reservado para a BottomNav flutuante (≈ ícones 56 + paddings + safe-area).
   const navReserve = "calc(env(safe-area-inset-bottom) + 84px)";
   const canGoOnline = hasPosition && gpsStatus === "granted";
-  const showLocationCta = !hasPosition; // ainda não temos coordenada válida
+  const showLocationCta = !hasPosition;
 
   return (
     <div
-      className="absolute inset-x-0 z-30 rounded-t-[28px] bg-card text-foreground shadow-[0_-20px_60px_-20px_rgba(0,0,0,0.7)] ring-1 ring-border/60"
-      style={{ bottom: navReserve, ["--driver-panel-h" as never]: "340px" }}
+      className="absolute inset-x-0 z-30 rounded-t-[24px] bg-card text-foreground shadow-[0_-20px_60px_-20px_rgba(0,0,0,0.7)] ring-1 ring-border/60"
+      style={{ bottom: navReserve, ["--driver-panel-h" as never]: "auto" }}
     >
-      <div className="flex flex-col gap-3 px-4 pb-4 pt-3">
-        {/* greeting + status compactos */}
+      {/* handle visual (sem arrasto, só estética) */}
+      <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-muted-foreground/30" />
+
+      <div className="flex flex-col gap-2.5 px-4 pb-3 pt-2">
+        {/* linha 1: saudação + status pill compacto */}
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
           <div className="min-w-0">
-            <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Olá, motorista</p>
-            <h1 className="truncate text-lg font-bold leading-tight sm:text-xl">{driverName || "Bem-vindo"}</h1>
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Motorista</p>
+            <h1 className="truncate text-base font-bold leading-tight">{driverName || "Bem-vindo"}</h1>
           </div>
           <div
-            className={`relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
-              online ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+            className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${
+              online
+                ? "bg-primary/15 text-primary ring-primary/40"
+                : "bg-muted/30 text-muted-foreground ring-border"
             }`}
           >
-            {online && <span className="absolute inset-0 animate-ping rounded-full bg-primary/40" />}
-            <Power className="relative h-4 w-4" />
+            <span className="relative flex h-2 w-2">
+              {online && <span className="absolute inset-0 animate-ping rounded-full bg-primary/60" />}
+              <span className={`relative h-2 w-2 rounded-full ${online ? "bg-primary" : "bg-muted-foreground"}`} />
+            </span>
+            {online ? "ONLINE" : "OFFLINE"}
           </div>
         </div>
 
-        <div
-          className={`rounded-xl px-3 py-2 ring-1 ${
-            online ? "bg-primary/10 ring-primary/40" : "bg-muted/30 ring-border"
-          }`}
-        >
-          <div className="text-sm font-bold">
-            {online ? "Você está online" : "Você está offline"}
-          </div>
-          <div className="text-[11px] text-muted-foreground">
-            {online ? "Recebendo solicitações em tempo real" : "Ative para começar a receber corridas"}
-          </div>
-        </div>
-
+        {/* linha 2: stats inline e compactas */}
         <div className="grid grid-cols-2 gap-2">
           <StatBlock label="Corridas hoje" value={stats.rides.toString()} />
           <StatBlock label="Ganhos hoje" value={formatBRL(stats.earnings)} highlight />
         </div>
 
-        {/* ===== CTA principal ===== */}
+        {/* CTA principal */}
         {showLocationCta ? (
           <div className="flex flex-col gap-2">
-            {/* mensagem de status do GPS */}
-            {gpsStatus === "loading" ? (
-              <div className="rounded-xl bg-muted/30 px-3 py-2 text-center text-xs text-muted-foreground ring-1 ring-border">
-                Obtendo sua localização...
-              </div>
-            ) : gpsMessage ? (
-              <div className={`rounded-xl px-3 py-2 text-xs ring-1 ${
+            {gpsMessage && (
+              <div className={`rounded-lg px-3 py-1.5 text-[11px] ring-1 ${
                 gpsStatus === "denied" || gpsStatus === "unavailable"
                   ? "bg-destructive/10 text-destructive ring-destructive/30"
                   : "bg-yellow-500/10 text-yellow-400 ring-yellow-500/30"
               }`}>
                 {gpsMessage}
               </div>
-            ) : (
-              <div className="rounded-xl bg-muted/30 px-3 py-2 text-center text-xs text-muted-foreground ring-1 ring-border">
-                Precisamos da sua localização para encontrar corridas próximas.
-              </div>
             )}
-
             <button
               type="button"
               disabled={disabled || gpsStatus === "loading" || gpsStatus === "unavailable"}
               onClick={onRequestLocation}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-sm font-bold uppercase tracking-wider text-primary-foreground shadow-lg shadow-primary/30 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-bold uppercase tracking-wider text-primary-foreground shadow-lg shadow-primary/30 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <MapPin className="h-4 w-4" />
               {gpsStatus === "loading"
@@ -637,7 +651,7 @@ function IdleBottomPanel({
             type="button"
             disabled={disabled || !canGoOnline}
             onClick={toggleOnline}
-            className={`w-full rounded-xl py-3.5 text-sm font-bold uppercase tracking-wider shadow-lg transition disabled:cursor-not-allowed disabled:opacity-50 ${
+            className={`w-full rounded-xl py-3 text-sm font-bold uppercase tracking-wider shadow-lg transition disabled:cursor-not-allowed disabled:opacity-50 ${
               online
                 ? "bg-card text-foreground ring-1 ring-border hover:ring-destructive/50"
                 : "bg-primary text-primary-foreground shadow-primary/30 hover:brightness-110"
@@ -653,9 +667,9 @@ function IdleBottomPanel({
 
 function StatBlock({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
   return (
-    <div className="rounded-2xl bg-card/60 p-3 ring-1 ring-border">
+    <div className="rounded-xl bg-background/60 px-3 py-2 ring-1 ring-border">
       <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</div>
-      <div className={`mt-1 text-lg font-bold tabular-nums ${highlight ? "text-primary" : ""}`}>{value}</div>
+      <div className={`mt-0.5 text-base font-bold tabular-nums ${highlight ? "text-primary" : ""}`}>{value}</div>
     </div>
   );
 }
