@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { Menu } from "lucide-react";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { AdminGuard } from "@/components/AdminGuard";
 import { AdminSidebar } from "./AdminSidebar";
