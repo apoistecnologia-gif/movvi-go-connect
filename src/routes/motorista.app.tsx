@@ -29,9 +29,10 @@ import { useDriverBroadcast } from "@/hooks/useDriverBroadcast";
 import { loadDriverProfile } from "@/lib/driverProfile";
 import { isDevelopmentEnvironment } from "@/lib/environment";
 
-// Coordenada de teste (Itainópolis/PI) — usada apenas em ambientes de preview/dev
-// quando o GPS real do navegador não retorna uma coordenada brasileira válida.
-const TEST_LOCATION_BR = { lat: -7.446, lng: -41.478 } as const;
+const TEST_DRIVER_LOCATION = {
+  lat: -7.446,
+  lng: -41.478,
+};
 
 import { computeRoute } from "@/lib/routes.functions";
 import {
@@ -95,6 +96,7 @@ function MotoristaApp() {
   type GpsStatus = "prompt" | "loading" | "granted" | "denied" | "timeout" | "unavailable" | "error";
   const [gpsStatus, setGpsStatus] = useState<GpsStatus>("prompt");
   const [gpsMessage, setGpsMessage] = useState<string | null>(null);
+  const [showTestLocationButton, setShowTestLocationButton] = useState(false);
   const watchIdRef = useRef<number | null>(null);
   const initialCenteredRef = useRef(false);
 
@@ -199,6 +201,7 @@ function MotoristaApp() {
     if (!("geolocation" in navigator)) {
       setGpsStatus("unavailable");
       setGpsMessage("GPS indisponível neste dispositivo.");
+      setShowTestLocationButton(isDevelopmentEnvironment());
       return;
     }
     setGpsStatus("loading");
@@ -210,12 +213,14 @@ function MotoristaApp() {
         console.log("[MOVVI MOTORISTA] GPS concedido:", { lat, lng });
         if (!isBrazilCoordinate(lat, lng)) {
           setGpsStatus("error");
-          setGpsMessage("Coordenada fora do Brasil. Verifique seu GPS.");
+          setGpsMessage("Sua localização não parece estar no Brasil. Ative o GPS real do aparelho e tente novamente.");
+          setShowTestLocationButton(isDevelopmentEnvironment());
           return;
         }
         setPosition({ lat, lng });
         setGpsStatus("granted");
         setGpsMessage(null);
+        setShowTestLocationButton(false);
         // salva imediatamente no perfil do motorista
         supabase.auth.getUser().then(({ data: u }) => {
           if (!u.user) return;
@@ -240,12 +245,15 @@ function MotoristaApp() {
         if (err.code === err.PERMISSION_DENIED) {
           setGpsStatus("denied");
           setGpsMessage("Localização negada. Ative a permissão do navegador para receber corridas.");
+          setShowTestLocationButton(isDevelopmentEnvironment());
         } else if (err.code === err.TIMEOUT) {
           setGpsStatus("timeout");
           setGpsMessage("Não conseguimos obter sua localização. Tente novamente.");
+          setShowTestLocationButton(isDevelopmentEnvironment());
         } else {
           setGpsStatus("error");
           setGpsMessage("Erro ao obter localização. Tente novamente.");
+          setShowTestLocationButton(isDevelopmentEnvironment());
         }
       },
       { enableHighAccuracy: false, timeout: 20000, maximumAge: 300000 },
@@ -297,8 +305,10 @@ function MotoristaApp() {
       setPosition({ lat, lng, heading, speed });
       setGpsStatus("granted");
       setGpsMessage(isTest ? "Modo teste ativo com localização no Brasil." : null);
+      setShowTestLocationButton(false);
       if (userId) {
         supabase.from("drivers").update({
+          is_online: true,
           current_lat: lat, current_lng: lng,
           current_heading: heading,
           current_speed: speed,
@@ -320,12 +330,35 @@ function MotoristaApp() {
     [userId, startWatch],
   );
 
-  // Modo teste (apenas preview/dev): usa coordenada de Itainópolis/PI.
-  const useTestLocation = useCallback(() => {
-    if (!isDevelopmentEnvironment()) return;
-    console.log("[MOVVI MOTORISTA] ativando modo teste com coordenada do Brasil");
-    activateOnlineWithCoords(TEST_LOCATION_BR.lat, TEST_LOCATION_BR.lng, null, null, true);
-  }, [activateOnlineWithCoords]);
+  async function ativarLocalizacaoTesteBrasil() {
+    if (!userId) return;
+
+    const lat = TEST_DRIVER_LOCATION.lat;
+    const lng = TEST_DRIVER_LOCATION.lng;
+
+    setPosition({ lat, lng });
+    setGpsStatus("granted");
+    setGpsMessage("Modo teste ativo com localização no Brasil.");
+    setShowTestLocationButton(false);
+    setOnline(true);
+
+    await supabase
+      .from("drivers")
+      .update({
+        is_online: true,
+        current_lat: lat,
+        current_lng: lng,
+        current_heading: null,
+        current_speed: null,
+        last_location_at: new Date().toISOString(),
+      })
+      .eq("user_id", userId);
+
+    if (mapRef.current) {
+      mapRef.current.panTo({ lat, lng });
+      mapRef.current.setZoom(16);
+    }
+  }
 
   // Toggle Online/Offline.
   // IMPORTANTE: a chamada a navigator.geolocation.getCurrentPosition é feita
@@ -341,11 +374,14 @@ function MotoristaApp() {
     // Offline → tentar ficar online
     if (!("geolocation" in navigator)) {
       setGpsMessage("Não foi possível obter sua localização. Ative o GPS e permita o acesso.");
+      setGpsStatus("unavailable");
+      setShowTestLocationButton(isDevelopmentEnvironment());
       return;
     }
     if (statusBlock) return;
     setGpsStatus("loading");
     setGpsMessage("Obtendo sua localização...");
+    setShowTestLocationButton(false);
     console.log("[MOVVI MOTORISTA] FICAR ONLINE clicado → solicitando GPS no clique");
 
     const onSuccess = (pos: GeolocationPosition) => {
@@ -354,11 +390,8 @@ function MotoristaApp() {
       if (!isBrazilCoordinate(rawLat, rawLng)) {
         console.warn("[MOVVI MOTORISTA] GPS fora do Brasil — bloqueando online:", { lat: rawLat, lng: rawLng });
         setGpsStatus("error");
-        setGpsMessage(
-          isDevelopmentEnvironment()
-            ? "Sua localização está fora do Brasil. Use a localização de teste para continuar."
-            : "Sua localização não parece estar no Brasil. Ative o GPS real do aparelho e tente novamente.",
-        );
+        setGpsMessage("Sua localização não parece estar no Brasil. Ative o GPS real do aparelho e tente novamente.");
+        setShowTestLocationButton(isDevelopmentEnvironment());
         return;
       }
       const heading = Number.isFinite(pos.coords.heading as number) ? (pos.coords.heading as number) : null;
@@ -371,6 +404,7 @@ function MotoristaApp() {
       console.warn("[MOVVI MOTORISTA] GPS erro final:", err.code, err.message);
       setGpsStatus(err.code === err.PERMISSION_DENIED ? "denied" : err.code === err.TIMEOUT ? "timeout" : "error");
       setGpsMessage("Não foi possível obter sua localização. Verifique se o GPS está ativo e tente novamente.");
+      setShowTestLocationButton(isDevelopmentEnvironment());
     };
 
     const requestFastLocation = () => {
@@ -400,6 +434,7 @@ function MotoristaApp() {
           if (st.state === "denied") {
             setGpsStatus("denied");
             setGpsMessage("Localização negada. Ative a permissão do navegador para receber corridas.");
+            setShowTestLocationButton(isDevelopmentEnvironment());
             return;
           }
           requestFastLocation();
@@ -408,7 +443,7 @@ function MotoristaApp() {
     } else {
       requestFastLocation();
     }
-  }, [online, statusBlock, userId, startWatch]);
+  }, [online, statusBlock, activateOnlineWithCoords]);
 
   // offline ao desmontar
   useEffect(() => () => { if (online && userId)
@@ -669,9 +704,10 @@ function MotoristaApp() {
           canUseTestLocation={
             !online &&
             isDevelopmentEnvironment() &&
-            (gpsStatus === "error" || gpsStatus === "denied" || gpsStatus === "timeout")
+            showTestLocationButton &&
+            (gpsStatus === "error" || gpsStatus === "denied" || gpsStatus === "timeout" || gpsStatus === "unavailable")
           }
-          onUseTestLocation={useTestLocation}
+          onUseTestLocation={ativarLocalizacaoTesteBrasil}
         />
       )}
 
