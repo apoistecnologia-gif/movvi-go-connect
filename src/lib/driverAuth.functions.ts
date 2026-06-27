@@ -102,11 +102,20 @@ function isDevHost(host: string) {
   return /localhost|127\.0\.0\.1|0\.0\.0\.0|id-preview--|lovableproject\.com|lovable\.app/i.test(host);
 }
 
+async function findAuthUserByEmail(supabaseAdmin: any, email: string) {
+  const users = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+  if (users.error) throw users.error;
+  return users.data.users.find((u: { email?: string | null }) => u.email?.toLowerCase() === email) ?? null;
+}
+
 export const cadastrarMotorista = createServerFn({ method: "POST" })
   .inputValidator((input) => DriverSignupSchema.parse(input))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const email = data.email.toLowerCase();
+
+    let authUserId: string | null = null;
+    let createdNewAuth = false;
 
     const created = await supabaseAdmin.auth.admin.createUser({
       email,
@@ -116,10 +125,26 @@ export const cadastrarMotorista = createServerFn({ method: "POST" })
     });
 
     if (created.error || !created.data.user) {
-      throw new Error(authErrorMessage(created.error));
+      const message = created.error?.message ?? "";
+      if (!isDuplicateAuthError(message)) throw new Error(authErrorMessage(created.error));
+
+      const existingAuthUser = await findAuthUserByEmail(supabaseAdmin, email);
+      if (!existingAuthUser) throw new Error("Este e-mail já está cadastrado.");
+
+      const existingDriver = await supabaseAdmin
+        .from(DRIVER_TABLE)
+        .select("user_id, email")
+        .or(`user_id.eq.${existingAuthUser.id},email.eq.${email}`)
+        .maybeSingle();
+      if (existingDriver.error) throw new Error("Falha ao verificar cadastro existente.");
+      if (existingDriver.data) throw new Error("Este e-mail já está cadastrado.");
+
+      authUserId = existingAuthUser.id;
+    } else {
+      authUserId = created.data.user.id;
+      createdNewAuth = true;
     }
 
-    const authUserId = created.data.user.id;
     const uploaded: Array<{ bucket: (typeof Buckets)[number]; path: string }> = [];
 
     try {
@@ -153,6 +178,13 @@ export const cadastrarMotorista = createServerFn({ method: "POST" })
         .from("user_roles")
         .upsert({ user_id: authUserId, role: "driver" }, { onConflict: "user_id,role" });
       if (role.error) throw new Error("Falha ao definir perfil de motorista.");
+
+      const authUpdate = await supabaseAdmin.auth.admin.updateUserById(authUserId, {
+        password: data.password,
+        email_confirm: true,
+        user_metadata: { name: data.name, phone: data.phone, role: "driver" },
+      });
+      if (authUpdate.error) throw new Error("Falha ao preparar login do motorista.");
 
       const driver = await supabaseAdmin.from(DRIVER_TABLE).insert({
         user_id: authUserId,
@@ -189,7 +221,7 @@ export const cadastrarMotorista = createServerFn({ method: "POST" })
         supabaseAdmin.from(DRIVER_TABLE).delete().eq("user_id", authUserId),
         supabaseAdmin.from("user_roles").delete().eq("user_id", authUserId).eq("role", "driver"),
         supabaseAdmin.from("users").delete().eq("auth_user_id", authUserId),
-        supabaseAdmin.auth.admin.deleteUser(authUserId),
+        ...(createdNewAuth ? [supabaseAdmin.auth.admin.deleteUser(authUserId)] : []),
       ]);
       throw new Error(error instanceof Error ? error.message : "Não foi possível concluir o cadastro.");
     }
