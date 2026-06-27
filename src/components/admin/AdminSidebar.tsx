@@ -27,13 +27,13 @@ type Item = { to: string; label: string; icon: LucideIcon };
 export const ADMIN_NAV: Item[] = [
   { to: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/admin/motoristas", label: "Motoristas", icon: Car },
+  { to: "/admin/categorias", label: "Categorias", icon: Layers },
+  { to: "/admin/precos", label: "Preços", icon: DollarSign },
 ];
 
-// Itens adicionais serão habilitados conforme cada módulo for finalizado:
-// Passageiros, Corridas, Categorias, Tarifas, Assinaturas, Financeiro,
-// Cupons, Notificações, Mapa ao vivo, Configurações, Relatórios, Segurança.
-void Users; void RouteIcon; void Tag; void DollarSign; void CreditCard;
-void Ticket; void Bell; void Settings; void FileBarChart; void MapIcon; void ShieldCheck; void Layers;
+// Itens adicionais serão habilitados conforme cada módulo for finalizado.
+void Users; void RouteIcon; void Tag; void CreditCard;
+void Ticket; void Bell; void Settings; void FileBarChart; void MapIcon; void ShieldCheck;
 
 export function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
