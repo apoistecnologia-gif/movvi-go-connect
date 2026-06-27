@@ -79,6 +79,7 @@ function MotoristaApp() {
   const callStart    = useServerFn(iniciarCorrida);
   const callComplete = useServerFn(finalizarCorrida);
   const callCancel   = useServerFn(cancelarPeloMotorista);
+  const callRate     = useServerFn(avaliarPassageiro);
   const callRoute    = useServerFn(computeRoute);
 
   const [userId, setUserId] = useState<string | null>(null);
