@@ -15,7 +15,17 @@ export const Route = createFileRoute("/debug/motorista-auth")({
   component: DriverAuthDebugPage,
 });
 
-type DiagnosticResult = Awaited<ReturnType<typeof diagnosticarAuthMotorista>>;
+type DiagnosticResult = {
+  auth_exists: boolean;
+  driver_exists: boolean;
+  auth_user_id: string | null;
+  status: string | null;
+  table: string;
+  auth_link_field: string;
+  related_profile_exists: boolean;
+  related_profile_table: string;
+  error: string | null;
+};
 
 function yesNo(value: boolean) {
   return value ? "Sim" : "Não";

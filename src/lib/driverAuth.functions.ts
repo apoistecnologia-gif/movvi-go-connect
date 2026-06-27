@@ -40,6 +40,32 @@ const DriverDiagnosticSchema = z.object({
   email: z.string().trim().email(),
 });
 
+type DriverDiagnosticResult = {
+  auth_exists: boolean;
+  driver_exists: boolean;
+  auth_user_id: string | null;
+  status: string | null;
+  table: string;
+  auth_link_field: string;
+  related_profile_exists: boolean;
+  related_profile_table: string;
+  error: string | null;
+};
+
+function emptyDiagnostic(error: string | null = null): DriverDiagnosticResult {
+  return {
+    auth_exists: false,
+    driver_exists: false,
+    auth_user_id: null,
+    status: null,
+    table: DRIVER_TABLE,
+    auth_link_field: DRIVER_AUTH_LINK_FIELD,
+    related_profile_exists: false,
+    related_profile_table: "users",
+    error,
+  };
+}
+
 function isDuplicateAuthError(message: string) {
   return /already|registered|exists|duplicate/i.test(message);
 }
@@ -175,32 +201,12 @@ export const diagnosticarAuthMotorista = createServerFn({ method: "POST" })
     const { getRequest } = await import("@tanstack/react-start/server");
     const host = getRequest()?.headers.get("host") ?? "";
     if (host && !isDevHost(host)) {
-      return { error: "Diagnóstico disponível apenas em ambiente de desenvolvimento." };
+      return emptyDiagnostic("Diagnóstico disponível apenas em ambiente de desenvolvimento.");
     }
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const email = data.email.toLowerCase();
-    const result: {
-      auth_exists: boolean;
-      driver_exists: boolean;
-      auth_user_id: string | null;
-      status: string | null;
-      table: string;
-      auth_link_field: string;
-      related_profile_exists: boolean;
-      related_profile_table: string;
-      error: string | null;
-    } = {
-      auth_exists: false,
-      driver_exists: false,
-      auth_user_id: null,
-      status: null,
-      table: DRIVER_TABLE,
-      auth_link_field: DRIVER_AUTH_LINK_FIELD,
-      related_profile_exists: false,
-      related_profile_table: "users",
-      error: null,
-    };
+    const result = emptyDiagnostic();
 
     try {
       const users = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 });
@@ -211,9 +217,9 @@ export const diagnosticarAuthMotorista = createServerFn({ method: "POST" })
 
       let driverQuery = supabaseAdmin
         .from(DRIVER_TABLE)
-        .select("user_id, email, approval_status, motivo_reprovacao, created_at")
-        .eq("email", email);
+        .select("user_id, email, approval_status, motivo_reprovacao, created_at");
       if (authUser?.id) driverQuery = driverQuery.or(`user_id.eq.${authUser.id},email.eq.${email}`);
+      else driverQuery = driverQuery.eq("email", email);
       const driver = await driverQuery.maybeSingle();
       if (driver.error) throw driver.error;
       result.driver_exists = !!driver.data;
