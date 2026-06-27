@@ -282,25 +282,34 @@ function MotoristaApp() {
     supabase.from("drivers").update({ is_online: false }).eq("user_id", userId).then();
   }, [online, userId]);
 
-  // realtime: ofertas + corrida ativa
+  // realtime: ofertas + corrida ativa — canal estável (não recria a cada estado)
   useEffect(() => {
     if (!userId) return;
 
     const presentOffer = (r: RideRow) => {
       if (r.status !== "procurar_motorista") return;
-      if (active || incoming || ratingRide) return;
+      if (r.current_offer_driver_id !== userId) return;
+      if (handledRidesRef.current.has(r.id)) {
+        console.log("[MOVVI MOTORISTA] oferta ignorada (já tratada):", r.id);
+        return;
+      }
+      if (activeRef.current || incomingRef.current || ratingRef.current) return;
       console.log("[MOVVI MOTORISTA] corrida recebida:", r.id, r.category, r.origin_name, "→", r.destination_name);
       setIncoming(r); setCountdown(15);
       if (navigator.vibrate) navigator.vibrate([280, 120, 280, 120, 280]);
     };
 
     const applyActive = (r: RideRow) => {
+      if (r.driver_id !== userId) return;
       if (r.status === "finalizada") {
         setActive(null); setPolyline([]); setRatingRide(r); setStars(5); setRatingComment("");
         loadTodayStats(userId);
       } else if (r.status === "cancelada_passageiro" || r.status === "cancelada_motorista") {
         setActive(null); setPolyline([]);
-      } else {
+      } else if (r.status === "motorista_a_caminho" || r.status === "motorista_chegou" || r.status === "em_viagem") {
+        // se está chegando uma corrida que assumimos, fecha qualquer modal de oferta para esta corrida
+        if (incomingRef.current?.id === r.id) setIncoming(null);
+        handledRidesRef.current.add(r.id);
         setActive(r);
       }
     };
@@ -316,7 +325,15 @@ function MotoristaApp() {
       .subscribe(async (status) => {
         console.log("[MOVVI MOTORISTA] status do canal:", status);
         if (status !== "SUBSCRIBED") return;
-        // pega oferta pendente que o realtime não entregou (driver acabou de entrar)
+        // recupera corrida ativa em andamento primeiro
+        const ongoing = await supabase
+          .from("rides").select("*")
+          .eq("driver_id", userId)
+          .in("status", ["motorista_a_caminho", "motorista_chegou", "em_viagem"])
+          .order("created_at", { ascending: false })
+          .limit(1).maybeSingle();
+        if (ongoing.data) { applyActive(ongoing.data as RideRow); return; }
+        // só então tenta pegar oferta pendente
         const pending = await supabase
           .from("rides").select("*")
           .eq("current_offer_driver_id", userId)
@@ -324,17 +341,9 @@ function MotoristaApp() {
           .order("created_at", { ascending: false })
           .limit(1).maybeSingle();
         if (pending.data) presentOffer(pending.data as RideRow);
-        // recupera corrida ativa em andamento
-        const ongoing = await supabase
-          .from("rides").select("*")
-          .eq("driver_id", userId)
-          .in("status", ["motorista_a_caminho", "motorista_chegou", "em_viagem"])
-          .order("created_at", { ascending: false })
-          .limit(1).maybeSingle();
-        if (ongoing.data) applyActive(ongoing.data as RideRow);
       });
     return () => { supabase.removeChannel(ch); };
-  }, [userId, active, incoming, ratingRide, loadTodayStats]);
+  }, [userId, loadTodayStats]);
 
   // carrega dados do passageiro
   useEffect(() => {
@@ -347,30 +356,38 @@ function MotoristaApp() {
   // countdown da oferta
   useEffect(() => {
     if (!incoming) return;
-    if (countdown <= 0) { handleReject(); return; }
+    if (countdown <= 0) { void handleReject(); return; }
     const t = window.setTimeout(() => setCountdown((c) => c - 1), 1000);
     return () => window.clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [incoming, countdown]);
 
   async function handleAccept() {
-    if (!incoming) return;
+    const offer = incomingRef.current;
+    if (!offer) return;
+    // bloqueia imediatamente para não reabrir via realtime
+    handledRidesRef.current.add(offer.id);
+    setIncoming(null);
     try {
-      const r = await callAccept({ data: { rideId: incoming.id } });
-      console.log("[MOVVI MOTORISTA] corrida aceita:", incoming.id);
-      setActive(r as RideRow); setIncoming(null);
+      const r = await callAccept({ data: { rideId: offer.id } });
+      console.log("[MOVVI MOTORISTA] corrida aceita:", offer.id);
+      setActive(r as RideRow);
       sheetRef.current?.snapTo(55);
     } catch (e) {
       console.error("[MOVVI MOTORISTA] erro ao aceitar:", e);
-      setIncoming(null);
+      // libera para tentar de novo no próximo ciclo
+      handledRidesRef.current.delete(offer.id);
     }
   }
   async function handleReject() {
-    if (!incoming) return;
-    console.log("[MOVVI MOTORISTA] corrida recusada:", incoming.id);
-    try { await callReject({ data: { rideId: incoming.id } }); }
+    const offer = incomingRef.current;
+    if (!offer) return;
+    // marca como tratada e fecha o card imediatamente
+    handledRidesRef.current.add(offer.id);
+    setIncoming(null);
+    console.log("[MOVVI MOTORISTA] corrida recusada:", offer.id);
+    try { await callReject({ data: { rideId: offer.id } }); }
     catch (e) { console.error("[MOVVI MOTORISTA] erro ao recusar:", e); }
-    finally { setIncoming(null); }
   }
 
   // rota dinâmica
