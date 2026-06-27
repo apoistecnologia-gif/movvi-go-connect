@@ -1,4 +1,14 @@
 // ────────────────────────────────────────────────────────────────────────────
+// MOVVI — Modo desenvolvedor global
+//
+// DEV_MODE controla TODA a interface de diagnóstico do app (banners de
+// ambiente de teste, painel de GPS, métricas técnicas, link para
+// /dev-diagnostics etc.). Em produção mantenha `false` — a interface
+// fica totalmente limpa e apenas o console registra logs.
+// ────────────────────────────────────────────────────────────────────────────
+export const DEV_MODE = true;
+
+// ────────────────────────────────────────────────────────────────────────────
 // MOVVI — Detecção de ambiente
 //
 // REGRA DE OURO:
