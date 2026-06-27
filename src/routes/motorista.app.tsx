@@ -263,19 +263,62 @@ function MotoristaApp() {
     };
   }, [requestLocation]);
 
-  // Toggle Online/Offline — se faltar GPS, solicita antes
+  // Toggle Online/Offline.
+  // IMPORTANTE: a chamada a navigator.geolocation.getCurrentPosition é feita
+  // SINCRONAMENTE dentro do click handler para preservar o gesto do usuário
+  // (alguns navegadores bloqueiam o prompt se houver await antes).
   const toggleOnline = useCallback(() => {
-    if (!position) {
-      console.log("[MOVVI MOTORISTA] tentou ficar online sem GPS, solicitando permissão");
-      requestLocation();
+    // Se já está online → fica offline imediatamente
+    if (online) {
+      console.log("[MOVVI MOTORISTA] indo offline");
+      setOnline(false);
       return;
     }
-    setOnline((prev) => {
-      const next = !prev;
-      console.log("[MOVVI MOTORISTA] online:", next, "userId:", userId, "pos:", position);
-      return next;
-    });
-  }, [position, userId, requestLocation]);
+    // Offline → tentar ficar online
+    if (!("geolocation" in navigator)) {
+      setGpsMessage("Não foi possível obter sua localização. Ative o GPS e permita o acesso.");
+      return;
+    }
+    if (statusBlock) return;
+    setGpsStatus("loading");
+    setGpsMessage(null);
+    console.log("[MOVVI MOTORISTA] FICAR ONLINE clicado → solicitando GPS");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = pos.coords.latitude, lng = pos.coords.longitude;
+        console.log("[MOVVI MOTORISTA] GPS ok:", { lat, lng });
+        if (!isBrazilCoordinate(lat, lng)) {
+          setGpsStatus("error");
+          setGpsMessage("Não foi possível obter sua localização. Ative o GPS e permita o acesso.");
+          return;
+        }
+        setPosition({ lat, lng });
+        setGpsStatus("granted");
+        setGpsMessage(null);
+        // persiste localização imediatamente
+        if (userId) {
+          supabase.from("drivers").update({
+            current_lat: lat, current_lng: lng,
+            last_location_at: new Date().toISOString(),
+          }).eq("user_id", userId).then();
+        }
+        if (mapRef.current && !initialCenteredRef.current) {
+          mapRef.current.panTo({ lat, lng });
+          mapRef.current.setZoom(16);
+          initialCenteredRef.current = true;
+        }
+        startWatch();
+        setOnline(true);
+        console.log("[MOVVI MOTORISTA] online: true");
+      },
+      (err) => {
+        console.warn("[MOVVI MOTORISTA] GPS erro:", err.code, err.message);
+        setGpsStatus(err.code === err.PERMISSION_DENIED ? "denied" : err.code === err.TIMEOUT ? "timeout" : "error");
+        setGpsMessage("Não foi possível obter sua localização. Ative o GPS e permita o acesso.");
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
+    );
+  }, [online, statusBlock, userId, startWatch]);
 
   // offline ao desmontar
   useEffect(() => () => { if (online && userId)
@@ -522,18 +565,16 @@ function MotoristaApp() {
         </MovviSheet>
       )}
 
-      {/* ===== Idle — painel fixo + CTA fixo (sem sheet, sem sobreposição) ===== */}
+      {/* ===== Idle — painel fixo compacto (~28vh) com botão ONLINE/OFFLINE sempre visível ===== */}
       {!incoming && !ratingRide && !active && (
         <IdleBottomPanel
           driverName={driverName}
           online={online}
-          disabled={!!statusBlock}
+          disabled={!!statusBlock || gpsStatus === "loading"}
           toggleOnline={toggleOnline}
           stats={todayStats}
-          gpsStatus={gpsStatus}
           gpsMessage={gpsMessage}
-          hasPosition={!!position}
-          onRequestLocation={requestLocation}
+          loading={gpsStatus === "loading"}
         />
       )}
 
@@ -569,31 +610,25 @@ function MotoristaApp() {
    Sempre visível, nunca exige rolagem para mostrar o CTA.
    ============================================================ */
 function IdleBottomPanel({
-  driverName, online, disabled, toggleOnline, stats,
-  gpsStatus, gpsMessage, hasPosition, onRequestLocation,
+  driverName, online, disabled, toggleOnline, stats, gpsMessage, loading,
 }: {
   driverName: string; online: boolean; disabled: boolean;
   toggleOnline: () => void; stats: { rides: number; earnings: number };
-  gpsStatus: "prompt" | "loading" | "granted" | "denied" | "timeout" | "unavailable" | "error";
   gpsMessage: string | null;
-  hasPosition: boolean;
-  onRequestLocation: () => void;
+  loading: boolean;
 }) {
-  // Espaço reservado para a BottomNav flutuante (≈ ícones 56 + paddings + safe-area).
+  // Espaço para BottomNav flutuante (~84px + safe-area).
   const navReserve = "calc(env(safe-area-inset-bottom) + 84px)";
-  const canGoOnline = hasPosition && gpsStatus === "granted";
-  const showLocationCta = !hasPosition;
 
   return (
     <div
       className="absolute inset-x-0 z-30 rounded-t-[24px] bg-card text-foreground shadow-[0_-20px_60px_-20px_rgba(0,0,0,0.7)] ring-1 ring-border/60"
-      style={{ bottom: navReserve, ["--driver-panel-h" as never]: "auto" }}
+      style={{ bottom: navReserve }}
     >
-      {/* handle visual (sem arrasto, só estética) */}
       <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-muted-foreground/30" />
 
       <div className="flex flex-col gap-2.5 px-4 pb-3 pt-2">
-        {/* linha 1: saudação + status pill compacto */}
+        {/* linha 1: nome + status pill */}
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
           <div className="min-w-0">
             <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Motorista</p>
@@ -614,52 +649,32 @@ function IdleBottomPanel({
           </div>
         </div>
 
-        {/* linha 2: stats inline e compactas */}
+        {/* linha 2: stats */}
         <div className="grid grid-cols-2 gap-2">
           <StatBlock label="Corridas hoje" value={stats.rides.toString()} />
           <StatBlock label="Ganhos hoje" value={formatBRL(stats.earnings)} highlight />
         </div>
 
-        {/* CTA principal */}
-        {showLocationCta ? (
-          <div className="flex flex-col gap-2">
-            {gpsMessage && (
-              <div className={`rounded-lg px-3 py-1.5 text-[11px] ring-1 ${
-                gpsStatus === "denied" || gpsStatus === "unavailable"
-                  ? "bg-destructive/10 text-destructive ring-destructive/30"
-                  : "bg-yellow-500/10 text-yellow-400 ring-yellow-500/30"
-              }`}>
-                {gpsMessage}
-              </div>
-            )}
-            <button
-              type="button"
-              disabled={disabled || gpsStatus === "loading" || gpsStatus === "unavailable"}
-              onClick={onRequestLocation}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-bold uppercase tracking-wider text-primary-foreground shadow-lg shadow-primary/30 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <MapPin className="h-4 w-4" />
-              {gpsStatus === "loading"
-                ? "Obtendo localização..."
-                : gpsStatus === "denied" || gpsStatus === "timeout" || gpsStatus === "error"
-                ? "Tentar novamente"
-                : "Permitir localização"}
-            </button>
+        {/* mensagem de erro do GPS (não substitui o botão) */}
+        {gpsMessage && (
+          <div className="rounded-lg bg-destructive/10 px-3 py-1.5 text-[11px] text-destructive ring-1 ring-destructive/30">
+            {gpsMessage}
           </div>
-        ) : (
-          <button
-            type="button"
-            disabled={disabled || !canGoOnline}
-            onClick={toggleOnline}
-            className={`w-full rounded-xl py-3 text-sm font-bold uppercase tracking-wider shadow-lg transition disabled:cursor-not-allowed disabled:opacity-50 ${
-              online
-                ? "bg-card text-foreground ring-1 ring-border hover:ring-destructive/50"
-                : "bg-primary text-primary-foreground shadow-primary/30 hover:brightness-110"
-            }`}
-          >
-            {online ? "Ficar offline" : "Ficar online"}
-          </button>
         )}
+
+        {/* Botão principal — SEMPRE FICAR ONLINE / FICAR OFFLINE */}
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={toggleOnline}
+          className={`w-full rounded-xl py-3 text-sm font-bold uppercase tracking-wider shadow-lg transition disabled:cursor-not-allowed disabled:opacity-60 ${
+            online
+              ? "bg-card text-foreground ring-1 ring-border hover:ring-destructive/50"
+              : "bg-primary text-primary-foreground shadow-primary/30 hover:brightness-110"
+          }`}
+        >
+          {loading ? "Obtendo localização..." : online ? "Ficar offline" : "Ficar online"}
+        </button>
       </div>
     </div>
   );
