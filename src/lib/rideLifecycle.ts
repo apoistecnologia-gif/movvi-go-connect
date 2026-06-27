@@ -202,8 +202,9 @@ export async function offerToNextDriver(supabase: any, rideId: string): Promise<
     });
   }
   const candidates = all
-    .filter((d) => !rejected.includes(d.user_id) && d.user_id !== r.driver_id && d.dist <= 15)
-    .sort((a, b) => a.dist - b.dist);
+    .filter((d: { user_id: string; dist: number }) => !rejected.includes(d.user_id) && d.user_id !== r.driver_id && d.dist <= 15)
+    .sort((a: { dist: number }, b: { dist: number }) => a.dist - b.dist);
+
 
   if (candidates.length === 0) {
     console.log("[MOVVI DESPACHO] nenhum motorista elegível para a corrida", rideId);
