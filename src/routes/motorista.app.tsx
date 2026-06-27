@@ -581,75 +581,61 @@ function IdleBottomPanel({
   // Espaço reservado para a BottomNav flutuante (≈ ícones 56 + paddings + safe-area).
   const navReserve = "calc(env(safe-area-inset-bottom) + 84px)";
   const canGoOnline = hasPosition && gpsStatus === "granted";
-  const showLocationCta = !hasPosition; // ainda não temos coordenada válida
+  const showLocationCta = !hasPosition;
 
   return (
     <div
-      className="absolute inset-x-0 z-30 rounded-t-[28px] bg-card text-foreground shadow-[0_-20px_60px_-20px_rgba(0,0,0,0.7)] ring-1 ring-border/60"
-      style={{ bottom: navReserve, ["--driver-panel-h" as never]: "340px" }}
+      className="absolute inset-x-0 z-30 rounded-t-[24px] bg-card text-foreground shadow-[0_-20px_60px_-20px_rgba(0,0,0,0.7)] ring-1 ring-border/60"
+      style={{ bottom: navReserve, ["--driver-panel-h" as never]: "auto" }}
     >
-      <div className="flex flex-col gap-3 px-4 pb-4 pt-3">
-        {/* greeting + status compactos */}
+      {/* handle visual (sem arrasto, só estética) */}
+      <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-muted-foreground/30" />
+
+      <div className="flex flex-col gap-2.5 px-4 pb-3 pt-2">
+        {/* linha 1: saudação + status pill compacto */}
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
           <div className="min-w-0">
-            <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Olá, motorista</p>
-            <h1 className="truncate text-lg font-bold leading-tight sm:text-xl">{driverName || "Bem-vindo"}</h1>
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Motorista</p>
+            <h1 className="truncate text-base font-bold leading-tight">{driverName || "Bem-vindo"}</h1>
           </div>
           <div
-            className={`relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
-              online ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+            className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${
+              online
+                ? "bg-primary/15 text-primary ring-primary/40"
+                : "bg-muted/30 text-muted-foreground ring-border"
             }`}
           >
-            {online && <span className="absolute inset-0 animate-ping rounded-full bg-primary/40" />}
-            <Power className="relative h-4 w-4" />
+            <span className="relative flex h-2 w-2">
+              {online && <span className="absolute inset-0 animate-ping rounded-full bg-primary/60" />}
+              <span className={`relative h-2 w-2 rounded-full ${online ? "bg-primary" : "bg-muted-foreground"}`} />
+            </span>
+            {online ? "ONLINE" : "OFFLINE"}
           </div>
         </div>
 
-        <div
-          className={`rounded-xl px-3 py-2 ring-1 ${
-            online ? "bg-primary/10 ring-primary/40" : "bg-muted/30 ring-border"
-          }`}
-        >
-          <div className="text-sm font-bold">
-            {online ? "Você está online" : "Você está offline"}
-          </div>
-          <div className="text-[11px] text-muted-foreground">
-            {online ? "Recebendo solicitações em tempo real" : "Ative para começar a receber corridas"}
-          </div>
-        </div>
-
+        {/* linha 2: stats inline e compactas */}
         <div className="grid grid-cols-2 gap-2">
           <StatBlock label="Corridas hoje" value={stats.rides.toString()} />
           <StatBlock label="Ganhos hoje" value={formatBRL(stats.earnings)} highlight />
         </div>
 
-        {/* ===== CTA principal ===== */}
+        {/* CTA principal */}
         {showLocationCta ? (
           <div className="flex flex-col gap-2">
-            {/* mensagem de status do GPS */}
-            {gpsStatus === "loading" ? (
-              <div className="rounded-xl bg-muted/30 px-3 py-2 text-center text-xs text-muted-foreground ring-1 ring-border">
-                Obtendo sua localização...
-              </div>
-            ) : gpsMessage ? (
-              <div className={`rounded-xl px-3 py-2 text-xs ring-1 ${
+            {gpsMessage && (
+              <div className={`rounded-lg px-3 py-1.5 text-[11px] ring-1 ${
                 gpsStatus === "denied" || gpsStatus === "unavailable"
                   ? "bg-destructive/10 text-destructive ring-destructive/30"
                   : "bg-yellow-500/10 text-yellow-400 ring-yellow-500/30"
               }`}>
                 {gpsMessage}
               </div>
-            ) : (
-              <div className="rounded-xl bg-muted/30 px-3 py-2 text-center text-xs text-muted-foreground ring-1 ring-border">
-                Precisamos da sua localização para encontrar corridas próximas.
-              </div>
             )}
-
             <button
               type="button"
               disabled={disabled || gpsStatus === "loading" || gpsStatus === "unavailable"}
               onClick={onRequestLocation}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-sm font-bold uppercase tracking-wider text-primary-foreground shadow-lg shadow-primary/30 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-bold uppercase tracking-wider text-primary-foreground shadow-lg shadow-primary/30 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <MapPin className="h-4 w-4" />
               {gpsStatus === "loading"
@@ -664,7 +650,7 @@ function IdleBottomPanel({
             type="button"
             disabled={disabled || !canGoOnline}
             onClick={toggleOnline}
-            className={`w-full rounded-xl py-3.5 text-sm font-bold uppercase tracking-wider shadow-lg transition disabled:cursor-not-allowed disabled:opacity-50 ${
+            className={`w-full rounded-xl py-3 text-sm font-bold uppercase tracking-wider shadow-lg transition disabled:cursor-not-allowed disabled:opacity-50 ${
               online
                 ? "bg-card text-foreground ring-1 ring-border hover:ring-destructive/50"
                 : "bg-primary text-primary-foreground shadow-primary/30 hover:brightness-110"
@@ -680,9 +666,9 @@ function IdleBottomPanel({
 
 function StatBlock({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
   return (
-    <div className="rounded-2xl bg-card/60 p-3 ring-1 ring-border">
+    <div className="rounded-xl bg-background/60 px-3 py-2 ring-1 ring-border">
       <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</div>
-      <div className={`mt-1 text-lg font-bold tabular-nums ${highlight ? "text-primary" : ""}`}>{value}</div>
+      <div className={`mt-0.5 text-base font-bold tabular-nums ${highlight ? "text-primary" : ""}`}>{value}</div>
     </div>
   );
 }
