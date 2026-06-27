@@ -233,6 +233,7 @@ export type Database = {
           driver_lng: number | null
           driver_name: string | null
           driver_phone: string | null
+          driver_rated_at: string | null
           driver_rating: number | null
           driver_rating_comment: string | null
           driver_vehicle: string | null
@@ -244,6 +245,7 @@ export type Database = {
           origin_lng: number
           origin_name: string
           passenger_id: string
+          passenger_rated_at: string | null
           passenger_rating: number | null
           passenger_rating_comment: string | null
           payment_method: string | null
@@ -270,6 +272,7 @@ export type Database = {
           driver_lng?: number | null
           driver_name?: string | null
           driver_phone?: string | null
+          driver_rated_at?: string | null
           driver_rating?: number | null
           driver_rating_comment?: string | null
           driver_vehicle?: string | null
@@ -281,6 +284,7 @@ export type Database = {
           origin_lng: number
           origin_name: string
           passenger_id: string
+          passenger_rated_at?: string | null
           passenger_rating?: number | null
           passenger_rating_comment?: string | null
           payment_method?: string | null
@@ -307,6 +311,7 @@ export type Database = {
           driver_lng?: number | null
           driver_name?: string | null
           driver_phone?: string | null
+          driver_rated_at?: string | null
           driver_rating?: number | null
           driver_rating_comment?: string | null
           driver_vehicle?: string | null
@@ -318,6 +323,7 @@ export type Database = {
           origin_lng?: number
           origin_name?: string
           passenger_id?: string
+          passenger_rated_at?: string | null
           passenger_rating?: number | null
           passenger_rating_comment?: string | null
           payment_method?: string | null

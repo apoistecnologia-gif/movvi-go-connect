@@ -593,7 +593,7 @@ export const cancelarPeloMotorista = createServerFn({ method: "POST" })
 
 /**
  * Motorista avalia o passageiro após a corrida finalizada.
- * Não altera status, mas centraliza updates na tabela `rides`.
+ * Marca `driver_rated_at` para que a tela de avaliação não reapareça.
  */
 export const avaliarPassageiro = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -605,15 +605,44 @@ export const avaliarPassageiro = createServerFn({ method: "POST" })
       .update({
         passenger_rating: data.stars,
         passenger_rating_comment: data.comment ?? null,
-      })
+        driver_rated_at: new Date().toISOString(),
+      } as RideUpdate)
       .eq("id", data.rideId)
       .eq("driver_id", userId)
       .eq("status", RIDE_STATUS.FINALIZADA)
+      .is("driver_rated_at", null)
       .select("id")
-      .single();
+      .maybeSingle();
     if (upd.error) throw new Error("Não foi possível registrar a avaliação: " + upd.error.message);
     return { ok: true };
   });
+
+/**
+ * Passageiro avalia o motorista após a corrida finalizada.
+ * Marca `passenger_rated_at` para que a tela de avaliação não reapareça.
+ */
+export const avaliarMotorista = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => AvaliarPassageiroInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const upd = await supabase
+      .from("rides")
+      .update({
+        driver_rating: data.stars,
+        driver_rating_comment: data.comment ?? null,
+        passenger_rated_at: new Date().toISOString(),
+      } as RideUpdate)
+      .eq("id", data.rideId)
+      .eq("passenger_id", userId)
+      .eq("status", RIDE_STATUS.FINALIZADA)
+      .is("passenger_rated_at", null)
+      .select("id")
+      .maybeSingle();
+    if (upd.error) throw new Error("Não foi possível registrar a avaliação: " + upd.error.message);
+    return { ok: true };
+  });
+
 
 // ---------- Aliases oficiais (nomes em inglês) ----------
 // Mesma máquina de estados — uma única fonte de verdade para a tabela `rides`.
