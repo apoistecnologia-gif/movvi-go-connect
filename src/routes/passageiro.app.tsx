@@ -842,6 +842,7 @@ function PassageiroApp() {
           (err) => {
             gpsRequestInFlightRef.current = false;
             console.error("[MOVVI] Erro (low accuracy):", err);
+            void logGpsTelemetry("getcurrentposition_error", { code: err.code, message: err.message, extra: { phase: "low_accuracy" } });
             setGpsState("denied");
             gpsStateRef.current = "denied";
             if (err.code === err.PERMISSION_DENIED) {
