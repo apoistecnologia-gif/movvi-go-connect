@@ -1619,6 +1619,30 @@ function PassageiroApp() {
         </MovviSheet>
       )}
 
+      {(DEV_MODE || isDevelopmentEnvironment()) && ride && ride.status === "procurar_motorista" && dispatchDiag && (
+        <div className="pointer-events-auto absolute left-2 top-20 z-50 max-w-[280px] rounded-lg bg-black/85 p-2 font-mono text-[10px] text-white ring-1 ring-white/20">
+          <div className="mb-1 font-bold text-primary">[DEV] DISPATCH</div>
+          <div>category: {dispatchDiag.ride?.category}</div>
+          <div>offer_driver: {dispatchDiag.ride?.current_offer_driver_id ?? "—"}</div>
+          <div>total: {dispatchDiag.totals?.total} · online: {dispatchDiag.totals?.online} · aprov: {dispatchDiag.totals?.aprovados}</div>
+          <div>com GPS: {dispatchDiag.totals?.com_gps} · cat match: {dispatchDiag.totals?.categoria_match} · elegíveis: {dispatchDiag.totals?.elegiveis}</div>
+          <div className="mt-1 border-t border-white/20 pt-1">
+            {dispatchDiag.radii?.map((r: any) => (
+              <div key={r.km}>raio {r.km}km → {r.count}</div>
+            ))}
+          </div>
+          {dispatchDiag.drivers?.length > 0 && (
+            <div className="mt-1 border-t border-white/20 pt-1">
+              {dispatchDiag.drivers.slice(0, 5).map((d: any) => (
+                <div key={d.user_id} className="truncate">
+                  {d.name ?? d.user_id.slice(0, 6)} · {d.dist_km != null ? `${d.dist_km.toFixed(1)}km` : "?"} · {d.reasons.length ? d.reasons.join(",") : "OK"}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {ride &&
         rideDriverInfo &&
         (phase === "motorista_a_caminho" ||
