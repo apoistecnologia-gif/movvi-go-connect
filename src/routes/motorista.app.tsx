@@ -606,21 +606,35 @@ function MotoristaApp() {
 
   async function submitRating() {
     if (!ratingRide) return;
+    if (submittingRating || ratingSubmitted) return; // garante envio único
+    if (ratedRidesRef.current.has(ratingRide.id)) {
+      setRatingSubmitted(true);
+      return;
+    }
     setSubmittingRating(true);
+    setRatingError(null);
     try {
       await callRate({ data: { rideId: ratingRide.id, stars, comment: ratingComment || null } });
       ratedRidesRef.current.add(ratingRide.id);
       setRatingSubmitted(true);
     } catch (e) {
-      console.warn("[MOVVI MOTORISTA] erro ao avaliar:", (e as Error).message);
+      const msg = (e as Error)?.message ?? "Falha ao enviar avaliação.";
+      console.warn("[MOVVI MOTORISTA] erro ao avaliar:", msg);
+      setRatingError(msg);
     } finally { setSubmittingRating(false); }
   }
 
   function dismissRating() {
     setRatingRide(null);
     setRatingSubmitted(false);
+    setRatingError(null);
     setRatingComment("");
     setStars(5);
+  }
+
+  function skipRating() {
+    if (ratingRide) ratedRidesRef.current.add(ratingRide.id);
+    dismissRating();
   }
 
   const center = position ?? BRAZIL_CENTER;
