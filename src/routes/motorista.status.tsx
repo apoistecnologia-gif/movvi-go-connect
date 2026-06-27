@@ -1,6 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { loadDriverProfile } from "@/lib/driverProfile";
+
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -57,21 +59,22 @@ function DriverStatusPage() {
   useEffect(() => {
     let mounted = true;
     async function fetchStatus() {
-      const { data: u } = await supabase.auth.getUser();
-      if (!u.user) {
+      const result = await loadDriverProfile();
+      if (!mounted) return;
+      if (!result.ok && result.reason === "no_session") {
         navigate({ to: "/motorista/login" });
         return;
       }
-      const { data } = await supabase
-        .from("drivers")
-        .select("approval_status, motivo_reprovacao")
-        .eq("user_id", u.user.id)
-        .maybeSingle();
-      if (!mounted) return;
-      setStatus((data?.approval_status as Status | undefined) ?? "nao_encontrado");
-      setRejectionReason(data?.motivo_reprovacao ?? null);
+      if (result.ok) {
+        setStatus(result.profile.approval_status as Status);
+        setRejectionReason(result.profile.motivo_reprovacao ?? null);
+      } else {
+        setStatus("nao_encontrado");
+        setRejectionReason(null);
+      }
       setLoading(false);
     }
+
     fetchStatus();
     const ch = supabase
       .channel("driver-status-self")
