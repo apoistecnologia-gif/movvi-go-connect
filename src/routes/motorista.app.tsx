@@ -385,44 +385,41 @@ function MotoristaApp() {
       {!incoming && !ratingRide && (
         <button onClick={recenter}
           className="absolute right-4 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-card/95 text-foreground shadow-lg ring-1 ring-border backdrop-blur hover:ring-primary/40"
-          style={{ bottom: hasRideUI ? "calc(58vh + 16px)" : "calc(38vh + 16px)" }}>
+          style={{ bottom: active ? "calc(58vh + 16px)" : "calc(var(--driver-panel-h, 320px) + 16px)" }}>
           <Crosshair className="h-5 w-5" />
         </button>
       )}
 
-      {/* ===== Sheet permanente — muda conforme estado ===== */}
-      {!incoming && !ratingRide && (
-        <MovviSheet
-          ref={sheetRef}
-          snaps={active ? [32, 55, 88] : [34, 60, 88]}
-          initial={active ? 55 : 34}
-        >
-          {active ? (
-            <ActiveRidePanel
-              ride={active}
-              passenger={passenger}
-              etaSeconds={etaSeconds}
-              legKm={legKm}
-              onArrive={async () => { await callArrive({ data: { rideId: active.id } }); }}
-              onStart={async () => { await callStart({ data: { rideId: active.id } }); }}
-              onComplete={async () => {
-                await callComplete({ data: {
-                  rideId: active.id,
-                  final_price: active.estimated_price ? Number(active.estimated_price) : undefined,
-                } });
-              }}
-              onCancel={async () => { await callCancel({ data: { rideId: active.id } }); }}
-            />
-          ) : (
-            <IdlePanel
-              driverName={driverName}
-              online={online}
-              disabled={!!statusBlock}
-              toggleOnline={toggleOnline}
-              stats={todayStats}
-            />
-          )}
+      {/* ===== Corrida ativa — usa bottom sheet ===== */}
+      {!incoming && !ratingRide && active && (
+        <MovviSheet ref={sheetRef} snaps={[32, 55, 88]} initial={55}>
+          <ActiveRidePanel
+            ride={active}
+            passenger={passenger}
+            etaSeconds={etaSeconds}
+            legKm={legKm}
+            onArrive={async () => { await callArrive({ data: { rideId: active.id } }); }}
+            onStart={async () => { await callStart({ data: { rideId: active.id } }); }}
+            onComplete={async () => {
+              await callComplete({ data: {
+                rideId: active.id,
+                final_price: active.estimated_price ? Number(active.estimated_price) : undefined,
+              } });
+            }}
+            onCancel={async () => { await callCancel({ data: { rideId: active.id } }); }}
+          />
         </MovviSheet>
+      )}
+
+      {/* ===== Idle — painel fixo + CTA fixo (sem sheet, sem sobreposição) ===== */}
+      {!incoming && !ratingRide && !active && (
+        <IdleBottomPanel
+          driverName={driverName}
+          online={online}
+          disabled={!!statusBlock}
+          toggleOnline={toggleOnline}
+          stats={todayStats}
+        />
       )}
 
       {/* ===== Oferta entrante ===== */}
