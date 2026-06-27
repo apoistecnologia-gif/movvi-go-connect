@@ -311,22 +311,40 @@ export const Route = createFileRoute("/passageiro/app")({
   component: PassageiroApp,
   errorComponent: ({ error, reset }) => {
     console.error("[MOVVI] Erro na tela do passageiro:", error);
+    const message = (error as Error)?.message ?? String(error ?? "Erro desconhecido");
+    const stack = (error as Error)?.stack ?? "";
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background p-6 text-center">
         <h1 className="font-display text-2xl font-bold">Tivemos um problema ao abrir o mapa</h1>
         <p className="text-sm text-muted-foreground max-w-md">
           O app continua disponível. Recarregue para tentar novamente — sua localização e seu cadastro estão preservados.
         </p>
-        <button
-          onClick={() => { try { reset(); } catch { /* ignore */ } if (typeof window !== "undefined") window.location.reload(); }}
-          className="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground"
-        >
-          Tentar novamente
-        </button>
+        <details className="w-full max-w-md rounded-lg bg-card/60 p-3 text-left text-[11px] text-muted-foreground ring-1 ring-border">
+          <summary className="cursor-pointer font-semibold text-foreground">Detalhes técnicos</summary>
+          <div className="mt-2 break-words font-mono text-[10px] text-destructive-foreground">{message}</div>
+          {stack && (
+            <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-words font-mono text-[10px] opacity-70">{stack}</pre>
+          )}
+        </details>
+        <div className="flex gap-2">
+          <button
+            onClick={() => { try { reset(); } catch { /* ignore */ } if (typeof window !== "undefined") window.location.reload(); }}
+            className="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground"
+          >
+            Tentar novamente
+          </button>
+          <button
+            onClick={() => { if (typeof window !== "undefined") window.location.href = "/"; }}
+            className="rounded-xl bg-card px-5 py-2.5 text-sm font-semibold text-foreground ring-1 ring-border"
+          >
+            Voltar ao início
+          </button>
+        </div>
       </div>
     );
   },
 });
+
 
 type LatLng = { lat: number; lng: number };
 type Suggestion = { placeId: string; primary: string; secondary: string };
@@ -910,13 +928,23 @@ function PassageiroApp() {
       return;
     }
 
+    // Watchdog: se a Permissions API não responder em 1.5s (Safari/iOS antigo,
+    // WebViews, navegadores embutidos), tratamos como "prompt" e disparamos o
+    // pedido nativo de localização para garantir que o prompt apareça.
+    const watchdog = window.setTimeout(() => {
+      if (cancelled) return;
+      setPermissionStatus((prev) => (prev === "checking" ? "prompt" : prev));
+      if (gpsStateRef.current === "idle") {
+        try { requestGps(); } catch (err) { console.warn("[MOVVI] requestGps watchdog falhou:", err); }
+      }
+    }, 1500);
+
     const perms = (navigator as Navigator).permissions;
     if (!perms || typeof perms.query !== "function") {
-      // Sem Permissions API (Safari iOS antigo etc.): dispara o prompt nativo
-      // imediatamente — mesmo comportamento do app do motorista.
+      window.clearTimeout(watchdog);
       setPermissionStatus("prompt");
-      requestGps();
-      return;
+      try { requestGps(); } catch (err) { console.warn("[MOVVI] requestGps fallback falhou:", err); }
+      return () => { cancelled = true; };
     }
 
     let statusRef: PermissionStatus | null = null;
@@ -924,6 +952,7 @@ function PassageiroApp() {
       .query({ name: "geolocation" as PermissionName })
       .then((status) => {
         if (cancelled) return;
+        window.clearTimeout(watchdog);
         statusRef = status;
         const apply = (s: PermissionState) => {
           try {
@@ -947,16 +976,21 @@ function PassageiroApp() {
         apply(status.state);
         status.onchange = () => apply(status.state);
       })
-      .catch(() => {
+      .catch((err) => {
         if (cancelled) return;
-        setPermissionStatus("unsupported");
+        window.clearTimeout(watchdog);
+        console.warn("[MOVVI] permissions.query falhou:", err);
+        setPermissionStatus("prompt");
+        try { requestGps(); } catch (e) { console.warn("[MOVVI] requestGps catch falhou:", e); }
       });
 
     return () => {
       cancelled = true;
+      window.clearTimeout(watchdog);
       if (statusRef) statusRef.onchange = null;
     };
   }, [requestGps]);
+
 
 
   /* ---------------------- autocomplete (Places API New) ---------------------- */
