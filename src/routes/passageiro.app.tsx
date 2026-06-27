@@ -848,8 +848,13 @@ function PassageiroApp() {
   // - Se for "denied", mostramos o fluxo manual sem nunca tentar de novo
   //   automaticamente (evita loops).
   useEffect(() => {
-    purgeForeignMapCache();
+    try {
+      purgeForeignMapCache();
+    } catch (err) {
+      console.warn("[MOVVI] purgeForeignMapCache falhou:", err);
+    }
     let cancelled = false;
+    console.log("[MOVVI] Permissão de localização solicitada");
 
     if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
       setPermissionStatus("unsupported");
