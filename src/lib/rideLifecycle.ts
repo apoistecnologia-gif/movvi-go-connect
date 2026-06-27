@@ -87,6 +87,11 @@ const CriarCorridaInput = z.object({
 const RideIdInput = z.object({ rideId: z.string().uuid() });
 const FinalizarInput = z.object({ rideId: z.string().uuid(), final_price: z.number().optional() });
 const CancelarInput = z.object({ rideId: z.string().uuid(), motivo: z.string().optional() });
+const AvaliarPassageiroInput = z.object({
+  rideId: z.string().uuid(),
+  stars: z.number().int().min(1).max(5),
+  comment: z.string().max(500).optional().nullable(),
+});
 
 // ---------- Helpers internos ----------
 
