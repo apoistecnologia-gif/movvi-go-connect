@@ -178,13 +178,16 @@ function AdminDashboardPage() {
           <CardContent className="p-0">
             <div className="h-[420px] w-full">
               <MovviMap center={mapCenter}>
-                {online.map((d) =>
-                  d.current_lat && d.current_lng ? (
+                {online.map((d) => {
+                  if (!d.current_lat || !d.current_lng) return null;
+                  const g = typeof window !== "undefined" ? (window as unknown as { google?: typeof google }).google : undefined;
+                  if (!g?.maps) return null;
+                  return (
                     <Marker
                       key={d.id}
                       position={{ lat: d.current_lat, lng: d.current_lng }}
                       icon={{
-                        path: google.maps.SymbolPath.CIRCLE,
+                        path: g.maps.SymbolPath.CIRCLE,
                         scale: 7,
                         fillColor: "#8DD92B",
                         fillOpacity: 1,
@@ -192,8 +195,8 @@ function AdminDashboardPage() {
                         strokeWeight: 2,
                       }}
                     />
-                  ) : null,
-                )}
+                  );
+                })}
               </MovviMap>
             </div>
           </CardContent>
