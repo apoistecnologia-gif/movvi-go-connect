@@ -290,8 +290,8 @@ function DriverSignUpPage() {
                 <div className="grid gap-4 sm:grid-cols-3">
                   <FileField
                     id="selfie"
-                    label="Selfie"
-                    accept="image/*"
+                    label="Foto de perfil (selfie) *"
+                    accept="image/jpeg,image/jpg,image/png,image/webp"
                     file={selfie}
                     onChange={setSelfie}
                   />
