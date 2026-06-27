@@ -34,9 +34,9 @@ export function useDriverBroadcast(
     supabase.from("drivers").update(patch).eq("user_id", userId).then();
   }, [userId, online]);
 
-  // broadcast GPS (sempre que houver posição, mesmo offline durante corrida ativa)
+  // broadcast GPS
   useEffect(() => {
-    if (!userId || !position) return;
+    if (!userId || !online || !position) return;
     const t = window.setTimeout(() => {
       supabase
         .from("drivers")
