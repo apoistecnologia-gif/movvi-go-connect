@@ -391,10 +391,16 @@ function MotoristaApp() {
       const rawLat = pos.coords.latitude, rawLng = pos.coords.longitude;
       console.log("[MOVVI MOTORISTA] GPS ok:", { lat: rawLat, lng: rawLng });
       if (!isBrazilCoordinate(rawLat, rawLng)) {
+        if (isDevelopmentEnvironment()) {
+          console.warn("[MOVVI MOTORISTA] GPS fora do Brasil — fallback automático para localização de teste (dev):", { lat: rawLat, lng: rawLng });
+          setGpsMessage("GPS fora do Brasil detectado. Usando localização de teste no Brasil (modo dev).");
+          activateOnlineWithCoords(TEST_DRIVER_LOCATION.lat, TEST_DRIVER_LOCATION.lng, null, null, true);
+          return;
+        }
         console.warn("[MOVVI MOTORISTA] GPS fora do Brasil — bloqueando online:", { lat: rawLat, lng: rawLng });
         setGpsStatus("error");
         setGpsMessage("Sua localização não parece estar no Brasil. Ative o GPS real do aparelho e tente novamente.");
-        setShowTestLocationButton(isDevelopmentEnvironment());
+        setShowTestLocationButton(true);
         return;
       }
       const heading = Number.isFinite(pos.coords.heading as number) ? (pos.coords.heading as number) : null;
