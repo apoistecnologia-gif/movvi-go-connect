@@ -433,6 +433,9 @@ export const aceitarCorrida = createServerFn({ method: "POST" })
             .join(" • ")
         : null;
 
+    // PIN de segurança (4 dígitos) — gerado UMA vez no aceite, nunca regenerado.
+    const safetyCode = String(Math.floor(1000 + Math.random() * 9000));
+
     const patch: Partial<RideUpdate> = {
       driver_id: userId,
       status: RIDE_STATUS.MOTORISTA_A_CAMINHO,
@@ -443,6 +446,7 @@ export const aceitarCorrida = createServerFn({ method: "POST" })
       driver_vehicle: vehicle,
       driver_lat: d?.current_lat ?? null,
       driver_lng: d?.current_lng ?? null,
+      safety_code: safetyCode,
     };
 
     const upd = await supabase
