@@ -426,13 +426,23 @@ function PassageiroApp() {
   const [ratingStars, setRatingStars] = useState(5);
   const [ratingComment, setRatingComment] = useState("");
   const [submittingRating, setSubmittingRating] = useState(false);
+  const [ratingError, setRatingError] = useState<string | null>(null);
 
   const ratedRideIdsRef = useRef<Set<string>>(new Set());
 
   async function submitDriverRating() {
     if (!ride) return;
     const rideId = ride.id;
+    if (submittingRating) return; // bloqueia cliques duplicados
+    if (ratedRideIdsRef.current.has(rideId)) {
+      // já enviou nesta sessão — apenas marca local p/ mostrar confirmação
+      setRide((prev) => (prev && prev.id === rideId
+        ? { ...prev, passenger_rated_at: prev.passenger_rated_at ?? new Date().toISOString() }
+        : prev));
+      return;
+    }
     setSubmittingRating(true);
+    setRatingError(null);
     try {
       await callRateDriver({ data: { rideId, stars: ratingStars, comment: ratingComment || null } });
       ratedRideIdsRef.current.add(rideId);
@@ -442,10 +452,21 @@ function PassageiroApp() {
         ? { ...prev, passenger_rated_at: new Date().toISOString() }
         : prev));
     } catch (e) {
-      console.warn("[MOVVI] erro ao avaliar motorista:", (e as Error).message);
+      const msg = (e as Error)?.message ?? "Falha ao enviar avaliação.";
+      console.warn("[MOVVI] erro ao avaliar motorista:", msg);
+      setRatingError(msg);
     } finally {
       setSubmittingRating(false);
     }
+  }
+
+  function skipDriverRating() {
+    if (!ride) return;
+    ratedRideIdsRef.current.add(ride.id);
+    setRatingError(null);
+    setRide((prev) => (prev
+      ? { ...prev, passenger_rated_at: prev.passenger_rated_at ?? new Date().toISOString() }
+      : prev));
   }
 
   const [userId, setUserId] = useState<string | null>(null);
@@ -1775,12 +1796,25 @@ function PassageiroApp() {
               rows={3}
               className="mt-4 w-full resize-none rounded-xl border border-border bg-card px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
             />
+            {ratingError && (
+              <div className="mt-3 rounded-xl bg-destructive/10 px-3 py-2 text-xs text-destructive ring-1 ring-destructive/30">
+                {ratingError} Toque em <strong>Tentar novamente</strong> ou pule esta avaliação.
+              </div>
+            )}
             <button
               onClick={submitDriverRating}
               disabled={submittingRating}
               className="mt-4 w-full rounded-2xl bg-primary py-4 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/30 disabled:opacity-60"
             >
-              {submittingRating ? "Enviando…" : "Enviar avaliação"}
+              {submittingRating ? "Enviando…" : (ratingError ? "Tentar novamente" : "Enviar avaliação")}
+            </button>
+            <button
+              type="button"
+              onClick={skipDriverRating}
+              disabled={submittingRating}
+              className="mt-2 w-full rounded-2xl bg-transparent py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground disabled:opacity-60"
+            >
+              Pular avaliação
             </button>
           </div>
         </MovviSheet>

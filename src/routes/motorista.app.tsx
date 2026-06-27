@@ -117,6 +117,7 @@ function MotoristaApp() {
   const [ratingComment, setRatingComment] = useState("");
   const [submittingRating, setSubmittingRating] = useState(false);
   const [ratingSubmitted, setRatingSubmitted] = useState(false);
+  const [ratingError, setRatingError] = useState<string | null>(null);
   const ratedRidesRef = useRef<Set<string>>(new Set());
 
   const mapRef = useRef<google.maps.Map | null>(null);
@@ -605,21 +606,35 @@ function MotoristaApp() {
 
   async function submitRating() {
     if (!ratingRide) return;
+    if (submittingRating || ratingSubmitted) return; // garante envio único
+    if (ratedRidesRef.current.has(ratingRide.id)) {
+      setRatingSubmitted(true);
+      return;
+    }
     setSubmittingRating(true);
+    setRatingError(null);
     try {
       await callRate({ data: { rideId: ratingRide.id, stars, comment: ratingComment || null } });
       ratedRidesRef.current.add(ratingRide.id);
       setRatingSubmitted(true);
     } catch (e) {
-      console.warn("[MOVVI MOTORISTA] erro ao avaliar:", (e as Error).message);
+      const msg = (e as Error)?.message ?? "Falha ao enviar avaliação.";
+      console.warn("[MOVVI MOTORISTA] erro ao avaliar:", msg);
+      setRatingError(msg);
     } finally { setSubmittingRating(false); }
   }
 
   function dismissRating() {
     setRatingRide(null);
     setRatingSubmitted(false);
+    setRatingError(null);
     setRatingComment("");
     setStars(5);
+  }
+
+  function skipRating() {
+    if (ratingRide) ratedRidesRef.current.add(ratingRide.id);
+    dismissRating();
   }
 
   const center = position ?? BRAZIL_CENTER;
@@ -749,8 +764,10 @@ function MotoristaApp() {
           comment={ratingComment} setComment={setRatingComment}
           submitting={submittingRating}
           submitted={ratingSubmitted}
+          errorMessage={ratingError}
           onSubmit={submitRating}
           onDismiss={dismissRating}
+          onSkip={skipRating}
         />
       )}
 
@@ -1098,13 +1115,15 @@ function ActionButton({
    AVALIAÇÃO + RESUMO
    ============================================================ */
 function RatingScreen({
-  ride, passenger, stars, setStars, comment, setComment, submitting, submitted, onSubmit, onDismiss,
+  ride, passenger, stars, setStars, comment, setComment, submitting, submitted,
+  errorMessage, onSubmit, onDismiss, onSkip,
 }: {
   ride: RideRow; passenger: Passenger | null;
   stars: number; setStars: (n: number) => void;
   comment: string; setComment: (s: string) => void;
   submitting: boolean; submitted: boolean;
-  onSubmit: () => void; onDismiss: () => void;
+  errorMessage: string | null;
+  onSubmit: () => void; onDismiss: () => void; onSkip: () => void;
 }) {
   const total = Number(ride.final_price ?? ride.estimated_price ?? 0);
   const paymentLabel = ride.payment_method === "cash" ? "Dinheiro" : (ride.payment_method ?? "—");
@@ -1167,9 +1186,20 @@ function RatingScreen({
                 rows={2} />
             </div>
 
+
+            {errorMessage && (
+              <div className="mt-3 rounded-xl bg-destructive/10 px-3 py-2 text-xs text-destructive ring-1 ring-destructive/30">
+                {errorMessage} Toque em <strong>Tentar novamente</strong> ou pule esta avaliação.
+              </div>
+            )}
+
             <button disabled={submitting} onClick={onSubmit}
               className="mt-4 w-full rounded-2xl bg-primary py-4 text-sm font-bold uppercase tracking-wider text-primary-foreground shadow-lg shadow-primary/30 hover:brightness-110 disabled:opacity-60">
-              {submitting ? "Enviando…" : "Enviar avaliação"}
+              {submitting ? "Enviando…" : (errorMessage ? "Tentar novamente" : "Enviar avaliação")}
+            </button>
+            <button type="button" onClick={onSkip} disabled={submitting}
+              className="mt-2 w-full rounded-2xl bg-transparent py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground disabled:opacity-60">
+              Pular avaliação
             </button>
           </>
         )}
