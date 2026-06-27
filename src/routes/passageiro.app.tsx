@@ -39,7 +39,7 @@ import {
   isBrazilCoordinate,
   purgeForeignMapCache,
 } from "@/lib/googleMaps";
-import { isDevelopmentEnvironment } from "@/lib/environment";
+import { DEV_MODE, isDevelopmentEnvironment } from "@/lib/environment";
 
 import { computeRoute, type RouteResult } from "@/lib/routes.functions";
 import { reverseGeocode, type GeocodeResult } from "@/lib/geocode.functions";
