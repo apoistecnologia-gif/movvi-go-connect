@@ -1421,6 +1421,7 @@ function PassageiroApp() {
       current_speed: null,
       rating: 5,
       selfie_url: null,
+      photo_url: null,
       vehicle_color: vehicleColor,
       vehicle_model: vehicleModel,
       vehicle_plate: vehiclePlate,
