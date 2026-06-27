@@ -69,7 +69,7 @@ export function useAuthForm(): UseAuthFormResult {
       try {
         await fn(new FormData(e.currentTarget));
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Erro inesperado");
+        setError(translateAuthError(err));
       } finally {
         setLoading(false);
       }
