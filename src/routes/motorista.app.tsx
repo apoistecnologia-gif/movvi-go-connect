@@ -191,6 +191,7 @@ function MotoristaApp() {
     const presentOffer = (r: RideRow) => {
       if (r.status !== "procurar_motorista") return;
       if (active || incoming || ratingRide) return;
+      console.log("[MOVVI MOTORISTA] corrida recebida:", r.id, r.category, r.origin_name, "→", r.destination_name);
       setIncoming(r); setCountdown(15);
       if (navigator.vibrate) navigator.vibrate([280, 120, 280, 120, 280]);
     };
@@ -206,6 +207,7 @@ function MotoristaApp() {
       }
     };
 
+    console.log("[MOVVI MOTORISTA] escutando corridas: canal driver-rides-" + userId);
     const ch = supabase.channel(`driver-rides-${userId}`)
       .on("postgres_changes",
         { event: "UPDATE", schema: "public", table: "rides", filter: `current_offer_driver_id=eq.${userId}` },
@@ -214,6 +216,7 @@ function MotoristaApp() {
         { event: "UPDATE", schema: "public", table: "rides", filter: `driver_id=eq.${userId}` },
         (p) => applyActive(p.new as RideRow))
       .subscribe(async (status) => {
+        console.log("[MOVVI MOTORISTA] status do canal:", status);
         if (status !== "SUBSCRIBED") return;
         // pega oferta pendente que o realtime não entregou (driver acabou de entrar)
         const pending = await supabase
