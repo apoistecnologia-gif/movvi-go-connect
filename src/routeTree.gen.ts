@@ -28,9 +28,11 @@ import { Route as MotoristaCadastroRouteImport } from './routes/motorista.cadast
 import { Route as MotoristaAppRouteImport } from './routes/motorista.app'
 import { Route as DevRatingTestRouteImport } from './routes/dev.rating-test'
 import { Route as DebugMotoristaAuthRouteImport } from './routes/debug.motorista-auth'
+import { Route as AdminSegurancaRouteImport } from './routes/admin.seguranca'
 import { Route as AdminRelatoriosRouteImport } from './routes/admin.relatorios'
 import { Route as AdminPrecosRouteImport } from './routes/admin.precos'
 import { Route as AdminPassageirosRouteImport } from './routes/admin.passageiros'
+import { Route as AdminPagamentosRouteImport } from './routes/admin.pagamentos'
 import { Route as AdminNotificacoesRouteImport } from './routes/admin.notificacoes'
 import { Route as AdminMotoristasRouteImport } from './routes/admin.motoristas'
 import { Route as AdminMapaRouteImport } from './routes/admin.mapa'
@@ -42,6 +44,7 @@ import { Route as AdminCuponsRouteImport } from './routes/admin.cupons'
 import { Route as AdminCorridasRouteImport } from './routes/admin.corridas'
 import { Route as AdminConfiguracoesRouteImport } from './routes/admin.configuracoes'
 import { Route as AdminCategoriasRouteImport } from './routes/admin.categorias'
+import { Route as AdminBackupsRouteImport } from './routes/admin.backups'
 import { Route as AdminAssinaturasRouteImport } from './routes/admin.assinaturas'
 import { Route as AdminAdministradoresRouteImport } from './routes/admin.administradores'
 
@@ -140,6 +143,11 @@ const DebugMotoristaAuthRoute = DebugMotoristaAuthRouteImport.update({
   path: '/debug/motorista-auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminSegurancaRoute = AdminSegurancaRouteImport.update({
+  id: '/admin/seguranca',
+  path: '/admin/seguranca',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminRelatoriosRoute = AdminRelatoriosRouteImport.update({
   id: '/admin/relatorios',
   path: '/admin/relatorios',
@@ -153,6 +161,11 @@ const AdminPrecosRoute = AdminPrecosRouteImport.update({
 const AdminPassageirosRoute = AdminPassageirosRouteImport.update({
   id: '/admin/passageiros',
   path: '/admin/passageiros',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminPagamentosRoute = AdminPagamentosRouteImport.update({
+  id: '/admin/pagamentos',
+  path: '/admin/pagamentos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminNotificacoesRoute = AdminNotificacoesRouteImport.update({
@@ -210,6 +223,11 @@ const AdminCategoriasRoute = AdminCategoriasRouteImport.update({
   path: '/admin/categorias',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminBackupsRoute = AdminBackupsRouteImport.update({
+  id: '/admin/backups',
+  path: '/admin/backups',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminAssinaturasRoute = AdminAssinaturasRouteImport.update({
   id: '/admin/assinaturas',
   path: '/admin/assinaturas',
@@ -227,6 +245,7 @@ export interface FileRoutesByFullPath {
   '/map-test': typeof MapTestRoute
   '/admin/administradores': typeof AdminAdministradoresRoute
   '/admin/assinaturas': typeof AdminAssinaturasRoute
+  '/admin/backups': typeof AdminBackupsRoute
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
   '/admin/corridas': typeof AdminCorridasRoute
@@ -238,9 +257,11 @@ export interface FileRoutesByFullPath {
   '/admin/mapa': typeof AdminMapaRoute
   '/admin/motoristas': typeof AdminMotoristasRoute
   '/admin/notificacoes': typeof AdminNotificacoesRoute
+  '/admin/pagamentos': typeof AdminPagamentosRoute
   '/admin/passageiros': typeof AdminPassageirosRoute
   '/admin/precos': typeof AdminPrecosRoute
   '/admin/relatorios': typeof AdminRelatoriosRoute
+  '/admin/seguranca': typeof AdminSegurancaRoute
   '/debug/motorista-auth': typeof DebugMotoristaAuthRoute
   '/dev/rating-test': typeof DevRatingTestRoute
   '/motorista/app': typeof MotoristaAppRoute
@@ -264,6 +285,7 @@ export interface FileRoutesByTo {
   '/map-test': typeof MapTestRoute
   '/admin/administradores': typeof AdminAdministradoresRoute
   '/admin/assinaturas': typeof AdminAssinaturasRoute
+  '/admin/backups': typeof AdminBackupsRoute
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
   '/admin/corridas': typeof AdminCorridasRoute
@@ -275,9 +297,11 @@ export interface FileRoutesByTo {
   '/admin/mapa': typeof AdminMapaRoute
   '/admin/motoristas': typeof AdminMotoristasRoute
   '/admin/notificacoes': typeof AdminNotificacoesRoute
+  '/admin/pagamentos': typeof AdminPagamentosRoute
   '/admin/passageiros': typeof AdminPassageirosRoute
   '/admin/precos': typeof AdminPrecosRoute
   '/admin/relatorios': typeof AdminRelatoriosRoute
+  '/admin/seguranca': typeof AdminSegurancaRoute
   '/debug/motorista-auth': typeof DebugMotoristaAuthRoute
   '/dev/rating-test': typeof DevRatingTestRoute
   '/motorista/app': typeof MotoristaAppRoute
@@ -302,6 +326,7 @@ export interface FileRoutesById {
   '/map-test': typeof MapTestRoute
   '/admin/administradores': typeof AdminAdministradoresRoute
   '/admin/assinaturas': typeof AdminAssinaturasRoute
+  '/admin/backups': typeof AdminBackupsRoute
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
   '/admin/corridas': typeof AdminCorridasRoute
@@ -313,9 +338,11 @@ export interface FileRoutesById {
   '/admin/mapa': typeof AdminMapaRoute
   '/admin/motoristas': typeof AdminMotoristasRoute
   '/admin/notificacoes': typeof AdminNotificacoesRoute
+  '/admin/pagamentos': typeof AdminPagamentosRoute
   '/admin/passageiros': typeof AdminPassageirosRoute
   '/admin/precos': typeof AdminPrecosRoute
   '/admin/relatorios': typeof AdminRelatoriosRoute
+  '/admin/seguranca': typeof AdminSegurancaRoute
   '/debug/motorista-auth': typeof DebugMotoristaAuthRoute
   '/dev/rating-test': typeof DevRatingTestRoute
   '/motorista/app': typeof MotoristaAppRoute
@@ -341,6 +368,7 @@ export interface FileRouteTypes {
     | '/map-test'
     | '/admin/administradores'
     | '/admin/assinaturas'
+    | '/admin/backups'
     | '/admin/categorias'
     | '/admin/configuracoes'
     | '/admin/corridas'
@@ -352,9 +380,11 @@ export interface FileRouteTypes {
     | '/admin/mapa'
     | '/admin/motoristas'
     | '/admin/notificacoes'
+    | '/admin/pagamentos'
     | '/admin/passageiros'
     | '/admin/precos'
     | '/admin/relatorios'
+    | '/admin/seguranca'
     | '/debug/motorista-auth'
     | '/dev/rating-test'
     | '/motorista/app'
@@ -378,6 +408,7 @@ export interface FileRouteTypes {
     | '/map-test'
     | '/admin/administradores'
     | '/admin/assinaturas'
+    | '/admin/backups'
     | '/admin/categorias'
     | '/admin/configuracoes'
     | '/admin/corridas'
@@ -389,9 +420,11 @@ export interface FileRouteTypes {
     | '/admin/mapa'
     | '/admin/motoristas'
     | '/admin/notificacoes'
+    | '/admin/pagamentos'
     | '/admin/passageiros'
     | '/admin/precos'
     | '/admin/relatorios'
+    | '/admin/seguranca'
     | '/debug/motorista-auth'
     | '/dev/rating-test'
     | '/motorista/app'
@@ -415,6 +448,7 @@ export interface FileRouteTypes {
     | '/map-test'
     | '/admin/administradores'
     | '/admin/assinaturas'
+    | '/admin/backups'
     | '/admin/categorias'
     | '/admin/configuracoes'
     | '/admin/corridas'
@@ -426,9 +460,11 @@ export interface FileRouteTypes {
     | '/admin/mapa'
     | '/admin/motoristas'
     | '/admin/notificacoes'
+    | '/admin/pagamentos'
     | '/admin/passageiros'
     | '/admin/precos'
     | '/admin/relatorios'
+    | '/admin/seguranca'
     | '/debug/motorista-auth'
     | '/dev/rating-test'
     | '/motorista/app'
@@ -453,6 +489,7 @@ export interface RootRouteChildren {
   MapTestRoute: typeof MapTestRoute
   AdminAdministradoresRoute: typeof AdminAdministradoresRoute
   AdminAssinaturasRoute: typeof AdminAssinaturasRoute
+  AdminBackupsRoute: typeof AdminBackupsRoute
   AdminCategoriasRoute: typeof AdminCategoriasRoute
   AdminConfiguracoesRoute: typeof AdminConfiguracoesRoute
   AdminCorridasRoute: typeof AdminCorridasRoute
@@ -464,9 +501,11 @@ export interface RootRouteChildren {
   AdminMapaRoute: typeof AdminMapaRoute
   AdminMotoristasRoute: typeof AdminMotoristasRoute
   AdminNotificacoesRoute: typeof AdminNotificacoesRoute
+  AdminPagamentosRoute: typeof AdminPagamentosRoute
   AdminPassageirosRoute: typeof AdminPassageirosRoute
   AdminPrecosRoute: typeof AdminPrecosRoute
   AdminRelatoriosRoute: typeof AdminRelatoriosRoute
+  AdminSegurancaRoute: typeof AdminSegurancaRoute
   DebugMotoristaAuthRoute: typeof DebugMotoristaAuthRoute
   DevRatingTestRoute: typeof DevRatingTestRoute
   MotoristaAppRoute: typeof MotoristaAppRoute
@@ -620,6 +659,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DebugMotoristaAuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/seguranca': {
+      id: '/admin/seguranca'
+      path: '/admin/seguranca'
+      fullPath: '/admin/seguranca'
+      preLoaderRoute: typeof AdminSegurancaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/relatorios': {
       id: '/admin/relatorios'
       path: '/admin/relatorios'
@@ -639,6 +685,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/passageiros'
       fullPath: '/admin/passageiros'
       preLoaderRoute: typeof AdminPassageirosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/pagamentos': {
+      id: '/admin/pagamentos'
+      path: '/admin/pagamentos'
+      fullPath: '/admin/pagamentos'
+      preLoaderRoute: typeof AdminPagamentosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/notificacoes': {
@@ -718,6 +771,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCategoriasRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/backups': {
+      id: '/admin/backups'
+      path: '/admin/backups'
+      fullPath: '/admin/backups'
+      preLoaderRoute: typeof AdminBackupsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/assinaturas': {
       id: '/admin/assinaturas'
       path: '/admin/assinaturas'
@@ -741,6 +801,7 @@ const rootRouteChildren: RootRouteChildren = {
   MapTestRoute: MapTestRoute,
   AdminAdministradoresRoute: AdminAdministradoresRoute,
   AdminAssinaturasRoute: AdminAssinaturasRoute,
+  AdminBackupsRoute: AdminBackupsRoute,
   AdminCategoriasRoute: AdminCategoriasRoute,
   AdminConfiguracoesRoute: AdminConfiguracoesRoute,
   AdminCorridasRoute: AdminCorridasRoute,
@@ -752,9 +813,11 @@ const rootRouteChildren: RootRouteChildren = {
   AdminMapaRoute: AdminMapaRoute,
   AdminMotoristasRoute: AdminMotoristasRoute,
   AdminNotificacoesRoute: AdminNotificacoesRoute,
+  AdminPagamentosRoute: AdminPagamentosRoute,
   AdminPassageirosRoute: AdminPassageirosRoute,
   AdminPrecosRoute: AdminPrecosRoute,
   AdminRelatoriosRoute: AdminRelatoriosRoute,
+  AdminSegurancaRoute: AdminSegurancaRoute,
   DebugMotoristaAuthRoute: DebugMotoristaAuthRoute,
   DevRatingTestRoute: DevRatingTestRoute,
   MotoristaAppRoute: MotoristaAppRoute,
