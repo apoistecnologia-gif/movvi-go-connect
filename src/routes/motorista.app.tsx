@@ -713,7 +713,7 @@ function MotoristaApp() {
             etaSeconds={etaSeconds}
             legKm={legKm}
             onArrive={async () => { await callArrive({ data: { rideId: active.id } }); }}
-            onStart={async () => { await callStart({ data: { rideId: active.id } }); }}
+            onStart={async (code) => { await callStart({ data: { rideId: active.id, safety_code: code } }); }}
             onComplete={async () => {
               await callComplete({ data: {
                 rideId: active.id,
