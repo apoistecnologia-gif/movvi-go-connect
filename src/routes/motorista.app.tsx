@@ -748,7 +748,9 @@ function MotoristaApp() {
           stars={stars} setStars={setStars}
           comment={ratingComment} setComment={setRatingComment}
           submitting={submittingRating}
+          submitted={ratingSubmitted}
           onSubmit={submitRating}
+          onDismiss={dismissRating}
         />
       )}
 
