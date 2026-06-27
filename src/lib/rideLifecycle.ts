@@ -242,12 +242,11 @@ export const aceitarCorrida = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => RideIdInput.parse(d))
   .handler(async ({ data, context }) => {
-    const { userId } = context;
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    await assertDriverApproved(supabaseAdmin, userId);
+    const { supabase, userId } = context;
+    await assertDriverApproved(supabase, userId);
 
     // snapshot do motorista
-    const drv = await supabaseAdmin
+    const drv = await supabase
       .from("drivers")
       .select("name, phone, vehicle_model, vehicle_plate, vehicle_color, current_lat, current_lng")
       .eq("user_id", userId)
@@ -273,7 +272,7 @@ export const aceitarCorrida = createServerFn({ method: "POST" })
       driver_lng: d?.current_lng ?? null,
     };
 
-    const upd = await supabaseAdmin
+    const upd = await supabase
       .from("rides")
       .update(patch)
       .eq("id", data.rideId)
@@ -287,6 +286,11 @@ export const aceitarCorrida = createServerFn({ method: "POST" })
           ? "Não foi possível aceitar a corrida: esta chamada já foi aceita, cancelada ou não está mais disponível para você."
           : "Não foi possível aceitar a corrida: " + upd.error.message,
       );
+    console.log("[MOVVI MOTORISTA] aceite confirmado no backend", {
+      rideId: upd.data.id,
+      driverId: upd.data.driver_id,
+      status: upd.data.status,
+    });
     return upd.data;
   });
 
