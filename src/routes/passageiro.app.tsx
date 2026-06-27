@@ -39,7 +39,7 @@ import {
   isBrazilCoordinate,
   purgeForeignMapCache,
 } from "@/lib/googleMaps";
-import { isDevelopmentEnvironment } from "@/lib/environment";
+import { DEV_MODE, isDevelopmentEnvironment } from "@/lib/environment";
 
 import { computeRoute, type RouteResult } from "@/lib/routes.functions";
 import { reverseGeocode, type GeocodeResult } from "@/lib/geocode.functions";
@@ -1188,7 +1188,7 @@ function PassageiroApp() {
 
 
 
-  const inPreview = isDevelopmentEnvironment();
+  const inPreview = DEV_MODE && isDevelopmentEnvironment();
   return (
     <div className="relative h-[100dvh] w-screen overflow-hidden bg-background text-foreground">
       {inPreview && (
@@ -1200,7 +1200,7 @@ function PassageiroApp() {
           </div>
         </div>
       )}
-      {gpsDiag && (
+      {DEV_MODE && gpsDiag && (
         <div className="pointer-events-auto absolute left-2 top-14 z-50 max-w-[280px] rounded-lg bg-black/85 p-3 font-mono text-[10px] leading-tight text-white ring-1 ring-white/20 backdrop-blur">
           <div className="mb-1 flex items-center justify-between gap-2">
             <span className={`font-bold ${gpsDiag.status === "ok" ? "text-emerald-400" : "text-red-400"}`}>
@@ -2521,7 +2521,7 @@ function GpsDeniedScreen({
     setManualError("Digite um endereço no Brasil e selecione uma opção da lista.");
   }
 
-  const showDevBadge = isDevelopmentEnvironment();
+  const showDevBadge = DEV_MODE && isDevelopmentEnvironment();
 
   return (
     <div className="relative flex min-h-[100dvh] flex-col items-center justify-center bg-background px-6 text-center text-foreground">
