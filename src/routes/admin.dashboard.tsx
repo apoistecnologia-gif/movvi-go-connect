@@ -67,7 +67,7 @@ const EMPTY: Metrics = {
   subsActive: 0, revenueToday: 0, revenueMonth: 0,
 };
 
-const ACTIVE_STATUSES = ["procurar_motorista", "motorista_a_caminho", "motorista_chegou", "em_viagem"];
+const ACTIVE_STATUSES = ["procurar_motorista", "motorista_a_caminho", "motorista_chegou", "em_viagem"] as const;
 
 function AdminDashboardPage() {
   const [m, setM] = useState<Metrics>(EMPTY);
