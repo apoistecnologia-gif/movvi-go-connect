@@ -666,6 +666,12 @@ function MotoristaApp() {
           stats={todayStats}
           gpsMessage={gpsMessage}
           loading={gpsStatus === "loading"}
+          canUseTestLocation={
+            !online &&
+            isDevelopmentEnvironment() &&
+            (gpsStatus === "error" || gpsStatus === "denied" || gpsStatus === "timeout")
+          }
+          onUseTestLocation={useTestLocation}
         />
       )}
 
