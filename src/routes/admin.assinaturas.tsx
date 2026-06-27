@@ -108,9 +108,9 @@ function AdminAssinaturasPage() {
   }
   async function suspendSub(s: Sub) {
     if (!confirm("Suspender essa assinatura?")) return;
-    const { error } = await supabase.from("subscriptions").update({ status: "vencida" }).eq("id", s.id);
+    const { error } = await supabase.from("subscriptions").update({ status: "overdue" as never }).eq("id", s.id);
     if (error) return toast.error(error.message);
-    await supabase.from("drivers").update({ subscription_status: "vencida" }).eq("id", s.driver_id);
+    await supabase.from("drivers").update({ subscription_status: "overdue" as never }).eq("id", s.driver_id);
     await logAdminAction({ action: "subscription.suspend", entity: "subscriptions", entity_id: s.id });
     toast.success("Assinatura suspensa");
   }

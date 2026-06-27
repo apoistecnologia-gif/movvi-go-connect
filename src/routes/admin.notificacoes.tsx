@@ -80,7 +80,7 @@ function AdminNotificacoesPage() {
       return Array.from(ids);
     }
     if (audience === "category") {
-      const { data } = await supabase.from("drivers").select("user_id").eq("category", filter);
+      const { data } = await supabase.from("drivers").select("user_id").eq("category", filter as never);
       return ((data ?? []) as { user_id: string }[]).map((r) => r.user_id).filter(Boolean);
     }
     if (audience === "driver" || audience === "passenger") {

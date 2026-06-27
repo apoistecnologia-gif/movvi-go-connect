@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { formatBRL, formatDate } from "@/lib/formatters";
 import { logAdminAction } from "@/lib/adminAudit";
 import { downloadCsv } from "@/lib/csvExport";
-import { cancelarPassageiro } from "@/lib/rideLifecycle";
+import { cancelarPeloPassageiro } from "@/lib/rideLifecycle";
 
 export const Route = createFileRoute("/admin/corridas")({
   head: () => ({ meta: [{ title: "Corridas — Admin MOVVI" }] }),
@@ -159,7 +159,7 @@ function AdminCorridasPage() {
   async function cancelRide(r: Ride) {
     if (!confirm(`Cancelar a corrida ${r.id.slice(0, 8)}?`)) return;
     try {
-      await cancelarPassageiro({ data: { rideId: r.id, reason: "admin_cancel" } });
+      await cancelarPeloPassageiro({ data: { rideId: r.id, reason: "admin_cancel" } });
       await logAdminAction({ action: "ride.cancel", entity: "rides", entity_id: r.id });
       toast.success("Corrida cancelada");
       refresh();

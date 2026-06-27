@@ -35,7 +35,7 @@ function AdminUsersPage() {
     const { data: r, error } = await supabase
       .from("user_roles")
       .select("user_id, role")
-      .in("role", ROLES as unknown as string[]);
+      .in("role", ROLES as unknown as never[]);
     if (error) {
       toast.error(error.message);
       setLoading(false);
