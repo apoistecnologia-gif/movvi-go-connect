@@ -1581,7 +1581,7 @@ function PassageiroApp() {
         <MovviSheet snaps={[50]} initial={50}>
           <SearchingPanel
             category={category}
-            driversCount={drivers.length}
+            driversCount={nearbyCount}
             onCancel={cancelRide}
           />
         </MovviSheet>
