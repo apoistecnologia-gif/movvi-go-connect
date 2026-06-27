@@ -28,12 +28,6 @@ import {
 import { useDriverBroadcast } from "@/hooks/useDriverBroadcast";
 import { loadDriverProfile } from "@/lib/driverProfile";
 import { isDevelopmentEnvironment } from "@/lib/environment";
-
-const TEST_DRIVER_LOCATION = {
-  lat: -7.446,
-  lng: -41.478,
-};
-
 import { computeRoute } from "@/lib/routes.functions";
 import {
   aceitarCorrida,
@@ -46,6 +40,11 @@ import {
 } from "@/lib/rideLifecycle";
 import { formatBRL } from "@/lib/rideCategories";
 import type { Database } from "@/integrations/supabase/types";
+
+const TEST_DRIVER_LOCATION = {
+  lat: -7.446,
+  lng: -41.478,
+};
 
 export const Route = createFileRoute("/motorista/app")({
   head: () => ({ meta: [{ title: "App do Motorista — MOVVI DRIVE" }] }),
