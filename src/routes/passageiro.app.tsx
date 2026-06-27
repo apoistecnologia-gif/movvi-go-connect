@@ -1030,28 +1030,54 @@ function PassageiroApp() {
   useEffect(() => {
     if (!rideId) return;
     let active = true;
-    const load = async () => {
-      const { data } = await supabase
+    const load = async (tag: string) => {
+      const { data, error } = await supabase
         .from("rides")
         .select("*")
         .eq("id", rideId)
         .maybeSingle();
-      if (active && data) setRide(data);
+      if (!active) return;
+      if (error) {
+        console.warn("[MOVVI PASSAGEIRO] erro ao recarregar corrida:", tag, error.message);
+        return;
+      }
+      if (data) {
+        console.log("[MOVVI PASSAGEIRO] corrida sincronizada (" + tag + "):", data.id, "status=", data.status, "driver_id=", data.driver_id);
+        setRide((prev) => {
+          // não regredir um estado já avançado se o realtime entregou primeiro
+          if (prev && prev.id === data.id && prev.status !== data.status) {
+            console.log("[MOVVI PASSAGEIRO] status atualizou:", prev.status, "→", data.status);
+          }
+          return data;
+        });
+      }
     };
-    load();
+    void load("init");
     const ch = supabase
       .channel(`ride-${rideId}`)
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "rides", filter: `id=eq.${rideId}` },
-        (p) => setRide(p.new as RideRow),
+        (p) => {
+          const next = p.new as RideRow;
+          console.log("[MOVVI PASSAGEIRO] realtime UPDATE rides:", next.id, "status=", next.status, "driver_id=", next.driver_id);
+          setRide(next);
+        },
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log("[MOVVI PASSAGEIRO] canal ride-" + rideId + " status:", status);
+        // após subscrever, recarrega para não perder updates ocorridos durante o handshake
+        if (status === "SUBSCRIBED") void load("subscribed");
+      });
+    // fallback: enquanto procura motorista, faz polling curto para garantir transição
+    const poll = window.setInterval(() => { void load("poll"); }, 3500);
     return () => {
       active = false;
+      window.clearInterval(poll);
       supabase.removeChannel(ch);
     };
   }, [rideId]);
+
 
   useEffect(() => {
     const driverId = ride?.driver_id;
