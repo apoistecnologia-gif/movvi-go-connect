@@ -959,6 +959,7 @@ function PassageiroApp() {
       console.log("[MOVVI UI] rota calculada:", result);
       setRoute(result);
       setPassengerUiStage("route_preview");
+      sheetRef.current?.snapTo(70);
       if (mapRef.current) {
         const bounds = new google.maps.LatLngBounds();
         bounds.extend(position);
@@ -1351,10 +1352,12 @@ function PassageiroApp() {
             onPick={pickSuggestion}
             onClearDestination={clearDestination}
             route={route}
+            uiStage={passengerUiStage}
+            setUiStage={setPassengerUiStage}
             busy={busy}
             error={error}
-            uiCategoryKey={uiCategoryKey}
-            setUiCategoryKey={setUiCategoryKey}
+            selectedCategoryKey={selectedCategoryKey}
+            setSelectedCategoryKey={setSelectedCategoryKey}
             driversCount={drivers.length}
             tariffs={tariffs}
             onSubmit={submitRide}
