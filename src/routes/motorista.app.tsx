@@ -83,7 +83,11 @@ function MotoristaApp() {
   const [position, setPosition] = useState<LatLng | null>(null);
   const [online, setOnline] = useState(false);
   const [statusBlock, setStatusBlock] = useState<string | null>(null);
-  const [gpsError, setGpsError] = useState<string | null>(null);
+  type GpsStatus = "prompt" | "loading" | "granted" | "denied" | "timeout" | "unavailable" | "error";
+  const [gpsStatus, setGpsStatus] = useState<GpsStatus>("prompt");
+  const [gpsMessage, setGpsMessage] = useState<string | null>(null);
+  const watchIdRef = useRef<number | null>(null);
+  const initialCenteredRef = useRef(false);
 
   const [incoming, setIncoming] = useState<RideRow | null>(null);
   const [active, setActive] = useState<RideRow | null>(null);
@@ -142,11 +146,10 @@ function MotoristaApp() {
   }, []);
   useEffect(() => { if (userId) loadTodayStats(userId); }, [userId, loadTodayStats]);
 
-  // GPS
-  useEffect(() => {
-    purgeForeignMapCache();
-    if (!("geolocation" in navigator)) { setGpsError("GPS indisponível neste dispositivo"); return; }
-    const id = navigator.geolocation.watchPosition(
+  // ===== GPS =====
+  const startWatch = useCallback(() => {
+    if (watchIdRef.current != null) return;
+    watchIdRef.current = navigator.geolocation.watchPosition(
       (pos) => {
         const lat = pos.coords.latitude, lng = pos.coords.longitude;
         if (!isBrazilCoordinate(lat, lng)) return;
@@ -156,28 +159,113 @@ function MotoristaApp() {
           }
           return { lat, lng };
         });
-        setGpsError(null);
       },
-      (err) => {
-        console.warn("[MOVVI MOTORISTA] erro GPS:", err.message);
-        setGpsError(err.message);
-      },
-      { enableHighAccuracy: true, maximumAge: 4000, timeout: 15000 });
-    return () => navigator.geolocation.clearWatch(id);
+      (err) => { console.warn("[MOVVI MOTORISTA] watch GPS:", err.message); },
+      { enableHighAccuracy: true, maximumAge: 4000, timeout: 15000 },
+    );
   }, []);
 
-  // Toggle Online/Offline com validação e log
+  const requestLocation = useCallback(() => {
+    if (!("geolocation" in navigator)) {
+      setGpsStatus("unavailable");
+      setGpsMessage("GPS indisponível neste dispositivo.");
+      return;
+    }
+    setGpsStatus("loading");
+    setGpsMessage(null);
+    console.log("[MOVVI MOTORISTA] solicitando permissão de GPS");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = pos.coords.latitude, lng = pos.coords.longitude;
+        console.log("[MOVVI MOTORISTA] GPS concedido:", { lat, lng });
+        if (!isBrazilCoordinate(lat, lng)) {
+          setGpsStatus("error");
+          setGpsMessage("Coordenada fora do Brasil. Verifique seu GPS.");
+          return;
+        }
+        setPosition({ lat, lng });
+        setGpsStatus("granted");
+        setGpsMessage(null);
+        // salva imediatamente no perfil do motorista
+        supabase.auth.getUser().then(({ data: u }) => {
+          if (!u.user) return;
+          supabase.from("drivers").update({
+            current_lat: lat, current_lng: lng,
+            last_location_at: new Date().toISOString(),
+          }).eq("user_id", u.user.id).then(({ error }) => {
+            if (error) console.warn("[MOVVI MOTORISTA] erro salvando localização:", error.message);
+            else console.log("[MOVVI MOTORISTA] localização salva no perfil");
+          });
+        });
+        // centraliza mapa
+        if (mapRef.current && !initialCenteredRef.current) {
+          mapRef.current.panTo({ lat, lng });
+          mapRef.current.setZoom(16);
+          initialCenteredRef.current = true;
+        }
+        startWatch();
+      },
+      (err) => {
+        console.warn("[MOVVI MOTORISTA] GPS erro:", err.code, err.message);
+        if (err.code === err.PERMISSION_DENIED) {
+          setGpsStatus("denied");
+          setGpsMessage("Localização negada. Ative a permissão do navegador para receber corridas.");
+        } else if (err.code === err.TIMEOUT) {
+          setGpsStatus("timeout");
+          setGpsMessage("Não conseguimos obter sua localização. Tente novamente.");
+        } else {
+          setGpsStatus("error");
+          setGpsMessage("Erro ao obter localização. Tente novamente.");
+        }
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
+    );
+  }, [startWatch]);
+
+  // Verifica permissão ao montar; se já concedida, busca imediatamente
+  useEffect(() => {
+    purgeForeignMapCache();
+    if (!("geolocation" in navigator)) {
+      setGpsStatus("unavailable");
+      setGpsMessage("GPS indisponível neste dispositivo.");
+      return;
+    }
+    const permsApi = (navigator as Navigator & { permissions?: { query: (p: { name: PermissionName }) => Promise<PermissionStatus> } }).permissions;
+    if (permsApi?.query) {
+      permsApi.query({ name: "geolocation" as PermissionName }).then((st) => {
+        console.log("[MOVVI MOTORISTA] permissão GPS:", st.state);
+        if (st.state === "granted") requestLocation();
+        else if (st.state === "denied") {
+          setGpsStatus("denied");
+          setGpsMessage("Localização negada. Ative a permissão do navegador para receber corridas.");
+        } else {
+          setGpsStatus("prompt");
+        }
+      }).catch(() => setGpsStatus("prompt"));
+    } else {
+      setGpsStatus("prompt");
+    }
+    return () => {
+      if (watchIdRef.current != null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
+      }
+    };
+  }, [requestLocation]);
+
+  // Toggle Online/Offline — se faltar GPS, solicita antes
   const toggleOnline = useCallback(() => {
+    if (!position) {
+      console.log("[MOVVI MOTORISTA] tentou ficar online sem GPS, solicitando permissão");
+      requestLocation();
+      return;
+    }
     setOnline((prev) => {
       const next = !prev;
-      if (next && !position) {
-        setGpsError("Aguardando localização. Permita o GPS para ficar online.");
-        return prev;
-      }
       console.log("[MOVVI MOTORISTA] online:", next, "userId:", userId, "pos:", position);
       return next;
     });
-  }, [position, userId]);
+  }, [position, userId, requestLocation]);
 
   // offline ao desmontar
   useEffect(() => () => { if (online && userId)
@@ -359,12 +447,7 @@ function MotoristaApp() {
 
       <MovviHeader variant="floating" logoutRedirect="/" />
 
-      {/* GPS error */}
-      {gpsError && (
-        <div className="absolute left-1/2 top-20 z-30 -translate-x-1/2 rounded-full bg-destructive/95 px-4 py-1.5 text-xs font-medium text-destructive-foreground shadow-lg">
-          GPS: {gpsError}
-        </div>
-      )}
+      {/* (status de GPS é mostrado dentro do painel inferior) */}
 
       {/* Bloqueio aprovação */}
       {statusBlock && !hasRideUI && (
@@ -419,6 +502,10 @@ function MotoristaApp() {
           disabled={!!statusBlock}
           toggleOnline={toggleOnline}
           stats={todayStats}
+          gpsStatus={gpsStatus}
+          gpsMessage={gpsMessage}
+          hasPosition={!!position}
+          onRequestLocation={requestLocation}
         />
       )}
 
@@ -455,16 +542,24 @@ function MotoristaApp() {
    ============================================================ */
 function IdleBottomPanel({
   driverName, online, disabled, toggleOnline, stats,
+  gpsStatus, gpsMessage, hasPosition, onRequestLocation,
 }: {
   driverName: string; online: boolean; disabled: boolean;
   toggleOnline: () => void; stats: { rides: number; earnings: number };
+  gpsStatus: "prompt" | "loading" | "granted" | "denied" | "timeout" | "unavailable" | "error";
+  gpsMessage: string | null;
+  hasPosition: boolean;
+  onRequestLocation: () => void;
 }) {
   // Espaço reservado para a BottomNav flutuante (≈ ícones 56 + paddings + safe-area).
   const navReserve = "calc(env(safe-area-inset-bottom) + 84px)";
+  const canGoOnline = hasPosition && gpsStatus === "granted";
+  const showLocationCta = !hasPosition; // ainda não temos coordenada válida
+
   return (
     <div
       className="absolute inset-x-0 z-30 rounded-t-[28px] bg-card text-foreground shadow-[0_-20px_60px_-20px_rgba(0,0,0,0.7)] ring-1 ring-border/60"
-      style={{ bottom: navReserve, ["--driver-panel-h" as never]: "320px" }}
+      style={{ bottom: navReserve, ["--driver-panel-h" as never]: "340px" }}
     >
       <div className="flex flex-col gap-3 px-4 pb-4 pt-3">
         {/* greeting + status compactos */}
@@ -501,19 +596,56 @@ function IdleBottomPanel({
           <StatBlock label="Ganhos hoje" value={formatBRL(stats.earnings)} highlight />
         </div>
 
-        {/* CTA principal — sempre visível, fica acima da BottomNav */}
-        <button
-          type="button"
-          disabled={disabled}
-          onClick={toggleOnline}
-          className={`w-full rounded-xl py-3.5 text-sm font-bold uppercase tracking-wider shadow-lg transition disabled:cursor-not-allowed disabled:opacity-50 ${
-            online
-              ? "bg-card text-foreground ring-1 ring-border hover:ring-destructive/50"
-              : "bg-primary text-primary-foreground shadow-primary/30 hover:brightness-110"
-          }`}
-        >
-          {online ? "Ficar offline" : "Ficar online"}
-        </button>
+        {/* ===== CTA principal ===== */}
+        {showLocationCta ? (
+          <div className="flex flex-col gap-2">
+            {/* mensagem de status do GPS */}
+            {gpsStatus === "loading" ? (
+              <div className="rounded-xl bg-muted/30 px-3 py-2 text-center text-xs text-muted-foreground ring-1 ring-border">
+                Obtendo sua localização...
+              </div>
+            ) : gpsMessage ? (
+              <div className={`rounded-xl px-3 py-2 text-xs ring-1 ${
+                gpsStatus === "denied" || gpsStatus === "unavailable"
+                  ? "bg-destructive/10 text-destructive ring-destructive/30"
+                  : "bg-yellow-500/10 text-yellow-400 ring-yellow-500/30"
+              }`}>
+                {gpsMessage}
+              </div>
+            ) : (
+              <div className="rounded-xl bg-muted/30 px-3 py-2 text-center text-xs text-muted-foreground ring-1 ring-border">
+                Precisamos da sua localização para encontrar corridas próximas.
+              </div>
+            )}
+
+            <button
+              type="button"
+              disabled={disabled || gpsStatus === "loading" || gpsStatus === "unavailable"}
+              onClick={onRequestLocation}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-sm font-bold uppercase tracking-wider text-primary-foreground shadow-lg shadow-primary/30 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <MapPin className="h-4 w-4" />
+              {gpsStatus === "loading"
+                ? "Obtendo localização..."
+                : gpsStatus === "denied" || gpsStatus === "timeout" || gpsStatus === "error"
+                ? "Tentar novamente"
+                : "Permitir localização"}
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            disabled={disabled || !canGoOnline}
+            onClick={toggleOnline}
+            className={`w-full rounded-xl py-3.5 text-sm font-bold uppercase tracking-wider shadow-lg transition disabled:cursor-not-allowed disabled:opacity-50 ${
+              online
+                ? "bg-card text-foreground ring-1 ring-border hover:ring-destructive/50"
+                : "bg-primary text-primary-foreground shadow-primary/30 hover:brightness-110"
+            }`}
+          >
+            {online ? "Ficar offline" : "Ficar online"}
+          </button>
+        )}
       </div>
     </div>
   );
