@@ -139,7 +139,7 @@ function RatingTestPage() {
   // key forces remount on side/mode change so internal state resets
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <RatingHarness key={`${side}-${mode}`} side={side} />
+      <RatingHarness key={`${side}-${mode}`} side={side} mode={mode} />
     </div>
   );
 }
