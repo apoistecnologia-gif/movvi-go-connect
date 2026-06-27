@@ -1400,33 +1400,33 @@ function PassageiroApp() {
   const center = position && isBrazilCoordinate(position.lat, position.lng) ? position : BRAZIL_CENTER;
   const phase = ride?.status;
   const rideDriverInfo = useMemo<DriverRow | null>(() => {
-    if (driverInfo) return driverInfo;
-    if (!ride?.driver_id && !ride?.driver_name) return null;
+    // Snapshot do motorista gravado na corrida tem prioridade — é o que garante
+    // que o passageiro veja foto/nome/veículo mesmo se a leitura de drivers falhar.
+    const snapshotPhoto = (ride as { driver_photo_url?: string | null } | null)?.driver_photo_url ?? null;
+    if (!driverInfo && !ride?.driver_id && !ride?.driver_name) return null;
 
-    const vehicleParts = (ride.driver_vehicle ?? "")
-      .split(" • ")
-      .map((part) => part.trim())
-      .filter(Boolean);
+    const vehicleSrc = ride?.driver_vehicle ?? "";
+    const vehicleParts = vehicleSrc.split(" • ").map((p) => p.trim()).filter(Boolean);
     const vehiclePlate = vehicleParts.length >= 1 ? vehicleParts[vehicleParts.length - 1] : "";
-    const vehicleModel = vehicleParts.length >= 2 ? vehicleParts[vehicleParts.length - 2] : ride.driver_vehicle ?? "";
+    const vehicleModel = vehicleParts.length >= 2 ? vehicleParts[vehicleParts.length - 2] : vehicleSrc;
     const vehicleColor = vehicleParts.length >= 3 ? vehicleParts[0] : "";
 
     return {
-      user_id: ride.driver_id ?? "",
-      name: ride.driver_name ?? "Motorista MOVVI",
-      phone: ride.driver_phone ?? "",
-      current_lat: ride.driver_lat,
-      current_lng: ride.driver_lng,
-      current_heading: null,
-      current_speed: null,
-      rating: 5,
-      selfie_url: null,
-      photo_url: null,
-      vehicle_color: vehicleColor,
-      vehicle_model: vehicleModel,
-      vehicle_plate: vehiclePlate,
+      user_id: driverInfo?.user_id ?? ride?.driver_id ?? "",
+      name: driverInfo?.name ?? ride?.driver_name ?? "Motorista MOVVI",
+      phone: driverInfo?.phone ?? ride?.driver_phone ?? "",
+      current_lat: driverInfo?.current_lat ?? ride?.driver_lat ?? null,
+      current_lng: driverInfo?.current_lng ?? ride?.driver_lng ?? null,
+      current_heading: driverInfo?.current_heading ?? null,
+      current_speed: driverInfo?.current_speed ?? null,
+      rating: driverInfo?.rating ?? 5,
+      selfie_url: driverInfo?.selfie_url ?? null,
+      photo_url: driverInfo?.photo_url ?? snapshotPhoto,
+      vehicle_color: driverInfo?.vehicle_color ?? vehicleColor,
+      vehicle_model: driverInfo?.vehicle_model ?? vehicleModel,
+      vehicle_plate: driverInfo?.vehicle_plate ?? vehiclePlate,
     } as DriverRow;
-  }, [driverInfo, ride?.driver_id, ride?.driver_name, ride?.driver_phone, ride?.driver_vehicle, ride?.driver_lat, ride?.driver_lng]);
+  }, [driverInfo, ride]);
 
   /* ---------------------- GPS initial loading ---------------------- */
   // Padrão Uber/99/InDrive:
