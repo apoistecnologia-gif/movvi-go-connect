@@ -713,7 +713,7 @@ function MotoristaApp() {
             etaSeconds={etaSeconds}
             legKm={legKm}
             onArrive={async () => { await callArrive({ data: { rideId: active.id } }); }}
-            onStart={async () => { await callStart({ data: { rideId: active.id } }); }}
+            onStart={async (code) => { await callStart({ data: { rideId: active.id, safety_code: code } }); }}
             onComplete={async () => {
               await callComplete({ data: {
                 rideId: active.id,
@@ -976,10 +976,38 @@ function ActiveRidePanel({
   ride: RideRow; passenger: Passenger | null;
   etaSeconds: number | null; legKm: number | null;
   onArrive: () => Promise<void> | void;
-  onStart: () => Promise<void> | void;
+  onStart: (code: string) => Promise<void> | void;
   onComplete: () => Promise<void> | void;
   onCancel: () => Promise<void> | void;
 }) {
+  const [pinOpen, setPinOpen] = useState(false);
+  const [pinCode, setPinCode] = useState("");
+  const [pinError, setPinError] = useState<string | null>(null);
+  const [pinBusy, setPinBusy] = useState(false);
+
+  async function submitPin() {
+    if (pinBusy) return;
+    if (!/^\d{4}$/.test(pinCode)) {
+      setPinError("Digite os 4 dígitos do código.");
+      return;
+    }
+    setPinBusy(true);
+    setPinError(null);
+    try {
+      await onStart(pinCode);
+      setPinOpen(false);
+      setPinCode("");
+    } catch (e) {
+      const msg = (e as Error)?.message ?? "";
+      setPinError(
+        /[Cc]ódigo incorreto/.test(msg)
+          ? "Código incorreto. Peça o código ao passageiro e tente novamente."
+          : msg || "Não foi possível iniciar a corrida.",
+      );
+    } finally {
+      setPinBusy(false);
+    }
+  }
   const phase = ride.status;
   const toPickup = phase === "motorista_a_caminho" || phase === "motorista_chegou";
 
@@ -1079,10 +1107,67 @@ function ActiveRidePanel({
         <ActionButton label="Cheguei ao local" onClick={onArrive} icon={MapPin} />
       )}
       {phase === "motorista_chegou" && (
-        <ActionButton label="Iniciar corrida" onClick={onStart} icon={ChevronRight} />
+        <ActionButton label="Iniciar corrida" onClick={() => { setPinError(null); setPinCode(""); setPinOpen(true); }} icon={ChevronRight} />
       )}
       {phase === "em_viagem" && (
         <ActionButton label="Finalizar corrida" onClick={onComplete} icon={CheckCircle2} variant="success" />
+      )}
+
+      {/* Modal de validação do PIN de segurança */}
+      {pinOpen && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-md rounded-t-[28px] sm:rounded-[28px] bg-card p-5 shadow-2xl ring-1 ring-border animate-in slide-in-from-bottom duration-200">
+            <div className="mx-auto -mt-1 mb-4 h-1 w-10 rounded-full bg-muted-foreground/30 sm:hidden" />
+            <div className="text-center">
+              <div className="mx-auto mb-3 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/15 text-primary ring-1 ring-primary/30">
+                <CheckCircle2 className="h-6 w-6" />
+              </div>
+              <h3 className="text-base font-bold">Código de segurança</h3>
+              <p className="mt-1 text-[12.5px] text-muted-foreground">
+                Digite o código de 4 dígitos informado pelo passageiro para iniciar a viagem.
+              </p>
+            </div>
+
+            <input
+              autoFocus
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={4}
+              value={pinCode}
+              onChange={(e) => {
+                const v = e.target.value.replace(/\D/g, "").slice(0, 4);
+                setPinCode(v);
+                setPinError(null);
+              }}
+              onKeyDown={(e) => { if (e.key === "Enter") submitPin(); }}
+              placeholder="••••"
+              className="mt-5 w-full rounded-2xl bg-background/70 px-4 py-4 text-center text-3xl font-extrabold tracking-[0.7em] tabular-nums ring-1 ring-border outline-none focus:ring-2 focus:ring-primary"
+            />
+
+            {pinError && (
+              <div className="mt-3 rounded-xl bg-destructive/10 px-3 py-2 text-[12.5px] font-medium text-destructive-foreground ring-1 ring-destructive/30">
+                {pinError}
+              </div>
+            )}
+
+            <div className="mt-5 grid grid-cols-2 gap-2">
+              <button
+                onClick={() => { if (!pinBusy) { setPinOpen(false); setPinCode(""); setPinError(null); } }}
+                disabled={pinBusy}
+                className="rounded-2xl bg-muted/40 py-3 text-[13px] font-semibold text-foreground ring-1 ring-border transition active:scale-[0.98] disabled:opacity-60"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={submitPin}
+                disabled={pinBusy || pinCode.length !== 4}
+                className="rounded-2xl bg-primary py-3 text-[13px] font-bold uppercase tracking-wider text-primary-foreground shadow-lg shadow-primary/30 transition active:scale-[0.98] hover:brightness-110 disabled:opacity-60"
+              >
+                {pinBusy ? "Validando…" : "Iniciar viagem"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

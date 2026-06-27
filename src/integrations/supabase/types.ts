@@ -703,6 +703,7 @@ export type Database = {
           payment_method: string | null
           rejected_driver_ids: string[]
           route_polyline: string | null
+          safety_code: string | null
           started_at: string | null
           status: Database["public"]["Enums"]["ride_status"]
           surge_multiplier: number
@@ -748,6 +749,7 @@ export type Database = {
           payment_method?: string | null
           rejected_driver_ids?: string[]
           route_polyline?: string | null
+          safety_code?: string | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["ride_status"]
           surge_multiplier?: number
@@ -793,6 +795,7 @@ export type Database = {
           payment_method?: string | null
           rejected_driver_ids?: string[]
           route_polyline?: string | null
+          safety_code?: string | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["ride_status"]
           surge_multiplier?: number
