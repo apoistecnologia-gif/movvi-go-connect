@@ -755,6 +755,7 @@ function PassageiroApp() {
     gpsStateRef.current = "requesting";
     gpsRequestInFlightRef.current = true;
     setGpsErrorMsg("");
+    void logGpsTelemetry("retry_clicked");
 
     const onSuccess = (pos: GeolocationPosition) => {
       gpsRequestInFlightRef.current = false;
@@ -762,6 +763,7 @@ function PassageiroApp() {
         const lat = pos?.coords?.latitude;
         const lng = pos?.coords?.longitude;
         console.log("[MOVVI] Permissão concedida — coordenadas recebidas:", lat, lng, "accuracy:", pos?.coords?.accuracy);
+        void logGpsTelemetry("getcurrentposition_success", { extra: { lat, lng, accuracy: pos?.coords?.accuracy } });
 
         if (
           typeof lat !== "number" ||
