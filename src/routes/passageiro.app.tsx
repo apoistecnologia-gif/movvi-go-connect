@@ -1555,6 +1555,7 @@ function SheetContent({
   const streetLine = isExact && rua ? (numero ? `${rua}, ${numero}` : rua) : "";
   const hasApproxAddress = !!geo && !isExact;
   const showApprox = hasApproxAddress && hasPosition && !!position;
+  const showDestinationInput = !destination || uiStage === "selecting_destination";
 
   return (
     <div className="pt-1">
@@ -1652,40 +1653,42 @@ function SheetContent({
 
 
 
-      {/* "Para onde você vai?" — sempre em destaque */}
-      <div className="mb-2">
-        <div className="flex items-center gap-3 rounded-2xl bg-background/80 px-4 py-3.5 ring-1 ring-border focus-within:ring-primary/60">
-          <Search className="h-5 w-5 shrink-0 text-primary" />
-          <input
-            ref={searchInputRef}
-            value={destinationText}
-            onChange={(e) => {
-              if (destination) onClearDestination();
-              setDestinationText(e.target.value);
-            }}
-            onFocus={onFocusSearch}
-            placeholder="Para onde você vai?"
-            className="min-w-0 flex-1 bg-transparent text-[15px] font-semibold outline-none placeholder:text-muted-foreground/80"
-          />
-          {destinationText && (
-            <button
-              type="button"
-              onClick={() => {
-                setDestinationText("");
-                onClearDestination();
-                searchInputRef.current?.focus();
+      {/* "Para onde você vai?" — só aparece antes de confirmar um destino. */}
+      {showDestinationInput && (
+        <div className="mb-2">
+          <div className="flex items-center gap-3 rounded-2xl bg-background/80 px-4 py-3.5 ring-1 ring-border focus-within:ring-primary/60">
+            <Search className="h-5 w-5 shrink-0 text-primary" />
+            <input
+              ref={searchInputRef}
+              value={destinationText}
+              onChange={(e) => {
+                if (destination) onClearDestination();
+                setDestinationText(e.target.value);
               }}
-              aria-label="Limpar"
-              className="rounded-full p-1 text-muted-foreground hover:bg-accent/30"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
+              onFocus={onFocusSearch}
+              placeholder="Para onde você vai?"
+              className="min-w-0 flex-1 bg-transparent text-[15px] font-semibold outline-none placeholder:text-muted-foreground/80"
+            />
+            {destinationText && (
+              <button
+                type="button"
+                onClick={() => {
+                  setDestinationText("");
+                  onClearDestination();
+                  searchInputRef.current?.focus();
+                }}
+                aria-label="Limpar"
+                className="rounded-full p-1 text-muted-foreground hover:bg-accent/30"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Sugestões ao vivo */}
-      {suggestions.length > 0 && !destination && (
+      {showDestinationInput && suggestions.length > 0 && !destination && (
         <ul className="-mx-1 mb-2 space-y-1">
           {suggestions.map((s) => (
             <li key={s.placeId}>
@@ -1712,7 +1715,7 @@ function SheetContent({
       )}
 
       {/* SEM destino: dica discreta — sem categorias aqui */}
-      {!destination && suggestions.length === 0 && (
+      {showDestinationInput && !destination && suggestions.length === 0 && (
         <div className="mb-1 mt-1 rounded-2xl border border-dashed border-border/70 bg-background/40 px-4 py-3 text-center">
           <p className="text-[12px] leading-snug text-muted-foreground">
             Informe o destino para ver as opções de{" "}
