@@ -27,19 +27,13 @@ type Item = { to: string; label: string; icon: LucideIcon };
 export const ADMIN_NAV: Item[] = [
   { to: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/admin/motoristas", label: "Motoristas", icon: Car },
-  { to: "/admin/passageiros", label: "Passageiros", icon: Users },
-  { to: "/admin/corridas", label: "Corridas", icon: RouteIcon },
-  { to: "/admin/categorias", label: "Categorias", icon: Layers },
-  { to: "/admin/tarifas", label: "Tarifas", icon: DollarSign },
-  { to: "/admin/assinaturas", label: "Assinaturas", icon: CreditCard },
-  { to: "/admin/financeiro", label: "Financeiro", icon: FileBarChart },
-  { to: "/admin/cupons", label: "Cupons", icon: Ticket },
-  { to: "/admin/notificacoes", label: "Notificações", icon: Bell },
-  { to: "/admin/mapa", label: "Mapa ao vivo", icon: MapIcon },
-  { to: "/admin/configuracoes", label: "Configurações", icon: Settings },
-  { to: "/admin/relatorios", label: "Relatórios", icon: FileBarChart },
-  { to: "/admin/seguranca", label: "Segurança", icon: ShieldCheck },
 ];
+
+// Itens adicionais serão habilitados conforme cada módulo for finalizado:
+// Passageiros, Corridas, Categorias, Tarifas, Assinaturas, Financeiro,
+// Cupons, Notificações, Mapa ao vivo, Configurações, Relatórios, Segurança.
+void Users; void RouteIcon; void Tag; void DollarSign; void CreditCard;
+void Ticket; void Bell; void Settings; void FileBarChart; void MapIcon; void ShieldCheck; void Layers;
 
 export function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
