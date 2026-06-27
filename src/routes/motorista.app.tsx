@@ -565,18 +565,16 @@ function MotoristaApp() {
         </MovviSheet>
       )}
 
-      {/* ===== Idle — painel fixo + CTA fixo (sem sheet, sem sobreposição) ===== */}
+      {/* ===== Idle — painel fixo compacto (~28vh) com botão ONLINE/OFFLINE sempre visível ===== */}
       {!incoming && !ratingRide && !active && (
         <IdleBottomPanel
           driverName={driverName}
           online={online}
-          disabled={!!statusBlock}
+          disabled={!!statusBlock || gpsStatus === "loading"}
           toggleOnline={toggleOnline}
           stats={todayStats}
-          gpsStatus={gpsStatus}
           gpsMessage={gpsMessage}
-          hasPosition={!!position}
-          onRequestLocation={requestLocation}
+          loading={gpsStatus === "loading"}
         />
       )}
 
