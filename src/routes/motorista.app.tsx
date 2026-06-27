@@ -762,6 +762,17 @@ function IdleBottomPanel({
           </div>
         )}
 
+        {/* Botão de modo teste — apenas em preview/dev quando o GPS real falha */}
+        {canUseTestLocation && (
+          <button
+            type="button"
+            onClick={onUseTestLocation}
+            className="w-full rounded-xl border border-dashed border-primary/60 bg-primary/10 px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-primary transition hover:bg-primary/20"
+          >
+            Usar localização de teste no Brasil
+          </button>
+        )}
+
         {/* Botão principal — SEMPRE FICAR ONLINE / FICAR OFFLINE */}
         <button
           type="button"
