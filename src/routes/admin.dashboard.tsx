@@ -267,5 +267,5 @@ function Kpi({
       </CardContent>
     </Card>
   );
-  return link ? <Link to={link}>{inner}</Link> : inner;
+  return link ? <a href={link} className="block">{inner}</a> : inner;
 }
