@@ -11,6 +11,8 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
+import { getDriverDocumentUrls } from "@/lib/driverDocs.functions";
 import { MovviHeader } from "@/components/MovviHeader";
 import { AdminGuard } from "@/components/AdminGuard";
 import { Button } from "@/components/ui/button";
@@ -329,27 +331,37 @@ function DriverCard({
 
 function DetailsDialog({ driver, onClose }: { driver: Driver | null; onClose: () => void }) {
   const [urls, setUrls] = useState<Record<string, string | null>>({});
+  const [urlError, setUrlError] = useState<string | null>(null);
+  const fetchUrls = useServerFn(getDriverDocumentUrls);
 
   useEffect(() => {
     if (!driver) return;
     let cancelled = false;
+    setUrls({});
+    setUrlError(null);
+    console.log("[MOVVI DOCS] admin lendo documentos:", {
+      driverId: driver.id,
+      selfie_url: driver.selfie_url,
+      cnh_url: driver.cnh_url,
+      vehicle_document_url: driver.vehicle_document_url,
+    });
     (async () => {
-      const out: Record<string, string | null> = {};
-      for (const [field, bucket] of Object.entries(BUCKETS) as [keyof typeof BUCKETS, string][]) {
-        const path = driver[field];
-        if (!path) {
-          out[field] = null;
-          continue;
-        }
-        const { data } = await supabase.storage.from(bucket).createSignedUrl(path, 600);
-        out[field] = data?.signedUrl ?? null;
+      try {
+        const result = await fetchUrls({ data: { driverId: driver.id } });
+        if (cancelled) return;
+        console.log("[MOVVI DOCS] URLs assinadas:", result);
+        setUrls(result);
+      } catch (err) {
+        if (cancelled) return;
+        const message = err instanceof Error ? err.message : "Falha ao gerar URLs.";
+        console.error("[MOVVI DOCS] erro ao buscar urls:", message);
+        setUrlError(message);
       }
-      if (!cancelled) setUrls(out);
     })();
     return () => {
       cancelled = true;
     };
-  }, [driver]);
+  }, [driver, fetchUrls]);
 
   if (!driver) return null;
   const meta = TAB_META[driver.approval_status];
@@ -385,10 +397,19 @@ function DetailsDialog({ driver, onClose }: { driver: Driver | null; onClose: ()
           </Section>
 
           <Section title="Documentos">
+            {urlError && (
+              <p className="mb-2 rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                {urlError}
+              </p>
+            )}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <DocCard label="Selfie" url={urls.selfie_url} />
-              <DocCard label="CNH" url={urls.cnh_url} />
-              <DocCard label="Doc. Veículo" url={urls.vehicle_document_url} />
+              <DocCard label="Selfie" url={urls.selfie_url} rawPath={driver.selfie_url} />
+              <DocCard label="CNH" url={urls.cnh_url} rawPath={driver.cnh_url} />
+              <DocCard
+                label="Doc. Veículo"
+                url={urls.vehicle_document_url}
+                rawPath={driver.vehicle_document_url}
+              />
             </div>
           </Section>
 
@@ -484,12 +505,20 @@ function Row({ label, value }: { label: string; value: string | null }) {
   );
 }
 
-function DocCard({ label, url }: { label: string; url: string | null }) {
+function DocCard({
+  label,
+  url,
+  rawPath,
+}: {
+  label: string;
+  url: string | null;
+  rawPath?: string | null;
+}) {
   if (!url) {
     return (
       <div className="rounded-xl border border-dashed border-border bg-card/40 p-4 text-center text-xs text-muted-foreground">
         {label}
-        <div className="mt-2">Não enviado</div>
+        <div className="mt-2">{rawPath ? "Carregando..." : "Não enviado"}</div>
       </div>
     );
   }

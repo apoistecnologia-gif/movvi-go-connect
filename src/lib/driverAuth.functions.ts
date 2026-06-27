@@ -160,16 +160,22 @@ export const cadastrarMotorista = createServerFn({ method: "POST" })
         data.documents.map(async (doc) => {
           const path = `${finalAuthUserId}/${doc.label}-${Date.now()}.${cleanExt(doc.fileName)}`;
           const body = decodeBase64(doc.base64);
+          console.log("[MOVVI DOCS] upload iniciado:", { bucket: doc.bucket, path });
           const { error } = await supabaseAdmin.storage
             .from(doc.bucket)
             .upload(path, body, { upsert: true, contentType: doc.contentType });
-          if (error) throw new Error(`Falha no upload de ${doc.label}.`);
+          if (error) {
+            console.error("[MOVVI DOCS] falha upload:", doc.label, error.message);
+            throw new Error(`Falha no upload de ${doc.label}.`);
+          }
           uploaded.push({ bucket: doc.bucket, path });
+          console.log("[MOVVI DOCS] upload concluído:", { bucket: doc.bucket, path });
           return [doc.label, path] as const;
         }),
       );
 
       const docPaths = Object.fromEntries(uploadedDocs) as Record<"selfie" | "cnh" | "veiculo", string>;
+      console.log("[MOVVI DOCS] path salvo:", docPaths);
 
       const profile = await supabaseAdmin.from("users").upsert(
         {
