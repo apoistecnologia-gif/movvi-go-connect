@@ -469,7 +469,14 @@ function MotoristaApp() {
     const applyActive = (r: RideRow) => {
       if (r.driver_id !== userId) return;
       if (r.status === "finalizada") {
-        setActive(null); setPolyline([]); setRatingRide(r); setStars(5); setRatingComment("");
+        setActive(null); setPolyline([]);
+        // Só mostra a tela de avaliação se o motorista ainda não avaliou.
+        if (!r.driver_rated_at && !ratingRef.current) {
+          setRatingRide(r); setStars(5); setRatingComment("");
+        } else if (r.driver_rated_at && ratingRef.current?.id === r.id) {
+          // já avaliou — fecha definitivamente.
+          setRatingRide(null);
+        }
         loadTodayStats(userId);
       } else if (r.status === "cancelada_passageiro" || r.status === "cancelada_motorista") {
         setActive(null); setPolyline([]);
@@ -480,6 +487,7 @@ function MotoristaApp() {
         setActive(r);
       }
     };
+
 
     console.log("[MOVVI MOTORISTA] escutando corridas: canal driver-rides-" + userId);
     const ch = supabase.channel(`driver-rides-${userId}`)
