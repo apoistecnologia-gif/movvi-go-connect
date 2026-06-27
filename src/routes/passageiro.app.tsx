@@ -643,11 +643,8 @@ function PassageiroApp() {
       setGpsState("unavailable");
       gpsStateRef.current = "unavailable";
       setGpsErrorMsg(msg);
+      gpsRequestInFlightRef.current = false;
     };
-    if (typeof window !== "undefined" && !window.isSecureContext) {
-      fail("Geolocalização requer HTTPS.");
-      return;
-    }
     if (!("geolocation" in navigator)) {
       fail("Seu navegador não oferece geolocalização.");
       return;
@@ -656,113 +653,104 @@ function PassageiroApp() {
     gpsStateRef.current = "requesting";
     gpsRequestInFlightRef.current = true;
     setGpsErrorMsg("");
-    try {
-      console.log("[MOVVI][DIAG] userAgent:", navigator.userAgent);
-      console.log("[MOVVI][DIAG] platform:", navigator.platform);
-      console.log("[MOVVI][DIAG] isSecureContext:", window.isSecureContext);
-      console.log("[MOVVI][DIAG] origin:", document.location.origin);
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          gpsRequestInFlightRef.current = false;
-          const lat = pos.coords.latitude;
-          const lng = pos.coords.longitude;
-          console.log("[MOVVI][DIAG] Position completo:", pos);
-          console.log("[MOVVI][DIAG] coords:", {
-            latitude: lat,
-            longitude: lng,
-            accuracy: pos.coords.accuracy,
-            altitude: pos.coords.altitude,
-            heading: pos.coords.heading,
-            speed: pos.coords.speed,
-            timestamp: pos.timestamp,
-          });
-          console.log("[MOVVI] GPS recebido:", lat, lng);
-          if (!isBrazilCoordinate(lat, lng)) {
-            console.warn("[MOVVI] GPS rejeitado: fora do Brasil", { lat, lng });
-            setGpsDiag({
-              status: "rejected-outside-br",
-              lat,
-              lng,
-              accuracy: pos.coords.accuracy ?? null,
-              altitude: pos.coords.altitude ?? null,
-              heading: pos.coords.heading ?? null,
-              speed: pos.coords.speed ?? null,
-              timestamp: pos.timestamp,
-              reason: "Coordenada fora do bounding box do Brasil",
-            });
+
+    const onSuccess = (pos: GeolocationPosition) => {
+      gpsRequestInFlightRef.current = false;
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      console.log("[MOVVI] GPS recebido:", lat, lng, "accuracy:", pos.coords.accuracy);
+
+      const insideBR = isBrazilCoordinate(lat, lng);
+      if (!insideBR) {
+        console.warn("[MOVVI] Aviso: coordenada fora do Brasil — aceitando mesmo assim.", { lat, lng });
+        setGpsErrorMsg(
+          "Sua localização parece estar fora do Brasil. Você pode digitar a origem manualmente se preferir.",
+        );
+      } else {
+        setGpsErrorMsg("");
+      }
+
+      setPosition({ lat, lng });
+      setGpsAccuracy(pos.coords.accuracy ?? null);
+      setGpsDiag({
+        status: insideBR ? "ok" : "rejected-outside-br",
+        lat,
+        lng,
+        accuracy: pos.coords.accuracy ?? null,
+        altitude: pos.coords.altitude ?? null,
+        heading: pos.coords.heading ?? null,
+        speed: pos.coords.speed ?? null,
+        timestamp: pos.timestamp,
+        reason: insideBR ? undefined : "Fora do bounding box do Brasil (aviso)",
+      });
+      setGpsState("granted");
+      gpsStateRef.current = "granted";
+
+      if (watchIdRef.current != null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+      }
+      watchIdRef.current = navigator.geolocation.watchPosition(
+        (p) => {
+          const la = p.coords.latitude;
+          const ln = p.coords.longitude;
+          setPosition({ lat: la, lng: ln });
+          setGpsAccuracy(p.coords.accuracy ?? null);
+        },
+        () => undefined,
+        { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 },
+      );
+    };
+
+    const tryLowAccuracy = () => {
+      console.log("[MOVVI] Tentativa 2 — enableHighAccuracy:false");
+      try {
+        navigator.geolocation.getCurrentPosition(
+          onSuccess,
+          (err) => {
+            gpsRequestInFlightRef.current = false;
+            console.error("[MOVVI] Erro (low accuracy):", err);
             setGpsState("denied");
             gpsStateRef.current = "denied";
-            setGpsErrorMsg(
-              "Recebemos uma localização incompatível com o Brasil. Digite sua origem manualmente ou tente novamente com a localização real ativada.",
-            );
+            if (err.code === err.PERMISSION_DENIED) {
+              setGpsErrorMsg("Permissão de localização negada.");
+            } else {
+              setGpsErrorMsg(
+                "Não foi possível obter sua localização. Você pode digitar a origem manualmente ou tentar novamente.",
+              );
+            }
+          },
+          { enableHighAccuracy: false, maximumAge: 30000, timeout: 20000 },
+        );
+      } catch (e) {
+        gpsRequestInFlightRef.current = false;
+        console.error("[MOVVI] Falha 2ª tentativa:", e);
+        fail("Não foi possível obter sua localização. Use a localização manual.");
+      }
+    };
+
+    try {
+      navigator.geolocation.getCurrentPosition(
+        onSuccess,
+        (err) => {
+          console.warn("[MOVVI] Erro (high accuracy):", err);
+          if (err.code === err.PERMISSION_DENIED) {
+            gpsRequestInFlightRef.current = false;
+            setGpsState("denied");
+            gpsStateRef.current = "denied";
+            setGpsErrorMsg("Permissão de localização negada.");
             return;
           }
-
-          setPosition({ lat, lng });
-          setGpsAccuracy(pos.coords.accuracy ?? null);
-          setGpsDiag({
-            status: "ok",
-            lat,
-            lng,
-            accuracy: pos.coords.accuracy ?? null,
-            altitude: pos.coords.altitude ?? null,
-            heading: pos.coords.heading ?? null,
-            speed: pos.coords.speed ?? null,
-            timestamp: pos.timestamp,
-          });
-          setGpsState("granted");
-          gpsStateRef.current = "granted";
-          setGpsErrorMsg("");
-          console.log("[MOVVI] Origem válida confirmada", { lat, lng });
-
-          // Evita múltiplos watchers acumulados em re-tentativas.
-          if (watchIdRef.current != null) {
-            navigator.geolocation.clearWatch(watchIdRef.current);
-          }
-          watchIdRef.current = navigator.geolocation.watchPosition(
-            (p) => {
-              const la = p.coords.latitude;
-              const ln = p.coords.longitude;
-              if (isBrazilCoordinate(la, ln)) {
-                setPosition({ lat: la, lng: ln });
-                setGpsAccuracy(p.coords.accuracy ?? null);
-              }
-            },
-            () => undefined,
-            { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 },
-          );
+          // Timeout ou POSITION_UNAVAILABLE → tenta de novo sem alta precisão.
+          tryLowAccuracy();
         },
-        (err) => {
-          gpsRequestInFlightRef.current = false;
-          console.error("[MOVVI] Erro ao obter localização:", err);
-          setGpsState("denied");
-          gpsStateRef.current = "denied";
-          if (err.code === err.PERMISSION_DENIED) {
-            setGpsErrorMsg(
-              "Permissão de localização negada.",
-            );
-          } else if (err.code === err.POSITION_UNAVAILABLE) {
-            setGpsErrorMsg(
-              "Não conseguimos detectar sua posição. Verifique se o GPS está ativo ou use a localização manual.",
-            );
-          } else if (err.code === err.TIMEOUT) {
-            setGpsErrorMsg(
-              "Tempo esgotado ao tentar obter sua localização. Tente novamente ou use a localização manual.",
-            );
-          } else {
-            setGpsErrorMsg(
-              "Não foi possível obter sua localização. Use a localização manual para continuar.",
-            );
-          }
-        },
-        { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 },
+        { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 },
       );
     } catch (e) {
-      gpsRequestInFlightRef.current = false;
       console.error("[MOVVI] Falha ao iniciar geolocalização:", e);
-      fail("A geolocalização foi bloqueada neste ambiente. Use a localização manual.");
+      tryLowAccuracy();
     }
   }, []);
+
 
   useEffect(() => {
     return () => {
