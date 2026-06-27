@@ -518,13 +518,32 @@ export const informarChegada = createServerFn({ method: "POST" })
     );
   });
 
-/** Motorista inicia a viagem (após passageiro embarcar). */
+/** Motorista inicia a viagem após validar o PIN de segurança do passageiro. */
 export const iniciarCorrida = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => RideIdInput.parse(d))
+  .inputValidator((d) => IniciarCorridaInput.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     await assertDriverApproved(supabase, userId);
+
+    // Lê o código atual da corrida (sem expor para o motorista) e compara.
+    const cur = await supabase
+      .from("rides")
+      .select("safety_code, status, driver_id")
+      .eq("id", data.rideId)
+      .maybeSingle();
+    if (cur.error) throw new Error("Falha ao validar a corrida: " + cur.error.message);
+    if (!cur.data) throw new Error("Corrida não encontrada.");
+    if (cur.data.driver_id !== userId) throw new Error("Esta corrida não é sua.");
+    if (cur.data.status !== RIDE_STATUS.MOTORISTA_CHEGOU) {
+      throw new Error("A corrida não está no momento de iniciar.");
+    }
+    const expected = String(cur.data.safety_code ?? "").trim();
+    const provided = String(data.safety_code ?? "").trim();
+    if (!expected || expected !== provided) {
+      throw new Error("Código incorreto. Peça o código ao passageiro e tente novamente.");
+    }
+
     return applyTransition(
       supabase,
       data.rideId,
