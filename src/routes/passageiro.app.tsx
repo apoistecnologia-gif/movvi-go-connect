@@ -389,13 +389,7 @@ type UiCategory = {
   backend: RideCategory;
   tagline: string;
 };
-const UI_CATEGORIES: UiCategory[] = [
-  { key: "carro",   label: "Carro",    icon: Car,     backend: "carros",  tagline: "Viagens urbanas com conforto" },
-  { key: "moto",    label: "Moto",     icon: Bike,    backend: "motos",   tagline: "Viagens rápidas e econômicas" },
-  { key: "entrega", label: "Entrega",  icon: Send,    backend: "envios",  tagline: "Envio de objetos e pequenos volumes" },
-  { key: "guincho", label: "Guincho",  icon: Truck,   backend: "guincho", tagline: "Remoção e transporte de veículos" },
-  { key: "mudanca", label: "Mudança",  icon: Box,     backend: "fretes",  tagline: "Transporte de móveis e cargas maiores" },
-];
+// UI_CATEGORIES agora vem do banco em realtime via `useUiCategories()` (lib/uiCategories.tsx).
 
 const fmtMin = (s: number) => `${Math.max(1, Math.round(s / 60))} min`;
 const fmtKm = (m: number) =>
