@@ -1356,10 +1356,7 @@ function PassageiroApp() {
                   strokeColor: "#05070D",
                   strokeWeight: 1.6,
                   scale: 1.6,
-                  rotation:
-                    typeof (driverInfo as DriverRow & { current_heading?: number | null }).current_heading === "number"
-                      ? ((driverInfo as DriverRow & { current_heading?: number | null }).current_heading as number)
-                      : 0,
+                  rotation: typeof driverInfo.current_heading === "number" ? driverInfo.current_heading : 0,
                   anchor: new google.maps.Point(12, 14),
                 }}
                 zIndex={9999}
