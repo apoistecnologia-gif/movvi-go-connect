@@ -750,10 +750,12 @@ function MotoristaApp() {
       {incoming && (
         <IncomingOffer
           ride={incoming}
+          passenger={passenger}
           countdown={countdown}
           onAccept={handleAccept}
           onReject={handleReject}
         />
+
       )}
 
       {/* ===== Rating ===== */}
@@ -879,9 +881,9 @@ function StatBlock({ label, value, highlight }: { label: string; value: string; 
    OFERTA ENTRANTE
    ============================================================ */
 function IncomingOffer({
-  ride, countdown, onAccept, onReject,
+  ride, passenger, countdown, onAccept, onReject,
 }: {
-  ride: RideRow; countdown: number; onAccept: () => void; onReject: () => void;
+  ride: RideRow; passenger: Passenger | null; countdown: number; onAccept: () => void; onReject: () => void;
 }) {
   const pct = (countdown / 15) * 100;
   return (
@@ -902,6 +904,18 @@ function IncomingOffer({
           </div>
           <CountdownRing seconds={countdown} pct={pct} />
         </div>
+
+        <div className="mt-3 flex items-center gap-3 rounded-2xl bg-background/60 p-2.5 ring-1 ring-border">
+          <Avatar src={passenger?.avatar_url ?? null} name={passenger?.name ?? "Passageiro"} size={40} />
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-sm font-semibold">{passenger?.name ?? "Passageiro"}</div>
+            <div className="text-[11px] text-muted-foreground">
+              {ride.payment_method === "cash" ? "Pagamento em dinheiro" : (ride.payment_method ?? "Pagamento")}
+            </div>
+          </div>
+        </div>
+
+
 
         <div className="mt-4 grid grid-cols-3 gap-2">
           <Metric label="Distância" value={ride.distance_km ? `${Number(ride.distance_km).toFixed(1)} km` : "—"} />
