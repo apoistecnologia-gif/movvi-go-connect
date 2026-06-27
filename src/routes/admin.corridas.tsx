@@ -36,6 +36,7 @@ type Ride = {
   passenger_rating: number | null;
   driver_rating: number | null;
   driver_name: string | null;
+  safety_code: string | null;
   created_at: string;
   accepted_at: string | null;
   started_at: string | null;
