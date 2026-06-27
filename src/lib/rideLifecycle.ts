@@ -418,20 +418,42 @@ export const aceitarCorrida = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     await assertDriverApproved(supabase, userId);
 
-    // snapshot do motorista
+    // snapshot do motorista (inclui photo_url para o passageiro ver)
     const drv = await supabase
       .from("drivers")
-      .select("name, phone, vehicle_model, vehicle_plate, vehicle_color, current_lat, current_lng")
+      .select("name, phone, vehicle_model, vehicle_plate, vehicle_color, current_lat, current_lng, photo_url")
       .eq("user_id", userId)
       .maybeSingle();
     if (drv.error) throw new Error("Falha ao carregar dados do motorista: " + drv.error.message);
-    const d = drv.data;
+    const d = drv.data as (typeof drv.data & { photo_url?: string | null }) | null;
     const vehicle =
       d && (d.vehicle_model || d.vehicle_plate)
         ? [d.vehicle_color, d.vehicle_model, d.vehicle_plate]
             .filter((x): x is string => !!x && String(x).trim().length > 0)
             .join(" • ")
         : null;
+
+    // foto do passageiro: usa supabaseAdmin (driver não tem RLS para ler users)
+    let passengerPhotoUrl: string | null = null;
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const rideRow = await supabaseAdmin
+        .from("rides")
+        .select("passenger_id")
+        .eq("id", data.rideId)
+        .maybeSingle();
+      const pid = rideRow.data?.passenger_id ?? null;
+      if (pid) {
+        const u = await supabaseAdmin
+          .from("users")
+          .select("avatar_url")
+          .eq("auth_user_id", pid)
+          .maybeSingle();
+        passengerPhotoUrl = (u.data?.avatar_url as string | null) ?? null;
+      }
+    } catch (e) {
+      console.warn("[MOVVI ACEITE] foto passageiro indisponível:", (e as Error).message);
+    }
 
     // PIN de segurança (4 dígitos) — gerado UMA vez no aceite, nunca regenerado.
     const safetyCode = String(Math.floor(1000 + Math.random() * 9000));
@@ -446,6 +468,8 @@ export const aceitarCorrida = createServerFn({ method: "POST" })
       driver_vehicle: vehicle,
       driver_lat: d?.current_lat ?? null,
       driver_lng: d?.current_lng ?? null,
+      driver_photo_url: (d?.photo_url ?? null) as string | null,
+      passenger_photo_url: passengerPhotoUrl,
       safety_code: safetyCode,
     };
 
@@ -457,16 +481,20 @@ export const aceitarCorrida = createServerFn({ method: "POST" })
       .eq("current_offer_driver_id", userId)
       .select("*")
       .single();
-    if (upd.error)
+    if (upd.error) {
+      console.error("[MOVVI MOTORISTA] aceite falhou:", upd.error);
       throw new Error(
         upd.error.code === "PGRST116"
-          ? "Não foi possível aceitar a corrida: esta chamada já foi aceita, cancelada ou não está mais disponível para você."
-          : "Não foi possível aceitar a corrida: " + upd.error.message,
+          ? "Esta corrida já não está mais disponível."
+          : "Não foi possível aceitar a corrida. Tente novamente.",
       );
+    }
     console.log("[MOVVI MOTORISTA] aceite confirmado no backend", {
       rideId: upd.data.id,
       driverId: upd.data.driver_id,
       status: upd.data.status,
+      hasDriverPhoto: !!(upd.data as { driver_photo_url?: string | null }).driver_photo_url,
+      hasPassengerPhoto: !!(upd.data as { passenger_photo_url?: string | null }).passenger_photo_url,
     });
     return upd.data;
   });
