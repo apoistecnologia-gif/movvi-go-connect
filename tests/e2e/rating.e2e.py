@@ -20,7 +20,8 @@ SCREENSHOTS.mkdir(parents=True, exist_ok=True)
 
 async def run_side(page, side: str, *, mode: str = "ok") -> None:
     url = f"{BASE}/dev/rating-test?side={side}&mode={mode}"
-    await page.goto(url, wait_until="domcontentloaded")
+    await page.goto(url, wait_until="networkidle")
+    await page.wait_for_selector(f'[data-testid="rating-{side}"]', timeout=15000)
     await expect(page.get_by_test_id(f"rating-{side}")).to_be_visible()
 
     # Default 5 stars; pick 4 stars
@@ -51,7 +52,8 @@ async def run_side(page, side: str, *, mode: str = "ok") -> None:
 
 async def double_click_test(page) -> None:
     """Ensure double clicking submit only triggers ONE submission."""
-    await page.goto(f"{BASE}/dev/rating-test?side=passenger", wait_until="domcontentloaded")
+    await page.goto(f"{BASE}/dev/rating-test?side=passenger", wait_until="networkidle")
+    await page.wait_for_selector('[data-testid="rating-passenger"]', timeout=15000)
     await page.get_by_test_id("star-3").click()
     btn = page.get_by_test_id("submit-button")
     # Fire two clicks rapidly
