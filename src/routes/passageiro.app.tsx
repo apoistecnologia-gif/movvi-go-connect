@@ -1939,6 +1939,111 @@ function StepFlow({
   );
 }
 
+function FareEstimateCard({ route, fare }: { route: RouteResult; fare: number | null }) {
+  return (
+    <div className="mb-3 rounded-2xl bg-primary/5 px-4 py-4 ring-1 ring-primary/30">
+      <div className="flex flex-wrap items-baseline justify-center gap-x-2 gap-y-1 text-center">
+        <span className="text-[15px] font-extrabold text-foreground">
+          {fmtMin(route.durationSeconds)}
+        </span>
+        <span className="text-muted-foreground">•</span>
+        <span className="text-[15px] font-extrabold text-foreground">
+          {fmtKm(route.distanceMeters)}
+        </span>
+        <span className="text-muted-foreground">•</span>
+        <span className="text-[15px] font-extrabold text-primary">
+          {fare != null ? formatBRL(fare) : "Valor estimado"}
+        </span>
+      </div>
+      <p className="mt-1.5 text-center text-[10.5px] text-muted-foreground">
+        Valor estimado. Pode variar conforme rota e disponibilidade.
+      </p>
+    </div>
+  );
+}
+
+function RideCategorySelector({
+  route,
+  km,
+  min,
+  tariffs,
+  selectedCategoryKey,
+  onSelect,
+}: {
+  route: RouteResult;
+  km: number;
+  min: number;
+  tariffs: TariffMap;
+  selectedCategoryKey: string | null;
+  onSelect: (category: UiCategory) => void;
+}) {
+  return (
+    <div className="animate-in fade-in slide-in-from-bottom-2 duration-200">
+      <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+        Escolha a categoria
+      </div>
+      <div className="-mx-4 mb-3 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex snap-x snap-mandatory gap-2.5 pb-1">
+          {UI_CATEGORIES.map((c) => {
+            const active = c.key === selectedCategoryKey;
+            const fare = estimateFare(c.backend, km, min, tariffs);
+            const Icon = c.icon;
+            return (
+              <button
+                key={c.key}
+                type="button"
+                onClick={() => onSelect(c)}
+                aria-pressed={active}
+                className={`flex w-[120px] shrink-0 snap-start flex-col items-center gap-1.5 rounded-2xl border-2 px-3 py-3 text-center transition active:scale-95 ${
+                  active
+                    ? "border-primary bg-primary/10 shadow-md shadow-primary/20"
+                    : "border-border bg-background/60 hover:border-primary/40"
+                }`}
+              >
+                <span
+                  className={`grid h-10 w-10 place-items-center rounded-xl ${
+                    active ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary"
+                  }`}
+                >
+                  <Icon className="h-5 w-5" />
+                </span>
+                <span className="text-[12.5px] font-bold leading-none">{c.label}</span>
+                <span className="text-[10px] leading-none text-muted-foreground">
+                  {fmtMin(route.durationSeconds)}
+                </span>
+                <span className="text-[12.5px] font-extrabold leading-none text-primary">
+                  {formatBRL(fare)}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RequestRideButton({
+  busy,
+  categoryLabel,
+  onSubmit,
+}: {
+  busy: boolean;
+  categoryLabel: string;
+  onSubmit: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={busy}
+      onClick={onSubmit}
+      className="mt-1 w-full rounded-2xl bg-primary py-3.5 text-[15px] font-extrabold text-primary-foreground shadow-xl shadow-primary/30 transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+    >
+      {busy ? "Solicitando..." : `Solicitar MOVVI ${categoryLabel}`}
+    </button>
+  );
+}
+
 function EnviosBlock({
   mode,
   setMode,
