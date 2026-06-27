@@ -53,7 +53,7 @@ import {
   type TariffMap,
 } from "@/lib/rideCategories";
 import { useTariffs } from "@/hooks/useTariffs";
-import { UiCategoriesProvider, useUiCategories, type UiCategory } from "@/lib/uiCategories";
+import { UiCategoriesProvider, useUiCategories } from "@/lib/uiCategories";
 import { logGpsTelemetry } from "@/lib/gpsTelemetry";
 
 import type { Database } from "@/integrations/supabase/types";
