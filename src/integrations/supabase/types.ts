@@ -229,8 +229,13 @@ export type Database = {
           destination_name: string
           distance_km: number | null
           driver_id: string | null
+          driver_lat: number | null
+          driver_lng: number | null
+          driver_name: string | null
+          driver_phone: string | null
           driver_rating: number | null
           driver_rating_comment: string | null
+          driver_vehicle: string | null
           duration_min: number | null
           estimated_price: number | null
           final_price: number | null
@@ -261,8 +266,13 @@ export type Database = {
           destination_name: string
           distance_km?: number | null
           driver_id?: string | null
+          driver_lat?: number | null
+          driver_lng?: number | null
+          driver_name?: string | null
+          driver_phone?: string | null
           driver_rating?: number | null
           driver_rating_comment?: string | null
+          driver_vehicle?: string | null
           duration_min?: number | null
           estimated_price?: number | null
           final_price?: number | null
@@ -293,8 +303,13 @@ export type Database = {
           destination_name?: string
           distance_km?: number | null
           driver_id?: string | null
+          driver_lat?: number | null
+          driver_lng?: number | null
+          driver_name?: string | null
+          driver_phone?: string | null
           driver_rating?: number | null
           driver_rating_comment?: string | null
+          driver_vehicle?: string | null
           duration_min?: number | null
           estimated_price?: number | null
           final_price?: number | null
