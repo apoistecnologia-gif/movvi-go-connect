@@ -1186,9 +1186,20 @@ function RatingScreen({
                 rows={2} />
             </div>
 
+
+            {errorMessage && (
+              <div className="mt-3 rounded-xl bg-destructive/10 px-3 py-2 text-xs text-destructive ring-1 ring-destructive/30">
+                {errorMessage} Toque em <strong>Tentar novamente</strong> ou pule esta avaliação.
+              </div>
+            )}
+
             <button disabled={submitting} onClick={onSubmit}
               className="mt-4 w-full rounded-2xl bg-primary py-4 text-sm font-bold uppercase tracking-wider text-primary-foreground shadow-lg shadow-primary/30 hover:brightness-110 disabled:opacity-60">
-              {submitting ? "Enviando…" : "Enviar avaliação"}
+              {submitting ? "Enviando…" : (errorMessage ? "Tentar novamente" : "Enviar avaliação")}
+            </button>
+            <button type="button" onClick={onSkip} disabled={submitting}
+              className="mt-2 w-full rounded-2xl bg-transparent py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground disabled:opacity-60">
+              Pular avaliação
             </button>
           </>
         )}
