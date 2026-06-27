@@ -912,7 +912,7 @@ function IncomingOffer({
         </div>
 
         <div className="mt-3 flex items-center gap-3 rounded-2xl bg-background/60 p-2.5 ring-1 ring-border">
-          <Avatar src={passenger?.avatar_url ?? null} name={passenger?.name ?? "Passageiro"} size={40} />
+          <Avatar src={passenger?.avatar_url ?? (ride as { passenger_photo_url?: string | null }).passenger_photo_url ?? null} name={passenger?.name ?? "Passageiro"} size={40} />
           <div className="min-w-0 flex-1">
             <div className="truncate text-sm font-semibold">{passenger?.name ?? "Passageiro"}</div>
             <div className="text-[11px] text-muted-foreground">
