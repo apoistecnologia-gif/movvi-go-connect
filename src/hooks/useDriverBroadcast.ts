@@ -1,6 +1,8 @@
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { isBrazilCoordinate } from "@/lib/googleMaps";
 import type { Database } from "@/integrations/supabase/types";
+
 
 type DriverUpdate = Database["public"]["Tables"]["drivers"]["Update"];
 
