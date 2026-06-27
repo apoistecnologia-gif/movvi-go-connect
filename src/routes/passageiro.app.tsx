@@ -538,9 +538,10 @@ function PassageiroApp() {
   const [route, setRoute] = useState<RouteResult | null>(null);
   const [passengerUiStage, setPassengerUiStage] = useState<PassengerUiStage>("selecting_destination");
   const [selectedCategoryKey, setSelectedCategoryKey] = useState<string | null>(null);
+  const uiCategories = useUiCategories();
   const selectedUiCategory = useMemo(
-    () => UI_CATEGORIES.find((c) => c.key === selectedCategoryKey) ?? null,
-    [selectedCategoryKey],
+    () => uiCategories.find((c) => c.key === selectedCategoryKey) ?? null,
+    [uiCategories, selectedCategoryKey],
   );
   const category: RideCategory = selectedUiCategory?.backend ?? "carros";
   const [recent, setRecent] = useState<Recent[]>([]);
