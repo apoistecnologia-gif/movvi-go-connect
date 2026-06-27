@@ -389,7 +389,17 @@ export const criarCorrida = createServerFn({ method: "POST" })
       .select("*")
       .single();
     if (ins.error) throw new Error(ins.error.message);
-    await offerToNextDriver(supabase, ins.data.id);
+    console.log("[MOVVI DESPACHO] corrida criada:", {
+      ride_id: ins.data.id, passenger_id: ins.data.passenger_id, category: ins.data.category,
+      origin: { lat: ins.data.origin_lat, lng: ins.data.origin_lng, name: ins.data.origin_name },
+      destination: { lat: ins.data.destination_lat, lng: ins.data.destination_lng, name: ins.data.destination_name },
+      status: ins.data.status, created_at: ins.data.created_at,
+    });
+    // Despacho usa supabaseAdmin para enxergar TODOS os motoristas (inclusive
+    // offline/não-aprovados) e gerar diagnóstico completo nos logs.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    try { await offerToNextDriver(supabaseAdmin, ins.data.id); }
+    catch (e) { console.warn("[MOVVI DESPACHO] offerToNextDriver inicial falhou:", (e as Error).message); }
     return { rideId: ins.data.id };
   });
 
