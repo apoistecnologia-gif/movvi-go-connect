@@ -43,7 +43,7 @@ import { DEV_MODE, isDevelopmentEnvironment } from "@/lib/environment";
 
 import { computeRoute, type RouteResult } from "@/lib/routes.functions";
 import { reverseGeocode, type GeocodeResult } from "@/lib/geocode.functions";
-import { criarCorrida, cancelarPeloPassageiro } from "@/lib/rideLifecycle";
+import { criarCorrida, cancelarPeloPassageiro, redispatchRide, diagnoseDispatch } from "@/lib/rideLifecycle";
 import { useNearbyDrivers } from "@/hooks/useNearbyDrivers";
 import {
   RIDE_CATEGORIES,
