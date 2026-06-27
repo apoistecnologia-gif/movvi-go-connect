@@ -53,6 +53,7 @@ import {
   type TariffMap,
 } from "@/lib/rideCategories";
 import { loadTariffs } from "@/lib/tariffs";
+import { logGpsTelemetry } from "@/lib/gpsTelemetry";
 
 import type { Database } from "@/integrations/supabase/types";
 
