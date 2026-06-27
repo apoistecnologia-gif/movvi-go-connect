@@ -1,0 +1,219 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { Loader2, Save, Copy, CheckCircle2, XCircle, CreditCard, KeyRound } from "lucide-react";
+import { AdminLayout } from "@/components/admin/AdminLayout";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { toast } from "sonner";
+import { logAdminAction } from "@/lib/adminAudit";
+
+export const Route = createFileRoute("/admin/pagamentos")({
+  head: () => ({ meta: [{ title: "Pagamentos — Admin MOVVI" }] }),
+  component: AdminPaymentsPage,
+});
+
+type Gateway = {
+  id: string;
+  provider: string;
+  display_name: string;
+  enabled: boolean;
+  mode: "sandbox" | "live";
+  api_key_secret_name: string | null;
+  webhook_url: string | null;
+  pix_key: string | null;
+  pix_key_type: string | null;
+};
+
+function AdminPaymentsPage() {
+  const [gateways, setGateways] = useState<Gateway[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [savingId, setSavingId] = useState<string | null>(null);
+
+  async function refresh() {
+    const { data, error } = await supabase
+      .from("payment_gateways")
+      .select("*")
+      .order("display_name");
+    if (error) toast.error(error.message);
+    setGateways((data ?? []) as Gateway[]);
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    refresh();
+    const ch = supabase
+      .channel("admin-payments")
+      .on("postgres_changes", { event: "*", schema: "public", table: "payment_gateways" }, refresh)
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, []);
+
+  function patch(id: string, p: Partial<Gateway>) {
+    setGateways((gs) => gs.map((g) => (g.id === id ? { ...g, ...p } : g)));
+  }
+
+  async function save(g: Gateway) {
+    setSavingId(g.id);
+    const { data: u } = await supabase.auth.getUser();
+    const { error } = await supabase
+      .from("payment_gateways")
+      .update({
+        enabled: g.enabled,
+        mode: g.mode,
+        api_key_secret_name: g.api_key_secret_name,
+        webhook_url: g.webhook_url,
+        pix_key: g.pix_key,
+        pix_key_type: g.pix_key_type,
+        updated_by: u?.user?.id ?? null,
+      })
+      .eq("id", g.id);
+    setSavingId(null);
+    if (error) return toast.error(error.message);
+    await logAdminAction({ action: "payment_gateway.update", entity: "payment_gateways", entity_id: g.id, after: { enabled: g.enabled, mode: g.mode } });
+    toast.success(`${g.display_name} atualizado`);
+  }
+
+  function copyWebhook(url: string) {
+    navigator.clipboard.writeText(url).then(() => toast.success("Webhook copiado"));
+  }
+
+  if (loading) {
+    return (
+      <AdminLayout title="Pagamentos">
+        <div className="grid place-items-center py-24 text-muted-foreground">
+          <Loader2 className="h-6 w-6 animate-spin" />
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  return (
+    <AdminLayout
+      title="Pagamentos"
+      description="Conecte gateways, defina chave PIX e webhooks. Credenciais ficam protegidas em secrets."
+    >
+      <div className="grid gap-4 lg:grid-cols-2">
+        {gateways.map((g) => {
+          const isActive = g.enabled && !!g.api_key_secret_name;
+          return (
+            <Card key={g.id} className="border-border bg-card/60">
+              <CardHeader className="flex flex-row items-start justify-between gap-3">
+                <div className="space-y-1">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <CreditCard className="h-4 w-4 text-primary" />
+                    {g.display_name}
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    {isActive ? (
+                      <span className="inline-flex items-center gap-1 text-primary">
+                        <CheckCircle2 className="h-3 w-3" /> Conectado em modo {g.mode}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-muted-foreground">
+                        <XCircle className="h-3 w-3" /> Não configurado
+                      </span>
+                    )}
+                  </CardDescription>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch checked={g.enabled} onCheckedChange={(v) => patch(g.id, { enabled: v })} />
+                  <Button size="sm" onClick={() => save(g)} disabled={savingId === g.id} className="gap-1">
+                    {savingId === g.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+                    Salvar
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="flex flex-col gap-1">
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Modo</span>
+                    <Select value={g.mode} onValueChange={(v) => patch(g.id, { mode: v as Gateway["mode"] })}>
+                      <SelectTrigger className="h-9">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="sandbox">Sandbox (teste)</SelectItem>
+                        <SelectItem value="live">Produção</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </label>
+                  <label className="flex flex-col gap-1">
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      <KeyRound className="mr-1 inline h-3 w-3" /> Nome da secret da API key
+                    </span>
+                    <Input
+                      placeholder={`${g.provider.toUpperCase()}_API_KEY`}
+                      value={g.api_key_secret_name ?? ""}
+                      onChange={(e) => patch(g.id, { api_key_secret_name: e.target.value })}
+                    />
+                  </label>
+                </div>
+
+                <label className="flex flex-col gap-1">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">URL do webhook</span>
+                  <div className="flex gap-1">
+                    <Input
+                      placeholder="https://seu-projeto.lovable.app/api/public/webhooks/..."
+                      value={g.webhook_url ?? ""}
+                      onChange={(e) => patch(g.id, { webhook_url: e.target.value })}
+                    />
+                    {g.webhook_url && (
+                      <Button variant="outline" size="icon" onClick={() => copyWebhook(g.webhook_url!)}>
+                        <Copy className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+                  </div>
+                </label>
+
+                {g.provider === "mercadopago" || g.provider === "asaas" || g.provider === "pagseguro" ? (
+                  <div className="grid grid-cols-3 gap-3">
+                    <label className="col-span-2 flex flex-col gap-1">
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Chave PIX</span>
+                      <Input
+                        placeholder="email, CPF, telefone ou chave aleatória"
+                        value={g.pix_key ?? ""}
+                        onChange={(e) => patch(g.id, { pix_key: e.target.value })}
+                      />
+                    </label>
+                    <label className="flex flex-col gap-1">
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Tipo</span>
+                      <Select value={g.pix_key_type ?? "random"} onValueChange={(v) => patch(g.id, { pix_key_type: v })}>
+                        <SelectTrigger className="h-9">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="cpf">CPF</SelectItem>
+                          <SelectItem value="cnpj">CNPJ</SelectItem>
+                          <SelectItem value="email">E-mail</SelectItem>
+                          <SelectItem value="phone">Telefone</SelectItem>
+                          <SelectItem value="random">Aleatória</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </label>
+                  </div>
+                ) : null}
+
+                <Badge variant="outline" className="text-[10px]">
+                  Provider: <span className="ml-1 font-mono">{g.provider}</span>
+                </Badge>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    </AdminLayout>
+  );
+}

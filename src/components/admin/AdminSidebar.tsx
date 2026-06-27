@@ -16,6 +16,8 @@ import {
   CreditCard,
   Wallet,
   ScrollText,
+  Database,
+  Lock,
   type LucideIcon,
 } from "lucide-react";
 import { MovviLogo } from "@/components/MovviLogo";
@@ -34,10 +36,13 @@ export const ADMIN_NAV: Item[] = [
   { to: "/admin/precos", label: "Tarifas", icon: DollarSign },
   { to: "/admin/cupons", label: "Promoções", icon: Ticket },
   { to: "/admin/assinaturas", label: "Assinaturas", icon: CreditCard },
+  { to: "/admin/pagamentos", label: "Pagamentos", icon: Wallet },
   { to: "/admin/financeiro", label: "Financeiro", icon: Wallet },
   { to: "/admin/relatorios", label: "Relatórios", icon: FileBarChart },
   { to: "/admin/notificacoes", label: "Notificações", icon: Bell },
   { to: "/admin/configuracoes", label: "Configurações", icon: Settings },
+  { to: "/admin/seguranca", label: "Segurança", icon: Lock },
+  { to: "/admin/backups", label: "Backups", icon: Database },
   { to: "/admin/administradores", label: "Administradores", icon: ShieldCheck },
   { to: "/admin/logs", label: "Logs", icon: ScrollText },
 ];
