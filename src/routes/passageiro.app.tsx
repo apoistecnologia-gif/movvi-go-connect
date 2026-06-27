@@ -1067,16 +1067,54 @@ function PassageiroApp() {
   }, [rideId]);
 
   useEffect(() => {
-    if (!ride?.driver_id) {
+    const driverId = ride?.driver_id;
+    if (!driverId) {
       setDriverInfo(null);
       return;
     }
+    let cancelled = false;
+    // Carga inicial
     supabase
       .from("drivers")
       .select("*")
-      .eq("user_id", ride.driver_id)
+      .eq("user_id", driverId)
       .maybeSingle()
-      .then(({ data }) => setDriverInfo(data));
+      .then(({ data }) => {
+        if (!cancelled) setDriverInfo(data);
+      });
+    // Rastreamento em tempo real do motorista (Uber/99-style)
+    const ch = supabase
+      .channel(`driver-track-${driverId}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "drivers", filter: `user_id=eq.${driverId}` },
+        (p) => {
+          const next = p.new as DriverRow;
+          console.log("[MOVVI PASSAGEIRO] motorista posição:", {
+            lat: next.current_lat,
+            lng: next.current_lng,
+            heading: next.current_heading,
+          });
+          setDriverInfo((prev) => ({ ...(prev ?? next), ...next }));
+        },
+      )
+      .subscribe();
+    // Fallback: reconsulta a cada 8s caso o realtime atrase
+    const poll = window.setInterval(() => {
+      supabase
+        .from("drivers")
+        .select("*")
+        .eq("user_id", driverId)
+        .maybeSingle()
+        .then(({ data }) => {
+          if (!cancelled && data) setDriverInfo((prev) => ({ ...(prev ?? data), ...data }));
+        });
+    }, 8000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(poll);
+      supabase.removeChannel(ch);
+    };
   }, [ride?.driver_id]);
 
   function resetRide() {
@@ -1300,6 +1338,30 @@ function PassageiroApp() {
               }}
             />
           )}
+
+          {/* Marcador do motorista durante a corrida (rastreamento em tempo real) */}
+          {ride &&
+            (ride.status === "motorista_a_caminho" ||
+              ride.status === "motorista_chegou" ||
+              ride.status === "em_viagem") &&
+            driverInfo &&
+            typeof driverInfo.current_lat === "number" &&
+            typeof driverInfo.current_lng === "number" && (
+              <Marker
+                position={{ lat: driverInfo.current_lat, lng: driverInfo.current_lng }}
+                icon={{
+                  path: "M5 11l1.5-4.5h11L19 11M6 14h12M7.5 17a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Zm12 0a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0ZM5 11h14v4H5z",
+                  fillColor: "#8DD92B",
+                  fillOpacity: 1,
+                  strokeColor: "#05070D",
+                  strokeWeight: 1.6,
+                  scale: 1.6,
+                  rotation: typeof driverInfo.current_heading === "number" ? driverInfo.current_heading : 0,
+                  anchor: new google.maps.Point(12, 14),
+                }}
+                zIndex={9999}
+              />
+            )}
 
           {polyPath.length > 0 && (
             <Polyline

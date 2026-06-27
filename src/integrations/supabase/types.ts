@@ -49,8 +49,10 @@ export type Database = {
           cnh_url: string | null
           cpf: string
           created_at: string
+          current_heading: number | null
           current_lat: number | null
           current_lng: number | null
+          current_speed: number | null
           email: string
           id: string
           is_online: boolean
@@ -80,8 +82,10 @@ export type Database = {
           cnh_url?: string | null
           cpf: string
           created_at?: string
+          current_heading?: number | null
           current_lat?: number | null
           current_lng?: number | null
+          current_speed?: number | null
           email: string
           id?: string
           is_online?: boolean
@@ -111,8 +115,10 @@ export type Database = {
           cnh_url?: string | null
           cpf?: string
           created_at?: string
+          current_heading?: number | null
           current_lat?: number | null
           current_lng?: number | null
+          current_speed?: number | null
           email?: string
           id?: string
           is_online?: boolean
