@@ -145,18 +145,39 @@ function MotoristaApp() {
   // GPS
   useEffect(() => {
     purgeForeignMapCache();
-    if (!("geolocation" in navigator)) { setGpsError("GPS indisponível"); return; }
+    if (!("geolocation" in navigator)) { setGpsError("GPS indisponível neste dispositivo"); return; }
     const id = navigator.geolocation.watchPosition(
       (pos) => {
         const lat = pos.coords.latitude, lng = pos.coords.longitude;
         if (!isBrazilCoordinate(lat, lng)) return;
-        setPosition({ lat, lng });
+        setPosition((prev) => {
+          if (!prev || Math.abs(prev.lat - lat) > 0.0001 || Math.abs(prev.lng - lng) > 0.0001) {
+            console.log("[MOVVI MOTORISTA] localização:", { lat, lng, accuracy: pos.coords.accuracy });
+          }
+          return { lat, lng };
+        });
         setGpsError(null);
       },
-      (err) => setGpsError(err.message),
-      { enableHighAccuracy: true, maximumAge: 4000, timeout: 10000 });
+      (err) => {
+        console.warn("[MOVVI MOTORISTA] erro GPS:", err.message);
+        setGpsError(err.message);
+      },
+      { enableHighAccuracy: true, maximumAge: 4000, timeout: 15000 });
     return () => navigator.geolocation.clearWatch(id);
   }, []);
+
+  // Toggle Online/Offline com validação e log
+  const toggleOnline = useCallback(() => {
+    setOnline((prev) => {
+      const next = !prev;
+      if (next && !position) {
+        setGpsError("Aguardando localização. Permita o GPS para ficar online.");
+        return prev;
+      }
+      console.log("[MOVVI MOTORISTA] online:", next, "userId:", userId, "pos:", position);
+      return next;
+    });
+  }, [position, userId]);
 
   // offline ao desmontar
   useEffect(() => () => { if (online && userId)
@@ -170,6 +191,7 @@ function MotoristaApp() {
     const presentOffer = (r: RideRow) => {
       if (r.status !== "procurar_motorista") return;
       if (active || incoming || ratingRide) return;
+      console.log("[MOVVI MOTORISTA] corrida recebida:", r.id, r.category, r.origin_name, "→", r.destination_name);
       setIncoming(r); setCountdown(15);
       if (navigator.vibrate) navigator.vibrate([280, 120, 280, 120, 280]);
     };
@@ -185,6 +207,7 @@ function MotoristaApp() {
       }
     };
 
+    console.log("[MOVVI MOTORISTA] escutando corridas: canal driver-rides-" + userId);
     const ch = supabase.channel(`driver-rides-${userId}`)
       .on("postgres_changes",
         { event: "UPDATE", schema: "public", table: "rides", filter: `current_offer_driver_id=eq.${userId}` },
@@ -193,6 +216,7 @@ function MotoristaApp() {
         { event: "UPDATE", schema: "public", table: "rides", filter: `driver_id=eq.${userId}` },
         (p) => applyActive(p.new as RideRow))
       .subscribe(async (status) => {
+        console.log("[MOVVI MOTORISTA] status do canal:", status);
         if (status !== "SUBSCRIBED") return;
         // pega oferta pendente que o realtime não entregou (driver acabou de entrar)
         const pending = await supabase
@@ -235,13 +259,19 @@ function MotoristaApp() {
     if (!incoming) return;
     try {
       const r = await callAccept({ data: { rideId: incoming.id } });
+      console.log("[MOVVI MOTORISTA] corrida aceita:", incoming.id);
       setActive(r as RideRow); setIncoming(null);
       sheetRef.current?.snapTo(55);
-    } catch (e) { console.error(e); setIncoming(null); }
+    } catch (e) {
+      console.error("[MOVVI MOTORISTA] erro ao aceitar:", e);
+      setIncoming(null);
+    }
   }
   async function handleReject() {
     if (!incoming) return;
+    console.log("[MOVVI MOTORISTA] corrida recusada:", incoming.id);
     try { await callReject({ data: { rideId: incoming.id } }); }
+    catch (e) { console.error("[MOVVI MOTORISTA] erro ao recusar:", e); }
     finally { setIncoming(null); }
   }
 
@@ -388,7 +418,7 @@ function MotoristaApp() {
               driverName={driverName}
               online={online}
               disabled={!!statusBlock}
-              toggleOnline={() => setOnline((v) => !v)}
+              toggleOnline={toggleOnline}
               stats={todayStats}
             />
           )}
