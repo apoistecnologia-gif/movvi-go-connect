@@ -36,6 +36,7 @@ import {
   iniciarCorrida,
   finalizarCorrida,
   cancelarPeloMotorista,
+  avaliarPassageiro,
 } from "@/lib/rideLifecycle";
 import { formatBRL } from "@/lib/rideCategories";
 import type { Database } from "@/integrations/supabase/types";
