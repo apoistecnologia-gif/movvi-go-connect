@@ -928,13 +928,23 @@ function PassageiroApp() {
       return;
     }
 
+    // Watchdog: se a Permissions API não responder em 1.5s (Safari/iOS antigo,
+    // WebViews, navegadores embutidos), tratamos como "prompt" e disparamos o
+    // pedido nativo de localização para garantir que o prompt apareça.
+    const watchdog = window.setTimeout(() => {
+      if (cancelled) return;
+      setPermissionStatus((prev) => (prev === "checking" ? "prompt" : prev));
+      if (gpsStateRef.current === "idle") {
+        try { requestGps(); } catch (err) { console.warn("[MOVVI] requestGps watchdog falhou:", err); }
+      }
+    }, 1500);
+
     const perms = (navigator as Navigator).permissions;
     if (!perms || typeof perms.query !== "function") {
-      // Sem Permissions API (Safari iOS antigo etc.): dispara o prompt nativo
-      // imediatamente — mesmo comportamento do app do motorista.
+      window.clearTimeout(watchdog);
       setPermissionStatus("prompt");
-      requestGps();
-      return;
+      try { requestGps(); } catch (err) { console.warn("[MOVVI] requestGps fallback falhou:", err); }
+      return () => { cancelled = true; };
     }
 
     let statusRef: PermissionStatus | null = null;
@@ -942,6 +952,7 @@ function PassageiroApp() {
       .query({ name: "geolocation" as PermissionName })
       .then((status) => {
         if (cancelled) return;
+        window.clearTimeout(watchdog);
         statusRef = status;
         const apply = (s: PermissionState) => {
           try {
@@ -965,16 +976,21 @@ function PassageiroApp() {
         apply(status.state);
         status.onchange = () => apply(status.state);
       })
-      .catch(() => {
+      .catch((err) => {
         if (cancelled) return;
-        setPermissionStatus("unsupported");
+        window.clearTimeout(watchdog);
+        console.warn("[MOVVI] permissions.query falhou:", err);
+        setPermissionStatus("prompt");
+        try { requestGps(); } catch (e) { console.warn("[MOVVI] requestGps catch falhou:", e); }
       });
 
     return () => {
       cancelled = true;
+      window.clearTimeout(watchdog);
       if (statusRef) statusRef.onchange = null;
     };
   }, [requestGps]);
+
 
 
   /* ---------------------- autocomplete (Places API New) ---------------------- */
