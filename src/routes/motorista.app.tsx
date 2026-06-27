@@ -131,15 +131,24 @@ function MotoristaApp() {
       const meta = (u.user.user_metadata ?? {}) as Record<string, unknown>;
       setDriverName(((meta.name as string) || (meta.full_name as string) || u.user.email?.split("@")[0] || "").split(" ")[0]);
 
-      const { data } = await supabase.from("drivers")
-        .select("approval_status, motivo_reprovacao").eq("user_id", u.user.id).maybeSingle();
-      if (!data || data.approval_status !== "aprovado") {
-        setStatusBlock(
-          !data ? "Cadastro de motorista não encontrado."
-          : data.approval_status === "reprovado" ? `Cadastro reprovado.${data.motivo_reprovacao ? ` Motivo: ${data.motivo_reprovacao}` : ""}`
-          : data.approval_status === "bloqueado" ? "Cadastro bloqueado."
-          : "Cadastro em análise.");
+      const result = await loadDriverProfile();
+      if (result.ok) {
+        const d = result.profile;
+        if (d.approval_status !== "aprovado") {
+          setStatusBlock(
+            d.approval_status === "reprovado"
+              ? `Cadastro reprovado.${d.motivo_reprovacao ? ` Motivo: ${d.motivo_reprovacao}` : ""}`
+              : d.approval_status === "bloqueado"
+                ? "Cadastro bloqueado."
+                : "Cadastro em análise.",
+          );
+        }
+      } else if (result.reason === "not_found") {
+        setStatusBlock("Cadastro de motorista não encontrado.");
+      } else if (result.reason === "error") {
+        setStatusBlock("Erro ao carregar cadastro. Tente novamente.");
       }
+
     })();
   }, [navigate]);
 
