@@ -195,7 +195,7 @@ function AdminMapaPage() {
                 : null;
 
             return (
-              <span key={r.id}>
+              <Fragment key={r.id}>
                 <Marker
                   position={origin}
                   icon={symbol(color, 11, 2)}
@@ -219,7 +219,7 @@ function AdminMapaPage() {
                     }}
                   />
                 )}
-              </span>
+              </Fragment>
             );
           })}
         </MovviMap>
@@ -242,7 +242,7 @@ function Toggle({
   return (
     <label className="flex items-center gap-2">
       <span className="h-3 w-3 rounded-full" style={{ background: color }} />
-      <span>{label}</span>
+      <span>{label}</Fragment>
       <Switch checked={checked} onCheckedChange={onChange} />
     </label>
   );
