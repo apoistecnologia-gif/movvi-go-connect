@@ -30,7 +30,7 @@ export async function logGpsTelemetry(
       message: payload.message ?? null,
       user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
       url: typeof window !== "undefined" ? window.location.href : null,
-      extra: payload.extra ?? null,
+      extra: (payload.extra ?? null) as never,
     });
   } catch (err) {
     // Telemetria nunca pode quebrar o app.
