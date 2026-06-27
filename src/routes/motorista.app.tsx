@@ -385,44 +385,41 @@ function MotoristaApp() {
       {!incoming && !ratingRide && (
         <button onClick={recenter}
           className="absolute right-4 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-card/95 text-foreground shadow-lg ring-1 ring-border backdrop-blur hover:ring-primary/40"
-          style={{ bottom: hasRideUI ? "calc(58vh + 16px)" : "calc(38vh + 16px)" }}>
+          style={{ bottom: active ? "calc(58vh + 16px)" : "calc(var(--driver-panel-h, 320px) + 16px)" }}>
           <Crosshair className="h-5 w-5" />
         </button>
       )}
 
-      {/* ===== Sheet permanente — muda conforme estado ===== */}
-      {!incoming && !ratingRide && (
-        <MovviSheet
-          ref={sheetRef}
-          snaps={active ? [32, 55, 88] : [34, 60, 88]}
-          initial={active ? 55 : 34}
-        >
-          {active ? (
-            <ActiveRidePanel
-              ride={active}
-              passenger={passenger}
-              etaSeconds={etaSeconds}
-              legKm={legKm}
-              onArrive={async () => { await callArrive({ data: { rideId: active.id } }); }}
-              onStart={async () => { await callStart({ data: { rideId: active.id } }); }}
-              onComplete={async () => {
-                await callComplete({ data: {
-                  rideId: active.id,
-                  final_price: active.estimated_price ? Number(active.estimated_price) : undefined,
-                } });
-              }}
-              onCancel={async () => { await callCancel({ data: { rideId: active.id } }); }}
-            />
-          ) : (
-            <IdlePanel
-              driverName={driverName}
-              online={online}
-              disabled={!!statusBlock}
-              toggleOnline={toggleOnline}
-              stats={todayStats}
-            />
-          )}
+      {/* ===== Corrida ativa — usa bottom sheet ===== */}
+      {!incoming && !ratingRide && active && (
+        <MovviSheet ref={sheetRef} snaps={[32, 55, 88]} initial={55}>
+          <ActiveRidePanel
+            ride={active}
+            passenger={passenger}
+            etaSeconds={etaSeconds}
+            legKm={legKm}
+            onArrive={async () => { await callArrive({ data: { rideId: active.id } }); }}
+            onStart={async () => { await callStart({ data: { rideId: active.id } }); }}
+            onComplete={async () => {
+              await callComplete({ data: {
+                rideId: active.id,
+                final_price: active.estimated_price ? Number(active.estimated_price) : undefined,
+              } });
+            }}
+            onCancel={async () => { await callCancel({ data: { rideId: active.id } }); }}
+          />
         </MovviSheet>
+      )}
+
+      {/* ===== Idle — painel fixo + CTA fixo (sem sheet, sem sobreposição) ===== */}
+      {!incoming && !ratingRide && !active && (
+        <IdleBottomPanel
+          driverName={driverName}
+          online={online}
+          disabled={!!statusBlock}
+          toggleOnline={toggleOnline}
+          stats={todayStats}
+        />
       )}
 
       {/* ===== Oferta entrante ===== */}
@@ -453,57 +450,70 @@ function MotoristaApp() {
 }
 
 /* ============================================================
-   IDLE — offline / online
+   IDLE — painel fixo (sem bottom sheet)
+   Sempre visível, nunca exige rolagem para mostrar o CTA.
    ============================================================ */
-function IdlePanel({
+function IdleBottomPanel({
   driverName, online, disabled, toggleOnline, stats,
 }: {
   driverName: string; online: boolean; disabled: boolean;
   toggleOnline: () => void; stats: { rides: number; earnings: number };
 }) {
+  // Espaço reservado para a BottomNav flutuante (≈ ícones 56 + paddings + safe-area).
+  const navReserve = "calc(env(safe-area-inset-bottom) + 84px)";
   return (
-    <div className="flex flex-col gap-4 pt-1">
-      <div>
-        <p className="text-xs uppercase tracking-widest text-muted-foreground">Olá, motorista</p>
-        <h1 className="text-2xl font-bold leading-tight">{driverName || "Bem-vindo"}</h1>
-      </div>
-
-      {/* hero status */}
-      <div className={`rounded-2xl p-4 ring-1 transition-all ${
-        online ? "bg-primary/10 ring-primary/40" : "bg-muted/30 ring-border"}`}>
-        <div className="flex items-center gap-3">
-          <div className={`relative flex h-12 w-12 items-center justify-center rounded-full ${
-            online ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
-            {online && <span className="absolute inset-0 animate-ping rounded-full bg-primary/40" />}
-            <Power className="relative h-5 w-5" />
+    <div
+      className="absolute inset-x-0 z-30 rounded-t-[28px] bg-card text-foreground shadow-[0_-20px_60px_-20px_rgba(0,0,0,0.7)] ring-1 ring-border/60"
+      style={{ bottom: navReserve, ["--driver-panel-h" as never]: "320px" }}
+    >
+      <div className="flex flex-col gap-3 px-4 pb-4 pt-3">
+        {/* greeting + status compactos */}
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+          <div className="min-w-0">
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Olá, motorista</p>
+            <h1 className="truncate text-lg font-bold leading-tight sm:text-xl">{driverName || "Bem-vindo"}</h1>
           </div>
-          <div className="flex-1">
-            <div className="text-sm font-bold">
-              {online ? "Você está online" : "Você está offline"}
-            </div>
-            <div className="text-xs text-muted-foreground">
-              {online ? "Aguardando solicitações em tempo real" : "Ative para começar a receber corridas"}
-            </div>
+          <div
+            className={`relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
+              online ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+            }`}
+          >
+            {online && <span className="absolute inset-0 animate-ping rounded-full bg-primary/40" />}
+            <Power className="relative h-4 w-4" />
           </div>
         </div>
 
-        <button type="button" disabled={disabled} onClick={toggleOnline}
-          className={`mt-4 w-full rounded-xl py-3.5 text-sm font-bold uppercase tracking-wider shadow-lg transition disabled:cursor-not-allowed disabled:opacity-50 ${
+        <div
+          className={`rounded-xl px-3 py-2 ring-1 ${
+            online ? "bg-primary/10 ring-primary/40" : "bg-muted/30 ring-border"
+          }`}
+        >
+          <div className="text-sm font-bold">
+            {online ? "Você está online" : "Você está offline"}
+          </div>
+          <div className="text-[11px] text-muted-foreground">
+            {online ? "Recebendo solicitações em tempo real" : "Ative para começar a receber corridas"}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <StatBlock label="Corridas hoje" value={stats.rides.toString()} />
+          <StatBlock label="Ganhos hoje" value={formatBRL(stats.earnings)} highlight />
+        </div>
+
+        {/* CTA principal — sempre visível, fica acima da BottomNav */}
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={toggleOnline}
+          className={`w-full rounded-xl py-3.5 text-sm font-bold uppercase tracking-wider shadow-lg transition disabled:cursor-not-allowed disabled:opacity-50 ${
             online
               ? "bg-card text-foreground ring-1 ring-border hover:ring-destructive/50"
-              : "bg-primary text-primary-foreground shadow-primary/30 hover:brightness-110"}`}>
+              : "bg-primary text-primary-foreground shadow-primary/30 hover:brightness-110"
+          }`}
+        >
           {online ? "Ficar offline" : "Ficar online"}
         </button>
-      </div>
-
-      {/* stats */}
-      <div className="grid grid-cols-2 gap-2">
-        <StatBlock label="Corridas hoje" value={stats.rides.toString()} />
-        <StatBlock label="Ganhos hoje" value={formatBRL(stats.earnings)} highlight />
-      </div>
-
-      <div className="rounded-2xl bg-muted/20 p-3 text-xs text-muted-foreground ring-1 ring-border">
-        Mantenha o app aberto enquanto estiver online. As solicitações chegam em tempo real e tocam um alerta no seu aparelho.
       </div>
     </div>
   );
