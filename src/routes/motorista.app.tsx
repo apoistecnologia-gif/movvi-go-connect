@@ -502,6 +502,10 @@ function MotoristaApp() {
           disabled={!!statusBlock}
           toggleOnline={toggleOnline}
           stats={todayStats}
+          gpsStatus={gpsStatus}
+          gpsMessage={gpsMessage}
+          hasPosition={!!position}
+          onRequestLocation={requestLocation}
         />
       )}
 
