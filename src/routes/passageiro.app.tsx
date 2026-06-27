@@ -421,6 +421,26 @@ function PassageiroApp() {
   const callReverseGeocode = useServerFn(reverseGeocode);
   const callRedispatch = useServerFn(redispatchRide);
   const callDiagnose = useServerFn(diagnoseDispatch);
+  const callRateDriver = useServerFn(avaliarMotorista);
+
+  const [ratingStars, setRatingStars] = useState(5);
+  const [ratingComment, setRatingComment] = useState("");
+  const [submittingRating, setSubmittingRating] = useState(false);
+
+  async function submitDriverRating() {
+    if (!ride) return;
+    setSubmittingRating(true);
+    try {
+      await callRateDriver({ data: { rideId: ride.id, stars: ratingStars, comment: ratingComment || null } });
+      setRatingStars(5);
+      setRatingComment("");
+      resetRide();
+    } catch (e) {
+      console.warn("[MOVVI] erro ao avaliar motorista:", (e as Error).message);
+    } finally {
+      setSubmittingRating(false);
+    }
+  }
 
   const [userId, setUserId] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>("");
