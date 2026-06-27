@@ -94,7 +94,7 @@ function AdminCorridasPage() {
     let query = supabase
       .from("rides")
       .select(
-        "id,passenger_id,driver_id,category,status,origin_name,destination_name,distance_km,duration_min,estimated_price,final_price,payment_method,passenger_rating,driver_rating,driver_name,created_at,accepted_at,started_at,completed_at,cancelled_at,cancel_reason",
+        "id,passenger_id,driver_id,category,status,origin_name,destination_name,distance_km,duration_min,estimated_price,final_price,payment_method,passenger_rating,driver_rating,driver_name,safety_code,created_at,accepted_at,started_at,completed_at,cancelled_at,cancel_reason",
       )
       .order("created_at", { ascending: false })
       .limit(200);
