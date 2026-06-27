@@ -542,16 +542,24 @@ function MotoristaApp() {
    ============================================================ */
 function IdleBottomPanel({
   driverName, online, disabled, toggleOnline, stats,
+  gpsStatus, gpsMessage, hasPosition, onRequestLocation,
 }: {
   driverName: string; online: boolean; disabled: boolean;
   toggleOnline: () => void; stats: { rides: number; earnings: number };
+  gpsStatus: "prompt" | "loading" | "granted" | "denied" | "timeout" | "unavailable" | "error";
+  gpsMessage: string | null;
+  hasPosition: boolean;
+  onRequestLocation: () => void;
 }) {
   // Espaço reservado para a BottomNav flutuante (≈ ícones 56 + paddings + safe-area).
   const navReserve = "calc(env(safe-area-inset-bottom) + 84px)";
+  const canGoOnline = hasPosition && gpsStatus === "granted";
+  const showLocationCta = !hasPosition; // ainda não temos coordenada válida
+
   return (
     <div
       className="absolute inset-x-0 z-30 rounded-t-[28px] bg-card text-foreground shadow-[0_-20px_60px_-20px_rgba(0,0,0,0.7)] ring-1 ring-border/60"
-      style={{ bottom: navReserve, ["--driver-panel-h" as never]: "320px" }}
+      style={{ bottom: navReserve, ["--driver-panel-h" as never]: "340px" }}
     >
       <div className="flex flex-col gap-3 px-4 pb-4 pt-3">
         {/* greeting + status compactos */}
@@ -588,19 +596,56 @@ function IdleBottomPanel({
           <StatBlock label="Ganhos hoje" value={formatBRL(stats.earnings)} highlight />
         </div>
 
-        {/* CTA principal — sempre visível, fica acima da BottomNav */}
-        <button
-          type="button"
-          disabled={disabled}
-          onClick={toggleOnline}
-          className={`w-full rounded-xl py-3.5 text-sm font-bold uppercase tracking-wider shadow-lg transition disabled:cursor-not-allowed disabled:opacity-50 ${
-            online
-              ? "bg-card text-foreground ring-1 ring-border hover:ring-destructive/50"
-              : "bg-primary text-primary-foreground shadow-primary/30 hover:brightness-110"
-          }`}
-        >
-          {online ? "Ficar offline" : "Ficar online"}
-        </button>
+        {/* ===== CTA principal ===== */}
+        {showLocationCta ? (
+          <div className="flex flex-col gap-2">
+            {/* mensagem de status do GPS */}
+            {gpsStatus === "loading" ? (
+              <div className="rounded-xl bg-muted/30 px-3 py-2 text-center text-xs text-muted-foreground ring-1 ring-border">
+                Obtendo sua localização...
+              </div>
+            ) : gpsMessage ? (
+              <div className={`rounded-xl px-3 py-2 text-xs ring-1 ${
+                gpsStatus === "denied" || gpsStatus === "unavailable"
+                  ? "bg-destructive/10 text-destructive ring-destructive/30"
+                  : "bg-yellow-500/10 text-yellow-400 ring-yellow-500/30"
+              }`}>
+                {gpsMessage}
+              </div>
+            ) : (
+              <div className="rounded-xl bg-muted/30 px-3 py-2 text-center text-xs text-muted-foreground ring-1 ring-border">
+                Precisamos da sua localização para encontrar corridas próximas.
+              </div>
+            )}
+
+            <button
+              type="button"
+              disabled={disabled || gpsStatus === "loading" || gpsStatus === "unavailable"}
+              onClick={onRequestLocation}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-sm font-bold uppercase tracking-wider text-primary-foreground shadow-lg shadow-primary/30 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <MapPin className="h-4 w-4" />
+              {gpsStatus === "loading"
+                ? "Obtendo localização..."
+                : gpsStatus === "denied" || gpsStatus === "timeout" || gpsStatus === "error"
+                ? "Tentar novamente"
+                : "Permitir localização"}
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            disabled={disabled || !canGoOnline}
+            onClick={toggleOnline}
+            className={`w-full rounded-xl py-3.5 text-sm font-bold uppercase tracking-wider shadow-lg transition disabled:cursor-not-allowed disabled:opacity-50 ${
+              online
+                ? "bg-card text-foreground ring-1 ring-border hover:ring-destructive/50"
+                : "bg-primary text-primary-foreground shadow-primary/30 hover:brightness-110"
+            }`}
+          >
+            {online ? "Ficar offline" : "Ficar online"}
+          </button>
+        )}
       </div>
     </div>
   );
