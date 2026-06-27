@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useLocation } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
 import { Star } from "lucide-react";
 import { shouldShowRating, canSubmitRating, type RatingSide } from "@/lib/ratingFlow";
@@ -134,11 +134,14 @@ function RatingHarness({ side }: { side: RatingSide }) {
 }
 
 function RatingTestPage() {
-  const search = typeof window !== "undefined" ? window.location.search : "";
+  const location = useLocation();
+  const search = location.searchStr ?? "";
   const side: RatingSide = search.includes("side=driver") ? "driver" : "passenger";
+  const mode = search.includes("mode=fail") ? "fail" : "ok";
+  // key forces remount on side/mode change so internal state resets
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <RatingHarness side={side} />
+      <RatingHarness key={`${side}-${mode}`} side={side} />
     </div>
   );
 }
