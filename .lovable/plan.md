@@ -1,93 +1,85 @@
-# Admin Panel MOVVI DRIVE — Plano de Implementação
+# MOVVI Admin — Plano de Conclusão
 
-Escopo enorme (17 módulos). Vou entregar em **fases incrementais**, cada uma totalmente funcional, ligada ao Supabase, sem mocks. Confirme o plano e a ordem antes de eu começar.
+A entrega é gigantesca (13 módulos novos, todos com CRUD + realtime + exportação). Vou dividir em fases pequenas e verificáveis para não quebrar nada do que já está pronto (Dashboard, Motoristas, Categorias, Preços).
 
-## Arquitetura comum (Fase 0 — base)
+Regras gerais aplicadas a todas as fases:
+- Reuso de `AdminLayout`, `AdminSidebar`, `AdminGuard`, `useRealtimeTable`, `logAdminAction`, `useAppSettings`, `formatBRL`.
+- Zero dado mockado; todas as listagens leem do Supabase.
+- Sidebar é incrementada a cada fase (item habilitado só quando a página existir).
+- Realtime via canais Supabase nas tabelas relevantes.
+- Sem alterar Dashboard, Categorias e Preços existentes.
 
-- **Shell admin novo:** `src/components/admin/AdminLayout.tsx` com sidebar fixa (desktop) + drawer (mobile), header com busca/notificações, tema escuro + accents `#8DD92B`.
-- **Rotas:** mover painel para layout `src/routes/_admin/` (route gate via `AdminGuard` existente + `has_role('admin')`). Mantém `/admin/login`. Cada módulo vira `/admin/<modulo>`.
-- **RBAC:** estender enum `app_role` com `admin`, `super_admin`, `financial`, `support`, `operations`, `readonly`. Helper `useAdminRole()` + componente `<Can role="...">`.
-- **Realtime:** hook `useRealtimeTable(table, filter)` reutilizável.
-- **Settings dinâmicos:** tabela `admin_settings` já existe; criar `useSetting(key)` + `useSettings(prefix)` com cache + realtime. Tarifas e configurações do app passam por aqui — apps passageiro/motorista já consomem via `loadTariffs()`.
-- **Audit log:** tabela `admin_audit_logs` + trigger helper `log_admin_action()` chamado nas mutations.
+## Fase A — Migrações de schema que faltam
+Uma única migration cobrindo:
+- `passengers_admin_view` (view leve com agregados: total_rides, completed, cancelled, total_spent, avg_rating, last_login) — calculada por SQL function `get_passenger_stats(uuid)`.
+- Colunas `suspended_at`, `blocked_at`, `block_reason` em `users` (passageiros) — se ainda não existirem.
+- Tabela `admin_users_meta` (role já vive em `user_roles`; aqui só `display_name`, `phone`, `last_login_at`).
+- Atualizar `app_settings` com chaves padrão de "Platform Settings" (platform_name, support_email, support_phone, whatsapp, currency, country, timezone, allow_cash, allow_pix, allow_credit_card, allow_scheduled, require_gps, require_driver_approval, enable_promotions, enable_notifications).
+- Cron `auto_suspend_overdue_subscriptions()` já existe — adicionar `pg_cron` schedule diário.
+- Grants + RLS nas novas estruturas.
 
-## Fases
+## Fase B — Passageiros (`/admin/passageiros`)
+- Lista com busca (nome/email/telefone), filtros (ativo/suspenso/bloqueado), paginação server-side.
+- Drawer de detalhes: perfil, agregados (KPIs), histórico de corridas (últimas 50), avaliação média.
+- Ações: editar, suspender, bloquear, excluir (todos auditados via `logAdminAction`).
 
-### Fase 1 — Banco de dados (migration única)
-Criar/ajustar tabelas, com GRANTs + RLS + realtime + índices:
+## Fase C — Corridas (`/admin/corridas`)
+- Tabela com filtros rápidos (Hoje / Ontem / Semana / Mês / por status) + busca (ID, passageiro, motorista, categoria, cidade).
+- Drawer com mapa Google (`MovviMap`) renderizando origem/destino + polyline, timeline de status, dados completos, ação "Cancelar corrida".
 
-- `app_role` enum estendido + `user_roles` atualizado.
-- `ride_categories` (key, label, icon, color, enabled, sort_order).
-- `tariff_rules` (category_id, field_key, value numeric, updated_by, updated_at) — substitui chaves soltas, mas mantém compat via view `admin_settings`.
-- `coupons` (code, type, value, max_discount, valid_from, valid_to, usage_limit, used_count, scope, enabled).
-- `coupon_redemptions` (coupon_id, user_id, ride_id, amount).
-- `subscriptions` (já existe — adicionar campos `grace_period_days`, `promotional_price`, `auto_suspend`).
-- `subscription_plans` (price, promo_price, billing_cycle_days, grace_days).
-- `notifications_broadcast` (title, body, audience_type, audience_filter, sent_at, sent_by, delivery_count).
-- `admin_audit_logs` (actor_id, action, entity, entity_id, before, after, ip).
-- `admin_login_history` (user_id, ip, ua, success, created_at).
-- `app_settings` chaves padrão: plataforma, suporte, mapa, raios, timeouts, multiplicadores (noturno/pico/feriado), taxas (aeroporto, pedágio, parada extra).
-- `rides` — garantir colunas: `waypoints jsonb`, `payment_method`, `coupon_id`, `surge_multiplier`, `night_multiplier`.
-- Index em `rides(status, created_at)`, `drivers(approval_status, online)`, `users(role, created_at)`.
-- Trigger `auto_suspend_overdue_subscriptions()` rodando via pg_cron.
-- Realtime publication: `rides, drivers, ride_categories, tariff_rules, app_settings, notifications_broadcast`.
+## Fase D — Mapa Operacional (`/admin/mapa`)
+- Mapa fullscreen com camadas alternáveis: motoristas online/offline, solicitações ativas, corridas em andamento.
+- Atualização via Supabase Realtime (`drivers`, `rides`).
 
-### Fase 2 — Dashboard
-KPIs reais via SQL agregada + realtime. Mapa ao vivo com motoristas online (`drivers` + canal realtime). Lista das últimas 20 solicitações.
+## Fase E — Preços (renomear para "Tarifas")
+- Renomear item da sidebar para "Tarifas"; rota `/admin/precos` mantida (já indexada).
+- Ampliar campos editáveis: `base_fare, min_fare, per_km, per_min, free_wait_min, wait_per_min, cancel_fee, extra_stop_fee, airport_fee, toll_fee, night_mult, peak_mult, max_search_radius_km, max_pickup_km, max_wait_min, max_stops`.
+- Botão "Resetar para padrão" e "Pré-visualizar tarifa" (calcula via `src/lib/tariffs.ts`).
 
-### Fase 3 — Motoristas (expansão do atual)
-Aproveita `/admin/motoristas`. Adiciona: editar dados, suspender/bloquear/excluir, histórico de corridas, avaliações, ganhos, status de assinatura.
+## Fase F — Promoções (`/admin/cupons`)
+- CRUD em `coupons`: tipo (percent/fixed/first_ride/free_delivery), max_discount, expires_at, usage_limit, enabled.
+- Listagem de resgates via `coupon_redemptions`.
 
-### Fase 4 — Passageiros
-`/admin/passageiros` — listar, filtrar, detalhar, editar/suspender/bloquear/excluir, histórico de corridas, rating.
+## Fase G — Assinaturas (`/admin/assinaturas`)
+- CRUD `subscription_plans` (preço mensal, preço promocional, grace period).
+- Lista de `subscriptions` ativas/vencidas, ação "suspender manualmente".
+- Confirmação de que `auto_suspend_overdue_subscriptions` está agendado.
 
-### Fase 5 — Corridas
-`/admin/corridas` — filtros por status, busca, detalhe completo (timeline + rota GPS via Google Maps Directions com `polyline` salva).
+## Fase H — Financeiro (`/admin/financeiro`)
+- Cards de receita (hoje/mês/ano), assinaturas pagas/vencidas, pagamentos pendentes (de `payments`).
+- Gráficos com `recharts` (já é dep do shadcn chart).
+- Export CSV/Excel (via `xlsx` lib) e PDF (via `jspdf`).
 
-### Fase 6 — Categorias + Tarifas dinâmicas
-- `/admin/categorias` — CRUD enable/disable, rename, ícone, cor, ordem.
-- `/admin/tarifas` — editor por categoria com campos específicos (Carro: base, mín, /km, /min, espera grátis, espera/min, cancelamento, multiplicador noturno/pico, aeroporto, pedágio, parada extra; Moto/Entrega/Guincho/Mudança com seus campos).
-- Função `computeFare(category, ride_context)` em `src/lib/fareEngine.ts` consumindo tudo do banco (substitui `tariffs.ts` + `rideCategories.estimateFare`).
-- Apps passageiro/motorista assinam realtime das tabelas — sem novo deploy.
+## Fase I — Relatórios (`/admin/relatorios`)
+- Geração por tipo (motoristas, passageiros, corridas, receita, assinaturas, categorias).
+- Exportação CSV/Excel/PDF.
 
-### Fase 7 — Assinaturas + Financeiro
-- `/admin/assinaturas` — planos, cobranças, status, suspensão automática.
-- `/admin/financeiro` — receitas, gráficos (recharts) diário/mensal, pagos vs vencidos.
+## Fase J — Notificações (`/admin/notificacoes`)
+- Form de broadcast → grava em `notifications_broadcast` + fanout para `notifications` (todos / motoristas / passageiros / cidade / categoria / específico).
+- Histórico dos broadcasts.
 
-### Fase 8 — Cupons
-`/admin/cupons` — CRUD completo, tipos (%, fixo, primeira corrida, frete grátis), validade, limite, desconto máximo. Aplicação integrada no `fareEngine`.
+## Fase K — Configurações da plataforma (`/admin/configuracoes`)
+- Formulário lendo/gravando `app_settings` (campos listados na Fase A).
 
-### Fase 9 — Notificações Push
-`/admin/notificacoes` — compositor + segmentação (todos, motoristas, passageiros, cidade, categoria, usuário específico). Persistência em `notifications` + envio via Web Push (FCM) se chave configurada; senão grava in-app.
+## Fase L — Administradores (`/admin/administradores`)
+- CRUD de admins: criar via Supabase Admin (server fn protegida com `requireSupabaseAuth` + checagem `has_role('super_admin')`).
+- Atribuição de papéis (`super_admin`, `operations`, `financial`, `support`, `readonly`).
+- Sidebar/Guards passam a respeitar permissões por papel.
 
-### Fase 10 — Configurações do App
-`/admin/configuracoes` — formulário das chaves `app_settings`. Apps consomem via `useSetting`.
+## Fase M — Logs do sistema (`/admin/logs`)
+- Lista paginada + filtros (entity, action, actor) sobre `admin_audit_logs` e `admin_login_history`.
+- Trigger de `admin_login_history` no login do admin (`/admin/login`).
 
-### Fase 11 — Relatórios
-`/admin/relatorios` — gerador com filtros + export CSV/Excel (`xlsx` lib) e PDF (`pdfmake`). 
+---
 
-### Fase 12 — Mapa ao vivo
-`/admin/mapa` — motoristas online, solicitações ativas, corridas em andamento, heatmap (HeatmapLayer), histórico filtrável.
+**Sequência sugerida de entrega (por turno):**
+1. Fase A (migration) — bloqueante para B/K/L.
+2. Fase B + sidebar update.
+3. Fase C + Fase D (módulos operacionais).
+4. Fase E (expansão Tarifas) + Fase F (Cupons).
+5. Fase G (Assinaturas) + Fase K (Configurações).
+6. Fase H (Financeiro) + Fase I (Relatórios) — exigem `bun add xlsx jspdf jspdf-autotable recharts(?)`.
+7. Fase J (Notificações).
+8. Fase L (Administradores) + Fase M (Logs) — finaliza com governança.
 
-### Fase 13 — Segurança/Auditoria
-- `/admin/usuarios-admin` — gestão de admins com RBAC.
-- `/admin/logs` — audit logs + login history com filtros.
-
-## Detalhes técnicos
-
-- Tudo TanStack Query + `createServerFn` para mutations sensíveis (auditadas).
-- Realtime via canal por página, com `removeChannel` no unmount.
-- Componentes shadcn (Table, Tabs, Dialog, Form com zod).
-- Sidebar destacando rota ativa, colapsável no mobile (Sheet).
-- Acessos por role escondem itens do menu e bloqueiam rotas (`<Can />`).
-- Nenhum `Em breve` — qualquer item não pronto fica fora do menu até a fase entregar.
-
-## Tamanho
-
-Isto são ~40 arquivos novos + 1 migration grande. Vou entregar **uma fase por turno** para você revisar. Posso começar pela **Fase 1 (migration) + Fase 0 (shell)** no próximo turno.
-
-## Pergunta antes de começar
-
-1. Confirma a ordem de entrega (Fase 0/1 primeiro)?
-2. Push notifications: configurar FCM agora (precisa chave do servidor) ou deixar como in-app por enquanto?
-3. Algum módulo prioritário fora da ordem acima?
+Confirma que devo seguir nessa ordem (começando agora pela Fase A)? Se preferir priorizar algum módulo específico (ex.: pular direto para Passageiros + Corridas), me diga e ajusto a fila.
