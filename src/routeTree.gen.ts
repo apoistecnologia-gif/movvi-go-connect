@@ -26,6 +26,7 @@ import { Route as MotoristaCorridasRouteImport } from './routes/motorista.corrid
 import { Route as MotoristaConfiguracoesRouteImport } from './routes/motorista.configuracoes'
 import { Route as MotoristaCadastroRouteImport } from './routes/motorista.cadastro'
 import { Route as MotoristaAppRouteImport } from './routes/motorista.app'
+import { Route as DebugMotoristaAuthRouteImport } from './routes/debug.motorista-auth'
 import { Route as AdminMotoristasRouteImport } from './routes/admin.motoristas'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
@@ -115,6 +116,11 @@ const MotoristaAppRoute = MotoristaAppRouteImport.update({
   path: '/motorista/app',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DebugMotoristaAuthRoute = DebugMotoristaAuthRouteImport.update({
+  id: '/debug/motorista-auth',
+  path: '/debug/motorista-auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminMotoristasRoute = AdminMotoristasRouteImport.update({
   id: '/admin/motoristas',
   path: '/admin/motoristas',
@@ -138,6 +144,7 @@ export interface FileRoutesByFullPath {
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/motoristas': typeof AdminMotoristasRoute
+  '/debug/motorista-auth': typeof DebugMotoristaAuthRoute
   '/motorista/app': typeof MotoristaAppRoute
   '/motorista/cadastro': typeof MotoristaCadastroRoute
   '/motorista/configuracoes': typeof MotoristaConfiguracoesRoute
@@ -160,6 +167,7 @@ export interface FileRoutesByTo {
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/motoristas': typeof AdminMotoristasRoute
+  '/debug/motorista-auth': typeof DebugMotoristaAuthRoute
   '/motorista/app': typeof MotoristaAppRoute
   '/motorista/cadastro': typeof MotoristaCadastroRoute
   '/motorista/configuracoes': typeof MotoristaConfiguracoesRoute
@@ -183,6 +191,7 @@ export interface FileRoutesById {
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/motoristas': typeof AdminMotoristasRoute
+  '/debug/motorista-auth': typeof DebugMotoristaAuthRoute
   '/motorista/app': typeof MotoristaAppRoute
   '/motorista/cadastro': typeof MotoristaCadastroRoute
   '/motorista/configuracoes': typeof MotoristaConfiguracoesRoute
@@ -207,6 +216,7 @@ export interface FileRouteTypes {
     | '/admin/dashboard'
     | '/admin/login'
     | '/admin/motoristas'
+    | '/debug/motorista-auth'
     | '/motorista/app'
     | '/motorista/cadastro'
     | '/motorista/configuracoes'
@@ -229,6 +239,7 @@ export interface FileRouteTypes {
     | '/admin/dashboard'
     | '/admin/login'
     | '/admin/motoristas'
+    | '/debug/motorista-auth'
     | '/motorista/app'
     | '/motorista/cadastro'
     | '/motorista/configuracoes'
@@ -251,6 +262,7 @@ export interface FileRouteTypes {
     | '/admin/dashboard'
     | '/admin/login'
     | '/admin/motoristas'
+    | '/debug/motorista-auth'
     | '/motorista/app'
     | '/motorista/cadastro'
     | '/motorista/configuracoes'
@@ -274,6 +286,7 @@ export interface RootRouteChildren {
   AdminDashboardRoute: typeof AdminDashboardRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AdminMotoristasRoute: typeof AdminMotoristasRoute
+  DebugMotoristaAuthRoute: typeof DebugMotoristaAuthRoute
   MotoristaAppRoute: typeof MotoristaAppRoute
   MotoristaCadastroRoute: typeof MotoristaCadastroRoute
   MotoristaConfiguracoesRoute: typeof MotoristaConfiguracoesRoute
@@ -411,6 +424,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MotoristaAppRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/debug/motorista-auth': {
+      id: '/debug/motorista-auth'
+      path: '/debug/motorista-auth'
+      fullPath: '/debug/motorista-auth'
+      preLoaderRoute: typeof DebugMotoristaAuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/motoristas': {
       id: '/admin/motoristas'
       path: '/admin/motoristas'
@@ -442,6 +462,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminDashboardRoute: AdminDashboardRoute,
   AdminLoginRoute: AdminLoginRoute,
   AdminMotoristasRoute: AdminMotoristasRoute,
+  DebugMotoristaAuthRoute: DebugMotoristaAuthRoute,
   MotoristaAppRoute: MotoristaAppRoute,
   MotoristaCadastroRoute: MotoristaCadastroRoute,
   MotoristaConfiguracoesRoute: MotoristaConfiguracoesRoute,
