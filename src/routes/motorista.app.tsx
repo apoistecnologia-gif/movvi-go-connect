@@ -27,6 +27,11 @@ import {
 } from "@/lib/googleMaps";
 import { useDriverBroadcast } from "@/hooks/useDriverBroadcast";
 import { loadDriverProfile } from "@/lib/driverProfile";
+import { isDevelopmentEnvironment } from "@/lib/environment";
+
+// Coordenada de teste (Itainópolis/PI) — usada apenas em ambientes de preview/dev
+// quando o GPS real do navegador não retorna uma coordenada brasileira válida.
+const TEST_LOCATION_BR = { lat: -7.446, lng: -41.478 } as const;
 
 import { computeRoute } from "@/lib/routes.functions";
 import {
