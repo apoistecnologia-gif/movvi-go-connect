@@ -1071,7 +1071,7 @@ function ActiveRidePanel({
 
       {/* passageiro */}
       <div className="flex items-center gap-3 rounded-2xl bg-background/60 p-3 ring-1 ring-border">
-        <Avatar src={passenger?.avatar_url ?? null} name={passenger?.name ?? "?"} size={44} />
+        <Avatar src={passenger?.avatar_url ?? (ride as { passenger_photo_url?: string | null }).passenger_photo_url ?? null} name={passenger?.name ?? "?"} size={44} />
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm font-semibold">{passenger?.name ?? "Passageiro"}</div>
           <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
