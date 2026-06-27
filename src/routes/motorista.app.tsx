@@ -36,6 +36,7 @@ import {
   iniciarCorrida,
   finalizarCorrida,
   cancelarPeloMotorista,
+  avaliarPassageiro,
 } from "@/lib/rideLifecycle";
 import { formatBRL } from "@/lib/rideCategories";
 import type { Database } from "@/integrations/supabase/types";
@@ -78,6 +79,7 @@ function MotoristaApp() {
   const callStart    = useServerFn(iniciarCorrida);
   const callComplete = useServerFn(finalizarCorrida);
   const callCancel   = useServerFn(cancelarPeloMotorista);
+  const callRate     = useServerFn(avaliarPassageiro);
   const callRoute    = useServerFn(computeRoute);
 
   const [userId, setUserId] = useState<string | null>(null);
@@ -524,10 +526,10 @@ function MotoristaApp() {
     if (!ratingRide) return;
     setSubmittingRating(true);
     try {
-      await supabase.from("rides")
-        .update({ passenger_rating: stars, passenger_rating_comment: ratingComment || null })
-        .eq("id", ratingRide.id);
+      await callRate({ data: { rideId: ratingRide.id, stars, comment: ratingComment || null } });
       setRatingRide(null); setRatingComment(""); setStars(5);
+    } catch (e) {
+      console.warn("[MOVVI MOTORISTA] erro ao avaliar:", (e as Error).message);
     } finally { setSubmittingRating(false); }
   }
 
