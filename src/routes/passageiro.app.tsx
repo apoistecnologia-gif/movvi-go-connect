@@ -389,6 +389,12 @@ function decodePolyline(encoded: string): LatLng[] {
 }
 
 type Recent = { label: string; secondary?: string; placeId: string };
+type PassengerUiStage =
+  | "selecting_destination"
+  | "route_preview"
+  | "selecting_category"
+  | "confirming_request"
+  | "searching_driver";
 
 function PassageiroApp() {
   const navigate = useNavigate();
@@ -446,12 +452,13 @@ function PassageiroApp() {
     label: string;
   } | null>(null);
   const [route, setRoute] = useState<RouteResult | null>(null);
-  const [uiCategoryKey, setUiCategoryKey] = useState<string>("carro");
-  const category: RideCategory = useMemo(
-    () =>
-      UI_CATEGORIES.find((c) => c.key === uiCategoryKey)?.backend ?? "carros",
-    [uiCategoryKey],
+  const [passengerUiStage, setPassengerUiStage] = useState<PassengerUiStage>("selecting_destination");
+  const [selectedCategoryKey, setSelectedCategoryKey] = useState<string | null>(null);
+  const selectedUiCategory = useMemo(
+    () => UI_CATEGORIES.find((c) => c.key === selectedCategoryKey) ?? null,
+    [selectedCategoryKey],
   );
+  const category: RideCategory = selectedUiCategory?.backend ?? "carros";
   const [recent, setRecent] = useState<Recent[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -483,6 +490,10 @@ function PassageiroApp() {
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
   const drivers = useNearbyDrivers({ category });
+
+  useEffect(() => {
+    console.log("[MOVVI UI] etapa atual:", passengerUiStage);
+  }, [passengerUiStage]);
 
   /* ---------------------- auth ---------------------- */
   useEffect(() => {
