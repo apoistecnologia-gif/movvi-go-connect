@@ -1156,6 +1156,7 @@ function PassageiroApp() {
   }, [ride?.id, ride?.status, ride?.current_offer_driver_id, callRedispatch, callDiagnose]);
 
 
+  useEffect(() => {
     const driverId = ride?.driver_id;
     if (!driverId) {
       setDriverInfo(null);
