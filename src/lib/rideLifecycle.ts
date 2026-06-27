@@ -181,26 +181,41 @@ export async function offerToNextDriver(supabase: any, rideId: string): Promise<
   if (drivers.error) throw new Error(drivers.error.message);
 
   const rejected: string[] = r.rejected_driver_ids ?? [];
-  const candidates = (drivers.data ?? [])
-    .filter((d: any) => !rejected.includes(d.user_id) && d.user_id !== r.driver_id)
-    .map((d: any) => ({
-      user_id: d.user_id as string,
-      dist: distanceKm(
-        { lat: r.origin_lat, lng: r.origin_lng },
-        { lat: d.current_lat, lng: d.current_lng },
-      ),
-    }))
-    .filter((d: any) => d.dist <= 15)
-    .sort((a: any, b: any) => a.dist - b.dist);
+  const all = (drivers.data ?? []).map((d: any) => ({
+    user_id: d.user_id as string,
+    lat: d.current_lat as number,
+    lng: d.current_lng as number,
+    dist: distanceKm(
+      { lat: r.origin_lat, lng: r.origin_lng },
+      { lat: d.current_lat, lng: d.current_lng },
+    ),
+  }));
+  console.log("[MOVVI DESPACHO] origem passageiro:", { lat: r.origin_lat, lng: r.origin_lng, category: r.category });
+  for (const d of all) {
+    const motivos: string[] = [];
+    if (rejected.includes(d.user_id)) motivos.push("recusou");
+    if (d.user_id === r.driver_id) motivos.push("já é motorista da corrida");
+    if (d.dist > 15) motivos.push(`fora do raio (${d.dist.toFixed(2)} km > 15 km)`);
+    console.log("[MOVVI DESPACHO] candidato:", {
+      driver: d.user_id, lat: d.lat, lng: d.lng, dist_km: Number(d.dist.toFixed(3)),
+      status: motivos.length ? `descartado: ${motivos.join(", ")}` : "elegível",
+    });
+  }
+  const candidates = all
+    .filter((d) => !rejected.includes(d.user_id) && d.user_id !== r.driver_id && d.dist <= 15)
+    .sort((a, b) => a.dist - b.dist);
 
   if (candidates.length === 0) {
+    console.log("[MOVVI DESPACHO] nenhum motorista elegível para a corrida", rideId);
     await supabase.from("rides").update({ current_offer_driver_id: null }).eq("id", rideId);
     return null;
   }
 
   const next = candidates[0].user_id;
+  console.log("[MOVVI DESPACHO] oferta enviada:", { rideId, driver: next, dist_km: Number(candidates[0].dist.toFixed(3)) });
   await supabase.from("rides").update({ current_offer_driver_id: next }).eq("id", rideId);
   return next;
+
 }
 
 // ---------- Server functions oficiais ----------
