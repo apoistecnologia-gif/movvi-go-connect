@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   Car,
@@ -12,7 +12,6 @@ import {
   UserCheck,
   UserX,
   Radio,
-  ArrowRight,
 } from "lucide-react";
 import { Marker } from "@react-google-maps/api";
 import { AdminLayout } from "@/components/admin/AdminLayout";
@@ -22,7 +21,6 @@ import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { formatBRL, formatNumber, formatDate } from "@/lib/formatters";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/admin/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — Admin MOVVI" }] }),
