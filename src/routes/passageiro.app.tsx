@@ -491,6 +491,23 @@ function PassageiroApp() {
 
   const drivers = useNearbyDrivers({ category });
 
+  // Conta apenas motoristas dentro do raio de 15 km da origem (mesmo raio do despacho).
+  const nearbyCount = useMemo(() => {
+    if (!position) return 0;
+    const R = 6371;
+    const toRad = (v: number) => (v * Math.PI) / 180;
+    return drivers.filter((d) => {
+      const dLat = toRad(d.current_lat - position.lat);
+      const dLng = toRad(d.current_lng - position.lng);
+      const a =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos(toRad(position.lat)) * Math.cos(toRad(d.current_lat)) * Math.sin(dLng / 2) ** 2;
+      const km = 2 * R * Math.asin(Math.sqrt(a));
+      return km <= 15;
+    }).length;
+  }, [drivers, position?.lat, position?.lng]);
+
+
   useEffect(() => {
     console.log("[MOVVI UI] etapa atual:", passengerUiStage);
   }, [passengerUiStage]);
@@ -1456,7 +1473,7 @@ function PassageiroApp() {
       <PremiumTopBar
         userName={userName}
         gpsState={gpsState}
-        drivers={drivers.length}
+        drivers={nearbyCount}
         searching={!!ride && ride.status === "procurar_motorista"}
         onLogout={handleLogout}
       />
@@ -1495,7 +1512,7 @@ function PassageiroApp() {
             error={error}
             selectedCategoryKey={selectedCategoryKey}
             setSelectedCategoryKey={setSelectedCategoryKey}
-            driversCount={drivers.length}
+            driversCount={nearbyCount}
             tariffs={tariffs}
             onSubmit={submitRide}
             searchInputRef={searchInputRef}
@@ -1564,7 +1581,7 @@ function PassageiroApp() {
         <MovviSheet snaps={[50]} initial={50}>
           <SearchingPanel
             category={category}
-            driversCount={drivers.length}
+            driversCount={nearbyCount}
             onCancel={cancelRide}
           />
         </MovviSheet>
