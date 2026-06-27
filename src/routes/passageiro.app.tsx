@@ -1796,12 +1796,25 @@ function PassageiroApp() {
               rows={3}
               className="mt-4 w-full resize-none rounded-xl border border-border bg-card px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
             />
+            {ratingError && (
+              <div className="mt-3 rounded-xl bg-destructive/10 px-3 py-2 text-xs text-destructive ring-1 ring-destructive/30">
+                {ratingError} Toque em <strong>Tentar novamente</strong> ou pule esta avaliação.
+              </div>
+            )}
             <button
               onClick={submitDriverRating}
               disabled={submittingRating}
               className="mt-4 w-full rounded-2xl bg-primary py-4 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/30 disabled:opacity-60"
             >
-              {submittingRating ? "Enviando…" : "Enviar avaliação"}
+              {submittingRating ? "Enviando…" : (ratingError ? "Tentar novamente" : "Enviar avaliação")}
+            </button>
+            <button
+              type="button"
+              onClick={skipDriverRating}
+              disabled={submittingRating}
+              className="mt-2 w-full rounded-2xl bg-transparent py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground disabled:opacity-60"
+            >
+              Pular avaliação
             </button>
           </div>
         </MovviSheet>
