@@ -879,18 +879,22 @@ function PassageiroApp() {
         if (cancelled) return;
         statusRef = status;
         const apply = (s: PermissionState) => {
-          if (s === "granted") {
-            setPermissionStatus("granted");
-            requestGps();
-          } else if (s === "denied") {
-            setPermissionStatus("denied");
-            setGpsState("denied");
-            setGpsErrorMsg("Permissão de localização negada.");
-          } else {
-            // "prompt": dispara o prompt nativo do navegador imediatamente,
-            // igual ao app do motorista. Sem aguardar clique em botão.
-            setPermissionStatus("prompt");
-            requestGps();
+          try {
+            if (s === "granted") {
+              console.log("[MOVVI] Permissão de localização concedida");
+              setPermissionStatus("granted");
+              requestGps();
+            } else if (s === "denied") {
+              console.log("[MOVVI] Permissão de localização negada");
+              setPermissionStatus("denied");
+              setGpsState("denied");
+              setGpsErrorMsg("Permissão de localização negada.");
+            } else {
+              setPermissionStatus("prompt");
+              requestGps();
+            }
+          } catch (err) {
+            console.error("[MOVVI] Erro ao aplicar permissão de localização:", err);
           }
         };
         apply(status.state);
