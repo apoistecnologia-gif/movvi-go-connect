@@ -242,7 +242,7 @@ function Toggle({
   return (
     <label className="flex items-center gap-2">
       <span className="h-3 w-3 rounded-full" style={{ background: color }} />
-      <span>{label}</Fragment>
+      <span>{label}</span>
       <Switch checked={checked} onCheckedChange={onChange} />
     </label>
   );
