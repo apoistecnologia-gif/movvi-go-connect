@@ -2213,6 +2213,7 @@ function StepFlow({
   onSubmit,
   onExpandSheet,
 }: StepFlowProps) {
+  const uiCategories = useUiCategories();
   useEffect(() => {
     if (route && uiStage === "selecting_destination") setUiStage("route_preview");
   }, [route, uiStage, setUiStage]);
