@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { Avatar } from "@/components/Avatar";
 import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
