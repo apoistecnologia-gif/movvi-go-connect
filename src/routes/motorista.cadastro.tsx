@@ -142,6 +142,13 @@ function DriverSignUpPage() {
     try {
       const data = parsed.data;
 
+      console.log("[MOVVI DOCS] arquivo selecionado:", {
+        selfie: selfie.name,
+        cnh: cnh.name,
+        veiculo: vehicleDoc.name,
+      });
+      console.log("[MOVVI DOCS] upload iniciado: codificando para envio ao servidor");
+
       const documents = await Promise.all([
         fileToBase64({ bucket: "driver-selfies", file: selfie, label: "selfie" }),
         fileToBase64({ bucket: "driver-cnh", file: cnh, label: "cnh" }),
@@ -157,6 +164,8 @@ function DriverSignUpPage() {
           documents: documents as [typeof documents[0], typeof documents[1], typeof documents[2]],
         },
       });
+
+      console.log("[MOVVI DOCS] upload concluído. resposta do servidor:", result);
 
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: data.email.toLowerCase(),
