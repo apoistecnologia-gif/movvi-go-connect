@@ -464,18 +464,19 @@ function MotoristaApp() {
   async function handleAccept() {
     const offer = incomingRef.current;
     if (!offer) return;
-    // bloqueia imediatamente para não reabrir via realtime
-    handledRidesRef.current.add(offer.id);
-    setIncoming(null);
     try {
       const r = await callAccept({ data: { rideId: offer.id } });
       console.log("[MOVVI MOTORISTA] corrida aceita:", offer.id);
+      // Só remove o alerta depois que o backend confirma o aceite da MESMA corrida.
+      handledRidesRef.current.add(offer.id);
+      setIncoming(null);
       setActive(r as RideRow);
       sheetRef.current?.snapTo(55);
     } catch (e) {
       console.error("[MOVVI MOTORISTA] erro ao aceitar:", e);
-      // libera para tentar de novo no próximo ciclo
       handledRidesRef.current.delete(offer.id);
+      setIncoming(offer);
+      setGpsMessage(e instanceof Error ? e.message : "Não foi possível aceitar a corrida. Tente novamente.");
     }
   }
   async function handleReject() {
