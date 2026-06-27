@@ -472,12 +472,14 @@ function MotoristaApp() {
       if (r.driver_id !== userId) return;
       if (r.status === "finalizada") {
         setActive(null); setPolyline([]);
-        // Só mostra a tela de avaliação se o motorista ainda não avaliou.
-        if (!r.driver_rated_at && !ratingRef.current) {
-          setRatingRide(r); setStars(5); setRatingComment("");
-        } else if (r.driver_rated_at && ratingRef.current?.id === r.id) {
-          // já avaliou — fecha definitivamente.
-          setRatingRide(null);
+        // Nunca reabrir a tela de avaliação para uma corrida já avaliada nesta sessão.
+        if (ratedRidesRef.current.has(r.id)) {
+          if (ratingRef.current?.id === r.id && !ratingSubmitted) setRatingRide(null);
+        } else if (!r.driver_rated_at && !ratingRef.current) {
+          setRatingRide(r); setStars(5); setRatingComment(""); setRatingSubmitted(false);
+        } else if (r.driver_rated_at) {
+          ratedRidesRef.current.add(r.id);
+          if (ratingRef.current?.id === r.id && !ratingSubmitted) setRatingRide(null);
         }
         loadTodayStats(userId);
       } else if (r.status === "cancelada_passageiro" || r.status === "cancelada_motorista") {
