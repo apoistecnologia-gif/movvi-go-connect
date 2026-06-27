@@ -104,6 +104,33 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_users_meta: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          last_login_at: string | null
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          last_login_at?: string | null
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          last_login_at?: string | null
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       app_settings: {
         Row: {
           category: string
@@ -849,11 +876,13 @@ export type Database = {
         Row: {
           auth_user_id: string
           avatar_url: string | null
+          block_reason: string | null
           blocked_at: string | null
           city: string | null
           created_at: string
           email: string
           id: string
+          last_login_at: string | null
           name: string
           phone: string | null
           suspended_at: string | null
@@ -862,11 +891,13 @@ export type Database = {
         Insert: {
           auth_user_id: string
           avatar_url?: string | null
+          block_reason?: string | null
           blocked_at?: string | null
           city?: string | null
           created_at?: string
           email: string
           id?: string
+          last_login_at?: string | null
           name: string
           phone?: string | null
           suspended_at?: string | null
@@ -875,11 +906,13 @@ export type Database = {
         Update: {
           auth_user_id?: string
           avatar_url?: string | null
+          block_reason?: string | null
           blocked_at?: string | null
           city?: string | null
           created_at?: string
           email?: string
           id?: string
+          last_login_at?: string | null
           name?: string
           phone?: string | null
           suspended_at?: string | null
@@ -893,6 +926,16 @@ export type Database = {
     }
     Functions: {
       auto_suspend_overdue_subscriptions: { Args: never; Returns: undefined }
+      get_passenger_stats: {
+        Args: { _user_id: string }
+        Returns: {
+          avg_rating: number
+          cancelled_rides: number
+          completed_rides: number
+          total_rides: number
+          total_spent: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
