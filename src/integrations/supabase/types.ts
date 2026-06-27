@@ -309,6 +309,7 @@ export type Database = {
           motivo_reprovacao: string | null
           name: string
           phone: string
+          photo_url: string | null
           rating: number
           selfie_url: string | null
           state: string
@@ -345,6 +346,7 @@ export type Database = {
           motivo_reprovacao?: string | null
           name: string
           phone: string
+          photo_url?: string | null
           rating?: number
           selfie_url?: string | null
           state: string
@@ -381,6 +383,7 @@ export type Database = {
           motivo_reprovacao?: string | null
           name?: string
           phone?: string
+          photo_url?: string | null
           rating?: number
           selfie_url?: string | null
           state?: string

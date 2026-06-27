@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Avatar } from "@/components/Avatar";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Marker, Polyline } from "@react-google-maps/api";
@@ -53,7 +54,7 @@ export const Route = createFileRoute("/motorista/app")({
 
 type LatLng = { lat: number; lng: number };
 type RideRow = Database["public"]["Tables"]["rides"]["Row"];
-type Passenger = { name: string | null; phone: string | null };
+type Passenger = { name: string | null; phone: string | null; avatar_url: string | null };
 
 function decodePolyline(encoded: string): LatLng[] {
   const points: LatLng[] = []; let index = 0, lat = 0, lng = 0;
@@ -527,11 +528,11 @@ function MotoristaApp() {
 
   // carrega dados do passageiro
   useEffect(() => {
-    const pid = active?.passenger_id ?? ratingRide?.passenger_id;
+    const pid = active?.passenger_id ?? ratingRide?.passenger_id ?? incoming?.passenger_id;
     if (!pid) { setPassenger(null); return; }
-    supabase.from("users").select("name, phone").eq("auth_user_id", pid).maybeSingle()
-      .then(({ data }) => setPassenger(data ?? { name: null, phone: null }));
-  }, [active?.passenger_id, ratingRide?.passenger_id]);
+    supabase.from("users").select("name, phone, avatar_url").eq("auth_user_id", pid).maybeSingle()
+      .then(({ data }) => setPassenger(data ?? { name: null, phone: null, avatar_url: null }));
+  }, [active?.passenger_id, ratingRide?.passenger_id, incoming?.passenger_id]);
 
   // countdown da oferta
   useEffect(() => {
@@ -749,10 +750,12 @@ function MotoristaApp() {
       {incoming && (
         <IncomingOffer
           ride={incoming}
+          passenger={passenger}
           countdown={countdown}
           onAccept={handleAccept}
           onReject={handleReject}
         />
+
       )}
 
       {/* ===== Rating ===== */}
@@ -878,9 +881,9 @@ function StatBlock({ label, value, highlight }: { label: string; value: string; 
    OFERTA ENTRANTE
    ============================================================ */
 function IncomingOffer({
-  ride, countdown, onAccept, onReject,
+  ride, passenger, countdown, onAccept, onReject,
 }: {
-  ride: RideRow; countdown: number; onAccept: () => void; onReject: () => void;
+  ride: RideRow; passenger: Passenger | null; countdown: number; onAccept: () => void; onReject: () => void;
 }) {
   const pct = (countdown / 15) * 100;
   return (
@@ -901,6 +904,18 @@ function IncomingOffer({
           </div>
           <CountdownRing seconds={countdown} pct={pct} />
         </div>
+
+        <div className="mt-3 flex items-center gap-3 rounded-2xl bg-background/60 p-2.5 ring-1 ring-border">
+          <Avatar src={passenger?.avatar_url ?? null} name={passenger?.name ?? "Passageiro"} size={40} />
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-sm font-semibold">{passenger?.name ?? "Passageiro"}</div>
+            <div className="text-[11px] text-muted-foreground">
+              {ride.payment_method === "cash" ? "Pagamento em dinheiro" : (ride.payment_method ?? "Pagamento")}
+            </div>
+          </div>
+        </div>
+
+
 
         <div className="mt-4 grid grid-cols-3 gap-2">
           <Metric label="Distância" value={ride.distance_km ? `${Number(ride.distance_km).toFixed(1)} km` : "—"} />
@@ -1050,9 +1065,7 @@ function ActiveRidePanel({
 
       {/* passageiro */}
       <div className="flex items-center gap-3 rounded-2xl bg-background/60 p-3 ring-1 ring-border">
-        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/15 text-base font-bold text-primary">
-          {(passenger?.name ?? "?").trim().charAt(0).toUpperCase() || "?"}
-        </div>
+        <Avatar src={passenger?.avatar_url ?? null} name={passenger?.name ?? "?"} size={44} />
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm font-semibold">{passenger?.name ?? "Passageiro"}</div>
           <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
@@ -1066,6 +1079,7 @@ function ActiveRidePanel({
           </a>
         )}
       </div>
+
 
       {/* endereços */}
       <div className="space-y-3 rounded-2xl bg-background/60 p-3 ring-1 ring-border">

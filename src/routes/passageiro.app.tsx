@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Avatar } from "@/components/Avatar";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Circle, Marker, Polyline, useJsApiLoader } from "@react-google-maps/api";
@@ -1420,6 +1421,7 @@ function PassageiroApp() {
       current_speed: null,
       rating: 5,
       selfie_url: null,
+      photo_url: null,
       vehicle_color: vehicleColor,
       vehicle_model: vehicleModel,
       vehicle_plate: vehiclePlate,
@@ -2738,17 +2740,12 @@ function DriverEnRoute({
       )}
 
       <div className="flex items-center gap-2.5 rounded-2xl bg-background/60 p-2.5 ring-1 ring-border">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/15 text-2xl">
-          {driver.selfie_url ? (
-            <img
-              src={driver.selfie_url}
-              alt={driver.name}
-              className="h-12 w-12 rounded-full object-cover"
-            />
-          ) : (
-            "👤"
-          )}
-        </div>
+        <Avatar
+          src={driver.photo_url ?? null}
+          name={driver.name}
+          size={48}
+        />
+
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
             <span className="truncate text-[13.5px] font-bold">{driver.name}</span>

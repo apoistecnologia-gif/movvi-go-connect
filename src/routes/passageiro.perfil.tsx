@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, Save, Lock } from "lucide-react";
+import { ProfilePhotoUploader } from "@/components/ProfilePhotoUploader";
 
 export const Route = createFileRoute("/passageiro/perfil")({
   head: () => ({ meta: [{ title: "Perfil — MOVVI DRIVE" }] }),
@@ -37,11 +38,13 @@ export function ProfilePage({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [city, setCity] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -49,10 +52,22 @@ export function ProfilePage({
       const u = data.user;
       if (u) {
         const meta = (u.user_metadata ?? {}) as Record<string, string>;
+        setUserId(u.id);
         setEmail(u.email ?? "");
         setFullName(meta.full_name ?? meta.name ?? "");
         setPhone(meta.phone ?? u.phone ?? "");
         setCity(meta.city ?? "");
+
+        const { data: profile } = await supabase
+          .from("users")
+          .select("avatar_url, name, phone")
+          .eq("auth_user_id", u.id)
+          .maybeSingle();
+        if (profile) {
+          setPhotoUrl(profile.avatar_url ?? null);
+          if (!meta.full_name && !meta.name && profile.name) setFullName(profile.name);
+          if (!meta.phone && profile.phone) setPhone(profile.phone);
+        }
       }
       setLoading(false);
     })();
@@ -69,12 +84,47 @@ export function ProfilePage({
       if (newPassword) updates.password = newPassword;
       const { error } = await supabase.auth.updateUser(updates);
       if (error) throw error;
+
+      if (userId) {
+        await supabase
+          .from("users")
+          .update({ name: fullName, phone })
+          .eq("auth_user_id", userId);
+      }
       setMsg({ kind: "ok", text: "Perfil atualizado com sucesso!" });
       setNewPassword("");
     } catch (err) {
       setMsg({ kind: "err", text: err instanceof Error ? err.message : "Falha ao salvar." });
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handlePhotoUploaded(result: { signedUrl: string; path: string }) {
+    if (!userId) return;
+    setPhotoUrl(result.signedUrl);
+    try {
+      const { error: userErr } = await supabase
+        .from("users")
+        .update({ avatar_url: result.signedUrl })
+        .eq("auth_user_id", userId);
+      if (userErr) throw userErr;
+
+      if (role === "driver") {
+        const { error: drvErr } = await supabase
+          .from("drivers")
+          .update({ photo_url: result.signedUrl })
+          .eq("user_id", userId);
+        if (drvErr) console.warn("[MOVVI PHOTO] driver photo_url update:", drvErr.message);
+      }
+
+      await supabase.auth.updateUser({ data: { avatar_url: result.signedUrl } });
+      setMsg({ kind: "ok", text: "Foto de perfil atualizada!" });
+    } catch (err) {
+      setMsg({
+        kind: "err",
+        text: err instanceof Error ? err.message : "Falha ao salvar a foto.",
+      });
     }
   }
 
@@ -97,7 +147,19 @@ export function ProfilePage({
                   <Loader2 className="h-4 w-4 animate-spin" /> Carregando perfil...
                 </div>
               ) : (
-                <form onSubmit={onSave} className="space-y-4">
+                <form onSubmit={onSave} className="space-y-5">
+                  {userId && (
+                    <div className="flex justify-center">
+                      <ProfilePhotoUploader
+                        userId={userId}
+                        name={fullName || email}
+                        currentUrl={photoUrl}
+                        onUploaded={handlePhotoUploaded}
+                        size={104}
+                      />
+                    </div>
+                  )}
+
                   <div className="space-y-1.5">
                     <Label>E-mail</Label>
                     <Input value={email} disabled />
@@ -170,10 +232,6 @@ export function ProfilePage({
               )}
             </CardContent>
           </Card>
-
-          <p className="mt-4 text-center text-[11px] text-muted-foreground">
-            Foto de perfil disponível em breve.
-          </p>
         </div>
       </main>
 
