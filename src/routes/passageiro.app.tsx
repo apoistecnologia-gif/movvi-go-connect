@@ -1308,6 +1308,8 @@ function PassageiroApp() {
     setRideId(null);
     setRide(null);
     setDriverInfo(null);
+    setRatingStars(5);
+    setRatingComment("");
     clearDestination();
   }
 
