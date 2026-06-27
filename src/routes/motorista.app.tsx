@@ -10,8 +10,8 @@ import {
   MapPin,
   Navigation2,
   Phone,
-
   Star,
+
   X,
   ChevronRight,
 } from "lucide-react";
