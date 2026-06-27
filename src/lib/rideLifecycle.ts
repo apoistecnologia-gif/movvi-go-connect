@@ -242,15 +242,17 @@ export const aceitarCorrida = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => RideIdInput.parse(d))
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    await assertDriverApproved(supabase, userId);
+    const { userId } = context;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await assertDriverApproved(supabaseAdmin, userId);
 
     // snapshot do motorista
-    const drv = await supabase
+    const drv = await supabaseAdmin
       .from("drivers")
       .select("name, phone, vehicle_model, vehicle_plate, vehicle_color, current_lat, current_lng")
       .eq("user_id", userId)
       .maybeSingle();
+    if (drv.error) throw new Error("Falha ao carregar dados do motorista: " + drv.error.message);
     const d = drv.data;
     const vehicle =
       d && (d.vehicle_model || d.vehicle_plate)
@@ -263,6 +265,7 @@ export const aceitarCorrida = createServerFn({ method: "POST" })
       driver_id: userId,
       status: RIDE_STATUS.MOTORISTA_A_CAMINHO,
       accepted_at: new Date().toISOString(),
+      current_offer_driver_id: null,
       driver_name: d?.name ?? null,
       driver_phone: d?.phone ?? null,
       driver_vehicle: vehicle,
@@ -270,7 +273,7 @@ export const aceitarCorrida = createServerFn({ method: "POST" })
       driver_lng: d?.current_lng ?? null,
     };
 
-    const upd = await supabase
+    const upd = await supabaseAdmin
       .from("rides")
       .update(patch)
       .eq("id", data.rideId)
@@ -279,7 +282,11 @@ export const aceitarCorrida = createServerFn({ method: "POST" })
       .select("*")
       .single();
     if (upd.error)
-      throw new Error("Não foi possível aceitar a corrida: " + upd.error.message);
+      throw new Error(
+        upd.error.code === "PGRST116"
+          ? "Não foi possível aceitar a corrida: esta chamada já foi aceita, cancelada ou não está mais disponível para você."
+          : "Não foi possível aceitar a corrida: " + upd.error.message,
+      );
     return upd.data;
   });
 

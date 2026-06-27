@@ -1213,6 +1213,33 @@ function PassageiroApp() {
 
   const center = position && isBrazilCoordinate(position.lat, position.lng) ? position : BRAZIL_CENTER;
   const phase = ride?.status;
+  const rideDriverInfo = useMemo<DriverRow | null>(() => {
+    if (driverInfo) return driverInfo;
+    if (!ride?.driver_id && !ride?.driver_name) return null;
+
+    const vehicleParts = (ride.driver_vehicle ?? "")
+      .split(" • ")
+      .map((part) => part.trim())
+      .filter(Boolean);
+    const vehiclePlate = vehicleParts.length >= 1 ? vehicleParts[vehicleParts.length - 1] : "";
+    const vehicleModel = vehicleParts.length >= 2 ? vehicleParts[vehicleParts.length - 2] : ride.driver_vehicle ?? "";
+    const vehicleColor = vehicleParts.length >= 3 ? vehicleParts[0] : "";
+
+    return {
+      user_id: ride.driver_id ?? "",
+      name: ride.driver_name ?? "Motorista MOVVI",
+      phone: ride.driver_phone ?? "",
+      current_lat: ride.driver_lat,
+      current_lng: ride.driver_lng,
+      current_heading: null,
+      current_speed: null,
+      rating: 5,
+      selfie_url: null,
+      vehicle_color: vehicleColor,
+      vehicle_model: vehicleModel,
+      vehicle_plate: vehiclePlate,
+    } as DriverRow;
+  }, [driverInfo, ride?.driver_id, ride?.driver_name, ride?.driver_phone, ride?.driver_vehicle, ride?.driver_lat, ride?.driver_lng]);
 
   /* ---------------------- GPS initial loading ---------------------- */
   // Padrão Uber/99/InDrive:
@@ -1391,11 +1418,11 @@ function PassageiroApp() {
             (ride.status === "motorista_a_caminho" ||
               ride.status === "motorista_chegou" ||
               ride.status === "em_viagem") &&
-            driverInfo &&
-            typeof driverInfo.current_lat === "number" &&
-            typeof driverInfo.current_lng === "number" && (
+            rideDriverInfo &&
+            typeof rideDriverInfo.current_lat === "number" &&
+            typeof rideDriverInfo.current_lng === "number" && (
               <Marker
-                position={{ lat: driverInfo.current_lat, lng: driverInfo.current_lng }}
+                position={{ lat: rideDriverInfo.current_lat, lng: rideDriverInfo.current_lng }}
                 icon={{
                   path: "M5 11l1.5-4.5h11L19 11M6 14h12M7.5 17a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Zm12 0a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0ZM5 11h14v4H5z",
                   fillColor: "#8DD92B",
@@ -1403,7 +1430,7 @@ function PassageiroApp() {
                   strokeColor: "#05070D",
                   strokeWeight: 1.6,
                   scale: 1.6,
-                  rotation: typeof driverInfo.current_heading === "number" ? driverInfo.current_heading : 0,
+                  rotation: typeof rideDriverInfo.current_heading === "number" ? rideDriverInfo.current_heading : 0,
                   anchor: new google.maps.Point(12, 14),
                 }}
                 zIndex={9999}
@@ -1543,12 +1570,12 @@ function PassageiroApp() {
       )}
 
       {ride &&
-        driverInfo &&
+        rideDriverInfo &&
         (phase === "motorista_a_caminho" ||
           phase === "motorista_chegou" ||
           phase === "em_viagem") && (
           <MovviSheet snaps={[40, 65]} initial={40}>
-            <DriverEnRoute ride={ride} driver={driverInfo} onCancel={cancelRide} />
+            <DriverEnRoute ride={ride} driver={rideDriverInfo} onCancel={cancelRide} />
           </MovviSheet>
         )}
 
