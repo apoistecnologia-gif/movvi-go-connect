@@ -223,8 +223,8 @@ function AdminMapaPage() {
                 <SelectContent>
                   <SelectItem value={ALL}>Todas as categorias</SelectItem>
                   {categories.map((c) => (
-                    <SelectItem key={c.slug} value={c.slug}>
-                      {c.name}
+                    <SelectItem key={c.key} value={c.key}>
+                      {c.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
