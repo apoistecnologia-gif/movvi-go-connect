@@ -28,9 +28,11 @@ import { Route as MotoristaCadastroRouteImport } from './routes/motorista.cadast
 import { Route as MotoristaAppRouteImport } from './routes/motorista.app'
 import { Route as DevRatingTestRouteImport } from './routes/dev.rating-test'
 import { Route as DebugMotoristaAuthRouteImport } from './routes/debug.motorista-auth'
+import { Route as AdminPrecosRouteImport } from './routes/admin.precos'
 import { Route as AdminMotoristasRouteImport } from './routes/admin.motoristas'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
+import { Route as AdminCategoriasRouteImport } from './routes/admin.categorias'
 
 const MapTestRoute = MapTestRouteImport.update({
   id: '/map-test',
@@ -127,6 +129,11 @@ const DebugMotoristaAuthRoute = DebugMotoristaAuthRouteImport.update({
   path: '/debug/motorista-auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminPrecosRoute = AdminPrecosRouteImport.update({
+  id: '/admin/precos',
+  path: '/admin/precos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminMotoristasRoute = AdminMotoristasRouteImport.update({
   id: '/admin/motoristas',
   path: '/admin/motoristas',
@@ -142,14 +149,21 @@ const AdminDashboardRoute = AdminDashboardRouteImport.update({
   path: '/admin/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminCategoriasRoute = AdminCategoriasRouteImport.update({
+  id: '/admin/categorias',
+  path: '/admin/categorias',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dev-diagnostics': typeof DevDiagnosticsRoute
   '/map-test': typeof MapTestRoute
+  '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/motoristas': typeof AdminMotoristasRoute
+  '/admin/precos': typeof AdminPrecosRoute
   '/debug/motorista-auth': typeof DebugMotoristaAuthRoute
   '/dev/rating-test': typeof DevRatingTestRoute
   '/motorista/app': typeof MotoristaAppRoute
@@ -171,9 +185,11 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dev-diagnostics': typeof DevDiagnosticsRoute
   '/map-test': typeof MapTestRoute
+  '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/motoristas': typeof AdminMotoristasRoute
+  '/admin/precos': typeof AdminPrecosRoute
   '/debug/motorista-auth': typeof DebugMotoristaAuthRoute
   '/dev/rating-test': typeof DevRatingTestRoute
   '/motorista/app': typeof MotoristaAppRoute
@@ -196,9 +212,11 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/dev-diagnostics': typeof DevDiagnosticsRoute
   '/map-test': typeof MapTestRoute
+  '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/motoristas': typeof AdminMotoristasRoute
+  '/admin/precos': typeof AdminPrecosRoute
   '/debug/motorista-auth': typeof DebugMotoristaAuthRoute
   '/dev/rating-test': typeof DevRatingTestRoute
   '/motorista/app': typeof MotoristaAppRoute
@@ -222,9 +240,11 @@ export interface FileRouteTypes {
     | '/'
     | '/dev-diagnostics'
     | '/map-test'
+    | '/admin/categorias'
     | '/admin/dashboard'
     | '/admin/login'
     | '/admin/motoristas'
+    | '/admin/precos'
     | '/debug/motorista-auth'
     | '/dev/rating-test'
     | '/motorista/app'
@@ -246,9 +266,11 @@ export interface FileRouteTypes {
     | '/'
     | '/dev-diagnostics'
     | '/map-test'
+    | '/admin/categorias'
     | '/admin/dashboard'
     | '/admin/login'
     | '/admin/motoristas'
+    | '/admin/precos'
     | '/debug/motorista-auth'
     | '/dev/rating-test'
     | '/motorista/app'
@@ -270,9 +292,11 @@ export interface FileRouteTypes {
     | '/'
     | '/dev-diagnostics'
     | '/map-test'
+    | '/admin/categorias'
     | '/admin/dashboard'
     | '/admin/login'
     | '/admin/motoristas'
+    | '/admin/precos'
     | '/debug/motorista-auth'
     | '/dev/rating-test'
     | '/motorista/app'
@@ -295,9 +319,11 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DevDiagnosticsRoute: typeof DevDiagnosticsRoute
   MapTestRoute: typeof MapTestRoute
+  AdminCategoriasRoute: typeof AdminCategoriasRoute
   AdminDashboardRoute: typeof AdminDashboardRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AdminMotoristasRoute: typeof AdminMotoristasRoute
+  AdminPrecosRoute: typeof AdminPrecosRoute
   DebugMotoristaAuthRoute: typeof DebugMotoristaAuthRoute
   DevRatingTestRoute: typeof DevRatingTestRoute
   MotoristaAppRoute: typeof MotoristaAppRoute
@@ -451,6 +477,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DebugMotoristaAuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/precos': {
+      id: '/admin/precos'
+      path: '/admin/precos'
+      fullPath: '/admin/precos'
+      preLoaderRoute: typeof AdminPrecosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/motoristas': {
       id: '/admin/motoristas'
       path: '/admin/motoristas'
@@ -472,6 +505,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/categorias': {
+      id: '/admin/categorias'
+      path: '/admin/categorias'
+      fullPath: '/admin/categorias'
+      preLoaderRoute: typeof AdminCategoriasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -479,9 +519,11 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DevDiagnosticsRoute: DevDiagnosticsRoute,
   MapTestRoute: MapTestRoute,
+  AdminCategoriasRoute: AdminCategoriasRoute,
   AdminDashboardRoute: AdminDashboardRoute,
   AdminLoginRoute: AdminLoginRoute,
   AdminMotoristasRoute: AdminMotoristasRoute,
+  AdminPrecosRoute: AdminPrecosRoute,
   DebugMotoristaAuthRoute: DebugMotoristaAuthRoute,
   DevRatingTestRoute: DevRatingTestRoute,
   MotoristaAppRoute: MotoristaAppRoute,
