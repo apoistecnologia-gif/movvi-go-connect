@@ -427,14 +427,20 @@ function PassageiroApp() {
   const [ratingComment, setRatingComment] = useState("");
   const [submittingRating, setSubmittingRating] = useState(false);
 
+  const ratedRideIdsRef = useRef<Set<string>>(new Set());
+
   async function submitDriverRating() {
     if (!ride) return;
+    const rideId = ride.id;
     setSubmittingRating(true);
     try {
-      await callRateDriver({ data: { rideId: ride.id, stars: ratingStars, comment: ratingComment || null } });
-      setRatingStars(5);
-      setRatingComment("");
-      resetRide();
+      await callRateDriver({ data: { rideId, stars: ratingStars, comment: ratingComment || null } });
+      ratedRideIdsRef.current.add(rideId);
+      // Marca localmente como avaliada para exibir a etapa de confirmação
+      // sem depender do Realtime e impedir a reabertura do formulário.
+      setRide((prev) => (prev && prev.id === rideId
+        ? { ...prev, passenger_rated_at: new Date().toISOString() }
+        : prev));
     } catch (e) {
       console.warn("[MOVVI] erro ao avaliar motorista:", (e as Error).message);
     } finally {
