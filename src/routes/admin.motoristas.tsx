@@ -374,14 +374,20 @@ function DetailsDialog({ driver, onClose }: { driver: Driver | null; onClose: ()
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            {driver.name}
-            <Badge variant="outline" className={meta.tone}>
-              {meta.label}
-            </Badge>
-          </DialogTitle>
-          <DialogDescription>Cadastro completo do motorista</DialogDescription>
+          <div className="flex items-center gap-3">
+            <Avatar src={(driver as any).photo_url ?? null} name={driver.name} size={56} />
+            <div className="min-w-0">
+              <DialogTitle className="flex items-center gap-2">
+                {driver.name}
+                <Badge variant="outline" className={meta.tone}>
+                  {meta.label}
+                </Badge>
+              </DialogTitle>
+              <DialogDescription>Cadastro completo do motorista</DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
+
 
         <div className="max-h-[65vh] space-y-5 overflow-y-auto pr-2 text-sm">
           <Section title="Dados pessoais">
