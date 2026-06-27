@@ -426,13 +426,23 @@ function PassageiroApp() {
   const [ratingStars, setRatingStars] = useState(5);
   const [ratingComment, setRatingComment] = useState("");
   const [submittingRating, setSubmittingRating] = useState(false);
+  const [ratingError, setRatingError] = useState<string | null>(null);
 
   const ratedRideIdsRef = useRef<Set<string>>(new Set());
 
   async function submitDriverRating() {
     if (!ride) return;
     const rideId = ride.id;
+    if (submittingRating) return; // bloqueia cliques duplicados
+    if (ratedRideIdsRef.current.has(rideId)) {
+      // já enviou nesta sessão — apenas marca local p/ mostrar confirmação
+      setRide((prev) => (prev && prev.id === rideId
+        ? { ...prev, passenger_rated_at: prev.passenger_rated_at ?? new Date().toISOString() }
+        : prev));
+      return;
+    }
     setSubmittingRating(true);
+    setRatingError(null);
     try {
       await callRateDriver({ data: { rideId, stars: ratingStars, comment: ratingComment || null } });
       ratedRideIdsRef.current.add(rideId);
@@ -442,10 +452,21 @@ function PassageiroApp() {
         ? { ...prev, passenger_rated_at: new Date().toISOString() }
         : prev));
     } catch (e) {
-      console.warn("[MOVVI] erro ao avaliar motorista:", (e as Error).message);
+      const msg = (e as Error)?.message ?? "Falha ao enviar avaliação.";
+      console.warn("[MOVVI] erro ao avaliar motorista:", msg);
+      setRatingError(msg);
     } finally {
       setSubmittingRating(false);
     }
+  }
+
+  function skipDriverRating() {
+    if (!ride) return;
+    ratedRideIdsRef.current.add(ride.id);
+    setRatingError(null);
+    setRide((prev) => (prev
+      ? { ...prev, passenger_rated_at: prev.passenger_rated_at ?? new Date().toISOString() }
+      : prev));
   }
 
   const [userId, setUserId] = useState<string | null>(null);
