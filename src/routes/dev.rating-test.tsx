@@ -34,10 +34,8 @@ function StarPicker({
   );
 }
 
-function RatingHarness({ side }: { side: RatingSide }) {
+function RatingHarness({ side, mode }: { side: RatingSide; mode: Mode }) {
   const navigate = useNavigate();
-  const search = typeof window !== "undefined" ? window.location.search : "";
-  const mode: Mode = search.includes("mode=fail") ? "fail" : "ok";
 
   const rideId = "test-ride-1";
   const [stars, setStars] = useState(5);
