@@ -81,7 +81,7 @@ function AdminCategoriasPage() {
       toast.error("Erro ao salvar: " + error.message);
       return;
     }
-    await logAdminAction("ride_category.update", "ride_categories", row.id, { key: row.key });
+    await logAdminAction({ action: "ride_category.update", entity: "ride_categories", entity_id: row.id, after: { key: row.key } });
     toast.success(`"${row.label}" atualizada`);
   }
 
@@ -96,7 +96,7 @@ function AdminCategoriasPage() {
       patch(row.id, { enabled: !enabled });
       return;
     }
-    await logAdminAction(enabled ? "ride_category.enable" : "ride_category.disable", "ride_categories", row.id);
+    await logAdminAction({ action: enabled ? "ride_category.enable" : "ride_category.disable", entity: "ride_categories", entity_id: row.id });
     toast.success(`${row.label} ${enabled ? "habilitada" : "desabilitada"}`);
   }
 
@@ -107,7 +107,7 @@ function AdminCategoriasPage() {
       toast.error("Erro ao excluir: " + error.message);
       return;
     }
-    await logAdminAction("ride_category.delete", "ride_categories", row.id, { key: row.key });
+    await logAdminAction({ action: "ride_category.delete", entity: "ride_categories", entity_id: row.id, before: { key: row.key } });
     toast.success("Categoria excluída");
   }
 
@@ -124,7 +124,7 @@ function AdminCategoriasPage() {
       toast.error("Erro ao criar: " + error.message);
       return;
     }
-    await logAdminAction("ride_category.create", "ride_categories", undefined, { key, label });
+    await logAdminAction({ action: "ride_category.create", entity: "ride_categories", after: { key, label } });
     toast.success("Categoria criada");
   }
 

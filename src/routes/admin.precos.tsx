@@ -142,7 +142,7 @@ function AdminPrecosPage() {
       toast.error("Erro ao salvar: " + error.message);
       return;
     }
-    await logAdminAction("tariff_rules.upsert", "tariff_rules", undefined, { category, count: payload.length });
+    await logAdminAction({ action: "tariff_rules.upsert", entity: "tariff_rules", after: { category, count: payload.length } });
     toast.success(`Tarifas de "${category}" salvas — refletindo no app em tempo real`);
   }
 
@@ -154,7 +154,7 @@ function AdminPrecosPage() {
     if (!confirm(`Excluir o campo "${rule.field_key}"?`)) return;
     const { error } = await supabase.from("tariff_rules").delete().eq("id", rule.id);
     if (error) toast.error(error.message);
-    else await logAdminAction("tariff_rules.delete", "tariff_rules", rule.id);
+    else await logAdminAction({ action: "tariff_rules.delete", entity: "tariff_rules", entity_id: rule.id });
   }
 
   async function addCustomField(category: string) {
@@ -171,7 +171,7 @@ function AdminPrecosPage() {
       .upsert({ category_key: category, field_key: key, value }, { onConflict: "category_key,field_key" });
     if (error) toast.error(error.message);
     else {
-      await logAdminAction("tariff_rules.add_field", "tariff_rules", undefined, { category, field: key });
+      await logAdminAction({ action: "tariff_rules.add_field", entity: "tariff_rules", after: { category, field: key } });
       toast.success("Campo adicionado");
     }
   }
