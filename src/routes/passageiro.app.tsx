@@ -1729,18 +1729,63 @@ function PassageiroApp() {
           </MovviSheet>
         )}
 
-      {ride && phase === "finalizada" && (
+      {ride && phase === "finalizada" && !ride.passenger_rated_at && (
+        <MovviSheet snaps={[70]} initial={70}>
+          <div className="pt-2">
+            <div className="text-center">
+              <div className="mx-auto mb-3 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/15 text-primary text-2xl">
+                ✓
+              </div>
+              <h2 className="font-display text-lg font-bold">Viagem concluída</h2>
+              {ride.final_price && (
+                <p className="mt-1 text-xl font-bold text-primary">
+                  {formatBRL(Number(ride.final_price))}
+                </p>
+              )}
+              <p className="mt-4 text-sm font-semibold">
+                Avalie {ride.driver_name ?? "o motorista"}
+              </p>
+              <div className="mt-2 flex items-center justify-center gap-1">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => setRatingStars(n)}
+                    className="px-1 text-3xl"
+                    aria-label={`${n} estrelas`}
+                  >
+                    <span className={n <= ratingStars ? "text-primary" : "text-muted-foreground/40"}>★</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <textarea
+              value={ratingComment}
+              onChange={(e) => setRatingComment(e.target.value)}
+              placeholder="Comentário (opcional)"
+              maxLength={500}
+              rows={3}
+              className="mt-4 w-full resize-none rounded-xl border border-border bg-card px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+            <button
+              onClick={submitDriverRating}
+              disabled={submittingRating}
+              className="mt-4 w-full rounded-2xl bg-primary py-4 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/30 disabled:opacity-60"
+            >
+              {submittingRating ? "Enviando…" : "Enviar avaliação"}
+            </button>
+          </div>
+        </MovviSheet>
+      )}
+
+      {ride && phase === "finalizada" && ride.passenger_rated_at && (
         <MovviSheet snaps={[40]} initial={40}>
           <div className="pt-2 text-center">
             <div className="mx-auto mb-3 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/15 text-primary text-3xl">
               ✓
             </div>
-            <h2 className="font-display text-xl font-bold">Viagem concluída</h2>
-            {ride.final_price && (
-              <p className="mt-1 text-2xl font-bold text-primary">
-                {formatBRL(Number(ride.final_price))}
-              </p>
-            )}
+            <h2 className="font-display text-xl font-bold">Avaliação enviada</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Obrigado por usar a MOVVI!</p>
             <button
               onClick={resetRide}
               className="mt-6 w-full rounded-2xl bg-primary py-4 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/30"
@@ -1750,6 +1795,7 @@ function PassageiroApp() {
           </div>
         </MovviSheet>
       )}
+
     </div>
   );
 }
