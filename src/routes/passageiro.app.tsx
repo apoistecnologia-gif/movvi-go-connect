@@ -930,6 +930,7 @@ function PassageiroApp() {
       setPermissionStatus("unsupported");
       setGpsState("unavailable");
       setGpsErrorMsg("Seu navegador não oferece geolocalização.");
+      void logGpsTelemetry("geolocation_unsupported");
       return;
     }
 
