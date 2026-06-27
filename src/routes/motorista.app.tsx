@@ -1050,9 +1050,7 @@ function ActiveRidePanel({
 
       {/* passageiro */}
       <div className="flex items-center gap-3 rounded-2xl bg-background/60 p-3 ring-1 ring-border">
-        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/15 text-base font-bold text-primary">
-          {(passenger?.name ?? "?").trim().charAt(0).toUpperCase() || "?"}
-        </div>
+        <Avatar src={passenger?.avatar_url ?? null} name={passenger?.name ?? "?"} size={44} />
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm font-semibold">{passenger?.name ?? "Passageiro"}</div>
           <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
@@ -1066,6 +1064,7 @@ function ActiveRidePanel({
           </a>
         )}
       </div>
+
 
       {/* endereços */}
       <div className="space-y-3 rounded-2xl bg-background/60 p-3 ring-1 ring-border">
