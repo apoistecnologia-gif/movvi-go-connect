@@ -16,6 +16,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { MovviLogo } from "@/components/MovviLogo";
 import { ArrowLeft, Loader2, Upload } from "lucide-react";
+import { translateAuthError } from "@/lib/authErrors";
 
 export const Route = createFileRoute("/motorista/cadastro")({
   head: () => ({ meta: [{ title: "Cadastro do Motorista — MOVVI DRIVE" }] }),
@@ -28,7 +29,7 @@ const schema = z.object({
   name: z.string().trim().min(3, "Nome muito curto").max(120),
   email: z.string().trim().email("E-mail inválido").max(255),
   phone: z.string().trim().min(10, "Telefone inválido").max(20),
-  password: z.string().min(8, "Mínimo 8 caracteres").max(72),
+  password: z.string().min(4, "Mínimo 4 caracteres").max(72),
   cpf: z.string().trim().min(11, "CPF inválido").max(14),
   birth_date: z.string().optional(),
   city: z.string().trim().min(2).max(80),
@@ -171,7 +172,7 @@ function DriverSignUpPage() {
 
       navigate({ to: "/motorista/status" });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro inesperado");
+      setError(translateAuthError(err));
     } finally {
       setLoading(false);
     }

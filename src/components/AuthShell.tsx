@@ -3,6 +3,7 @@ import { Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { ArrowLeft, Home } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MovviLogo } from "@/components/MovviLogo";
+import { translateAuthError } from "@/lib/authErrors";
 
 interface AuthShellProps {
   title: ReactNode;
@@ -68,7 +69,7 @@ export function useAuthForm(): UseAuthFormResult {
       try {
         await fn(new FormData(e.currentTarget));
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Erro inesperado");
+        setError(translateAuthError(err));
       } finally {
         setLoading(false);
       }
