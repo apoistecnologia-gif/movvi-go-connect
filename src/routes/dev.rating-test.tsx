@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Star } from "lucide-react";
 import { shouldShowRating, canSubmitRating, type RatingSide } from "@/lib/ratingFlow";
 
@@ -47,6 +47,8 @@ function RatingHarness({ side }: { side: RatingSide }) {
   const [error, setError] = useState<string | null>(null);
   const [ratedLocal, setRatedLocal] = useState<Set<string>>(new Set());
   const [submitCount, setSubmitCount] = useState(0);
+  const inFlightRef = useRef(false);
+  const submitCountRef = useRef(0);
 
   const ride = useMemo(
     () => ({ id: rideId, status: "finalizada" as const }),
@@ -56,14 +58,18 @@ function RatingHarness({ side }: { side: RatingSide }) {
   const visible = shouldShowRating(ride, side, ratedLocal);
 
   async function handleSubmit() {
+    if (inFlightRef.current) return;
     if (!canSubmitRating({ rideId, submitting, submitted, ratedLocal })) return;
+    inFlightRef.current = true;
     setSubmitting(true);
     setError(null);
-    setSubmitCount((n) => n + 1);
+    submitCountRef.current += 1;
+    setSubmitCount(submitCountRef.current);
     await new Promise((r) => setTimeout(r, 100));
-    if (mode === "fail" && submitCount === 0) {
+    if (mode === "fail" && submitCountRef.current === 1) {
       setSubmitting(false);
       setError("Falha simulada");
+      inFlightRef.current = false;
       return;
     }
     setSubmitting(false);
