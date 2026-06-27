@@ -80,7 +80,7 @@ function MotoristaApp() {
 
   const [userId, setUserId] = useState<string | null>(null);
   const [driverName, setDriverName] = useState<string>("");
-  const [position, setPosition] = useState<LatLng | null>(null);
+  const [position, setPosition] = useState<(LatLng & { heading?: number | null; speed?: number | null }) | null>(null);
   const [online, setOnline] = useState(false);
   const [statusBlock, setStatusBlock] = useState<string | null>(null);
   type GpsStatus = "prompt" | "loading" | "granted" | "denied" | "timeout" | "unavailable" | "error";
