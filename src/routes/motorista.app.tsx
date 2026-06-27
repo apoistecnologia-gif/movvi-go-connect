@@ -116,6 +116,8 @@ function MotoristaApp() {
   const [stars, setStars] = useState<number>(5);
   const [ratingComment, setRatingComment] = useState("");
   const [submittingRating, setSubmittingRating] = useState(false);
+  const [ratingSubmitted, setRatingSubmitted] = useState(false);
+  const ratedRidesRef = useRef<Set<string>>(new Set());
 
   const mapRef = useRef<google.maps.Map | null>(null);
   const sheetRef = useRef<MovviSheetHandle | null>(null);
@@ -470,12 +472,14 @@ function MotoristaApp() {
       if (r.driver_id !== userId) return;
       if (r.status === "finalizada") {
         setActive(null); setPolyline([]);
-        // Só mostra a tela de avaliação se o motorista ainda não avaliou.
-        if (!r.driver_rated_at && !ratingRef.current) {
-          setRatingRide(r); setStars(5); setRatingComment("");
-        } else if (r.driver_rated_at && ratingRef.current?.id === r.id) {
-          // já avaliou — fecha definitivamente.
-          setRatingRide(null);
+        // Nunca reabrir a tela de avaliação para uma corrida já avaliada nesta sessão.
+        if (ratedRidesRef.current.has(r.id)) {
+          if (ratingRef.current?.id === r.id && !ratingSubmitted) setRatingRide(null);
+        } else if (!r.driver_rated_at && !ratingRef.current) {
+          setRatingRide(r); setStars(5); setRatingComment(""); setRatingSubmitted(false);
+        } else if (r.driver_rated_at) {
+          ratedRidesRef.current.add(r.id);
+          if (ratingRef.current?.id === r.id && !ratingSubmitted) setRatingRide(null);
         }
         loadTodayStats(userId);
       } else if (r.status === "cancelada_passageiro" || r.status === "cancelada_motorista") {
@@ -604,10 +608,18 @@ function MotoristaApp() {
     setSubmittingRating(true);
     try {
       await callRate({ data: { rideId: ratingRide.id, stars, comment: ratingComment || null } });
-      setRatingRide(null); setRatingComment(""); setStars(5);
+      ratedRidesRef.current.add(ratingRide.id);
+      setRatingSubmitted(true);
     } catch (e) {
       console.warn("[MOVVI MOTORISTA] erro ao avaliar:", (e as Error).message);
     } finally { setSubmittingRating(false); }
+  }
+
+  function dismissRating() {
+    setRatingRide(null);
+    setRatingSubmitted(false);
+    setRatingComment("");
+    setStars(5);
   }
 
   const center = position ?? BRAZIL_CENTER;
@@ -736,7 +748,9 @@ function MotoristaApp() {
           stars={stars} setStars={setStars}
           comment={ratingComment} setComment={setRatingComment}
           submitting={submittingRating}
+          submitted={ratingSubmitted}
           onSubmit={submitRating}
+          onDismiss={dismissRating}
         />
       )}
 
@@ -1084,12 +1098,13 @@ function ActionButton({
    AVALIAÇÃO + RESUMO
    ============================================================ */
 function RatingScreen({
-  ride, passenger, stars, setStars, comment, setComment, submitting, onSubmit,
+  ride, passenger, stars, setStars, comment, setComment, submitting, submitted, onSubmit, onDismiss,
 }: {
   ride: RideRow; passenger: Passenger | null;
   stars: number; setStars: (n: number) => void;
   comment: string; setComment: (s: string) => void;
-  submitting: boolean; onSubmit: () => void;
+  submitting: boolean; submitted: boolean;
+  onSubmit: () => void; onDismiss: () => void;
 }) {
   const total = Number(ride.final_price ?? ride.estimated_price ?? 0);
   const paymentLabel = ride.payment_method === "cash" ? "Dinheiro" : (ride.payment_method ?? "—");
@@ -1116,30 +1131,48 @@ function RatingScreen({
           <Metric label="Duração" value={ride.duration_min ? `${Math.round(Number(ride.duration_min))} min` : "—"} />
         </div>
 
-        {/* rating */}
-        <div className="mt-4">
-          <div className="text-center text-sm font-semibold">
-            Avalie {passenger?.name ?? "o passageiro"}
+        {submitted ? (
+          <div className="mt-4 rounded-2xl bg-primary/10 p-5 text-center ring-1 ring-primary/30 animate-in fade-in zoom-in-95 duration-200">
+            <div className="mx-auto mb-2 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
+              <CheckCircle2 className="h-7 w-7" />
+            </div>
+            <p className="text-base font-bold text-foreground">Avaliação registrada</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Você deu {stars} {stars === 1 ? "estrela" : "estrelas"} para {passenger?.name ?? "o passageiro"}. Obrigado!
+            </p>
+            <button onClick={onDismiss}
+              className="mt-4 w-full rounded-2xl bg-primary py-4 text-sm font-bold uppercase tracking-wider text-primary-foreground shadow-lg shadow-primary/30 hover:brightness-110">
+              Concluir
+            </button>
           </div>
-          <div className="mt-2 flex items-center justify-center gap-1.5">
-            {[1, 2, 3, 4, 5].map((n) => (
-              <button key={n} type="button" onClick={() => setStars(n)}
-                className="transition active:scale-90">
-                <Star className={`h-9 w-9 transition ${
-                  n <= stars ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/40"}`} />
-              </button>
-            ))}
-          </div>
-          <textarea value={comment} onChange={(e) => setComment(e.target.value)}
-            placeholder="Comentário (opcional)"
-            className="mt-3 w-full resize-none rounded-2xl bg-background/60 p-3 text-sm ring-1 ring-border focus:outline-none focus:ring-primary/50"
-            rows={2} />
-        </div>
+        ) : (
+          <>
+            {/* rating */}
+            <div className="mt-4">
+              <div className="text-center text-sm font-semibold">
+                Avalie {passenger?.name ?? "o passageiro"}
+              </div>
+              <div className="mt-2 flex items-center justify-center gap-1.5">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <button key={n} type="button" onClick={() => setStars(n)}
+                    className="transition active:scale-90">
+                    <Star className={`h-9 w-9 transition ${
+                      n <= stars ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/40"}`} />
+                  </button>
+                ))}
+              </div>
+              <textarea value={comment} onChange={(e) => setComment(e.target.value)}
+                placeholder="Comentário (opcional)"
+                className="mt-3 w-full resize-none rounded-2xl bg-background/60 p-3 text-sm ring-1 ring-border focus:outline-none focus:ring-primary/50"
+                rows={2} />
+            </div>
 
-        <button disabled={submitting} onClick={onSubmit}
-          className="mt-4 w-full rounded-2xl bg-primary py-4 text-sm font-bold uppercase tracking-wider text-primary-foreground shadow-lg shadow-primary/30 hover:brightness-110 disabled:opacity-60">
-          {submitting ? "Enviando…" : "Enviar avaliação"}
-        </button>
+            <button disabled={submitting} onClick={onSubmit}
+              className="mt-4 w-full rounded-2xl bg-primary py-4 text-sm font-bold uppercase tracking-wider text-primary-foreground shadow-lg shadow-primary/30 hover:brightness-110 disabled:opacity-60">
+              {submitting ? "Enviando…" : "Enviar avaliação"}
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
