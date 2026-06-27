@@ -309,7 +309,11 @@ function OriginAction({
 
 export const Route = createFileRoute("/passageiro/app")({
   head: () => ({ meta: [{ title: "MOVVI Drive — Passageiro" }] }),
-  component: PassageiroApp,
+  component: () => (
+    <UiCategoriesProvider>
+      <PassageiroApp />
+    </UiCategoriesProvider>
+  ),
   errorComponent: ({ error, reset }) => {
     console.error("[MOVVI] Erro na tela do passageiro:", error);
     const message = (error as Error)?.message ?? String(error ?? "Erro desconhecido");
