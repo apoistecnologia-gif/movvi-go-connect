@@ -102,7 +102,7 @@ function decodeBase64(base64: string) {
 
 async function removeUploadedFiles(
   supabaseAdmin: any,
-  uploaded: Array<{ bucket: (typeof Buckets)[number]; path: string }>,
+  uploaded: Array<{ bucket: string; path: string }>,
 ) {
   await Promise.allSettled(
     uploaded.map((item) => supabaseAdmin.storage.from(item.bucket).remove([item.path])),
