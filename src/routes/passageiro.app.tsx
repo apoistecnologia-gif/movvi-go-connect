@@ -814,9 +814,10 @@ function PassageiroApp() {
 
     const perms = (navigator as Navigator).permissions;
     if (!perms || typeof perms.query !== "function") {
-      // Sem Permissions API (Safari iOS antigo etc.): tratamos como prompt,
-      // o usuário precisa tocar no botão para disparar a solicitação.
-      setPermissionStatus("unsupported");
+      // Sem Permissions API (Safari iOS antigo etc.): dispara o prompt nativo
+      // imediatamente — mesmo comportamento do app do motorista.
+      setPermissionStatus("prompt");
+      requestGps();
       return;
     }
 
@@ -829,16 +830,16 @@ function PassageiroApp() {
         const apply = (s: PermissionState) => {
           if (s === "granted") {
             setPermissionStatus("granted");
-            // Permissão já concedida em qualquer ambiente (inclusive preview):
-            // tentamos obter o GPS real imediatamente. Se vier coordenada inválida
-            // (fora do Brasil) o próprio requestGps cai para o fluxo manual.
             requestGps();
           } else if (s === "denied") {
             setPermissionStatus("denied");
             setGpsState("denied");
             setGpsErrorMsg("Permissão de localização negada.");
           } else {
+            // "prompt": dispara o prompt nativo do navegador imediatamente,
+            // igual ao app do motorista. Sem aguardar clique em botão.
             setPermissionStatus("prompt");
+            requestGps();
           }
         };
         apply(status.state);
