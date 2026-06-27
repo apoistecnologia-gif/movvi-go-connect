@@ -1490,7 +1490,22 @@ function PassageiroApp() {
         requesting={false}
       />
     );
+  }
 
+  // Permissão negada / indisponível e ainda SEM origem: mostra a tela dedicada
+  // com o seletor manual de endereço (origem). O usuário pode escolher cidade
+  // ou endereço para liberar o mapa e calcular a rota normalmente.
+  if (!position && (permissionStatus === "denied" || gpsState === "denied" || gpsState === "unavailable")) {
+    return (
+      <GpsDeniedScreen
+        mode="denied"
+        onRetry={requestGps}
+        onHome={() => { void navigate({ to: "/" }); }}
+        onManual={setManualLocation}
+        errorMessage={gpsErrorMsg || "Não conseguimos acessar sua localização. Selecione sua origem manualmente abaixo."}
+        requesting={gpsState === "requesting"}
+      />
+    );
   }
   const gpsFailed = (gpsState === "denied" || gpsState === "unavailable") && !!gpsErrorMsg;
 
