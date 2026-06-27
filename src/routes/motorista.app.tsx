@@ -1115,13 +1115,15 @@ function ActionButton({
    AVALIAÇÃO + RESUMO
    ============================================================ */
 function RatingScreen({
-  ride, passenger, stars, setStars, comment, setComment, submitting, submitted, onSubmit, onDismiss,
+  ride, passenger, stars, setStars, comment, setComment, submitting, submitted,
+  errorMessage, onSubmit, onDismiss, onSkip,
 }: {
   ride: RideRow; passenger: Passenger | null;
   stars: number; setStars: (n: number) => void;
   comment: string; setComment: (s: string) => void;
   submitting: boolean; submitted: boolean;
-  onSubmit: () => void; onDismiss: () => void;
+  errorMessage: string | null;
+  onSubmit: () => void; onDismiss: () => void; onSkip: () => void;
 }) {
   const total = Number(ride.final_price ?? ride.estimated_price ?? 0);
   const paymentLabel = ride.payment_method === "cash" ? "Dinheiro" : (ride.payment_method ?? "—");
