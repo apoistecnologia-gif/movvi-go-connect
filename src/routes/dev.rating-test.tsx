@@ -144,6 +144,7 @@ function RatingTestPage() {
 }
 
 export const Route = createFileRoute("/dev/rating-test")({
+  ssr: false,
   head: () => ({ meta: [{ title: "Rating Test Harness — MOVVI" }] }),
   component: RatingTestPage,
 });
