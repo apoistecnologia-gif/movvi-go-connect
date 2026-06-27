@@ -397,10 +397,19 @@ function DetailsDialog({ driver, onClose }: { driver: Driver | null; onClose: ()
           </Section>
 
           <Section title="Documentos">
+            {urlError && (
+              <p className="mb-2 rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                {urlError}
+              </p>
+            )}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <DocCard label="Selfie" url={urls.selfie_url} />
-              <DocCard label="CNH" url={urls.cnh_url} />
-              <DocCard label="Doc. Veículo" url={urls.vehicle_document_url} />
+              <DocCard label="Selfie" url={urls.selfie_url} rawPath={driver.selfie_url} />
+              <DocCard label="CNH" url={urls.cnh_url} rawPath={driver.cnh_url} />
+              <DocCard
+                label="Doc. Veículo"
+                url={urls.vehicle_document_url}
+                rawPath={driver.vehicle_document_url}
+              />
             </div>
           </Section>
 
@@ -496,12 +505,20 @@ function Row({ label, value }: { label: string; value: string | null }) {
   );
 }
 
-function DocCard({ label, url }: { label: string; url: string | null }) {
+function DocCard({
+  label,
+  url,
+  rawPath,
+}: {
+  label: string;
+  url: string | null;
+  rawPath?: string | null;
+}) {
   if (!url) {
     return (
       <div className="rounded-xl border border-dashed border-border bg-card/40 p-4 text-center text-xs text-muted-foreground">
         {label}
-        <div className="mt-2">Não enviado</div>
+        <div className="mt-2">{rawPath ? "Carregando..." : "Não enviado"}</div>
       </div>
     );
   }
