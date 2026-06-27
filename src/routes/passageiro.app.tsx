@@ -1207,7 +1207,8 @@ function PassageiroApp() {
 
   const inPreview = DEV_MODE && isDevelopmentEnvironment();
   return (
-    <div className="relative h-[100dvh] w-screen overflow-hidden bg-background text-foreground">
+    <div className="relative mx-auto h-[100dvh] w-full max-w-[430px] overflow-hidden bg-background text-foreground shadow-2xl sm:my-0">
+
       {inPreview && (
         <div
           className="pointer-events-none absolute inset-x-0 top-0 z-50 flex justify-center px-3 pt-[max(env(safe-area-inset-top),0px)]"
