@@ -1030,6 +1030,9 @@ function PassageiroApp() {
   useEffect(() => {
     if (!rideId) return;
     let active = true;
+    let pollTimer: number | null = null;
+    let subscribed = false;
+
     const load = async (tag: string) => {
       const { data, error } = await supabase
         .from("rides")
@@ -1042,9 +1045,7 @@ function PassageiroApp() {
         return;
       }
       if (data) {
-        console.log("[MOVVI PASSAGEIRO] corrida sincronizada (" + tag + "):", data.id, "status=", data.status, "driver_id=", data.driver_id);
         setRide((prev) => {
-          // não regredir um estado já avançado se o realtime entregou primeiro
           if (prev && prev.id === data.id && prev.status !== data.status) {
             console.log("[MOVVI PASSAGEIRO] status atualizou:", prev.status, "→", data.status);
           }
@@ -1052,7 +1053,21 @@ function PassageiroApp() {
         });
       }
     };
+
+    const stopPolling = () => {
+      if (pollTimer != null) {
+        window.clearInterval(pollTimer);
+        pollTimer = null;
+      }
+    };
+    const startPolling = () => {
+      if (pollTimer != null || !active) return;
+      console.log("[MOVVI PASSAGEIRO] fallback polling rides (realtime indisponível)");
+      pollTimer = window.setInterval(() => { void load("poll"); }, 5000);
+    };
+
     void load("init");
+
     const ch = supabase
       .channel(`ride-${rideId}`)
       .on(
@@ -1060,20 +1075,32 @@ function PassageiroApp() {
         { event: "UPDATE", schema: "public", table: "rides", filter: `id=eq.${rideId}` },
         (p) => {
           const next = p.new as RideRow;
-          console.log("[MOVVI PASSAGEIRO] realtime UPDATE rides:", next.id, "status=", next.status, "driver_id=", next.driver_id);
+          console.log("[MOVVI PASSAGEIRO] realtime UPDATE rides:", next.id, "status=", next.status);
           setRide(next);
         },
       )
       .subscribe((status) => {
         console.log("[MOVVI PASSAGEIRO] canal ride-" + rideId + " status:", status);
-        // após subscrever, recarrega para não perder updates ocorridos durante o handshake
-        if (status === "SUBSCRIBED") void load("subscribed");
+        if (status === "SUBSCRIBED") {
+          subscribed = true;
+          stopPolling();
+          // recarrega para capturar updates ocorridos durante o handshake
+          void load("subscribed");
+        } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+          subscribed = false;
+          startPolling();
+        }
       });
-    // fallback: enquanto procura motorista, faz polling curto para garantir transição
-    const poll = window.setInterval(() => { void load("poll"); }, 3500);
+
+    // Só liga polling se o canal não ficou SUBSCRIBED em 5s.
+    const handshakeGuard = window.setTimeout(() => {
+      if (!subscribed) startPolling();
+    }, 5000);
+
     return () => {
       active = false;
-      window.clearInterval(poll);
+      window.clearTimeout(handshakeGuard);
+      stopPolling();
       supabase.removeChannel(ch);
     };
   }, [rideId]);
@@ -1086,34 +1113,10 @@ function PassageiroApp() {
       return;
     }
     let cancelled = false;
-    // Carga inicial
-    supabase
-      .from("drivers")
-      .select("*")
-      .eq("user_id", driverId)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (!cancelled) setDriverInfo(data);
-      });
-    // Rastreamento em tempo real do motorista (Uber/99-style)
-    const ch = supabase
-      .channel(`driver-track-${driverId}`)
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "drivers", filter: `user_id=eq.${driverId}` },
-        (p) => {
-          const next = p.new as DriverRow;
-          console.log("[MOVVI PASSAGEIRO] motorista posição:", {
-            lat: next.current_lat,
-            lng: next.current_lng,
-            heading: next.current_heading,
-          });
-          setDriverInfo((prev) => ({ ...(prev ?? next), ...next }));
-        },
-      )
-      .subscribe();
-    // Fallback: reconsulta a cada 8s caso o realtime atrase
-    const poll = window.setInterval(() => {
+    let pollTimer: number | null = null;
+    let subscribed = false;
+
+    const load = () => {
       supabase
         .from("drivers")
         .select("*")
@@ -1122,10 +1125,49 @@ function PassageiroApp() {
         .then(({ data }) => {
           if (!cancelled && data) setDriverInfo((prev) => ({ ...(prev ?? data), ...data }));
         });
-    }, 8000);
+    };
+    const stopPolling = () => {
+      if (pollTimer != null) {
+        window.clearInterval(pollTimer);
+        pollTimer = null;
+      }
+    };
+    const startPolling = () => {
+      if (pollTimer != null || cancelled) return;
+      console.log("[MOVVI PASSAGEIRO] fallback polling motorista (realtime indisponível)");
+      pollTimer = window.setInterval(load, 15000);
+    };
+
+    load();
+
+    const ch = supabase
+      .channel(`driver-track-${driverId}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "drivers", filter: `user_id=eq.${driverId}` },
+        (p) => {
+          const next = p.new as DriverRow;
+          setDriverInfo((prev) => ({ ...(prev ?? next), ...next }));
+        },
+      )
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          subscribed = true;
+          stopPolling();
+        } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+          subscribed = false;
+          startPolling();
+        }
+      });
+
+    const handshakeGuard = window.setTimeout(() => {
+      if (!subscribed) startPolling();
+    }, 5000);
+
     return () => {
       cancelled = true;
-      window.clearInterval(poll);
+      window.clearTimeout(handshakeGuard);
+      stopPolling();
       supabase.removeChannel(ch);
     };
   }, [ride?.driver_id]);
