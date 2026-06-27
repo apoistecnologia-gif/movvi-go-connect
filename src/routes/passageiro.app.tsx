@@ -1955,9 +1955,10 @@ function SheetContent({
   const km = route ? route.distanceMeters / 1000 : 0;
   const min = route ? route.durationSeconds / 60 : 0;
 
+  const uiCategories = useUiCategories();
   const selectedCategory = useMemo(
-    () => UI_CATEGORIES.find((c) => c.key === selectedCategoryKey) ?? null,
-    [selectedCategoryKey],
+    () => uiCategories.find((c) => c.key === selectedCategoryKey) ?? null,
+    [uiCategories, selectedCategoryKey],
   );
   const selectedFare = route && selectedCategory
     ? estimateFare(selectedCategory.backend, km, min, tariffs)
@@ -2222,13 +2223,13 @@ function StepFlow({
 
   useEffect(() => {
     if (uiStage === "selecting_category") {
-      console.log("[MOVVI UI] exibindo categorias:", UI_CATEGORIES.map((c) => c.label));
+      console.log("[MOVVI UI] exibindo categorias:", uiCategories.map((c) => c.label));
     }
-  }, [uiStage]);
+  }, [uiStage, uiCategories]);
 
-  // Preço de prévia (categoria padrão = carro) para a Etapa 2
-  const previewFare = route
-    ? estimateFare(UI_CATEGORIES[0].backend, km, min, tariffs)
+  // Preço de prévia (primeira categoria visível) para a Etapa 2
+  const previewFare = route && uiCategories[0]
+    ? estimateFare(uiCategories[0].backend, km, min, tariffs)
     : null;
 
   return (
@@ -2406,7 +2407,7 @@ function RideCategorySelector({
       </div>
       <div className="-mx-4 mb-3 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <div className="flex snap-x snap-mandatory gap-2.5 pb-1">
-          {UI_CATEGORIES.map((c) => {
+          {uiCategories.map((c) => {
             const active = c.key === selectedCategoryKey;
             const fare = estimateFare(c.backend, km, min, tariffs);
             const Icon = c.icon;
