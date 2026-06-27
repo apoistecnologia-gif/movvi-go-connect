@@ -52,7 +52,8 @@ import {
   type RideCategory,
   type TariffMap,
 } from "@/lib/rideCategories";
-import { loadTariffs } from "@/lib/tariffs";
+import { useTariffs } from "@/hooks/useTariffs";
+import { UiCategoriesProvider, useUiCategories } from "@/lib/uiCategories";
 import { logGpsTelemetry } from "@/lib/gpsTelemetry";
 
 import type { Database } from "@/integrations/supabase/types";
@@ -309,7 +310,11 @@ function OriginAction({
 
 export const Route = createFileRoute("/passageiro/app")({
   head: () => ({ meta: [{ title: "MOVVI Drive — Passageiro" }] }),
-  component: PassageiroApp,
+  component: () => (
+    <UiCategoriesProvider>
+      <PassageiroApp />
+    </UiCategoriesProvider>
+  ),
   errorComponent: ({ error, reset }) => {
     console.error("[MOVVI] Erro na tela do passageiro:", error);
     const message = (error as Error)?.message ?? String(error ?? "Erro desconhecido");
@@ -384,13 +389,7 @@ type UiCategory = {
   backend: RideCategory;
   tagline: string;
 };
-const UI_CATEGORIES: UiCategory[] = [
-  { key: "carro",   label: "Carro",    icon: Car,     backend: "carros",  tagline: "Viagens urbanas com conforto" },
-  { key: "moto",    label: "Moto",     icon: Bike,    backend: "motos",   tagline: "Viagens rápidas e econômicas" },
-  { key: "entrega", label: "Entrega",  icon: Send,    backend: "envios",  tagline: "Envio de objetos e pequenos volumes" },
-  { key: "guincho", label: "Guincho",  icon: Truck,   backend: "guincho", tagline: "Remoção e transporte de veículos" },
-  { key: "mudanca", label: "Mudança",  icon: Box,     backend: "fretes",  tagline: "Transporte de móveis e cargas maiores" },
-];
+// UI_CATEGORIES agora vem do banco em realtime via `useUiCategories()` (lib/uiCategories.tsx).
 
 const fmtMin = (s: number) => `${Math.max(1, Math.round(s / 60))} min`;
 const fmtKm = (m: number) =>
@@ -539,28 +538,16 @@ function PassageiroApp() {
   const [route, setRoute] = useState<RouteResult | null>(null);
   const [passengerUiStage, setPassengerUiStage] = useState<PassengerUiStage>("selecting_destination");
   const [selectedCategoryKey, setSelectedCategoryKey] = useState<string | null>(null);
+  const uiCategories = useUiCategories();
   const selectedUiCategory = useMemo(
-    () => UI_CATEGORIES.find((c) => c.key === selectedCategoryKey) ?? null,
-    [selectedCategoryKey],
+    () => uiCategories.find((c) => c.key === selectedCategoryKey) ?? null,
+    [uiCategories, selectedCategoryKey],
   );
   const category: RideCategory = selectedUiCategory?.backend ?? "carros";
   const [recent, setRecent] = useState<Recent[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [tariffs, setTariffs] = useState<TariffMap>({});
-
-  /* ---------------------- tariffs (admin_settings) ---------------------- */
-  useEffect(() => {
-    let active = true;
-    loadTariffs()
-      .then((t) => {
-        if (active) setTariffs(t);
-      })
-      .catch((e) => console.warn("[MOVVI] loadTariffs falhou:", e));
-    return () => {
-      active = false;
-    };
-  }, []);
+  const { tariffs } = useTariffs();
 
   // ride lifecycle
   const [rideId, setRideId] = useState<string | null>(null);
@@ -1968,9 +1955,10 @@ function SheetContent({
   const km = route ? route.distanceMeters / 1000 : 0;
   const min = route ? route.durationSeconds / 60 : 0;
 
+  const uiCategories = useUiCategories();
   const selectedCategory = useMemo(
-    () => UI_CATEGORIES.find((c) => c.key === selectedCategoryKey) ?? null,
-    [selectedCategoryKey],
+    () => uiCategories.find((c) => c.key === selectedCategoryKey) ?? null,
+    [uiCategories, selectedCategoryKey],
   );
   const selectedFare = route && selectedCategory
     ? estimateFare(selectedCategory.backend, km, min, tariffs)
@@ -2225,6 +2213,7 @@ function StepFlow({
   onSubmit,
   onExpandSheet,
 }: StepFlowProps) {
+  const uiCategories = useUiCategories();
   useEffect(() => {
     if (route && uiStage === "selecting_destination") setUiStage("route_preview");
   }, [route, uiStage, setUiStage]);
@@ -2235,13 +2224,13 @@ function StepFlow({
 
   useEffect(() => {
     if (uiStage === "selecting_category") {
-      console.log("[MOVVI UI] exibindo categorias:", UI_CATEGORIES.map((c) => c.label));
+      console.log("[MOVVI UI] exibindo categorias:", uiCategories.map((c) => c.label));
     }
-  }, [uiStage]);
+  }, [uiStage, uiCategories]);
 
-  // Preço de prévia (categoria padrão = carro) para a Etapa 2
-  const previewFare = route
-    ? estimateFare(UI_CATEGORIES[0].backend, km, min, tariffs)
+  // Preço de prévia (primeira categoria visível) para a Etapa 2
+  const previewFare = route && uiCategories[0]
+    ? estimateFare(uiCategories[0].backend, km, min, tariffs)
     : null;
 
   return (
@@ -2412,6 +2401,7 @@ function RideCategorySelector({
   selectedCategoryKey: string | null;
   onSelect: (category: UiCategory) => void;
 }) {
+  const uiCategories = useUiCategories();
   return (
     <div className="animate-in fade-in slide-in-from-bottom-2 duration-200">
       <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
@@ -2419,7 +2409,7 @@ function RideCategorySelector({
       </div>
       <div className="-mx-4 mb-3 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <div className="flex snap-x snap-mandatory gap-2.5 pb-1">
-          {UI_CATEGORIES.map((c) => {
+          {uiCategories.map((c) => {
             const active = c.key === selectedCategoryKey;
             const fare = estimateFare(c.backend, km, min, tariffs);
             const Icon = c.icon;

@@ -7,42 +7,64 @@ import {
 } from "@/lib/rideCategories";
 
 /**
- * Carrega as tarifas configuradas pelo painel admin (`admin_settings.tariff_*`).
- * Cada linha é um JSONB do tipo:
- *   { "base": 5, "per_km": 2.2, "per_min": 0.35, "min": 8, ... }
+ * Carrega tarifas a partir da tabela `tariff_rules` (fonte oficial do admin).
+ * Cada linha tem `category_key` + `field_key` + `value` numérico.
+ *
+ * Mapeia para o tipo `Tariff` legado usado no cálculo do passageiro:
+ *   base ← base_fare | base
+ *   perKm ← per_km
+ *   perMin ← per_min
+ *   min ← min_fare | min
  *
  * Campos faltantes caem para o DEV_FALLBACK da categoria.
  */
 export async function loadTariffs(): Promise<TariffMap> {
   const { data, error } = await supabase
-    .from("admin_settings")
-    .select("key,value")
-    .like("key", "tariff_%");
+    .from("tariff_rules")
+    .select("category_key, field_key, value");
 
   if (error) {
-    console.warn("[MOVVI] Falha ao carregar tarifas, usando fallback dev:", error.message);
+    console.warn("[MOVVI] Falha ao carregar tariff_rules, usando fallback dev:", error.message);
     return { ...DEV_FALLBACK_TARIFFS };
   }
 
-  const out: TariffMap = {};
+  const grouped: Record<string, Record<string, number>> = {};
   for (const row of data ?? []) {
-    const key = row.key.replace(/^tariff_/, "") as RideCategory;
-    if (!(key in DEV_FALLBACK_TARIFFS)) continue;
-    const v = (row.value ?? {}) as Record<string, unknown>;
-    const num = (x: unknown, fb: number) =>
-      typeof x === "number" && Number.isFinite(x) ? x : fb;
-    const fb = DEV_FALLBACK_TARIFFS[key];
-    const tariff: Tariff = {
-      base: num(v.base, fb.base),
-      perKm: num(v.per_km ?? v.perKm, fb.perKm),
-      perMin: num(v.per_min ?? v.perMin, fb.perMin),
-      min: num(v.min, fb.min),
-    };
-    out[key] = tariff;
+    const cat = String(row.category_key);
+    const field = String(row.field_key);
+    const value = Number(row.value);
+    if (!Number.isFinite(value)) continue;
+    (grouped[cat] ??= {})[field] = value;
   }
-  // garante que todas as categorias tenham valor
+
+  const out: TariffMap = {};
   for (const k of Object.keys(DEV_FALLBACK_TARIFFS) as RideCategory[]) {
-    if (!out[k]) out[k] = DEV_FALLBACK_TARIFFS[k];
+    const g = grouped[k] ?? {};
+    const fb = DEV_FALLBACK_TARIFFS[k];
+    const tariff: Tariff = {
+      base: g.base_fare ?? g.base ?? fb.base,
+      perKm: g.per_km ?? fb.perKm,
+      perMin: g.per_min ?? fb.perMin,
+      min: g.min_fare ?? g.min ?? fb.min,
+    };
+    out[k] = tariff;
   }
   return out;
+}
+
+/** Retorna o mapa bruto categoria → { field_key: value } para uso no admin de preços. */
+export async function loadTariffRulesRaw(): Promise<Record<string, Record<string, number>>> {
+  const { data, error } = await supabase
+    .from("tariff_rules")
+    .select("category_key, field_key, value");
+  if (error) throw error;
+  const grouped: Record<string, Record<string, number>> = {};
+  for (const row of data ?? []) {
+    const cat = String(row.category_key);
+    const field = String(row.field_key);
+    const value = Number(row.value);
+    if (!Number.isFinite(value)) continue;
+    (grouped[cat] ??= {})[field] = value;
+  }
+  return grouped;
 }
