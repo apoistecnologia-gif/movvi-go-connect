@@ -293,6 +293,7 @@ function RideDetail({
                 <Info label="Aval. motorista" v={ride.driver_rating ? `${ride.driver_rating}/5` : "—"} />
                 <Info label="Aval. passageiro" v={ride.passenger_rating ? `${ride.passenger_rating}/5` : "—"} />
                 <Info label="Motorista" v={ride.driver_name} />
+                <Info label="PIN de segurança" v={ride.safety_code ?? "—"} />
               </CardContent>
             </Card>
             <Card>
