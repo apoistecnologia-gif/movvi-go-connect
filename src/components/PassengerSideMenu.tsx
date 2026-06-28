@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "@tanstack/react-router";
-import { Bell, ClipboardList, HelpCircle, Info, Loader2, Lock, Mail, Phone, Save, Settings, User as UserIcon, LogOut } from "lucide-react";
+import { Bell, ClipboardList, FileText, HelpCircle, Info, Loader2, Lock, Mail, Phone, Save, Settings, Shield, User as UserIcon, LogOut } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -280,6 +280,22 @@ export function PassengerSideMenu({ open, onOpenChange, onLogout }: Props) {
                 >
                   <Settings className="h-4 w-4 text-primary" />
                   Configurações
+                </Link>
+                <Link
+                  to="/passageiro/termos"
+                  onClick={() => onOpenChange(false)}
+                  className="flex items-center gap-3 rounded-lg border border-border bg-card/60 px-3 py-2.5 text-sm font-medium text-foreground transition hover:bg-accent/40 active:scale-[0.99]"
+                >
+                  <FileText className="h-4 w-4 text-primary" />
+                  Termos de Uso
+                </Link>
+                <Link
+                  to="/passageiro/privacidade"
+                  onClick={() => onOpenChange(false)}
+                  className="flex items-center gap-3 rounded-lg border border-border bg-card/60 px-3 py-2.5 text-sm font-medium text-foreground transition hover:bg-accent/40 active:scale-[0.99]"
+                >
+                  <Shield className="h-4 w-4 text-primary" />
+                  Política de Privacidade
                 </Link>
 
                 {onLogout && (
