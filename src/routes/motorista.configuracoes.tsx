@@ -72,16 +72,93 @@ function DriverSettingsPage() {
     navigate({ to: "/motorista/login" });
   }
 
+  const [reqNotif, setReqNotif] = useState(false);
+  const [reqLoc, setReqLoc] = useState(false);
+  const [notifState, setNotifState] = useState<NotificationPermission | "unsupported" | null>(null);
+  const [locState, setLocState] = useState<PermissionState | "unsupported" | null>(null);
+
+  useEffect(() => {
+    if (typeof Notification !== "undefined") setNotifState(Notification.permission);
+    else setNotifState("unsupported");
+    if (navigator.permissions && (navigator.permissions as any).query) {
+      navigator.permissions
+        .query({ name: "geolocation" as PermissionName })
+        .then((s) => {
+          setLocState(s.state);
+          s.onchange = () => setLocState(s.state);
+        })
+        .catch(() => setLocState(null));
+    } else if (!navigator.geolocation) setLocState("unsupported");
+  }, []);
+
   async function requestNotifPermission() {
-    const r = await requestPushPermission();
-    toast.info(r === "granted" ? "Notificações ativadas." : "Permissão negada pelo navegador.");
+    if (reqNotif) return;
+    setReqNotif(true);
+    try {
+      if (typeof Notification === "undefined") {
+        toast.error("Este navegador não suporta notificações.");
+        setNotifState("unsupported");
+        return;
+      }
+      if (Notification.permission === "denied") {
+        toast.error("Notificações bloqueadas. Ative nas configurações do navegador (cadeado ao lado do endereço).");
+        setNotifState("denied");
+        return;
+      }
+      const r = await requestPushPermission();
+      setNotifState(r);
+      if (r === "granted") toast.success("Notificações permitidas com sucesso.");
+      else if (r === "denied") toast.error("Permissão negada. Ative nas configurações do navegador.");
+      else if (r === "unsupported") toast.error("Este navegador não suporta notificações.");
+      else toast.message("Solicitação de notificações fechada.");
+      if (userId) {
+        try { await saveDriverPrefs(userId, { ...prefs, push: r === "granted" }); } catch {}
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao solicitar notificações.");
+    } finally { setReqNotif(false); }
   }
+
   async function requestLocPermission() {
-    if (!navigator.geolocation) { toast.error("GPS indisponível."); return; }
-    navigator.geolocation.getCurrentPosition(
-      () => toast.success("Localização permitida."),
-      () => toast.error("Permissão negada."),
-    );
+    if (reqLoc) return;
+    setReqLoc(true);
+    try {
+      if (!navigator.geolocation) {
+        toast.error("Geolocalização não suportada neste navegador.");
+        setLocState("unsupported");
+        return;
+      }
+      try {
+        if (navigator.permissions && (navigator.permissions as any).query) {
+          const s = await navigator.permissions.query({ name: "geolocation" as PermissionName });
+          if (s.state === "denied") {
+            toast.error("Localização bloqueada. Ative nas configurações do navegador (cadeado ao lado do endereço).");
+            setLocState("denied");
+            return;
+          }
+        }
+      } catch { /* segue p/ getCurrentPosition */ }
+
+      await new Promise<void>((resolve) => {
+        navigator.geolocation.getCurrentPosition(
+          () => { toast.success("Localização permitida com sucesso."); setLocState("granted"); resolve(); },
+          (err) => {
+            if (err.code === err.PERMISSION_DENIED) {
+              toast.error("Permissão de localização negada. Ative nas configurações do navegador.");
+              setLocState("denied");
+            } else if (err.code === err.POSITION_UNAVAILABLE) {
+              toast.error("Localização indisponível no momento.");
+            } else if (err.code === err.TIMEOUT) {
+              toast.error("Tempo esgotado ao obter localização.");
+            } else {
+              toast.error("Erro ao obter localização.");
+            }
+            resolve();
+          },
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
+        );
+      });
+    } finally { setReqLoc(false); }
   }
 
   return (
@@ -180,8 +257,14 @@ function DriverSettingsPage() {
               <Card>
                 <CardHeader><CardTitle className="flex items-center gap-2 text-base"><Shield className="h-4 w-4 text-primary" /> Privacidade & Conta</CardTitle></CardHeader>
                 <CardContent className="space-y-2">
-                  <Button variant="outline" onClick={requestLocPermission} className="w-full justify-start">Permissão de localização</Button>
-                  <Button variant="outline" onClick={requestNotifPermission} className="w-full justify-start">Permissão de notificações</Button>
+                  <Button type="button" variant="outline" onClick={requestLocPermission} disabled={reqLoc} className="w-full justify-between active:scale-[0.98] transition">
+                    <span className="flex items-center gap-2">{reqLoc && <Loader2 className="h-4 w-4 animate-spin" />} Permissão de localização</span>
+                    {locState && <span className="text-xs text-muted-foreground">{locState === "granted" ? "Permitida" : locState === "denied" ? "Bloqueada" : locState === "unsupported" ? "Indisponível" : "Pendente"}</span>}
+                  </Button>
+                  <Button type="button" variant="outline" onClick={requestNotifPermission} disabled={reqNotif} className="w-full justify-between active:scale-[0.98] transition">
+                    <span className="flex items-center gap-2">{reqNotif && <Loader2 className="h-4 w-4 animate-spin" />} Permissão de notificações</span>
+                    {notifState && <span className="text-xs text-muted-foreground">{notifState === "granted" ? "Permitida" : notifState === "denied" ? "Bloqueada" : notifState === "unsupported" ? "Indisponível" : "Pendente"}</span>}
+                  </Button>
                   <Button variant="outline" onClick={handleClearCache} className="w-full justify-start"><Trash2 className="mr-2 h-4 w-4" /> Limpar cache</Button>
                   <Button asChild variant="outline" className="w-full justify-start"><Link to="/passageiro/termos">Termos de Uso</Link></Button>
                   <Button asChild variant="outline" className="w-full justify-start"><Link to="/passageiro/privacidade">Política de Privacidade</Link></Button>
