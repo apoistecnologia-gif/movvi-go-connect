@@ -864,7 +864,7 @@ function MotoristaApp() {
     <div className="relative h-[100dvh] w-screen overflow-hidden bg-background text-foreground">
       {/* MAPA */}
       <div className="absolute inset-0">
-        <MovviMap center={center} zoom={position ? 16 : 13} height="100%"
+        <MovviMap center={stableMapCenter} zoom={stableMapZoom} height="100%"
           onLoad={(m) => { mapRef.current = m; }}>
           {position && (
             <Marker position={position} icon={{
