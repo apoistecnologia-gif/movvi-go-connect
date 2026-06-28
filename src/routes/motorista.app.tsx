@@ -31,7 +31,6 @@ import { loadDriverProfile } from "@/lib/driverProfile";
 import { isDevelopmentEnvironment } from "@/lib/environment";
 import { computeRoute } from "@/lib/routes.functions";
 import {
-
   aceitarCorrida,
   recusarCorrida,
   informarChegada,
@@ -39,7 +38,9 @@ import {
   finalizarCorrida,
   cancelarPeloMotorista,
   avaliarPassageiro,
+  type RideStatus,
 } from "@/lib/rideLifecycle";
+import { notifyRideStatus } from "@/lib/rideStatusToast";
 import { formatBRL } from "@/lib/rideCategories";
 import type { Database } from "@/integrations/supabase/types";
 
