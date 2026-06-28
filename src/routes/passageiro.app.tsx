@@ -1118,7 +1118,7 @@ function PassageiroApp() {
       searchInputRef.current?.blur();
       await calcRoute(point);
     } catch (e) {
-      console.error("[MOVVI] pickSuggestion falhou:", e);
+      console.warn("[MOVVI] pickSuggestion falhou:", e);
       setError(e instanceof Error ? e.message : "Falha ao buscar o local.");
     }
   }
