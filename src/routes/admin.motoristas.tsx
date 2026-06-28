@@ -342,6 +342,9 @@ function DriverCard({
           <Button size="sm" variant="outline" onClick={onDetails}>
             <Eye className="mr-1 h-4 w-4" /> Detalhes
           </Button>
+          <Button size="sm" variant="outline" onClick={onSubscription}>
+            <CreditCard className="mr-1 h-4 w-4" /> Assinatura
+          </Button>
           {driver.approval_status !== "aprovado" && (
             <Button size="sm" onClick={onApprove} disabled={busy}>
               <CheckCircle2 className="mr-1 h-4 w-4" /> Aprovar
