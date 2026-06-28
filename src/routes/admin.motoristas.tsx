@@ -47,6 +47,19 @@ export const Route = createFileRoute("/admin/motoristas")({
 
 type Driver = Database["public"]["Tables"]["drivers"]["Row"];
 type Status = Driver["approval_status"];
+type SubStatus = "active" | "inactive" | "pending" | "overdue" | "suspended";
+
+const SUB_STATUSES: { value: SubStatus; label: string; tone: string }[] = [
+  { value: "active", label: "Ativa", tone: "bg-primary/15 text-primary border-primary/30" },
+  { value: "pending", label: "Pendente", tone: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30" },
+  { value: "overdue", label: "Em atraso", tone: "bg-orange-500/15 text-orange-400 border-orange-500/30" },
+  { value: "inactive", label: "Inativa", tone: "bg-muted text-muted-foreground border-border" },
+  { value: "suspended", label: "Suspensa", tone: "bg-destructive/15 text-destructive border-destructive/30" },
+];
+
+function subMeta(s: string | null | undefined) {
+  return SUB_STATUSES.find((x) => x.value === s) ?? { value: "inactive" as SubStatus, label: "—", tone: "bg-muted text-muted-foreground border-border" };
+}
 
 const TAB_META: Record<Status, { label: string; tone: string }> = {
   em_analise: { label: "Em análise", tone: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30" },
