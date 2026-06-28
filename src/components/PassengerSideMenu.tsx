@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "@tanstack/react-router";
-import { Loader2, Lock, Mail, Phone, Save, Settings, User as UserIcon, LogOut } from "lucide-react";
+import { Bell, ClipboardList, HelpCircle, Info, Loader2, Lock, Mail, Phone, Save, Settings, User as UserIcon, LogOut } from "lucide-react";
 import {
   Sheet,
   SheetContent,
