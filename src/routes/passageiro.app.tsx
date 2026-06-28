@@ -14,6 +14,7 @@ import {
   Crosshair,
   LogOut,
   MapPin,
+  Menu,
   Moon,
   Navigation2,
   Package,
@@ -30,6 +31,7 @@ import {
   Zap,
   type LucideIcon,
 } from "lucide-react";
+import { PassengerSideMenu } from "@/components/PassengerSideMenu";
 import { MovviMap } from "@/components/MovviMap";
 import { MovviSheet, type MovviSheetHandle } from "@/components/MovviSheet";
 import { supabase } from "@/integrations/supabase/client";
