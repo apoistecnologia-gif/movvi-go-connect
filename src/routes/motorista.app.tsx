@@ -44,6 +44,8 @@ import {
   type RideStatus,
 } from "@/lib/rideLifecycle";
 import { notifyRideStatus } from "@/lib/rideStatusToast";
+import { toast } from "sonner";
+
 import { requestPushPermission } from "@/lib/pushNotifications";
 import { formatBRL } from "@/lib/rideCategories";
 import type { Database } from "@/integrations/supabase/types";
