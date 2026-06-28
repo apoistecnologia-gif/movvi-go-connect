@@ -640,10 +640,39 @@ function PassageiroApp() {
 
   /* ---------------------- auth ---------------------- */
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
+    let cancelled = false;
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (cancelled) return;
       if (!data.user) {
         navigate({ to: "/passageiro/login" });
         return;
+      }
+      // Bloqueio/suspensão aplicado pelo Admin Panel — fonte: public.users
+      try {
+        const { data: u } = await supabase
+          .from("users")
+          .select("blocked_at, suspended_at, block_reason")
+          .eq("auth_user_id", data.user.id)
+          .maybeSingle();
+        if (u?.blocked_at) {
+          toast.error(
+            u.block_reason
+              ? `Conta bloqueada: ${u.block_reason}`
+              : "Sua conta foi bloqueada. Entre em contato com o suporte.",
+            { duration: 8000 },
+          );
+          await supabase.auth.signOut();
+          navigate({ to: "/passageiro/login" });
+          return;
+        }
+        if (u?.suspended_at) {
+          toast.error("Sua conta está suspensa temporariamente.", { duration: 8000 });
+          await supabase.auth.signOut();
+          navigate({ to: "/passageiro/login" });
+          return;
+        }
+      } catch {
+        /* fallback: deixa entrar; bloqueio será reavaliado em ações */
       }
       setUserId(data.user.id);
       const meta = (data.user.user_metadata ?? {}) as Record<string, unknown>;
@@ -654,7 +683,33 @@ function PassageiroApp() {
           "Passageiro",
       );
     });
+    return () => {
+      cancelled = true;
+    };
   }, [navigate]);
+
+  // Realtime: se o admin bloquear o passageiro durante a sessão, encerra na hora.
+  useEffect(() => {
+    if (!userId) return;
+    const ch = supabase
+      .channel(`user-self-${userId}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "users", filter: `auth_user_id=eq.${userId}` },
+        async (payload) => {
+          const row = payload.new as { blocked_at?: string | null; suspended_at?: string | null };
+          if (row.blocked_at || row.suspended_at) {
+            toast.error("Sua conta foi bloqueada/suspensa pelo suporte.", { duration: 8000 });
+            await supabase.auth.signOut();
+            navigate({ to: "/passageiro/login" });
+          }
+        },
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(ch);
+    };
+  }, [userId, navigate]);
 
   /* ---------------------- recents (localStorage) ---------------------- */
   useEffect(() => {
