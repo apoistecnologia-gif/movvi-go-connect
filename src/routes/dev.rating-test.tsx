@@ -1,7 +1,8 @@
 import { createFileRoute, useNavigate, useLocation } from "@tanstack/react-router";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Star } from "lucide-react";
 import { shouldShowRating, canSubmitRating, type RatingSide } from "@/lib/ratingFlow";
+import { isDevelopmentEnvironment } from "@/lib/environment";
 
 /**
  * Harness E2E exclusivamente para Playwright validar o fluxo de avaliação.
