@@ -136,6 +136,19 @@ function MotoristaApp() {
   useEffect(() => { incomingRef.current = incoming; }, [incoming]);
   useEffect(() => { ratingRef.current = ratingRide; }, [ratingRide]);
 
+  // Toast em cada transição de status da corrida ativa (sem reload)
+  const lastNotifiedStatusRef = useRef<RideStatus | null>(null);
+  useEffect(() => {
+    const s = active?.status as RideStatus | undefined;
+    if (!s) { lastNotifiedStatusRef.current = null; return; }
+    if (lastNotifiedStatusRef.current === s) return;
+    const isFirst = lastNotifiedStatusRef.current === null;
+    lastNotifiedStatusRef.current = s;
+    if (isFirst) return; // não toasta ao restaurar uma corrida já em andamento
+    notifyRideStatus("motorista", s);
+  }, [active?.status]);
+
+
   useDriverBroadcast(userId, online, position);
 
   // sessão + aprovação + perfil
