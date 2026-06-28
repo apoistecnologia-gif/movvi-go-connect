@@ -93,3 +93,45 @@ export const MOVVI_DARK_MAP_STYLE: google.maps.MapTypeStyle[] = [
   { featureType: "water", elementType: "geometry", stylers: [{ color: "#0a1626" }] },
   { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#4a5a73" }] },
 ];
+
+// ─── Helpers seguros para uso ANTES de o SDK terminar de carregar ─────────
+// O JSX pai de <MovviMap> é avaliado em todo render, mesmo enquanto
+// `isLoaded` ainda é falso. Acessar `google.maps.Point` / `SymbolPath`
+// diretamente nesses pontos lança "google is not defined" /
+// "google.maps.Point is not a constructor". Use os helpers abaixo para
+// construir ícones de forma resiliente — eles devolvem `undefined` quando
+// o SDK ainda não está pronto e o Marker simplesmente cai no ícone padrão
+// no primeiro render; assim que o SDK carrega e o componente re-renderiza,
+// o ícone correto aparece.
+
+export function isGoogleMapsReady(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    typeof (window as unknown as { google?: { maps?: { Point?: unknown } } }).google
+      ?.maps?.Point === "function"
+  );
+}
+
+export function safePoint(x: number, y: number): google.maps.Point | undefined {
+  return isGoogleMapsReady() ? new google.maps.Point(x, y) : undefined;
+}
+
+// SymbolPath é um enum numérico. CIRCLE === 0, FORWARD_CLOSED_ARROW === 1,
+// BACKWARD_CLOSED_ARROW === 2. Devolvemos o valor numérico quando o SDK
+// ainda não respondeu para que `icon.path` continue válido.
+const SYMBOL_PATH_FALLBACK: Record<string, number> = {
+  CIRCLE: 0,
+  FORWARD_CLOSED_ARROW: 1,
+  BACKWARD_CLOSED_ARROW: 2,
+  FORWARD_OPEN_ARROW: 3,
+  BACKWARD_OPEN_ARROW: 4,
+};
+
+export function safeSymbol(
+  name: keyof typeof google.maps.SymbolPath,
+): google.maps.SymbolPath | number {
+  if (isGoogleMapsReady() && google.maps.SymbolPath) {
+    return google.maps.SymbolPath[name];
+  }
+  return SYMBOL_PATH_FALLBACK[name as string] ?? 0;
+}
