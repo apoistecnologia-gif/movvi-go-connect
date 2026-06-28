@@ -2011,6 +2011,54 @@ function PassageiroApp() {
 
 /* (Grupos antigos removidos — agora exibimos as 5 categorias flat conforme spec MOVVI.) */
 
+function FavoritesStrip({ onPick }: { onPick: (point: LatLng, label: string) => void }) {
+  const [items, setItems] = useState<FavoritePlace[]>([]);
+  useEffect(() => {
+    let alive = true;
+    listFavorites()
+      .then((r) => alive && setItems(r))
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const navigate = useNavigate();
+
+  return (
+    <div className="-mx-1 mb-2 flex items-center gap-2 overflow-x-auto px-1 pb-1">
+      {items.slice(0, 6).map((f) => {
+        const Icon = f.kind === "home" ? HomeIcon : f.kind === "work" ? Briefcase : Heart;
+        const color =
+          f.kind === "home"
+            ? "text-[#8DD92B]"
+            : f.kind === "work"
+              ? "text-blue-400"
+              : "text-pink-400";
+        return (
+          <button
+            key={f.id}
+            type="button"
+            onClick={() => onPick({ lat: f.lat, lng: f.lng }, f.address)}
+            className="flex shrink-0 items-center gap-2 rounded-full border border-border/60 bg-background/60 px-3 py-2 text-xs font-semibold transition hover:border-primary/50"
+          >
+            <Icon className={`h-4 w-4 ${color}`} />
+            <span className="max-w-[140px] truncate">{f.label}</span>
+          </button>
+        );
+      })}
+      <button
+        type="button"
+        onClick={() => navigate({ to: "/passageiro/favoritos" })}
+        className="flex shrink-0 items-center gap-2 rounded-full border border-dashed border-border/60 px-3 py-2 text-xs font-semibold text-muted-foreground transition hover:border-primary/50 hover:text-foreground"
+      >
+        <Heart className="h-4 w-4" />
+        <span>{items.length === 0 ? "Adicionar favoritos" : "Gerenciar"}</span>
+      </button>
+    </div>
+  );
+}
+
 function SheetContent({
   geo,
   addressStatus,
