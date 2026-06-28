@@ -1,5 +1,6 @@
 import { toast } from "sonner";
 import type { RideStatus } from "@/lib/rideLifecycle";
+import { showPush } from "@/lib/pushNotifications";
 
 type Audience = "passageiro" | "motorista";
 
