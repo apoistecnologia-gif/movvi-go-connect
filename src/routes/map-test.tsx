@@ -17,6 +17,11 @@ export const Route = createFileRoute("/map-test")({
 });
 
 function MapTest() {
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (!isDevelopmentEnvironment()) void navigate({ to: "/" });
+  }, [navigate]);
+  if (!isDevelopmentEnvironment()) return null;
   const hasKey = Boolean(GOOGLE_MAPS_API_KEY);
 
   return (
