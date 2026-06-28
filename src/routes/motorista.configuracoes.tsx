@@ -257,8 +257,14 @@ function DriverSettingsPage() {
               <Card>
                 <CardHeader><CardTitle className="flex items-center gap-2 text-base"><Shield className="h-4 w-4 text-primary" /> Privacidade & Conta</CardTitle></CardHeader>
                 <CardContent className="space-y-2">
-                  <Button variant="outline" onClick={requestLocPermission} className="w-full justify-start">Permissão de localização</Button>
-                  <Button variant="outline" onClick={requestNotifPermission} className="w-full justify-start">Permissão de notificações</Button>
+                  <Button type="button" variant="outline" onClick={requestLocPermission} disabled={reqLoc} className="w-full justify-between active:scale-[0.98] transition">
+                    <span className="flex items-center gap-2">{reqLoc && <Loader2 className="h-4 w-4 animate-spin" />} Permissão de localização</span>
+                    {locState && <span className="text-xs text-muted-foreground">{locState === "granted" ? "Permitida" : locState === "denied" ? "Bloqueada" : locState === "unsupported" ? "Indisponível" : "Pendente"}</span>}
+                  </Button>
+                  <Button type="button" variant="outline" onClick={requestNotifPermission} disabled={reqNotif} className="w-full justify-between active:scale-[0.98] transition">
+                    <span className="flex items-center gap-2">{reqNotif && <Loader2 className="h-4 w-4 animate-spin" />} Permissão de notificações</span>
+                    {notifState && <span className="text-xs text-muted-foreground">{notifState === "granted" ? "Permitida" : notifState === "denied" ? "Bloqueada" : notifState === "unsupported" ? "Indisponível" : "Pendente"}</span>}
+                  </Button>
                   <Button variant="outline" onClick={handleClearCache} className="w-full justify-start"><Trash2 className="mr-2 h-4 w-4" /> Limpar cache</Button>
                   <Button asChild variant="outline" className="w-full justify-start"><Link to="/passageiro/termos">Termos de Uso</Link></Button>
                   <Button asChild variant="outline" className="w-full justify-start"><Link to="/passageiro/privacidade">Política de Privacidade</Link></Button>
