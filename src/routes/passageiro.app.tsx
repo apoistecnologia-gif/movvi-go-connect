@@ -50,6 +50,7 @@ import { computeRoute, type RouteResult } from "@/lib/routes.functions";
 import { reverseGeocode, type GeocodeResult } from "@/lib/geocode.functions";
 import { criarCorrida, cancelarPeloPassageiro, redispatchRide, diagnoseDispatch, avaliarMotorista, type RideStatus } from "@/lib/rideLifecycle";
 import { notifyRideStatus } from "@/lib/rideStatusToast";
+import { toast } from "sonner";
 import { requestPushPermission } from "@/lib/pushNotifications";
 import { useNearbyDrivers } from "@/hooks/useNearbyDrivers";
 import {
