@@ -12,7 +12,7 @@ import {
   FileText, ShieldCheck, LifeBuoy, Info, LogOut, Loader2, Save,
 } from "lucide-react";
 import { toast } from "sonner";
-import { requestNotificationPermission } from "@/lib/pushNotifications";
+import { requestPushPermission } from "@/lib/pushNotifications";
 
 export const Route = createFileRoute("/passageiro/configuracoes")({
   head: () => ({ meta: [{ title: "Configurações — MOVVI DRIVE" }] }),
