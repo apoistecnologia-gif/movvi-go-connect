@@ -1971,10 +1971,14 @@ function PassageiroApp() {
         (phase === "motorista_a_caminho" ||
           phase === "motorista_chegou" ||
           phase === "em_viagem") && (
-          <MovviSheet snaps={[40, 65]} initial={40}>
+          <MovviSheet
+            snaps={[60, 90]}
+            initial={ride.safety_code && phase !== "em_viagem" ? 75 : 60}
+          >
             <DriverEnRoute ride={ride} driver={rideDriverInfo} onCancel={cancelRide} />
           </MovviSheet>
         )}
+
 
       {ride && phase === "finalizada" && !ride.passenger_rated_at && (
         <MovviSheet snaps={[70]} initial={70}>
