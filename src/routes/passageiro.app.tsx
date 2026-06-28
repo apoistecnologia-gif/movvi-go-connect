@@ -44,7 +44,8 @@ import { DEV_MODE, isDevelopmentEnvironment } from "@/lib/environment";
 
 import { computeRoute, type RouteResult } from "@/lib/routes.functions";
 import { reverseGeocode, type GeocodeResult } from "@/lib/geocode.functions";
-import { criarCorrida, cancelarPeloPassageiro, redispatchRide, diagnoseDispatch, avaliarMotorista } from "@/lib/rideLifecycle";
+import { criarCorrida, cancelarPeloPassageiro, redispatchRide, diagnoseDispatch, avaliarMotorista, type RideStatus } from "@/lib/rideLifecycle";
+import { notifyRideStatus } from "@/lib/rideStatusToast";
 import { useNearbyDrivers } from "@/hooks/useNearbyDrivers";
 import {
   RIDE_CATEGORIES,
@@ -554,6 +555,19 @@ function PassageiroApp() {
   const [rideId, setRideId] = useState<string | null>(null);
   const [ride, setRide] = useState<RideRow | null>(null);
   const [driverInfo, setDriverInfo] = useState<DriverRow | null>(null);
+
+  // Toast em cada transição de status (sem reload)
+  const lastNotifiedStatusRef = useRef<RideStatus | null>(null);
+  useEffect(() => {
+    const s = ride?.status as RideStatus | undefined;
+    if (!s) { lastNotifiedStatusRef.current = null; return; }
+    if (lastNotifiedStatusRef.current === s) return;
+    // Pula a primeira leitura ao restaurar uma corrida já em andamento, exceto pelo "procurar_motorista".
+    const isFirst = lastNotifiedStatusRef.current === null;
+    lastNotifiedStatusRef.current = s;
+    if (isFirst && s !== "procurar_motorista") return;
+    notifyRideStatus("passageiro", s);
+  }, [ride?.status]);
 
   const mapRef = useRef<google.maps.Map | null>(null);
   const sessionTokenRef =
