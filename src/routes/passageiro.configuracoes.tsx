@@ -45,6 +45,7 @@ const DEFAULT_PREFS: Prefs = {
 
 function ConfiguracoesPassageiro() {
   const navigate = useNavigate();
+  const { mode: themeMode, setMode: setThemeMode } = useTheme();
   const [userId, setUserId] = useState<string | null>(null);
   const [prefs, setPrefs] = useState<Prefs>(DEFAULT_PREFS);
   const [loading, setLoading] = useState(true);
@@ -81,9 +82,12 @@ function ConfiguracoesPassageiro() {
     }
   }, []);
 
+  // Keep local prefs.theme in sync with active theme mode (provider is source of truth)
   useEffect(() => {
-    applyTheme(prefs.theme);
-  }, [prefs.theme]);
+    if (prefs.theme !== themeMode) setPrefs((p) => ({ ...p, theme: themeMode }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [themeMode]);
+
 
   async function save(next: Prefs) {
     setPrefs(next);
