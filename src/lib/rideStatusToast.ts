@@ -41,10 +41,13 @@ export function notifyRideStatus(audience: Audience, status: RideStatus) {
     : toast.info;
   fn(n.title, n.description ? { description: n.description } : undefined);
 
-  // Background push: only fires when the document is hidden.
+  // Background push: only fires when the document is hidden. Tapping the
+  // notification opens the correct ride screen (passenger or driver app).
+  const deepLink = audience === "passageiro" ? "/passageiro/app" : "/motorista/app";
   showPush({
     title: `MOVVI • ${n.title}`,
     body: n.description,
     tag: `movvi-ride-${audience}-${status}`,
+    url: deepLink,
   });
 }
