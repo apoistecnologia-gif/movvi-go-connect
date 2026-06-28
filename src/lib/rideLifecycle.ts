@@ -707,7 +707,44 @@ export const cancelarPeloPassageiro = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { userId } = context;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    return applyTransition(
+
+    // Carrega corrida atual para calcular taxa/distância e notificar motorista
+    const cur = await supabaseAdmin
+      .from("rides")
+      .select("id, status, driver_id, origin_lat, origin_lng")
+      .eq("id", data.rideId)
+      .eq("passenger_id", userId)
+      .maybeSingle();
+    if (cur.error) throw new Error("Falha ao carregar corrida: " + cur.error.message);
+    if (!cur.data) throw new Error("Corrida não encontrada.");
+
+    const prevStatus = cur.data.status as RideStatus;
+    const driverId = cur.data.driver_id as string | null;
+
+    // Calcula distância motorista→embarque se o motorista já tinha aceito
+    let driverDistKm: number | null = null;
+    let feeEligible = false;
+    if (
+      driverId &&
+      (prevStatus === RIDE_STATUS.MOTORISTA_A_CAMINHO ||
+        prevStatus === RIDE_STATUS.MOTORISTA_CHEGOU)
+    ) {
+      const loc = await supabaseAdmin
+        .from("driver_public_locations")
+        .select("current_lat, current_lng")
+        .eq("user_id", driverId)
+        .maybeSingle();
+      if (loc.data?.current_lat != null && loc.data?.current_lng != null) {
+        driverDistKm = distanceKm(
+          { lat: Number(loc.data.current_lat), lng: Number(loc.data.current_lng) },
+          { lat: Number(cur.data.origin_lat), lng: Number(cur.data.origin_lng) },
+        );
+      }
+      // Regra simples: motorista já se deslocava → elegível para taxa
+      feeEligible = prevStatus === RIDE_STATUS.MOTORISTA_A_CAMINHO || prevStatus === RIDE_STATUS.MOTORISTA_CHEGOU;
+    }
+
+    const result = await applyTransition(
       supabaseAdmin,
       data.rideId,
       [
@@ -720,10 +757,30 @@ export const cancelarPeloPassageiro = createServerFn({ method: "POST" })
         cancelled_at: new Date().toISOString(),
         cancelled_by: userId,
         cancel_reason: data.motivo ?? null,
-      },
+        cancellation_fee_eligible: feeEligible,
+        driver_distance_to_pickup_at_cancel: driverDistKm,
+      } as RideUpdate,
       { column: "passenger_id", value: userId },
     );
+
+    // Notifica o motorista (best-effort; não falha o cancelamento)
+    if (driverId) {
+      try {
+        await supabaseAdmin.from("notification_inbox").insert({
+          user_id: driverId,
+          category: "ride_cancelled",
+          title: "Corrida cancelada",
+          body: "O passageiro cancelou a corrida.",
+          data: { ride_id: data.rideId, cancelled_by: "passenger", reason: data.motivo ?? null },
+        });
+      } catch (e) {
+        console.warn("[MOVVI] falha ao gravar notification_inbox:", e);
+      }
+    }
+
+    return result;
   });
+
 
 /** Motorista cancela entre aceitar e iniciar a viagem. */
 export const cancelarPeloMotorista = createServerFn({ method: "POST" })
