@@ -864,7 +864,7 @@ function MotoristaApp() {
         />
       )}
 
-      {!hasRideUI && <BottomNav items={DRIVER_NAV} floating />}
+      {/* Bottom nav removido — todas as opções vivem dentro do menu lateral (hambúrguer). */}
     </div>
   );
 }
