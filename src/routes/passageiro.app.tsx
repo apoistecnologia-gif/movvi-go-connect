@@ -1794,6 +1794,14 @@ function PassageiroApp() {
             suggestions={suggestions}
             onFocusSearch={focusSearch}
             onPick={pickSuggestion}
+            onPickFavorite={async (point, label) => {
+              setDestination({ point, label });
+              setDestinationText(label);
+              setSuggestions([]);
+              sheetRef.current?.snapTo(55);
+              searchInputRef.current?.blur();
+              await calcRoute(point);
+            }}
             onClearDestination={clearDestination}
             route={route}
             uiStage={passengerUiStage}
@@ -2013,6 +2021,7 @@ function SheetContent({
   suggestions,
   onFocusSearch,
   onPick,
+  onPickFavorite,
   onClearDestination,
   route,
   uiStage,
@@ -2042,6 +2051,7 @@ function SheetContent({
   suggestions: Suggestion[];
   onFocusSearch: () => void;
   onPick: (s: Suggestion) => void;
+  onPickFavorite: (point: LatLng, label: string) => void;
   onClearDestination: () => void;
   route: RouteResult | null;
   uiStage: PassengerUiStage;
