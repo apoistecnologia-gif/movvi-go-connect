@@ -362,9 +362,20 @@ export const diagnoseDispatch = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { userId } = context;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Diagnóstico expõe localização de TODOS os motoristas — restrito a admins.
+    const role = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .in("role", ["admin", "super_admin", "operations", "support"])
+      .maybeSingle();
+    if (!role.data) {
+      throw new Error("Diagnóstico disponível apenas para administradores.");
+    }
+
     const r = await supabaseAdmin.from("rides").select("*").eq("id", data.rideId).maybeSingle();
     if (r.error || !r.data) throw new Error("Corrida não encontrada.");
-    if (r.data.passenger_id !== userId) throw new Error("Sem permissão.");
     const ride = r.data;
     const drv = await supabaseAdmin
       .from("drivers")
