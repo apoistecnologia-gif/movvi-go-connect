@@ -545,7 +545,8 @@ export const aceitarCorrida = createServerFn({ method: "POST" })
       safety_code: safetyCode,
     };
 
-    const upd = await supabase
+    const { supabaseAdmin: adminForUpdate } = await import("@/integrations/supabase/client.server");
+    const upd = await adminForUpdate
       .from("rides")
       .update(patch)
       .eq("id", data.rideId)
