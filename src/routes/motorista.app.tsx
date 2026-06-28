@@ -96,6 +96,12 @@ function MotoristaApp() {
 
   const [userId, setUserId] = useState<string | null>(null);
   const [driverName, setDriverName] = useState<string>("");
+  const [sideMenuOpen, setSideMenuOpen] = useState(false);
+
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    navigate({ to: "/" });
+  }
   const [position, setPosition] = useState<(LatLng & { heading?: number | null; speed?: number | null }) | null>(null);
   const [online, setOnline] = useState(false);
   const [statusBlock, setStatusBlock] = useState<string | null>(null);
