@@ -286,6 +286,176 @@ export type Database = {
         }
         Relationships: []
       }
+      driver_announcements: {
+        Row: {
+          active: boolean
+          audience: string
+          body: string
+          created_at: string
+          ends_at: string | null
+          id: string
+          starts_at: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          audience?: string
+          body: string
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          starts_at?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          audience?: string
+          body?: string
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          starts_at?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      driver_documents: {
+        Row: {
+          created_at: string
+          driver_id: string
+          expires_at: string | null
+          file_url: string | null
+          id: string
+          rejected_reason: string | null
+          status: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          driver_id: string
+          expires_at?: string | null
+          file_url?: string | null
+          id?: string
+          rejected_reason?: string | null
+          status?: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          driver_id?: string
+          expires_at?: string | null
+          file_url?: string | null
+          id?: string
+          rejected_reason?: string | null
+          status?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_documents_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      driver_emergency_contacts: {
+        Row: {
+          created_at: string
+          driver_user_id: string
+          id: string
+          is_primary: boolean
+          name: string
+          phone: string
+          relation: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          driver_user_id: string
+          id?: string
+          is_primary?: boolean
+          name: string
+          phone: string
+          relation?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          driver_user_id?: string
+          id?: string
+          is_primary?: boolean
+          name?: string
+          phone?: string
+          relation?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      driver_preferences: {
+        Row: {
+          accept_card: boolean
+          accept_cash: boolean
+          accept_long: boolean
+          accept_pix: boolean
+          accept_short: boolean
+          created_at: string
+          language: string
+          max_radius_km: number
+          navigation_app: string
+          push: boolean
+          ride_alerts: boolean
+          sound: boolean
+          theme: string
+          updated_at: string
+          user_id: string
+          vibration: boolean
+        }
+        Insert: {
+          accept_card?: boolean
+          accept_cash?: boolean
+          accept_long?: boolean
+          accept_pix?: boolean
+          accept_short?: boolean
+          created_at?: string
+          language?: string
+          max_radius_km?: number
+          navigation_app?: string
+          push?: boolean
+          ride_alerts?: boolean
+          sound?: boolean
+          theme?: string
+          updated_at?: string
+          user_id: string
+          vibration?: boolean
+        }
+        Update: {
+          accept_card?: boolean
+          accept_cash?: boolean
+          accept_long?: boolean
+          accept_pix?: boolean
+          accept_short?: boolean
+          created_at?: string
+          language?: string
+          max_radius_km?: number
+          navigation_app?: string
+          push?: boolean
+          ride_alerts?: boolean
+          sound?: boolean
+          theme?: string
+          updated_at?: string
+          user_id?: string
+          vibration?: boolean
+        }
+        Relationships: []
+      }
       driver_public_locations: {
         Row: {
           category: string | null
@@ -1440,6 +1610,32 @@ export type Database = {
     }
     Functions: {
       auto_suspend_overdue_subscriptions: { Args: never; Returns: undefined }
+      get_driver_home_kpis: {
+        Args: { _user_id: string }
+        Returns: {
+          acceptance_rate: number
+          cancellation_rate: number
+          distance_today: number
+          earnings_today: number
+          rating: number
+          total_trips: number
+          trips_today: number
+        }[]
+      }
+      get_driver_stats: {
+        Args: { _from: string; _to: string; _user_id: string }
+        Returns: {
+          acceptance_rate: number
+          avg_fare: number
+          avg_per_km: number
+          cancellation_rate: number
+          cancelled: number
+          distance_km: number
+          earnings: number
+          ride_minutes: number
+          trips: number
+        }[]
+      }
       get_passenger_stats: {
         Args: { _user_id: string }
         Returns: {

@@ -1,8 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ClipboardList, Star, MapPin, Navigation2 } from "lucide-react";
+import { ChevronRight, ClipboardList, MapPin, Navigation2, Star } from "lucide-react";
 import { MovviHeader } from "@/components/MovviHeader";
 import { BottomNav, DRIVER_NAV } from "@/components/BottomNav";
+import { Avatar } from "@/components/Avatar";
 import { supabase } from "@/integrations/supabase/client";
 
 type RideRow = {
@@ -10,12 +11,16 @@ type RideRow = {
   status: string;
   origin_name: string;
   destination_name: string;
+  category: string | null;
+  payment_method: string | null;
+  passenger_photo_url: string | null;
   final_price: number | null;
   estimated_price: number | null;
   distance_km: number | null;
   duration_min: number | null;
   completed_at: string | null;
   created_at: string;
+  accepted_at: string | null;
   passenger_rating: number | null;
   passenger_rating_comment: string | null;
   driver_rated_at: string | null;
@@ -38,29 +43,31 @@ function RideCard({ ride }: { ride: RideRow }) {
   const price = ride.final_price ?? ride.estimated_price;
   const date = ride.completed_at ?? ride.created_at;
   return (
-    <article
+    <Link
+      to="/motorista/corridas/$id"
+      params={{ id: ride.id }}
       data-testid="ride-card"
-      className="rounded-2xl border border-border bg-card p-4 text-sm"
+      className="block rounded-2xl border border-border bg-card p-4 text-sm transition hover:border-primary/40 active:scale-[0.99]"
     >
-      <header className="mb-3 flex items-start justify-between gap-3">
-        <div>
+      <header className="mb-3 flex items-start gap-3">
+        <Avatar src={ride.passenger_photo_url} name="Passageiro" size={44} />
+        <div className="min-w-0 flex-1">
           <p className="text-xs text-muted-foreground">
             {new Date(date).toLocaleString("pt-BR")}
           </p>
-          {ride.distance_km !== null && (
-            <p className="text-xs text-muted-foreground">
-              {Number(ride.distance_km).toFixed(1)} km
-              {ride.duration_min !== null
-                ? ` · ${Math.round(Number(ride.duration_min))} min`
-                : ""}
-            </p>
-          )}
-        </div>
-        {price !== null && (
-          <p className="text-base font-bold text-primary">
-            R$ {Number(price).toFixed(2)}
+          <p className="text-[11px] text-muted-foreground">
+            {ride.category ?? "—"}
+            {ride.distance_km != null ? ` · ${Number(ride.distance_km).toFixed(1)} km` : ""}
+            {ride.duration_min != null ? ` · ${Math.round(Number(ride.duration_min))} min` : ""}
+            {ride.payment_method ? ` · ${ride.payment_method}` : ""}
           </p>
-        )}
+        </div>
+        <div className="text-right">
+          {price !== null && (
+            <p className="text-base font-bold text-primary">R$ {Number(price).toFixed(2)}</p>
+          )}
+          <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground" />
+        </div>
       </header>
 
       <div className="space-y-1.5 text-xs">
@@ -74,36 +81,24 @@ function RideCard({ ride }: { ride: RideRow }) {
         </p>
       </div>
 
-      {ride.status === "finalizada" && (
+      {ride.status === "finalizada" && ride.driver_rated_at && ride.passenger_rating && (
         <div
           data-testid="rating-info"
           className="mt-3 rounded-xl border border-border/60 bg-background/40 p-3"
         >
-          {ride.driver_rated_at && ride.passenger_rating ? (
-            <>
-              <p className="mb-1 text-xs font-medium text-foreground">
-                Avaliação enviada ao passageiro
-              </p>
-              <div className="flex items-center gap-2">
-                <StarRow value={ride.passenger_rating} />
-                <span className="text-xs text-muted-foreground">
-                  {ride.passenger_rating}/5
-                </span>
-              </div>
-              {ride.passenger_rating_comment && (
-                <p className="mt-1.5 text-xs italic text-muted-foreground">
-                  “{ride.passenger_rating_comment}”
-                </p>
-              )}
-            </>
-          ) : (
-            <p className="text-xs text-muted-foreground">
-              Você ainda não avaliou este passageiro.
+          <p className="mb-1 text-xs font-medium text-foreground">Você avaliou o passageiro</p>
+          <div className="flex items-center gap-2">
+            <StarRow value={ride.passenger_rating} />
+            <span className="text-xs text-muted-foreground">{ride.passenger_rating}/5</span>
+          </div>
+          {ride.passenger_rating_comment && (
+            <p className="mt-1.5 text-xs italic text-muted-foreground">
+              "{ride.passenger_rating_comment}"
             </p>
           )}
         </div>
       )}
-    </article>
+    </Link>
   );
 }
 
@@ -123,7 +118,7 @@ function DriverRidesPage() {
       const { data, error } = await supabase
         .from("rides")
         .select(
-          "id,status,origin_name,destination_name,final_price,estimated_price,distance_km,duration_min,completed_at,created_at,passenger_rating,passenger_rating_comment,driver_rated_at",
+          "id,status,category,payment_method,passenger_photo_url,origin_name,destination_name,final_price,estimated_price,distance_km,duration_min,completed_at,created_at,accepted_at,passenger_rating,passenger_rating_comment,driver_rated_at",
         )
         .eq("driver_id", uid)
         .order("created_at", { ascending: false })
