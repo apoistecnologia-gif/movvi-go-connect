@@ -25,6 +25,8 @@ import {
   BRAZIL_CENTER,
   isBrazilCoordinate,
   purgeForeignMapCache,
+  safePoint,
+  safeSymbol,
 } from "@/lib/googleMaps";
 import { useDriverBroadcast } from "@/hooks/useDriverBroadcast";
 import { loadDriverProfile } from "@/lib/driverProfile";
@@ -704,7 +706,7 @@ function MotoristaApp() {
           onLoad={(m) => { mapRef.current = m; }}>
           {position && (
             <Marker position={position} icon={{
-              path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+              path: safeSymbol("FORWARD_CLOSED_ARROW"),
               scale: 6, fillColor: online ? "#8DD92B" : "#94a3b8",
               fillOpacity: 1, strokeColor: "#05070D", strokeWeight: 2,
             }} />
@@ -712,13 +714,13 @@ function MotoristaApp() {
           {active && (
             <>
               <Marker position={{ lat: active.origin_lat, lng: active.origin_lng }} icon={{
-                path: google.maps.SymbolPath.CIRCLE, scale: 8,
+                path: safeSymbol("CIRCLE"), scale: 8,
                 fillColor: "#3b82f6", fillOpacity: 1, strokeColor: "#fff", strokeWeight: 2,
               }} />
               <Marker position={{ lat: active.destination_lat, lng: active.destination_lng }} icon={{
                 path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z",
                 fillColor: "#ef4444", fillOpacity: 1, strokeColor: "#05070D",
-                strokeWeight: 2, scale: 1.6, anchor: new google.maps.Point(12, 22),
+                strokeWeight: 2, scale: 1.6, anchor: safePoint(12, 22),
               }} />
             </>
           )}
