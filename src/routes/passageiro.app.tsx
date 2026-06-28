@@ -78,6 +78,22 @@ function firstName(full: string): string {
   return (full || "").trim().split(/\s+/)[0] || "";
 }
 
+/** Converte "FRANCIEL DA SILVA" → "Franciel". Mantém acentos. */
+function properCase(name: string): string {
+  const first = firstName(name);
+  if (!first) return "";
+  return first.charAt(0).toLocaleUpperCase("pt-BR") + first.slice(1).toLocaleLowerCase("pt-BR");
+}
+
+/** Reduz o tamanho da fonte da saudação conforme o nome cresce, evitando reticências. */
+function greetingTextSize(name: string): string {
+  const len = name.length;
+  if (len <= 10) return "text-[14px]";
+  if (len <= 14) return "text-[13px]";
+  if (len <= 18) return "text-[12px]";
+  return "text-[11px]";
+}
+
 // ====== COMPONENTES PREMIUM ======
 
 function PremiumTopBar({
