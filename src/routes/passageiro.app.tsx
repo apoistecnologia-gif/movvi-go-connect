@@ -86,12 +86,14 @@ function PremiumTopBar({
   drivers,
   searching,
   onLogout,
+  onOpenMenu,
 }: {
   userName: string;
   gpsState: "idle" | "requesting" | "granted" | "denied" | "unavailable";
   drivers: number;
   searching: boolean;
   onLogout: () => void;
+  onOpenMenu: () => void;
 }) {
   const { text: greet, icon: GIcon } = getGreeting();
   const fname = firstName(userName) || "passageiro";
@@ -115,7 +117,14 @@ function PremiumTopBar({
   return (
     <div className="absolute inset-x-0 top-0 z-40 px-3 pt-[calc(env(safe-area-inset-top)+10px)]">
       <div className="mx-auto flex max-w-5xl items-center gap-3 rounded-2xl bg-card/90 px-3 py-2.5 shadow-xl ring-1 ring-border/60 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-500">
-        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/15 text-primary ring-1 ring-primary/30">
+        <button
+          onClick={onOpenMenu}
+          aria-label="Abrir menu"
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary ring-1 ring-primary/30 transition hover:bg-primary/25 active:scale-90"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/10 text-primary ring-1 ring-primary/20">
           <GIcon className="h-5 w-5" />
         </div>
         <div className="min-w-0 flex-1">
