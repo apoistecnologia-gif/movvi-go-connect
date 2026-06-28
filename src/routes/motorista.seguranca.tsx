@@ -80,10 +80,9 @@ function DriverSecurityPage() {
     });
     const { error } = await supabase.from("sos_alerts").insert({
       user_id: userId,
-      role: "driver",
       lat: pos?.coords.latitude ?? null,
       lng: pos?.coords.longitude ?? null,
-      status: "open",
+      message: "SOS acionado pelo motorista",
     });
     if (error) toast.error(error.message);
     else toast.success("Alerta SOS enviado para o suporte MOVVI.");

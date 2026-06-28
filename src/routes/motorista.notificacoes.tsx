@@ -16,7 +16,7 @@ type Notif = {
   id: string;
   title: string;
   body: string | null;
-  type: string | null;
+  category: string | null;
   read_at: string | null;
   created_at: string;
 };
@@ -30,7 +30,7 @@ function DriverNotificationsPage() {
   async function load(uid: string) {
     const { data, error } = await supabase
       .from("notification_inbox")
-      .select("id,title,body,type,read_at,created_at")
+      .select("id,title,body,category,read_at,created_at")
       .eq("user_id", uid)
       .order("created_at", { ascending: false })
       .limit(100);
