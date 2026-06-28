@@ -189,7 +189,7 @@ export const MovviSheet = forwardRef<MovviSheetHandle, Props>(function MovviShee
     }
   }, [height, minSnap]);
 
-  const isFull = height >= maxSnap - 2;
+  
 
   return (
     <div
