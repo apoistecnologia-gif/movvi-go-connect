@@ -1740,6 +1740,13 @@ function PassageiroApp() {
         drivers={nearbyCount}
         searching={!!ride && ride.status === "procurar_motorista"}
         onLogout={handleLogout}
+        onOpenMenu={() => setSideMenuOpen(true)}
+      />
+
+      <PassengerSideMenu
+        open={sideMenuOpen}
+        onOpenChange={setSideMenuOpen}
+        onLogout={handleLogout}
       />
 
       {/* Floating controls */}
