@@ -100,8 +100,16 @@ function AdminNotificacoesPage() {
         setSending(false);
         return toast.error("Nenhum destinatário encontrado");
       }
-      const rows = recipients.map((user_id) => ({ user_id, title, body }));
-      const { error } = await supabase.from("notifications").insert(rows);
+      // Apps (driver + passenger) leem de `notification_inbox`. Inserimos lá para que
+      // o admin -> usuário chegue em tempo real nas duas pontas.
+      const rows = recipients.map((user_id) => ({
+        user_id,
+        title,
+        body,
+        category: "admin",
+        data: { audience, filter: filter || null },
+      }));
+      const { error } = await supabase.from("notification_inbox").insert(rows);
       if (error) throw error;
       const { data: u } = await supabase.auth.getUser();
       await supabase.from("notifications_broadcast").insert({
