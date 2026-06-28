@@ -114,6 +114,45 @@ function distanceKm(a: { lat: number; lng: number }, b: { lat: number; lng: numb
 }
 
 /**
+ * Carrega as regras tarifárias de uma categoria a partir do banco
+ * (`public.tariff_rules`) e devolve um mapa field_key → valor numérico.
+ * Esta é a ÚNICA fonte de verdade para preço — o cliente NUNCA pode
+ * influenciar tarifas (preço estimado/final).
+ */
+async function loadTariff(admin: any, category: string): Promise<Record<string, number>> {
+  const res = await admin
+    .from("tariff_rules")
+    .select("field_key, value")
+    .eq("category_key", category);
+  if (res.error) throw new Error("Falha ao carregar tarifas: " + res.error.message);
+  const out: Record<string, number> = {};
+  for (const row of res.data ?? []) {
+    out[row.field_key as string] = Number(row.value ?? 0);
+  }
+  return out;
+}
+
+/**
+ * Calcula o preço autoritativo (server-side) de uma corrida a partir das
+ * regras tarifárias. Sempre respeita a tarifa mínima.
+ *   preço = max(min_fare, base_fare + per_km*km + per_min*min)
+ */
+function computeFareFromTariff(
+  tariff: Record<string, number>,
+  distanceKmValue: number,
+  durationMinValue: number,
+): number {
+  const base = tariff.base_fare ?? 0;
+  const perKm = tariff.per_km ?? 0;
+  const perMin = tariff.per_min ?? 0;
+  const minFare = tariff.min_fare ?? 0;
+  const raw = base + perKm * Math.max(0, distanceKmValue) + perMin * Math.max(0, durationMinValue);
+  const final = Math.max(minFare, raw);
+  return Math.round(final * 100) / 100;
+}
+
+
+/**
  * Aplica uma transição de forma ATÔMICA:
  * - exige status de origem esperado
  * - exige usuário responsável (passageiro_id ou driver_id)
