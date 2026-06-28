@@ -87,6 +87,7 @@ function AdminMotoristas() {
   const [tab, setTab] = useState<Status>("em_analise");
   const [detail, setDetail] = useState<Driver | null>(null);
   const [rejectFor, setRejectFor] = useState<Driver | null>(null);
+  const [subFor, setSubFor] = useState<Driver | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
   const [adminEmail, setAdminEmail] = useState<string>("—");
@@ -223,6 +224,7 @@ function AdminMotoristas() {
                         }}
                         onBlock={() => updateStatus(d, "bloqueado")}
                         onReinstate={() => updateStatus(d, "em_analise")}
+                        onSubscription={() => setSubFor(d)}
                       />
                     ))
                   )}
