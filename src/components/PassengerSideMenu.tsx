@@ -242,7 +242,7 @@ export function PassengerSideMenu({ open, onOpenChange, onLogout }: Props) {
 
               <div className="space-y-2 border-t border-border pt-4">
                 <Link
-                  to="/passageiro/configuracoes"
+                  to="/passageiro/corridas"
                   onClick={() => onOpenChange(false)}
                   className="flex items-center gap-3 rounded-lg border border-border bg-card/60 px-3 py-2.5 text-sm font-medium text-foreground transition hover:bg-accent/40"
                 >
