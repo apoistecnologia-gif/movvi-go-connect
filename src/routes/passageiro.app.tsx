@@ -39,6 +39,8 @@ import {
   GOOGLE_MAPS_LIBRARIES,
   isBrazilCoordinate,
   purgeForeignMapCache,
+  safePoint,
+  safeSymbol,
 } from "@/lib/googleMaps";
 import { DEV_MODE, isDevelopmentEnvironment } from "@/lib/environment";
 
@@ -138,7 +140,7 @@ function PremiumTopBar({
 function PulsingUserMarker({ position }: { position: LatLng }) {
   const pulseIcon = useMemo(
     () => ({
-      path: google.maps.SymbolPath.CIRCLE,
+      path: safeSymbol("CIRCLE"),
       scale: 22,
       fillColor: "#3b82f6",
       fillOpacity: 0.18,
@@ -150,7 +152,7 @@ function PulsingUserMarker({ position }: { position: LatLng }) {
   );
   const dotIcon = useMemo(
     () => ({
-      path: google.maps.SymbolPath.CIRCLE,
+      path: safeSymbol("CIRCLE"),
       scale: 8,
       fillColor: "#3b82f6",
       fillOpacity: 1,
@@ -1624,7 +1626,7 @@ function PassageiroApp() {
                   strokeColor: "#05070D",
                   strokeWeight: 1.4,
                   scale: 1.2,
-                  anchor: new google.maps.Point(12, 14),
+                  anchor: safePoint(12, 14),
                 }}
               />
             ))}
@@ -1639,7 +1641,7 @@ function PassageiroApp() {
                 strokeColor: "#05070D",
                 strokeWeight: 2,
                 scale: 1.7,
-                anchor: new google.maps.Point(12, 22),
+                anchor: safePoint(12, 22),
               }}
             />
           )}
@@ -1662,7 +1664,7 @@ function PassageiroApp() {
                   strokeWeight: 1.6,
                   scale: 1.6,
                   rotation: typeof rideDriverInfo.current_heading === "number" ? rideDriverInfo.current_heading : 0,
-                  anchor: new google.maps.Point(12, 14),
+                  anchor: safePoint(12, 14),
                 }}
                 zIndex={9999}
               />
