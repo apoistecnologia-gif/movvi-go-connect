@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { requestPushPermission } from "@/lib/pushNotifications";
-import { useTheme, type ThemeMode } from "@/lib/theme";
+import { useTheme } from "@/lib/theme";
 
 export const Route = createFileRoute("/passageiro/configuracoes")({
   head: () => ({ meta: [{ title: "Configurações — MOVVI DRIVE" }] }),
