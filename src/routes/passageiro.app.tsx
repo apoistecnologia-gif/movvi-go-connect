@@ -556,6 +556,19 @@ function PassageiroApp() {
   const [ride, setRide] = useState<RideRow | null>(null);
   const [driverInfo, setDriverInfo] = useState<DriverRow | null>(null);
 
+  // Toast em cada transição de status (sem reload)
+  const lastNotifiedStatusRef = useRef<RideStatus | null>(null);
+  useEffect(() => {
+    const s = ride?.status as RideStatus | undefined;
+    if (!s) { lastNotifiedStatusRef.current = null; return; }
+    if (lastNotifiedStatusRef.current === s) return;
+    // Pula a primeira leitura ao restaurar uma corrida já em andamento, exceto pelo "procurar_motorista".
+    const isFirst = lastNotifiedStatusRef.current === null;
+    lastNotifiedStatusRef.current = s;
+    if (isFirst && s !== "procurar_motorista") return;
+    notifyRideStatus("passageiro", s);
+  }, [ride?.status]);
+
   const mapRef = useRef<google.maps.Map | null>(null);
   const sessionTokenRef =
     useRef<google.maps.places.AutocompleteSessionToken | null>(null);
