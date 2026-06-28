@@ -582,7 +582,21 @@ function MotoristaApp() {
         }
         loadTodayStats(userId);
       } else if (r.status === "cancelada_passageiro" || r.status === "cancelada_motorista") {
-        setActive(null); setPolyline([]);
+        // Notifica + libera o motorista para receber novas ofertas
+        if (activeRef.current?.id === r.id || r.driver_id === userId) {
+          if (r.status === "cancelada_passageiro") {
+            notifyRideStatus("motorista", "cancelada_passageiro");
+            toast.warning("Corrida cancelada pelo passageiro.", {
+              description: r.cancel_reason ? `Motivo: ${r.cancel_reason}` : undefined,
+            });
+            if (navigator.vibrate) navigator.vibrate([200, 80, 200]);
+          }
+        }
+        handledRidesRef.current.add(r.id);
+        setIncoming(null);
+        setActive(null);
+        setPolyline([]);
+
       } else if (r.status === "motorista_a_caminho" || r.status === "motorista_chegou" || r.status === "em_viagem") {
         // se está chegando uma corrida que assumimos, fecha qualquer modal de oferta para esta corrida
         if (incomingRef.current?.id === r.id) setIncoming(null);
