@@ -585,19 +585,29 @@ function MotoristaApp() {
         loadTodayStats(userId);
       } else if (r.status === "cancelada_passageiro" || r.status === "cancelada_motorista") {
         // Notifica + libera o motorista para receber novas ofertas
-        if (activeRef.current?.id === r.id || r.driver_id === userId) {
-          if (r.status === "cancelada_passageiro") {
-            notifyRideStatus("motorista", "cancelada_passageiro");
-            toast.warning("Corrida cancelada pelo passageiro.", {
-              description: r.cancel_reason ? `Motivo: ${r.cancel_reason}` : undefined,
-            });
-            if (navigator.vibrate) navigator.vibrate([200, 80, 200]);
-          }
+        const wasActive = activeRef.current?.id === r.id || r.driver_id === userId;
+        if (wasActive && r.status === "cancelada_passageiro") {
+          const reason = (r.cancel_reason ?? "").trim();
+          toast.warning("Passageiro cancelou a corrida", {
+            description: reason
+              ? `Motivo: ${reason}`
+              : "Você está disponível para novas ofertas.",
+            duration: 7000,
+          });
+          if (navigator.vibrate) navigator.vibrate([220, 90, 220, 90, 220]);
+          showPush({
+            title: "MOVVI • Corrida cancelada",
+            body: reason ? `Motivo: ${reason}` : "O passageiro cancelou a corrida.",
+            tag: `movvi-ride-motorista-cancelada_passageiro-${r.id}`,
+            url: "/motorista/app",
+          });
         }
         handledRidesRef.current.add(r.id);
         setIncoming(null);
         setActive(null);
         setPolyline([]);
+
+
 
       } else if (r.status === "motorista_a_caminho" || r.status === "motorista_chegou" || r.status === "em_viagem") {
         // se está chegando uma corrida que assumimos, fecha qualquer modal de oferta para esta corrida
