@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { MovviHeader } from "@/components/MovviHeader";
 import { BottomNav, PASSENGER_NAV } from "@/components/BottomNav";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -46,9 +46,9 @@ function SobrePage() {
               <CardTitle className="text-base">Links úteis</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
-              <a href="mailto:suporte@movvi.app" className="block rounded-lg border border-border bg-card/50 px-3 py-2 hover:bg-accent/40">suporte@movvi.app</a>
-              <a href="#" className="block rounded-lg border border-border bg-card/50 px-3 py-2 hover:bg-accent/40">Termos de Uso</a>
-              <a href="#" className="block rounded-lg border border-border bg-card/50 px-3 py-2 hover:bg-accent/40">Política de Privacidade</a>
+              <a href="mailto:suporte@movvi.app" className="block rounded-lg border border-border bg-card/50 px-3 py-2 transition hover:bg-accent/40 active:scale-[0.99]">suporte@movvi.app</a>
+              <Link to="/passageiro/termos" className="block rounded-lg border border-border bg-card/50 px-3 py-2 transition hover:bg-accent/40 active:scale-[0.99]">Termos de Uso</Link>
+              <Link to="/passageiro/privacidade" className="block rounded-lg border border-border bg-card/50 px-3 py-2 transition hover:bg-accent/40 active:scale-[0.99]">Política de Privacidade</Link>
             </CardContent>
           </Card>
         </div>

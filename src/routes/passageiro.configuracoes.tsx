@@ -229,8 +229,8 @@ function ConfiguracoesPassageiro() {
                   Testar
                 </Button>
               </Row>
-              <LinkRow to="#" icon={FileText} label="Termos de Uso" />
-              <LinkRow to="#" icon={FileText} label="Política de Privacidade" />
+              <LinkRow to="/passageiro/termos" icon={FileText} label="Termos de Uso" />
+              <LinkRow to="/passageiro/privacidade" icon={ShieldCheck} label="Política de Privacidade" />
             </CardContent>
           </Card>
 
