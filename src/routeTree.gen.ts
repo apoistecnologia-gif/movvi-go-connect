@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as MapTestRouteImport } from './routes/map-test'
 import { Route as DevDiagnosticsRouteImport } from './routes/dev-diagnostics'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PassageiroSuporteRouteImport } from './routes/passageiro.suporte'
 import { Route as PassageiroPerfilRouteImport } from './routes/passageiro.perfil'
 import { Route as PassageiroLoginRouteImport } from './routes/passageiro.login'
 import { Route as PassageiroFavoritosRouteImport } from './routes/passageiro.favoritos'
@@ -62,6 +63,11 @@ const DevDiagnosticsRoute = DevDiagnosticsRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PassageiroSuporteRoute = PassageiroSuporteRouteImport.update({
+  id: '/passageiro/suporte',
+  path: '/passageiro/suporte',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PassageiroPerfilRoute = PassageiroPerfilRouteImport.update({
@@ -285,6 +291,7 @@ export interface FileRoutesByFullPath {
   '/passageiro/favoritos': typeof PassageiroFavoritosRoute
   '/passageiro/login': typeof PassageiroLoginRoute
   '/passageiro/perfil': typeof PassageiroPerfilRoute
+  '/passageiro/suporte': typeof PassageiroSuporteRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -326,6 +333,7 @@ export interface FileRoutesByTo {
   '/passageiro/favoritos': typeof PassageiroFavoritosRoute
   '/passageiro/login': typeof PassageiroLoginRoute
   '/passageiro/perfil': typeof PassageiroPerfilRoute
+  '/passageiro/suporte': typeof PassageiroSuporteRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -368,6 +376,7 @@ export interface FileRoutesById {
   '/passageiro/favoritos': typeof PassageiroFavoritosRoute
   '/passageiro/login': typeof PassageiroLoginRoute
   '/passageiro/perfil': typeof PassageiroPerfilRoute
+  '/passageiro/suporte': typeof PassageiroSuporteRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -411,6 +420,7 @@ export interface FileRouteTypes {
     | '/passageiro/favoritos'
     | '/passageiro/login'
     | '/passageiro/perfil'
+    | '/passageiro/suporte'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -452,6 +462,7 @@ export interface FileRouteTypes {
     | '/passageiro/favoritos'
     | '/passageiro/login'
     | '/passageiro/perfil'
+    | '/passageiro/suporte'
   id:
     | '__root__'
     | '/'
@@ -493,6 +504,7 @@ export interface FileRouteTypes {
     | '/passageiro/favoritos'
     | '/passageiro/login'
     | '/passageiro/perfil'
+    | '/passageiro/suporte'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -535,6 +547,7 @@ export interface RootRouteChildren {
   PassageiroFavoritosRoute: typeof PassageiroFavoritosRoute
   PassageiroLoginRoute: typeof PassageiroLoginRoute
   PassageiroPerfilRoute: typeof PassageiroPerfilRoute
+  PassageiroSuporteRoute: typeof PassageiroSuporteRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -558,6 +571,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/passageiro/suporte': {
+      id: '/passageiro/suporte'
+      path: '/passageiro/suporte'
+      fullPath: '/passageiro/suporte'
+      preLoaderRoute: typeof PassageiroSuporteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/passageiro/perfil': {
@@ -855,6 +875,7 @@ const rootRouteChildren: RootRouteChildren = {
   PassageiroFavoritosRoute: PassageiroFavoritosRoute,
   PassageiroLoginRoute: PassageiroLoginRoute,
   PassageiroPerfilRoute: PassageiroPerfilRoute,
+  PassageiroSuporteRoute: PassageiroSuporteRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
