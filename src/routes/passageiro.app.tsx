@@ -112,23 +112,8 @@ function PremiumTopBar({
   onOpenMenu: () => void;
 }) {
   const { text: greet, icon: GIcon } = getGreeting();
-  const fname = firstName(userName) || "passageiro";
-
-  let statusIcon = "🔎";
-  let statusText = "Procurando motoristas próximos";
-  if (gpsState === "requesting" || gpsState === "idle") {
-    statusIcon = "📍";
-    statusText = "Obtendo sua localização...";
-  } else if (gpsState === "unavailable" || gpsState === "denied") {
-    statusIcon = "⚠️";
-    statusText = "Localização indisponível";
-  } else if (searching) {
-    statusIcon = "🔎";
-    statusText = "Procurando motoristas próximos";
-  } else if (drivers > 0) {
-    statusIcon = "🚗";
-    statusText = `${drivers} ${drivers === 1 ? "motorista próximo" : "motoristas próximos"}`;
-  }
+  const fname = properCase(userName) || "passageiro";
+  const greetingClass = greetingTextSize(fname);
 
   return (
     <div className="absolute inset-x-0 top-0 z-40 px-3 pt-[calc(env(safe-area-inset-top)+10px)]">
@@ -136,15 +121,15 @@ function PremiumTopBar({
         <button
           onClick={onOpenMenu}
           aria-label="Abrir menu"
-          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary ring-1 ring-primary/30 transition hover:bg-primary/25 active:scale-90"
+          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary ring-1 ring-primary/30 transition hover:bg-primary/25 active:scale-90"
         >
-          <Menu className="h-5 w-5" />
+          <Menu className="h-[22px] w-[22px]" />
         </button>
         <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/10 text-primary ring-1 ring-primary/20">
           <GIcon className="h-5 w-5" />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="truncate text-[14px] font-semibold leading-tight text-foreground">
+          <div className={`${greetingClass} font-semibold leading-tight text-foreground`}>
             {greet}, {fname} <span className="opacity-90">👋</span>
           </div>
           <div className="mt-0.5 flex items-center gap-1.5 truncate text-[11px] text-muted-foreground">
@@ -155,9 +140,9 @@ function PremiumTopBar({
         <button
           onClick={onLogout}
           aria-label="Sair"
-          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-destructive/15 text-destructive ring-1 ring-destructive/30 transition hover:bg-destructive/25 active:scale-90"
+          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-destructive/15 text-destructive ring-1 ring-destructive/30 transition hover:bg-destructive/25 active:scale-90"
         >
-          <LogOut className="h-4 w-4" />
+          <LogOut className="h-5 w-5" />
         </button>
       </div>
     </div>
