@@ -724,9 +724,66 @@ function MotoristaApp() {
     catch (e) { console.error("[MOVVI MOTORISTA] erro ao recusar:", e); }
   }
 
-  // rota dinâmica
+  // ===== CONTROLADOR ÚNICO DE CÂMERA =====
+  // Regras:
+  //  - initialCenter é congelado na primeira coord válida (evita setCenter
+  //    repetido a cada render — passar `position` ao vivo no <MovviMap>
+  //    causava o "pulo" vertical do mapa).
+  //  - autoFollow segue o motorista suavemente com panTo throttled.
+  //  - Arrastar o mapa desativa o follow até o usuário tocar em "recenter".
+  //  - fitBounds só roda quando muda rideId/status (NUNCA por GPS).
+  const positionRef = useRef<typeof position>(null);
+  useEffect(() => { positionRef.current = position; }, [position]);
+
+  const [initialMapCenter, setInitialMapCenter] = useState<LatLng | null>(null);
   useEffect(() => {
-    if (!active || !position) { setPolyline([]); setEtaSeconds(null); setLegKm(null); return; }
+    if (!initialMapCenter && position && isBrazilCoordinate(position.lat, position.lng)) {
+      setInitialMapCenter({ lat: position.lat, lng: position.lng });
+    }
+  }, [position, initialMapCenter]);
+  // Centro/zoom estáveis para o <MovviMap>. Memoizados por referência para
+  // que o componente <GoogleMap> não chame setCenter/setZoom a cada render.
+  const stableMapCenter = useMemo(
+    () => initialMapCenter ?? BRAZIL_CENTER,
+    [initialMapCenter],
+  );
+  const stableMapZoom = useMemo(() => (initialMapCenter ? 16 : 5), [initialMapCenter]);
+
+  const autoFollowRef = useRef(true);
+  const lastFollowAtRef = useRef(0);
+  const lastFitKeyRef = useRef<string | null>(null);
+
+  // Detecta arrasto manual → desliga follow.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const onDragStart = () => { autoFollowRef.current = false; };
+    const listener = google.maps.event.addListener(map, "dragstart", onDragStart);
+    return () => { google.maps.event.removeListener(listener); };
+  }, [initialMapCenter]); // re-anexa quando o mapa fica disponível
+
+  // Follow suave do motorista: panTo throttled (a cada 1.5s) e somente se a
+  // distância for relevante (>15m). Não mexe no zoom.
+  useEffect(() => {
+    if (!position || !mapRef.current || !autoFollowRef.current) return;
+    if (!active) return; // só segue durante corrida ativa
+    const now = Date.now();
+    if (now - lastFollowAtRef.current < 1500) return;
+    const center = mapRef.current.getCenter();
+    if (center) {
+      const dKm = haversineKm({ lat: center.lat(), lng: center.lng() }, position);
+      if (dKm < 0.015) return; // <15m — não vale repintar
+    }
+    lastFollowAtRef.current = now;
+    mapRef.current.panTo(position);
+  }, [position?.lat, position?.lng, active?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Rota — depende SOMENTE de rideId/status. Usa posição via ref para não
+  // recomputar a rota nem fazer fitBounds a cada GPS.
+  useEffect(() => {
+    if (!active) { setPolyline([]); setEtaSeconds(null); setLegKm(null); lastFitKeyRef.current = null; return; }
+    const pos = positionRef.current;
+    if (!pos) return;
     const toPickup = active.status === "motorista_a_caminho" || active.status === "motorista_chegou";
     const dest = toPickup
       ? { lat: active.origin_lat, lng: active.origin_lng }
@@ -734,28 +791,37 @@ function MotoristaApp() {
         ? { lat: active.destination_lat, lng: active.destination_lng }
         : null;
     if (!dest) { setPolyline([]); return; }
-    callRoute({ data: { origin: position, destination: dest } })
+    const fitKey = `${active.id}-${active.status}`;
+    callRoute({ data: { origin: pos, destination: dest } })
       .then((res) => {
         setPolyline(decodePolyline(res.encodedPolyline));
         setEtaSeconds(res.durationSeconds);
         setLegKm(res.distanceMeters / 1000);
-        if (mapRef.current) {
+        // fitBounds APENAS uma vez por transição de status.
+        if (mapRef.current && lastFitKeyRef.current !== fitKey) {
+          lastFitKeyRef.current = fitKey;
+          autoFollowRef.current = false; // evita conflito com follow
           const b = new google.maps.LatLngBounds();
-          b.extend(position); b.extend(dest);
+          b.extend(pos); b.extend(dest);
           mapRef.current.fitBounds(b, { top: 120, bottom: window.innerHeight * 0.55, left: 60, right: 60 });
+          // reativa follow depois da animação inicial
+          window.setTimeout(() => { autoFollowRef.current = true; }, 1200);
         }
       })
       .catch(() => {
-        // fallback: linha reta + estimativa por haversine
-        setPolyline([position, dest]);
-        const km = haversineKm(position, dest);
+        setPolyline([pos, dest]);
+        const km = haversineKm(pos, dest);
         setLegKm(km); setEtaSeconds(Math.round((km / 35) * 3600));
       });
-  }, [active?.id, active?.status, position?.lat, position?.lng]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [active?.id, active?.status]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function recenter() {
-    if (position && mapRef.current) { mapRef.current.panTo(position); mapRef.current.setZoom(16); }
+    autoFollowRef.current = true;
+    lastFollowAtRef.current = 0;
+    const pos = positionRef.current;
+    if (pos && mapRef.current) { mapRef.current.panTo(pos); mapRef.current.setZoom(16); }
   }
+
 
   async function submitRating() {
     if (!ratingRide) return;
