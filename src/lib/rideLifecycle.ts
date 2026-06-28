@@ -418,13 +418,39 @@ export const diagnoseDispatch = createServerFn({ method: "POST" })
 
 // ---------- Server functions oficiais ----------
 
-/** Passageiro cria a corrida. Status inicial = procurar_motorista. */
+/** Passageiro cria a corrida. Status inicial = procurar_motorista.
+ *  Distância, duração e preço estimados são calculados/validados no servidor
+ *  — o cliente pode sugerir valores apenas como referência. */
 export const criarCorrida = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => CriarCorridaInput.parse(d))
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const ins = await supabase
+    const { userId } = context;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // --- Cálculo autoritativo (server-side) ---
+    const straightKm = distanceKm(data.origin, data.destination);
+    // Estimativa conservadora: usa a distância informada pelo cliente apenas
+    // se for >= distância em linha reta (o cliente conhece a rota real do
+    // Google). Caso contrário, multiplicamos a distância em linha reta por
+    // 1.30 como aproximação de fator de rota.
+    const clientKm =
+      typeof data.distance_km === "number" && Number.isFinite(data.distance_km)
+        ? Math.max(0, data.distance_km)
+        : 0;
+    const distanceKmFinal = clientKm >= straightKm ? clientKm : straightKm * 1.3;
+
+    const clientMin =
+      typeof data.duration_min === "number" && Number.isFinite(data.duration_min)
+        ? Math.max(0, data.duration_min)
+        : 0;
+    // 30 km/h média conservadora urbana caso o cliente não informe.
+    const durationMinFinal = clientMin > 0 ? clientMin : (distanceKmFinal / 30) * 60;
+
+    const tariff = await loadTariff(supabaseAdmin, data.category);
+    const estimatedPriceServer = computeFareFromTariff(tariff, distanceKmFinal, durationMinFinal);
+
+    const ins = await supabaseAdmin
       .from("rides")
       .insert({
         passenger_id: userId,
@@ -435,9 +461,9 @@ export const criarCorrida = createServerFn({ method: "POST" })
         destination_lat: data.destination.lat,
         destination_lng: data.destination.lng,
         destination_name: data.destination_name,
-        distance_km: data.distance_km ?? null,
-        duration_min: data.duration_min ?? null,
-        estimated_price: data.estimated_price ?? null,
+        distance_km: distanceKmFinal,
+        duration_min: durationMinFinal,
+        estimated_price: estimatedPriceServer,
         status: RIDE_STATUS.PROCURAR_MOTORISTA,
       })
       .select("*")
@@ -445,13 +471,9 @@ export const criarCorrida = createServerFn({ method: "POST" })
     if (ins.error) throw new Error(ins.error.message);
     console.log("[MOVVI DESPACHO] corrida criada:", {
       ride_id: ins.data.id, passenger_id: ins.data.passenger_id, category: ins.data.category,
-      origin: { lat: ins.data.origin_lat, lng: ins.data.origin_lng, name: ins.data.origin_name },
-      destination: { lat: ins.data.destination_lat, lng: ins.data.destination_lng, name: ins.data.destination_name },
+      distance_km: distanceKmFinal, estimated_price: estimatedPriceServer,
       status: ins.data.status, created_at: ins.data.created_at,
     });
-    // Despacho usa supabaseAdmin para enxergar TODOS os motoristas (inclusive
-    // offline/não-aprovados) e gerar diagnóstico completo nos logs.
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     try { await offerToNextDriver(supabaseAdmin, ins.data.id); }
     catch (e) { console.warn("[MOVVI DESPACHO] offerToNextDriver inicial falhou:", (e as Error).message); }
     return { rideId: ins.data.id };
