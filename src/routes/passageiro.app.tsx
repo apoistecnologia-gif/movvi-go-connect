@@ -1032,11 +1032,12 @@ function PassageiroApp() {
           region: "br",
           includedRegionCodes: ["br"],
         };
-        if (position)
-          req.locationBias = {
-            center: new google.maps.LatLng(position.lat, position.lng),
-            radius: 50000,
-          } as google.maps.CircleLiteral;
+        // `origin` (LatLng) é o sinal de bias suportado pelo Places API (New)
+        // em fetchAutocompleteSuggestions — `locationBias` quebra a chamada
+        // no SDK atual (TypeError em places_impl.js).
+        if (position && Number.isFinite(position.lat) && Number.isFinite(position.lng)) {
+          req.origin = { lat: position.lat, lng: position.lng };
+        }
         const { suggestions: result } =
           await places.AutocompleteSuggestion.fetchAutocompleteSuggestions(req);
         setSuggestions(
@@ -1044,11 +1045,23 @@ function PassageiroApp() {
             .map((s) => s.placePrediction)
             .filter((p): p is google.maps.places.PlacePrediction => !!p)
             .slice(0, 6)
-            .map((p) => ({
-              placeId: p.placeId,
-              primary: p.mainText?.toString() ?? p.text.toString(),
-              secondary: p.secondaryText?.toString() ?? "",
-            })),
+            .map((p) => {
+              // Places API New retorna FormattableText (objeto com .text);
+              // toString() pode devolver vazio dependendo do build do SDK.
+              const ft = (v: unknown): string =>
+                v == null
+                  ? ""
+                  : typeof v === "string"
+                  ? v
+                  : typeof (v as { text?: unknown }).text === "string"
+                  ? (v as { text: string }).text
+                  : String(v);
+              return {
+                placeId: p.placeId,
+                primary: ft(p.mainText) || ft(p.text),
+                secondary: ft(p.secondaryText),
+              };
+            }),
         );
       } catch (e) {
         console.error("autocomplete error", e);
@@ -1062,17 +1075,40 @@ function PassageiroApp() {
   async function pickSuggestion(s: Suggestion) {
     setError(null);
     try {
-      const places = (await google.maps.importLibrary(
-        "places",
-      )) as google.maps.PlacesLibrary;
-      const place = new places.Place({ id: s.placeId });
-      await place.fetchFields({
-        fields: ["location", "formattedAddress", "displayName"],
-      });
-      const loc = place.location;
+      // Em vez de depender de Place.fetchFields (que em algumas builds do SDK
+      // Places New não retorna `location` consistentemente), usamos o
+      // Geocoder pelo placeId, que sempre devolve as coordenadas reais e
+      // o endereço formatado.
+      const geocoder = new google.maps.Geocoder();
+      let loc: google.maps.LatLng | null = null;
+      let formatted: string | null = null;
+      try {
+        const r = await geocoder.geocode({ placeId: s.placeId });
+        const first = r.results?.[0];
+        loc = first?.geometry?.location ?? null;
+        formatted = first?.formatted_address ?? null;
+      } catch (geocoderErr) {
+        console.warn("[MOVVI] Geocoder fallback falhou:", geocoderErr);
+      }
+      // Plano B: tentar Places New caso o Geocoder tenha retornado vazio.
+      if (!loc) {
+        try {
+          const places = (await google.maps.importLibrary(
+            "places",
+          )) as google.maps.PlacesLibrary;
+          const place = new places.Place({ id: s.placeId });
+          await place.fetchFields({
+            fields: ["location", "formattedAddress"],
+          });
+          loc = place.location ?? null;
+          formatted = formatted ?? place.formattedAddress ?? null;
+        } catch (placesErr) {
+          console.warn("[MOVVI] Places.fetchFields falhou:", placesErr);
+        }
+      }
       if (!loc) throw new Error("Local sem coordenadas.");
       const point: LatLng = { lat: loc.lat(), lng: loc.lng() };
-      const label = place.formattedAddress ?? `${s.primary} ${s.secondary}`.trim();
+      const label = formatted ?? `${s.primary} ${s.secondary}`.trim();
       setDestination({ point, label });
       setDestinationText(label);
       setSuggestions([]);
@@ -1082,6 +1118,7 @@ function PassageiroApp() {
       searchInputRef.current?.blur();
       await calcRoute(point);
     } catch (e) {
+      console.warn("[MOVVI] pickSuggestion falhou:", e);
       setError(e instanceof Error ? e.message : "Falha ao buscar o local.");
     }
   }
