@@ -12,7 +12,6 @@ import {
   Phone,
   Save,
   Settings,
-  Shield,
   ShieldAlert,
   ShieldCheck,
   User as UserIcon,
