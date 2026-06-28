@@ -78,6 +78,22 @@ function firstName(full: string): string {
   return (full || "").trim().split(/\s+/)[0] || "";
 }
 
+/** Converte "FRANCIEL DA SILVA" → "Franciel". Mantém acentos. */
+function properCase(name: string): string {
+  const first = firstName(name);
+  if (!first) return "";
+  return first.charAt(0).toLocaleUpperCase("pt-BR") + first.slice(1).toLocaleLowerCase("pt-BR");
+}
+
+/** Reduz o tamanho da fonte da saudação conforme o nome cresce, evitando reticências. */
+function greetingTextSize(name: string): string {
+  const len = name.length;
+  if (len <= 10) return "text-[14px]";
+  if (len <= 14) return "text-[13px]";
+  if (len <= 18) return "text-[12px]";
+  return "text-[11px]";
+}
+
 // ====== COMPONENTES PREMIUM ======
 
 function PremiumTopBar({
@@ -96,7 +112,8 @@ function PremiumTopBar({
   onOpenMenu: () => void;
 }) {
   const { text: greet, icon: GIcon } = getGreeting();
-  const fname = firstName(userName) || "passageiro";
+  const fname = properCase(userName) || "passageiro";
+  const greetingClass = greetingTextSize(fname);
 
   let statusIcon = "🔎";
   let statusText = "Procurando motoristas próximos";
@@ -114,21 +131,22 @@ function PremiumTopBar({
     statusText = `${drivers} ${drivers === 1 ? "motorista próximo" : "motoristas próximos"}`;
   }
 
+
   return (
     <div className="absolute inset-x-0 top-0 z-40 px-3 pt-[calc(env(safe-area-inset-top)+10px)]">
       <div className="mx-auto flex max-w-5xl items-center gap-3 rounded-2xl bg-card/90 px-3 py-2.5 shadow-xl ring-1 ring-border/60 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-500">
         <button
           onClick={onOpenMenu}
           aria-label="Abrir menu"
-          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary ring-1 ring-primary/30 transition hover:bg-primary/25 active:scale-90"
+          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary ring-1 ring-primary/30 transition hover:bg-primary/25 active:scale-90"
         >
-          <Menu className="h-5 w-5" />
+          <Menu className="h-[22px] w-[22px]" />
         </button>
         <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/10 text-primary ring-1 ring-primary/20">
           <GIcon className="h-5 w-5" />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="truncate text-[14px] font-semibold leading-tight text-foreground">
+          <div className={`${greetingClass} font-semibold leading-tight text-foreground`}>
             {greet}, {fname} <span className="opacity-90">👋</span>
           </div>
           <div className="mt-0.5 flex items-center gap-1.5 truncate text-[11px] text-muted-foreground">
@@ -139,9 +157,9 @@ function PremiumTopBar({
         <button
           onClick={onLogout}
           aria-label="Sair"
-          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-destructive/15 text-destructive ring-1 ring-destructive/30 transition hover:bg-destructive/25 active:scale-90"
+          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-destructive/15 text-destructive ring-1 ring-destructive/30 transition hover:bg-destructive/25 active:scale-90"
         >
-          <LogOut className="h-4 w-4" />
+          <LogOut className="h-5 w-5" />
         </button>
       </div>
     </div>
@@ -2092,10 +2110,17 @@ function SheetContent({
           </button>
         </div>
       ) : (
-        <button
-          type="button"
+        <div
+          role="button"
+          tabIndex={0}
           onClick={onOpenAddressDetails}
-          className="mb-2.5 flex w-full items-center gap-2.5 rounded-2xl bg-primary/10 px-3 py-2 text-left ring-1 ring-primary/30 transition active:scale-[0.99] hover:bg-primary/15"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              onOpenAddressDetails();
+            }
+          }}
+          className="mb-2.5 flex w-full cursor-pointer items-center gap-2.5 rounded-2xl bg-primary/10 px-3 py-2 text-left ring-1 ring-primary/30 transition active:scale-[0.99] hover:bg-primary/15"
         >
           <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
             <MapPin className="h-4 w-4" />
@@ -2103,7 +2128,7 @@ function SheetContent({
           <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between gap-2">
               <div className="text-[9px] font-semibold uppercase tracking-widest text-primary leading-none">
-                📍 Local de partida
+                📍 Seu local de embarque
               </div>
               {hasPosition && (
                 <span className="text-[9px] font-bold uppercase tracking-wider text-primary/80">
@@ -2111,7 +2136,7 @@ function SheetContent({
                 </span>
               )}
             </div>
-            {addressStatus === "loading" && !streetLine && !showApprox ? (
+            {addressStatus === "loading" && !streetLine ? (
               <div className="mt-0.5 truncate text-[12px] font-medium leading-tight text-muted-foreground">
                 Obtendo seu endereço...
               </div>
@@ -2131,20 +2156,6 @@ function SheetContent({
                   </div>
                 )}
               </>
-            ) : showApprox && position ? (
-              <>
-                <div className="mt-0.5 truncate text-[12.5px] font-bold leading-tight text-amber-400">
-                  Localização aproximada
-                </div>
-                <div className="truncate font-mono text-[11.5px] leading-tight text-foreground">
-                  Lat: {position.lat.toFixed(6)} • Lng: {position.lng.toFixed(6)}
-                </div>
-                {region && (
-                  <div className="truncate text-[11.5px] leading-tight text-muted-foreground">
-                    Referência: {region}
-                  </div>
-                )}
-              </>
             ) : hasPosition && position ? (
               <div className="mt-0.5 truncate font-mono text-[12px] font-semibold text-foreground">
                 {position.lat.toFixed(6)}, {position.lng.toFixed(6)}
@@ -2155,9 +2166,23 @@ function SheetContent({
               </div>
             )}
           </div>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRetryGps();
+            }}
+            disabled={gpsRequesting}
+            aria-label="Atualizar GPS"
+            title="Atualizar GPS"
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary/20 text-primary ring-1 ring-primary/30 transition hover:bg-primary/30 active:scale-90 disabled:opacity-60"
+          >
+            <Crosshair className={`h-4 w-4 ${gpsRequesting ? "animate-spin" : ""}`} />
+          </button>
           <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-        </button>
+        </div>
       )}
+
 
 
 
