@@ -2110,10 +2110,17 @@ function SheetContent({
           </button>
         </div>
       ) : (
-        <button
-          type="button"
+        <div
+          role="button"
+          tabIndex={0}
           onClick={onOpenAddressDetails}
-          className="mb-2.5 flex w-full items-center gap-2.5 rounded-2xl bg-primary/10 px-3 py-2 text-left ring-1 ring-primary/30 transition active:scale-[0.99] hover:bg-primary/15"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              onOpenAddressDetails();
+            }
+          }}
+          className="mb-2.5 flex w-full cursor-pointer items-center gap-2.5 rounded-2xl bg-primary/10 px-3 py-2 text-left ring-1 ring-primary/30 transition active:scale-[0.99] hover:bg-primary/15"
         >
           <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
             <MapPin className="h-4 w-4" />
@@ -2121,7 +2128,7 @@ function SheetContent({
           <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between gap-2">
               <div className="text-[9px] font-semibold uppercase tracking-widest text-primary leading-none">
-                📍 Local de partida
+                📍 Seu local de embarque
               </div>
               {hasPosition && (
                 <span className="text-[9px] font-bold uppercase tracking-wider text-primary/80">
@@ -2129,7 +2136,7 @@ function SheetContent({
                 </span>
               )}
             </div>
-            {addressStatus === "loading" && !streetLine && !showApprox ? (
+            {addressStatus === "loading" && !streetLine ? (
               <div className="mt-0.5 truncate text-[12px] font-medium leading-tight text-muted-foreground">
                 Obtendo seu endereço...
               </div>
@@ -2149,20 +2156,6 @@ function SheetContent({
                   </div>
                 )}
               </>
-            ) : showApprox && position ? (
-              <>
-                <div className="mt-0.5 truncate text-[12.5px] font-bold leading-tight text-amber-400">
-                  Localização aproximada
-                </div>
-                <div className="truncate font-mono text-[11.5px] leading-tight text-foreground">
-                  Lat: {position.lat.toFixed(6)} • Lng: {position.lng.toFixed(6)}
-                </div>
-                {region && (
-                  <div className="truncate text-[11.5px] leading-tight text-muted-foreground">
-                    Referência: {region}
-                  </div>
-                )}
-              </>
             ) : hasPosition && position ? (
               <div className="mt-0.5 truncate font-mono text-[12px] font-semibold text-foreground">
                 {position.lat.toFixed(6)}, {position.lng.toFixed(6)}
@@ -2173,9 +2166,23 @@ function SheetContent({
               </div>
             )}
           </div>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRetryGps();
+            }}
+            disabled={gpsRequesting}
+            aria-label="Atualizar GPS"
+            title="Atualizar GPS"
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary/20 text-primary ring-1 ring-primary/30 transition hover:bg-primary/30 active:scale-90 disabled:opacity-60"
+          >
+            <Crosshair className={`h-4 w-4 ${gpsRequesting ? "animate-spin" : ""}`} />
+          </button>
           <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-        </button>
+        </div>
       )}
+
 
 
 
