@@ -83,6 +83,20 @@ function haversineKm(a: LatLng, b: LatLng) {
   return 2 * R * Math.asin(Math.sqrt(s));
 }
 
+function subscriptionBlockMessage(status: string): string {
+  switch (status) {
+    case "overdue":
+      return "Assinatura em atraso. Regularize o pagamento para voltar a operar.";
+    case "pending":
+      return "Assinatura pendente de confirmação. Aguarde liberação do administrador.";
+    case "suspended":
+      return "Assinatura suspensa pelo administrador. Entre em contato com o suporte.";
+    case "inactive":
+    default:
+      return "Assinatura inativa. Ative seu plano para receber corridas.";
+  }
+}
+
 function MotoristaApp() {
   const navigate = useNavigate();
   const callAccept   = useServerFn(aceitarCorrida);
