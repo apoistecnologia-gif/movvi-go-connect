@@ -25,7 +25,9 @@ import { Route as PassageiroConfiguracoesRouteImport } from './routes/passageiro
 import { Route as PassageiroCadastroRouteImport } from './routes/passageiro.cadastro'
 import { Route as PassageiroAppRouteImport } from './routes/passageiro.app'
 import { Route as MotoristaStatusRouteImport } from './routes/motorista.status'
+import { Route as MotoristaSegurancaRouteImport } from './routes/motorista.seguranca'
 import { Route as MotoristaPerfilRouteImport } from './routes/motorista.perfil'
+import { Route as MotoristaNotificacoesRouteImport } from './routes/motorista.notificacoes'
 import { Route as MotoristaLoginRouteImport } from './routes/motorista.login'
 import { Route as MotoristaGanhosRouteImport } from './routes/motorista.ganhos'
 import { Route as MotoristaCorridasRouteImport } from './routes/motorista.corridas'
@@ -53,6 +55,7 @@ import { Route as AdminCategoriasRouteImport } from './routes/admin.categorias'
 import { Route as AdminBackupsRouteImport } from './routes/admin.backups'
 import { Route as AdminAssinaturasRouteImport } from './routes/admin.assinaturas'
 import { Route as AdminAdministradoresRouteImport } from './routes/admin.administradores'
+import { Route as MotoristaCorridasIdRouteImport } from './routes/motorista.corridas.$id'
 
 const MapTestRoute = MapTestRouteImport.update({
   id: '/map-test',
@@ -134,9 +137,19 @@ const MotoristaStatusRoute = MotoristaStatusRouteImport.update({
   path: '/motorista/status',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MotoristaSegurancaRoute = MotoristaSegurancaRouteImport.update({
+  id: '/motorista/seguranca',
+  path: '/motorista/seguranca',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MotoristaPerfilRoute = MotoristaPerfilRouteImport.update({
   id: '/motorista/perfil',
   path: '/motorista/perfil',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MotoristaNotificacoesRoute = MotoristaNotificacoesRouteImport.update({
+  id: '/motorista/notificacoes',
+  path: '/motorista/notificacoes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MotoristaLoginRoute = MotoristaLoginRouteImport.update({
@@ -274,6 +287,11 @@ const AdminAdministradoresRoute = AdminAdministradoresRouteImport.update({
   path: '/admin/administradores',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MotoristaCorridasIdRoute = MotoristaCorridasIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => MotoristaCorridasRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -303,10 +321,12 @@ export interface FileRoutesByFullPath {
   '/motorista/app': typeof MotoristaAppRoute
   '/motorista/cadastro': typeof MotoristaCadastroRoute
   '/motorista/configuracoes': typeof MotoristaConfiguracoesRoute
-  '/motorista/corridas': typeof MotoristaCorridasRoute
+  '/motorista/corridas': typeof MotoristaCorridasRouteWithChildren
   '/motorista/ganhos': typeof MotoristaGanhosRoute
   '/motorista/login': typeof MotoristaLoginRoute
+  '/motorista/notificacoes': typeof MotoristaNotificacoesRoute
   '/motorista/perfil': typeof MotoristaPerfilRoute
+  '/motorista/seguranca': typeof MotoristaSegurancaRoute
   '/motorista/status': typeof MotoristaStatusRoute
   '/passageiro/app': typeof PassageiroAppRoute
   '/passageiro/cadastro': typeof PassageiroCadastroRoute
@@ -320,6 +340,7 @@ export interface FileRoutesByFullPath {
   '/passageiro/sobre': typeof PassageiroSobreRoute
   '/passageiro/suporte': typeof PassageiroSuporteRoute
   '/passageiro/termos': typeof PassageiroTermosRoute
+  '/motorista/corridas/$id': typeof MotoristaCorridasIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -349,10 +370,12 @@ export interface FileRoutesByTo {
   '/motorista/app': typeof MotoristaAppRoute
   '/motorista/cadastro': typeof MotoristaCadastroRoute
   '/motorista/configuracoes': typeof MotoristaConfiguracoesRoute
-  '/motorista/corridas': typeof MotoristaCorridasRoute
+  '/motorista/corridas': typeof MotoristaCorridasRouteWithChildren
   '/motorista/ganhos': typeof MotoristaGanhosRoute
   '/motorista/login': typeof MotoristaLoginRoute
+  '/motorista/notificacoes': typeof MotoristaNotificacoesRoute
   '/motorista/perfil': typeof MotoristaPerfilRoute
+  '/motorista/seguranca': typeof MotoristaSegurancaRoute
   '/motorista/status': typeof MotoristaStatusRoute
   '/passageiro/app': typeof PassageiroAppRoute
   '/passageiro/cadastro': typeof PassageiroCadastroRoute
@@ -366,6 +389,7 @@ export interface FileRoutesByTo {
   '/passageiro/sobre': typeof PassageiroSobreRoute
   '/passageiro/suporte': typeof PassageiroSuporteRoute
   '/passageiro/termos': typeof PassageiroTermosRoute
+  '/motorista/corridas/$id': typeof MotoristaCorridasIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -396,10 +420,12 @@ export interface FileRoutesById {
   '/motorista/app': typeof MotoristaAppRoute
   '/motorista/cadastro': typeof MotoristaCadastroRoute
   '/motorista/configuracoes': typeof MotoristaConfiguracoesRoute
-  '/motorista/corridas': typeof MotoristaCorridasRoute
+  '/motorista/corridas': typeof MotoristaCorridasRouteWithChildren
   '/motorista/ganhos': typeof MotoristaGanhosRoute
   '/motorista/login': typeof MotoristaLoginRoute
+  '/motorista/notificacoes': typeof MotoristaNotificacoesRoute
   '/motorista/perfil': typeof MotoristaPerfilRoute
+  '/motorista/seguranca': typeof MotoristaSegurancaRoute
   '/motorista/status': typeof MotoristaStatusRoute
   '/passageiro/app': typeof PassageiroAppRoute
   '/passageiro/cadastro': typeof PassageiroCadastroRoute
@@ -413,6 +439,7 @@ export interface FileRoutesById {
   '/passageiro/sobre': typeof PassageiroSobreRoute
   '/passageiro/suporte': typeof PassageiroSuporteRoute
   '/passageiro/termos': typeof PassageiroTermosRoute
+  '/motorista/corridas/$id': typeof MotoristaCorridasIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -447,7 +474,9 @@ export interface FileRouteTypes {
     | '/motorista/corridas'
     | '/motorista/ganhos'
     | '/motorista/login'
+    | '/motorista/notificacoes'
     | '/motorista/perfil'
+    | '/motorista/seguranca'
     | '/motorista/status'
     | '/passageiro/app'
     | '/passageiro/cadastro'
@@ -461,6 +490,7 @@ export interface FileRouteTypes {
     | '/passageiro/sobre'
     | '/passageiro/suporte'
     | '/passageiro/termos'
+    | '/motorista/corridas/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -493,7 +523,9 @@ export interface FileRouteTypes {
     | '/motorista/corridas'
     | '/motorista/ganhos'
     | '/motorista/login'
+    | '/motorista/notificacoes'
     | '/motorista/perfil'
+    | '/motorista/seguranca'
     | '/motorista/status'
     | '/passageiro/app'
     | '/passageiro/cadastro'
@@ -507,6 +539,7 @@ export interface FileRouteTypes {
     | '/passageiro/sobre'
     | '/passageiro/suporte'
     | '/passageiro/termos'
+    | '/motorista/corridas/$id'
   id:
     | '__root__'
     | '/'
@@ -539,7 +572,9 @@ export interface FileRouteTypes {
     | '/motorista/corridas'
     | '/motorista/ganhos'
     | '/motorista/login'
+    | '/motorista/notificacoes'
     | '/motorista/perfil'
+    | '/motorista/seguranca'
     | '/motorista/status'
     | '/passageiro/app'
     | '/passageiro/cadastro'
@@ -553,6 +588,7 @@ export interface FileRouteTypes {
     | '/passageiro/sobre'
     | '/passageiro/suporte'
     | '/passageiro/termos'
+    | '/motorista/corridas/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -583,10 +619,12 @@ export interface RootRouteChildren {
   MotoristaAppRoute: typeof MotoristaAppRoute
   MotoristaCadastroRoute: typeof MotoristaCadastroRoute
   MotoristaConfiguracoesRoute: typeof MotoristaConfiguracoesRoute
-  MotoristaCorridasRoute: typeof MotoristaCorridasRoute
+  MotoristaCorridasRoute: typeof MotoristaCorridasRouteWithChildren
   MotoristaGanhosRoute: typeof MotoristaGanhosRoute
   MotoristaLoginRoute: typeof MotoristaLoginRoute
+  MotoristaNotificacoesRoute: typeof MotoristaNotificacoesRoute
   MotoristaPerfilRoute: typeof MotoristaPerfilRoute
+  MotoristaSegurancaRoute: typeof MotoristaSegurancaRoute
   MotoristaStatusRoute: typeof MotoristaStatusRoute
   PassageiroAppRoute: typeof PassageiroAppRoute
   PassageiroCadastroRoute: typeof PassageiroCadastroRoute
@@ -716,11 +754,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MotoristaStatusRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/motorista/seguranca': {
+      id: '/motorista/seguranca'
+      path: '/motorista/seguranca'
+      fullPath: '/motorista/seguranca'
+      preLoaderRoute: typeof MotoristaSegurancaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/motorista/perfil': {
       id: '/motorista/perfil'
       path: '/motorista/perfil'
       fullPath: '/motorista/perfil'
       preLoaderRoute: typeof MotoristaPerfilRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/motorista/notificacoes': {
+      id: '/motorista/notificacoes'
+      path: '/motorista/notificacoes'
+      fullPath: '/motorista/notificacoes'
+      preLoaderRoute: typeof MotoristaNotificacoesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/motorista/login': {
@@ -912,8 +964,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAdministradoresRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/motorista/corridas/$id': {
+      id: '/motorista/corridas/$id'
+      path: '/$id'
+      fullPath: '/motorista/corridas/$id'
+      preLoaderRoute: typeof MotoristaCorridasIdRouteImport
+      parentRoute: typeof MotoristaCorridasRoute
+    }
   }
 }
+
+interface MotoristaCorridasRouteChildren {
+  MotoristaCorridasIdRoute: typeof MotoristaCorridasIdRoute
+}
+
+const MotoristaCorridasRouteChildren: MotoristaCorridasRouteChildren = {
+  MotoristaCorridasIdRoute: MotoristaCorridasIdRoute,
+}
+
+const MotoristaCorridasRouteWithChildren =
+  MotoristaCorridasRoute._addFileChildren(MotoristaCorridasRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -943,10 +1013,12 @@ const rootRouteChildren: RootRouteChildren = {
   MotoristaAppRoute: MotoristaAppRoute,
   MotoristaCadastroRoute: MotoristaCadastroRoute,
   MotoristaConfiguracoesRoute: MotoristaConfiguracoesRoute,
-  MotoristaCorridasRoute: MotoristaCorridasRoute,
+  MotoristaCorridasRoute: MotoristaCorridasRouteWithChildren,
   MotoristaGanhosRoute: MotoristaGanhosRoute,
   MotoristaLoginRoute: MotoristaLoginRoute,
+  MotoristaNotificacoesRoute: MotoristaNotificacoesRoute,
   MotoristaPerfilRoute: MotoristaPerfilRoute,
+  MotoristaSegurancaRoute: MotoristaSegurancaRoute,
   MotoristaStatusRoute: MotoristaStatusRoute,
   PassageiroAppRoute: PassageiroAppRoute,
   PassageiroCadastroRoute: PassageiroCadastroRoute,
