@@ -10,7 +10,12 @@ import {
   Eye,
   FileText,
   RefreshCw,
+  CreditCard,
+  Zap,
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { logAdminAction } from "@/lib/adminAudit";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { getDriverDocumentUrls } from "@/lib/driverDocs.functions";
@@ -42,6 +47,19 @@ export const Route = createFileRoute("/admin/motoristas")({
 
 type Driver = Database["public"]["Tables"]["drivers"]["Row"];
 type Status = Driver["approval_status"];
+type SubStatus = "active" | "inactive" | "pending" | "overdue" | "suspended";
+
+const SUB_STATUSES: { value: SubStatus; label: string; tone: string }[] = [
+  { value: "active", label: "Ativa", tone: "bg-primary/15 text-primary border-primary/30" },
+  { value: "pending", label: "Pendente", tone: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30" },
+  { value: "overdue", label: "Em atraso", tone: "bg-orange-500/15 text-orange-400 border-orange-500/30" },
+  { value: "inactive", label: "Inativa", tone: "bg-muted text-muted-foreground border-border" },
+  { value: "suspended", label: "Suspensa", tone: "bg-destructive/15 text-destructive border-destructive/30" },
+];
+
+function subMeta(s: string | null | undefined) {
+  return SUB_STATUSES.find((x) => x.value === s) ?? { value: "inactive" as SubStatus, label: "—", tone: "bg-muted text-muted-foreground border-border" };
+}
 
 const TAB_META: Record<Status, { label: string; tone: string }> = {
   em_analise: { label: "Em análise", tone: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30" },
@@ -69,6 +87,7 @@ function AdminMotoristas() {
   const [tab, setTab] = useState<Status>("em_analise");
   const [detail, setDetail] = useState<Driver | null>(null);
   const [rejectFor, setRejectFor] = useState<Driver | null>(null);
+  const [subFor, setSubFor] = useState<Driver | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
   const [adminEmail, setAdminEmail] = useState<string>("—");
@@ -205,6 +224,7 @@ function AdminMotoristas() {
                         }}
                         onBlock={() => updateStatus(d, "bloqueado")}
                         onReinstate={() => updateStatus(d, "em_analise")}
+                        onSubscription={() => setSubFor(d)}
                       />
                     ))
                   )}
@@ -223,6 +243,17 @@ function AdminMotoristas() {
       </main>
 
       <DetailsDialog driver={detail} onClose={() => setDetail(null)} />
+
+      <SubscriptionDialog
+        driver={subFor}
+        onClose={() => setSubFor(null)}
+        onSaved={(updated) => {
+          setSubFor(null);
+          if (detail?.id === updated.id) setDetail(updated);
+          load();
+        }}
+      />
+
 
       <Dialog open={!!rejectFor} onOpenChange={(o) => !o && setRejectFor(null)}>
         <DialogContent>
@@ -265,6 +296,7 @@ function DriverCard({
   onReject,
   onBlock,
   onReinstate,
+  onSubscription,
 }: {
   driver: Driver;
   busy: boolean;
@@ -273,8 +305,10 @@ function DriverCard({
   onReject: () => void;
   onBlock: () => void;
   onReinstate: () => void;
+  onSubscription: () => void;
 }) {
   const meta = TAB_META[driver.approval_status];
+  const sm = subMeta(driver.subscription_status);
   return (
     <div className="rounded-2xl border border-border bg-card p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -283,6 +317,9 @@ function DriverCard({
             <h3 className="font-semibold">{driver.name}</h3>
             <Badge variant="outline" className={meta.tone}>
               {meta.label}
+            </Badge>
+            <Badge variant="outline" className={sm.tone}>
+              Assinatura: {sm.label}
             </Badge>
             <Badge variant="secondary" className="capitalize">
               {driver.category}
@@ -304,6 +341,9 @@ function DriverCard({
         <div className="flex flex-wrap gap-2">
           <Button size="sm" variant="outline" onClick={onDetails}>
             <Eye className="mr-1 h-4 w-4" /> Detalhes
+          </Button>
+          <Button size="sm" variant="outline" onClick={onSubscription}>
+            <CreditCard className="mr-1 h-4 w-4" /> Assinatura
           </Button>
           {driver.approval_status !== "aprovado" && (
             <Button size="sm" onClick={onApprove} disabled={busy}>
@@ -427,7 +467,11 @@ function DetailsDialog({ driver, onClose }: { driver: Driver | null; onClose: ()
           </Section>
 
           <Section title="Assinatura / Pagamento">
-            <Row label="Status assinatura" value={driver.subscription_status} />
+            <Row label="Status assinatura" value={subMeta(driver.subscription_status).label} />
+            <Row label="Status pagamento" value={(driver as { payment_status?: string }).payment_status ?? "—"} />
+            <Row label="Validade" value={fmtDate((driver as { subscription_expires_at?: string | null }).subscription_expires_at ?? null)} />
+            <Row label="Carência (dias)" value={String((driver as { subscription_grace_days?: number }).subscription_grace_days ?? 0)} />
+            <Row label="Observação do admin" value={(driver as { subscription_admin_note?: string | null }).subscription_admin_note ?? null} />
           </Section>
 
           <Section title="Status">
@@ -559,5 +603,240 @@ function DocCard({
         </div>
       )}
     </a>
+  );
+}
+
+function toDateInput(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toISOString().slice(0, 10);
+}
+
+function SubscriptionDialog({
+  driver,
+  onClose,
+  onSaved,
+}: {
+  driver: Driver | null;
+  onClose: () => void;
+  onSaved: (d: Driver) => void;
+}) {
+  const [status, setStatus] = useState<SubStatus>("inactive");
+  const [paymentStatus, setPaymentStatus] = useState<string>("unpaid");
+  const [expires, setExpires] = useState<string>("");
+  const [graceDays, setGraceDays] = useState<number>(0);
+  const [note, setNote] = useState<string>("");
+  const [saving, setSaving] = useState(false);
+  const [releasing, setReleasing] = useState(false);
+
+  useEffect(() => {
+    if (!driver) return;
+    setStatus(((driver.subscription_status as SubStatus) ?? "inactive") || "inactive");
+    setPaymentStatus((driver as { payment_status?: string }).payment_status ?? "unpaid");
+    setExpires(toDateInput((driver as { subscription_expires_at?: string | null }).subscription_expires_at ?? null));
+    setGraceDays(Number((driver as { subscription_grace_days?: number }).subscription_grace_days ?? 0));
+    setNote((driver as { subscription_admin_note?: string | null }).subscription_admin_note ?? "");
+  }, [driver?.id]);
+
+  if (!driver) return null;
+
+  async function save() {
+    if (!driver) return;
+    setSaving(true);
+    const patch = {
+      subscription_status: status,
+      payment_status: paymentStatus,
+      subscription_expires_at: expires ? new Date(`${expires}T23:59:59`).toISOString() : null,
+      subscription_grace_days: Number.isFinite(graceDays) ? graceDays : 0,
+      subscription_admin_note: note.trim() || null,
+    };
+    const before = {
+      subscription_status: driver.subscription_status,
+      payment_status: (driver as { payment_status?: string }).payment_status,
+      subscription_expires_at: (driver as { subscription_expires_at?: string | null }).subscription_expires_at,
+      subscription_grace_days: (driver as { subscription_grace_days?: number }).subscription_grace_days,
+      subscription_admin_note: (driver as { subscription_admin_note?: string | null }).subscription_admin_note,
+    };
+    const { data, error } = await supabase
+      .from("drivers")
+      .update(patch as never)
+      .eq("id", driver.id)
+      .select("*")
+      .maybeSingle();
+    setSaving(false);
+    if (error) {
+      toast.error("Erro ao salvar assinatura: " + error.message);
+      return;
+    }
+    const action =
+      status === "active"
+        ? "driver.subscription.activate"
+        : status === "suspended"
+          ? "driver.subscription.suspend"
+          : "driver.subscription.update";
+    await logAdminAction({
+      action,
+      entity: "drivers",
+      entity_id: driver.id,
+      before,
+      after: patch,
+    });
+    toast.success("Assinatura atualizada");
+    onSaved((data ?? { ...driver, ...patch }) as Driver);
+  }
+
+  async function releaseForTesting() {
+    if (!driver) return;
+    setReleasing(true);
+    const exp = new Date();
+    exp.setDate(exp.getDate() + 30);
+    const patch = {
+      approval_status: "aprovado" as Status,
+      approved_at: new Date().toISOString(),
+      blocked_at: null,
+      motivo_reprovacao: null,
+      subscription_status: "active" as SubStatus,
+      payment_status: "paid",
+      subscription_expires_at: exp.toISOString(),
+      subscription_grace_days: 0,
+      subscription_admin_note: note.trim() || "Liberado para teste pelo administrador",
+    };
+    const { data, error } = await supabase
+      .from("drivers")
+      .update(patch as never)
+      .eq("id", driver.id)
+      .select("*")
+      .maybeSingle();
+    setReleasing(false);
+    if (error) {
+      toast.error("Falha ao liberar para teste: " + error.message);
+      return;
+    }
+    await logAdminAction({
+      action: "driver.release_for_testing",
+      entity: "drivers",
+      entity_id: driver.id,
+      before: {
+        approval_status: driver.approval_status,
+        subscription_status: driver.subscription_status,
+      },
+      after: patch,
+    });
+    toast.success("Motorista liberado para teste por 30 dias");
+    onSaved((data ?? { ...driver, ...patch }) as Driver);
+  }
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <CreditCard className="h-5 w-5 text-primary" />
+            Assinatura — {driver.name}
+          </DialogTitle>
+          <DialogDescription>
+            Controle manual do status de pagamento/assinatura do motorista (modo teste, sem gateway).
+          </DialogDescription>
+        </DialogHeader>
+
+        <button
+          type="button"
+          onClick={releaseForTesting}
+          disabled={releasing || saving}
+          className="flex w-full items-center justify-between rounded-2xl border border-primary/40 bg-primary/10 px-4 py-3 text-left transition hover:bg-primary/15 disabled:opacity-60"
+        >
+          <div>
+            <div className="flex items-center gap-2 font-semibold text-primary">
+              <Zap className="h-4 w-4" /> Liberar motorista para teste
+            </div>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Aprova o cadastro, ativa a assinatura por 30 dias e marca pagamento como pago.
+            </p>
+          </div>
+          {releasing ? <Loader2 className="h-5 w-5 animate-spin text-primary" /> : null}
+        </button>
+
+        <div className="grid gap-3 pt-2">
+          <div className="grid gap-1.5">
+            <Label>Status da assinatura</Label>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {SUB_STATUSES.map((s) => (
+                <button
+                  key={s.value}
+                  type="button"
+                  onClick={() => setStatus(s.value)}
+                  className={`rounded-xl border px-3 py-2 text-xs transition ${
+                    status === s.value
+                      ? `${s.tone} border-current`
+                      : "border-border bg-card text-muted-foreground hover:border-primary/40"
+                  }`}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-1.5">
+              <Label htmlFor="payment_status">Status de pagamento</Label>
+              <select
+                id="payment_status"
+                value={paymentStatus}
+                onChange={(e) => setPaymentStatus(e.target.value)}
+                className="h-10 rounded-md border border-border bg-card px-3 text-sm"
+              >
+                <option value="paid">Pago</option>
+                <option value="unpaid">Não pago</option>
+                <option value="pending">Pendente</option>
+                <option value="refunded">Reembolsado</option>
+              </select>
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="grace">Carência (dias)</Label>
+              <Input
+                id="grace"
+                type="number"
+                min={0}
+                value={graceDays}
+                onChange={(e) => setGraceDays(Number(e.target.value))}
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-1.5">
+            <Label htmlFor="expires">Validade da assinatura</Label>
+            <Input
+              id="expires"
+              type="date"
+              value={expires}
+              onChange={(e) => setExpires(e.target.value)}
+            />
+          </div>
+
+          <div className="grid gap-1.5">
+            <Label htmlFor="note">Observação do administrador</Label>
+            <Textarea
+              id="note"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Ex.: liberação manual para teste interno"
+              rows={3}
+            />
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose} disabled={saving || releasing}>
+            Cancelar
+          </Button>
+          <Button onClick={save} disabled={saving || releasing}>
+            {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            Salvar alterações
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

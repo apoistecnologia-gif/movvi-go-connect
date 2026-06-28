@@ -83,6 +83,20 @@ function haversineKm(a: LatLng, b: LatLng) {
   return 2 * R * Math.asin(Math.sqrt(s));
 }
 
+function subscriptionBlockMessage(status: string): string {
+  switch (status) {
+    case "overdue":
+      return "Assinatura em atraso. Regularize o pagamento para voltar a operar.";
+    case "pending":
+      return "Assinatura pendente de confirmação. Aguarde liberação do administrador.";
+    case "suspended":
+      return "Assinatura suspensa pelo administrador. Entre em contato com o suporte.";
+    case "inactive":
+    default:
+      return "Assinatura inativa. Ative seu plano para receber corridas.";
+  }
+}
+
 function MotoristaApp() {
   const navigate = useNavigate();
   const callAccept   = useServerFn(aceitarCorrida);
@@ -185,11 +199,7 @@ function MotoristaApp() {
                 : "Cadastro em análise.",
           );
         } else if (d.subscription_status && d.subscription_status !== "active") {
-          setStatusBlock(
-            d.subscription_status === "overdue"
-              ? "Assinatura em atraso. Regularize o pagamento para voltar a operar."
-              : "Assinatura inativa. Ative seu plano para receber corridas.",
-          );
+          setStatusBlock(subscriptionBlockMessage(d.subscription_status));
         }
       } else if (result.reason === "not_found") {
         setStatusBlock("Cadastro de motorista não encontrado.");
@@ -230,11 +240,7 @@ function MotoristaApp() {
             return;
           }
           if (row.subscription_status && row.subscription_status !== "active") {
-            setStatusBlock(
-              row.subscription_status === "overdue"
-                ? "Assinatura em atraso. Regularize o pagamento para voltar a operar."
-                : "Assinatura inativa. Ative seu plano para receber corridas.",
-            );
+            setStatusBlock(subscriptionBlockMessage(row.subscription_status));
             setOnline(false);
             if (userId) {
               void supabase.from("drivers").update({ is_online: false }).eq("user_id", userId);

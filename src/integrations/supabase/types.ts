@@ -550,11 +550,15 @@ export type Database = {
           last_location_at: string | null
           motivo_reprovacao: string | null
           name: string
+          payment_status: string
           phone: string
           photo_url: string | null
           rating: number
           selfie_url: string | null
           state: string
+          subscription_admin_note: string | null
+          subscription_expires_at: string | null
+          subscription_grace_days: number
           subscription_status: Database["public"]["Enums"]["driver_subscription_status"]
           suspended_at: string | null
           updated_at: string
@@ -587,11 +591,15 @@ export type Database = {
           last_location_at?: string | null
           motivo_reprovacao?: string | null
           name: string
+          payment_status?: string
           phone: string
           photo_url?: string | null
           rating?: number
           selfie_url?: string | null
           state: string
+          subscription_admin_note?: string | null
+          subscription_expires_at?: string | null
+          subscription_grace_days?: number
           subscription_status?: Database["public"]["Enums"]["driver_subscription_status"]
           suspended_at?: string | null
           updated_at?: string
@@ -624,11 +632,15 @@ export type Database = {
           last_location_at?: string | null
           motivo_reprovacao?: string | null
           name?: string
+          payment_status?: string
           phone?: string
           photo_url?: string | null
           rating?: number
           selfie_url?: string | null
           state?: string
+          subscription_admin_note?: string | null
+          subscription_expires_at?: string | null
+          subscription_grace_days?: number
           subscription_status?: Database["public"]["Enums"]["driver_subscription_status"]
           suspended_at?: string | null
           updated_at?: string
@@ -1669,7 +1681,12 @@ export type Database = {
         | "aprovado"
         | "reprovado"
         | "bloqueado"
-      driver_subscription_status: "active" | "inactive" | "overdue"
+      driver_subscription_status:
+        | "active"
+        | "inactive"
+        | "overdue"
+        | "pending"
+        | "suspended"
       payment_status: "pending" | "paid" | "failed" | "refunded"
       ride_category: "carros" | "motos" | "fretes" | "guincho" | "envios"
       ride_status:
@@ -1823,7 +1840,13 @@ export const Constants = {
         "reprovado",
         "bloqueado",
       ],
-      driver_subscription_status: ["active", "inactive", "overdue"],
+      driver_subscription_status: [
+        "active",
+        "inactive",
+        "overdue",
+        "pending",
+        "suspended",
+      ],
       payment_status: ["pending", "paid", "failed", "refunded"],
       ride_category: ["carros", "motos", "fretes", "guincho", "envios"],
       ride_status: [
