@@ -2922,22 +2922,234 @@ function Action({
   icon,
   label,
   tone,
+  onClick,
+  href,
 }: {
   icon: React.ReactNode;
   label: string;
   tone?: "destructive";
+  onClick?: () => void;
+  href?: string;
 }) {
-  return (
-    <button
-      className={`flex flex-col items-center gap-1 rounded-xl py-3 ring-1 ring-border ${
-        tone === "destructive"
-          ? "bg-destructive/10 text-destructive-foreground hover:bg-destructive/20"
-          : "bg-background/60 hover:ring-primary/40"
-      }`}
-    >
+  const cls = `flex flex-col items-center gap-1 rounded-xl py-3 ring-1 ring-border transition active:scale-95 ${
+    tone === "destructive"
+      ? "bg-destructive/15 text-destructive-foreground hover:bg-destructive/25 ring-destructive/40"
+      : "bg-background/60 hover:ring-primary/40"
+  }`;
+  const inner = (
+    <>
       {icon}
       <span className="text-[11px]">{label}</span>
+    </>
+  );
+  if (href) {
+    return (
+      <a href={href} className={cls}>
+        {inner}
+      </a>
+    );
+  }
+  return (
+    <button onClick={onClick} className={cls}>
+      {inner}
     </button>
+  );
+}
+
+function RideQuickActions({
+  ride,
+  driver,
+  onCancel,
+}: {
+  ride: RideRow;
+  driver: DriverRow;
+  onCancel: () => void;
+}) {
+  const [sosOpen, setSosOpen] = useState(false);
+  const [sosSending, setSosSending] = useState(false);
+  const [sosSent, setSosSent] = useState(false);
+  const [emergency, setEmergency] = useState<{ name: string | null; phone: string | null }>({
+    name: null,
+    phone: null,
+  });
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const { data: auth } = await supabase.auth.getUser();
+        if (!auth?.user) return;
+        const { data } = await supabase
+          .from("users")
+          .select("emergency_contact_name, emergency_contact_phone")
+          .eq("auth_user_id", auth.user.id)
+          .maybeSingle();
+        if (active && data) {
+          setEmergency({
+            name: data.emergency_contact_name ?? null,
+            phone: data.emergency_contact_phone ?? null,
+          });
+        }
+      } catch {
+        /* silencioso */
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const driverPhone = (driver.phone ?? "").replace(/\D/g, "");
+  const telHref = driverPhone ? `tel:+${driverPhone.startsWith("55") ? driverPhone : "55" + driverPhone}` : undefined;
+
+  async function handleShare() {
+    const text =
+      `🚗 MOVVI Drive — Estou em uma corrida\n` +
+      `Motorista: ${driver.name}\n` +
+      `Veículo: ${driver.vehicle_color ?? ""} ${driver.vehicle_model ?? ""} (${driver.vehicle_plate ?? "-"})\n` +
+      `Destino: ${ride.destination_name ?? "-"}\n` +
+      `Código de segurança: ${ride.safety_code ?? "-"}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: "MOVVI Drive", text });
+      } else {
+        await navigator.clipboard.writeText(text);
+        toast.success("Detalhes da corrida copiados");
+      }
+    } catch {
+      /* usuário cancelou */
+    }
+  }
+
+  async function triggerSos() {
+    if (sosSending) return;
+    setSosSending(true);
+    try {
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth?.user) throw new Error("Sessão expirada");
+
+      // Pega coordenadas em tempo real
+      const pos = await new Promise<GeolocationPosition | null>((resolve) => {
+        if (!navigator.geolocation) return resolve(null);
+        navigator.geolocation.getCurrentPosition(
+          (p) => resolve(p),
+          () => resolve(null),
+          { enableHighAccuracy: true, timeout: 4000, maximumAge: 0 },
+        );
+      });
+
+      const { error } = await supabase.from("sos_alerts").insert({
+        user_id: auth.user.id,
+        ride_id: ride.id,
+        lat: pos?.coords.latitude ?? ride.origin_lat ?? null,
+        lng: pos?.coords.longitude ?? ride.origin_lng ?? null,
+        message: `Alerta SOS — passageiro ${auth.user.email ?? ""} | motorista ${driver.name} | placa ${driver.vehicle_plate ?? "-"}`,
+      });
+      if (error) throw error;
+
+      setSosSent(true);
+      toast.success("Alerta SOS enviado. Nossa central foi notificada.");
+    } catch (err) {
+      console.error("[MOVVI] SOS falhou:", err);
+      toast.error("Não foi possível enviar o SOS. Ligue 190 imediatamente.");
+    } finally {
+      setSosSending(false);
+    }
+  }
+
+  return (
+    <>
+      <div className="mt-2 grid grid-cols-4 gap-1.5 text-xs">
+        <Action
+          icon={<Phone className="h-4 w-4" />}
+          label="Ligar"
+          href={telHref}
+          onClick={telHref ? undefined : () => toast.info("Telefone do motorista indisponível")}
+        />
+        <Action icon={<Navigation2 className="h-4 w-4" />} label="Compartilhar" onClick={handleShare} />
+        <Action
+          icon={<Shield className="h-4 w-4" />}
+          label="SOS"
+          tone="destructive"
+          onClick={() => setSosOpen(true)}
+        />
+        <Action icon={<X className="h-4 w-4" />} label="Cancelar" onClick={onCancel} />
+      </div>
+
+      {sosOpen && (
+        <div
+          className="fixed inset-0 z-[200] flex items-end justify-center bg-black/70 backdrop-blur-sm animate-in fade-in"
+          onClick={() => !sosSending && setSosOpen(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md rounded-t-3xl bg-card p-5 ring-1 ring-destructive/40 animate-in slide-in-from-bottom"
+          >
+            <div className="mb-3 flex items-center gap-2">
+              <div className="grid h-10 w-10 place-items-center rounded-full bg-destructive/20 text-destructive-foreground">
+                <Shield className="h-5 w-5" />
+              </div>
+              <div>
+                <div className="text-[15px] font-extrabold">Emergência durante a corrida</div>
+                <div className="text-[12px] text-muted-foreground">
+                  Use apenas em caso real de risco.
+                </div>
+              </div>
+            </div>
+
+            {sosSent ? (
+              <div className="rounded-2xl bg-primary/10 p-3 text-[13px] ring-1 ring-primary/30">
+                ✅ Alerta enviado. A central recebeu sua localização e os dados do motorista. Mantenha-se em local seguro.
+              </div>
+            ) : (
+              <p className="text-[13px] text-muted-foreground">
+                Vamos registrar um alerta com sua localização atual, dados do motorista ({driver.name} · {driver.vehicle_plate ?? "-"}) e detalhes da corrida.
+              </p>
+            )}
+
+            <div className="mt-3 grid gap-2">
+              <a
+                href="tel:190"
+                className="flex items-center justify-center gap-2 rounded-2xl bg-destructive py-3 text-[14px] font-bold text-destructive-foreground active:scale-[0.98]"
+              >
+                <Phone className="h-4 w-4" /> Ligar 190 — Polícia
+              </a>
+              {emergency.phone && (
+                <a
+                  href={`tel:${emergency.phone.replace(/\D/g, "")}`}
+                  className="flex items-center justify-center gap-2 rounded-2xl bg-primary py-3 text-[14px] font-bold text-primary-foreground active:scale-[0.98]"
+                >
+                  <Phone className="h-4 w-4" /> Ligar para {emergency.name || "contato de emergência"}
+                </a>
+              )}
+              {!sosSent && (
+                <button
+                  disabled={sosSending}
+                  onClick={triggerSos}
+                  className="flex items-center justify-center gap-2 rounded-2xl border border-destructive/60 bg-destructive/10 py-3 text-[14px] font-bold text-destructive-foreground active:scale-[0.98] disabled:opacity-50"
+                >
+                  <Shield className="h-4 w-4" />
+                  {sosSending ? "Enviando alerta..." : "Enviar alerta para a MOVVI"}
+                </button>
+              )}
+              <button
+                onClick={() => setSosOpen(false)}
+                disabled={sosSending}
+                className="rounded-2xl bg-background/60 py-2.5 text-[13px] ring-1 ring-border"
+              >
+                Fechar
+              </button>
+            </div>
+
+            {!emergency.phone && !sosSent && (
+              <p className="mt-2 text-center text-[11px] text-muted-foreground">
+                Dica: cadastre um contato de emergência no seu perfil.
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
