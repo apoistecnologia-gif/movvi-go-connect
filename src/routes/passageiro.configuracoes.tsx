@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { requestPushPermission } from "@/lib/pushNotifications";
+import { useTheme, type ThemeMode } from "@/lib/theme";
 
 export const Route = createFileRoute("/passageiro/configuracoes")({
   head: () => ({ meta: [{ title: "Configurações — MOVVI DRIVE" }] }),
@@ -39,12 +40,8 @@ const DEFAULT_PREFS: Prefs = {
   theme: "dark",
 };
 
-function applyTheme(theme: Prefs["theme"]) {
-  const root = document.documentElement;
-  const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
-  const dark = theme === "dark" || (theme === "system" && prefersDark);
-  root.classList.toggle("dark", dark);
-}
+// Theme application is handled centrally by ThemeProvider (src/lib/theme.tsx).
+
 
 function ConfiguracoesPassageiro() {
   const navigate = useNavigate();
