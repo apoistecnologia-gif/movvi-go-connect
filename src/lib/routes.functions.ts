@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/google_maps";
 
@@ -19,7 +20,9 @@ export type RouteResult = {
   encodedPolyline: string;
 };
 
+// Requer usuário autenticado para evitar consumo abusivo da chave do Google Maps.
 export const computeRoute = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((data) => InputSchema.parse(data))
   .handler(async ({ data }): Promise<RouteResult> => {
     const lovableKey = process.env.LOVABLE_API_KEY;
@@ -51,7 +54,9 @@ export const computeRoute = createServerFn({ method: "POST" })
 
     if (!res.ok) {
       const text = await res.text();
-      throw new Error(`Routes API ${res.status}: ${text.slice(0, 200)}`);
+      // Log the upstream error server-side only; never leak details to clients.
+      console.error("[MOVVI ROUTE] upstream Routes API error", res.status, text.slice(0, 500));
+      throw new Error("Não foi possível calcular a rota.");
     }
 
     const json = (await res.json()) as {

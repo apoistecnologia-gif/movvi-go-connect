@@ -28,13 +28,14 @@ export function useNearbyDrivers({ category }: Filter = {}) {
     let active = true;
 
     async function load() {
+      // Lê da visão pública `driver_public_locations` que expõe apenas
+      // colunas não-sensíveis (sem CPF/email/documentos).
       let q = supabase
-        .from("drivers")
+        .from("driver_public_locations" as never)
         .select(
           "user_id, name, category, current_lat, current_lng, vehicle_model, vehicle_color, rating",
         )
         .eq("is_online", true)
-        .eq("approval_status", "aprovado")
         .not("current_lat", "is", null)
         .not("current_lng", "is", null);
       if (category) q = q.eq("category", category);
@@ -48,7 +49,7 @@ export function useNearbyDrivers({ category }: Filter = {}) {
       .channel("nearby-drivers")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "drivers" },
+        { event: "*", schema: "public", table: "driver_public_locations" },
         () => load(),
       )
       .subscribe();

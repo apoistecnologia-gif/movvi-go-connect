@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/google_maps";
 
@@ -78,8 +79,11 @@ const EMPTY_GEOCODE: GeocodeResult = {
   components: {},
 };
 
+// Requer usuário autenticado para evitar abuso/scraping da chave Google Maps.
 export const reverseGeocode = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
+
     z
       .object({
         lat: z.number().min(-90).max(90),

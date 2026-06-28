@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const DRIVER_TABLE = "drivers" as const;
 const DRIVER_AUTH_LINK_FIELD = "user_id" as const;
@@ -264,8 +265,9 @@ export const cadastrarMotorista = createServerFn({ method: "POST" })
   });
 
 export const diagnosticarAuthMotorista = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input) => DriverDiagnosticSchema.parse(input))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const { getRequest } = await import("@tanstack/react-start/server");
     const host = getRequest()?.headers.get("host") ?? "";
     if (host && !isDevHost(host)) {
@@ -273,6 +275,18 @@ export const diagnosticarAuthMotorista = createServerFn({ method: "POST" })
     }
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Apenas administradores podem inspecionar o estado de cadastro alheio.
+    const role = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId)
+      .in("role", ["admin", "super_admin", "support"])
+      .maybeSingle();
+    if (!role.data) {
+      return emptyDiagnostic("Diagnóstico disponível apenas para administradores.");
+    }
+
     const email = data.email.toLowerCase();
     const result = emptyDiagnostic();
 

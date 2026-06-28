@@ -286,6 +286,48 @@ export type Database = {
         }
         Relationships: []
       }
+      driver_public_locations: {
+        Row: {
+          category: string | null
+          current_lat: number | null
+          current_lng: number | null
+          is_online: boolean
+          name: string | null
+          photo_url: string | null
+          rating: number | null
+          updated_at: string
+          user_id: string
+          vehicle_color: string | null
+          vehicle_model: string | null
+        }
+        Insert: {
+          category?: string | null
+          current_lat?: number | null
+          current_lng?: number | null
+          is_online?: boolean
+          name?: string | null
+          photo_url?: string | null
+          rating?: number | null
+          updated_at?: string
+          user_id: string
+          vehicle_color?: string | null
+          vehicle_model?: string | null
+        }
+        Update: {
+          category?: string | null
+          current_lat?: number | null
+          current_lng?: number | null
+          is_online?: boolean
+          name?: string | null
+          photo_url?: string | null
+          rating?: number | null
+          updated_at?: string
+          user_id?: string
+          vehicle_color?: string | null
+          vehicle_model?: string | null
+        }
+        Relationships: []
+      }
       drivers: {
         Row: {
           approval_status: Database["public"]["Enums"]["driver_approval_status"]
@@ -1097,10 +1139,6 @@ export type Database = {
     }
     Functions: {
       auto_suspend_overdue_subscriptions: { Args: never; Returns: undefined }
-      can_view_profile_photo: {
-        Args: { _owner: string; _viewer: string }
-        Returns: boolean
-      }
       get_passenger_stats: {
         Args: { _user_id: string }
         Returns: {
@@ -1118,7 +1156,6 @@ export type Database = {
         }
         Returns: boolean
       }
-      is_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       app_role:

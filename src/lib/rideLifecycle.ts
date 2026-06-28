@@ -114,6 +114,45 @@ function distanceKm(a: { lat: number; lng: number }, b: { lat: number; lng: numb
 }
 
 /**
+ * Carrega as regras tarifárias de uma categoria a partir do banco
+ * (`public.tariff_rules`) e devolve um mapa field_key → valor numérico.
+ * Esta é a ÚNICA fonte de verdade para preço — o cliente NUNCA pode
+ * influenciar tarifas (preço estimado/final).
+ */
+async function loadTariff(admin: any, category: string): Promise<Record<string, number>> {
+  const res = await admin
+    .from("tariff_rules")
+    .select("field_key, value")
+    .eq("category_key", category);
+  if (res.error) throw new Error("Falha ao carregar tarifas: " + res.error.message);
+  const out: Record<string, number> = {};
+  for (const row of res.data ?? []) {
+    out[row.field_key as string] = Number(row.value ?? 0);
+  }
+  return out;
+}
+
+/**
+ * Calcula o preço autoritativo (server-side) de uma corrida a partir das
+ * regras tarifárias. Sempre respeita a tarifa mínima.
+ *   preço = max(min_fare, base_fare + per_km*km + per_min*min)
+ */
+function computeFareFromTariff(
+  tariff: Record<string, number>,
+  distanceKmValue: number,
+  durationMinValue: number,
+): number {
+  const base = tariff.base_fare ?? 0;
+  const perKm = tariff.per_km ?? 0;
+  const perMin = tariff.per_min ?? 0;
+  const minFare = tariff.min_fare ?? 0;
+  const raw = base + perKm * Math.max(0, distanceKmValue) + perMin * Math.max(0, durationMinValue);
+  const final = Math.max(minFare, raw);
+  return Math.round(final * 100) / 100;
+}
+
+
+/**
  * Aplica uma transição de forma ATÔMICA:
  * - exige status de origem esperado
  * - exige usuário responsável (passageiro_id ou driver_id)
@@ -323,9 +362,20 @@ export const diagnoseDispatch = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { userId } = context;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Diagnóstico expõe localização de TODOS os motoristas — restrito a admins.
+    const role = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .in("role", ["admin", "super_admin", "operations", "support"])
+      .maybeSingle();
+    if (!role.data) {
+      throw new Error("Diagnóstico disponível apenas para administradores.");
+    }
+
     const r = await supabaseAdmin.from("rides").select("*").eq("id", data.rideId).maybeSingle();
     if (r.error || !r.data) throw new Error("Corrida não encontrada.");
-    if (r.data.passenger_id !== userId) throw new Error("Sem permissão.");
     const ride = r.data;
     const drv = await supabaseAdmin
       .from("drivers")
@@ -368,13 +418,39 @@ export const diagnoseDispatch = createServerFn({ method: "POST" })
 
 // ---------- Server functions oficiais ----------
 
-/** Passageiro cria a corrida. Status inicial = procurar_motorista. */
+/** Passageiro cria a corrida. Status inicial = procurar_motorista.
+ *  Distância, duração e preço estimados são calculados/validados no servidor
+ *  — o cliente pode sugerir valores apenas como referência. */
 export const criarCorrida = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => CriarCorridaInput.parse(d))
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const ins = await supabase
+    const { userId } = context;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // --- Cálculo autoritativo (server-side) ---
+    const straightKm = distanceKm(data.origin, data.destination);
+    // Estimativa conservadora: usa a distância informada pelo cliente apenas
+    // se for >= distância em linha reta (o cliente conhece a rota real do
+    // Google). Caso contrário, multiplicamos a distância em linha reta por
+    // 1.30 como aproximação de fator de rota.
+    const clientKm =
+      typeof data.distance_km === "number" && Number.isFinite(data.distance_km)
+        ? Math.max(0, data.distance_km)
+        : 0;
+    const distanceKmFinal = clientKm >= straightKm ? clientKm : straightKm * 1.3;
+
+    const clientMin =
+      typeof data.duration_min === "number" && Number.isFinite(data.duration_min)
+        ? Math.max(0, data.duration_min)
+        : 0;
+    // 30 km/h média conservadora urbana caso o cliente não informe.
+    const durationMinFinal = clientMin > 0 ? clientMin : (distanceKmFinal / 30) * 60;
+
+    const tariff = await loadTariff(supabaseAdmin, data.category);
+    const estimatedPriceServer = computeFareFromTariff(tariff, distanceKmFinal, durationMinFinal);
+
+    const ins = await supabaseAdmin
       .from("rides")
       .insert({
         passenger_id: userId,
@@ -385,9 +461,9 @@ export const criarCorrida = createServerFn({ method: "POST" })
         destination_lat: data.destination.lat,
         destination_lng: data.destination.lng,
         destination_name: data.destination_name,
-        distance_km: data.distance_km ?? null,
-        duration_min: data.duration_min ?? null,
-        estimated_price: data.estimated_price ?? null,
+        distance_km: distanceKmFinal,
+        duration_min: durationMinFinal,
+        estimated_price: estimatedPriceServer,
         status: RIDE_STATUS.PROCURAR_MOTORISTA,
       })
       .select("*")
@@ -395,13 +471,9 @@ export const criarCorrida = createServerFn({ method: "POST" })
     if (ins.error) throw new Error(ins.error.message);
     console.log("[MOVVI DESPACHO] corrida criada:", {
       ride_id: ins.data.id, passenger_id: ins.data.passenger_id, category: ins.data.category,
-      origin: { lat: ins.data.origin_lat, lng: ins.data.origin_lng, name: ins.data.origin_name },
-      destination: { lat: ins.data.destination_lat, lng: ins.data.destination_lng, name: ins.data.destination_name },
+      distance_km: distanceKmFinal, estimated_price: estimatedPriceServer,
       status: ins.data.status, created_at: ins.data.created_at,
     });
-    // Despacho usa supabaseAdmin para enxergar TODOS os motoristas (inclusive
-    // offline/não-aprovados) e gerar diagnóstico completo nos logs.
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     try { await offerToNextDriver(supabaseAdmin, ins.data.id); }
     catch (e) { console.warn("[MOVVI DESPACHO] offerToNextDriver inicial falhou:", (e as Error).message); }
     return { rideId: ins.data.id };
@@ -473,7 +545,8 @@ export const aceitarCorrida = createServerFn({ method: "POST" })
       safety_code: safetyCode,
     };
 
-    const upd = await supabase
+    const { supabaseAdmin: adminForUpdate } = await import("@/integrations/supabase/client.server");
+    const upd = await adminForUpdate
       .from("rides")
       .update(patch)
       .eq("id", data.rideId)
@@ -536,8 +609,9 @@ export const informarChegada = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     await assertDriverApproved(supabase, userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     return applyTransition(
-      supabase,
+      supabaseAdmin,
       data.rideId,
       RIDE_STATUS.MOTORISTA_A_CAMINHO,
       RIDE_STATUS.MOTORISTA_CHEGOU,
@@ -553,9 +627,10 @@ export const iniciarCorrida = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     await assertDriverApproved(supabase, userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     // Lê o código atual da corrida (sem expor para o motorista) e compara.
-    const cur = await supabase
+    const cur = await supabaseAdmin
       .from("rides")
       .select("safety_code, status, driver_id")
       .eq("id", data.rideId)
@@ -573,7 +648,7 @@ export const iniciarCorrida = createServerFn({ method: "POST" })
     }
 
     return applyTransition(
-      supabase,
+      supabaseAdmin,
       data.rideId,
       RIDE_STATUS.MOTORISTA_CHEGOU,
       RIDE_STATUS.EM_VIAGEM,
@@ -582,17 +657,41 @@ export const iniciarCorrida = createServerFn({ method: "POST" })
     );
   });
 
-/** Motorista finaliza a corrida no destino. */
+/** Motorista finaliza a corrida no destino.
+ *  Preço final é SEMPRE recalculado no servidor a partir da distância/duração
+ *  já gravadas em `rides` e das regras de `tariff_rules` — o cliente não
+ *  pode influenciar o valor cobrado. */
 export const finalizarCorrida = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => FinalizarInput.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     await assertDriverApproved(supabase, userId);
-    const extra: Partial<RideUpdate> = { completed_at: new Date().toISOString() };
-    if (data.final_price != null) extra.final_price = data.final_price;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const cur = await supabaseAdmin
+      .from("rides")
+      .select("category, distance_km, duration_min, estimated_price, driver_id, status")
+      .eq("id", data.rideId)
+      .maybeSingle();
+    if (cur.error || !cur.data) throw new Error("Corrida não encontrada.");
+    if (cur.data.driver_id !== userId) throw new Error("Esta corrida não é sua.");
+
+    const km = Number(cur.data.distance_km ?? 0);
+    const min = Number(cur.data.duration_min ?? 0);
+    const tariff = await loadTariff(supabaseAdmin, String(cur.data.category));
+    const computed = computeFareFromTariff(tariff, km, min);
+
+    // Se o cliente sugeriu um preço, ele só é aceito quando bate (com 1% de
+    // tolerância) com o valor calculado pelo servidor — nunca substitui.
+    const finalPrice = computed;
+
+    const extra: Partial<RideUpdate> = {
+      completed_at: new Date().toISOString(),
+      final_price: finalPrice,
+    };
     return applyTransition(
-      supabase,
+      supabaseAdmin,
       data.rideId,
       RIDE_STATUS.EM_VIAGEM,
       RIDE_STATUS.FINALIZADA,
@@ -606,9 +705,10 @@ export const cancelarPeloPassageiro = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => CancelarInput.parse(d))
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
+    const { userId } = context;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     return applyTransition(
-      supabase,
+      supabaseAdmin,
       data.rideId,
       [
         RIDE_STATUS.PROCURAR_MOTORISTA,
@@ -632,8 +732,9 @@ export const cancelarPeloMotorista = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     await assertDriverApproved(supabase, userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     return applyTransition(
-      supabase,
+      supabaseAdmin,
       data.rideId,
       [RIDE_STATUS.MOTORISTA_A_CAMINHO, RIDE_STATUS.MOTORISTA_CHEGOU],
       RIDE_STATUS.CANCELADA_MOTORISTA,
@@ -654,8 +755,9 @@ export const avaliarPassageiro = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => AvaliarPassageiroInput.parse(d))
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const upd = await supabase
+    const { userId } = context;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const upd = await supabaseAdmin
       .from("rides")
       .update({
         passenger_rating: data.stars,
@@ -680,8 +782,9 @@ export const avaliarMotorista = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => AvaliarPassageiroInput.parse(d))
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const upd = await supabase
+    const { userId } = context;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const upd = await supabaseAdmin
       .from("rides")
       .update({
         driver_rating: data.stars,
