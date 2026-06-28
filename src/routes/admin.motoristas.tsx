@@ -244,6 +244,17 @@ function AdminMotoristas() {
 
       <DetailsDialog driver={detail} onClose={() => setDetail(null)} />
 
+      <SubscriptionDialog
+        driver={subFor}
+        onClose={() => setSubFor(null)}
+        onSaved={(updated) => {
+          setSubFor(null);
+          if (detail?.id === updated.id) setDetail(updated);
+          load();
+        }}
+      />
+
+
       <Dialog open={!!rejectFor} onOpenChange={(o) => !o && setRejectFor(null)}>
         <DialogContent>
           <DialogHeader>
@@ -285,6 +296,7 @@ function DriverCard({
   onReject,
   onBlock,
   onReinstate,
+  onSubscription,
 }: {
   driver: Driver;
   busy: boolean;
@@ -293,8 +305,10 @@ function DriverCard({
   onReject: () => void;
   onBlock: () => void;
   onReinstate: () => void;
+  onSubscription: () => void;
 }) {
   const meta = TAB_META[driver.approval_status];
+  const sm = subMeta(driver.subscription_status);
   return (
     <div className="rounded-2xl border border-border bg-card p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -303,6 +317,9 @@ function DriverCard({
             <h3 className="font-semibold">{driver.name}</h3>
             <Badge variant="outline" className={meta.tone}>
               {meta.label}
+            </Badge>
+            <Badge variant="outline" className={sm.tone}>
+              Assinatura: {sm.label}
             </Badge>
             <Badge variant="secondary" className="capitalize">
               {driver.category}
