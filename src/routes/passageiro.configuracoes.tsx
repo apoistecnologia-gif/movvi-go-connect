@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { requestPushPermission } from "@/lib/pushNotifications";
+import { useTheme } from "@/lib/theme";
 
 export const Route = createFileRoute("/passageiro/configuracoes")({
   head: () => ({ meta: [{ title: "Configurações — MOVVI DRIVE" }] }),
@@ -39,15 +40,12 @@ const DEFAULT_PREFS: Prefs = {
   theme: "dark",
 };
 
-function applyTheme(theme: Prefs["theme"]) {
-  const root = document.documentElement;
-  const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
-  const dark = theme === "dark" || (theme === "system" && prefersDark);
-  root.classList.toggle("dark", dark);
-}
+// Theme application is handled centrally by ThemeProvider (src/lib/theme.tsx).
+
 
 function ConfiguracoesPassageiro() {
   const navigate = useNavigate();
+  const { mode: themeMode, setMode: setThemeMode } = useTheme();
   const [userId, setUserId] = useState<string | null>(null);
   const [prefs, setPrefs] = useState<Prefs>(DEFAULT_PREFS);
   const [loading, setLoading] = useState(true);
@@ -84,9 +82,12 @@ function ConfiguracoesPassageiro() {
     }
   }, []);
 
+  // Keep local prefs.theme in sync with active theme mode (provider is source of truth)
   useEffect(() => {
-    applyTheme(prefs.theme);
-  }, [prefs.theme]);
+    if (prefs.theme !== themeMode) setPrefs((p) => ({ ...p, theme: themeMode }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [themeMode]);
+
 
   async function save(next: Prefs) {
     setPrefs(next);
@@ -203,9 +204,9 @@ function ConfiguracoesPassageiro() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-3 gap-2">
-                <ThemeBtn active={prefs.theme === "light"} onClick={() => save({ ...prefs, theme: "light" })} icon={<Sun className="h-4 w-4" />} label="Claro" />
-                <ThemeBtn active={prefs.theme === "dark"} onClick={() => save({ ...prefs, theme: "dark" })} icon={<Moon className="h-4 w-4" />} label="Escuro" />
-                <ThemeBtn active={prefs.theme === "system"} onClick={() => save({ ...prefs, theme: "system" })} icon={<MonitorSmartphone className="h-4 w-4" />} label="Sistema" />
+                <ThemeBtn active={themeMode === "light"} onClick={() => { setThemeMode("light"); save({ ...prefs, theme: "light" }); }} icon={<Sun className="h-4 w-4" />} label="Claro" />
+                <ThemeBtn active={themeMode === "dark"} onClick={() => { setThemeMode("dark"); save({ ...prefs, theme: "dark" }); }} icon={<Moon className="h-4 w-4" />} label="Escuro" />
+                <ThemeBtn active={themeMode === "system"} onClick={() => { setThemeMode("system"); save({ ...prefs, theme: "system" }); }} icon={<MonitorSmartphone className="h-4 w-4" />} label="Sistema" />
               </div>
             </CardContent>
           </Card>
