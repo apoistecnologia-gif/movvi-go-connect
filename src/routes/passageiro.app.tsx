@@ -115,6 +115,23 @@ function PremiumTopBar({
   const fname = properCase(userName) || "passageiro";
   const greetingClass = greetingTextSize(fname);
 
+  let statusIcon = "🔎";
+  let statusText = "Procurando motoristas próximos";
+  if (gpsState === "requesting" || gpsState === "idle") {
+    statusIcon = "📍";
+    statusText = "Obtendo sua localização...";
+  } else if (gpsState === "unavailable" || gpsState === "denied") {
+    statusIcon = "⚠️";
+    statusText = "Localização indisponível";
+  } else if (searching) {
+    statusIcon = "🔎";
+    statusText = "Procurando motoristas próximos";
+  } else if (drivers > 0) {
+    statusIcon = "🚗";
+    statusText = `${drivers} ${drivers === 1 ? "motorista próximo" : "motoristas próximos"}`;
+  }
+
+
   return (
     <div className="absolute inset-x-0 top-0 z-40 px-3 pt-[calc(env(safe-area-inset-top)+10px)]">
       <div className="mx-auto flex max-w-5xl items-center gap-3 rounded-2xl bg-card/90 px-3 py-2.5 shadow-xl ring-1 ring-border/60 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-500">
