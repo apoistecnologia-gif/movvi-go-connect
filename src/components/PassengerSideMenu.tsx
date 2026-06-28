@@ -246,6 +246,38 @@ export function PassengerSideMenu({ open, onOpenChange, onLogout }: Props) {
                   onClick={() => onOpenChange(false)}
                   className="flex items-center gap-3 rounded-lg border border-border bg-card/60 px-3 py-2.5 text-sm font-medium text-foreground transition hover:bg-accent/40"
                 >
+                  <ClipboardList className="h-4 w-4 text-primary" />
+                  Minhas corridas
+                </Link>
+                <Link
+                  to="/passageiro/notificacoes"
+                  onClick={() => onOpenChange(false)}
+                  className="flex items-center gap-3 rounded-lg border border-border bg-card/60 px-3 py-2.5 text-sm font-medium text-foreground transition hover:bg-accent/40"
+                >
+                  <Bell className="h-4 w-4 text-primary" />
+                  Notificações
+                </Link>
+                <Link
+                  to="/passageiro/suporte"
+                  onClick={() => onOpenChange(false)}
+                  className="flex items-center gap-3 rounded-lg border border-border bg-card/60 px-3 py-2.5 text-sm font-medium text-foreground transition hover:bg-accent/40"
+                >
+                  <HelpCircle className="h-4 w-4 text-primary" />
+                  Suporte
+                </Link>
+                <Link
+                  to="/passageiro/sobre"
+                  onClick={() => onOpenChange(false)}
+                  className="flex items-center gap-3 rounded-lg border border-border bg-card/60 px-3 py-2.5 text-sm font-medium text-foreground transition hover:bg-accent/40"
+                >
+                  <Info className="h-4 w-4 text-primary" />
+                  Sobre o app
+                </Link>
+                <Link
+                  to="/passageiro/configuracoes"
+                  onClick={() => onOpenChange(false)}
+                  className="flex items-center gap-3 rounded-lg border border-border bg-card/60 px-3 py-2.5 text-sm font-medium text-foreground transition hover:bg-accent/40"
+                >
                   <Settings className="h-4 w-4 text-primary" />
                   Configurações
                 </Link>
