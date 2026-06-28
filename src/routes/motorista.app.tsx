@@ -529,8 +529,37 @@ function MotoristaApp() {
           .limit(1).maybeSingle();
         if (pending.data) presentOffer(pending.data as RideRow);
       });
-    return () => { supabase.removeChannel(ch); };
+
+    // Rede de segurança 1: re-sincroniza ao retomar a aba (após background no mobile)
+    const onVisibility = async () => {
+      if (document.visibilityState !== "visible") return;
+      console.log("[MOVVI MOTORISTA] aba visível — ressincronizando corrida ativa");
+      const ongoing = await supabase
+        .from("rides").select("*").eq("driver_id", userId)
+        .in("status", ["motorista_a_caminho", "motorista_chegou", "em_viagem", "finalizada"])
+        .order("created_at", { ascending: false }).limit(1).maybeSingle();
+      if (ongoing.data) applyActive(ongoing.data as RideRow);
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+
+    // Rede de segurança 2: polling leve da corrida ativa a cada 8s caso o realtime caia
+    const poll = window.setInterval(async () => {
+      const cur = activeRef.current;
+      if (!cur) return;
+      const { data } = await supabase.from("rides").select("*").eq("id", cur.id).maybeSingle();
+      if (data && (data as RideRow).status !== cur.status) {
+        console.log("[MOVVI MOTORISTA] polling detectou mudança de status:", cur.status, "→", (data as RideRow).status);
+        applyActive(data as RideRow);
+      }
+    }, 8000);
+
+    return () => {
+      supabase.removeChannel(ch);
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.clearInterval(poll);
+    };
   }, [userId, loadTodayStats]);
+
 
   // carrega dados do passageiro
   useEffect(() => {
