@@ -739,7 +739,34 @@ function MotoristaApp() {
         </MovviMap>
       </div>
 
-      <MovviHeader variant="floating" logoutRedirect="/" />
+      {/* Top bar — apenas hambúrguer (todas as opções vivem dentro do menu lateral) */}
+      <div className="absolute inset-x-0 top-0 z-40 px-3 pt-[calc(env(safe-area-inset-top)+10px)]">
+        <div className="mx-auto flex max-w-5xl items-center gap-2 rounded-2xl bg-card/90 px-2.5 py-2 shadow-xl ring-1 ring-border/60 backdrop-blur-xl">
+          <button
+            onClick={() => setSideMenuOpen(true)}
+            aria-label="Abrir menu"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary ring-1 ring-primary/30 transition hover:bg-primary/25 active:scale-90"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+          <div className="min-w-0 flex-1 truncate text-[13px] font-semibold text-foreground">
+            {driverName ? `Olá, ${driverName}` : "MOVVI DRIVE"}
+          </div>
+          <button
+            onClick={handleLogout}
+            aria-label="Sair"
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-destructive/15 text-destructive ring-1 ring-destructive/30 transition hover:bg-destructive/25 active:scale-90"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
+      <DriverSideMenu
+        open={sideMenuOpen}
+        onOpenChange={setSideMenuOpen}
+        onLogout={handleLogout}
+      />
 
       {/* (status de GPS é mostrado dentro do painel inferior) */}
 
