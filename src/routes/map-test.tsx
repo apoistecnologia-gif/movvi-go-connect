@@ -1,7 +1,9 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { Marker } from "@react-google-maps/api";
 import { MovviMap } from "@/components/MovviMap";
 import { BRAZIL_CENTER, GOOGLE_MAPS_API_KEY } from "@/lib/googleMaps";
+import { isDevelopmentEnvironment } from "@/lib/environment";
 import { ArrowLeft, CheckCircle2, XCircle } from "lucide-react";
 
 export const Route = createFileRoute("/map-test")({
