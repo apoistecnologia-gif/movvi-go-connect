@@ -856,7 +856,7 @@ function MotoristaApp() {
     dismissRating();
   }
 
-  const center = position ?? BRAZIL_CENTER;
+  void position; // posição é usada via positionRef pelo controlador de câmera
   const phase = active?.status;
   const hasRideUI = !!active || !!incoming || !!ratingRide;
 
