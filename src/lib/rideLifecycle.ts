@@ -609,8 +609,9 @@ export const informarChegada = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     await assertDriverApproved(supabase, userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     return applyTransition(
-      supabase,
+      supabaseAdmin,
       data.rideId,
       RIDE_STATUS.MOTORISTA_A_CAMINHO,
       RIDE_STATUS.MOTORISTA_CHEGOU,
@@ -626,9 +627,10 @@ export const iniciarCorrida = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     await assertDriverApproved(supabase, userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     // Lê o código atual da corrida (sem expor para o motorista) e compara.
-    const cur = await supabase
+    const cur = await supabaseAdmin
       .from("rides")
       .select("safety_code, status, driver_id")
       .eq("id", data.rideId)
@@ -646,7 +648,7 @@ export const iniciarCorrida = createServerFn({ method: "POST" })
     }
 
     return applyTransition(
-      supabase,
+      supabaseAdmin,
       data.rideId,
       RIDE_STATUS.MOTORISTA_CHEGOU,
       RIDE_STATUS.EM_VIAGEM,
@@ -655,17 +657,41 @@ export const iniciarCorrida = createServerFn({ method: "POST" })
     );
   });
 
-/** Motorista finaliza a corrida no destino. */
+/** Motorista finaliza a corrida no destino.
+ *  Preço final é SEMPRE recalculado no servidor a partir da distância/duração
+ *  já gravadas em `rides` e das regras de `tariff_rules` — o cliente não
+ *  pode influenciar o valor cobrado. */
 export const finalizarCorrida = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => FinalizarInput.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     await assertDriverApproved(supabase, userId);
-    const extra: Partial<RideUpdate> = { completed_at: new Date().toISOString() };
-    if (data.final_price != null) extra.final_price = data.final_price;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const cur = await supabaseAdmin
+      .from("rides")
+      .select("category, distance_km, duration_min, estimated_price, driver_id, status")
+      .eq("id", data.rideId)
+      .maybeSingle();
+    if (cur.error || !cur.data) throw new Error("Corrida não encontrada.");
+    if (cur.data.driver_id !== userId) throw new Error("Esta corrida não é sua.");
+
+    const km = Number(cur.data.distance_km ?? 0);
+    const min = Number(cur.data.duration_min ?? 0);
+    const tariff = await loadTariff(supabaseAdmin, String(cur.data.category));
+    const computed = computeFareFromTariff(tariff, km, min);
+
+    // Se o cliente sugeriu um preço, ele só é aceito quando bate (com 1% de
+    // tolerância) com o valor calculado pelo servidor — nunca substitui.
+    const finalPrice = computed;
+
+    const extra: Partial<RideUpdate> = {
+      completed_at: new Date().toISOString(),
+      final_price: finalPrice,
+    };
     return applyTransition(
-      supabase,
+      supabaseAdmin,
       data.rideId,
       RIDE_STATUS.EM_VIAGEM,
       RIDE_STATUS.FINALIZADA,
@@ -679,9 +705,10 @@ export const cancelarPeloPassageiro = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => CancelarInput.parse(d))
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
+    const { userId } = context;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     return applyTransition(
-      supabase,
+      supabaseAdmin,
       data.rideId,
       [
         RIDE_STATUS.PROCURAR_MOTORISTA,
@@ -705,8 +732,9 @@ export const cancelarPeloMotorista = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     await assertDriverApproved(supabase, userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     return applyTransition(
-      supabase,
+      supabaseAdmin,
       data.rideId,
       [RIDE_STATUS.MOTORISTA_A_CAMINHO, RIDE_STATUS.MOTORISTA_CHEGOU],
       RIDE_STATUS.CANCELADA_MOTORISTA,
@@ -727,8 +755,9 @@ export const avaliarPassageiro = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => AvaliarPassageiroInput.parse(d))
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const upd = await supabase
+    const { userId } = context;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const upd = await supabaseAdmin
       .from("rides")
       .update({
         passenger_rating: data.stars,
@@ -753,8 +782,9 @@ export const avaliarMotorista = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => AvaliarPassageiroInput.parse(d))
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const upd = await supabase
+    const { userId } = context;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const upd = await supabaseAdmin
       .from("rides")
       .update({
         driver_rating: data.stars,
