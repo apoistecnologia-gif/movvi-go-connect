@@ -328,6 +328,36 @@ export type Database = {
         }
         Relationships: []
       }
+      driver_reports: {
+        Row: {
+          created_at: string
+          details: string | null
+          driver_id: string
+          id: string
+          passenger_id: string
+          reason: string
+          ride_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          details?: string | null
+          driver_id: string
+          id?: string
+          passenger_id: string
+          reason: string
+          ride_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          details?: string | null
+          driver_id?: string
+          id?: string
+          passenger_id?: string
+          reason?: string
+          ride_id?: string | null
+        }
+        Relationships: []
+      }
       drivers: {
         Row: {
           approval_status: Database["public"]["Enums"]["driver_approval_status"]
@@ -442,6 +472,27 @@ export type Database = {
         }
         Relationships: []
       }
+      favorite_drivers: {
+        Row: {
+          created_at: string
+          driver_id: string
+          id: string
+          passenger_id: string
+        }
+        Insert: {
+          created_at?: string
+          driver_id: string
+          id?: string
+          passenger_id: string
+        }
+        Update: {
+          created_at?: string
+          driver_id?: string
+          id?: string
+          passenger_id?: string
+        }
+        Relationships: []
+      }
       gps_diagnostics: {
         Row: {
           code: string | null
@@ -514,6 +565,39 @@ export type Database = {
           id?: string
           updated_at?: string
           updated_by?: string | null
+        }
+        Relationships: []
+      }
+      notification_inbox: {
+        Row: {
+          body: string | null
+          category: string
+          created_at: string
+          data: Json
+          id: string
+          read_at: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          category?: string
+          created_at?: string
+          data?: Json
+          id?: string
+          read_at?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          category?: string
+          created_at?: string
+          data?: Json
+          id?: string
+          read_at?: string | null
+          title?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -1026,6 +1110,42 @@ export type Database = {
           },
         ]
       }
+      support_tickets: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          id: string
+          ride_id: string | null
+          status: string
+          subject: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description: string
+          id?: string
+          ride_id?: string | null
+          status?: string
+          subject: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          ride_id?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       tariff_rules: {
         Row: {
           category_key: string
@@ -1089,45 +1209,72 @@ export type Database = {
         Row: {
           auth_user_id: string
           avatar_url: string | null
+          birth_date: string | null
           block_reason: string | null
           blocked_at: string | null
           city: string | null
+          cpf: string | null
           created_at: string
+          deleted_at: string | null
           email: string
+          email_verified_at: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          gender: string | null
           id: string
           last_login_at: string | null
           name: string
           phone: string | null
+          phone_verified_at: string | null
+          preferences: Json
           suspended_at: string | null
           updated_at: string
         }
         Insert: {
           auth_user_id: string
           avatar_url?: string | null
+          birth_date?: string | null
           block_reason?: string | null
           blocked_at?: string | null
           city?: string | null
+          cpf?: string | null
           created_at?: string
+          deleted_at?: string | null
           email: string
+          email_verified_at?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          gender?: string | null
           id?: string
           last_login_at?: string | null
           name: string
           phone?: string | null
+          phone_verified_at?: string | null
+          preferences?: Json
           suspended_at?: string | null
           updated_at?: string
         }
         Update: {
           auth_user_id?: string
           avatar_url?: string | null
+          birth_date?: string | null
           block_reason?: string | null
           blocked_at?: string | null
           city?: string | null
+          cpf?: string | null
           created_at?: string
+          deleted_at?: string | null
           email?: string
+          email_verified_at?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          gender?: string | null
           id?: string
           last_login_at?: string | null
           name?: string
           phone?: string | null
+          phone_verified_at?: string | null
+          preferences?: Json
           suspended_at?: string | null
           updated_at?: string
         }
