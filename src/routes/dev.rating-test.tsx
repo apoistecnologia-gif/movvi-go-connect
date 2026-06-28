@@ -1,7 +1,8 @@
 import { createFileRoute, useNavigate, useLocation } from "@tanstack/react-router";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Star } from "lucide-react";
 import { shouldShowRating, canSubmitRating, type RatingSide } from "@/lib/ratingFlow";
+import { isDevelopmentEnvironment } from "@/lib/environment";
 
 /**
  * Harness E2E exclusivamente para Playwright validar o fluxo de avaliação.
@@ -132,7 +133,12 @@ function RatingHarness({ side, mode }: { side: RatingSide; mode: Mode }) {
 }
 
 function RatingTestPage() {
+  const navigate = useNavigate();
   const location = useLocation();
+  useEffect(() => {
+    if (!isDevelopmentEnvironment()) void navigate({ to: "/" });
+  }, [navigate]);
+  if (!isDevelopmentEnvironment()) return null;
   const search = location.searchStr ?? "";
   const side: RatingSide = search.includes("side=driver") ? "driver" : "passenger";
   const mode = search.includes("mode=fail") ? "fail" : "ok";
