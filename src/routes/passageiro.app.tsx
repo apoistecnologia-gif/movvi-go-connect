@@ -2875,22 +2875,7 @@ function DriverEnRoute({
         </div>
       </div>
 
-      <div className="mt-2 grid grid-cols-4 gap-1.5 text-xs">
-        <Action icon={<Phone className="h-4 w-4" />} label="Ligar" />
-        <Action icon={<Navigation2 className="h-4 w-4" />} label="Compartilhar" />
-        <Action
-          icon={<Shield className="h-4 w-4" />}
-          label="SOS"
-          tone="destructive"
-        />
-        <button
-          onClick={onCancel}
-          className="flex flex-col items-center gap-1 rounded-xl bg-background/60 py-2.5 ring-1 ring-border transition active:scale-95 hover:ring-destructive/50"
-        >
-          <X className="h-4 w-4" />
-          <span className="text-[10.5px]">Cancelar</span>
-        </button>
-      </div>
+      <RideQuickActions ride={ride} driver={driver} onCancel={onCancel} />
 
       {/* PIN de segurança — só antes de iniciar a viagem */}
       {!isInTrip && ride.safety_code && (
