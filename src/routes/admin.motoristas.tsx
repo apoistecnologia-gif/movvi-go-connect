@@ -467,7 +467,11 @@ function DetailsDialog({ driver, onClose }: { driver: Driver | null; onClose: ()
           </Section>
 
           <Section title="Assinatura / Pagamento">
-            <Row label="Status assinatura" value={driver.subscription_status} />
+            <Row label="Status assinatura" value={subMeta(driver.subscription_status).label} />
+            <Row label="Status pagamento" value={(driver as { payment_status?: string }).payment_status ?? "—"} />
+            <Row label="Validade" value={fmtDate((driver as { subscription_expires_at?: string | null }).subscription_expires_at ?? null)} />
+            <Row label="Carência (dias)" value={String((driver as { subscription_grace_days?: number }).subscription_grace_days ?? 0)} />
+            <Row label="Observação do admin" value={(driver as { subscription_admin_note?: string | null }).subscription_admin_note ?? null} />
           </Section>
 
           <Section title="Status">
