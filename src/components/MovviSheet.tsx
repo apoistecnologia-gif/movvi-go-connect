@@ -214,16 +214,18 @@ export const MovviSheet = forwardRef<MovviSheetHandle, Props>(function MovviShee
 
       <div
         ref={scrollRef}
-        className="flex-1 px-4 pb-4"
+        className="flex-1 px-4"
         style={{
-          overflowY: isFull ? "auto" : "hidden",
+          paddingBottom: "calc(env(safe-area-inset-bottom) + 24px)",
+          overflowY: "auto",
           overscrollBehavior: "contain",
           WebkitOverflowScrolling: "touch",
-          touchAction: isFull ? "pan-y" : "none",
+          touchAction: "pan-y",
         }}
       >
         {children}
       </div>
+
     </div>
   );
 });
