@@ -118,7 +118,7 @@ function DriverRidesPage() {
       const { data, error } = await supabase
         .from("rides")
         .select(
-          "id,status,origin_name,destination_name,final_price,estimated_price,distance_km,duration_min,completed_at,created_at,passenger_rating,passenger_rating_comment,driver_rated_at",
+          "id,status,category,payment_method,passenger_photo_url,origin_name,destination_name,final_price,estimated_price,distance_km,duration_min,completed_at,created_at,accepted_at,passenger_rating,passenger_rating_comment,driver_rated_at",
         )
         .eq("driver_id", uid)
         .order("created_at", { ascending: false })
