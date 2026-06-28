@@ -1,11 +1,30 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ClipboardList, Star, MapPin, Navigation2 } from "lucide-react";
+import { ChevronRight, ClipboardList, MapPin, Navigation2, Star } from "lucide-react";
 import { MovviHeader } from "@/components/MovviHeader";
 import { BottomNav, DRIVER_NAV } from "@/components/BottomNav";
+import { Avatar } from "@/components/Avatar";
 import { supabase } from "@/integrations/supabase/client";
 
 type RideRow = {
+  id: string;
+  status: string;
+  origin_name: string;
+  destination_name: string;
+  category: string | null;
+  payment_method: string | null;
+  passenger_photo_url: string | null;
+  final_price: number | null;
+  estimated_price: number | null;
+  distance_km: number | null;
+  duration_min: number | null;
+  completed_at: string | null;
+  created_at: string;
+  accepted_at: string | null;
+  passenger_rating: number | null;
+  passenger_rating_comment: string | null;
+  driver_rated_at: string | null;
+};
   id: string;
   status: string;
   origin_name: string;
