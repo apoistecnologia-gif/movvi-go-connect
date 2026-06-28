@@ -181,8 +181,14 @@ function MotoristaApp() {
             d.approval_status === "reprovado"
               ? `Cadastro reprovado.${d.motivo_reprovacao ? ` Motivo: ${d.motivo_reprovacao}` : ""}`
               : d.approval_status === "bloqueado"
-                ? "Cadastro bloqueado."
+                ? "Cadastro bloqueado. Entre em contato com o suporte."
                 : "Cadastro em análise.",
+          );
+        } else if (d.subscription_status && d.subscription_status !== "active") {
+          setStatusBlock(
+            d.subscription_status === "overdue"
+              ? "Assinatura em atraso. Regularize o pagamento para voltar a operar."
+              : "Assinatura inativa. Ative seu plano para receber corridas.",
           );
         }
       } else if (result.reason === "not_found") {
@@ -193,6 +199,57 @@ function MotoristaApp() {
 
     })();
   }, [navigate]);
+
+  // Realtime: reage a mudanças no próprio cadastro (admin aprova/bloqueia,
+  // assinatura vira inativa, etc.) sem precisar de reload.
+  useEffect(() => {
+    if (!userId) return;
+    const channel = supabase
+      .channel(`driver-self-${userId}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "drivers", filter: `user_id=eq.${userId}` },
+        (payload) => {
+          const row = payload.new as {
+            approval_status?: string;
+            subscription_status?: string | null;
+            motivo_reprovacao?: string | null;
+          };
+          if (row.approval_status && row.approval_status !== "aprovado") {
+            const msg =
+              row.approval_status === "reprovado"
+                ? `Cadastro reprovado.${row.motivo_reprovacao ? ` Motivo: ${row.motivo_reprovacao}` : ""}`
+                : row.approval_status === "bloqueado"
+                  ? "Sua conta foi bloqueada pelo administrador."
+                  : "Cadastro em análise.";
+            setStatusBlock(msg);
+            setOnline(false);
+            if (userId) {
+              void supabase.from("drivers").update({ is_online: false }).eq("user_id", userId);
+            }
+            return;
+          }
+          if (row.subscription_status && row.subscription_status !== "active") {
+            setStatusBlock(
+              row.subscription_status === "overdue"
+                ? "Assinatura em atraso. Regularize o pagamento para voltar a operar."
+                : "Assinatura inativa. Ative seu plano para receber corridas.",
+            );
+            setOnline(false);
+            if (userId) {
+              void supabase.from("drivers").update({ is_online: false }).eq("user_id", userId);
+            }
+            return;
+          }
+          // Voltou ao normal
+          setStatusBlock(null);
+        },
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [userId]);
 
   // estatísticas do dia
   const loadTodayStats = useCallback(async (uid: string) => {
