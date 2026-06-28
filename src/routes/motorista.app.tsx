@@ -41,6 +41,7 @@ import {
   type RideStatus,
 } from "@/lib/rideLifecycle";
 import { notifyRideStatus } from "@/lib/rideStatusToast";
+import { requestPushPermission } from "@/lib/pushNotifications";
 import { formatBRL } from "@/lib/rideCategories";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -135,6 +136,9 @@ function MotoristaApp() {
   useEffect(() => { activeRef.current = active; }, [active]);
   useEffect(() => { incomingRef.current = incoming; }, [incoming]);
   useEffect(() => { ratingRef.current = ratingRide; }, [ratingRide]);
+
+  // Solicita permissão de notificações push uma vez ao montar.
+  useEffect(() => { void requestPushPermission(); }, []);
 
   // Toast em cada transição de status da corrida ativa (sem reload)
   const lastNotifiedStatusRef = useRef<RideStatus | null>(null);
