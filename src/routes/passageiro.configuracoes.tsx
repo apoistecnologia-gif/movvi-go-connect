@@ -229,8 +229,8 @@ function ConfiguracoesPassageiro() {
                   Testar
                 </Button>
               </Row>
-              <LinkRow to="#" icon={FileText} label="Termos de Uso" />
-              <LinkRow to="#" icon={FileText} label="Política de Privacidade" />
+              <LinkRow to="/passageiro/termos" icon={FileText} label="Termos de Uso" />
+              <LinkRow to="/passageiro/privacidade" icon={ShieldCheck} label="Política de Privacidade" />
             </CardContent>
           </Card>
 
@@ -288,7 +288,7 @@ function LinkRow({ to, icon: Icon, label }: { to: string; icon: React.ComponentT
   return (
     <Link
       to={to}
-      className="flex items-center gap-3 rounded-lg border border-border bg-card/50 px-3 py-2.5 text-sm transition hover:bg-accent/40"
+      className="flex items-center gap-3 rounded-lg border border-border bg-card/50 px-3 py-2.5 text-sm transition hover:bg-accent/40 active:scale-[0.99] active:bg-accent/60"
     >
       <Icon className="h-4 w-4 text-primary" />
       <span className="flex-1">{label}</span>

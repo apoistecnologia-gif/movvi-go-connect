@@ -12,8 +12,10 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as MapTestRouteImport } from './routes/map-test'
 import { Route as DevDiagnosticsRouteImport } from './routes/dev-diagnostics'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PassageiroTermosRouteImport } from './routes/passageiro.termos'
 import { Route as PassageiroSuporteRouteImport } from './routes/passageiro.suporte'
 import { Route as PassageiroSobreRouteImport } from './routes/passageiro.sobre'
+import { Route as PassageiroPrivacidadeRouteImport } from './routes/passageiro.privacidade'
 import { Route as PassageiroPerfilRouteImport } from './routes/passageiro.perfil'
 import { Route as PassageiroNotificacoesRouteImport } from './routes/passageiro.notificacoes'
 import { Route as PassageiroLoginRouteImport } from './routes/passageiro.login'
@@ -67,6 +69,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PassageiroTermosRoute = PassageiroTermosRouteImport.update({
+  id: '/passageiro/termos',
+  path: '/passageiro/termos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PassageiroSuporteRoute = PassageiroSuporteRouteImport.update({
   id: '/passageiro/suporte',
   path: '/passageiro/suporte',
@@ -75,6 +82,11 @@ const PassageiroSuporteRoute = PassageiroSuporteRouteImport.update({
 const PassageiroSobreRoute = PassageiroSobreRouteImport.update({
   id: '/passageiro/sobre',
   path: '/passageiro/sobre',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PassageiroPrivacidadeRoute = PassageiroPrivacidadeRouteImport.update({
+  id: '/passageiro/privacidade',
+  path: '/passageiro/privacidade',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PassageiroPerfilRoute = PassageiroPerfilRouteImport.update({
@@ -304,8 +316,10 @@ export interface FileRoutesByFullPath {
   '/passageiro/login': typeof PassageiroLoginRoute
   '/passageiro/notificacoes': typeof PassageiroNotificacoesRoute
   '/passageiro/perfil': typeof PassageiroPerfilRoute
+  '/passageiro/privacidade': typeof PassageiroPrivacidadeRoute
   '/passageiro/sobre': typeof PassageiroSobreRoute
   '/passageiro/suporte': typeof PassageiroSuporteRoute
+  '/passageiro/termos': typeof PassageiroTermosRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -348,8 +362,10 @@ export interface FileRoutesByTo {
   '/passageiro/login': typeof PassageiroLoginRoute
   '/passageiro/notificacoes': typeof PassageiroNotificacoesRoute
   '/passageiro/perfil': typeof PassageiroPerfilRoute
+  '/passageiro/privacidade': typeof PassageiroPrivacidadeRoute
   '/passageiro/sobre': typeof PassageiroSobreRoute
   '/passageiro/suporte': typeof PassageiroSuporteRoute
+  '/passageiro/termos': typeof PassageiroTermosRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -393,8 +409,10 @@ export interface FileRoutesById {
   '/passageiro/login': typeof PassageiroLoginRoute
   '/passageiro/notificacoes': typeof PassageiroNotificacoesRoute
   '/passageiro/perfil': typeof PassageiroPerfilRoute
+  '/passageiro/privacidade': typeof PassageiroPrivacidadeRoute
   '/passageiro/sobre': typeof PassageiroSobreRoute
   '/passageiro/suporte': typeof PassageiroSuporteRoute
+  '/passageiro/termos': typeof PassageiroTermosRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -439,8 +457,10 @@ export interface FileRouteTypes {
     | '/passageiro/login'
     | '/passageiro/notificacoes'
     | '/passageiro/perfil'
+    | '/passageiro/privacidade'
     | '/passageiro/sobre'
     | '/passageiro/suporte'
+    | '/passageiro/termos'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -483,8 +503,10 @@ export interface FileRouteTypes {
     | '/passageiro/login'
     | '/passageiro/notificacoes'
     | '/passageiro/perfil'
+    | '/passageiro/privacidade'
     | '/passageiro/sobre'
     | '/passageiro/suporte'
+    | '/passageiro/termos'
   id:
     | '__root__'
     | '/'
@@ -527,8 +549,10 @@ export interface FileRouteTypes {
     | '/passageiro/login'
     | '/passageiro/notificacoes'
     | '/passageiro/perfil'
+    | '/passageiro/privacidade'
     | '/passageiro/sobre'
     | '/passageiro/suporte'
+    | '/passageiro/termos'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -572,8 +596,10 @@ export interface RootRouteChildren {
   PassageiroLoginRoute: typeof PassageiroLoginRoute
   PassageiroNotificacoesRoute: typeof PassageiroNotificacoesRoute
   PassageiroPerfilRoute: typeof PassageiroPerfilRoute
+  PassageiroPrivacidadeRoute: typeof PassageiroPrivacidadeRoute
   PassageiroSobreRoute: typeof PassageiroSobreRoute
   PassageiroSuporteRoute: typeof PassageiroSuporteRoute
+  PassageiroTermosRoute: typeof PassageiroTermosRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -599,6 +625,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/passageiro/termos': {
+      id: '/passageiro/termos'
+      path: '/passageiro/termos'
+      fullPath: '/passageiro/termos'
+      preLoaderRoute: typeof PassageiroTermosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/passageiro/suporte': {
       id: '/passageiro/suporte'
       path: '/passageiro/suporte'
@@ -611,6 +644,13 @@ declare module '@tanstack/react-router' {
       path: '/passageiro/sobre'
       fullPath: '/passageiro/sobre'
       preLoaderRoute: typeof PassageiroSobreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/passageiro/privacidade': {
+      id: '/passageiro/privacidade'
+      path: '/passageiro/privacidade'
+      fullPath: '/passageiro/privacidade'
+      preLoaderRoute: typeof PassageiroPrivacidadeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/passageiro/perfil': {
@@ -916,8 +956,10 @@ const rootRouteChildren: RootRouteChildren = {
   PassageiroLoginRoute: PassageiroLoginRoute,
   PassageiroNotificacoesRoute: PassageiroNotificacoesRoute,
   PassageiroPerfilRoute: PassageiroPerfilRoute,
+  PassageiroPrivacidadeRoute: PassageiroPrivacidadeRoute,
   PassageiroSobreRoute: PassageiroSobreRoute,
   PassageiroSuporteRoute: PassageiroSuporteRoute,
+  PassageiroTermosRoute: PassageiroTermosRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
