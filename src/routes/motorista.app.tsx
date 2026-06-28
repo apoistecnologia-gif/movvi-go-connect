@@ -8,7 +8,9 @@ import {
   Banknote,
   CheckCircle2,
   Crosshair,
+  LogOut,
   MapPin,
+  Menu,
   Navigation2,
   Phone,
   Star,
@@ -17,8 +19,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { MovviMap } from "@/components/MovviMap";
-import { MovviHeader } from "@/components/MovviHeader";
-import { BottomNav, DRIVER_NAV } from "@/components/BottomNav";
+import { DriverSideMenu } from "@/components/DriverSideMenu";
 import { MovviSheet, type MovviSheetHandle } from "@/components/MovviSheet";
 import { supabase } from "@/integrations/supabase/client";
 import {
