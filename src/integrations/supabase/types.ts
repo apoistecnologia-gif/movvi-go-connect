@@ -1139,10 +1139,6 @@ export type Database = {
     }
     Functions: {
       auto_suspend_overdue_subscriptions: { Args: never; Returns: undefined }
-      can_view_profile_photo: {
-        Args: { _owner: string; _viewer: string }
-        Returns: boolean
-      }
       get_passenger_stats: {
         Args: { _user_id: string }
         Returns: {
