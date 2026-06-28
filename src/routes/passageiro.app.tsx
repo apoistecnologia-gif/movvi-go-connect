@@ -2234,6 +2234,13 @@ function SheetContent({
         </div>
       )}
 
+      {/* Favoritos rápidos */}
+      {showDestinationInput && !destination && suggestions.length === 0 && (
+        <FavoritesStrip onPick={onPickFavorite} />
+      )}
+
+
+
       {/* Sugestões ao vivo */}
       {showDestinationInput && suggestions.length > 0 && !destination && (
         <ul className="-mx-1 mb-2 space-y-1">
