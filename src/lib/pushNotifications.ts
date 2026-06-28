@@ -32,15 +32,19 @@ export type PushOptions = {
   title: string;
   body?: string;
   tag?: string;
+  /** URL to open/focus when the notification is clicked. */
+  url?: string;
   /** Force showing even when the document is visible (default: false). */
   force?: boolean;
 };
 
 /**
  * Show a system notification. By default, only fires when the document is
- * hidden — in-foreground updates rely on toasts.
+ * hidden — in-foreground updates rely on toasts. Clicking the notification
+ * focuses an existing tab on `url` (or navigates to it) and opens a new tab
+ * otherwise.
  */
-export function showPush({ title, body, tag, force = false }: PushOptions): void {
+export function showPush({ title, body, tag, url, force = false }: PushOptions): void {
   if (!isPushSupported()) return;
   if (Notification.permission !== "granted") return;
   if (!force && typeof document !== "undefined" && document.visibilityState === "visible") return;
@@ -52,13 +56,25 @@ export function showPush({ title, body, tag, force = false }: PushOptions): void
       icon: ICON,
       badge: ICON,
       renotify: true,
+      data: { url },
     } as NotificationOptions);
-    n.onclick = () => {
+    n.onclick = (event) => {
+      event.preventDefault();
       try {
-        window.focus();
+        const target = url ?? "/";
+        const absolute = new URL(target, window.location.origin).href;
+        // If we're already on the target path, just focus the tab.
+        if (window.location.href === absolute) {
+          window.focus();
+        } else if (window.location.origin === new URL(absolute).origin) {
+          // Same-origin: focus + client-side navigate via history to avoid full reload.
+          window.focus();
+          window.location.assign(absolute);
+        } else {
+          window.open(absolute, "_blank");
+        }
+      } finally {
         n.close();
-      } catch {
-        /* ignore */
       }
     };
   } catch {
