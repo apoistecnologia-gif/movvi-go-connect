@@ -101,7 +101,7 @@ function ConfiguracoesPassageiro() {
   }
 
   async function handleEnablePush() {
-    const ok = await requestNotificationPermission();
+    const ok = (await requestPushPermission()) === "granted";
     if (ok) {
       toast.success("Notificações ativadas.");
       save({ ...prefs, push: true });
