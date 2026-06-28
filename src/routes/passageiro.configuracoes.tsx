@@ -204,9 +204,9 @@ function ConfiguracoesPassageiro() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-3 gap-2">
-                <ThemeBtn active={prefs.theme === "light"} onClick={() => save({ ...prefs, theme: "light" })} icon={<Sun className="h-4 w-4" />} label="Claro" />
-                <ThemeBtn active={prefs.theme === "dark"} onClick={() => save({ ...prefs, theme: "dark" })} icon={<Moon className="h-4 w-4" />} label="Escuro" />
-                <ThemeBtn active={prefs.theme === "system"} onClick={() => save({ ...prefs, theme: "system" })} icon={<MonitorSmartphone className="h-4 w-4" />} label="Sistema" />
+                <ThemeBtn active={themeMode === "light"} onClick={() => { setThemeMode("light"); save({ ...prefs, theme: "light" }); }} icon={<Sun className="h-4 w-4" />} label="Claro" />
+                <ThemeBtn active={themeMode === "dark"} onClick={() => { setThemeMode("dark"); save({ ...prefs, theme: "dark" }); }} icon={<Moon className="h-4 w-4" />} label="Escuro" />
+                <ThemeBtn active={themeMode === "system"} onClick={() => { setThemeMode("system"); save({ ...prefs, theme: "system" }); }} icon={<MonitorSmartphone className="h-4 w-4" />} label="Sistema" />
               </div>
             </CardContent>
           </Card>
