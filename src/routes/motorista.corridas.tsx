@@ -25,20 +25,6 @@ type RideRow = {
   passenger_rating_comment: string | null;
   driver_rated_at: string | null;
 };
-  id: string;
-  status: string;
-  origin_name: string;
-  destination_name: string;
-  final_price: number | null;
-  estimated_price: number | null;
-  distance_km: number | null;
-  duration_min: number | null;
-  completed_at: string | null;
-  created_at: string;
-  passenger_rating: number | null;
-  passenger_rating_comment: string | null;
-  driver_rated_at: string | null;
-};
 
 function StarRow({ value }: { value: number }) {
   return (
