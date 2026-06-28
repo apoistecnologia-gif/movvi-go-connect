@@ -95,8 +95,8 @@ function DriverSettingsPage() {
     try {
       localStorage.setItem(STORAGE_PREFIX + userId, JSON.stringify(prefs));
       if (prefs.pushEnabled) {
-        const granted = await requestPushPermission();
-        if (!granted) {
+        const result = await requestPushPermission();
+        if (result !== "granted") {
           toast.warning("Permissão de notificações não concedida pelo navegador.");
         }
       }
