@@ -568,6 +568,7 @@ function PassageiroApp() {
   // ride lifecycle
   const [rideId, setRideId] = useState<string | null>(null);
   const [ride, setRide] = useState<RideRow | null>(null);
+  const [sideMenuOpen, setSideMenuOpen] = useState(false);
   const [driverInfo, setDriverInfo] = useState<DriverRow | null>(null);
 
   // Solicita permissão de notificações push uma vez ao montar.
