@@ -16,7 +16,7 @@ export type DriverProfileRow = {
   approval_status: "em_analise" | "aprovado" | "reprovado" | "bloqueado";
   motivo_reprovacao: string | null;
   email: string | null;
-  subscription_status: "ativa" | "pendente" | "vencida" | "suspensa" | "cancelada" | null;
+  subscription_status: "active" | "inactive" | "overdue" | null;
 };
 
 const SELECT_COLS =
