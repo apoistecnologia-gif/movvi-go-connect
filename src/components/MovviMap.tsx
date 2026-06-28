@@ -50,8 +50,10 @@ export function MovviMap({
   const isValid = !!center && isBrazilCoordinate(center.lat, center.lng);
   const effectiveCenter = isValid ? center! : BRAZIL_CENTER;
   const effectiveZoom = isValid ? (zoom ?? 14) : BRAZIL_ZOOM;
-  // Key dinâmica garante recriação caso o centro precise ser corrigido.
-  const mapKey = `map-${effectiveCenter.lat.toFixed(3)}-${effectiveCenter.lng.toFixed(3)}`;
+  // Key estável: só recria o mapa quando alterna entre válido/inválido.
+  // NÃO usar coordenadas no key — isso remontava o GoogleMap a cada GPS
+  // e causava jitter / flicker durante navegação ativa.
+  const mapKey = isValid ? "map-valid" : "map-fallback";
 
   const containerStyle = useMemo(
     () => ({
