@@ -1251,13 +1251,24 @@ function PassageiroApp() {
       if (!subscribed) startPolling();
     }, 5000);
 
+    // Rede de segurança: re-sincroniza ao retomar a aba
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") {
+        console.log("[MOVVI PASSAGEIRO] aba visível — ressincronizando corrida");
+        void load("visibility");
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+
     return () => {
       active = false;
       window.clearTimeout(handshakeGuard);
       stopPolling();
+      document.removeEventListener("visibilitychange", onVisibility);
       supabase.removeChannel(ch);
     };
   }, [rideId]);
+
 
   /* ---- Re-despacho periódico enquanto a corrida está procurando motorista ---- */
   const [dispatchDiag, setDispatchDiag] = useState<any>(null);
