@@ -1091,6 +1091,7 @@ export type Database = {
         Row: {
           accepted_at: string | null
           cancel_reason: string | null
+          cancellation_fee_eligible: boolean
           cancelled_at: string | null
           cancelled_by: string | null
           category: Database["public"]["Enums"]["ride_category"]
@@ -1102,6 +1103,7 @@ export type Database = {
           destination_lng: number
           destination_name: string
           distance_km: number | null
+          driver_distance_to_pickup_at_cancel: number | null
           driver_id: string | null
           driver_lat: number | null
           driver_lng: number | null
@@ -1139,6 +1141,7 @@ export type Database = {
         Insert: {
           accepted_at?: string | null
           cancel_reason?: string | null
+          cancellation_fee_eligible?: boolean
           cancelled_at?: string | null
           cancelled_by?: string | null
           category: Database["public"]["Enums"]["ride_category"]
@@ -1150,6 +1153,7 @@ export type Database = {
           destination_lng: number
           destination_name: string
           distance_km?: number | null
+          driver_distance_to_pickup_at_cancel?: number | null
           driver_id?: string | null
           driver_lat?: number | null
           driver_lng?: number | null
@@ -1187,6 +1191,7 @@ export type Database = {
         Update: {
           accepted_at?: string | null
           cancel_reason?: string | null
+          cancellation_fee_eligible?: boolean
           cancelled_at?: string | null
           cancelled_by?: string | null
           category?: Database["public"]["Enums"]["ride_category"]
@@ -1198,6 +1203,7 @@ export type Database = {
           destination_lng?: number
           destination_name?: string
           distance_km?: number | null
+          driver_distance_to_pickup_at_cancel?: number | null
           driver_id?: string | null
           driver_lat?: number | null
           driver_lng?: number | null
