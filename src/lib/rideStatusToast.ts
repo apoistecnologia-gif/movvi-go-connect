@@ -40,4 +40,11 @@ export function notifyRideStatus(audience: Audience, status: RideStatus) {
     : n.kind === "warning" ? toast.warning
     : toast.info;
   fn(n.title, n.description ? { description: n.description } : undefined);
+
+  // Background push: only fires when the document is hidden.
+  showPush({
+    title: `MOVVI • ${n.title}`,
+    body: n.description,
+    tag: `movvi-ride-${audience}-${status}`,
+  });
 }
