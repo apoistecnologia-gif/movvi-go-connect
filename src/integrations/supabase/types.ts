@@ -493,6 +493,48 @@ export type Database = {
         }
         Relationships: []
       }
+      favorite_places: {
+        Row: {
+          address: string
+          created_at: string
+          icon: string | null
+          id: string
+          kind: string
+          label: string
+          lat: number
+          lng: number
+          sort_order: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address: string
+          created_at?: string
+          icon?: string | null
+          id?: string
+          kind?: string
+          label: string
+          lat: number
+          lng: number
+          sort_order?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string
+          created_at?: string
+          icon?: string | null
+          id?: string
+          kind?: string
+          label?: string
+          lat?: number
+          lng?: number
+          sort_order?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       gps_diagnostics: {
         Row: {
           code: string | null
@@ -756,6 +798,42 @@ export type Database = {
           },
         ]
       }
+      recent_places: {
+        Row: {
+          address: string
+          created_at: string
+          id: string
+          last_used_at: string
+          lat: number
+          lng: number
+          place_id: string | null
+          use_count: number
+          user_id: string
+        }
+        Insert: {
+          address: string
+          created_at?: string
+          id?: string
+          last_used_at?: string
+          lat: number
+          lng: number
+          place_id?: string | null
+          use_count?: number
+          user_id: string
+        }
+        Update: {
+          address?: string
+          created_at?: string
+          id?: string
+          last_used_at?: string
+          lat?: number
+          lng?: number
+          place_id?: string | null
+          use_count?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       ride_categories: {
         Row: {
           color: string
@@ -791,6 +869,41 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      ride_tips: {
+        Row: {
+          amount: number
+          created_at: string
+          driver_id: string | null
+          id: string
+          passenger_id: string
+          ride_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          driver_id?: string | null
+          id?: string
+          passenger_id: string
+          ride_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          driver_id?: string | null
+          id?: string
+          passenger_id?: string
+          ride_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ride_tips_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "rides"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       rides: {
         Row: {
@@ -1106,6 +1219,47 @@ export type Database = {
             columns: ["plan_id"]
             isOneToOne: false
             referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_ticket_attachments: {
+        Row: {
+          created_at: string
+          file_name: string | null
+          file_path: string
+          id: string
+          mime_type: string | null
+          size_bytes: number | null
+          ticket_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_name?: string | null
+          file_path: string
+          id?: string
+          mime_type?: string | null
+          size_bytes?: number | null
+          ticket_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string | null
+          file_path?: string
+          id?: string
+          mime_type?: string | null
+          size_bytes?: number | null
+          ticket_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_ticket_attachments_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
             referencedColumns: ["id"]
           },
         ]
