@@ -3207,10 +3207,12 @@ function Stat({
 function SearchingPanel({
   category,
   driversCount,
+  noDriversAvailable,
   onCancel,
 }: {
   category: RideCategory;
   driversCount: number;
+  noDriversAvailable?: boolean;
   onCancel: () => void;
 }) {
   const cat = RIDE_CATEGORIES.find((c) => c.key === category)!;
