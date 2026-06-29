@@ -131,7 +131,7 @@ function MotoristaApp() {
   const [incoming, setIncoming] = useState<RideRow | null>(null);
   const [active, setActive] = useState<RideRow | null>(null);
   const [passenger, setPassenger] = useState<Passenger | null>(null);
-  const [countdown, setCountdown] = useState(15);
+  const [countdown, setCountdown] = useState(RIDE_OFFER_TIMEOUT_SECONDS);
 
   const [polyline, setPolyline] = useState<LatLng[]>([]);
   const [etaSeconds, setEtaSeconds] = useState<number | null>(null);
