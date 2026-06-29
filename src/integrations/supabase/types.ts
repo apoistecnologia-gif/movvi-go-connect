@@ -1129,6 +1129,11 @@ export type Database = {
           passenger_rating: number | null
           passenger_rating_comment: string | null
           payment_method: string | null
+          pickup_address: string | null
+          pickup_label: string | null
+          pickup_place_id: string | null
+          pickup_short_label: string | null
+          pickup_source: string | null
           rejected_driver_ids: string[]
           route_polyline: string | null
           safety_code: string | null
@@ -1179,6 +1184,11 @@ export type Database = {
           passenger_rating?: number | null
           passenger_rating_comment?: string | null
           payment_method?: string | null
+          pickup_address?: string | null
+          pickup_label?: string | null
+          pickup_place_id?: string | null
+          pickup_short_label?: string | null
+          pickup_source?: string | null
           rejected_driver_ids?: string[]
           route_polyline?: string | null
           safety_code?: string | null
@@ -1229,6 +1239,11 @@ export type Database = {
           passenger_rating?: number | null
           passenger_rating_comment?: string | null
           payment_method?: string | null
+          pickup_address?: string | null
+          pickup_label?: string | null
+          pickup_place_id?: string | null
+          pickup_short_label?: string | null
+          pickup_source?: string | null
           rejected_driver_ids?: string[]
           route_polyline?: string | null
           safety_code?: string | null

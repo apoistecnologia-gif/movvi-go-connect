@@ -97,7 +97,30 @@ function greetingTextSize(name: string): string {
   return "text-[11px]";
 }
 
+// ====== CACHE LOCAL DE PICKUP LABEL ======
+const PICKUP_CACHE_KEY = "movvi.lastPickupLabel";
+type PickupCache = {
+  lat: number; lng: number;
+  label: string; short?: string; sub?: string;
+  address?: string; ts: number;
+};
+function readPickupCache(): PickupCache | null {
+  try {
+    const raw = localStorage.getItem(PICKUP_CACHE_KEY);
+    if (!raw) return null;
+    const j = JSON.parse(raw) as PickupCache;
+    if (!j?.label || typeof j.lat !== "number" || typeof j.lng !== "number") return null;
+    // Cache válido por 24h.
+    if (Date.now() - (j.ts ?? 0) > 24 * 60 * 60 * 1000) return null;
+    return j;
+  } catch { return null; }
+}
+function writePickupCache(c: PickupCache) {
+  try { localStorage.setItem(PICKUP_CACHE_KEY, JSON.stringify(c)); } catch { /* noop */ }
+}
+
 // ====== COMPONENTES PREMIUM ======
+
 
 function PremiumTopBar({
   userName,
@@ -556,6 +579,7 @@ function PassageiroApp() {
   const [originPickOnMap, setOriginPickOnMap] = useState(false);
   const [originManualOpen, setOriginManualOpen] = useState(false);
   const [originPickCenter, setOriginPickCenter] = useState<LatLng | null>(null);
+  const [pickupSource, setPickupSource] = useState<"gps" | "manual" | "places">("gps");
   const [tick, setTick] = useState(0); // re-render para saudação dinâmica
   const [gpsState, setGpsState] = useState<
     "idle" | "requesting" | "granted" | "denied" | "unavailable"
@@ -809,6 +833,30 @@ function PassageiroApp() {
         if (diagnostic?.failureReason || !r.address) {
           const reason = diagnostic?.failureReason || diagnostic?.googleError || diagnostic?.googleStatus || "Google returned no formatted_address.";
           console.error("[MOVVI Reverse Geocoding Diagnostic] Reverse Geocoding failed:", reason);
+          // Fallback: tentar cache local recente (≤ 200 m do GPS atual).
+          const cached = readPickupCache();
+          if (cached && distanceMeters(position, { lat: cached.lat, lng: cached.lng }) < 200) {
+            console.log("[MOVVI Pickup Cache] reaproveitando label cacheado:", cached.label);
+            setGeo({
+              address: cached.address || cached.label,
+              friendly: "",
+              region: cached.sub || "",
+              approximate: true,
+              precision: "approximate",
+              confidence: "fallback",
+              selectionReason: "Cache local",
+              locationType: "",
+              partialMatch: false,
+              types: [],
+              components: {},
+              pickupLabel: cached.label,
+              pickupShortLabel: cached.short,
+              pickupSubLabel: cached.sub,
+              pickupSource: "gps",
+            } as GeocodeResult);
+            setAddressStatus("resolved");
+            return;
+          }
           setReverseGeocodeFailureReason(reason);
           setGeo(null);
           setAddressStatus("failed");
@@ -830,6 +878,18 @@ function PassageiroApp() {
         setReverseGeocodeFailureReason(null);
         setGeo(r);
         setAddressStatus("resolved");
+        // Cache local do último pickup label bom.
+        if (r.pickupLabel) {
+          writePickupCache({
+            lat: position.lat,
+            lng: position.lng,
+            label: r.pickupLabel,
+            short: r.pickupShortLabel,
+            sub: r.pickupSubLabel,
+            address: r.address,
+            ts: Date.now(),
+          });
+        }
       })
       .catch((e) => {
         if (!active) return;
@@ -874,6 +934,7 @@ function PassageiroApp() {
       return;
     }
     console.log("[MOVVI] Solicitando localização...");
+    setPickupSource("gps");
     const fail = (msg: string) => {
       setGpsState("unavailable");
       gpsStateRef.current = "unavailable";
@@ -1037,9 +1098,11 @@ function PassageiroApp() {
     console.log("[MOVVI] Origem manual selecionada", p);
     void logGpsTelemetry("manual_origin_set", { extra: { lat: p.lat, lng: p.lng } });
     setPosition(p);
+    setPickupSource("manual");
     setGpsState("granted");
     gpsStateRef.current = "granted";
     setGpsErrorMsg("");
+    try { toast.success("Ponto de partida confirmado."); } catch { /* noop */ }
   }, []);
 
 
@@ -1337,6 +1400,7 @@ function PassageiroApp() {
       // vão para o cálculo/rastreio. Se o Google não tiver nome, usamos as
       // coordenadas como rótulo.
       const originLabel =
+        geo?.pickupLabel ||
         geo?.friendly ||
         geo?.region ||
         `GPS ${position.lat.toFixed(6)}, ${position.lng.toFixed(6)}`;
@@ -1350,6 +1414,11 @@ function PassageiroApp() {
           distance_km: Math.round(km * 100) / 100,
           duration_min: Math.round(min),
           estimated_price: fare,
+          pickup_label: geo?.pickupLabel ?? null,
+          pickup_short_label: geo?.pickupShortLabel ?? null,
+          pickup_address: geo?.address ?? null,
+          pickup_place_id: geo?.nearestPoiPlaceId ?? null,
+          pickup_source: pickupSource,
         },
       });
       setRideId(newId);

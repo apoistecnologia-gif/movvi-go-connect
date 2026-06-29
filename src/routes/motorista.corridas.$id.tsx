@@ -16,6 +16,7 @@ export const Route = createFileRoute("/motorista/corridas/$id")({
 type RideRow = {
   id: string; status: string; category: string | null;
   origin_name: string; destination_name: string;
+  pickup_label?: string | null; pickup_short_label?: string | null;
   distance_km: number | null; duration_min: number | null;
   estimated_price: number | null; final_price: number | null;
   payment_method: string | null;
@@ -108,7 +109,7 @@ function RideDetailsPage() {
               </div>
 
               <div className="space-y-2 rounded-lg border border-border bg-card/40 p-3 text-sm">
-                <p className="flex items-start gap-2"><MapPin className="mt-0.5 h-4 w-4 text-primary" /><span>{ride.origin_name}</span></p>
+                <p className="flex items-start gap-2"><MapPin className="mt-0.5 h-4 w-4 text-primary" /><span>{ride.pickup_label || ride.origin_name}</span></p>
                 <p className="flex items-start gap-2"><Navigation2 className="mt-0.5 h-4 w-4 text-primary" /><span>{ride.destination_name}</span></p>
               </div>
 

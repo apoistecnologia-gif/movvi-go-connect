@@ -1169,7 +1169,7 @@ function IncomingOffer({
         </div>
 
         <div className="mt-4 space-y-3 rounded-2xl bg-background/60 p-3 ring-1 ring-border">
-          <RouteLine color="bg-blue-500" label="Embarque" name={ride.origin_name} />
+          <RouteLine color="bg-blue-500" label="Embarque" name={ride.pickup_label || ride.origin_name} />
           <div className="ml-[7px] h-3 w-px bg-border" />
           <RouteLine color="bg-destructive" label="Destino" name={ride.destination_name} />
         </div>
@@ -1333,7 +1333,7 @@ function ActiveRidePanel({
             toPickup ? "bg-blue-500 animate-pulse" : "bg-blue-500/60"}`} />
           <div className="min-w-0 flex-1">
             <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Embarque</div>
-            <div className="line-clamp-2 text-sm font-medium">{ride.origin_name}</div>
+            <div className="line-clamp-2 text-sm font-medium">{ride.pickup_short_label || ride.pickup_label || ride.origin_name}</div>
           </div>
           {toPickup && (
             <a target="_blank" rel="noreferrer"

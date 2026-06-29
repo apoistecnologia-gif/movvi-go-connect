@@ -83,6 +83,11 @@ const CriarCorridaInput = z.object({
   distance_km: z.number().nullable().optional(),
   duration_min: z.number().nullable().optional(),
   estimated_price: z.number().nullable().optional(),
+  pickup_label: z.string().max(240).nullable().optional(),
+  pickup_short_label: z.string().max(120).nullable().optional(),
+  pickup_address: z.string().max(500).nullable().optional(),
+  pickup_place_id: z.string().max(240).nullable().optional(),
+  pickup_source: z.enum(["gps", "manual", "places"]).nullable().optional(),
 });
 const RideIdInput = z.object({ rideId: z.string().uuid() });
 const IniciarCorridaInput = z.object({
@@ -465,6 +470,11 @@ export const criarCorrida = createServerFn({ method: "POST" })
         duration_min: durationMinFinal,
         estimated_price: estimatedPriceServer,
         status: RIDE_STATUS.PROCURAR_MOTORISTA,
+        pickup_label: data.pickup_label ?? null,
+        pickup_short_label: data.pickup_short_label ?? null,
+        pickup_address: data.pickup_address ?? null,
+        pickup_place_id: data.pickup_place_id ?? null,
+        pickup_source: data.pickup_source ?? "gps",
       })
       .select("*")
       .single();

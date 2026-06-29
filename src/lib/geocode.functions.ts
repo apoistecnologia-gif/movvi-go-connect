@@ -34,12 +34,18 @@ export type GeocodeResult = {
   geocodedLat?: number;
   geocodedLng?: number;
   components: GeocodeComponents;
-  /** Nome de um POI próximo (≤200m), quando a rua não estiver nomeada. */
+  /** Nome de um POI próximo (≤300m), quando a rua não estiver nomeada. */
   nearestPoi?: string;
+  /** placeId do POI mais próximo, quando aplicável. */
+  nearestPoiPlaceId?: string;
   /** Rótulo final pronto para exibição (regra MOVVI BR, nunca "Unnamed Road"). */
   pickupLabel?: string;
   /** Sub-rótulo (município/estado), pode ser igual a region. */
   pickupSubLabel?: string;
+  /** Versão curta para cards / markers / notificações. */
+  pickupShortLabel?: string;
+  /** Origem do ponto de partida. "gps" por padrão. */
+  pickupSource?: "gps" | "manual" | "places";
   diagnostic?: ReverseGeocodeDiagnostic;
 };
 
@@ -308,6 +314,9 @@ export const reverseGeocode = createServerFn({ method: "POST" })
     const rua = isUnnamedRoad(ruaRaw?.long) ? undefined : ruaRaw;
     const numero = pick(orderedResults, ["street_number"]);
     const bairro = pick(orderedResults, ["neighborhood"]);
+    const distrito =
+      pick(orderedResults, ["administrative_area_level_4"]) ??
+      pick(orderedResults, ["administrative_area_level_3"]);
     const cidade =
       pick(orderedResults, ["locality"]) ?? pick(orderedResults, ["administrative_area_level_2"]);
     const estado = pick(orderedResults, ["administrative_area_level_1"]);
@@ -338,21 +347,31 @@ export const reverseGeocode = createServerFn({ method: "POST" })
 
     const precision: "exact" | "approximate" = confidence === "exact" ? "exact" : "approximate";
 
-    // POI lookup: rural / sem rua nomeada → tentar Places Nearby
+    // POI lookup: rural / sem rua nomeada → tentar Places Nearby (raio 300m).
     let nearestPoi: string | undefined;
+    let nearestPoiPlaceId: string | undefined;
     if (!rua?.long) {
       try {
-        nearestPoi = await fetchNearestPoi(data.lat, data.lng, lovableKey, connKey);
+        const poi = await fetchNearestPoi(data.lat, data.lng, lovableKey, connKey);
+        nearestPoi = poi?.name;
+        nearestPoiPlaceId = poi?.placeId;
       } catch (err) {
         console.warn("[MOVVI Pickup Label] Nearby POI lookup failed:", err);
       }
     }
 
-    const { pickupLabel, pickupSubLabel } = buildPickupLabel({
+    // Detecta rodovia BR-/UF- a partir do route.short_name.
+    const highwayMatch = ruaRaw?.short?.match(/^(BR|AC|AL|AP|AM|BA|CE|DF|ES|GO|MA|MT|MS|MG|PA|PB|PR|PE|PI|RJ|RN|RS|RO|RR|SC|SP|SE|TO)-?\d{2,4}/i);
+    const highway = highwayMatch ? highwayMatch[0].toUpperCase().replace(/^([A-Z]{2})(\d)/, "$1-$2") : undefined;
+
+    const { pickupLabel, pickupSubLabel, pickupShortLabel } = buildPickupLabel({
       components,
       region,
       nearestPoi,
       hasNamedStreet: !!rua?.long,
+      distrito: distrito?.long,
+      highway,
+      topTypes,
     });
 
     return {
@@ -371,8 +390,11 @@ export const reverseGeocode = createServerFn({ method: "POST" })
       geocodedLng: top.geometry?.location?.lng,
       components,
       nearestPoi,
+      nearestPoiPlaceId,
       pickupLabel,
       pickupSubLabel,
+      pickupShortLabel,
+      pickupSource: "gps",
       diagnostic,
     };
   });
@@ -393,8 +415,11 @@ function buildPickupLabel(args: {
   region: string;
   nearestPoi?: string;
   hasNamedStreet: boolean;
-}): { pickupLabel?: string; pickupSubLabel?: string } {
-  const { components, region, nearestPoi, hasNamedStreet } = args;
+  distrito?: string;
+  highway?: string;
+  topTypes?: string[];
+}): { pickupLabel?: string; pickupSubLabel?: string; pickupShortLabel?: string } {
+  const { components, region, nearestPoi, hasNamedStreet, distrito, highway, topTypes } = args;
   const { rua, numero, bairro, povoado, cidade, estado, estadoSigla } = components;
 
   // Sub-label padrão (município/estado).
@@ -403,32 +428,68 @@ function buildPickupLabel(args: {
       ? `${cidade} - ${estadoSigla}`
       : region || cidade || estado || "";
 
-  // 1) POI próximo tem prioridade quando não há rua nomeada.
-  if (!hasNamedStreet && nearestPoi) {
-    return { pickupLabel: `Próximo a ${nearestPoi}`, pickupSubLabel: sub };
-  }
+  const stripPrefix = (s: string) =>
+    s.replace(/^\s*(povoado|comunidade|distrito|vila)\s+(de\s+|do\s+|da\s+)?/i, "").trim() || s;
 
-  // 2) Rua nomeada (com ou sem número).
+  // Heurística: povoado/comunidade — prefixar quando vier de sublocality genérico.
+  const prependVillage = (name: string): string => {
+    const lower = name.toLowerCase();
+    if (/^(povoado|comunidade|vila|distrito)\b/.test(lower)) return name;
+    // Distrito tem prefixo próprio (item 3); aqui é só vila/povoado.
+    return `Povoado ${name}`;
+  };
+
+  // 1) Rua nomeada (com ou sem número) — PRIORIDADE MÁXIMA.
   if (hasNamedStreet && rua) {
     const main = numero ? `${rua}, ${numero}` : rua;
-    return { pickupLabel: main, pickupSubLabel: [bairro, sub].filter(Boolean).join(" • ") };
+    return {
+      pickupLabel: main,
+      pickupSubLabel: [bairro, sub].filter(Boolean).join(" • "),
+      pickupShortLabel: rua,
+    };
   }
 
-  // 3) Cadeia de fallback descritiva.
-  const fallback = bairro || povoado || cidade || estado;
-  if (fallback) {
-    return { pickupLabel: fallback, pickupSubLabel: sub && sub !== fallback ? sub : "" };
+  // 2) Bairro.
+  if (bairro) {
+    return { pickupLabel: bairro, pickupSubLabel: sub && sub !== bairro ? sub : "", pickupShortLabel: bairro };
   }
 
-  // 4) Zona Rural + município.
+  // 3) Distrito.
+  if (distrito && distrito !== cidade) {
+    const label = `Distrito de ${stripPrefix(distrito)}`;
+    return { pickupLabel: label, pickupSubLabel: sub, pickupShortLabel: stripPrefix(distrito) };
+  }
+
+  // 4) Povoado / Comunidade.
+  if (povoado && povoado !== cidade) {
+    const label = prependVillage(povoado);
+    return { pickupLabel: label, pickupSubLabel: sub, pickupShortLabel: stripPrefix(povoado) };
+  }
+
+  // 5/6) Rodovia detectada — exibe antes do POI quando o resultado principal é rodovia.
+  if (highway && topTypes?.includes("route")) {
+    return { pickupLabel: highway, pickupSubLabel: sub, pickupShortLabel: highway };
+  }
+
+  // 6) POI próximo (≤300m).
+  if (nearestPoi) {
+    return {
+      pickupLabel: `Próximo a ${nearestPoi}`,
+      pickupSubLabel: sub,
+      pickupShortLabel: nearestPoi,
+    };
+  }
+
+  // 7) Zona Rural + município.
   if (cidade || estado) {
     return {
       pickupLabel: "Zona Rural",
       pickupSubLabel: sub,
+      pickupShortLabel: cidade || estado || "Zona Rural",
     };
   }
 
-  return { pickupLabel: undefined, pickupSubLabel: undefined };
+  return {};
 }
 
 async function fetchNearestPoi(
@@ -436,17 +497,17 @@ async function fetchNearestPoi(
   lng: number,
   lovableKey: string,
   connKey: string,
-): Promise<string | undefined> {
+): Promise<{ name: string; placeId?: string } | undefined> {
   const url = `${GATEWAY_URL}/places/v1/places:searchNearby`;
   const body = {
-    maxResultCount: 5,
+    maxResultCount: 8,
     languageCode: "pt-BR",
     regionCode: "BR",
     rankPreference: "DISTANCE",
     locationRestriction: {
       circle: {
         center: { latitude: lat, longitude: lng },
-        radius: 200,
+        radius: 300,
       },
     },
   };
@@ -456,20 +517,20 @@ async function fetchNearestPoi(
       Authorization: `Bearer ${lovableKey}`,
       "X-Connection-Api-Key": connKey,
       "Content-Type": "application/json",
-      "X-Goog-FieldMask": "places.displayName,places.primaryType,places.types",
+      "X-Goog-FieldMask": "places.id,places.displayName,places.primaryType,places.types",
     },
     body: JSON.stringify(body),
   });
   if (!res.ok) return undefined;
   const json = (await res.json()) as {
     places?: Array<{
+      id?: string;
       displayName?: { text?: string };
       primaryType?: string;
       types?: string[];
     }>;
   };
   const places = json.places ?? [];
-  // Ignorar tipos genéricos pouco úteis como rótulo.
   const skipTypes = new Set([
     "route",
     "street_address",
@@ -477,14 +538,17 @@ async function fetchNearestPoi(
     "political",
     "locality",
     "neighborhood",
+    "sublocality",
     "plus_code",
+    "premise",
+    "subpremise",
   ]);
   for (const p of places) {
     const name = p.displayName?.text?.trim();
     if (!name) continue;
     const types = p.types ?? [];
     if (types.every((t) => skipTypes.has(t))) continue;
-    return name;
+    return { name, placeId: p.id };
   }
   return undefined;
 }
