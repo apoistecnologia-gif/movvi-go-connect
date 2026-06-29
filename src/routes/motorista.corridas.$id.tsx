@@ -16,6 +16,7 @@ export const Route = createFileRoute("/motorista/corridas/$id")({
 type RideRow = {
   id: string; status: string; category: string | null;
   origin_name: string; destination_name: string;
+  pickup_label?: string | null; pickup_short_label?: string | null;
   distance_km: number | null; duration_min: number | null;
   estimated_price: number | null; final_price: number | null;
   payment_method: string | null;
