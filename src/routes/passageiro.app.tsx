@@ -831,6 +831,17 @@ function PassageiroApp() {
         console.log("[MOVVI] Preview detectado:", inPreview);
         console.log("[MOVVI] Alta confiança:", highConfidence, baseHighConfidence === highConfidence ? "" : "(rebaixado pelo preview)");
         if (!highConfidence) {
+          const confidenceFailureReason = [
+            "MOVVI high-confidence validation rejected the Google reverse geocoding result.",
+            `locationType=${r.locationType || "empty"}`,
+            `partialMatch=${r.partialMatch}`,
+            `hasRoute=${hasRoute}`,
+            `hasNumber=${hasNumber}`,
+            `addressMentionsStreet=${addressMentionsStreet}`,
+            `looksGeneric=${looksGeneric}`,
+            `gpsToGeocodeDistanceMeters=${Number.isFinite(dist) ? dist.toFixed(1) : "n/a"}`,
+            "required=ROOFTOP + street/number + non-generic + distance < 30m",
+          ].join(" | ");
           console.warn("[MOVVI Reverse Geocoding Diagnostic] Reverse geocoding succeeded, but the UI is displaying coordinates because high-confidence validation failed.", {
             locationType: r.locationType,
             partialMatch: r.partialMatch,
@@ -841,9 +852,11 @@ function PassageiroApp() {
             gpsToGeocodeDistanceMeters: Number.isFinite(dist) ? Number(dist.toFixed(1)) : null,
             required: "ROOFTOP, formatted street/number, not generic, GPS/geocode distance < 30m",
           });
-        }
-        if (finalPrecision === "approximate") {
-          console.log("[MOVVI] Exibindo origem aproximada:", `${position.lat.toFixed(6)}, ${position.lng.toFixed(6)}`, r.region || "(sem referência)");
+          console.error("[MOVVI Reverse Geocoding Diagnostic] Reverse Geocoding failed:", confidenceFailureReason);
+          setReverseGeocodeFailureReason(confidenceFailureReason);
+          setGeo({ ...r, precision: "approximate" });
+          setAddressStatus("failed");
+          return;
         }
         console.log("[MOVVI] Coordenadas reais mantidas para rota:", position.lat, position.lng);
 
