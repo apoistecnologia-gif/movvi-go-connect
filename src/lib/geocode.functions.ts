@@ -15,23 +15,22 @@ export type GeocodeComponents = {
   pais?: string;
 };
 
+export type GeocodeConfidence = "exact" | "approximate" | "area" | "fallback";
+
 export type GeocodeResult = {
-  address: string;       // endereço completo formatado
-  friendly: string;      // primeira linha (povoado/bairro). Vazio se não houver.
-  region: string;        // "Cidade - UF"
-  approximate: boolean;  // true quando só temos município (sem bairro/povoado)
-  /**
-   * Confiabilidade do endereço retornado pelo Google.
-   * - "exact": location_type=ROOFTOP, endereço é o ponto exato.
-   * - "approximate": location_type ∈ {APPROXIMATE, GEOMETRIC_CENTER, RANGE_INTERPOLATED}
-   *   ou partial_match=true. NÃO mostrar rua/número como exato — preferir coordenadas + referência.
-   */
+  address: string;
+  friendly: string;
+  region: string;
+  approximate: boolean;
   precision: "exact" | "approximate";
-  locationType: string;  // ROOFTOP | RANGE_INTERPOLATED | GEOMETRIC_CENTER | APPROXIMATE | ""
+  /** Nova classificação detalhada da seleção do melhor resultado. */
+  confidence: GeocodeConfidence;
+  /** Motivo legível pelo qual o melhor resultado foi escolhido. */
+  selectionReason: string;
+  locationType: string;
   partialMatch: boolean;
-  plusCode?: string;     // global_code do plus_code, se houver
-  types: string[];       // types do primeiro resultado
-  /** Coordenadas retornadas pelo Google (geometry.location) — usadas para medir distância do GPS. */
+  plusCode?: string;
+  types: string[];
   geocodedLat?: number;
   geocodedLng?: number;
   components: GeocodeComponents;
@@ -82,17 +81,82 @@ function pick(results: GResult[], types: string[]): { long: string; short: strin
 
 function emptyGeocode(diagnostic?: ReverseGeocodeDiagnostic): GeocodeResult {
   return {
-  address: "",
-  friendly: "",
-  region: "",
-  approximate: false,
-  precision: "approximate",
-  locationType: "",
-  partialMatch: false,
-  types: [],
-  components: {},
-  diagnostic,
+    address: "",
+    friendly: "",
+    region: "",
+    approximate: false,
+    precision: "approximate",
+    confidence: "fallback",
+    selectionReason: "No usable result from Google Geocoding",
+    locationType: "",
+    partialMatch: false,
+    types: [],
+    components: {},
+    diagnostic,
   };
+}
+
+function hasComponent(r: GResult, type: string): boolean {
+  return (r.address_components ?? []).some((c) => c.types.includes(type));
+}
+
+function hasAnyComponent(r: GResult, types: string[]): boolean {
+  return types.some((t) => hasComponent(r, t));
+}
+
+export function selectBestGeocodeResult(
+  results: GResult[],
+): { result: GResult; index: number; confidence: GeocodeConfidence; reason: string } | null {
+  if (!results.length) return null;
+
+  // Priority A: ROOFTOP with route/neighborhood/locality
+  for (let i = 0; i < results.length; i++) {
+    const r = results[i];
+    if (
+      r.geometry?.location_type === "ROOFTOP" &&
+      hasAnyComponent(r, ["route", "neighborhood", "locality"])
+    ) {
+      return { result: r, index: i, confidence: "exact", reason: "ROOFTOP with route/neighborhood/locality" };
+    }
+  }
+  // Priority B: RANGE_INTERPOLATED with route/neighborhood/locality
+  for (let i = 0; i < results.length; i++) {
+    const r = results[i];
+    if (
+      r.geometry?.location_type === "RANGE_INTERPOLATED" &&
+      hasAnyComponent(r, ["route", "neighborhood", "locality"])
+    ) {
+      return { result: r, index: i, confidence: "approximate", reason: "RANGE_INTERPOLATED with route/neighborhood/locality" };
+    }
+  }
+  // Priority C: GEOMETRIC_CENTER with usable area
+  const areaTypes = [
+    "neighborhood",
+    "locality",
+    "sublocality",
+    "sublocality_level_1",
+    "sublocality_level_2",
+    "administrative_area_level_2",
+    "administrative_area_level_3",
+    "administrative_area_level_4",
+  ];
+  for (let i = 0; i < results.length; i++) {
+    const r = results[i];
+    if (
+      r.geometry?.location_type === "GEOMETRIC_CENTER" &&
+      (hasAnyComponent(r, areaTypes) || !!r.formatted_address)
+    ) {
+      return { result: r, index: i, confidence: "area", reason: "GEOMETRIC_CENTER with usable area or formatted_address" };
+    }
+  }
+  // Priority D: fallback - first result with formatted_address
+  for (let i = 0; i < results.length; i++) {
+    const r = results[i];
+    if (r.formatted_address) {
+      return { result: r, index: i, confidence: "fallback", reason: "Fallback to first result with formatted_address" };
+    }
+  }
+  return { result: results[0], index: 0, confidence: "fallback", reason: "Last-resort: first result without formatted_address" };
 }
 
 // Requer usuário autenticado para evitar abuso/scraping da chave Google Maps.
@@ -198,18 +262,28 @@ export const reverseGeocode = createServerFn({ method: "POST" })
       return emptyGeocode({ ...diagnostic, failureReason });
     }
 
-    const top = results[0];
+    const selection = selectBestGeocodeResult(results);
+    const top = selection?.result ?? results[0];
+    const confidence: GeocodeConfidence = selection?.confidence ?? "fallback";
+    const selectionReason = selection?.reason ?? "No selection produced; using first result";
+
+    console.log("[MOVVI Reverse Geocoding Diagnostic] total results:", results.length);
+    console.log("[MOVVI Reverse Geocoding Diagnostic] selected index:", selection?.index ?? 0);
+    console.log("[MOVVI Reverse Geocoding Diagnostic] selected formatted_address:", top.formatted_address ?? "(none)");
+    console.log("[MOVVI Reverse Geocoding Diagnostic] selected location_type:", top.geometry?.location_type ?? "(none)");
+    console.log("[MOVVI Reverse Geocoding Diagnostic] confidence:", confidence);
+    console.log("[MOVVI Reverse Geocoding Diagnostic] reason:", selectionReason);
+
     const address = top.formatted_address ?? "";
     const locationType = top.geometry?.location_type ?? "";
     const partialMatch = !!top.partial_match;
     const plusCode = top.plus_code?.global_code;
     const topTypes = top.types ?? [];
 
+    // Para extração de componentes, priorize o resultado selecionado, com fallback
+    // para a lista completa (Google retorna componentes redundantes entre resultados).
+    const orderedResults = [top, ...results.filter((r) => r !== top)];
 
-    // Prioridade conforme exigência: sublocality_level_1, sublocality_level_2,
-    // neighborhood, locality, administrative_area_level_2, administrative_area_level_1.
-    // Para a primeira linha (friendly), só usamos níveis MENORES que o município
-    // (povoado / bairro / distrito). Município vai sempre para a segunda linha.
     const povoadoCandidates = [
       ["sublocality_level_1"],
       ["sublocality_level_2"],
@@ -220,17 +294,17 @@ export const reverseGeocode = createServerFn({ method: "POST" })
     ];
     let povoado: { long: string; short: string } | undefined;
     for (const types of povoadoCandidates) {
-      povoado = pick(results, types);
+      povoado = pick(orderedResults, types);
       if (povoado) break;
     }
 
-    const rua = pick(results, ["route"]);
-    const numero = pick(results, ["street_number"]);
-    const bairro = pick(results, ["neighborhood"]);
+    const rua = pick(orderedResults, ["route"]);
+    const numero = pick(orderedResults, ["street_number"]);
+    const bairro = pick(orderedResults, ["neighborhood"]);
     const cidade =
-      pick(results, ["locality"]) ?? pick(results, ["administrative_area_level_2"]);
-    const estado = pick(results, ["administrative_area_level_1"]);
-    const pais = pick(results, ["country"]);
+      pick(orderedResults, ["locality"]) ?? pick(orderedResults, ["administrative_area_level_2"]);
+    const estado = pick(orderedResults, ["administrative_area_level_1"]);
+    const pais = pick(orderedResults, ["country"]);
 
     const components: GeocodeComponents = {
       rua: rua?.long,
@@ -243,7 +317,6 @@ export const reverseGeocode = createServerFn({ method: "POST" })
       pais: pais?.long,
     };
 
-    // Friendly = só povoado/bairro. Nunca repetir o município aqui.
     const cityName = cidade?.long?.toLowerCase() ?? "";
     const candidate = povoado?.long ?? bairro?.long ?? "";
     const friendly =
@@ -254,13 +327,9 @@ export const reverseGeocode = createServerFn({ method: "POST" })
         ? `${cidade.long} - ${estado.short}`
         : (cidade?.long ?? estado?.long ?? "");
 
-    const approximate = !friendly && !!region;
+    const approximate = confidence !== "exact";
 
-    // ROOFTOP é o único nível considerado endereço exato no Brasil.
-    // RANGE_INTERPOLATED interpola entre números → não confiável para zona rural.
-    // GEOMETRIC_CENTER/APPROXIMATE são área/poligono → nunca apresentar como rua exata.
-    const precision: "exact" | "approximate" =
-      locationType === "ROOFTOP" && !partialMatch ? "exact" : "approximate";
+    const precision: "exact" | "approximate" = confidence === "exact" ? "exact" : "approximate";
 
     return {
       address,
@@ -268,6 +337,8 @@ export const reverseGeocode = createServerFn({ method: "POST" })
       region,
       approximate,
       precision,
+      confidence,
+      selectionReason,
       locationType,
       partialMatch,
       plusCode,

@@ -798,69 +798,20 @@ function PassageiroApp() {
           return;
         }
 
-        const inPreview = isDevelopmentEnvironment();
-        const hasRoute = !!r.components.rua;
-        const hasNumber = !!r.components.numero;
-        const fa = (r.address || "").toLowerCase();
-        const addressMentionsStreet =
-          hasRoute && (fa.includes((r.components.rua || "").toLowerCase()) || fa.match(/\d/) !== null);
-        // Resultados muito genéricos: apenas locality / political → não é endereço de rua.
-        const genericTypes = new Set(["locality", "political", "administrative_area_level_2", "administrative_area_level_1", "country", "plus_code"]);
-        const looksGeneric = r.types.length > 0 && r.types.every((t) => genericTypes.has(t));
-
         let dist = Number.POSITIVE_INFINITY;
         if (typeof r.geocodedLat === "number" && typeof r.geocodedLng === "number") {
           dist = distanceMeters(position, { lat: r.geocodedLat, lng: r.geocodedLng });
         }
 
-        const baseHighConfidence =
-          r.locationType === "ROOFTOP" &&
-          !r.partialMatch &&
-          hasRoute &&
-          hasNumber &&
-          addressMentionsStreet &&
-          !looksGeneric &&
-          dist < 30;
+        console.log("[MOVVI Reverse Geocoding Diagnostic] selected formatted_address:", r.address);
+        console.log("[MOVVI Reverse Geocoding Diagnostic] selected location_type:", r.locationType || "(none)");
+        console.log("[MOVVI Reverse Geocoding Diagnostic] confidence:", r.confidence);
+        console.log("[MOVVI Reverse Geocoding Diagnostic] reason:", r.selectionReason);
+        console.log("[MOVVI] Distância GPS↔geocoding:", Number.isFinite(dist) ? `${dist.toFixed(1)} m` : "n/d");
 
-        const highConfidence = inPreview && FORCE_APPROXIMATE_ORIGIN_IN_PREVIEW ? false : baseHighConfidence;
-        const finalPrecision: "exact" | "approximate" = highConfidence ? "exact" : "approximate";
-
-        console.log("[MOVVI] Endereço retornado pelo Google:", r.address || "(vazio)");
-        console.log("[MOVVI] Tipo de precisão:", r.locationType || "(desconhecido)", r.partialMatch ? "(partial_match)" : "");
-        console.log("[MOVVI] Distância entre GPS e geocoding:", Number.isFinite(dist) ? `${dist.toFixed(1)} m` : "n/d");
-        console.log("[MOVVI] Preview detectado:", inPreview);
-        console.log("[MOVVI] Alta confiança:", highConfidence, baseHighConfidence === highConfidence ? "" : "(rebaixado pelo preview)");
-        if (!highConfidence) {
-          const confidenceFailureReason = [
-            "MOVVI high-confidence validation rejected the Google reverse geocoding result.",
-            `locationType=${r.locationType || "empty"}`,
-            `partialMatch=${r.partialMatch}`,
-            `hasRoute=${hasRoute}`,
-            `hasNumber=${hasNumber}`,
-            `addressMentionsStreet=${addressMentionsStreet}`,
-            `looksGeneric=${looksGeneric}`,
-            `gpsToGeocodeDistanceMeters=${Number.isFinite(dist) ? dist.toFixed(1) : "n/a"}`,
-            "required=ROOFTOP + street/number + non-generic + distance < 30m",
-          ].join(" | ");
-          console.warn("[MOVVI Reverse Geocoding Diagnostic] Reverse geocoding succeeded, but the UI is displaying coordinates because high-confidence validation failed.", {
-            locationType: r.locationType,
-            partialMatch: r.partialMatch,
-            hasRoute,
-            hasNumber,
-            addressMentionsStreet,
-            looksGeneric,
-            gpsToGeocodeDistanceMeters: Number.isFinite(dist) ? Number(dist.toFixed(1)) : null,
-            required: "ROOFTOP, formatted street/number, not generic, GPS/geocode distance < 30m",
-          });
-          console.error("[MOVVI Reverse Geocoding Diagnostic] Reverse Geocoding failed:", confidenceFailureReason);
-          setReverseGeocodeFailureReason(confidenceFailureReason);
-          setGeo({ ...r, precision: "approximate" });
-          setAddressStatus("failed");
-          return;
-        }
-        console.log("[MOVVI] Coordenadas reais mantidas para rota:", position.lat, position.lng);
-
-        setGeo({ ...r, precision: finalPrecision });
+        // Limpa qualquer erro anterior — temos um endereço utilizável.
+        setReverseGeocodeFailureReason(null);
+        setGeo(r);
         setAddressStatus("resolved");
       })
       .catch((e) => {
