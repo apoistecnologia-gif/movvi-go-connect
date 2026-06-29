@@ -876,10 +876,11 @@ function PassageiroApp() {
         console.log("[MOVVI Reverse Geocoding Diagnostic] reason:", r.selectionReason);
         console.log("[MOVVI] Distância GPS↔geocoding:", Number.isFinite(dist) ? `${dist.toFixed(1)} m` : "n/d");
 
-        // Limpa qualquer erro anterior — temos um endereço utilizável.
+        // Stage 1: limpa erro e mostra o endereço imediatamente — sem esperar POI.
         setReverseGeocodeFailureReason(null);
         setGeo(r);
         setAddressStatus("resolved");
+        console.log("[MOVVI] Pickup label gerado (stage 1):", r.pickupLabel);
         // Cache local do último pickup label bom.
         if (r.pickupLabel) {
           writePickupCache({
@@ -891,6 +892,56 @@ function PassageiroApp() {
             address: r.address,
             ts: Date.now(),
           });
+        }
+
+        // Stage 2 (background): só vale a pena enriquecer com POI quando não temos
+        // rua nomeada, bairro ou povoado — ou seja, casos "Zona Rural" / rodovia.
+        const c = r.components;
+        const labelIsWeak =
+          !c.rua && !c.bairro && !c.povoado &&
+          (!r.pickupLabel || /zona rural|^br-|^[a-z]{2}-\d/i.test(r.pickupLabel));
+        if (labelIsWeak) {
+          console.log("[MOVVI] Stage 2 POI lookup iniciado");
+          const poiTimeout = new Promise<{ name?: string; placeId?: string }>((resolve) =>
+            window.setTimeout(() => {
+              console.warn("[MOVVI] Nearby Places timeout (3s) — mantendo label atual");
+              resolve({});
+            }, 3000),
+          );
+          Promise.race([
+            callNearestPoi({ data: { lat: position.lat, lng: position.lng } }),
+            poiTimeout,
+          ])
+            .then((poi) => {
+              if (!active) return;
+              console.log("[MOVVI] Nearby Places finalizado:", poi?.name ?? "(nenhum)");
+              if (!poi?.name) return;
+              setGeo((prev) => {
+                if (!prev) return prev;
+                const newLabel = `Próximo a ${poi.name}`;
+                console.log("[MOVVI] Pickup label atualizado (stage 2):", newLabel);
+                const updated: GeocodeResult = {
+                  ...prev,
+                  nearestPoi: poi.name,
+                  nearestPoiPlaceId: poi.placeId,
+                  pickupLabel: newLabel,
+                  pickupShortLabel: poi.name,
+                };
+                writePickupCache({
+                  lat: position.lat,
+                  lng: position.lng,
+                  label: newLabel,
+                  short: poi.name,
+                  sub: prev.pickupSubLabel,
+                  address: prev.address,
+                  ts: Date.now(),
+                });
+                return updated;
+              });
+            })
+            .catch((err) => {
+              console.warn("[MOVVI] Nearby Places falhou — mantendo label atual:", err);
+            });
         }
       })
       .catch((e) => {
