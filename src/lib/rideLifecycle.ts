@@ -470,6 +470,11 @@ export const criarCorrida = createServerFn({ method: "POST" })
         duration_min: durationMinFinal,
         estimated_price: estimatedPriceServer,
         status: RIDE_STATUS.PROCURAR_MOTORISTA,
+        pickup_label: data.pickup_label ?? null,
+        pickup_short_label: data.pickup_short_label ?? null,
+        pickup_address: data.pickup_address ?? null,
+        pickup_place_id: data.pickup_place_id ?? null,
+        pickup_source: data.pickup_source ?? "gps",
       })
       .select("*")
       .single();
