@@ -55,6 +55,10 @@ const TEST_DRIVER_LOCATION = {
   lng: -41.478,
 };
 
+/** Tempo máximo (em segundos) que uma oferta de corrida fica visível para
+ *  o motorista antes de ser recusada automaticamente. */
+const RIDE_OFFER_TIMEOUT_SECONDS = 60;
+
 export const Route = createFileRoute("/motorista/app")({
   head: () => ({ meta: [{ title: "App do Motorista — MOVVI DRIVE" }] }),
   component: MotoristaApp,
