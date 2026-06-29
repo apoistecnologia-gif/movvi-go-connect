@@ -34,6 +34,12 @@ export type GeocodeResult = {
   geocodedLat?: number;
   geocodedLng?: number;
   components: GeocodeComponents;
+  /** Nome de um POI próximo (≤200m), quando a rua não estiver nomeada. */
+  nearestPoi?: string;
+  /** Rótulo final pronto para exibição (regra MOVVI BR, nunca "Unnamed Road"). */
+  pickupLabel?: string;
+  /** Sub-rótulo (município/estado), pode ser igual a region. */
+  pickupSubLabel?: string;
   diagnostic?: ReverseGeocodeDiagnostic;
 };
 
