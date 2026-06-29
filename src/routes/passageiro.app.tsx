@@ -848,11 +848,40 @@ function PassageiroApp() {
       console.warn("[MOVVI] Reverse geocode timeout (5s)");
       console.error("[MOVVI Reverse Geocoding Diagnostic] Reverse Geocoding failed:", reason);
       setReverseGeocodeFailureReason(reason);
-      setAddressStatus((s) => (s === "loading" ? "failed" : s));
-    }, 5000);
-    callReverseGeocode({ data: { lat: position.lat, lng: position.lng } })
-      .then((raw) => {
-        if (!active) return;
+      setAddressStatus((s) => {
+        if (s !== "loading") return s;
+        return hasDisplayablePickup(latestGeoRef.current) ? "resolved" : "failed";
+      });
+    }, REVERSE_GEOCODE_CLIENT_TIMEOUT_MS);
+
+    void (async () => {
+      const reverseResult = await withClientTimeout(
+        callReverseGeocode({ data: { lat: position.lat, lng: position.lng } }) as Promise<GeocodeResult>,
+        REVERSE_GEOCODE_CLIENT_TIMEOUT_MS,
+      );
+      window.clearTimeout(timeoutId);
+      if (!active) return;
+
+      if (reverseResult.status === "timeout") {
+        const reason = `Reverse Geocoding timed out after ${REVERSE_GEOCODE_CLIENT_TIMEOUT_MS}ms.`;
+        console.warn("[MOVVI] Reverse geocode finished: timeout");
+        setReverseGeocodeFailureReason(reason);
+        setAddressStatus(hasDisplayablePickup(latestGeoRef.current) ? "resolved" : "failed");
+        return;
+      }
+
+      if (reverseResult.status === "error") {
+        const reason = reverseResult.error instanceof Error ? reverseResult.error.message : String(reverseResult.error);
+        console.error("[MOVVI] Reverse geocode finished: error", reverseResult.error);
+        console.error("[MOVVI Reverse Geocoding Diagnostic] Reverse Geocoding failed:", reason);
+        setReverseGeocodeFailureReason(reason);
+        setAddressStatus(hasDisplayablePickup(latestGeoRef.current) ? "resolved" : "failed");
+        return;
+      }
+
+      try {
+        console.log("[MOVVI] Reverse geocode finished: success");
+        const raw = reverseResult.value;
         const r = raw as GeocodeResult;
         const diagnostic = r.diagnostic;
         console.log("[MOVVI Reverse Geocoding Diagnostic] returned latitude:", diagnostic?.latitude ?? position.lat);
@@ -890,6 +919,23 @@ function PassageiroApp() {
               pickupSubLabel: cached.sub,
               pickupSource: "gps",
             } as GeocodeResult);
+            latestGeoRef.current = {
+              address: cached.address || cached.label,
+              friendly: "",
+              region: cached.sub || "",
+              approximate: true,
+              precision: "approximate",
+              confidence: "fallback",
+              selectionReason: "Cache local",
+              locationType: "",
+              partialMatch: false,
+              types: [],
+              components: {},
+              pickupLabel: cached.label,
+              pickupShortLabel: cached.short,
+              pickupSubLabel: cached.sub,
+              pickupSource: "gps",
+            } as GeocodeResult;
             setAddressStatus("resolved");
             return;
           }
@@ -912,9 +958,10 @@ function PassageiroApp() {
 
         // Stage 1: limpa erro e mostra o endereço imediatamente — sem esperar POI.
         setReverseGeocodeFailureReason(null);
+        latestGeoRef.current = r;
         setGeo(r);
         setAddressStatus("resolved");
-        console.log("[MOVVI] Pickup label gerado (stage 1):", r.pickupLabel);
+        console.log("[MOVVI] Pickup label generated", r.pickupLabel || r.address);
         // Cache local do último pickup label bom.
         if (r.pickupLabel) {
           writePickupCache({
@@ -936,24 +983,27 @@ function PassageiroApp() {
           (!r.pickupLabel || /zona rural|^br-|^[a-z]{2}-\d/i.test(r.pickupLabel));
         if (labelIsWeak) {
           console.log("[MOVVI] Stage 2 POI lookup iniciado");
-          const poiTimeout = new Promise<{ name?: string; placeId?: string }>((resolve) =>
-            window.setTimeout(() => {
-              console.warn("[MOVVI] Nearby Places timeout (3s) — mantendo label atual");
-              resolve({});
-            }, 3000),
-          );
-          Promise.race([
-            callNearestPoi({ data: { lat: position.lat, lng: position.lng } }),
-            poiTimeout,
-          ])
-            .then((poi) => {
+          void (async () => {
+            const poiResult = await withClientTimeout(
+              callNearestPoi({ data: { lat: position.lat, lng: position.lng } }) as Promise<{ name?: string; placeId?: string }>,
+              NEARBY_PLACES_CLIENT_TIMEOUT_MS,
+            );
+            if (poiResult.status === "timeout") {
+              console.warn("[MOVVI] Nearby Places finished: timeout — mantendo label atual");
+              return;
+            }
+            if (poiResult.status === "error") {
+              console.warn("[MOVVI] Nearby Places finished: error — mantendo label atual", poiResult.error);
+              return;
+            }
+            const poi = poiResult.value;
               if (!active) return;
-              console.log("[MOVVI] Nearby Places finalizado:", poi?.name ?? "(nenhum)");
+              console.log("[MOVVI] Nearby Places finished:", poi?.name ?? "(nenhum)");
               if (!poi?.name) return;
               setGeo((prev) => {
                 if (!prev) return prev;
                 const newLabel = `Próximo a ${poi.name}`;
-                console.log("[MOVVI] Pickup label atualizado (stage 2):", newLabel);
+                console.log("[MOVVI] Pickup label updated", newLabel);
                 const updated: GeocodeResult = {
                   ...prev,
                   nearestPoi: poi.name,
@@ -961,6 +1011,7 @@ function PassageiroApp() {
                   pickupLabel: newLabel,
                   pickupShortLabel: poi.name,
                 };
+                latestGeoRef.current = updated;
                 writePickupCache({
                   lat: position.lat,
                   lng: position.lng,
@@ -972,23 +1023,12 @@ function PassageiroApp() {
                 });
                 return updated;
               });
-            })
-            .catch((err) => {
-              console.warn("[MOVVI] Nearby Places falhou — mantendo label atual:", err);
-            });
+          })();
         }
-      })
-      .catch((e) => {
-        if (!active) return;
-        const reason = (e as Error)?.message || String(e);
-        console.error("[MOVVI] Reverse geocoding falhou", e);
-        console.error("[MOVVI Reverse Geocoding Diagnostic] Reverse Geocoding failed:", reason);
-        setReverseGeocodeFailureReason(reason);
-        setAddressStatus("failed");
-      })
-      .finally(() => {
+      } finally {
         window.clearTimeout(timeoutId);
-      });
+      }
+    })();
     return () => {
       active = false;
       window.clearTimeout(timeoutId);
