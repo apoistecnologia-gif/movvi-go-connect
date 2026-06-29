@@ -875,21 +875,36 @@ function MotoristaApp() {
           )}
           {active && (
             <>
+              {/* Pickup do passageiro — pin verde com halo */}
               <Marker position={{ lat: active.origin_lat, lng: active.origin_lng }} icon={{
-                path: safeSymbol("CIRCLE"), scale: 8,
-                fillColor: "#3b82f6", fillOpacity: 1, strokeColor: "#fff", strokeWeight: 2,
-              }} />
+                path: safeSymbol("CIRCLE"), scale: 16,
+                fillColor: "#8DD92B", fillOpacity: 0.18, strokeColor: "#8DD92B", strokeOpacity: 0.4, strokeWeight: 1,
+              }} clickable={false} zIndex={9990} />
+              <Marker position={{ lat: active.origin_lat, lng: active.origin_lng }} icon={{
+                path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z",
+                fillColor: "#8DD92B", fillOpacity: 1, strokeColor: "#ffffff",
+                strokeWeight: 2, scale: 1.8, anchor: safePoint(12, 22),
+              }} zIndex={9991} />
+              {/* Destino — pin vermelho */}
               <Marker position={{ lat: active.destination_lat, lng: active.destination_lng }} icon={{
-                path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z",
-                fillColor: "#ef4444", fillOpacity: 1, strokeColor: "#05070D",
-                strokeWeight: 2, scale: 1.6, anchor: safePoint(12, 22),
+                path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z",
+                fillColor: "#ef4444", fillOpacity: 1, strokeColor: "#ffffff",
+                strokeWeight: 2, scale: 1.8, anchor: safePoint(12, 22),
               }} />
             </>
           )}
           {polyline.length > 0 && (
-            <Polyline path={polyline} options={{
-              strokeColor: "#8DD92B", strokeOpacity: 0.95, strokeWeight: 6, geodesic: true,
-            }} />
+            <>
+              <Polyline path={polyline} options={{
+                strokeColor: "#000000", strokeOpacity: 0.18, strokeWeight: 14, geodesic: true, zIndex: 1,
+              }} />
+              <Polyline path={polyline} options={{
+                strokeColor: "#ffffff", strokeOpacity: 1, strokeWeight: 10, geodesic: true, zIndex: 2,
+              }} />
+              <Polyline path={polyline} options={{
+                strokeColor: "#8DD92B", strokeOpacity: 1, strokeWeight: 6, geodesic: true, zIndex: 3,
+              }} />
+            </>
           )}
         </MovviMap>
       </div>

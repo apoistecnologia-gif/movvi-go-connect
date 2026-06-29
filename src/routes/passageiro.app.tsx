@@ -2061,7 +2061,7 @@ function PassageiroApp() {
                 position={{ lat: rideDriverInfo.current_lat, lng: rideDriverInfo.current_lng }}
                 icon={{
                   path: "M5 11l1.5-4.5h11L19 11M6 14h12M7.5 17a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Zm12 0a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0ZM5 11h14v4H5z",
-                  fillColor: "#8DD92B",
+                  fillColor: "#2563eb",
                   fillOpacity: 1,
                   strokeColor: "#ffffff",
                   strokeWeight: 2,
@@ -2071,21 +2071,34 @@ function PassageiroApp() {
                 }}
                 zIndex={9999}
               />
+
             )}
 
           {polyPath.length > 0 && (
             <>
-              {/* Contorno branco para legibilidade sobre qualquer estilo de mapa */}
+              {/* Sombra suave para profundidade */}
               <Polyline
                 path={polyPath}
                 options={{
-                  strokeColor: "#ffffff",
-                  strokeOpacity: 0.95,
-                  strokeWeight: 10,
+                  strokeColor: "#000000",
+                  strokeOpacity: 0.18,
+                  strokeWeight: 14,
                   geodesic: true,
                   zIndex: 1,
                 }}
               />
+              {/* Casing branco para contraste em qualquer tema */}
+              <Polyline
+                path={polyPath}
+                options={{
+                  strokeColor: "#ffffff",
+                  strokeOpacity: 1,
+                  strokeWeight: 10,
+                  geodesic: true,
+                  zIndex: 2,
+                }}
+              />
+              {/* Núcleo verde MOVVI */}
               <Polyline
                 path={polyPath}
                 options={{
@@ -2093,11 +2106,12 @@ function PassageiroApp() {
                   strokeOpacity: 1,
                   strokeWeight: 6,
                   geodesic: true,
-                  zIndex: 2,
+                  zIndex: 3,
                 }}
               />
             </>
           )}
+
         </MovviMap>
 
       </div>
