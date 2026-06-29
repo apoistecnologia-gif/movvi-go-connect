@@ -810,6 +810,30 @@ function PassageiroApp() {
         if (diagnostic?.failureReason || !r.address) {
           const reason = diagnostic?.failureReason || diagnostic?.googleError || diagnostic?.googleStatus || "Google returned no formatted_address.";
           console.error("[MOVVI Reverse Geocoding Diagnostic] Reverse Geocoding failed:", reason);
+          // Fallback: tentar cache local recente (≤ 200 m do GPS atual).
+          const cached = readPickupCache();
+          if (cached && distanceMeters(position, { lat: cached.lat, lng: cached.lng }) < 200) {
+            console.log("[MOVVI Pickup Cache] reaproveitando label cacheado:", cached.label);
+            setGeo({
+              address: cached.address || cached.label,
+              friendly: "",
+              region: cached.sub || "",
+              approximate: true,
+              precision: "approximate",
+              confidence: "fallback",
+              selectionReason: "Cache local",
+              locationType: "",
+              partialMatch: false,
+              types: [],
+              components: {},
+              pickupLabel: cached.label,
+              pickupShortLabel: cached.short,
+              pickupSubLabel: cached.sub,
+              pickupSource: "gps",
+            } as GeocodeResult);
+            setAddressStatus("resolved");
+            return;
+          }
           setReverseGeocodeFailureReason(reason);
           setGeo(null);
           setAddressStatus("failed");
@@ -831,6 +855,18 @@ function PassageiroApp() {
         setReverseGeocodeFailureReason(null);
         setGeo(r);
         setAddressStatus("resolved");
+        // Cache local do último pickup label bom.
+        if (r.pickupLabel) {
+          writePickupCache({
+            lat: position.lat,
+            lng: position.lng,
+            label: r.pickupLabel,
+            short: r.pickupShortLabel,
+            sub: r.pickupSubLabel,
+            address: r.address,
+            ts: Date.now(),
+          });
+        }
       })
       .catch((e) => {
         if (!active) return;
