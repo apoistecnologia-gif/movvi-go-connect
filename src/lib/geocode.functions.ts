@@ -34,12 +34,18 @@ export type GeocodeResult = {
   geocodedLat?: number;
   geocodedLng?: number;
   components: GeocodeComponents;
-  /** Nome de um POI próximo (≤200m), quando a rua não estiver nomeada. */
+  /** Nome de um POI próximo (≤300m), quando a rua não estiver nomeada. */
   nearestPoi?: string;
+  /** placeId do POI mais próximo, quando aplicável. */
+  nearestPoiPlaceId?: string;
   /** Rótulo final pronto para exibição (regra MOVVI BR, nunca "Unnamed Road"). */
   pickupLabel?: string;
   /** Sub-rótulo (município/estado), pode ser igual a region. */
   pickupSubLabel?: string;
+  /** Versão curta para cards / markers / notificações. */
+  pickupShortLabel?: string;
+  /** Origem do ponto de partida. "gps" por padrão. */
+  pickupSource?: "gps" | "manual" | "places";
   diagnostic?: ReverseGeocodeDiagnostic;
 };
 
