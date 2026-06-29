@@ -1991,6 +1991,7 @@ function PassageiroApp() {
             setUiStage={setPassengerUiStage}
             busy={busy}
             error={error}
+            reverseGeocodeFailureReason={reverseGeocodeFailureReason}
             selectedCategoryKey={selectedCategoryKey}
             setSelectedCategoryKey={setSelectedCategoryKey}
             driversCount={nearbyCount}
