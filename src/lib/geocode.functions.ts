@@ -314,6 +314,9 @@ export const reverseGeocode = createServerFn({ method: "POST" })
     const rua = isUnnamedRoad(ruaRaw?.long) ? undefined : ruaRaw;
     const numero = pick(orderedResults, ["street_number"]);
     const bairro = pick(orderedResults, ["neighborhood"]);
+    const distrito =
+      pick(orderedResults, ["administrative_area_level_4"]) ??
+      pick(orderedResults, ["administrative_area_level_3"]);
     const cidade =
       pick(orderedResults, ["locality"]) ?? pick(orderedResults, ["administrative_area_level_2"]);
     const estado = pick(orderedResults, ["administrative_area_level_1"]);
@@ -344,21 +347,31 @@ export const reverseGeocode = createServerFn({ method: "POST" })
 
     const precision: "exact" | "approximate" = confidence === "exact" ? "exact" : "approximate";
 
-    // POI lookup: rural / sem rua nomeada → tentar Places Nearby
+    // POI lookup: rural / sem rua nomeada → tentar Places Nearby (raio 300m).
     let nearestPoi: string | undefined;
+    let nearestPoiPlaceId: string | undefined;
     if (!rua?.long) {
       try {
-        nearestPoi = await fetchNearestPoi(data.lat, data.lng, lovableKey, connKey);
+        const poi = await fetchNearestPoi(data.lat, data.lng, lovableKey, connKey);
+        nearestPoi = poi?.name;
+        nearestPoiPlaceId = poi?.placeId;
       } catch (err) {
         console.warn("[MOVVI Pickup Label] Nearby POI lookup failed:", err);
       }
     }
 
-    const { pickupLabel, pickupSubLabel } = buildPickupLabel({
+    // Detecta rodovia BR-/UF- a partir do route.short_name.
+    const highwayMatch = ruaRaw?.short?.match(/^(BR|AC|AL|AP|AM|BA|CE|DF|ES|GO|MA|MT|MS|MG|PA|PB|PR|PE|PI|RJ|RN|RS|RO|RR|SC|SP|SE|TO)-?\d{2,4}/i);
+    const highway = highwayMatch ? highwayMatch[0].toUpperCase().replace(/^([A-Z]{2})(\d)/, "$1-$2") : undefined;
+
+    const { pickupLabel, pickupSubLabel, pickupShortLabel } = buildPickupLabel({
       components,
       region,
       nearestPoi,
       hasNamedStreet: !!rua?.long,
+      distrito: distrito?.long,
+      highway,
+      topTypes,
     });
 
     return {
@@ -377,8 +390,11 @@ export const reverseGeocode = createServerFn({ method: "POST" })
       geocodedLng: top.geometry?.location?.lng,
       components,
       nearestPoi,
+      nearestPoiPlaceId,
       pickupLabel,
       pickupSubLabel,
+      pickupShortLabel,
+      pickupSource: "gps",
       diagnostic,
     };
   });
