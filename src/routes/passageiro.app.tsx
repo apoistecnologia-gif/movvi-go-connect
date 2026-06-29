@@ -488,6 +488,26 @@ function hasDisplayablePickup(geo: GeocodeResult | null): boolean {
   );
 }
 
+function geocodeFromPickupCache(cached: PickupCache): GeocodeResult {
+  return {
+    address: cached.address || cached.label,
+    friendly: "",
+    region: cached.sub || "",
+    approximate: true,
+    precision: "approximate",
+    confidence: "fallback",
+    selectionReason: "Cache local",
+    locationType: "",
+    partialMatch: false,
+    types: [],
+    components: {},
+    pickupLabel: cached.label,
+    pickupShortLabel: cached.short,
+    pickupSubLabel: cached.sub,
+    pickupSource: "gps",
+  };
+}
+
 /** Catálogo visual de categorias da MOVVI (mapeia para o enum backend). */
 type UiCategory = {
   key: string;
@@ -902,40 +922,9 @@ function PassageiroApp() {
           const cached = readPickupCache();
           if (cached && distanceMeters(position, { lat: cached.lat, lng: cached.lng }) < 200) {
             console.log("[MOVVI Pickup Cache] reaproveitando label cacheado:", cached.label);
-            setGeo({
-              address: cached.address || cached.label,
-              friendly: "",
-              region: cached.sub || "",
-              approximate: true,
-              precision: "approximate",
-              confidence: "fallback",
-              selectionReason: "Cache local",
-              locationType: "",
-              partialMatch: false,
-              types: [],
-              components: {},
-              pickupLabel: cached.label,
-              pickupShortLabel: cached.short,
-              pickupSubLabel: cached.sub,
-              pickupSource: "gps",
-            } as GeocodeResult);
-            latestGeoRef.current = {
-              address: cached.address || cached.label,
-              friendly: "",
-              region: cached.sub || "",
-              approximate: true,
-              precision: "approximate",
-              confidence: "fallback",
-              selectionReason: "Cache local",
-              locationType: "",
-              partialMatch: false,
-              types: [],
-              components: {},
-              pickupLabel: cached.label,
-              pickupShortLabel: cached.short,
-              pickupSubLabel: cached.sub,
-              pickupSource: "gps",
-            } as GeocodeResult;
+            const cachedGeo = geocodeFromPickupCache(cached);
+            latestGeoRef.current = cachedGeo;
+            setGeo(cachedGeo);
             setAddressStatus("resolved");
             return;
           }
@@ -1100,6 +1089,7 @@ function PassageiroApp() {
         }
 
         const insideBR = isBrazilCoordinate(lat, lng);
+        console.log("[MOVVI] GPS acquired", { lat, lng, accuracy: pos?.coords?.accuracy });
         if (!insideBR) {
           console.warn("[MOVVI] Aviso: coordenada fora do Brasil — aceitando mesmo assim.", { lat, lng });
           setGpsErrorMsg(
