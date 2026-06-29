@@ -347,18 +347,10 @@ export const reverseGeocode = createServerFn({ method: "POST" })
 
     const precision: "exact" | "approximate" = confidence === "exact" ? "exact" : "approximate";
 
-    // POI lookup: rural / sem rua nomeada → tentar Places Nearby (raio 300m).
-    let nearestPoi: string | undefined;
-    let nearestPoiPlaceId: string | undefined;
-    if (!rua?.long) {
-      try {
-        const poi = await fetchNearestPoi(data.lat, data.lng, lovableKey, connKey);
-        nearestPoi = poi?.name;
-        nearestPoiPlaceId = poi?.placeId;
-      } catch (err) {
-        console.warn("[MOVVI Pickup Label] Nearby POI lookup failed:", err);
-      }
-    }
+    // POI lookup desabilitado na chamada principal — é feito em segundo plano
+    // pelo cliente via `nearestPoiLookup` para não travar a UI.
+    const nearestPoi: string | undefined = undefined;
+    const nearestPoiPlaceId: string | undefined = undefined;
 
     // Detecta rodovia BR-/UF- a partir do route.short_name.
     const highwayMatch = ruaRaw?.short?.match(/^(BR|AC|AL|AP|AM|BA|CE|DF|ES|GO|MA|MT|MS|MG|PA|PB|PR|PE|PI|RJ|RN|RS|RO|RR|SC|SP|SE|TO)-?\d{2,4}/i);
@@ -553,3 +545,32 @@ async function fetchNearestPoi(
   return undefined;
 }
 
+
+/**
+ * Stage 2 do pipeline de pickup label: busca de POI próximo (≤300m) em
+ * background. Retorna apenas o POI mais próximo; o cliente decide se
+ * substitui o label atual (ex.: "Zona Rural" → "Próximo a X").
+ */
+export const nearestPoiLookup = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({
+        lat: z.number().min(-90).max(90),
+        lng: z.number().min(-180).max(180),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data }): Promise<{ name?: string; placeId?: string }> => {
+    const lovableKey = process.env.LOVABLE_API_KEY;
+    const connKey = process.env.GOOGLE_MAPS_API_KEY;
+    if (!lovableKey || !connKey) return {};
+    try {
+      const poi = await fetchNearestPoi(data.lat, data.lng, lovableKey, connKey);
+      if (!poi) return {};
+      return { name: poi.name, placeId: poi.placeId };
+    } catch (err) {
+      console.warn("[MOVVI nearestPoiLookup] failed:", err);
+      return {};
+    }
+  });
