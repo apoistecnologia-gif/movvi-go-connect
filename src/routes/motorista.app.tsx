@@ -887,9 +887,17 @@ function MotoristaApp() {
             </>
           )}
           {polyline.length > 0 && (
-            <Polyline path={polyline} options={{
-              strokeColor: "#8DD92B", strokeOpacity: 0.95, strokeWeight: 6, geodesic: true,
-            }} />
+            <>
+              <Polyline path={polyline} options={{
+                strokeColor: "#000000", strokeOpacity: 0.18, strokeWeight: 14, geodesic: true, zIndex: 1,
+              }} />
+              <Polyline path={polyline} options={{
+                strokeColor: "#ffffff", strokeOpacity: 1, strokeWeight: 10, geodesic: true, zIndex: 2,
+              }} />
+              <Polyline path={polyline} options={{
+                strokeColor: "#8DD92B", strokeOpacity: 1, strokeWeight: 6, geodesic: true, zIndex: 3,
+              }} />
+            </>
           )}
         </MovviMap>
       </div>
