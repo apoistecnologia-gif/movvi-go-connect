@@ -1400,6 +1400,7 @@ function PassageiroApp() {
       // vão para o cálculo/rastreio. Se o Google não tiver nome, usamos as
       // coordenadas como rótulo.
       const originLabel =
+        geo?.pickupLabel ||
         geo?.friendly ||
         geo?.region ||
         `GPS ${position.lat.toFixed(6)}, ${position.lng.toFixed(6)}`;
@@ -1413,6 +1414,11 @@ function PassageiroApp() {
           distance_km: Math.round(km * 100) / 100,
           duration_min: Math.round(min),
           estimated_price: fare,
+          pickup_label: geo?.pickupLabel ?? null,
+          pickup_short_label: geo?.pickupShortLabel ?? null,
+          pickup_address: geo?.address ?? null,
+          pickup_place_id: geo?.nearestPoiPlaceId ?? null,
+          pickup_source: pickupSource,
         },
       });
       setRideId(newId);
