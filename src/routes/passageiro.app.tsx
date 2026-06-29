@@ -2278,6 +2278,7 @@ function PassageiroApp() {
           <SearchingPanel
             category={category}
             driversCount={nearbyCount}
+            noDriversAvailable={noDriversAvailable}
             onCancel={cancelRide}
           />
         </MovviSheet>
