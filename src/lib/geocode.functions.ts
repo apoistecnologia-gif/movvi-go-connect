@@ -43,7 +43,7 @@ export type ReverseGeocodeDiagnostic = {
   longitude: number;
   requestUrl: string;
   httpStatus: number | null;
-  responseBody: unknown;
+  responseBody: string | null;
   googleStatus?: string;
   googleError?: string;
   rejectionReason?: string;
@@ -93,14 +93,6 @@ function emptyGeocode(diagnostic?: ReverseGeocodeDiagnostic): GeocodeResult {
   components: {},
   diagnostic,
   };
-}
-
-function stringifyDiagnosticBody(body: unknown) {
-  try {
-    return typeof body === "string" ? body : JSON.stringify(body, null, 2);
-  } catch {
-    return String(body);
-  }
 }
 
 // Requer usuário autenticado para evitar abuso/scraping da chave Google Maps.
@@ -154,16 +146,17 @@ export const reverseGeocode = createServerFn({ method: "POST" })
     });
     console.log("[MOVVI Reverse Geocoding Diagnostic] HTTP response status:", res.status);
 
-    const contentType = res.headers.get("content-type") ?? "";
-    let responseBody: unknown;
-    if (contentType.includes("application/json")) {
-      responseBody = await res.json();
-    } else {
-      responseBody = await res.text();
-    }
-    console.log("[MOVVI Reverse Geocoding Diagnostic] complete response body:", stringifyDiagnosticBody(responseBody));
+    const responseBody = await res.text();
+    console.log("[MOVVI Reverse Geocoding Diagnostic] complete response body:", responseBody);
 
-    const json = (typeof responseBody === "object" && responseBody !== null ? responseBody : {}) as {
+    let parsedBody: unknown = {};
+    try {
+      parsedBody = responseBody ? JSON.parse(responseBody) : {};
+    } catch (parseError) {
+      console.error("[MOVVI Reverse Geocoding Diagnostic] Failed to parse response body as JSON:", parseError);
+    }
+
+    const json = (typeof parsedBody === "object" && parsedBody !== null ? parsedBody : {}) as {
       status?: string;
       error_message?: string;
       error?: string | { message?: string; status?: string; code?: string };
