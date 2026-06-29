@@ -875,6 +875,7 @@ function PassageiroApp() {
       return;
     }
     console.log("[MOVVI] Solicitando localização...");
+    setPickupSource("gps");
     const fail = (msg: string) => {
       setGpsState("unavailable");
       gpsStateRef.current = "unavailable";
