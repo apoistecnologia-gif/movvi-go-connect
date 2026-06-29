@@ -140,4 +140,4 @@ export function useTheme(): ThemeContextValue {
 }
 
 /** Inline script content to prevent FOUC — applies stored theme before React hydrates. */
-export const THEME_INIT_SCRIPT = `(function(){try{var m=localStorage.getItem('${STORAGE_KEY}')||'dark';var d=m==='dark'||(m==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);var r=document.documentElement;r.classList.toggle('dark',d);r.classList.toggle('light',!d);r.style.colorScheme=d?'dark':'light';}catch(e){}})();`;
+export const THEME_INIT_SCRIPT = `(function(){try{var r=document.documentElement;r.classList.add('dark');r.classList.remove('light');r.style.colorScheme='dark';}catch(e){}})();`;
