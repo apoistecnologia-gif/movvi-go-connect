@@ -10,7 +10,7 @@ import {
   isBrazilCoordinate,
   purgeForeignMapCache,
 } from "@/lib/googleMaps";
-import { useTheme } from "@/lib/theme";
+import { useMapTheme } from "@/lib/mapTheme";
 
 interface MovviMapProps {
   center?: { lat: number; lng: number } | null;
