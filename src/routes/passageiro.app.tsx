@@ -229,7 +229,7 @@ function OriginActionsSheet({
     geo?.components?.rua ||
     geo?.components?.bairro ||
     geo?.components?.povoado ||
-    geo?.components?.localidade ||
+    geo?.components?.cidade ||
     geo?.friendly ||
     geo?.region ||
     geo?.address ||
@@ -2307,7 +2307,7 @@ function SheetContent({
     geo?.components?.rua ||
     geo?.components?.bairro ||
     geo?.components?.povoado ||
-    geo?.components?.localidade ||
+    geo?.components?.cidade ||
     geo?.friendly ||
     geo?.region ||
     geo?.address ||
