@@ -97,7 +97,30 @@ function greetingTextSize(name: string): string {
   return "text-[11px]";
 }
 
+// ====== CACHE LOCAL DE PICKUP LABEL ======
+const PICKUP_CACHE_KEY = "movvi.lastPickupLabel";
+type PickupCache = {
+  lat: number; lng: number;
+  label: string; short?: string; sub?: string;
+  address?: string; ts: number;
+};
+function readPickupCache(): PickupCache | null {
+  try {
+    const raw = localStorage.getItem(PICKUP_CACHE_KEY);
+    if (!raw) return null;
+    const j = JSON.parse(raw) as PickupCache;
+    if (!j?.label || typeof j.lat !== "number" || typeof j.lng !== "number") return null;
+    // Cache válido por 24h.
+    if (Date.now() - (j.ts ?? 0) > 24 * 60 * 60 * 1000) return null;
+    return j;
+  } catch { return null; }
+}
+function writePickupCache(c: PickupCache) {
+  try { localStorage.setItem(PICKUP_CACHE_KEY, JSON.stringify(c)); } catch { /* noop */ }
+}
+
 // ====== COMPONENTES PREMIUM ======
+
 
 function PremiumTopBar({
   userName,
