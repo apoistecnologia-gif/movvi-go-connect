@@ -129,7 +129,9 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <Outlet />
+        <MapThemeProvider>
+          <Outlet />
+        </MapThemeProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );
