@@ -347,18 +347,10 @@ export const reverseGeocode = createServerFn({ method: "POST" })
 
     const precision: "exact" | "approximate" = confidence === "exact" ? "exact" : "approximate";
 
-    // POI lookup: rural / sem rua nomeada → tentar Places Nearby (raio 300m).
-    let nearestPoi: string | undefined;
-    let nearestPoiPlaceId: string | undefined;
-    if (!rua?.long) {
-      try {
-        const poi = await fetchNearestPoi(data.lat, data.lng, lovableKey, connKey);
-        nearestPoi = poi?.name;
-        nearestPoiPlaceId = poi?.placeId;
-      } catch (err) {
-        console.warn("[MOVVI Pickup Label] Nearby POI lookup failed:", err);
-      }
-    }
+    // POI lookup desabilitado na chamada principal — é feito em segundo plano
+    // pelo cliente via `nearestPoiLookup` para não travar a UI.
+    const nearestPoi: string | undefined = undefined;
+    const nearestPoiPlaceId: string | undefined = undefined;
 
     // Detecta rodovia BR-/UF- a partir do route.short_name.
     const highwayMatch = ruaRaw?.short?.match(/^(BR|AC|AL|AP|AM|BA|CE|DF|ES|GO|MA|MT|MS|MG|PA|PB|PR|PE|PI|RJ|RN|RS|RO|RR|SC|SP|SE|TO)-?\d{2,4}/i);
