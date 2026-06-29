@@ -1333,7 +1333,7 @@ function ActiveRidePanel({
             toPickup ? "bg-blue-500 animate-pulse" : "bg-blue-500/60"}`} />
           <div className="min-w-0 flex-1">
             <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Embarque</div>
-            <div className="line-clamp-2 text-sm font-medium">{ride.origin_name}</div>
+            <div className="line-clamp-2 text-sm font-medium">{ride.pickup_short_label || ride.pickup_label || ride.origin_name}</div>
           </div>
           {toPickup && (
             <a target="_blank" rel="noreferrer"
