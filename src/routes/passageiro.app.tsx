@@ -2264,6 +2264,7 @@ function SheetContent({
   setUiStage,
   busy,
   error,
+  reverseGeocodeFailureReason,
   selectedCategoryKey,
   setSelectedCategoryKey,
   driversCount,
@@ -2294,6 +2295,7 @@ function SheetContent({
   setUiStage: (stage: PassengerUiStage) => void;
   busy: boolean;
   error: string | null;
+  reverseGeocodeFailureReason: string | null;
   selectedCategoryKey: string | null;
   setSelectedCategoryKey: (k: string | null) => void;
   driversCount: number;
