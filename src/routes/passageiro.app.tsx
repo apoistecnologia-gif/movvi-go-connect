@@ -1640,16 +1640,28 @@ function PassageiroApp() {
 
   /* ---- Re-despacho periódico enquanto a corrida está procurando motorista ---- */
   const [dispatchDiag, setDispatchDiag] = useState<any>(null);
+  const [noDriversAvailable, setNoDriversAvailable] = useState(false);
   useEffect(() => {
-    if (!ride || ride.status !== "procurar_motorista") return;
-    if (ride.current_offer_driver_id) return; // já ofertada — apenas aguardar resposta
+    if (!ride || ride.status !== "procurar_motorista") {
+      setNoDriversAvailable(false);
+      return;
+    }
     let cancelled = false;
     let timer: number | null = null;
+    let emptyStreak = 0;
     const tick = async () => {
       if (cancelled) return;
       try {
         const r = await callRedispatch({ data: { rideId: ride.id } });
         console.log("[MOVVI PASSAGEIRO] re-despacho:", r);
+        const c = (r as { candidates?: number }).candidates ?? 0;
+        const offered = (r as { skipped?: string | null }).skipped === "already_offered";
+        if (!offered && c === 0) {
+          emptyStreak += 1;
+        } else {
+          emptyStreak = 0;
+        }
+        if (!cancelled) setNoDriversAvailable(emptyStreak >= 3);
       } catch (e) {
         console.warn("[MOVVI PASSAGEIRO] re-despacho falhou:", (e as Error).message);
       }
@@ -1666,7 +1678,7 @@ function PassageiroApp() {
       cancelled = true;
       if (timer != null) window.clearTimeout(timer);
     };
-  }, [ride?.id, ride?.status, ride?.current_offer_driver_id, callRedispatch, callDiagnose]);
+  }, [ride?.id, ride?.status, callRedispatch, callDiagnose]);
 
 
   useEffect(() => {
