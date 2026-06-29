@@ -569,7 +569,7 @@ function MotoristaApp() {
       }
       if (activeRef.current || incomingRef.current || ratingRef.current) return;
       console.log("[MOVVI MOTORISTA] corrida recebida:", r.id, r.category, r.origin_name, "→", r.destination_name);
-      setIncoming(r); setCountdown(15);
+      setIncoming(r); setCountdown(RIDE_OFFER_TIMEOUT_SECONDS);
       if (navigator.vibrate) navigator.vibrate([280, 120, 280, 120, 280]);
     };
 
