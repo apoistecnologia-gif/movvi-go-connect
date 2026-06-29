@@ -1679,14 +1679,19 @@ function PassageiroApp() {
     let pollTimer: number | null = null;
     let subscribed = false;
 
+    // Passageiro lê motorista pela visão pública (apenas motoristas online,
+    // sem PII sensível). RLS no `drivers` impede leitura direta por
+    // outros usuários — por isso usamos `driver_public_locations`.
     const load = () => {
       supabase
-        .from("drivers")
+        .from("driver_public_locations" as never)
         .select("*")
         .eq("user_id", driverId)
         .maybeSingle()
         .then(({ data }) => {
-          if (!cancelled && data) setDriverInfo((prev) => ({ ...(prev ?? data), ...data }));
+          if (!cancelled && data) {
+            setDriverInfo((prev) => ({ ...(prev ?? (data as DriverRow)), ...(data as DriverRow) }));
+          }
         });
     };
     const stopPolling = () => {
@@ -1698,7 +1703,7 @@ function PassageiroApp() {
     const startPolling = () => {
       if (pollTimer != null || cancelled) return;
       console.log("[MOVVI PASSAGEIRO] fallback polling motorista (realtime indisponível)");
-      pollTimer = window.setInterval(load, 15000);
+      pollTimer = window.setInterval(load, 5000);
     };
 
     load();
@@ -1707,7 +1712,12 @@ function PassageiroApp() {
       .channel(`driver-track-${driverId}`)
       .on(
         "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "drivers", filter: `user_id=eq.${driverId}` },
+        {
+          event: "*",
+          schema: "public",
+          table: "driver_public_locations",
+          filter: `user_id=eq.${driverId}`,
+        },
         (p) => {
           const next = p.new as DriverRow;
           setDriverInfo((prev) => ({ ...(prev ?? next), ...next }));
