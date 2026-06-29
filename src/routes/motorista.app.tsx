@@ -694,7 +694,7 @@ function MotoristaApp() {
   useEffect(() => {
     if (!incoming) return;
     if (countdown <= 0) { void handleReject(); return; }
-    const t = window.setTimeout(() => setCountdown((c) => c - 1), 1000);
+    const t = window.setTimeout(() => setCountdown((c: number) => c - 1), 1000);
     return () => window.clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [incoming, countdown]);
