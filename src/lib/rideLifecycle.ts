@@ -545,6 +545,7 @@ export const aceitarCorrida = createServerFn({ method: "POST" })
       status: RIDE_STATUS.MOTORISTA_A_CAMINHO,
       accepted_at: new Date().toISOString(),
       current_offer_driver_id: null,
+      offered_driver_ids: [] as unknown as string[], // limpa broadcast — outros drivers veem a remoção via realtime
       driver_name: d?.name ?? null,
       driver_phone: d?.phone ?? null,
       driver_vehicle: vehicle,
@@ -556,19 +557,22 @@ export const aceitarCorrida = createServerFn({ method: "POST" })
     };
 
     const { supabaseAdmin: adminForUpdate } = await import("@/integrations/supabase/client.server");
+    // Aceita se o motorista estiver no broadcast OU for o current_offer_driver_id (compat).
+    // O `.contains` garante atomicidade: se outro driver já aceitou (offered_driver_ids = {}),
+    // este UPDATE não casa nenhuma linha e o aceite falha.
     const upd = await adminForUpdate
       .from("rides")
       .update(patch)
       .eq("id", data.rideId)
       .eq("status", RIDE_STATUS.PROCURAR_MOTORISTA)
-      .eq("current_offer_driver_id", userId)
+      .contains("offered_driver_ids", [userId])
       .select("*")
       .single();
     if (upd.error) {
       console.error("[MOVVI MOTORISTA] aceite falhou:", upd.error);
       throw new Error(
         upd.error.code === "PGRST116"
-          ? "Esta corrida já não está mais disponível."
+          ? "Esta corrida já foi aceita por outro motorista."
           : "Não foi possível aceitar a corrida. Tente novamente.",
       );
     }
@@ -576,13 +580,12 @@ export const aceitarCorrida = createServerFn({ method: "POST" })
       rideId: upd.data.id,
       driverId: upd.data.driver_id,
       status: upd.data.status,
-      hasDriverPhoto: !!(upd.data as { driver_photo_url?: string | null }).driver_photo_url,
-      hasPassengerPhoto: !!(upd.data as { passenger_photo_url?: string | null }).passenger_photo_url,
     });
     return upd.data;
   });
 
-/** Motorista recusa a oferta atual; o sistema repassa para o próximo. */
+/** Motorista recusa a oferta atual; é removido do broadcast e o sistema
+ *  procura novos candidatos se a lista esvaziar. */
 export const recusarCorrida = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => RideIdInput.parse(d))
@@ -591,24 +594,35 @@ export const recusarCorrida = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const cur = await supabaseAdmin
       .from("rides")
-      .select("rejected_driver_ids, current_offer_driver_id, status")
+      .select("rejected_driver_ids, offered_driver_ids, current_offer_driver_id, status")
       .eq("id", data.rideId)
       .single();
     if (cur.error) throw new Error(cur.error.message);
-    if (cur.data.current_offer_driver_id !== userId) {
-      throw new Error("Esta corrida não está ofertada para você.");
-    }
     if (cur.data.status !== RIDE_STATUS.PROCURAR_MOTORISTA) {
       throw new Error("Corrida não está mais aguardando motorista.");
     }
-    const rejected = Array.from(
-      new Set([...(cur.data.rejected_driver_ids ?? []), userId]),
-    );
+    const offered: string[] = Array.isArray(cur.data.offered_driver_ids) ? cur.data.offered_driver_ids : [];
+    if (!offered.includes(userId) && cur.data.current_offer_driver_id !== userId) {
+      throw new Error("Esta corrida não está ofertada para você.");
+    }
+    const rejected = Array.from(new Set([...(cur.data.rejected_driver_ids ?? []), userId]));
+    const newOffered = offered.filter((id) => id !== userId);
+    const newCurrent = cur.data.current_offer_driver_id === userId
+      ? (newOffered[0] ?? null)
+      : cur.data.current_offer_driver_id;
     await supabaseAdmin
       .from("rides")
-      .update({ rejected_driver_ids: rejected, current_offer_driver_id: null })
+      .update({
+        rejected_driver_ids: rejected,
+        offered_driver_ids: newOffered,
+        current_offer_driver_id: newCurrent,
+      })
       .eq("id", data.rideId);
-    await offerToNextDriver(supabaseAdmin, data.rideId);
+    console.log("[MOVVI MOTORISTA] recusa:", { driver: userId, ride: data.rideId, offered_remaining: newOffered });
+    // Se o broadcast esvaziou, busca novos candidatos (excluindo rejected).
+    if (newOffered.length === 0) {
+      await offerToNextDriver(supabaseAdmin, data.rideId);
+    }
     return { ok: true };
   });
 
