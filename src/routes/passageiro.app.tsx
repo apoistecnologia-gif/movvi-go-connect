@@ -806,15 +806,16 @@ function PassageiroApp() {
     console.log("[MOVVI Reverse Geocoding Diagnostic] longitude:", position.lng);
     console.log("[MOVVI Reverse Geocoding Diagnostic] exact request URL:", diagnosticRequestUrl);
     console.log("[MOVVI] Reverse geocoding iniciado");
-    // Timeout de segurança: nunca deixar o cartão preso em "Obtendo localização...".
+    // Timeout de segurança: nunca deixar o cartão preso em "Obtendo seu endereço...".
+    // Limite máximo do Reverse Geocoding: 5s. Após isso, marcamos failed se ainda estiver loading.
     const timeoutId = window.setTimeout(() => {
       if (!active) return;
-      const reason = "Request timed out after 8000ms before reverse geocoding returned.";
-      console.warn("[MOVVI] Timeout de localização aplicado");
+      const reason = "Reverse Geocoding timed out after 5000ms.";
+      console.warn("[MOVVI] Reverse geocode timeout (5s)");
       console.error("[MOVVI Reverse Geocoding Diagnostic] Reverse Geocoding failed:", reason);
       setReverseGeocodeFailureReason(reason);
       setAddressStatus((s) => (s === "loading" ? "failed" : s));
-    }, 8000);
+    }, 5000);
     callReverseGeocode({ data: { lat: position.lat, lng: position.lng } })
       .then((raw) => {
         if (!active) return;
