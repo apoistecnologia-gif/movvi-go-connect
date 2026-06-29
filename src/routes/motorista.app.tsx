@@ -1169,7 +1169,7 @@ function IncomingOffer({
         </div>
 
         <div className="mt-4 space-y-3 rounded-2xl bg-background/60 p-3 ring-1 ring-border">
-          <RouteLine color="bg-blue-500" label="Embarque" name={ride.origin_name} />
+          <RouteLine color="bg-blue-500" label="Embarque" name={ride.pickup_label || ride.origin_name} />
           <div className="ml-[7px] h-3 w-px bg-border" />
           <RouteLine color="bg-destructive" label="Destino" name={ride.destination_name} />
         </div>
