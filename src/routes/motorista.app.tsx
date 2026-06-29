@@ -556,28 +556,43 @@ function MotoristaApp() {
     supabase.from("drivers").update({ is_online: false }).eq("user_id", userId).then();
   }, [online, userId]);
 
-  // realtime: ofertas + corrida ativa — canal estável (não recria a cada estado)
+  // realtime: ofertas (broadcast) + corrida ativa — canal estável
   useEffect(() => {
     if (!userId) return;
 
     const presentOffer = (r: RideRow) => {
       if (r.status !== "procurar_motorista") return;
-      if (r.current_offer_driver_id !== userId) return;
-      if (handledRidesRef.current.has(r.id)) {
-        console.log("[MOVVI MOTORISTA] oferta ignorada (já tratada):", r.id);
+      const offered: string[] = Array.isArray((r as any).offered_driver_ids) ? (r as any).offered_driver_ids : [];
+      const inBroadcast = offered.includes(userId) || r.current_offer_driver_id === userId;
+      if (!inBroadcast) {
+        // se eu estava vendo a oferta mas fui removido (outro aceitou),
+        // fecha o card sem barulho.
+        if (incomingRef.current?.id === r.id) {
+          console.log("[MOVVI MOTORISTA] removido do broadcast da corrida", r.id, "— fechando card");
+          setIncoming(null);
+        }
         return;
       }
+      if (handledRidesRef.current.has(r.id)) return;
       if (activeRef.current || incomingRef.current || ratingRef.current) return;
-      console.log("[MOVVI MOTORISTA] corrida recebida:", r.id, r.category, r.origin_name, "→", r.destination_name);
+      console.log("[MOVVI MOTORISTA] corrida recebida (broadcast):", r.id, r.category, r.origin_name, "→", r.destination_name);
       setIncoming(r); setCountdown(RIDE_OFFER_TIMEOUT_SECONDS);
       if (navigator.vibrate) navigator.vibrate([280, 120, 280, 120, 280]);
     };
 
     const applyActive = (r: RideRow) => {
+      // Caso a corrida atualmente exibida como "oferta" tenha sido aceita por
+      // outro motorista, dispensa o card.
+      if (incomingRef.current?.id === r.id && r.status !== "procurar_motorista" && r.driver_id !== userId) {
+        console.log("[MOVVI MOTORISTA] corrida", r.id, "aceita por outro motorista — fechando card");
+        setIncoming(null);
+        handledRidesRef.current.add(r.id);
+        toast.info("Corrida aceita por outro motorista");
+        return;
+      }
       if (r.driver_id !== userId) return;
       if (r.status === "finalizada") {
         setActive(null); setPolyline([]);
-        // Nunca reabrir a tela de avaliação para uma corrida já avaliada nesta sessão.
         if (ratedRidesRef.current.has(r.id)) {
           if (ratingRef.current?.id === r.id && !ratingSubmitted) setRatingRide(null);
         } else if (!r.driver_rated_at && !ratingRef.current) {
@@ -588,14 +603,11 @@ function MotoristaApp() {
         }
         loadTodayStats(userId);
       } else if (r.status === "cancelada_passageiro" || r.status === "cancelada_motorista") {
-        // Notifica + libera o motorista para receber novas ofertas
         const wasActive = activeRef.current?.id === r.id || r.driver_id === userId;
         if (wasActive && r.status === "cancelada_passageiro") {
           const reason = (r.cancel_reason ?? "").trim();
           toast.warning("Passageiro cancelou a corrida", {
-            description: reason
-              ? `Motivo: ${reason}`
-              : "Você está disponível para novas ofertas.",
+            description: reason ? `Motivo: ${reason}` : "Você está disponível para novas ofertas.",
             duration: 7000,
           });
           if (navigator.vibrate) navigator.vibrate([220, 90, 220, 90, 220]);
@@ -610,30 +622,28 @@ function MotoristaApp() {
         setIncoming(null);
         setActive(null);
         setPolyline([]);
-
-
-
       } else if (r.status === "motorista_a_caminho" || r.status === "motorista_chegou" || r.status === "em_viagem") {
-        // se está chegando uma corrida que assumimos, fecha qualquer modal de oferta para esta corrida
         if (incomingRef.current?.id === r.id) setIncoming(null);
         handledRidesRef.current.add(r.id);
         setActive(r);
       }
     };
 
-
     console.log("[MOVVI MOTORISTA] escutando corridas: canal driver-rides-" + userId);
+    // Sem filtro por coluna: a RLS já garante que só recebo rides em que estou
+    // envolvido (passageiro/driver/current_offer/offered_driver_ids).
     const ch = supabase.channel(`driver-rides-${userId}`)
       .on("postgres_changes",
-        { event: "UPDATE", schema: "public", table: "rides", filter: `current_offer_driver_id=eq.${userId}` },
-        (p) => presentOffer(p.new as RideRow))
-      .on("postgres_changes",
-        { event: "UPDATE", schema: "public", table: "rides", filter: `driver_id=eq.${userId}` },
-        (p) => applyActive(p.new as RideRow))
+        { event: "*", schema: "public", table: "rides" },
+        (p) => {
+          const row = (p.new ?? p.old) as RideRow;
+          if (!row) return;
+          presentOffer(row);
+          applyActive(row);
+        })
       .subscribe(async (status) => {
         console.log("[MOVVI MOTORISTA] status do canal:", status);
         if (status !== "SUBSCRIBED") return;
-        // recupera corrida ativa em andamento primeiro
         const ongoing = await supabase
           .from("rides").select("*")
           .eq("driver_id", userId)
@@ -641,10 +651,9 @@ function MotoristaApp() {
           .order("created_at", { ascending: false })
           .limit(1).maybeSingle();
         if (ongoing.data) { applyActive(ongoing.data as RideRow); return; }
-        // só então tenta pegar oferta pendente
         const pending = await supabase
           .from("rides").select("*")
-          .eq("current_offer_driver_id", userId)
+          .contains("offered_driver_ids", [userId])
           .eq("status", "procurar_motorista")
           .order("created_at", { ascending: false })
           .limit(1).maybeSingle();
