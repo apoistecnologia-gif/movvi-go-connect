@@ -959,7 +959,7 @@ function PassageiroApp() {
       active = false;
       window.clearTimeout(timeoutId);
     };
-  }, [position, callReverseGeocode]);
+  }, [position, callReverseGeocode, callNearestPoi]);
 
   // Atualiza saudação a cada minuto.
   useEffect(() => {
