@@ -1537,11 +1537,13 @@ function PassageiroApp() {
   }
 
   function recenter() {
+    autoFollowRef.current = true;
     if (mapRef.current && position) {
       mapRef.current.panTo(position);
       mapRef.current.setZoom(16);
     }
   }
+
 
   function focusSearch() {
     sheetRef.current?.snapTo(70);
