@@ -601,6 +601,7 @@ function PassageiroApp() {
   const [position, setPosition] = useState<LatLng | null>(null);
   const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
   const [geo, setGeo] = useState<GeocodeResult | null>(null);
+  const latestGeoRef = useRef<GeocodeResult | null>(null);
   const [addressStatus, setAddressStatus] = useState<
     "idle" | "loading" | "resolved" | "failed"
   >("idle");
@@ -689,6 +690,10 @@ function PassageiroApp() {
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
   const drivers = useNearbyDrivers({ category });
+
+  useEffect(() => {
+    latestGeoRef.current = geo;
+  }, [geo]);
 
   // Conta apenas motoristas dentro do raio de 15 km da origem (mesmo raio do despacho).
   const nearbyCount = useMemo(() => {
