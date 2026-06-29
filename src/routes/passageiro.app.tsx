@@ -1756,10 +1756,21 @@ function PassageiroApp() {
 
   async function cancelRide() {
     if (!ride) return;
+    if (ride.status === "em_viagem") {
+      toast.info("Viagem em andamento", {
+        description: "Para encerrar, fale com o motorista ou suporte.",
+      });
+      return;
+    }
     try {
       await callCancelByPassenger({ data: { rideId: ride.id } });
+      toast.success("Corrida cancelada");
     } catch (err) {
       console.error("[MOVVI] cancelarPeloPassageiro falhou:", err);
+      toast.error("Não foi possível cancelar agora", {
+        description: err instanceof Error ? err.message : undefined,
+      });
+      return;
     }
     resetRide();
   }
