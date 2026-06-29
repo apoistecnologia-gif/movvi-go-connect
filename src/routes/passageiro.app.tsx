@@ -397,12 +397,13 @@ type DriverRow = Database["public"]["Tables"]["drivers"]["Row"];
 const RECENT_KEY = "movvi.recent_destinations";
 
 /**
- * Em qualquer ambiente não-produção (Lovable Preview / dev), forçamos a origem
- * a ser exibida como "Localização aproximada" mesmo que o Google retorne ROOFTOP.
- * Isso evita mostrar uma rua incorreta como se fosse o ponto exato do usuário
- * — comum em zonas rurais — quando o GPS do iframe é só um fallback por IP.
+ * Antes forçávamos a origem como aproximada no Lovable Preview. Removido:
+ * se o Google devolver um endereço válido (ROOFTOP, rua/número, dist < 30m),
+ * exibimos o endereço real. Coordenadas só aparecem como fallback quando o
+ * reverse geocoding realmente falha ou retorna baixa confiança.
  */
-const FORCE_APPROXIMATE_ORIGIN_IN_PREVIEW = true;
+const FORCE_APPROXIMATE_ORIGIN_IN_PREVIEW = false;
+
 
 /** Distância em metros entre dois pares lat/lng (Haversine). */
 function distanceMeters(a: LatLng, b: LatLng): number {
