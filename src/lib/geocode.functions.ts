@@ -35,6 +35,19 @@ export type GeocodeResult = {
   geocodedLat?: number;
   geocodedLng?: number;
   components: GeocodeComponents;
+  diagnostic?: ReverseGeocodeDiagnostic;
+};
+
+export type ReverseGeocodeDiagnostic = {
+  latitude: number;
+  longitude: number;
+  requestUrl: string;
+  httpStatus: number | null;
+  responseBody: string | null;
+  googleStatus?: string;
+  googleError?: string;
+  rejectionReason?: string;
+  failureReason?: string;
 };
 
 type GResult = {
@@ -67,7 +80,8 @@ function pick(results: GResult[], types: string[]): { long: string; short: strin
   return undefined;
 }
 
-const EMPTY_GEOCODE: GeocodeResult = {
+function emptyGeocode(diagnostic?: ReverseGeocodeDiagnostic): GeocodeResult {
+  return {
   address: "",
   friendly: "",
   region: "",
@@ -77,7 +91,9 @@ const EMPTY_GEOCODE: GeocodeResult = {
   partialMatch: false,
   types: [],
   components: {},
-};
+  diagnostic,
+  };
+}
 
 // Requer usuário autenticado para evitar abuso/scraping da chave Google Maps.
 export const reverseGeocode = createServerFn({ method: "POST" })
@@ -94,19 +110,93 @@ export const reverseGeocode = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<GeocodeResult> => {
     const lovableKey = process.env.LOVABLE_API_KEY;
     const connKey = process.env.GOOGLE_MAPS_API_KEY;
-    if (!lovableKey || !connKey) return EMPTY_GEOCODE;
+    const platformKey = process.env.GOOGLE_MAPS_PLATFORM_API_KEY;
 
     const url = `${GATEWAY_URL}/maps/api/geocode/json?latlng=${data.lat},${data.lng}&language=pt-BR&region=br`;
+    const diagnosticBase: ReverseGeocodeDiagnostic = {
+      latitude: data.lat,
+      longitude: data.lng,
+      requestUrl: url,
+      httpStatus: null,
+      responseBody: null,
+    };
+
+    console.log("[MOVVI Reverse Geocoding Diagnostic] latitude:", data.lat);
+    console.log("[MOVVI Reverse Geocoding Diagnostic] longitude:", data.lng);
+    console.log("[MOVVI Reverse Geocoding Diagnostic] request URL:", url);
+    console.log("[MOVVI Reverse Geocoding Diagnostic] GOOGLE_MAPS_API_KEY:", connKey ? "present" : "missing");
+    console.log("[MOVVI Reverse Geocoding Diagnostic] GOOGLE_MAPS_PLATFORM_API_KEY:", platformKey ? "present" : "missing");
+    console.log("[MOVVI Reverse Geocoding Diagnostic] LOVABLE_API_KEY:", lovableKey ? "present" : "missing");
+
+    if (!lovableKey || !connKey) {
+      const missing = [
+        !lovableKey ? "LOVABLE_API_KEY" : null,
+        !connKey ? "GOOGLE_MAPS_API_KEY" : null,
+      ].filter(Boolean).join(", ");
+      const failureReason = `Missing required credential(s): ${missing}`;
+      console.error("[MOVVI Reverse Geocoding Diagnostic]", failureReason);
+      return emptyGeocode({ ...diagnosticBase, failureReason, rejectionReason: failureReason });
+    }
+
     const res = await fetch(url, {
       headers: {
         Authorization: `Bearer ${lovableKey}`,
         "X-Connection-Api-Key": connKey,
       },
     });
-    if (!res.ok) return EMPTY_GEOCODE;
-    const json = (await res.json()) as { results?: GResult[] };
+    console.log("[MOVVI Reverse Geocoding Diagnostic] HTTP response status:", res.status);
+
+    const responseBody = await res.text();
+    console.log("[MOVVI Reverse Geocoding Diagnostic] complete response body:", responseBody);
+
+    let parsedBody: unknown = {};
+    try {
+      parsedBody = responseBody ? JSON.parse(responseBody) : {};
+    } catch (parseError) {
+      console.error("[MOVVI Reverse Geocoding Diagnostic] Failed to parse response body as JSON:", parseError);
+    }
+
+    const json = (typeof parsedBody === "object" && parsedBody !== null ? parsedBody : {}) as {
+      status?: string;
+      error_message?: string;
+      error?: string | { message?: string; status?: string; code?: string };
+      results?: GResult[];
+    };
+    const googleError = json.error_message || (typeof json.error === "string" ? json.error : json.error?.message);
+    const googleStatus = json.status || (typeof json.error === "object" ? json.error.status : undefined);
+    const rejectionReason = googleError || googleStatus;
+    const diagnostic: ReverseGeocodeDiagnostic = {
+      ...diagnosticBase,
+      httpStatus: res.status,
+      responseBody,
+      googleStatus,
+      googleError,
+      rejectionReason,
+    };
+
+    if (googleError) {
+      console.error("[MOVVI Reverse Geocoding Diagnostic] Google returned error exactly:", googleError);
+    }
+    if (googleStatus && googleStatus !== "OK") {
+      console.error("[MOVVI Reverse Geocoding Diagnostic] Google status:", googleStatus);
+    }
+    if (!res.ok) {
+      const failureReason = googleError || `HTTP ${res.status}`;
+      console.error("[MOVVI Reverse Geocoding Diagnostic] API key rejection / gateway failure reason:", failureReason);
+      return emptyGeocode({ ...diagnostic, failureReason, rejectionReason: failureReason });
+    }
+    if (googleStatus && googleStatus !== "OK") {
+      const failureReason = googleError || googleStatus;
+      console.error("[MOVVI Reverse Geocoding Diagnostic] Geocoding API failure reason:", failureReason);
+      return emptyGeocode({ ...diagnostic, failureReason, rejectionReason: failureReason });
+    }
+
     const results = json.results ?? [];
-    if (!results.length) return EMPTY_GEOCODE;
+    if (!results.length) {
+      const failureReason = "Google returned OK but no geocoding results.";
+      console.error("[MOVVI Reverse Geocoding Diagnostic]", failureReason);
+      return emptyGeocode({ ...diagnostic, failureReason });
+    }
 
     const top = results[0];
     const address = top.formatted_address ?? "";
@@ -185,5 +275,6 @@ export const reverseGeocode = createServerFn({ method: "POST" })
       geocodedLat: top.geometry?.location?.lat,
       geocodedLng: top.geometry?.location?.lng,
       components,
+      diagnostic,
     };
   });

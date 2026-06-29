@@ -534,6 +534,7 @@ function PassageiroApp() {
   const [addressStatus, setAddressStatus] = useState<
     "idle" | "loading" | "resolved" | "failed"
   >("idle");
+  const [reverseGeocodeFailureReason, setReverseGeocodeFailureReason] = useState<string | null>(null);
   const [addressDetailsOpen, setAddressDetailsOpen] = useState(false);
   const [originPickOnMap, setOriginPickOnMap] = useState(false);
   const [originManualOpen, setOriginManualOpen] = useState(false);
@@ -737,27 +738,66 @@ function PassageiroApp() {
   /* ---------------------- reverse geocode (endereço atual) ---------------------- */
   const lastGeocodedRef = useRef<LatLng | null>(null);
   useEffect(() => {
-    if (!position) return;
+    if (!position) {
+      console.warn("[MOVVI Reverse Geocoding Diagnostic] reverse geocoding was not called: GPS has not returned coordinates yet.");
+      return;
+    }
     const last = lastGeocodedRef.current;
     if (
       last &&
       Math.abs(last.lat - position.lat) < 0.002 &&
       Math.abs(last.lng - position.lng) < 0.002
     )
+    {
+      console.warn("[MOVVI Reverse Geocoding Diagnostic] reverse geocoding was not called: coordinate delta is below throttle threshold.", {
+        previous: last,
+        current: position,
+      });
       return;
+    }
     lastGeocodedRef.current = position;
     let active = true;
     setAddressStatus("loading");
+    setReverseGeocodeFailureReason(null);
+    const diagnosticRequestUrl = `https://connector-gateway.lovable.dev/google_maps/maps/api/geocode/json?latlng=${position.lat},${position.lng}&language=pt-BR&region=br`;
+    console.log("[MOVVI Reverse Geocoding Diagnostic] latitude:", position.lat);
+    console.log("[MOVVI Reverse Geocoding Diagnostic] longitude:", position.lng);
+    console.log("[MOVVI Reverse Geocoding Diagnostic] exact request URL:", diagnosticRequestUrl);
     console.log("[MOVVI] Reverse geocoding iniciado");
     // Timeout de segurança: nunca deixar o cartão preso em "Obtendo localização...".
     const timeoutId = window.setTimeout(() => {
       if (!active) return;
+      const reason = "Request timed out after 8000ms before reverse geocoding returned.";
       console.warn("[MOVVI] Timeout de localização aplicado");
+      console.error("[MOVVI Reverse Geocoding Diagnostic] Reverse Geocoding failed:", reason);
+      setReverseGeocodeFailureReason(reason);
       setAddressStatus((s) => (s === "loading" ? "failed" : s));
     }, 8000);
     callReverseGeocode({ data: { lat: position.lat, lng: position.lng } })
-      .then((r) => {
+      .then((raw) => {
         if (!active) return;
+        const r = raw as GeocodeResult;
+        const diagnostic = r.diagnostic;
+        console.log("[MOVVI Reverse Geocoding Diagnostic] returned latitude:", diagnostic?.latitude ?? position.lat);
+        console.log("[MOVVI Reverse Geocoding Diagnostic] returned longitude:", diagnostic?.longitude ?? position.lng);
+        console.log("[MOVVI Reverse Geocoding Diagnostic] returned request URL:", diagnostic?.requestUrl ?? diagnosticRequestUrl);
+        console.log("[MOVVI Reverse Geocoding Diagnostic] HTTP response status:", diagnostic?.httpStatus ?? "not returned");
+        console.log("[MOVVI Reverse Geocoding Diagnostic] complete Google JSON/body:", diagnostic?.responseBody ?? "not returned");
+        if (diagnostic?.googleError) {
+          console.error("[MOVVI Reverse Geocoding Diagnostic] Google returned error exactly:", diagnostic.googleError);
+        }
+        if (diagnostic?.rejectionReason) {
+          console.error("[MOVVI Reverse Geocoding Diagnostic] API key rejection / failure reason:", diagnostic.rejectionReason);
+        }
+        if (diagnostic?.failureReason || !r.address) {
+          const reason = diagnostic?.failureReason || diagnostic?.googleError || diagnostic?.googleStatus || "Google returned no formatted_address.";
+          console.error("[MOVVI Reverse Geocoding Diagnostic] Reverse Geocoding failed:", reason);
+          setReverseGeocodeFailureReason(reason);
+          setGeo(null);
+          setAddressStatus("failed");
+          return;
+        }
+
         const inPreview = isDevelopmentEnvironment();
         const hasRoute = !!r.components.rua;
         const hasNumber = !!r.components.numero;
@@ -790,6 +830,18 @@ function PassageiroApp() {
         console.log("[MOVVI] Distância entre GPS e geocoding:", Number.isFinite(dist) ? `${dist.toFixed(1)} m` : "n/d");
         console.log("[MOVVI] Preview detectado:", inPreview);
         console.log("[MOVVI] Alta confiança:", highConfidence, baseHighConfidence === highConfidence ? "" : "(rebaixado pelo preview)");
+        if (!highConfidence) {
+          console.warn("[MOVVI Reverse Geocoding Diagnostic] Reverse geocoding succeeded, but the UI is displaying coordinates because high-confidence validation failed.", {
+            locationType: r.locationType,
+            partialMatch: r.partialMatch,
+            hasRoute,
+            hasNumber,
+            addressMentionsStreet,
+            looksGeneric,
+            gpsToGeocodeDistanceMeters: Number.isFinite(dist) ? Number(dist.toFixed(1)) : null,
+            required: "ROOFTOP, formatted street/number, not generic, GPS/geocode distance < 30m",
+          });
+        }
         if (finalPrecision === "approximate") {
           console.log("[MOVVI] Exibindo origem aproximada:", `${position.lat.toFixed(6)}, ${position.lng.toFixed(6)}`, r.region || "(sem referência)");
         }
@@ -800,7 +852,10 @@ function PassageiroApp() {
       })
       .catch((e) => {
         if (!active) return;
+        const reason = (e as Error)?.message || String(e);
         console.error("[MOVVI] Reverse geocoding falhou", e);
+        console.error("[MOVVI Reverse Geocoding Diagnostic] Reverse Geocoding failed:", reason);
+        setReverseGeocodeFailureReason(reason);
         setAddressStatus("failed");
       })
       .finally(() => {
@@ -1936,6 +1991,7 @@ function PassageiroApp() {
             setUiStage={setPassengerUiStage}
             busy={busy}
             error={error}
+            reverseGeocodeFailureReason={reverseGeocodeFailureReason}
             selectedCategoryKey={selectedCategoryKey}
             setSelectedCategoryKey={setSelectedCategoryKey}
             driversCount={nearbyCount}
@@ -2208,6 +2264,7 @@ function SheetContent({
   setUiStage,
   busy,
   error,
+  reverseGeocodeFailureReason,
   selectedCategoryKey,
   setSelectedCategoryKey,
   driversCount,
@@ -2238,6 +2295,7 @@ function SheetContent({
   setUiStage: (stage: PassengerUiStage) => void;
   busy: boolean;
   error: string | null;
+  reverseGeocodeFailureReason: string | null;
   selectedCategoryKey: string | null;
   setSelectedCategoryKey: (k: string | null) => void;
   driversCount: number;
@@ -2299,6 +2357,15 @@ function SheetContent({
           >
             {gpsRequesting ? "..." : "Tentar novamente"}
           </button>
+        </div>
+      ) : addressStatus === "failed" && reverseGeocodeFailureReason ? (
+        <div className="mb-2.5 w-full rounded-2xl bg-red-950/90 px-3 py-2.5 text-left ring-1 ring-red-500/70">
+          <div className="text-[11px] font-black uppercase tracking-widest text-red-200">
+            Reverse Geocoding failed
+          </div>
+          <div className="mt-1 break-words font-mono text-[11px] leading-snug text-red-100">
+            {reverseGeocodeFailureReason}
+          </div>
         </div>
       ) : (
         <div
