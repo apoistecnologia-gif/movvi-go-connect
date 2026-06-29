@@ -1038,9 +1038,11 @@ function PassageiroApp() {
     console.log("[MOVVI] Origem manual selecionada", p);
     void logGpsTelemetry("manual_origin_set", { extra: { lat: p.lat, lng: p.lng } });
     setPosition(p);
+    setPickupSource("manual");
     setGpsState("granted");
     gpsStateRef.current = "granted";
     setGpsErrorMsg("");
+    try { toast.success("Ponto de partida confirmado."); } catch { /* noop */ }
   }, []);
 
 
