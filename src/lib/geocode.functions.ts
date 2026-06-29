@@ -262,18 +262,28 @@ export const reverseGeocode = createServerFn({ method: "POST" })
       return emptyGeocode({ ...diagnostic, failureReason });
     }
 
-    const top = results[0];
+    const selection = selectBestGeocodeResult(results);
+    const top = selection?.result ?? results[0];
+    const confidence: GeocodeConfidence = selection?.confidence ?? "fallback";
+    const selectionReason = selection?.reason ?? "No selection produced; using first result";
+
+    console.log("[MOVVI Reverse Geocoding Diagnostic] total results:", results.length);
+    console.log("[MOVVI Reverse Geocoding Diagnostic] selected index:", selection?.index ?? 0);
+    console.log("[MOVVI Reverse Geocoding Diagnostic] selected formatted_address:", top.formatted_address ?? "(none)");
+    console.log("[MOVVI Reverse Geocoding Diagnostic] selected location_type:", top.geometry?.location_type ?? "(none)");
+    console.log("[MOVVI Reverse Geocoding Diagnostic] confidence:", confidence);
+    console.log("[MOVVI Reverse Geocoding Diagnostic] reason:", selectionReason);
+
     const address = top.formatted_address ?? "";
     const locationType = top.geometry?.location_type ?? "";
     const partialMatch = !!top.partial_match;
     const plusCode = top.plus_code?.global_code;
     const topTypes = top.types ?? [];
 
+    // Para extração de componentes, priorize o resultado selecionado, com fallback
+    // para a lista completa (Google retorna componentes redundantes entre resultados).
+    const orderedResults = [top, ...results.filter((r) => r !== top)];
 
-    // Prioridade conforme exigência: sublocality_level_1, sublocality_level_2,
-    // neighborhood, locality, administrative_area_level_2, administrative_area_level_1.
-    // Para a primeira linha (friendly), só usamos níveis MENORES que o município
-    // (povoado / bairro / distrito). Município vai sempre para a segunda linha.
     const povoadoCandidates = [
       ["sublocality_level_1"],
       ["sublocality_level_2"],
@@ -284,17 +294,17 @@ export const reverseGeocode = createServerFn({ method: "POST" })
     ];
     let povoado: { long: string; short: string } | undefined;
     for (const types of povoadoCandidates) {
-      povoado = pick(results, types);
+      povoado = pick(orderedResults, types);
       if (povoado) break;
     }
 
-    const rua = pick(results, ["route"]);
-    const numero = pick(results, ["street_number"]);
-    const bairro = pick(results, ["neighborhood"]);
+    const rua = pick(orderedResults, ["route"]);
+    const numero = pick(orderedResults, ["street_number"]);
+    const bairro = pick(orderedResults, ["neighborhood"]);
     const cidade =
-      pick(results, ["locality"]) ?? pick(results, ["administrative_area_level_2"]);
-    const estado = pick(results, ["administrative_area_level_1"]);
-    const pais = pick(results, ["country"]);
+      pick(orderedResults, ["locality"]) ?? pick(orderedResults, ["administrative_area_level_2"]);
+    const estado = pick(orderedResults, ["administrative_area_level_1"]);
+    const pais = pick(orderedResults, ["country"]);
 
     const components: GeocodeComponents = {
       rua: rua?.long,
@@ -307,7 +317,6 @@ export const reverseGeocode = createServerFn({ method: "POST" })
       pais: pais?.long,
     };
 
-    // Friendly = só povoado/bairro. Nunca repetir o município aqui.
     const cityName = cidade?.long?.toLowerCase() ?? "";
     const candidate = povoado?.long ?? bairro?.long ?? "";
     const friendly =
@@ -318,13 +327,9 @@ export const reverseGeocode = createServerFn({ method: "POST" })
         ? `${cidade.long} - ${estado.short}`
         : (cidade?.long ?? estado?.long ?? "");
 
-    const approximate = !friendly && !!region;
+    const approximate = confidence !== "exact";
 
-    // ROOFTOP é o único nível considerado endereço exato no Brasil.
-    // RANGE_INTERPOLATED interpola entre números → não confiável para zona rural.
-    // GEOMETRIC_CENTER/APPROXIMATE são área/poligono → nunca apresentar como rua exata.
-    const precision: "exact" | "approximate" =
-      locationType === "ROOFTOP" && !partialMatch ? "exact" : "approximate";
+    const precision: "exact" | "approximate" = confidence === "exact" ? "exact" : "approximate";
 
     return {
       address,
@@ -332,6 +337,8 @@ export const reverseGeocode = createServerFn({ method: "POST" })
       region,
       approximate,
       precision,
+      confidence,
+      selectionReason,
       locationType,
       partialMatch,
       plusCode,
