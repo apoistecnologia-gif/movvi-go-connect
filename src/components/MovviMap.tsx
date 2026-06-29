@@ -45,7 +45,7 @@ export function MovviMap({
     purgeForeignMapCache();
   }, []);
 
-  const { resolved } = useTheme();
+  const { resolved } = useMapTheme();
   const theme: "light" | "dark" = themeOverride ?? resolved;
 
   const { isLoaded, loadError } = useJsApiLoader({
