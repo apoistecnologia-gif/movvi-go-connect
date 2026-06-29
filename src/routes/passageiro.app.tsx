@@ -434,6 +434,9 @@ type Suggestion = { placeId: string; primary: string; secondary: string };
 type RideRow = Database["public"]["Tables"]["rides"]["Row"];
 type DriverRow = Database["public"]["Tables"]["drivers"]["Row"];
 
+const REVERSE_GEOCODE_CLIENT_TIMEOUT_MS = 5000;
+const NEARBY_PLACES_CLIENT_TIMEOUT_MS = 3000;
+
 const RECENT_KEY = "movvi.recent_destinations";
 
 /**
@@ -457,6 +460,52 @@ function distanceMeters(a: LatLng, b: LatLng): number {
     Math.sin(dLat / 2) ** 2 +
     Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
   return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+function withClientTimeout<T>(
+  promise: Promise<T>,
+  ms: number,
+): Promise<{ status: "success"; value: T } | { status: "timeout" } | { status: "error"; error: unknown }> {
+  return new Promise((resolve) => {
+    const id = window.setTimeout(() => resolve({ status: "timeout" }), ms);
+    promise
+      .then((value) => resolve({ status: "success", value }))
+      .catch((error) => resolve({ status: "error", error }))
+      .finally(() => window.clearTimeout(id));
+  });
+}
+
+function hasDisplayablePickup(geo: GeocodeResult | null): boolean {
+  return !!(
+    geo?.pickupLabel ||
+    geo?.components?.rua ||
+    geo?.components?.bairro ||
+    geo?.components?.povoado ||
+    geo?.components?.cidade ||
+    geo?.friendly ||
+    geo?.region ||
+    geo?.address
+  );
+}
+
+function geocodeFromPickupCache(cached: PickupCache): GeocodeResult {
+  return {
+    address: cached.address || cached.label,
+    friendly: "",
+    region: cached.sub || "",
+    approximate: true,
+    precision: "approximate",
+    confidence: "fallback",
+    selectionReason: "Cache local",
+    locationType: "",
+    partialMatch: false,
+    types: [],
+    components: {},
+    pickupLabel: cached.label,
+    pickupShortLabel: cached.short,
+    pickupSubLabel: cached.sub,
+    pickupSource: "gps",
+  };
 }
 
 /** Catálogo visual de categorias da MOVVI (mapeia para o enum backend). */
@@ -572,6 +621,7 @@ function PassageiroApp() {
   const [position, setPosition] = useState<LatLng | null>(null);
   const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
   const [geo, setGeo] = useState<GeocodeResult | null>(null);
+  const latestGeoRef = useRef<GeocodeResult | null>(null);
   const [addressStatus, setAddressStatus] = useState<
     "idle" | "loading" | "resolved" | "failed"
   >("idle");
@@ -660,6 +710,10 @@ function PassageiroApp() {
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
   const drivers = useNearbyDrivers({ category });
+
+  useEffect(() => {
+    latestGeoRef.current = geo;
+  }, [geo]);
 
   // Conta apenas motoristas dentro do raio de 15 km da origem (mesmo raio do despacho).
   const nearbyCount = useMemo(() => {
@@ -814,11 +868,40 @@ function PassageiroApp() {
       console.warn("[MOVVI] Reverse geocode timeout (5s)");
       console.error("[MOVVI Reverse Geocoding Diagnostic] Reverse Geocoding failed:", reason);
       setReverseGeocodeFailureReason(reason);
-      setAddressStatus((s) => (s === "loading" ? "failed" : s));
-    }, 5000);
-    callReverseGeocode({ data: { lat: position.lat, lng: position.lng } })
-      .then((raw) => {
-        if (!active) return;
+      setAddressStatus((s) => {
+        if (s !== "loading") return s;
+        return hasDisplayablePickup(latestGeoRef.current) ? "resolved" : "failed";
+      });
+    }, REVERSE_GEOCODE_CLIENT_TIMEOUT_MS);
+
+    void (async () => {
+      const reverseResult = await withClientTimeout(
+        callReverseGeocode({ data: { lat: position.lat, lng: position.lng } }) as Promise<GeocodeResult>,
+        REVERSE_GEOCODE_CLIENT_TIMEOUT_MS,
+      );
+      window.clearTimeout(timeoutId);
+      if (!active) return;
+
+      if (reverseResult.status === "timeout") {
+        const reason = `Reverse Geocoding timed out after ${REVERSE_GEOCODE_CLIENT_TIMEOUT_MS}ms.`;
+        console.warn("[MOVVI] Reverse geocode finished: timeout");
+        setReverseGeocodeFailureReason(reason);
+        setAddressStatus(hasDisplayablePickup(latestGeoRef.current) ? "resolved" : "failed");
+        return;
+      }
+
+      if (reverseResult.status === "error") {
+        const reason = reverseResult.error instanceof Error ? reverseResult.error.message : String(reverseResult.error);
+        console.error("[MOVVI] Reverse geocode finished: error", reverseResult.error);
+        console.error("[MOVVI Reverse Geocoding Diagnostic] Reverse Geocoding failed:", reason);
+        setReverseGeocodeFailureReason(reason);
+        setAddressStatus(hasDisplayablePickup(latestGeoRef.current) ? "resolved" : "failed");
+        return;
+      }
+
+      try {
+        console.log("[MOVVI] Reverse geocode finished: success");
+        const raw = reverseResult.value;
         const r = raw as GeocodeResult;
         const diagnostic = r.diagnostic;
         console.log("[MOVVI Reverse Geocoding Diagnostic] returned latitude:", diagnostic?.latitude ?? position.lat);
@@ -839,23 +922,9 @@ function PassageiroApp() {
           const cached = readPickupCache();
           if (cached && distanceMeters(position, { lat: cached.lat, lng: cached.lng }) < 200) {
             console.log("[MOVVI Pickup Cache] reaproveitando label cacheado:", cached.label);
-            setGeo({
-              address: cached.address || cached.label,
-              friendly: "",
-              region: cached.sub || "",
-              approximate: true,
-              precision: "approximate",
-              confidence: "fallback",
-              selectionReason: "Cache local",
-              locationType: "",
-              partialMatch: false,
-              types: [],
-              components: {},
-              pickupLabel: cached.label,
-              pickupShortLabel: cached.short,
-              pickupSubLabel: cached.sub,
-              pickupSource: "gps",
-            } as GeocodeResult);
+            const cachedGeo = geocodeFromPickupCache(cached);
+            latestGeoRef.current = cachedGeo;
+            setGeo(cachedGeo);
             setAddressStatus("resolved");
             return;
           }
@@ -878,9 +947,10 @@ function PassageiroApp() {
 
         // Stage 1: limpa erro e mostra o endereço imediatamente — sem esperar POI.
         setReverseGeocodeFailureReason(null);
+        latestGeoRef.current = r;
         setGeo(r);
         setAddressStatus("resolved");
-        console.log("[MOVVI] Pickup label gerado (stage 1):", r.pickupLabel);
+        console.log("[MOVVI] Pickup label generated", r.pickupLabel || r.address);
         // Cache local do último pickup label bom.
         if (r.pickupLabel) {
           writePickupCache({
@@ -902,24 +972,27 @@ function PassageiroApp() {
           (!r.pickupLabel || /zona rural|^br-|^[a-z]{2}-\d/i.test(r.pickupLabel));
         if (labelIsWeak) {
           console.log("[MOVVI] Stage 2 POI lookup iniciado");
-          const poiTimeout = new Promise<{ name?: string; placeId?: string }>((resolve) =>
-            window.setTimeout(() => {
-              console.warn("[MOVVI] Nearby Places timeout (3s) — mantendo label atual");
-              resolve({});
-            }, 3000),
-          );
-          Promise.race([
-            callNearestPoi({ data: { lat: position.lat, lng: position.lng } }),
-            poiTimeout,
-          ])
-            .then((poi) => {
+          void (async () => {
+            const poiResult = await withClientTimeout(
+              callNearestPoi({ data: { lat: position.lat, lng: position.lng } }) as Promise<{ name?: string; placeId?: string }>,
+              NEARBY_PLACES_CLIENT_TIMEOUT_MS,
+            );
+            if (poiResult.status === "timeout") {
+              console.warn("[MOVVI] Nearby Places finished: timeout — mantendo label atual");
+              return;
+            }
+            if (poiResult.status === "error") {
+              console.warn("[MOVVI] Nearby Places finished: error — mantendo label atual", poiResult.error);
+              return;
+            }
+            const poi = poiResult.value;
               if (!active) return;
-              console.log("[MOVVI] Nearby Places finalizado:", poi?.name ?? "(nenhum)");
+              console.log("[MOVVI] Nearby Places finished:", poi?.name ?? "(nenhum)");
               if (!poi?.name) return;
               setGeo((prev) => {
                 if (!prev) return prev;
                 const newLabel = `Próximo a ${poi.name}`;
-                console.log("[MOVVI] Pickup label atualizado (stage 2):", newLabel);
+                console.log("[MOVVI] Pickup label updated", newLabel);
                 const updated: GeocodeResult = {
                   ...prev,
                   nearestPoi: poi.name,
@@ -927,6 +1000,7 @@ function PassageiroApp() {
                   pickupLabel: newLabel,
                   pickupShortLabel: poi.name,
                 };
+                latestGeoRef.current = updated;
                 writePickupCache({
                   lat: position.lat,
                   lng: position.lng,
@@ -938,23 +1012,12 @@ function PassageiroApp() {
                 });
                 return updated;
               });
-            })
-            .catch((err) => {
-              console.warn("[MOVVI] Nearby Places falhou — mantendo label atual:", err);
-            });
+          })();
         }
-      })
-      .catch((e) => {
-        if (!active) return;
-        const reason = (e as Error)?.message || String(e);
-        console.error("[MOVVI] Reverse geocoding falhou", e);
-        console.error("[MOVVI Reverse Geocoding Diagnostic] Reverse Geocoding failed:", reason);
-        setReverseGeocodeFailureReason(reason);
-        setAddressStatus("failed");
-      })
-      .finally(() => {
+      } finally {
         window.clearTimeout(timeoutId);
-      });
+      }
+    })();
     return () => {
       active = false;
       window.clearTimeout(timeoutId);
@@ -1026,6 +1089,7 @@ function PassageiroApp() {
         }
 
         const insideBR = isBrazilCoordinate(lat, lng);
+        console.log("[MOVVI] GPS acquired", { lat, lng, accuracy: pos?.coords?.accuracy });
         if (!insideBR) {
           console.warn("[MOVVI] Aviso: coordenada fora do Brasil — aceitando mesmo assim.", { lat, lng });
           setGpsErrorMsg(

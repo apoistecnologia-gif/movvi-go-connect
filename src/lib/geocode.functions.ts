@@ -3,6 +3,8 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/google_maps";
+const REVERSE_GEOCODE_TIMEOUT_MS = 5000;
+const NEARBY_PLACES_TIMEOUT_MS = 3000;
 
 export type GeocodeComponents = {
   rua?: string;
@@ -171,6 +173,10 @@ export function selectBestGeocodeResult(
   return { result: results[0], index: 0, confidence: "fallback", reason: "Last-resort: first result without formatted_address" };
 }
 
+function isAbortError(error: unknown): boolean {
+  return error instanceof Error && error.name === "AbortError";
+}
+
 // Requer usuário autenticado para evitar abuso/scraping da chave Google Maps.
 export const reverseGeocode = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -214,15 +220,29 @@ export const reverseGeocode = createServerFn({ method: "POST" })
       return emptyGeocode({ ...diagnosticBase, failureReason, rejectionReason: failureReason });
     }
 
-    const res = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${lovableKey}`,
-        "X-Connection-Api-Key": connKey,
-      },
-    });
-    console.log("[MOVVI Reverse Geocoding Diagnostic] HTTP response status:", res.status);
-
-    const responseBody = await res.text();
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), REVERSE_GEOCODE_TIMEOUT_MS);
+    let res: Response;
+    let responseBody = "";
+    try {
+      res = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${lovableKey}`,
+          "X-Connection-Api-Key": connKey,
+        },
+        signal: controller.signal,
+      });
+      console.log("[MOVVI Reverse Geocoding Diagnostic] HTTP response status:", res.status);
+      responseBody = await res.text();
+    } catch (error) {
+      const failureReason = isAbortError(error)
+        ? `Reverse Geocoding timed out after ${REVERSE_GEOCODE_TIMEOUT_MS}ms.`
+        : (error instanceof Error ? error.message : String(error));
+      console.error("[MOVVI Reverse Geocoding Diagnostic] Reverse Geocoding failed:", failureReason);
+      return emptyGeocode({ ...diagnosticBase, failureReason, rejectionReason: failureReason });
+    } finally {
+      clearTimeout(timeoutId);
+    }
     console.log("[MOVVI Reverse Geocoding Diagnostic] complete response body:", responseBody);
 
     let parsedBody: unknown = {};
@@ -503,16 +523,30 @@ async function fetchNearestPoi(
       },
     },
   };
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${lovableKey}`,
-      "X-Connection-Api-Key": connKey,
-      "Content-Type": "application/json",
-      "X-Goog-FieldMask": "places.id,places.displayName,places.primaryType,places.types",
-    },
-    body: JSON.stringify(body),
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), NEARBY_PLACES_TIMEOUT_MS);
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${lovableKey}`,
+        "X-Connection-Api-Key": connKey,
+        "Content-Type": "application/json",
+        "X-Goog-FieldMask": "places.id,places.displayName,places.primaryType,places.types",
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (isAbortError(error)) {
+      console.warn(`[MOVVI nearestPoiLookup] Nearby Places timed out after ${NEARBY_PLACES_TIMEOUT_MS}ms.`);
+      return undefined;
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
   if (!res.ok) return undefined;
   const json = (await res.json()) as {
     places?: Array<{
