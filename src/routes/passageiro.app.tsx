@@ -3534,6 +3534,8 @@ function RideQuickActions({
     }
   }
 
+  const isInProgress = ride.status === "em_viagem";
+
   return (
     <>
       <div className="mt-2 grid grid-cols-4 gap-1.5 text-xs">
@@ -3550,7 +3552,19 @@ function RideQuickActions({
           tone="destructive"
           onClick={() => setSosOpen(true)}
         />
-        <Action icon={<X className="h-4 w-4" />} label="Cancelar" onClick={onCancel} />
+        {isInProgress ? (
+          <Action
+            icon={<Shield className="h-4 w-4" />}
+            label="Suporte"
+            onClick={() =>
+              toast.info("Viagem em andamento", {
+                description: "Para encerrar, fale com o motorista ou suporte.",
+              })
+            }
+          />
+        ) : (
+          <Action icon={<X className="h-4 w-4" />} label="Cancelar" onClick={onCancel} />
+        )}
       </div>
 
       {sosOpen && (
