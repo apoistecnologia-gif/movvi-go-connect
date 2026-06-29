@@ -2396,15 +2396,23 @@ function SheetContent({
                 <div className="mt-0.5 truncate text-[13.5px] font-bold leading-tight text-foreground">
                   {pickupAddressLine}
                 </div>
-                {bairro && bairro !== pickupAddressLine && (
+                {pickupSubLine && pickupSubLine !== pickupAddressLine ? (
                   <div className="truncate text-[12px] leading-tight text-foreground/80">
-                    {bairro}
+                    {pickupSubLine}
                   </div>
-                )}
-                {region && region !== pickupAddressLine && (
-                  <div className="truncate text-[11.5px] font-medium leading-tight text-muted-foreground">
-                    {region}
-                  </div>
+                ) : (
+                  <>
+                    {bairro && bairro !== pickupAddressLine && (
+                      <div className="truncate text-[12px] leading-tight text-foreground/80">
+                        {bairro}
+                      </div>
+                    )}
+                    {region && region !== pickupAddressLine && (
+                      <div className="truncate text-[11.5px] font-medium leading-tight text-muted-foreground">
+                        {region}
+                      </div>
+                    )}
+                  </>
                 )}
               </>
             ) : hasPosition && position ? (
