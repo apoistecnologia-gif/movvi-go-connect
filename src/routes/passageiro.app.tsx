@@ -225,6 +225,7 @@ function OriginActionsSheet({
   const region = geo?.region;
   const ruaLine = isExact && rua ? (numero ? `${rua}, ${numero}` : rua) : "";
   const pickupAddressLine =
+    geo?.pickupLabel ||
     ruaLine ||
     geo?.components?.rua ||
     geo?.components?.bairro ||
@@ -234,6 +235,7 @@ function OriginActionsSheet({
     geo?.region ||
     geo?.address ||
     "";
+  const pickupSubLine = geo?.pickupSubLabel || "";
 
   return (
     <div className="fixed inset-0 z-[60] flex items-end" onClick={onClose}>
@@ -254,11 +256,17 @@ function OriginActionsSheet({
             {pickupAddressLine ? (
               <>
                 <div className="mt-0.5 truncate text-[15px] font-bold text-foreground">{pickupAddressLine}</div>
-                {bairro && bairro !== pickupAddressLine && (
-                  <div className="truncate text-[12.5px] text-foreground/80">{bairro}</div>
-                )}
-                {region && region !== pickupAddressLine && (
-                  <div className="truncate text-[12px] text-muted-foreground">{region}</div>
+                {pickupSubLine && pickupSubLine !== pickupAddressLine ? (
+                  <div className="truncate text-[12.5px] text-foreground/80">{pickupSubLine}</div>
+                ) : (
+                  <>
+                    {bairro && bairro !== pickupAddressLine && (
+                      <div className="truncate text-[12.5px] text-foreground/80">{bairro}</div>
+                    )}
+                    {region && region !== pickupAddressLine && (
+                      <div className="truncate text-[12px] text-muted-foreground">{region}</div>
+                    )}
+                  </>
                 )}
               </>
             ) : position ? (
@@ -2303,6 +2311,7 @@ function SheetContent({
   // Caso contrário (APPROXIMATE/GEOMETRIC_CENTER/RANGE_INTERPOLATED) mostramos coords + referência.
   const streetLine = isExact && rua ? (numero ? `${rua}, ${numero}` : rua) : "";
   const pickupAddressLine =
+    geo?.pickupLabel ||
     streetLine ||
     geo?.components?.rua ||
     geo?.components?.bairro ||
@@ -2312,6 +2321,7 @@ function SheetContent({
     geo?.region ||
     geo?.address ||
     "";
+  const pickupSubLine = geo?.pickupSubLabel || "";
   const hasApproxAddress = !!geo && !isExact;
   const showApprox = hasApproxAddress && hasPosition && !!position;
   const showDestinationInput = !destination || uiStage === "selecting_destination";
@@ -2386,15 +2396,23 @@ function SheetContent({
                 <div className="mt-0.5 truncate text-[13.5px] font-bold leading-tight text-foreground">
                   {pickupAddressLine}
                 </div>
-                {bairro && bairro !== pickupAddressLine && (
+                {pickupSubLine && pickupSubLine !== pickupAddressLine ? (
                   <div className="truncate text-[12px] leading-tight text-foreground/80">
-                    {bairro}
+                    {pickupSubLine}
                   </div>
-                )}
-                {region && region !== pickupAddressLine && (
-                  <div className="truncate text-[11.5px] font-medium leading-tight text-muted-foreground">
-                    {region}
-                  </div>
+                ) : (
+                  <>
+                    {bairro && bairro !== pickupAddressLine && (
+                      <div className="truncate text-[12px] leading-tight text-foreground/80">
+                        {bairro}
+                      </div>
+                    )}
+                    {region && region !== pickupAddressLine && (
+                      <div className="truncate text-[11.5px] font-medium leading-tight text-muted-foreground">
+                        {region}
+                      </div>
+                    )}
+                  </>
                 )}
               </>
             ) : hasPosition && position ? (

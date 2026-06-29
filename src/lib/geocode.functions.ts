@@ -34,6 +34,12 @@ export type GeocodeResult = {
   geocodedLat?: number;
   geocodedLng?: number;
   components: GeocodeComponents;
+  /** Nome de um POI próximo (≤200m), quando a rua não estiver nomeada. */
+  nearestPoi?: string;
+  /** Rótulo final pronto para exibição (regra MOVVI BR, nunca "Unnamed Road"). */
+  pickupLabel?: string;
+  /** Sub-rótulo (município/estado), pode ser igual a region. */
+  pickupSubLabel?: string;
   diagnostic?: ReverseGeocodeDiagnostic;
 };
 
@@ -298,7 +304,8 @@ export const reverseGeocode = createServerFn({ method: "POST" })
       if (povoado) break;
     }
 
-    const rua = pick(orderedResults, ["route"]);
+    const ruaRaw = pick(orderedResults, ["route"]);
+    const rua = isUnnamedRoad(ruaRaw?.long) ? undefined : ruaRaw;
     const numero = pick(orderedResults, ["street_number"]);
     const bairro = pick(orderedResults, ["neighborhood"]);
     const cidade =
@@ -331,6 +338,23 @@ export const reverseGeocode = createServerFn({ method: "POST" })
 
     const precision: "exact" | "approximate" = confidence === "exact" ? "exact" : "approximate";
 
+    // POI lookup: rural / sem rua nomeada → tentar Places Nearby
+    let nearestPoi: string | undefined;
+    if (!rua?.long) {
+      try {
+        nearestPoi = await fetchNearestPoi(data.lat, data.lng, lovableKey, connKey);
+      } catch (err) {
+        console.warn("[MOVVI Pickup Label] Nearby POI lookup failed:", err);
+      }
+    }
+
+    const { pickupLabel, pickupSubLabel } = buildPickupLabel({
+      components,
+      region,
+      nearestPoi,
+      hasNamedStreet: !!rua?.long,
+    });
+
     return {
       address,
       friendly,
@@ -346,6 +370,122 @@ export const reverseGeocode = createServerFn({ method: "POST" })
       geocodedLat: top.geometry?.location?.lat,
       geocodedLng: top.geometry?.location?.lng,
       components,
+      nearestPoi,
+      pickupLabel,
+      pickupSubLabel,
       diagnostic,
     };
   });
+
+function isUnnamedRoad(name?: string | null): boolean {
+  if (!name) return false;
+  const n = name.trim().toLowerCase();
+  return (
+    n === "unnamed road" ||
+    n === "estrada sem nome" ||
+    n === "rua sem nome" ||
+    n === "via sem nome"
+  );
+}
+
+function buildPickupLabel(args: {
+  components: GeocodeComponents;
+  region: string;
+  nearestPoi?: string;
+  hasNamedStreet: boolean;
+}): { pickupLabel?: string; pickupSubLabel?: string } {
+  const { components, region, nearestPoi, hasNamedStreet } = args;
+  const { rua, numero, bairro, povoado, cidade, estado, estadoSigla } = components;
+
+  // Sub-label padrão (município/estado).
+  const sub =
+    cidade && estadoSigla
+      ? `${cidade} - ${estadoSigla}`
+      : region || cidade || estado || "";
+
+  // 1) POI próximo tem prioridade quando não há rua nomeada.
+  if (!hasNamedStreet && nearestPoi) {
+    return { pickupLabel: `Próximo a ${nearestPoi}`, pickupSubLabel: sub };
+  }
+
+  // 2) Rua nomeada (com ou sem número).
+  if (hasNamedStreet && rua) {
+    const main = numero ? `${rua}, ${numero}` : rua;
+    return { pickupLabel: main, pickupSubLabel: [bairro, sub].filter(Boolean).join(" • ") };
+  }
+
+  // 3) Cadeia de fallback descritiva.
+  const fallback = bairro || povoado || cidade || estado;
+  if (fallback) {
+    return { pickupLabel: fallback, pickupSubLabel: sub && sub !== fallback ? sub : "" };
+  }
+
+  // 4) Zona Rural + município.
+  if (cidade || estado) {
+    return {
+      pickupLabel: "Zona Rural",
+      pickupSubLabel: sub,
+    };
+  }
+
+  return { pickupLabel: undefined, pickupSubLabel: undefined };
+}
+
+async function fetchNearestPoi(
+  lat: number,
+  lng: number,
+  lovableKey: string,
+  connKey: string,
+): Promise<string | undefined> {
+  const url = `${GATEWAY_URL}/places/v1/places:searchNearby`;
+  const body = {
+    maxResultCount: 5,
+    languageCode: "pt-BR",
+    regionCode: "BR",
+    rankPreference: "DISTANCE",
+    locationRestriction: {
+      circle: {
+        center: { latitude: lat, longitude: lng },
+        radius: 200,
+      },
+    },
+  };
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${lovableKey}`,
+      "X-Connection-Api-Key": connKey,
+      "Content-Type": "application/json",
+      "X-Goog-FieldMask": "places.displayName,places.primaryType,places.types",
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) return undefined;
+  const json = (await res.json()) as {
+    places?: Array<{
+      displayName?: { text?: string };
+      primaryType?: string;
+      types?: string[];
+    }>;
+  };
+  const places = json.places ?? [];
+  // Ignorar tipos genéricos pouco úteis como rótulo.
+  const skipTypes = new Set([
+    "route",
+    "street_address",
+    "geocode",
+    "political",
+    "locality",
+    "neighborhood",
+    "plus_code",
+  ]);
+  for (const p of places) {
+    const name = p.displayName?.text?.trim();
+    if (!name) continue;
+    const types = p.types ?? [];
+    if (types.every((t) => skipTypes.has(t))) continue;
+    return name;
+  }
+  return undefined;
+}
+
