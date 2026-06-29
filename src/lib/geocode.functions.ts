@@ -545,3 +545,32 @@ async function fetchNearestPoi(
   return undefined;
 }
 
+
+/**
+ * Stage 2 do pipeline de pickup label: busca de POI próximo (≤300m) em
+ * background. Retorna apenas o POI mais próximo; o cliente decide se
+ * substitui o label atual (ex.: "Zona Rural" → "Próximo a X").
+ */
+export const nearestPoiLookup = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({
+        lat: z.number().min(-90).max(90),
+        lng: z.number().min(-180).max(180),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data }): Promise<{ name?: string; placeId?: string }> => {
+    const lovableKey = process.env.LOVABLE_API_KEY;
+    const connKey = process.env.GOOGLE_MAPS_API_KEY;
+    if (!lovableKey || !connKey) return {};
+    try {
+      const poi = await fetchNearestPoi(data.lat, data.lng, lovableKey, connKey);
+      if (!poi) return {};
+      return { name: poi.name, placeId: poi.placeId };
+    } catch (err) {
+      console.warn("[MOVVI nearestPoiLookup] failed:", err);
+      return {};
+    }
+  });
