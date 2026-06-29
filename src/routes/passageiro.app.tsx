@@ -515,6 +515,7 @@ function PassageiroApp() {
   const callRequestRide = useServerFn(criarCorrida);
   const callCancelByPassenger = useServerFn(cancelarPeloPassageiro);
   const callReverseGeocode = useServerFn(reverseGeocode);
+  const callNearestPoi = useServerFn(nearestPoiLookup);
   const callRedispatch = useServerFn(redispatchRide);
   const callDiagnose = useServerFn(diagnoseDispatch);
   const callRateDriver = useServerFn(avaliarMotorista);
