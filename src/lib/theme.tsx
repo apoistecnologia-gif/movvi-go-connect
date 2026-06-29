@@ -14,14 +14,10 @@ type ThemeContextValue = {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-function systemPrefersDark(): boolean {
-  if (typeof window === "undefined") return true;
-  return window.matchMedia?.("(prefers-color-scheme: dark)").matches ?? true;
-}
-
-function resolveTheme(mode: ThemeMode): ResolvedTheme {
-  if (mode === "system") return systemPrefersDark() ? "dark" : "light";
-  return mode;
+// A aplicação MOVVI é SEMPRE escura (identidade visual da marca).
+// O tema do mapa é independente — ver src/lib/mapTheme.tsx.
+function resolveTheme(_mode: ThemeMode): ResolvedTheme {
+  return "dark";
 }
 
 function applyThemeClass(resolved: ResolvedTheme) {
