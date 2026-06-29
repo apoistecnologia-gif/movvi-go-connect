@@ -136,8 +136,9 @@ export function getMapStyleForTheme(
 }
 
 export function getMapBackgroundForTheme(theme: "light" | "dark"): string {
-  return theme === "light" ? "#f4f5f7" : "#121826";
+  return theme === "light" ? "#f8f9fa" : "#0f1a2c";
 }
+
 
 
 // ─── Helpers seguros para uso ANTES de o SDK terminar de carregar ─────────
