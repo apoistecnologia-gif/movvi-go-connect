@@ -256,11 +256,17 @@ function OriginActionsSheet({
             {pickupAddressLine ? (
               <>
                 <div className="mt-0.5 truncate text-[15px] font-bold text-foreground">{pickupAddressLine}</div>
-                {bairro && bairro !== pickupAddressLine && (
-                  <div className="truncate text-[12.5px] text-foreground/80">{bairro}</div>
-                )}
-                {region && region !== pickupAddressLine && (
-                  <div className="truncate text-[12px] text-muted-foreground">{region}</div>
+                {pickupSubLine && pickupSubLine !== pickupAddressLine ? (
+                  <div className="truncate text-[12.5px] text-foreground/80">{pickupSubLine}</div>
+                ) : (
+                  <>
+                    {bairro && bairro !== pickupAddressLine && (
+                      <div className="truncate text-[12.5px] text-foreground/80">{bairro}</div>
+                    )}
+                    {region && region !== pickupAddressLine && (
+                      <div className="truncate text-[12px] text-muted-foreground">{region}</div>
+                    )}
+                  </>
                 )}
               </>
             ) : position ? (
