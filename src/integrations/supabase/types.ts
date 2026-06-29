@@ -1129,6 +1129,7 @@ export type Database = {
           final_price: number | null
           id: string
           night_multiplier: number
+          offered_driver_ids: string[]
           origin_lat: number
           origin_lng: number
           origin_name: string
@@ -1184,6 +1185,7 @@ export type Database = {
           final_price?: number | null
           id?: string
           night_multiplier?: number
+          offered_driver_ids?: string[]
           origin_lat: number
           origin_lng: number
           origin_name: string
@@ -1239,6 +1241,7 @@ export type Database = {
           final_price?: number | null
           id?: string
           night_multiplier?: number
+          offered_driver_ids?: string[]
           origin_lat?: number
           origin_lng?: number
           origin_name?: string
