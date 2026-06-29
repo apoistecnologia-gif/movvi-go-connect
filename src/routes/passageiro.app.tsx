@@ -434,6 +434,9 @@ type Suggestion = { placeId: string; primary: string; secondary: string };
 type RideRow = Database["public"]["Tables"]["rides"]["Row"];
 type DriverRow = Database["public"]["Tables"]["drivers"]["Row"];
 
+const REVERSE_GEOCODE_CLIENT_TIMEOUT_MS = 5000;
+const NEARBY_PLACES_CLIENT_TIMEOUT_MS = 3000;
+
 const RECENT_KEY = "movvi.recent_destinations";
 
 /**
@@ -457,6 +460,32 @@ function distanceMeters(a: LatLng, b: LatLng): number {
     Math.sin(dLat / 2) ** 2 +
     Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
   return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+function withClientTimeout<T>(
+  promise: Promise<T>,
+  ms: number,
+): Promise<{ status: "success"; value: T } | { status: "timeout" } | { status: "error"; error: unknown }> {
+  return new Promise((resolve) => {
+    const id = window.setTimeout(() => resolve({ status: "timeout" }), ms);
+    promise
+      .then((value) => resolve({ status: "success", value }))
+      .catch((error) => resolve({ status: "error", error }))
+      .finally(() => window.clearTimeout(id));
+  });
+}
+
+function hasDisplayablePickup(geo: GeocodeResult | null): boolean {
+  return !!(
+    geo?.pickupLabel ||
+    geo?.components?.rua ||
+    geo?.components?.bairro ||
+    geo?.components?.povoado ||
+    geo?.components?.cidade ||
+    geo?.friendly ||
+    geo?.region ||
+    geo?.address
+  );
 }
 
 /** Catálogo visual de categorias da MOVVI (mapeia para o enum backend). */
