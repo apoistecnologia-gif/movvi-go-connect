@@ -2075,17 +2075,29 @@ function PassageiroApp() {
 
           {polyPath.length > 0 && (
             <>
-              {/* Contorno branco para legibilidade sobre qualquer estilo de mapa */}
+              {/* Sombra suave para profundidade */}
               <Polyline
                 path={polyPath}
                 options={{
-                  strokeColor: "#ffffff",
-                  strokeOpacity: 0.95,
-                  strokeWeight: 10,
+                  strokeColor: "#000000",
+                  strokeOpacity: 0.18,
+                  strokeWeight: 14,
                   geodesic: true,
                   zIndex: 1,
                 }}
               />
+              {/* Casing branco para contraste em qualquer tema */}
+              <Polyline
+                path={polyPath}
+                options={{
+                  strokeColor: "#ffffff",
+                  strokeOpacity: 1,
+                  strokeWeight: 10,
+                  geodesic: true,
+                  zIndex: 2,
+                }}
+              />
+              {/* Núcleo verde MOVVI */}
               <Polyline
                 path={polyPath}
                 options={{
@@ -2093,11 +2105,12 @@ function PassageiroApp() {
                   strokeOpacity: 1,
                   strokeWeight: 6,
                   geodesic: true,
-                  zIndex: 2,
+                  zIndex: 3,
                 }}
               />
             </>
           )}
+
         </MovviMap>
 
       </div>
