@@ -3241,10 +3241,12 @@ function SearchingPanel({
       </div>
 
       <h2 className="font-display text-[17px] font-extrabold leading-tight">
-        Procurando motoristas...
+        {noDriversAvailable ? "Nenhum motorista disponível no momento" : "Procurando motoristas..."}
       </h2>
       <p className="mt-0.5 text-[11.5px] text-muted-foreground">
-        Conectando com {cat.label} próximos a você
+        {noDriversAvailable
+          ? "Estamos tentando novamente — aguarde ou cancele a solicitação."
+          : `Conectando com ${cat.label} próximos a você`}
       </p>
 
       {/* Métricas em tempo real */}
