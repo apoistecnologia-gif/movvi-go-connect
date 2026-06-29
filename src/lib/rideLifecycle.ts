@@ -337,7 +337,7 @@ export const redispatchRide = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const cur = await supabaseAdmin
       .from("rides")
-      .select("id, status, passenger_id, current_offer_driver_id")
+      .select("id, status, passenger_id, offered_driver_ids")
       .eq("id", data.rideId)
       .maybeSingle();
     if (cur.error) throw new Error(cur.error.message);
@@ -346,13 +346,17 @@ export const redispatchRide = createServerFn({ method: "POST" })
       throw new Error("Apenas o passageiro pode re-despachar a corrida.");
     }
     if (cur.data.status !== RIDE_STATUS.PROCURAR_MOTORISTA) {
-      return { ok: true, skipped: "status_changed", status: cur.data.status, driver: null as string | null };
+      return { ok: true, skipped: "status_changed", status: cur.data.status, driver: null as string | null, candidates: 0 };
     }
-    if (cur.data.current_offer_driver_id) {
-      return { ok: true, skipped: "already_offered", status: cur.data.status, driver: cur.data.current_offer_driver_id };
+    const offered = Array.isArray(cur.data.offered_driver_ids) ? cur.data.offered_driver_ids : [];
+    if (offered.length > 0) {
+      return { ok: true, skipped: "already_offered", status: cur.data.status, driver: offered[0], candidates: offered.length };
     }
     const next = await offerToNextDriver(supabaseAdmin, data.rideId);
-    return { ok: true, skipped: null as string | null, status: cur.data.status, driver: next };
+    // Re-lê para devolver o número final de candidatos no broadcast.
+    const after = await supabaseAdmin.from("rides").select("offered_driver_ids").eq("id", data.rideId).maybeSingle();
+    const candidates = Array.isArray(after.data?.offered_driver_ids) ? after.data!.offered_driver_ids.length : 0;
+    return { ok: true, skipped: null as string | null, status: cur.data.status, driver: next, candidates };
   });
 
 /** Diagnóstico de despacho (DEV) — devolve a contagem de motoristas em cada
