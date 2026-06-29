@@ -459,9 +459,12 @@ export type Database = {
       driver_public_locations: {
         Row: {
           category: string | null
+          current_heading: number | null
           current_lat: number | null
           current_lng: number | null
+          current_speed: number | null
           is_online: boolean
+          last_location_at: string | null
           name: string | null
           photo_url: string | null
           rating: number | null
@@ -472,9 +475,12 @@ export type Database = {
         }
         Insert: {
           category?: string | null
+          current_heading?: number | null
           current_lat?: number | null
           current_lng?: number | null
+          current_speed?: number | null
           is_online?: boolean
+          last_location_at?: string | null
           name?: string | null
           photo_url?: string | null
           rating?: number | null
@@ -485,9 +491,12 @@ export type Database = {
         }
         Update: {
           category?: string | null
+          current_heading?: number | null
           current_lat?: number | null
           current_lng?: number | null
+          current_speed?: number | null
           is_online?: boolean
+          last_location_at?: string | null
           name?: string | null
           photo_url?: string | null
           rating?: number | null
