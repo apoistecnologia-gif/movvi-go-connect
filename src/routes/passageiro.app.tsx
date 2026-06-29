@@ -225,6 +225,7 @@ function OriginActionsSheet({
   const region = geo?.region;
   const ruaLine = isExact && rua ? (numero ? `${rua}, ${numero}` : rua) : "";
   const pickupAddressLine =
+    geo?.pickupLabel ||
     ruaLine ||
     geo?.components?.rua ||
     geo?.components?.bairro ||
@@ -234,6 +235,7 @@ function OriginActionsSheet({
     geo?.region ||
     geo?.address ||
     "";
+  const pickupSubLine = geo?.pickupSubLabel || "";
 
   return (
     <div className="fixed inset-0 z-[60] flex items-end" onClick={onClose}>
