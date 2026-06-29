@@ -15,23 +15,22 @@ export type GeocodeComponents = {
   pais?: string;
 };
 
+export type GeocodeConfidence = "exact" | "approximate" | "area" | "fallback";
+
 export type GeocodeResult = {
-  address: string;       // endereço completo formatado
-  friendly: string;      // primeira linha (povoado/bairro). Vazio se não houver.
-  region: string;        // "Cidade - UF"
-  approximate: boolean;  // true quando só temos município (sem bairro/povoado)
-  /**
-   * Confiabilidade do endereço retornado pelo Google.
-   * - "exact": location_type=ROOFTOP, endereço é o ponto exato.
-   * - "approximate": location_type ∈ {APPROXIMATE, GEOMETRIC_CENTER, RANGE_INTERPOLATED}
-   *   ou partial_match=true. NÃO mostrar rua/número como exato — preferir coordenadas + referência.
-   */
+  address: string;
+  friendly: string;
+  region: string;
+  approximate: boolean;
   precision: "exact" | "approximate";
-  locationType: string;  // ROOFTOP | RANGE_INTERPOLATED | GEOMETRIC_CENTER | APPROXIMATE | ""
+  /** Nova classificação detalhada da seleção do melhor resultado. */
+  confidence: GeocodeConfidence;
+  /** Motivo legível pelo qual o melhor resultado foi escolhido. */
+  selectionReason: string;
+  locationType: string;
   partialMatch: boolean;
-  plusCode?: string;     // global_code do plus_code, se houver
-  types: string[];       // types do primeiro resultado
-  /** Coordenadas retornadas pelo Google (geometry.location) — usadas para medir distância do GPS. */
+  plusCode?: string;
+  types: string[];
   geocodedLat?: number;
   geocodedLng?: number;
   components: GeocodeComponents;
