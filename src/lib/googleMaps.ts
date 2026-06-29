@@ -94,6 +94,41 @@ export const MOVVI_DARK_MAP_STYLE: google.maps.MapTypeStyle[] = [
   { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#4a5a73" }] },
 ];
 
+// Estilo claro premium — inspirado em apps de mobilidade comerciais (Uber/99).
+// Fundo neutro, ruas em cinza suave, parques em verde claro, água em azul claro.
+export const MOVVI_LIGHT_MAP_STYLE: google.maps.MapTypeStyle[] = [
+  { elementType: "geometry", stylers: [{ color: "#f4f5f7" }] },
+  { elementType: "labels.text.fill", stylers: [{ color: "#5b6470" }] },
+  { elementType: "labels.text.stroke", stylers: [{ color: "#ffffff" }] },
+  { featureType: "administrative", elementType: "geometry", stylers: [{ visibility: "off" }] },
+  { featureType: "administrative.land_parcel", stylers: [{ visibility: "off" }] },
+  { featureType: "administrative.neighborhood", stylers: [{ visibility: "off" }] },
+  { featureType: "poi", stylers: [{ visibility: "off" }] },
+  { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#dff0d3" }] },
+  { featureType: "poi.park", elementType: "labels.text.fill", stylers: [{ color: "#6b8a5a" }] },
+  { featureType: "road", elementType: "geometry", stylers: [{ color: "#ffffff" }] },
+  { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#e6e8ec" }] },
+  { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#7a8392" }] },
+  { featureType: "road.arterial", elementType: "geometry", stylers: [{ color: "#ffffff" }] },
+  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#ffe9b3" }] },
+  { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#f2cf7a" }] },
+  { featureType: "road.local", elementType: "labels", stylers: [{ visibility: "simplified" }] },
+  { featureType: "transit", stylers: [{ visibility: "off" }] },
+  { featureType: "water", elementType: "geometry", stylers: [{ color: "#cfe4f5" }] },
+  { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#5b8bb3" }] },
+];
+
+export function getMapStyleForTheme(
+  theme: "light" | "dark",
+): google.maps.MapTypeStyle[] {
+  return theme === "light" ? MOVVI_LIGHT_MAP_STYLE : MOVVI_DARK_MAP_STYLE;
+}
+
+export function getMapBackgroundForTheme(theme: "light" | "dark"): string {
+  return theme === "light" ? "#f4f5f7" : "#121826";
+}
+
+
 // ─── Helpers seguros para uso ANTES de o SDK terminar de carregar ─────────
 // O JSX pai de <MovviMap> é avaliado em todo render, mesmo enquanto
 // `isLoaded` ainda é falso. Acessar `google.maps.Point` / `SymbolPath`

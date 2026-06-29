@@ -1,72 +1,42 @@
-# Plano: Completar 100% do App do Motorista MOVVI
+## Goal
+Modernize ONLY the visual and camera UX of the Passenger map. Zero changes to business logic (rides, dispatch, auth, Supabase, payments, notifications, admin).
 
-Manter identidade visual, cores, navegação e layout atuais. Substituir todas as telas "Em breve" por funcionalidades reais ligadas ao Supabase. Mobile-first, sem dados mockados.
+## Scope of files touched
+- `src/lib/googleMaps.ts` — add `MOVVI_LIGHT_MAP_STYLE` and export both light + dark styles; add a helper `getMapStyleForTheme(resolved)`.
+- `src/components/MovviMap.tsx` — react to current theme from `useTheme()`, swap map style live, keep stable `mapKey`, expose `onDragStart`/`onDragEnd` and optional `pickMode` (center pin).
+- `src/routes/passageiro.app.tsx` — only the presentational layer:
+  - New floating top search card (Pickup + Destination), rounded, shadow.
+  - New horizontal category carousel cards (icon, name, price, ETA).
+  - Payment row (PIX / Credit / Cash) + Coupon + Schedule buttons (UI only — wire to existing handlers when present, otherwise no-op toast "Em breve").
+  - Big primary "Solicitar corrida" button always visible.
+  - Replace driver/origin/destination marker icons with branded SVGs (green pickup, red destination, animated car for driver).
+  - Polyline: MOVVI green, thicker, with white outline (render two polylines).
+  - Camera controller: single source of truth, no repeated `fitBounds`/`setCenter`; only re-fits on (a) recenter button, (b) destination change, (c) ride status transition; smooth `panTo` follow during active ride with throttle + dead zone (mirroring the driver app fix).
+  - Drag-to-pick: when user drags map in pickup-selection mode, show fixed center pin; on `dragend`, reverse-geocode and update pickup via the EXISTING handler (no new business rules).
+- `src/lib/theme.tsx` — already has Light/Dark/System; verify Settings already calls `setMode`. No logic change.
 
-## Fase 1 — Banco de Dados (base obrigatória)
+## Explicitly NOT changing
+- `rideLifecycle.ts`, `routes.functions.ts`, `geocode.functions.ts`, dispatch, tariffs, fare math, Supabase queries, realtime, push, admin, driver app.
+- Any function signatures the page already calls.
 
-Migração única criando o que ainda não existe:
+## Camera rules (final)
+- Stable initial center memoized from first valid GPS.
+- `panTo` throttled at 1500ms, dead zone 15m, disabled when user drags; re-armed by recenter button.
+- `fitBounds` runs once per (rideId, status) tuple via a ref guard.
 
-- `driver_preferences` (user_id PK, push, ride_alerts, sound, vibration, accept_short, accept_long, max_radius_km, accept_cash, accept_pix, accept_card, theme, language, navigation_app, updated_at)
-- `driver_emergency_contacts` (id, driver_user_id, name, phone, relation, is_primary)
-- `driver_documents` (id, driver_id, type [cnh|crlv|selfie|vehicle_photo|insurance], file_url, status, expires_at, rejected_reason)
-- `driver_announcements` (id, title, body, audience, active, starts_at, ends_at)
-- View `driver_earnings_daily` agregando `rides` finalizadas (date, driver_id, trips, gross, distance_km, duration_min)
-- RPC `get_driver_stats(_user_id, _from, _to)` → totals (earnings, trips, distance, online_hours, ride_hours, avg_fare, avg_per_km, acceptance_rate, cancellation_rate)
-- RPC `get_driver_home_kpis(_user_id)` → KPIs do dia
-- GRANTs + RLS (motorista só lê os próprios; admin lê tudo via `has_role`)
+## Marker assets
+- Pickup: green circle with MOVVI "M" (SVG via dataURL).
+- Destination: red pin (SVG).
+- Driver car: rotating car SVG (rotation = bearing from previous position).
 
-## Fase 2 — Ganhos (`/motorista/ganhos`)
+## Theme reactivity for the map
+- `MovviMap` reads `useTheme().resolved`; passes the corresponding style array to `<GoogleMap options>`. The `mapKey` includes resolved theme so Google Maps re-applies styles cleanly on toggle.
 
-Página completa substituindo o stub:
-- Cards: Hoje, Ontem, Semana, Mês, Total, Corridas, KM, Horas online, Horas em viagem, Tarifa média, R$/km
-- Filtros: Hoje / Ontem / Semana / Mês / Customizado (date range)
-- Gráficos (recharts já no projeto): barras diárias, linha semanal, área mensal
-- Extrato detalhado paginado (lista de rides finalizadas)
-- Exportar CSV (já temos `csvExport.ts`) e PDF (jsPDF + autotable)
+## Validation
+- Typecheck via existing tooling.
+- Manual visual check via Playwright on `/passageiro/app` (light + dark), confirming map render, marker placement, no console errors, and that toggling theme in Settings updates the map.
 
-## Fase 3 — Histórico e Detalhes da Corrida
-
-- `/motorista/corridas`: expandir card existente (foto passageiro, categoria, pagamento, ratings, horários accept/finish, botão "Ver detalhes")
-- Nova rota `/motorista/corridas/$id`: timeline completa (criada → aceita → chegou → iniciada → finalizada), rota desenhada no mapa, valores, taxas, ganhos, botão "Recibo PDF"
-
-## Fase 4 — Perfil + Status Expandidos
-
-- `/motorista/perfil`: foto, rating médio, total corridas, "Motorista desde", veículo (modelo/cor/placa/categoria), status atual, barra de completude
-- `/motorista/status`: lista de documentos com status, validade, badges (Aprovado/Pendente/Reprovado/Vencido), alerta amarelo se expira em ≤30 dias
-
-## Fase 5 — Configurações Reais (`/motorista/configuracoes`)
-
-Reescrever para persistir tudo em `driver_preferences`:
-- Notificações (push, alertas, som, vibração)
-- Corridas (curtas, longas, raio máx 1–50km)
-- Pagamentos aceitos (dinheiro, PIX, máquina)
-- Aparência (claro/escuro/sistema via `useTheme` já existente)
-- Navegação (interna/Google Maps/Waze) — usado nos botões "Navegar" do app
-- Idioma (pt/en/es) — i18n base
-- Privacidade: permissões, limpar cache, "Sair de todos os dispositivos" (`supabase.auth.signOut({ scope: 'global' })`)
-
-## Fase 6 — Home do Motorista
-
-Painel flutuante no `/motorista/app` (offline) com KPIs do dia via `get_driver_home_kpis`:
-- Ganhos hoje, corridas hoje, horas online, km, rating, taxa de aceitação, taxa de cancelamento, nível, promoção atual, anúncios, status da assinatura
-
-## Fase 7 — Segurança + Notificações + Recibos
-
-- `/motorista/seguranca`: SOS (já existe sos_alerts), CRUD de contatos de emergência, compartilhar localização ao vivo (link com token), ligar 190
-- `/motorista/notificacoes`: inbox via `notification_inbox` (filtro por tipo, marcar lida, excluir)
-- `src/lib/receipt.ts`: gerador de PDF reutilizado em corridas e detalhes
-
-## Fase 8 — Polimento e Bug Sweep
-
-- Revisar todos os botões/links do menu lateral do motorista; remover qualquer "Em breve"
-- Loading skeletons, paginação no histórico, lazy load gráficos
-- Validar formulários (zod), tratar erros em PT-BR
-- Testar fluxos: cadastro → status → online → corrida → finalização → recibo → ganhos atualizados
-
-## Tecnologias
-
-Reuso: shadcn/ui, recharts, sonner, zod, supabase realtime, `useTheme`, `csvExport`. Adicionar: `jspdf` + `jspdf-autotable` para PDFs.
-
-## Entrega
-
-Cada fase entregue e testada antes da próxima. Confirmação a cada fase. Começo pela **Fase 1 (migração)** assim que aprovado.
+## Out of scope (will not implement now unless asked)
+- Real PIX/credit/cash processing.
+- Schedule ride backend.
+- Coupon backend (UI button only).

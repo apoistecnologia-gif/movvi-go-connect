@@ -1537,11 +1537,13 @@ function PassageiroApp() {
   }
 
   function recenter() {
+    autoFollowRef.current = true;
     if (mapRef.current && position) {
       mapRef.current.panTo(position);
       mapRef.current.setZoom(16);
     }
   }
+
 
   function focusSearch() {
     sheetRef.current?.snapTo(70);
@@ -1553,8 +1555,43 @@ function PassageiroApp() {
     [route],
   );
 
-  const center = position && isBrazilCoordinate(position.lat, position.lng) ? position : BRAZIL_CENTER;
+  // Centro estável do mapa — congelado na primeira coordenada válida para
+  // evitar jitter por atualizações contínuas do GPS. O follow ativo usa
+  // panTo controlado abaixo.
+  const [stableInitialCenter, setStableInitialCenter] = useState<LatLng | null>(null);
+  useEffect(() => {
+    if (!stableInitialCenter && position && isBrazilCoordinate(position.lat, position.lng)) {
+      setStableInitialCenter({ lat: position.lat, lng: position.lng });
+    }
+  }, [position, stableInitialCenter]);
+  const center = stableInitialCenter ?? BRAZIL_CENTER;
+  const stableZoom = stableInitialCenter ? 16 : 5;
+
+  // Auto-follow do passageiro com throttle + zona morta (anti-shake).
+  const autoFollowRef = useRef(true);
+  const lastFollowAtRef = useRef(0);
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const onDragStart = () => { autoFollowRef.current = false; };
+    const listener = google.maps.event.addListener(map, "dragstart", onDragStart);
+    return () => { google.maps.event.removeListener(listener); };
+  }, [stableInitialCenter]);
+  useEffect(() => {
+    if (!position || !mapRef.current || !autoFollowRef.current) return;
+    const now = Date.now();
+    if (now - lastFollowAtRef.current < 1500) return;
+    const c = mapRef.current.getCenter();
+    if (c) {
+      const meters = distanceMeters({ lat: c.lat(), lng: c.lng() }, position);
+      if (meters < 15) return;
+    }
+    lastFollowAtRef.current = now;
+    mapRef.current.panTo(position);
+  }, [position?.lat, position?.lng]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const phase = ride?.status;
+
   const rideDriverInfo = useMemo<DriverRow | null>(() => {
     // Snapshot do motorista gravado na corrida tem prioridade — é o que garante
     // que o passageiro veja foto/nome/veículo mesmo se a leitura de drivers falhar.
@@ -1715,7 +1752,7 @@ function PassageiroApp() {
       <div className="absolute inset-0">
         <MovviMap
           center={center}
-          zoom={position ? 16 : 5}
+          zoom={stableZoom}
           height="100%"
           onLoad={(m) => {
             mapRef.current = m;
@@ -1757,18 +1794,36 @@ function PassageiroApp() {
             ))}
 
           {destination && (
-            <Marker
-              position={destination.point}
-              icon={{
-                path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z",
-                fillColor: "#ef4444",
-                fillOpacity: 1,
-                strokeColor: "#05070D",
-                strokeWeight: 2,
-                scale: 1.7,
-                anchor: safePoint(12, 22),
-              }}
-            />
+            <>
+              {/* Halo do destino — visibilidade premium */}
+              <Marker
+                position={destination.point}
+                icon={{
+                  path: safeSymbol("CIRCLE"),
+                  scale: 14,
+                  fillColor: "#ef4444",
+                  fillOpacity: 0.15,
+                  strokeColor: "#ef4444",
+                  strokeOpacity: 0.35,
+                  strokeWeight: 1,
+                }}
+                clickable={false}
+                zIndex={9990}
+              />
+              <Marker
+                position={destination.point}
+                icon={{
+                  path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z",
+                  fillColor: "#ef4444",
+                  fillOpacity: 1,
+                  strokeColor: "#ffffff",
+                  strokeWeight: 2,
+                  scale: 1.9,
+                  anchor: safePoint(12, 22),
+                }}
+                zIndex={9991}
+              />
+            </>
           )}
 
           {/* Marcador do motorista durante a corrida (rastreamento em tempo real) */}
@@ -1785,9 +1840,9 @@ function PassageiroApp() {
                   path: "M5 11l1.5-4.5h11L19 11M6 14h12M7.5 17a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Zm12 0a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0ZM5 11h14v4H5z",
                   fillColor: "#8DD92B",
                   fillOpacity: 1,
-                  strokeColor: "#05070D",
-                  strokeWeight: 1.6,
-                  scale: 1.6,
+                  strokeColor: "#ffffff",
+                  strokeWeight: 2,
+                  scale: 1.8,
                   rotation: typeof rideDriverInfo.current_heading === "number" ? rideDriverInfo.current_heading : 0,
                   anchor: safePoint(12, 14),
                 }}
@@ -1796,17 +1851,32 @@ function PassageiroApp() {
             )}
 
           {polyPath.length > 0 && (
-            <Polyline
-              path={polyPath}
-              options={{
-                strokeColor: "#8DD92B",
-                strokeOpacity: 0.95,
-                strokeWeight: 6,
-                geodesic: true,
-              }}
-            />
+            <>
+              {/* Contorno branco para legibilidade sobre qualquer estilo de mapa */}
+              <Polyline
+                path={polyPath}
+                options={{
+                  strokeColor: "#ffffff",
+                  strokeOpacity: 0.95,
+                  strokeWeight: 10,
+                  geodesic: true,
+                  zIndex: 1,
+                }}
+              />
+              <Polyline
+                path={polyPath}
+                options={{
+                  strokeColor: "#8DD92B",
+                  strokeOpacity: 1,
+                  strokeWeight: 6,
+                  geodesic: true,
+                  zIndex: 2,
+                }}
+              />
+            </>
           )}
         </MovviMap>
+
       </div>
 
       {/* TOP BAR — premium: saudação + status dinâmico */}
