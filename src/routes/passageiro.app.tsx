@@ -1553,8 +1553,43 @@ function PassageiroApp() {
     [route],
   );
 
-  const center = position && isBrazilCoordinate(position.lat, position.lng) ? position : BRAZIL_CENTER;
+  // Centro estável do mapa — congelado na primeira coordenada válida para
+  // evitar jitter por atualizações contínuas do GPS. O follow ativo usa
+  // panTo controlado abaixo.
+  const [stableInitialCenter, setStableInitialCenter] = useState<LatLng | null>(null);
+  useEffect(() => {
+    if (!stableInitialCenter && position && isBrazilCoordinate(position.lat, position.lng)) {
+      setStableInitialCenter({ lat: position.lat, lng: position.lng });
+    }
+  }, [position, stableInitialCenter]);
+  const center = stableInitialCenter ?? BRAZIL_CENTER;
+  const stableZoom = stableInitialCenter ? 16 : 5;
+
+  // Auto-follow do passageiro com throttle + zona morta (anti-shake).
+  const autoFollowRef = useRef(true);
+  const lastFollowAtRef = useRef(0);
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const onDragStart = () => { autoFollowRef.current = false; };
+    const listener = google.maps.event.addListener(map, "dragstart", onDragStart);
+    return () => { google.maps.event.removeListener(listener); };
+  }, [stableInitialCenter]);
+  useEffect(() => {
+    if (!position || !mapRef.current || !autoFollowRef.current) return;
+    const now = Date.now();
+    if (now - lastFollowAtRef.current < 1500) return;
+    const c = mapRef.current.getCenter();
+    if (c) {
+      const meters = distanceMeters({ lat: c.lat(), lng: c.lng() }, position);
+      if (meters < 15) return;
+    }
+    lastFollowAtRef.current = now;
+    mapRef.current.panTo(position);
+  }, [position?.lat, position?.lng]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const phase = ride?.status;
+
   const rideDriverInfo = useMemo<DriverRow | null>(() => {
     // Snapshot do motorista gravado na corrida tem prioridade — é o que garante
     // que o passageiro veja foto/nome/veículo mesmo se a leitura de drivers falhar.
