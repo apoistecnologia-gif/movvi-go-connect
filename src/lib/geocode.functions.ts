@@ -81,17 +81,82 @@ function pick(results: GResult[], types: string[]): { long: string; short: strin
 
 function emptyGeocode(diagnostic?: ReverseGeocodeDiagnostic): GeocodeResult {
   return {
-  address: "",
-  friendly: "",
-  region: "",
-  approximate: false,
-  precision: "approximate",
-  locationType: "",
-  partialMatch: false,
-  types: [],
-  components: {},
-  diagnostic,
+    address: "",
+    friendly: "",
+    region: "",
+    approximate: false,
+    precision: "approximate",
+    confidence: "fallback",
+    selectionReason: "No usable result from Google Geocoding",
+    locationType: "",
+    partialMatch: false,
+    types: [],
+    components: {},
+    diagnostic,
   };
+}
+
+function hasComponent(r: GResult, type: string): boolean {
+  return (r.address_components ?? []).some((c) => c.types.includes(type));
+}
+
+function hasAnyComponent(r: GResult, types: string[]): boolean {
+  return types.some((t) => hasComponent(r, t));
+}
+
+export function selectBestGeocodeResult(
+  results: GResult[],
+): { result: GResult; index: number; confidence: GeocodeConfidence; reason: string } | null {
+  if (!results.length) return null;
+
+  // Priority A: ROOFTOP with route/neighborhood/locality
+  for (let i = 0; i < results.length; i++) {
+    const r = results[i];
+    if (
+      r.geometry?.location_type === "ROOFTOP" &&
+      hasAnyComponent(r, ["route", "neighborhood", "locality"])
+    ) {
+      return { result: r, index: i, confidence: "exact", reason: "ROOFTOP with route/neighborhood/locality" };
+    }
+  }
+  // Priority B: RANGE_INTERPOLATED with route/neighborhood/locality
+  for (let i = 0; i < results.length; i++) {
+    const r = results[i];
+    if (
+      r.geometry?.location_type === "RANGE_INTERPOLATED" &&
+      hasAnyComponent(r, ["route", "neighborhood", "locality"])
+    ) {
+      return { result: r, index: i, confidence: "approximate", reason: "RANGE_INTERPOLATED with route/neighborhood/locality" };
+    }
+  }
+  // Priority C: GEOMETRIC_CENTER with usable area
+  const areaTypes = [
+    "neighborhood",
+    "locality",
+    "sublocality",
+    "sublocality_level_1",
+    "sublocality_level_2",
+    "administrative_area_level_2",
+    "administrative_area_level_3",
+    "administrative_area_level_4",
+  ];
+  for (let i = 0; i < results.length; i++) {
+    const r = results[i];
+    if (
+      r.geometry?.location_type === "GEOMETRIC_CENTER" &&
+      (hasAnyComponent(r, areaTypes) || !!r.formatted_address)
+    ) {
+      return { result: r, index: i, confidence: "area", reason: "GEOMETRIC_CENTER with usable area or formatted_address" };
+    }
+  }
+  // Priority D: fallback - first result with formatted_address
+  for (let i = 0; i < results.length; i++) {
+    const r = results[i];
+    if (r.formatted_address) {
+      return { result: r, index: i, confidence: "fallback", reason: "Fallback to first result with formatted_address" };
+    }
+  }
+  return { result: results[0], index: 0, confidence: "fallback", reason: "Last-resort: first result without formatted_address" };
 }
 
 // Requer usuário autenticado para evitar abuso/scraping da chave Google Maps.
