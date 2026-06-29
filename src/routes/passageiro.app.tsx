@@ -2311,6 +2311,7 @@ function SheetContent({
   // Caso contrário (APPROXIMATE/GEOMETRIC_CENTER/RANGE_INTERPOLATED) mostramos coords + referência.
   const streetLine = isExact && rua ? (numero ? `${rua}, ${numero}` : rua) : "";
   const pickupAddressLine =
+    geo?.pickupLabel ||
     streetLine ||
     geo?.components?.rua ||
     geo?.components?.bairro ||
@@ -2320,6 +2321,7 @@ function SheetContent({
     geo?.region ||
     geo?.address ||
     "";
+  const pickupSubLine = geo?.pickupSubLabel || "";
   const hasApproxAddress = !!geo && !isExact;
   const showApprox = hasApproxAddress && hasPosition && !!position;
   const showDestinationInput = !destination || uiStage === "selecting_destination";
