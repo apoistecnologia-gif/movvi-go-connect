@@ -55,6 +55,10 @@ const TEST_DRIVER_LOCATION = {
   lng: -41.478,
 };
 
+/** Tempo máximo (em segundos) que uma oferta de corrida fica visível para
+ *  o motorista antes de ser recusada automaticamente. */
+const RIDE_OFFER_TIMEOUT_SECONDS = 60;
+
 export const Route = createFileRoute("/motorista/app")({
   head: () => ({ meta: [{ title: "App do Motorista — MOVVI DRIVE" }] }),
   component: MotoristaApp,
@@ -131,7 +135,7 @@ function MotoristaApp() {
   const [incoming, setIncoming] = useState<RideRow | null>(null);
   const [active, setActive] = useState<RideRow | null>(null);
   const [passenger, setPassenger] = useState<Passenger | null>(null);
-  const [countdown, setCountdown] = useState(15);
+  const [countdown, setCountdown] = useState(RIDE_OFFER_TIMEOUT_SECONDS);
 
   const [polyline, setPolyline] = useState<LatLng[]>([]);
   const [etaSeconds, setEtaSeconds] = useState<number | null>(null);
@@ -565,7 +569,7 @@ function MotoristaApp() {
       }
       if (activeRef.current || incomingRef.current || ratingRef.current) return;
       console.log("[MOVVI MOTORISTA] corrida recebida:", r.id, r.category, r.origin_name, "→", r.destination_name);
-      setIncoming(r); setCountdown(15);
+      setIncoming(r); setCountdown(RIDE_OFFER_TIMEOUT_SECONDS);
       if (navigator.vibrate) navigator.vibrate([280, 120, 280, 120, 280]);
     };
 
@@ -690,7 +694,7 @@ function MotoristaApp() {
   useEffect(() => {
     if (!incoming) return;
     if (countdown <= 0) { void handleReject(); return; }
-    const t = window.setTimeout(() => setCountdown((c) => c - 1), 1000);
+    const t = window.setTimeout(() => setCountdown((c: number) => c - 1), 1000);
     return () => window.clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [incoming, countdown]);
