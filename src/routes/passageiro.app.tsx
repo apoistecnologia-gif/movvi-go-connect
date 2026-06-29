@@ -47,7 +47,7 @@ import {
 import { DEV_MODE, isDevelopmentEnvironment } from "@/lib/environment";
 
 import { computeRoute, type RouteResult } from "@/lib/routes.functions";
-import { reverseGeocode, type GeocodeResult } from "@/lib/geocode.functions";
+import { reverseGeocode, nearestPoiLookup, type GeocodeResult } from "@/lib/geocode.functions";
 import { criarCorrida, cancelarPeloPassageiro, redispatchRide, diagnoseDispatch, avaliarMotorista, type RideStatus } from "@/lib/rideLifecycle";
 import { notifyRideStatus } from "@/lib/rideStatusToast";
 import { toast } from "sonner";
