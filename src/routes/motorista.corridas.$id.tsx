@@ -109,7 +109,7 @@ function RideDetailsPage() {
               </div>
 
               <div className="space-y-2 rounded-lg border border-border bg-card/40 p-3 text-sm">
-                <p className="flex items-start gap-2"><MapPin className="mt-0.5 h-4 w-4 text-primary" /><span>{ride.origin_name}</span></p>
+                <p className="flex items-start gap-2"><MapPin className="mt-0.5 h-4 w-4 text-primary" /><span>{ride.pickup_label || ride.origin_name}</span></p>
                 <p className="flex items-start gap-2"><Navigation2 className="mt-0.5 h-4 w-4 text-primary" /><span>{ride.destination_name}</span></p>
               </div>
 
