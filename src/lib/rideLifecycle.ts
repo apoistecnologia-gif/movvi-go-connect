@@ -83,6 +83,11 @@ const CriarCorridaInput = z.object({
   distance_km: z.number().nullable().optional(),
   duration_min: z.number().nullable().optional(),
   estimated_price: z.number().nullable().optional(),
+  pickup_label: z.string().max(240).nullable().optional(),
+  pickup_short_label: z.string().max(120).nullable().optional(),
+  pickup_address: z.string().max(500).nullable().optional(),
+  pickup_place_id: z.string().max(240).nullable().optional(),
+  pickup_source: z.enum(["gps", "manual", "places"]).nullable().optional(),
 });
 const RideIdInput = z.object({ rideId: z.string().uuid() });
 const IniciarCorridaInput = z.object({
