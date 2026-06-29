@@ -210,23 +210,24 @@ async function assertDriverApproved(supabase: any, userId: string) {
  *  urbanos densos quanto regiões interioranas (Piauí, Norte/Nordeste). */
 export const DISPATCH_RADII_KM = [3, 5, 8, 12, 20, 30, 50] as const;
 
+/** Quantos motoristas recebem a oferta simultaneamente. O primeiro a aceitar ganha. */
+export const DISPATCH_BROADCAST_SIZE = 3;
+
 /** Idade máxima da última atualização de GPS aceita no despacho (segundos). */
 const MAX_GPS_AGE_SECONDS = 120;
 
-/** Normaliza string de categoria (case/acento safe) — guard adicional caso
- *  o enum seja burlado em algum ponto. */
+/** Normaliza string de categoria (case/acento safe). */
 function normalizeCategory(v: unknown): string {
   return String(v ?? "").trim().toLowerCase();
 }
 
 /**
- * Encontra o próximo motorista disponível (mesma categoria, online, aprovado,
- * com GPS recente, que ainda não recusou) e grava em `current_offer_driver_id`.
+ * Modelo broadcast: oferta a até `DISPATCH_BROADCAST_SIZE` motoristas
+ * elegíveis ao mesmo tempo. O primeiro a aceitar ganha; os outros recebem
+ * a atualização de status em realtime e o card desaparece.
  *
  * NÃO altera o status (permanece `procurar_motorista`).
- *
- * Estratégia: carrega TODOS os candidatos da categoria, loga rejeições uma
- * por uma, e expande o raio progressivamente até encontrar alguém.
+ * Retorna o id do motorista mais próximo (compat single-offer) ou null.
  */
 export async function offerToNextDriver(supabase: any, rideId: string): Promise<string | null> {
   const ride = await supabase.from("rides").select("*").eq("id", rideId).single();
@@ -236,23 +237,20 @@ export async function offerToNextDriver(supabase: any, rideId: string): Promise<
     console.log("[MOVVI DESPACHO] corrida não está procurando motorista, status=", r.status);
     return null;
   }
-  if (r.current_offer_driver_id) {
-    console.log("[MOVVI DESPACHO] corrida já ofertada a", r.current_offer_driver_id, "— ignorando");
-    return r.current_offer_driver_id as string;
+  const alreadyOffered: string[] = Array.isArray(r.offered_driver_ids) ? r.offered_driver_ids : [];
+  if (alreadyOffered.length > 0) {
+    console.log("[MOVVI DESPACHO] corrida já em broadcast para", alreadyOffered, "— mantendo");
+    return alreadyOffered[0] ?? null;
   }
 
   const rideCategory = normalizeCategory(r.category);
   const origin = { lat: r.origin_lat as number, lng: r.origin_lng as number };
   console.log("[MOVVI DESPACHO] ▶ início", { rideId, origin, category: rideCategory });
 
-  // 1) Carrega TODOS os motoristas (sem filtro) para diagnosticar.
   const allDriversRes = await supabase
     .from("drivers")
     .select("user_id, name, category, is_online, approval_status, current_lat, current_lng, last_location_at");
-  if (allDriversRes.error) {
-    console.warn("[MOVVI DESPACHO] erro lendo drivers:", allDriversRes.error.message);
-    throw new Error(allDriversRes.error.message);
-  }
+  if (allDriversRes.error) throw new Error(allDriversRes.error.message);
   const allDrivers = allDriversRes.data ?? [];
   console.log("[MOVVI DESPACHO] total motoristas no banco:", allDrivers.length);
 
@@ -280,52 +278,50 @@ export async function offerToNextDriver(supabase: any, rideId: string): Promise<
     return { user_id: d.user_id, name: d.name, dist_km: dist, reasons, eligible: reasons.length === 0 };
   });
 
-  // Log estrutural de cada candidato (motivos de rejeição NUNCA escondidos).
   for (const e of evaluated) {
     console.log("[MOVVI DESPACHO] candidato:", {
       driver: e.user_id, name: e.name,
       dist_km: e.dist_km != null ? Number(e.dist_km.toFixed(3)) : null,
-      status: e.eligible ? "elegível (antes do raio)" : `descartado: ${e.reasons.join(", ")}`,
+      status: e.eligible ? "elegível" : `descartado: ${e.reasons.join(", ")}`,
     });
   }
 
   const eligibleAll = evaluated.filter((e) => e.eligible && e.dist_km != null);
-  console.log("[MOVVI DESPACHO] resumo filtros:", {
+  console.log("[MOVVI DESPACHO] resumo:", {
     total: evaluated.length,
-    online: evaluated.filter((e) => !e.reasons.includes("offline")).length,
-    aprovados: evaluated.filter((e) => !e.reasons.some((r) => r.startsWith("não aprovado"))).length,
-    com_gps: evaluated.filter((e) => !e.reasons.includes("sem GPS")).length,
-    categoria_match: evaluated.filter((e) => !e.reasons.some((r) => r.startsWith("categoria !="))).length,
-    elegiveis_antes_do_raio: eligibleAll.length,
+    elegiveis: eligibleAll.length,
+    rejected_já: rejected.length,
   });
 
-  // 2) Expansão progressiva do raio.
-  let chosen: Eval | null = null;
+  let chosen: Eval[] = [];
   for (const radius of DISPATCH_RADII_KM) {
     const within = eligibleAll
       .filter((e) => (e.dist_km ?? Infinity) <= radius)
       .sort((a, b) => (a.dist_km ?? 0) - (b.dist_km ?? 0));
     console.log(`[MOVVI DESPACHO] raio ${radius} km → ${within.length} motorista(s)`);
-    if (within.length > 0) { chosen = within[0]; break; }
+    if (within.length > 0) {
+      chosen = within.slice(0, DISPATCH_BROADCAST_SIZE);
+      break;
+    }
   }
 
-  if (!chosen) {
-    console.log("[MOVVI DESPACHO] ✗ nenhum motorista elegível para a corrida", rideId);
+  if (chosen.length === 0) {
+    console.log("[MOVVI DESPACHO] ✗ nenhum motorista elegível para corrida", rideId);
     return null;
   }
 
-  console.log("[MOVVI DESPACHO] ✓ oferta:", {
-    rideId, driver: chosen.user_id, name: chosen.name,
-    dist_km: chosen.dist_km != null ? Number(chosen.dist_km.toFixed(3)) : null,
-  });
+  const candidateIds = chosen.map((c) => c.user_id);
+  console.log("[MOVVI DESPACHO] ✓ broadcast offered_driver_ids =", candidateIds);
   const upd = await supabase
     .from("rides")
-    .update({ current_offer_driver_id: chosen.user_id })
+    .update({
+      offered_driver_ids: candidateIds,
+      current_offer_driver_id: candidateIds[0], // compat single-offer
+    })
     .eq("id", rideId)
-    .eq("status", RIDE_STATUS.PROCURAR_MOTORISTA)
-    .is("current_offer_driver_id", null);
+    .eq("status", RIDE_STATUS.PROCURAR_MOTORISTA);
   if (upd.error) console.warn("[MOVVI DESPACHO] erro gravando oferta:", upd.error.message);
-  return chosen.user_id;
+  return candidateIds[0];
 }
 
 /**
@@ -341,7 +337,7 @@ export const redispatchRide = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const cur = await supabaseAdmin
       .from("rides")
-      .select("id, status, passenger_id, current_offer_driver_id")
+      .select("id, status, passenger_id, offered_driver_ids")
       .eq("id", data.rideId)
       .maybeSingle();
     if (cur.error) throw new Error(cur.error.message);
@@ -350,13 +346,17 @@ export const redispatchRide = createServerFn({ method: "POST" })
       throw new Error("Apenas o passageiro pode re-despachar a corrida.");
     }
     if (cur.data.status !== RIDE_STATUS.PROCURAR_MOTORISTA) {
-      return { ok: true, skipped: "status_changed", status: cur.data.status, driver: null as string | null };
+      return { ok: true, skipped: "status_changed", status: cur.data.status, driver: null as string | null, candidates: 0 };
     }
-    if (cur.data.current_offer_driver_id) {
-      return { ok: true, skipped: "already_offered", status: cur.data.status, driver: cur.data.current_offer_driver_id };
+    const offered = Array.isArray(cur.data.offered_driver_ids) ? cur.data.offered_driver_ids : [];
+    if (offered.length > 0) {
+      return { ok: true, skipped: "already_offered", status: cur.data.status, driver: offered[0], candidates: offered.length };
     }
     const next = await offerToNextDriver(supabaseAdmin, data.rideId);
-    return { ok: true, skipped: null as string | null, status: cur.data.status, driver: next };
+    // Re-lê para devolver o número final de candidatos no broadcast.
+    const after = await supabaseAdmin.from("rides").select("offered_driver_ids").eq("id", data.rideId).maybeSingle();
+    const candidates = Array.isArray(after.data?.offered_driver_ids) ? after.data!.offered_driver_ids.length : 0;
+    return { ok: true, skipped: null as string | null, status: cur.data.status, driver: next, candidates };
   });
 
 /** Diagnóstico de despacho (DEV) — devolve a contagem de motoristas em cada
@@ -545,6 +545,7 @@ export const aceitarCorrida = createServerFn({ method: "POST" })
       status: RIDE_STATUS.MOTORISTA_A_CAMINHO,
       accepted_at: new Date().toISOString(),
       current_offer_driver_id: null,
+      offered_driver_ids: [] as unknown as string[], // limpa broadcast — outros drivers veem a remoção via realtime
       driver_name: d?.name ?? null,
       driver_phone: d?.phone ?? null,
       driver_vehicle: vehicle,
@@ -556,19 +557,22 @@ export const aceitarCorrida = createServerFn({ method: "POST" })
     };
 
     const { supabaseAdmin: adminForUpdate } = await import("@/integrations/supabase/client.server");
+    // Aceita se o motorista estiver no broadcast OU for o current_offer_driver_id (compat).
+    // O `.contains` garante atomicidade: se outro driver já aceitou (offered_driver_ids = {}),
+    // este UPDATE não casa nenhuma linha e o aceite falha.
     const upd = await adminForUpdate
       .from("rides")
       .update(patch)
       .eq("id", data.rideId)
       .eq("status", RIDE_STATUS.PROCURAR_MOTORISTA)
-      .eq("current_offer_driver_id", userId)
+      .contains("offered_driver_ids", [userId])
       .select("*")
       .single();
     if (upd.error) {
       console.error("[MOVVI MOTORISTA] aceite falhou:", upd.error);
       throw new Error(
         upd.error.code === "PGRST116"
-          ? "Esta corrida já não está mais disponível."
+          ? "Esta corrida já foi aceita por outro motorista."
           : "Não foi possível aceitar a corrida. Tente novamente.",
       );
     }
@@ -576,13 +580,12 @@ export const aceitarCorrida = createServerFn({ method: "POST" })
       rideId: upd.data.id,
       driverId: upd.data.driver_id,
       status: upd.data.status,
-      hasDriverPhoto: !!(upd.data as { driver_photo_url?: string | null }).driver_photo_url,
-      hasPassengerPhoto: !!(upd.data as { passenger_photo_url?: string | null }).passenger_photo_url,
     });
     return upd.data;
   });
 
-/** Motorista recusa a oferta atual; o sistema repassa para o próximo. */
+/** Motorista recusa a oferta atual; é removido do broadcast e o sistema
+ *  procura novos candidatos se a lista esvaziar. */
 export const recusarCorrida = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => RideIdInput.parse(d))
@@ -591,24 +594,35 @@ export const recusarCorrida = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const cur = await supabaseAdmin
       .from("rides")
-      .select("rejected_driver_ids, current_offer_driver_id, status")
+      .select("rejected_driver_ids, offered_driver_ids, current_offer_driver_id, status")
       .eq("id", data.rideId)
       .single();
     if (cur.error) throw new Error(cur.error.message);
-    if (cur.data.current_offer_driver_id !== userId) {
-      throw new Error("Esta corrida não está ofertada para você.");
-    }
     if (cur.data.status !== RIDE_STATUS.PROCURAR_MOTORISTA) {
       throw new Error("Corrida não está mais aguardando motorista.");
     }
-    const rejected = Array.from(
-      new Set([...(cur.data.rejected_driver_ids ?? []), userId]),
-    );
+    const offered: string[] = Array.isArray(cur.data.offered_driver_ids) ? cur.data.offered_driver_ids : [];
+    if (!offered.includes(userId) && cur.data.current_offer_driver_id !== userId) {
+      throw new Error("Esta corrida não está ofertada para você.");
+    }
+    const rejected = Array.from(new Set([...(cur.data.rejected_driver_ids ?? []), userId]));
+    const newOffered = offered.filter((id) => id !== userId);
+    const newCurrent = cur.data.current_offer_driver_id === userId
+      ? (newOffered[0] ?? null)
+      : cur.data.current_offer_driver_id;
     await supabaseAdmin
       .from("rides")
-      .update({ rejected_driver_ids: rejected, current_offer_driver_id: null })
+      .update({
+        rejected_driver_ids: rejected,
+        offered_driver_ids: newOffered,
+        current_offer_driver_id: newCurrent,
+      })
       .eq("id", data.rideId);
-    await offerToNextDriver(supabaseAdmin, data.rideId);
+    console.log("[MOVVI MOTORISTA] recusa:", { driver: userId, ride: data.rideId, offered_remaining: newOffered });
+    // Se o broadcast esvaziou, busca novos candidatos (excluindo rejected).
+    if (newOffered.length === 0) {
+      await offerToNextDriver(supabaseAdmin, data.rideId);
+    }
     return { ok: true };
   });
 

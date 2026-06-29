@@ -1640,16 +1640,28 @@ function PassageiroApp() {
 
   /* ---- Re-despacho periódico enquanto a corrida está procurando motorista ---- */
   const [dispatchDiag, setDispatchDiag] = useState<any>(null);
+  const [noDriversAvailable, setNoDriversAvailable] = useState(false);
   useEffect(() => {
-    if (!ride || ride.status !== "procurar_motorista") return;
-    if (ride.current_offer_driver_id) return; // já ofertada — apenas aguardar resposta
+    if (!ride || ride.status !== "procurar_motorista") {
+      setNoDriversAvailable(false);
+      return;
+    }
     let cancelled = false;
     let timer: number | null = null;
+    let emptyStreak = 0;
     const tick = async () => {
       if (cancelled) return;
       try {
         const r = await callRedispatch({ data: { rideId: ride.id } });
         console.log("[MOVVI PASSAGEIRO] re-despacho:", r);
+        const c = (r as { candidates?: number }).candidates ?? 0;
+        const offered = (r as { skipped?: string | null }).skipped === "already_offered";
+        if (!offered && c === 0) {
+          emptyStreak += 1;
+        } else {
+          emptyStreak = 0;
+        }
+        if (!cancelled) setNoDriversAvailable(emptyStreak >= 3);
       } catch (e) {
         console.warn("[MOVVI PASSAGEIRO] re-despacho falhou:", (e as Error).message);
       }
@@ -1666,7 +1678,7 @@ function PassageiroApp() {
       cancelled = true;
       if (timer != null) window.clearTimeout(timer);
     };
-  }, [ride?.id, ride?.status, ride?.current_offer_driver_id, callRedispatch, callDiagnose]);
+  }, [ride?.id, ride?.status, callRedispatch, callDiagnose]);
 
 
   useEffect(() => {
@@ -1756,10 +1768,21 @@ function PassageiroApp() {
 
   async function cancelRide() {
     if (!ride) return;
+    if (ride.status === "em_viagem") {
+      toast.info("Viagem em andamento", {
+        description: "Para encerrar, fale com o motorista ou suporte.",
+      });
+      return;
+    }
     try {
       await callCancelByPassenger({ data: { rideId: ride.id } });
+      toast.success("Corrida cancelada");
     } catch (err) {
       console.error("[MOVVI] cancelarPeloPassageiro falhou:", err);
+      toast.error("Não foi possível cancelar agora", {
+        description: err instanceof Error ? err.message : undefined,
+      });
+      return;
     }
     resetRide();
   }
@@ -2255,6 +2278,7 @@ function PassageiroApp() {
           <SearchingPanel
             category={category}
             driversCount={nearbyCount}
+            noDriversAvailable={noDriversAvailable}
             onCancel={cancelRide}
           />
         </MovviSheet>
@@ -3183,10 +3207,12 @@ function Stat({
 function SearchingPanel({
   category,
   driversCount,
+  noDriversAvailable,
   onCancel,
 }: {
   category: RideCategory;
   driversCount: number;
+  noDriversAvailable?: boolean;
   onCancel: () => void;
 }) {
   const cat = RIDE_CATEGORIES.find((c) => c.key === category)!;
@@ -3215,10 +3241,12 @@ function SearchingPanel({
       </div>
 
       <h2 className="font-display text-[17px] font-extrabold leading-tight">
-        Procurando motoristas...
+        {noDriversAvailable ? "Nenhum motorista disponível no momento" : "Procurando motoristas..."}
       </h2>
       <p className="mt-0.5 text-[11.5px] text-muted-foreground">
-        Conectando com {cat.label} próximos a você
+        {noDriversAvailable
+          ? "Estamos tentando novamente — aguarde ou cancele a solicitação."
+          : `Conectando com ${cat.label} próximos a você`}
       </p>
 
       {/* Métricas em tempo real */}
@@ -3534,6 +3562,8 @@ function RideQuickActions({
     }
   }
 
+  const isInProgress = ride.status === "em_viagem";
+
   return (
     <>
       <div className="mt-2 grid grid-cols-4 gap-1.5 text-xs">
@@ -3550,7 +3580,19 @@ function RideQuickActions({
           tone="destructive"
           onClick={() => setSosOpen(true)}
         />
-        <Action icon={<X className="h-4 w-4" />} label="Cancelar" onClick={onCancel} />
+        {isInProgress ? (
+          <Action
+            icon={<Shield className="h-4 w-4" />}
+            label="Suporte"
+            onClick={() =>
+              toast.info("Viagem em andamento", {
+                description: "Para encerrar, fale com o motorista ou suporte.",
+              })
+            }
+          />
+        ) : (
+          <Action icon={<X className="h-4 w-4" />} label="Cancelar" onClick={onCancel} />
+        )}
       </div>
 
       {sosOpen && (
