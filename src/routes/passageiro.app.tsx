@@ -2064,7 +2064,12 @@ function PassageiroApp() {
             </>
           )}
 
-          {!ride &&
+          {/* Círculo de raio de busca durante "procurar motoristas" */}
+          {ride && ride.status === "procurar_motorista" && position && (
+            <SearchRadiusCircle center={position} />
+          )}
+
+          {(!ride || ride.status === "procurar_motorista") &&
             drivers.map((d) => (
               <Marker
                 key={d.user_id}
