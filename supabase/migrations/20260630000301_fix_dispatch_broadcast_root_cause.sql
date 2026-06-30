@@ -34,6 +34,7 @@ WHERE status = 'procurar_motorista'::public.ride_status
 -- Drivers in candidate_driver_ids must be able to read the offer row for REST + Realtime.
 DROP POLICY IF EXISTS rides_select_involved_or_admin ON public.rides;
 CREATE POLICY rides_select_involved_or_admin ON public.rides
+  ON public.rides
   FOR SELECT
   USING (
     passenger_id = auth.uid()
