@@ -1882,34 +1882,8 @@ function PassageiroApp() {
     mapRef.current.panTo(position);
   }, [position?.lat, position?.lng, ride?.status]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // FitBounds ÚNICO por transição de fase: quando o motorista aceita
-  // e quando chega no ponto de embarque, enquadra passageiro + motorista
-  // (ou origem + destino na viagem). Não roda novamente a cada GPS.
   const lastPassengerFitKeyRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (!ride || !mapRef.current) return;
-    const driverLat = rideDriverInfo?.current_lat;
-    const driverLng = rideDriverInfo?.current_lng;
-    const fitKey = `${ride.id}-${ride.status}`;
-    if (lastPassengerFitKeyRef.current === fitKey) return;
-    let a: LatLng | null = null;
-    let b: LatLng | null = null;
-    if (ride.status === "motorista_a_caminho" || ride.status === "motorista_chegou") {
-      a = { lat: ride.origin_lat, lng: ride.origin_lng };
-      b = typeof driverLat === "number" && typeof driverLng === "number"
-        ? { lat: driverLat, lng: driverLng }
-        : null;
-    } else if (ride.status === "em_viagem") {
-      a = { lat: ride.origin_lat, lng: ride.origin_lng };
-      b = { lat: ride.destination_lat, lng: ride.destination_lng };
-    }
-    if (!a || !b) return;
-    lastPassengerFitKeyRef.current = fitKey;
-    autoFollowRef.current = false;
-    const bounds = new google.maps.LatLngBounds();
-    bounds.extend(a); bounds.extend(b);
-    mapRef.current.fitBounds(bounds, { top: 180, bottom: Math.round(window.innerHeight * 0.35), left: 60, right: 60 });
-  }, [ride?.id, ride?.status, rideDriverInfo?.current_lat, rideDriverInfo?.current_lng]); // eslint-disable-line react-hooks/exhaustive-deps
+
 
   const phase = ride?.status;
 
