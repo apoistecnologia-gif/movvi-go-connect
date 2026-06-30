@@ -60,6 +60,9 @@ async function createTestDriver(label: string): Promise<CreatedDriver> {
     name: `Driver ${label}`,
     email,
     phone: "+5511999990000",
+    cpf: String(Math.floor(10_000_000_000 + Math.random() * 89_999_999_999)),
+    city: "São Paulo",
+    state: "SP",
     category: "carros",
     is_online: true,
     approval_status: "aprovado",
@@ -69,6 +72,7 @@ async function createTestDriver(label: string): Promise<CreatedDriver> {
     vehicle_model: "Test Car",
     vehicle_plate: `TST${Math.floor(Math.random() * 9999)}`,
     vehicle_color: "Preto",
+    vehicle_year: 2022,
   });
   if (drvError) {
     await admin.auth.admin.deleteUser(authId).catch(() => {});
