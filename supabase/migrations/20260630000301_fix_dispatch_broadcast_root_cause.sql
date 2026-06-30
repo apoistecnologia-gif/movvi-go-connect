@@ -42,9 +42,7 @@ CREATE POLICY rides_select_involved_or_admin
     OR driver_id = auth.uid()
     OR accepted_driver_id = auth.uid()
     OR (
-      status = 'procurar_motorista'::public.ride_status
-      AND accepted_driver_id IS NULL
-      AND auth.uid() = ANY(candidate_driver_ids)
+      auth.uid() = ANY(candidate_driver_ids)
       AND NOT (auth.uid() = ANY(rejected_driver_ids))
     )
     OR private.has_role(auth.uid(), 'admin'::app_role)
