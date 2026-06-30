@@ -1099,10 +1099,12 @@ export type Database = {
       rides: {
         Row: {
           accepted_at: string | null
+          accepted_driver_id: string | null
           cancel_reason: string | null
           cancellation_fee_eligible: boolean
           cancelled_at: string | null
           cancelled_by: string | null
+          candidate_driver_ids: string[]
           category: Database["public"]["Enums"]["ride_category"]
           completed_at: string | null
           coupon_id: string | null
@@ -1145,6 +1147,7 @@ export type Database = {
           pickup_short_label: string | null
           pickup_source: string | null
           rejected_driver_ids: string[]
+          request_expires_at: string | null
           route_polyline: string | null
           safety_code: string | null
           started_at: string | null
@@ -1155,10 +1158,12 @@ export type Database = {
         }
         Insert: {
           accepted_at?: string | null
+          accepted_driver_id?: string | null
           cancel_reason?: string | null
           cancellation_fee_eligible?: boolean
           cancelled_at?: string | null
           cancelled_by?: string | null
+          candidate_driver_ids?: string[]
           category: Database["public"]["Enums"]["ride_category"]
           completed_at?: string | null
           coupon_id?: string | null
@@ -1201,6 +1206,7 @@ export type Database = {
           pickup_short_label?: string | null
           pickup_source?: string | null
           rejected_driver_ids?: string[]
+          request_expires_at?: string | null
           route_polyline?: string | null
           safety_code?: string | null
           started_at?: string | null
@@ -1211,10 +1217,12 @@ export type Database = {
         }
         Update: {
           accepted_at?: string | null
+          accepted_driver_id?: string | null
           cancel_reason?: string | null
           cancellation_fee_eligible?: boolean
           cancelled_at?: string | null
           cancelled_by?: string | null
+          candidate_driver_ids?: string[]
           category?: Database["public"]["Enums"]["ride_category"]
           completed_at?: string | null
           coupon_id?: string | null
@@ -1257,6 +1265,7 @@ export type Database = {
           pickup_short_label?: string | null
           pickup_source?: string | null
           rejected_driver_ids?: string[]
+          request_expires_at?: string | null
           route_polyline?: string | null
           safety_code?: string | null
           started_at?: string | null
