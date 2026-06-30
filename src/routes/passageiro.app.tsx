@@ -2042,6 +2042,7 @@ function PassageiroApp() {
           center={center}
           zoom={stableZoom}
           height="100%"
+          themeOverride={ride && (ride.status === "motorista_a_caminho" || ride.status === "motorista_chegou" || ride.status === "em_viagem") ? "light" : undefined}
           onLoad={(m) => {
             mapRef.current = m;
           }}
