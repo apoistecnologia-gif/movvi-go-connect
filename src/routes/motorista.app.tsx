@@ -89,6 +89,34 @@ function haversineKm(a: LatLng, b: LatLng) {
   return 2 * R * Math.asin(Math.sqrt(s));
 }
 
+type RequestRemovalReason =
+  | "accepted_by_other"
+  | "driver_rejected"
+  | "passenger_cancelled"
+  | "expired"
+  | "no_longer_candidate";
+
+const ALLOWED_REQUEST_REMOVAL_REASONS = new Set<RequestRemovalReason>([
+  "accepted_by_other",
+  "driver_rejected",
+  "passenger_cancelled",
+  "expired",
+  "no_longer_candidate",
+]);
+
+function getRequestExpiresAtMs(ride: RideRow): number | null {
+  const value = (ride as { request_expires_at?: string | null }).request_expires_at;
+  if (!value) return null;
+  const ms = new Date(value).getTime();
+  return Number.isFinite(ms) ? ms : null;
+}
+
+function computeOfferCountdown(ride: RideRow): number {
+  const expiresAtMs = getRequestExpiresAtMs(ride);
+  if (!expiresAtMs) return RIDE_OFFER_TIMEOUT_SECONDS;
+  return Math.max(0, Math.ceil((expiresAtMs - Date.now()) / 1000));
+}
+
 function subscriptionBlockMessage(status: string): string {
   switch (status) {
     case "overdue":
@@ -165,6 +193,26 @@ function MotoristaApp() {
   useEffect(() => { activeRef.current = active; }, [active]);
   useEffect(() => { incomingRef.current = incoming; }, [incoming]);
   useEffect(() => { ratingRef.current = ratingRide; }, [ratingRide]);
+
+  const removeIncomingRequest = useCallback((ride: RideRow, removeReason: RequestRemovalReason | string) => {
+    if (!ALLOWED_REQUEST_REMOVAL_REASONS.has(removeReason as RequestRemovalReason)) {
+      console.error("INVALID REQUEST REMOVAL", {
+        driverId: userId,
+        rideId: ride.id,
+        timestamp: new Date().toISOString(),
+        removeReason,
+      });
+      return;
+    }
+    console.log("[MOVVI REQUEST REMOVAL]", {
+      driverId: userId,
+      rideId: ride.id,
+      timestamp: new Date().toISOString(),
+      removeReason,
+    });
+    setIncoming(null);
+    if (removeReason !== "expired") handledRidesRef.current.add(ride.id);
+  }, [userId]);
 
   // Solicita permissão de notificações push uma vez ao montar.
   useEffect(() => { void requestPushPermission(); }, []);
@@ -561,36 +609,69 @@ function MotoristaApp() {
     if (!userId) return;
 
     const presentOffer = (r: RideRow) => {
-      if (r.status !== "procurar_motorista") return;
-      const offered: string[] = Array.isArray((r as any).offered_driver_ids) ? (r as any).offered_driver_ids : [];
-      const inBroadcast = offered.includes(userId) || r.current_offer_driver_id === userId;
-      if (!inBroadcast) {
-        // se eu estava vendo a oferta mas fui removido (outro aceitou),
-        // fecha o card sem barulho.
-        if (incomingRef.current?.id === r.id) {
-          console.log("[MOVVI MOTORISTA] removido do broadcast da corrida", r.id, "— fechando card");
-          setIncoming(null);
+      const candidates: string[] = Array.isArray((r as any).candidate_driver_ids) ? (r as any).candidate_driver_ids : [];
+      const rejected: string[] = Array.isArray((r as any).rejected_driver_ids) ? (r as any).rejected_driver_ids : [];
+      const acceptedDriverId = (r as any).accepted_driver_id ?? r.driver_id ?? null;
+      const isCandidate = candidates.includes(userId);
+      const didReject = rejected.includes(userId);
+      const expired = computeOfferCountdown(r) <= 0;
+
+      if (incomingRef.current?.id === r.id) {
+        if (acceptedDriverId && acceptedDriverId !== userId) {
+          removeIncomingRequest(r, "accepted_by_other");
+          toast.info("Corrida aceita por outro motorista");
+          return;
         }
-        return;
+        if (r.status === "cancelada_passageiro") {
+          removeIncomingRequest(r, "passenger_cancelled");
+          return;
+        }
+        if (didReject) {
+          removeIncomingRequest(r, "driver_rejected");
+          return;
+        }
+        if (!isCandidate) {
+          removeIncomingRequest(r, "no_longer_candidate");
+          return;
+        }
+        if (expired) {
+          removeIncomingRequest(r, "expired");
+          return;
+        }
       }
+
+      if (r.status !== "procurar_motorista") return;
+      if (acceptedDriverId || didReject || !isCandidate || expired) return;
       if (handledRidesRef.current.has(r.id)) return;
-      if (activeRef.current || incomingRef.current || ratingRef.current) return;
-      console.log("[MOVVI MOTORISTA] corrida recebida (broadcast):", r.id, r.category, r.origin_name, "→", r.destination_name);
-      setIncoming(r); setCountdown(RIDE_OFFER_TIMEOUT_SECONDS);
+      if (activeRef.current || ratingRef.current) return;
+      if (incomingRef.current && incomingRef.current.id !== r.id) return;
+
+      console.log("[MOVVI MOTORISTA] corrida recebida (broadcast candidatos):", r.id, {
+        category: r.category,
+        origin: r.origin_name,
+        destination: r.destination_name,
+        candidateCount: candidates.length,
+        request_expires_at: (r as any).request_expires_at,
+      });
+      setIncoming(r);
+      setCountdown(computeOfferCountdown(r));
       if (navigator.vibrate) navigator.vibrate([280, 120, 280, 120, 280]);
     };
 
     const applyActive = (r: RideRow) => {
-      // Caso a corrida atualmente exibida como "oferta" tenha sido aceita por
-      // outro motorista, dispensa o card.
-      if (incomingRef.current?.id === r.id && r.status !== "procurar_motorista" && r.driver_id !== userId) {
-        console.log("[MOVVI MOTORISTA] corrida", r.id, "aceita por outro motorista — fechando card");
-        setIncoming(null);
-        handledRidesRef.current.add(r.id);
-        toast.info("Corrida aceita por outro motorista");
-        return;
+      if (incomingRef.current?.id === r.id) {
+        if (r.status === "cancelada_passageiro") {
+          removeIncomingRequest(r, "passenger_cancelled");
+          return;
+        }
+        const acceptedDriverId = (r as any).accepted_driver_id ?? r.driver_id ?? null;
+        if (acceptedDriverId && acceptedDriverId !== userId) {
+          removeIncomingRequest(r, "accepted_by_other");
+          toast.info("Corrida aceita por outro motorista");
+          return;
+        }
       }
-      if (r.driver_id !== userId) return;
+      if (r.driver_id !== userId && (r as any).accepted_driver_id !== userId) return;
       if (r.status === "finalizada") {
         setActive(null); setPolyline([]);
         if (ratedRidesRef.current.has(r.id)) {
@@ -603,7 +684,7 @@ function MotoristaApp() {
         }
         loadTodayStats(userId);
       } else if (r.status === "cancelada_passageiro" || r.status === "cancelada_motorista") {
-        const wasActive = activeRef.current?.id === r.id || r.driver_id === userId;
+        const wasActive = activeRef.current?.id === r.id || r.driver_id === userId || (r as any).accepted_driver_id === userId;
         if (wasActive && r.status === "cancelada_passageiro") {
           const reason = (r.cancel_reason ?? "").trim();
           toast.warning("Passageiro cancelou a corrida", {
@@ -631,7 +712,7 @@ function MotoristaApp() {
 
     console.log("[MOVVI MOTORISTA] escutando corridas: canal driver-rides-" + userId);
     // Sem filtro por coluna: a RLS já garante que só recebo rides em que estou
-    // envolvido (passageiro/driver/current_offer/offered_driver_ids).
+    // envolvido (passageiro/driver/candidate_driver_ids/accepted_driver_id).
     const ch = supabase.channel(`driver-rides-${userId}`)
       .on("postgres_changes",
         { event: "*", schema: "public", table: "rides" },
@@ -653,7 +734,7 @@ function MotoristaApp() {
         if (ongoing.data) { applyActive(ongoing.data as RideRow); return; }
         const pending = await supabase
           .from("rides").select("*")
-          .contains("offered_driver_ids", [userId])
+          .contains("candidate_driver_ids", [userId])
           .eq("status", "procurar_motorista")
           .order("created_at", { ascending: false })
           .limit(1).maybeSingle();
@@ -668,7 +749,13 @@ function MotoristaApp() {
         .from("rides").select("*").eq("driver_id", userId)
         .in("status", ["motorista_a_caminho", "motorista_chegou", "em_viagem", "finalizada"])
         .order("created_at", { ascending: false }).limit(1).maybeSingle();
-      if (ongoing.data) applyActive(ongoing.data as RideRow);
+      if (ongoing.data) { applyActive(ongoing.data as RideRow); return; }
+      const pending = await supabase
+        .from("rides").select("*")
+        .contains("candidate_driver_ids", [userId])
+        .eq("status", "procurar_motorista")
+        .order("created_at", { ascending: false }).limit(1).maybeSingle();
+      if (pending.data) presentOffer(pending.data as RideRow);
     };
     document.addEventListener("visibilitychange", onVisibility);
 
@@ -702,11 +789,14 @@ function MotoristaApp() {
   // countdown da oferta
   useEffect(() => {
     if (!incoming) return;
-    if (countdown <= 0) { void handleReject(); return; }
-    const t = window.setTimeout(() => setCountdown((c: number) => c - 1), 1000);
+    if (countdown <= 0) {
+      removeIncomingRequest(incoming, "expired");
+      void callReject({ data: { rideId: incoming.id } }).catch((e) => console.error("[MOVVI MOTORISTA] erro ao expirar oferta:", e));
+      return;
+    }
+    const t = window.setTimeout(() => setCountdown(computeOfferCountdown(incoming)), 1000);
     return () => window.clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [incoming, countdown]);
+  }, [incoming, countdown, callReject, removeIncomingRequest]);
 
   async function handleAccept() {
     const offer = incomingRef.current;
@@ -729,9 +819,7 @@ function MotoristaApp() {
   async function handleReject() {
     const offer = incomingRef.current;
     if (!offer) return;
-    // marca como tratada e fecha o card imediatamente
-    handledRidesRef.current.add(offer.id);
-    setIncoming(null);
+    removeIncomingRequest(offer, "driver_rejected");
     console.log("[MOVVI MOTORISTA] corrida recusada:", offer.id);
     try { await callReject({ data: { rideId: offer.id } }); }
     catch (e) { console.error("[MOVVI MOTORISTA] erro ao recusar:", e); }
@@ -1158,7 +1246,7 @@ function IncomingOffer({
 }: {
   ride: RideRow; passenger: Passenger | null; countdown: number; onAccept: () => void; onReject: () => void;
 }) {
-  const pct = (countdown / 15) * 100;
+  const pct = (countdown / RIDE_OFFER_TIMEOUT_SECONDS) * 100;
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-sm animate-in fade-in"
       role="dialog" aria-modal="true">
