@@ -79,11 +79,11 @@ async function createTestDriver(label: string): Promise<CreatedDriver> {
 
 async function cleanup(drivers: CreatedDriver[], rideId?: string) {
   if (rideId) {
-    await admin.from("rides").delete().eq("id", rideId).catch(() => {});
+    try { await admin.from("rides").delete().eq("id", rideId); } catch { /* ignore */ }
   }
   for (const d of drivers) {
     // CASCADE em auth.users limpa public.users, drivers, user_roles, etc.
-    await admin.auth.admin.deleteUser(d.authId).catch(() => {});
+    try { await admin.auth.admin.deleteUser(d.authId); } catch { /* ignore */ }
   }
 }
 
