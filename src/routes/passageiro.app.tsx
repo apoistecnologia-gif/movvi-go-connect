@@ -224,6 +224,38 @@ function PulsingUserMarker({ position }: { position: LatLng }) {
   );
 }
 
+/**
+ * Círculo de raio de busca animado durante "procurar_motorista".
+ * Cresce de 1km até 8km de forma cíclica, pulsando suavemente.
+ * Não interfere em lógica de despacho — é puramente visual.
+ */
+function SearchRadiusCircle({ center }: { center: LatLng }) {
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const i = setInterval(() => setTick((t) => t + 1), 1000);
+    return () => clearInterval(i);
+  }, []);
+  // Cresce de 1km até 8km em ~28s, depois reinicia (loop visual).
+  const radiusKm = 1 + (tick % 28) * 0.25;
+  const radius = radiusKm * 1000;
+  const fillOpacity = 0.10 - ((tick % 28) / 28) * 0.07; // desvanece ao crescer
+  return (
+    <Circle
+      center={center}
+      radius={radius}
+      options={{
+        strokeColor: "#8DD92B",
+        strokeOpacity: 0.55,
+        strokeWeight: 1.5,
+        fillColor: "#8DD92B",
+        fillOpacity: Math.max(0.03, fillOpacity),
+        clickable: false,
+        zIndex: 1,
+      }}
+    />
+  );
+}
+
 function OriginActionsSheet({
   geo,
   position,
@@ -2032,7 +2064,12 @@ function PassageiroApp() {
             </>
           )}
 
-          {!ride &&
+          {/* Círculo de raio de busca durante "procurar motoristas" */}
+          {ride && ride.status === "procurar_motorista" && position && (
+            <SearchRadiusCircle center={position} />
+          )}
+
+          {(!ride || ride.status === "procurar_motorista") &&
             drivers.map((d) => (
               <Marker
                 key={d.user_id}
@@ -2274,7 +2311,7 @@ function PassageiroApp() {
 
 
       {ride && ride.status === "procurar_motorista" && (
-        <MovviSheet snaps={[50]} initial={50}>
+        <MovviSheet snaps={[28, 55, 85]} initial={28}>
           <SearchingPanel
             category={category}
             driversCount={nearbyCount}
@@ -3229,71 +3266,72 @@ function SearchingPanel({
   const ss = (elapsed % 60).toString().padStart(2, "0");
 
   return (
-    <div className="px-1 pt-1 text-center">
-      {/* Pulso multi-anel */}
-      <div className="relative mx-auto mb-3 grid h-28 w-28 place-items-center">
-        <span className="absolute inset-0 animate-ping rounded-full bg-primary/20 [animation-duration:1.8s]" />
-        <span className="absolute inset-3 animate-ping rounded-full bg-primary/30 [animation-duration:1.4s]" />
-        <span className="absolute inset-6 animate-ping rounded-full bg-primary/40 [animation-duration:1s]" />
-        <span className="relative grid h-16 w-16 place-items-center rounded-full bg-primary text-3xl shadow-2xl shadow-primary/40">
-          {cat.emoji}
-        </span>
+    <div className="px-1 pt-0.5">
+      {/* Header compacto: indicador pulsante + título + cancelar */}
+      <div className="flex items-center gap-3">
+        <div className="relative grid h-10 w-10 shrink-0 place-items-center">
+          <span className="absolute inset-0 animate-ping rounded-full bg-primary/25 [animation-duration:1.6s]" />
+          <span className="relative grid h-7 w-7 place-items-center rounded-full bg-primary text-base shadow-lg shadow-primary/40">
+            {cat.emoji}
+          </span>
+        </div>
+        <div className="min-w-0 flex-1">
+          <h2 className="truncate font-display text-[14px] font-extrabold leading-tight">
+            {noDriversAvailable ? "Nenhum motorista disponível" : "Procurando motoristas..."}
+          </h2>
+          <p className="truncate text-[11px] text-muted-foreground">
+            {noDriversAvailable ? "Tentando novamente" : `Conectando com ${cat.label} próximos`}
+          </p>
+        </div>
+        <button
+          onClick={onCancel}
+          aria-label="Cancelar solicitação"
+          className="shrink-0 rounded-full border border-destructive/40 bg-destructive/10 px-3 py-1.5 text-[11px] font-semibold text-destructive-foreground transition active:scale-[0.96] hover:bg-destructive/20"
+        >
+          Cancelar
+        </button>
       </div>
 
-      <h2 className="font-display text-[17px] font-extrabold leading-tight">
-        {noDriversAvailable ? "Nenhum motorista disponível no momento" : "Procurando motoristas..."}
-      </h2>
-      <p className="mt-0.5 text-[11.5px] text-muted-foreground">
-        {noDriversAvailable
-          ? "Estamos tentando novamente — aguarde ou cancele a solicitação."
-          : `Conectando com ${cat.label} próximos a você`}
-      </p>
-
-      {/* Métricas em tempo real */}
-      <div className="mt-3 grid grid-cols-3 gap-1.5">
-        <div className="rounded-xl bg-primary/10 px-1.5 py-2 ring-1 ring-primary/30">
-          <div className="text-[16px] font-extrabold tabular-nums leading-none text-primary">
+      {/* Métricas compactas em linha */}
+      <div className="mt-2.5 grid grid-cols-3 gap-1.5">
+        <div className="rounded-lg bg-primary/10 px-2 py-1.5 text-center ring-1 ring-primary/30">
+          <div className="text-[13px] font-extrabold tabular-nums leading-none text-primary">
             {driversCount}
           </div>
-          <div className="mt-0.5 text-[9.5px] uppercase tracking-wider text-muted-foreground">
+          <div className="mt-0.5 text-[9px] uppercase tracking-wider text-muted-foreground">
             Motoristas
           </div>
         </div>
-        <div className="rounded-xl bg-background/60 px-1.5 py-2 ring-1 ring-border">
-          <div className="text-[16px] font-extrabold tabular-nums leading-none text-foreground">
-            {radiusKm.toFixed(1)}<span className="text-[10px] font-bold">km</span>
+        <div className="rounded-lg bg-background/60 px-2 py-1.5 text-center ring-1 ring-border">
+          <div className="text-[13px] font-extrabold tabular-nums leading-none text-foreground">
+            {radiusKm.toFixed(1)}<span className="text-[9px] font-bold">km</span>
           </div>
-          <div className="mt-0.5 text-[9.5px] uppercase tracking-wider text-muted-foreground">
+          <div className="mt-0.5 text-[9px] uppercase tracking-wider text-muted-foreground">
             Raio
           </div>
         </div>
-        <div className="rounded-xl bg-background/60 px-1.5 py-2 ring-1 ring-border">
-          <div className="text-[16px] font-extrabold tabular-nums leading-none text-foreground">
+        <div className="rounded-lg bg-background/60 px-2 py-1.5 text-center ring-1 ring-border">
+          <div className="text-[13px] font-extrabold tabular-nums leading-none text-foreground">
             {mm}:{ss}
           </div>
-          <div className="mt-0.5 text-[9.5px] uppercase tracking-wider text-muted-foreground">
+          <div className="mt-0.5 text-[9px] uppercase tracking-wider text-muted-foreground">
             Tempo
           </div>
         </div>
       </div>
 
-      {/* Barra de progresso do raio */}
-      <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-background/80 ring-1 ring-border">
+      {/* Barra de progresso fina do raio */}
+      <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-background/80 ring-1 ring-border">
         <div
           className="h-full rounded-full bg-gradient-to-r from-primary via-primary to-primary/60 transition-[width] duration-700 ease-out"
           style={{ width: `${(radiusKm / 8) * 100}%` }}
         />
       </div>
-      <p className="mt-1.5 text-[10.5px] text-muted-foreground">
-        Expandindo busca em tempo real...
-      </p>
 
-      <button
-        onClick={onCancel}
-        className="mt-3 w-full rounded-2xl border border-destructive/40 bg-destructive/10 py-2.5 text-[13px] font-semibold text-destructive-foreground transition active:scale-[0.98] hover:bg-destructive/20"
-      >
-        Cancelar solicitação
-      </button>
+      {/* Dica de arraste — visível só nos primeiros segundos */}
+      <p className="mt-1.5 text-center text-[10px] text-muted-foreground/80">
+        Arraste para cima para mais detalhes
+      </p>
     </div>
   );
 }
