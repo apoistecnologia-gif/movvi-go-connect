@@ -1928,21 +1928,40 @@ function PassageiroApp() {
     let a: LatLng | null = null;
     let b: LatLng | null = null;
     if (ride.status === "motorista_a_caminho" || ride.status === "motorista_chegou") {
-      a = { lat: ride.origin_lat, lng: ride.origin_lng };
-      b = typeof driverLat === "number" && typeof driverLng === "number"
-        ? { lat: driverLat, lng: driverLng }
-        : null;
+      // passageiro + motorista aceito
+      if (typeof driverLat === "number" && typeof driverLng === "number" &&
+          isBrazilCoordinate(driverLat, driverLng)) {
+        const pax = position && isBrazilCoordinate(position.lat, position.lng)
+          ? position
+          : (isBrazilCoordinate(ride.origin_lat, ride.origin_lng)
+              ? { lat: ride.origin_lat, lng: ride.origin_lng }
+              : null);
+        a = pax;
+        b = { lat: driverLat, lng: driverLng };
+      }
     } else if (ride.status === "em_viagem") {
-      a = { lat: ride.origin_lat, lng: ride.origin_lng };
-      b = { lat: ride.destination_lat, lng: ride.destination_lng };
+      // motorista + destino
+      if (typeof driverLat === "number" && typeof driverLng === "number" &&
+          isBrazilCoordinate(driverLat, driverLng) &&
+          isBrazilCoordinate(ride.destination_lat, ride.destination_lng)) {
+        a = { lat: driverLat, lng: driverLng };
+        b = { lat: ride.destination_lat, lng: ride.destination_lng };
+      }
     }
     if (!a || !b) return;
     lastPassengerFitKeyRef.current = fitKey;
     autoFollowRef.current = false;
     const bounds = new google.maps.LatLngBounds();
     bounds.extend(a); bounds.extend(b);
-    mapRef.current.fitBounds(bounds, { top: 180, bottom: Math.round(window.innerHeight * 0.35), left: 60, right: 60 });
-  }, [ride?.id, ride?.status, rideDriverInfo?.current_lat, rideDriverInfo?.current_lng]); // eslint-disable-line react-hooks/exhaustive-deps
+    // Padding enxuto: o cartão fixo do código ocupa ~140px no topo e o
+    // bottom sheet colapsado ocupa ~32vh. Sem inflar o viewport.
+    mapRef.current.fitBounds(bounds, {
+      top: 150,
+      bottom: Math.round(window.innerHeight * 0.34) + 16,
+      left: 48,
+      right: 48,
+    });
+  }, [ride?.id, ride?.status, rideDriverInfo?.current_lat, rideDriverInfo?.current_lng, position]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ---------------------- GPS initial loading ---------------------- */
   // Padrão Uber/99/InDrive:
@@ -2419,7 +2438,7 @@ function PassageiroApp() {
           phase === "motorista_chegou" ||
           phase === "em_viagem") && (
           <MovviSheet
-            snaps={[30, 55, 85]}
+            snaps={[32, 60, 88]}
             initial={32}
           >
             <DriverEnRoute ride={ride} driver={rideDriverInfo} onCancel={cancelRide} />
@@ -3487,28 +3506,9 @@ function DriverEnRoute({
 
       <RideQuickActions ride={ride} driver={driver} onCancel={onCancel} />
 
-      {/* PIN de segurança — só antes de iniciar a viagem */}
-      {!isInTrip && ride.safety_code && (
-        <div className="mt-3 rounded-2xl bg-gradient-to-br from-primary/25 via-primary/10 to-transparent p-4 ring-2 ring-primary/50 shadow-lg shadow-primary/10">
-          <div className="flex items-center justify-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-primary">
-            <Shield className="h-3.5 w-3.5" />
-            Código de segurança
-          </div>
-          <div className="mt-2.5 flex items-center justify-center gap-2">
-            {ride.safety_code.split("").map((d, i) => (
-              <span
-                key={i}
-                className="grid h-14 w-12 place-items-center rounded-xl bg-background/90 text-3xl font-extrabold tabular-nums text-foreground ring-2 ring-primary/50 shadow-inner"
-              >
-                {d}
-              </span>
-            ))}
-          </div>
-          <p className="mt-2.5 text-center text-[12px] font-medium text-muted-foreground">
-            Informe este código ao motorista antes de iniciar a corrida.
-          </p>
-        </div>
-      )}
+      {/* Código de segurança exibido somente no cartão fixo no topo da tela. */}
+
+
 
 
       <div className="mt-2 rounded-xl bg-background/60 px-3 py-2 text-[11.5px] ring-1 ring-border">
