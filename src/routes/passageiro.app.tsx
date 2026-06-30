@@ -224,6 +224,38 @@ function PulsingUserMarker({ position }: { position: LatLng }) {
   );
 }
 
+/**
+ * Círculo de raio de busca animado durante "procurar_motorista".
+ * Cresce de 1km até 8km de forma cíclica, pulsando suavemente.
+ * Não interfere em lógica de despacho — é puramente visual.
+ */
+function SearchRadiusCircle({ center }: { center: LatLng }) {
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const i = setInterval(() => setTick((t) => t + 1), 1000);
+    return () => clearInterval(i);
+  }, []);
+  // Cresce de 1km até 8km em ~28s, depois reinicia (loop visual).
+  const radiusKm = 1 + (tick % 28) * 0.25;
+  const radius = radiusKm * 1000;
+  const fillOpacity = 0.10 - ((tick % 28) / 28) * 0.07; // desvanece ao crescer
+  return (
+    <Circle
+      center={center}
+      radius={radius}
+      options={{
+        strokeColor: "#8DD92B",
+        strokeOpacity: 0.55,
+        strokeWeight: 1.5,
+        fillColor: "#8DD92B",
+        fillOpacity: Math.max(0.03, fillOpacity),
+        clickable: false,
+        zIndex: 1,
+      }}
+    />
+  );
+}
+
 function OriginActionsSheet({
   geo,
   position,
