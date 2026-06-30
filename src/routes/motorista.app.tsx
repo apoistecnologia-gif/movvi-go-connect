@@ -972,6 +972,7 @@ function MotoristaApp() {
       {/* MAPA */}
       <div className="absolute inset-0">
         <MovviMap center={stableMapCenter} zoom={stableMapZoom} height="100%"
+          themeOverride={active ? "light" : undefined}
           onLoad={(m) => { mapRef.current = m; }}>
           {position && (
             <Marker position={position} icon={{
