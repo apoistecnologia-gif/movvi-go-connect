@@ -225,12 +225,15 @@ function normalizeCategory(v: unknown): string {
 }
 
 /**
- * Modelo broadcast: oferta a até `DISPATCH_BROADCAST_SIZE` motoristas
- * elegíveis ao mesmo tempo. O primeiro a aceitar ganha; os outros recebem
- * a atualização de status em realtime e o card desaparece.
+ * Modelo broadcast real: `candidate_driver_ids` é a lista estável de todos
+ * os motoristas que podem ver a OFERTA. Ela é separada da corrida ativa.
  *
- * NÃO altera o status (permanece `procurar_motorista`).
- * Retorna o id do motorista mais próximo (compat single-offer) ou null.
+ * Regras críticas:
+ * - entrega simultânea para TODOS os elegíveis no primeiro raio com candidatos;
+ * - não usa `current_offer_driver_id` para alternar motorista;
+ * - não remove candidatos por GPS/realtime/render;
+ * - mantém a oferta por no mínimo 60s via `request_expires_at`;
+ * - só recalcula candidatos quando não há nenhum candidato visível restante.
  */
 export async function offerToNextDriver(supabase: any, rideId: string): Promise<string | null> {
   const ride = await supabase.from("rides").select("*").eq("id", rideId).single();
@@ -240,15 +243,25 @@ export async function offerToNextDriver(supabase: any, rideId: string): Promise<
     console.log("[MOVVI DESPACHO] corrida não está procurando motorista, status=", r.status);
     return null;
   }
-  const alreadyOffered: string[] = Array.isArray(r.offered_driver_ids) ? r.offered_driver_ids : [];
-  if (alreadyOffered.length > 0) {
-    console.log("[MOVVI DESPACHO] corrida já em broadcast para", alreadyOffered, "— mantendo");
-    return alreadyOffered[0] ?? null;
+  if (r.accepted_driver_id || r.driver_id) {
+    console.log("[MOVVI DESPACHO] corrida já aceita — não reofertar", { rideId, accepted_driver_id: r.accepted_driver_id, driver_id: r.driver_id });
+    return r.accepted_driver_id ?? r.driver_id ?? null;
+  }
+
+  const rejected: string[] = Array.isArray(r.rejected_driver_ids) ? r.rejected_driver_ids : [];
+  const existingCandidates: string[] = Array.isArray(r.candidate_driver_ids) ? r.candidate_driver_ids : [];
+  const visibleExisting = existingCandidates.filter((id) => !rejected.includes(id));
+  const expiresAt = r.request_expires_at ? new Date(r.request_expires_at).getTime() : 0;
+  if (visibleExisting.length > 0 && expiresAt > Date.now()) {
+    console.log("[MOVVI DESPACHO] oferta broadcast já ativa — mantendo candidatos", {
+      rideId, candidates: visibleExisting.length, request_expires_at: r.request_expires_at,
+    });
+    return visibleExisting[0] ?? null;
   }
 
   const rideCategory = normalizeCategory(r.category);
   const origin = { lat: r.origin_lat as number, lng: r.origin_lng as number };
-  console.log("[MOVVI DESPACHO] ▶ início", { rideId, origin, category: rideCategory });
+  console.log("[MOVVI DESPACHO] ▶ início broadcast", { rideId, origin, category: rideCategory });
 
   const allDriversRes = await supabase
     .from("drivers")
@@ -257,7 +270,6 @@ export async function offerToNextDriver(supabase: any, rideId: string): Promise<
   const allDrivers = allDriversRes.data ?? [];
   console.log("[MOVVI DESPACHO] total motoristas no banco:", allDrivers.length);
 
-  const rejected: string[] = r.rejected_driver_ids ?? [];
   const now = Date.now();
 
   type Eval = { user_id: string; name: string | null; dist_km: number | null; reasons: string[]; eligible: boolean };
@@ -271,7 +283,7 @@ export async function offerToNextDriver(supabase: any, rideId: string): Promise<
       const ageSec = (now - new Date(d.last_location_at).getTime()) / 1000;
       if (ageSec > MAX_GPS_AGE_SECONDS) reasons.push(`GPS antigo (${Math.round(ageSec)}s)`);
     }
-    if (rejected.includes(d.user_id)) reasons.push("já recusou esta corrida");
+    if (rejected.includes(d.user_id)) reasons.push("já recusou/expirou esta corrida");
     if (d.user_id === r.driver_id) reasons.push("já é motorista da corrida");
 
     const dist = d.current_lat != null && d.current_lng != null
@@ -293,7 +305,7 @@ export async function offerToNextDriver(supabase: any, rideId: string): Promise<
   console.log("[MOVVI DESPACHO] resumo:", {
     total: evaluated.length,
     elegiveis: eligibleAll.length,
-    rejected_já: rejected.length,
+    rejeitados: rejected.length,
   });
 
   let chosen: Eval[] = [];
@@ -303,7 +315,7 @@ export async function offerToNextDriver(supabase: any, rideId: string): Promise<
       .sort((a, b) => (a.dist_km ?? 0) - (b.dist_km ?? 0));
     console.log(`[MOVVI DESPACHO] raio ${radius} km → ${within.length} motorista(s)`);
     if (within.length > 0) {
-      chosen = within.slice(0, DISPATCH_BROADCAST_SIZE);
+      chosen = within; // TODOS os elegíveis do raio, sem rotação/limite artificial.
       break;
     }
   }
@@ -314,17 +326,21 @@ export async function offerToNextDriver(supabase: any, rideId: string): Promise<
   }
 
   const candidateIds = chosen.map((c) => c.user_id);
-  console.log("[MOVVI DESPACHO] ✓ broadcast offered_driver_ids =", candidateIds);
+  const requestExpiresAt = new Date(Date.now() + RIDE_REQUEST_TIMEOUT_SECONDS * 1000).toISOString();
+  console.log("[MOVVI DESPACHO] ✓ broadcast candidate_driver_ids =", candidateIds);
   const upd = await supabase
     .from("rides")
     .update({
-      offered_driver_ids: candidateIds,
-      current_offer_driver_id: candidateIds[0], // compat single-offer
+      candidate_driver_ids: candidateIds,
+      offered_driver_ids: candidateIds, // compat legado; a visibilidade real agora é candidate_driver_ids
+      current_offer_driver_id: null,
+      request_expires_at: requestExpiresAt,
     })
     .eq("id", rideId)
-    .eq("status", RIDE_STATUS.PROCURAR_MOTORISTA);
-  if (upd.error) console.warn("[MOVVI DESPACHO] erro gravando oferta:", upd.error.message);
-  return candidateIds[0];
+    .eq("status", RIDE_STATUS.PROCURAR_MOTORISTA)
+    .is("accepted_driver_id", null);
+  if (upd.error) console.warn("[MOVVI DESPACHO] erro gravando broadcast:", upd.error.message);
+  return candidateIds[0] ?? null;
 }
 
 /**
