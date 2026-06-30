@@ -54,6 +54,5 @@ CREATE POLICY rides_select_involved_or_admin
       AND auth.uid() = ANY(offered_driver_ids)
       AND NOT (auth.uid() = ANY(rejected_driver_ids))
     )
-    OR current_offer_driver_id = auth.uid()
     OR private.has_role(auth.uid(), 'admin'::app_role)
   );
