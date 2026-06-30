@@ -2345,14 +2345,46 @@ function PassageiroApp() {
         </div>
       )}
 
+      {/* Cartão FIXO do código de segurança — visível sobre tudo,
+          enquanto o motorista está a caminho ou chegou, antes da viagem iniciar.
+          Não fica escondido atrás do bottom sheet. */}
+      {ride &&
+        ride.safety_code &&
+        (phase === "motorista_a_caminho" || phase === "motorista_chegou") && (
+          <div
+            className="pointer-events-none absolute inset-x-0 z-40 flex justify-center px-3"
+            style={{ top: "calc(env(safe-area-inset-top) + 76px)" }}
+          >
+            <div className="pointer-events-auto w-full max-w-sm rounded-2xl bg-card/95 p-3 ring-2 ring-primary/60 shadow-2xl shadow-primary/20 backdrop-blur">
+              <div className="flex items-center justify-center gap-1.5 text-[10.5px] font-bold uppercase tracking-widest text-primary">
+                <Shield className="h-3.5 w-3.5" />
+                Código de segurança
+              </div>
+              <div className="mt-2 flex items-center justify-center gap-1.5">
+                {ride.safety_code.split("").map((d, i) => (
+                  <span
+                    key={i}
+                    className="grid h-11 w-9 place-items-center rounded-lg bg-background text-2xl font-extrabold tabular-nums text-foreground ring-1 ring-primary/40 shadow-inner"
+                  >
+                    {d}
+                  </span>
+                ))}
+              </div>
+              <p className="mt-1.5 text-center text-[10.5px] text-muted-foreground">
+                Informe ao motorista antes de iniciar a corrida.
+              </p>
+            </div>
+          </div>
+        )}
+
       {ride &&
         rideDriverInfo &&
         (phase === "motorista_a_caminho" ||
           phase === "motorista_chegou" ||
           phase === "em_viagem") && (
           <MovviSheet
-            snaps={[60, 90]}
-            initial={ride.safety_code && phase !== "em_viagem" ? 75 : 60}
+            snaps={[30, 55, 85]}
+            initial={32}
           >
             <DriverEnRoute ride={ride} driver={rideDriverInfo} onCancel={cancelRide} />
           </MovviSheet>
