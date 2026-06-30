@@ -210,11 +210,14 @@ async function assertDriverApproved(supabase: any, userId: string) {
  *  urbanos densos quanto regiões interioranas (Piauí, Norte/Nordeste). */
 export const DISPATCH_RADII_KM = [3, 5, 8, 12, 20, 30, 50] as const;
 
-/** Quantos motoristas recebem a oferta simultaneamente. O primeiro a aceitar ganha. */
-export const DISPATCH_BROADCAST_SIZE = 3;
+/** Quantos motoristas recebem a oferta simultaneamente. Infinity = todos os elegíveis. */
+export const DISPATCH_BROADCAST_SIZE = Number.POSITIVE_INFINITY;
 
 /** Idade máxima da última atualização de GPS aceita no despacho (segundos). */
 const MAX_GPS_AGE_SECONDS = 120;
+
+/** Vida mínima da solicitação de corrida antes de expirar. */
+export const RIDE_REQUEST_TIMEOUT_SECONDS = 60;
 
 /** Normaliza string de categoria (case/acento safe). */
 function normalizeCategory(v: unknown): string {
