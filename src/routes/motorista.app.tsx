@@ -516,6 +516,12 @@ function MotoristaApp() {
     // Se já está online → fica offline imediatamente
     if (online) {
       console.log("[MOVVI MOTORISTA] indo offline");
+      // Para o watcher de GPS para não continuar consumindo bateria nem
+      // gravando posições fantasmas enquanto o motorista está offline.
+      if (watchIdRef.current != null && "geolocation" in navigator) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
+      }
       setOnline(false);
       return;
     }
