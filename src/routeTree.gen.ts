@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as MapTestRouteImport } from './routes/map-test'
+import { Route as DownloadRouteImport } from './routes/download'
 import { Route as DevDiagnosticsRouteImport } from './routes/dev-diagnostics'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PassageiroTermosRouteImport } from './routes/passageiro.termos'
@@ -56,10 +57,16 @@ import { Route as AdminBackupsRouteImport } from './routes/admin.backups'
 import { Route as AdminAssinaturasRouteImport } from './routes/admin.assinaturas'
 import { Route as AdminAdministradoresRouteImport } from './routes/admin.administradores'
 import { Route as MotoristaCorridasIdRouteImport } from './routes/motorista.corridas.$id'
+import { Route as ApiPublicDownloadMovviSourceRouteImport } from './routes/api/public/download.movvi-source'
 
 const MapTestRoute = MapTestRouteImport.update({
   id: '/map-test',
   path: '/map-test',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DownloadRoute = DownloadRouteImport.update({
+  id: '/download',
+  path: '/download',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DevDiagnosticsRoute = DevDiagnosticsRouteImport.update({
@@ -292,10 +299,17 @@ const MotoristaCorridasIdRoute = MotoristaCorridasIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => MotoristaCorridasRoute,
 } as any)
+const ApiPublicDownloadMovviSourceRoute =
+  ApiPublicDownloadMovviSourceRouteImport.update({
+    id: '/api/public/download/movvi-source',
+    path: '/api/public/download/movvi-source',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dev-diagnostics': typeof DevDiagnosticsRoute
+  '/download': typeof DownloadRoute
   '/map-test': typeof MapTestRoute
   '/admin/administradores': typeof AdminAdministradoresRoute
   '/admin/assinaturas': typeof AdminAssinaturasRoute
@@ -341,10 +355,12 @@ export interface FileRoutesByFullPath {
   '/passageiro/suporte': typeof PassageiroSuporteRoute
   '/passageiro/termos': typeof PassageiroTermosRoute
   '/motorista/corridas/$id': typeof MotoristaCorridasIdRoute
+  '/api/public/download/movvi-source': typeof ApiPublicDownloadMovviSourceRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dev-diagnostics': typeof DevDiagnosticsRoute
+  '/download': typeof DownloadRoute
   '/map-test': typeof MapTestRoute
   '/admin/administradores': typeof AdminAdministradoresRoute
   '/admin/assinaturas': typeof AdminAssinaturasRoute
@@ -390,11 +406,13 @@ export interface FileRoutesByTo {
   '/passageiro/suporte': typeof PassageiroSuporteRoute
   '/passageiro/termos': typeof PassageiroTermosRoute
   '/motorista/corridas/$id': typeof MotoristaCorridasIdRoute
+  '/api/public/download/movvi-source': typeof ApiPublicDownloadMovviSourceRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/dev-diagnostics': typeof DevDiagnosticsRoute
+  '/download': typeof DownloadRoute
   '/map-test': typeof MapTestRoute
   '/admin/administradores': typeof AdminAdministradoresRoute
   '/admin/assinaturas': typeof AdminAssinaturasRoute
@@ -440,12 +458,14 @@ export interface FileRoutesById {
   '/passageiro/suporte': typeof PassageiroSuporteRoute
   '/passageiro/termos': typeof PassageiroTermosRoute
   '/motorista/corridas/$id': typeof MotoristaCorridasIdRoute
+  '/api/public/download/movvi-source': typeof ApiPublicDownloadMovviSourceRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/dev-diagnostics'
+    | '/download'
     | '/map-test'
     | '/admin/administradores'
     | '/admin/assinaturas'
@@ -491,10 +511,12 @@ export interface FileRouteTypes {
     | '/passageiro/suporte'
     | '/passageiro/termos'
     | '/motorista/corridas/$id'
+    | '/api/public/download/movvi-source'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/dev-diagnostics'
+    | '/download'
     | '/map-test'
     | '/admin/administradores'
     | '/admin/assinaturas'
@@ -540,10 +562,12 @@ export interface FileRouteTypes {
     | '/passageiro/suporte'
     | '/passageiro/termos'
     | '/motorista/corridas/$id'
+    | '/api/public/download/movvi-source'
   id:
     | '__root__'
     | '/'
     | '/dev-diagnostics'
+    | '/download'
     | '/map-test'
     | '/admin/administradores'
     | '/admin/assinaturas'
@@ -589,11 +613,13 @@ export interface FileRouteTypes {
     | '/passageiro/suporte'
     | '/passageiro/termos'
     | '/motorista/corridas/$id'
+    | '/api/public/download/movvi-source'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DevDiagnosticsRoute: typeof DevDiagnosticsRoute
+  DownloadRoute: typeof DownloadRoute
   MapTestRoute: typeof MapTestRoute
   AdminAdministradoresRoute: typeof AdminAdministradoresRoute
   AdminAssinaturasRoute: typeof AdminAssinaturasRoute
@@ -638,6 +664,7 @@ export interface RootRouteChildren {
   PassageiroSobreRoute: typeof PassageiroSobreRoute
   PassageiroSuporteRoute: typeof PassageiroSuporteRoute
   PassageiroTermosRoute: typeof PassageiroTermosRoute
+  ApiPublicDownloadMovviSourceRoute: typeof ApiPublicDownloadMovviSourceRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -647,6 +674,13 @@ declare module '@tanstack/react-router' {
       path: '/map-test'
       fullPath: '/map-test'
       preLoaderRoute: typeof MapTestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/download': {
+      id: '/download'
+      path: '/download'
+      fullPath: '/download'
+      preLoaderRoute: typeof DownloadRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dev-diagnostics': {
@@ -971,6 +1005,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MotoristaCorridasIdRouteImport
       parentRoute: typeof MotoristaCorridasRoute
     }
+    '/api/public/download/movvi-source': {
+      id: '/api/public/download/movvi-source'
+      path: '/api/public/download/movvi-source'
+      fullPath: '/api/public/download/movvi-source'
+      preLoaderRoute: typeof ApiPublicDownloadMovviSourceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -988,6 +1029,7 @@ const MotoristaCorridasRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DevDiagnosticsRoute: DevDiagnosticsRoute,
+  DownloadRoute: DownloadRoute,
   MapTestRoute: MapTestRoute,
   AdminAdministradoresRoute: AdminAdministradoresRoute,
   AdminAssinaturasRoute: AdminAssinaturasRoute,
@@ -1032,17 +1074,8 @@ const rootRouteChildren: RootRouteChildren = {
   PassageiroSobreRoute: PassageiroSobreRoute,
   PassageiroSuporteRoute: PassageiroSuporteRoute,
   PassageiroTermosRoute: PassageiroTermosRoute,
+  ApiPublicDownloadMovviSourceRoute: ApiPublicDownloadMovviSourceRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
