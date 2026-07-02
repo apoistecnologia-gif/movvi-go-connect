@@ -19,6 +19,7 @@ import { MovviLogo } from "@/components/MovviLogo";
 import { ArrowLeft, Loader2, Upload } from "lucide-react";
 import { translateAuthError } from "@/lib/authErrors";
 import { cadastrarMotorista } from "@/lib/driverAuth.functions";
+import { DriverPhotoField } from "@/components/DriverPhotoField";
 
 export const Route = createFileRoute("/motorista/cadastro")({
   head: () => ({ meta: [{ title: "Cadastro do Motorista — MOVVI DRIVE" }] }),
