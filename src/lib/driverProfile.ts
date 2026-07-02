@@ -17,10 +17,17 @@ export type DriverProfileRow = {
   motivo_reprovacao: string | null;
   email: string | null;
   subscription_status: "active" | "inactive" | "overdue" | "pending" | "suspended" | null;
+  photo_url: string | null;
+  selfie_url: string | null;
+  cnh_url: string | null;
+  cnh_back_url: string | null;
+  vehicle_document_url: string | null;
+  documents_status: "pending_upload" | "pending_review" | "approved" | "rejected" | null;
 };
 
 const SELECT_COLS =
-  "id, user_id, approval_status, motivo_reprovacao, email, subscription_status";
+  "id, user_id, approval_status, motivo_reprovacao, email, subscription_status, photo_url, selfie_url, cnh_url, cnh_back_url, vehicle_document_url, documents_status";
+
 
 export async function loadDriverProfile(): Promise<
   | { ok: true; profile: DriverProfileRow }
