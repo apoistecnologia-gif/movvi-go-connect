@@ -1548,7 +1548,7 @@ function PassageiroApp() {
         geo?.pickupLabel ||
         geo?.friendly ||
         geo?.region ||
-        `GPS ${position.lat.toFixed(6)}, ${position.lng.toFixed(6)}`;
+        "Localização atual";
       const { rideId: newId } = await callRequestRide({
         data: {
           origin: { lat: position.lat, lng: position.lng },
