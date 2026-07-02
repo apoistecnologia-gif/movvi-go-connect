@@ -149,6 +149,37 @@ function DriverStatusPage() {
             </CardContent>
           </Card>
 
+          {!loading && docsSummary && docsSummary.status !== "approved" && (
+            <Card className={docsSummary.uploaded < 4 ? "border-yellow-500/40 bg-yellow-500/5" : "border-primary/40 bg-primary/5"}>
+              <CardContent className="flex items-start gap-3 py-4">
+                <div className={`rounded-full p-2 ${docsSummary.uploaded < 4 ? "bg-yellow-500/15 text-yellow-400" : "bg-primary/15 text-primary"}`}>
+                  {docsSummary.uploaded < 4 ? <AlertTriangle className="h-5 w-5" /> : <FileCheck2 className="h-5 w-5" />}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold">
+                    {docsSummary.uploaded < 4
+                      ? `Faltam ${4 - docsSummary.uploaded} de 4 documentos`
+                      : docsSummary.status === "rejected"
+                      ? "Documentos reprovados — reenvie"
+                      : "Documentos em análise"}
+                  </p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {docsSummary.uploaded < 4
+                      ? "Complete o envio para liberar a análise da sua conta."
+                      : "Assim que forem revisados, você será notificado."}
+                  </p>
+                  <div className="mt-3">
+                    <Button asChild size="sm" variant={docsSummary.uploaded < 4 ? "default" : "secondary"}>
+                      <Link to="/motorista/documentos">
+                        {docsSummary.uploaded < 4 ? "Completar envio" : "Ver meus documentos"}
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {!loading && status && status !== "nao_encontrado" && (
             <Card>
               <CardHeader>
