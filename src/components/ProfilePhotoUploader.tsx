@@ -41,7 +41,8 @@ export function ProfilePhotoUploader({
     const localPreview = URL.createObjectURL(file);
     setPreview(localPreview);
     try {
-      const res = await uploadProfilePhoto(userId, file);
+      const compressed = await compressImageToSquare(file, { size: 512, quality: 0.85 });
+      const res = await uploadProfilePhoto(userId, compressed);
       await onUploaded(res);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Falha ao enviar a foto.");
