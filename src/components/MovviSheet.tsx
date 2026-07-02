@@ -194,30 +194,31 @@ export const MovviSheet = forwardRef<MovviSheetHandle, Props>(function MovviShee
   return (
     <div
       ref={sheetRef}
-      className="absolute inset-x-0 bottom-0 z-30 flex flex-col rounded-t-[32px] bg-card text-foreground will-change-[height] animate-sheet-in"
+      className="absolute inset-x-0 bottom-0 z-30 flex flex-col rounded-t-[34px] bg-card text-foreground will-change-[height] animate-sheet-in"
       style={{
         height: `${height}vh`,
         boxShadow:
-          "0 -24px 60px -28px rgba(0,0,0,0.55), 0 -1px 0 0 rgba(255,255,255,0.04) inset",
+          "0 -28px 64px -30px rgba(0,0,0,0.55), 0 -1px 0 0 rgba(255,255,255,0.05) inset",
+        borderTop: "1px solid color-mix(in oklab, var(--color-border) 55%, transparent)",
       }}
     >
       {/* drag handle area */}
       <div
-        className="flex shrink-0 cursor-grab touch-none flex-col items-center pb-2 pt-3 active:cursor-grabbing"
+        className="group flex shrink-0 cursor-grab touch-none flex-col items-center pb-3 pt-4 active:cursor-grabbing"
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
       >
-        <span className="h-[5px] w-11 rounded-full bg-muted-foreground/25 transition group-active:bg-muted-foreground/60" />
+        <span className="h-[5px] w-12 rounded-full bg-muted-foreground/25 transition-all duration-200 group-hover:bg-muted-foreground/45 group-active:w-14 group-active:bg-muted-foreground/60" />
       </div>
 
 
       <div
         ref={scrollRef}
-        className="flex-1 px-5"
+        className="flex-1 px-6"
         style={{
-          paddingBottom: "calc(env(safe-area-inset-bottom) + 28px)",
+          paddingBottom: "calc(env(safe-area-inset-bottom) + 32px)",
           overflowY: "auto",
           overscrollBehavior: "contain",
           WebkitOverflowScrolling: "touch",
