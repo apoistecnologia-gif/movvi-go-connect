@@ -194,23 +194,24 @@ export const MovviSheet = forwardRef<MovviSheetHandle, Props>(function MovviShee
   return (
     <div
       ref={sheetRef}
-      className="absolute inset-x-0 bottom-0 z-30 flex flex-col rounded-t-[28px] bg-card text-foreground will-change-[height]"
+      className="absolute inset-x-0 bottom-0 z-30 flex flex-col rounded-t-[32px] bg-card text-foreground will-change-[height] animate-sheet-in"
       style={{
         height: `${height}vh`,
         boxShadow:
-          "0 -20px 60px -20px rgba(0,0,0,0.7), 0 -2px 0 0 rgba(255,255,255,0.04) inset",
+          "0 -24px 60px -28px rgba(0,0,0,0.55), 0 -1px 0 0 rgba(255,255,255,0.04) inset",
       }}
     >
       {/* drag handle area */}
       <div
-        className="flex shrink-0 cursor-grab touch-none flex-col items-center pb-1 pt-2 active:cursor-grabbing"
+        className="flex shrink-0 cursor-grab touch-none flex-col items-center pb-2 pt-3 active:cursor-grabbing"
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
       >
-        <span className="h-1 w-10 rounded-full bg-muted-foreground/30 transition group-active:bg-muted-foreground/60" />
+        <span className="h-[5px] w-11 rounded-full bg-muted-foreground/25 transition group-active:bg-muted-foreground/60" />
       </div>
+
 
       <div
         ref={scrollRef}
