@@ -1439,18 +1439,22 @@ function ActiveRidePanel({
       )}
 
       {/* passageiro */}
-      <div className="flex items-center gap-3 rounded-2xl bg-background/60 p-3 ring-1 ring-border">
-        <Avatar src={passenger?.avatar_url ?? (ride as { passenger_photo_url?: string | null }).passenger_photo_url ?? null} name={passenger?.name ?? "?"} size={44} />
+      <div className="flex items-center gap-3.5 rounded-2xl bg-background/55 p-3.5 ring-1 ring-border/60">
+        <div className="shrink-0 rounded-full ring-2 ring-white/85 shadow-[0_6px_18px_-6px_rgba(0,0,0,0.5)]">
+          <Avatar src={passenger?.avatar_url ?? (ride as { passenger_photo_url?: string | null }).passenger_photo_url ?? null} name={passenger?.name ?? "?"} size={56} />
+        </div>
         <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-semibold">{passenger?.name ?? "Passageiro"}</div>
-          <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
-            <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" /> 5.0 · {ride.payment_method === "cash" ? "Dinheiro" : (ride.payment_method ?? "—")}
+          <div className="truncate text-[15px] font-semibold tracking-tight">{passenger?.name ?? "Passageiro"}</div>
+          <div className="mt-1 flex items-center gap-1.5 text-[12px] text-muted-foreground">
+            <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" /> 5.0
+            <span className="text-muted-foreground/50">·</span>
+            {ride.payment_method === "cash" ? "Dinheiro" : (ride.payment_method ?? "—")}
           </div>
         </div>
         {passenger?.phone && (
           <a href={`tel:${passenger.phone}`}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/15 text-primary ring-1 ring-primary/40 hover:bg-primary/25">
-            <Phone className="h-4 w-4" />
+            className="active-press flex h-11 w-11 items-center justify-center rounded-full bg-primary/12 text-primary ring-1 ring-primary/30 hover:bg-primary/20">
+            <Phone className="h-[17px] w-[17px]" />
           </a>
         )}
       </div>
