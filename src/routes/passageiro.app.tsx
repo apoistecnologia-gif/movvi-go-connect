@@ -3438,15 +3438,33 @@ function DriverEnRoute({
       : ride.status === "em_viagem"
         ? "Em viagem para o destino"
         : "Motorista a caminho";
-  // ETA animado para fase "motorista a caminho"
+  // ETA/distância reais quando disponíveis:
+  //  - Aproximando: haversine motorista → origem (velocidade média urbana 32 km/h)
+  //  - Em viagem: usa ride.duration_min / ride.distance_km calculados no aceite
   const isArriving = ride.status === "motorista_a_caminho" || ride.status === "procurar_motorista";
   const isInTrip = ride.status === "em_viagem";
-  const [eta, setEta] = useState(() => Math.floor(Math.random() * 4) + 3);
-  useEffect(() => {
-    if (!isArriving) return;
-    const i = setInterval(() => setEta((e) => (e > 1 ? e - 1 : 1)), 30000);
-    return () => clearInterval(i);
-  }, [isArriving]);
+
+  const approachKm = (() => {
+    const dLat = driver.current_lat as number | null | undefined;
+    const dLng = driver.current_lng as number | null | undefined;
+    if (typeof dLat !== "number" || typeof dLng !== "number") return null;
+    if (typeof ride.origin_lat !== "number" || typeof ride.origin_lng !== "number") return null;
+    const R = 6371;
+    const toRad = (v: number) => (v * Math.PI) / 180;
+    const dφ = toRad(ride.origin_lat - dLat);
+    const dλ = toRad(ride.origin_lng - dLng);
+    const a =
+      Math.sin(dφ / 2) ** 2 +
+      Math.cos(toRad(dLat)) * Math.cos(toRad(ride.origin_lat)) * Math.sin(dλ / 2) ** 2;
+    return 2 * R * Math.asin(Math.min(1, Math.sqrt(a)));
+  })();
+
+  const eta = isInTrip
+    ? (ride.duration_min ? Math.max(1, Math.round(Number(ride.duration_min))) : null)
+    : (approachKm != null ? Math.max(1, Math.round((approachKm / 32) * 60)) : null);
+  const distKm = isInTrip
+    ? (ride.distance_km != null ? Number(ride.distance_km) : null)
+    : approachKm;
 
   return (
     <div className="pt-1 animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -3458,15 +3476,15 @@ function DriverEnRoute({
         {phaseLabel}
       </div>
 
-      {/* ETA destacado */}
-      {!isInTrip && (
+      {/* ETA destacado — só quando dados reais disponíveis */}
+      {(eta != null || distKm != null) && ride.status !== "motorista_chegou" && (
         <div className="mb-2 flex items-center justify-between gap-3 rounded-2xl bg-primary/10 px-3 py-2.5 ring-1 ring-primary/30">
           <div>
             <div className="text-[9.5px] font-semibold uppercase tracking-widest text-primary leading-none">
-              Chegando em
+              {isInTrip ? "Tempo restante" : "Chegando em"}
             </div>
             <div className="mt-0.5 text-[22px] font-extrabold leading-none text-foreground tabular-nums">
-              {eta} <span className="text-[12px] font-bold">min</span>
+              {eta ?? "—"} <span className="text-[12px] font-bold">min</span>
             </div>
           </div>
           <div className="text-right">
@@ -3474,7 +3492,7 @@ function DriverEnRoute({
               Distância
             </div>
             <div className="mt-0.5 text-[15px] font-extrabold leading-none text-foreground tabular-nums">
-              {(eta * 0.45).toFixed(1)} <span className="text-[10px] font-bold">km</span>
+              {distKm != null ? distKm.toFixed(1) : "—"} <span className="text-[10px] font-bold">km</span>
             </div>
           </div>
         </div>
