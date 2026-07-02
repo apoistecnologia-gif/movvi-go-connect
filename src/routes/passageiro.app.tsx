@@ -1498,7 +1498,7 @@ function PassageiroApp() {
         const bounds = new google.maps.LatLngBounds();
         bounds.extend(position);
         bounds.extend(dest);
-        mapRef.current.fitBounds(bounds, { top: 100, bottom: window.innerHeight * 0.6, left: 60, right: 60 });
+        mapRef.current.fitBounds(bounds, { top: 100, bottom: Math.round(window.innerHeight * 0.34) + 16, left: 60, right: 60 });
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Falha ao calcular rota.");
