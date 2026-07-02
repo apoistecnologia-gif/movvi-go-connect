@@ -16,10 +16,12 @@ import {
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { MovviLogo } from "@/components/MovviLogo";
-import { ArrowLeft, Loader2, Upload } from "lucide-react";
+import { ArrowLeft, Loader2, ShieldCheck } from "lucide-react";
 import { translateAuthError } from "@/lib/authErrors";
 import { cadastrarMotorista } from "@/lib/driverAuth.functions";
 import { DriverPhotoField } from "@/components/DriverPhotoField";
+import { DriverDocumentField } from "@/components/DriverDocumentField";
+import { compressDocumentImage } from "@/lib/imageCompress";
 
 export const Route = createFileRoute("/motorista/cadastro")({
   head: () => ({ meta: [{ title: "Cadastro do Motorista — MOVVI DRIVE" }] }),
