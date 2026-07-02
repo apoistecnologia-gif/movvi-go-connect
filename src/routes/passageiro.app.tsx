@@ -160,32 +160,32 @@ function PremiumTopBar({
 
   return (
     <div className="absolute inset-x-0 top-0 z-40 px-3 pt-[calc(env(safe-area-inset-top)+10px)]">
-      <div className="mx-auto flex max-w-5xl items-center gap-3 rounded-2xl bg-card/85 px-3.5 py-2.5 shadow-lg ring-1 ring-border/50 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-500">
+      <div className="mx-auto flex max-w-5xl items-center gap-3 rounded-[22px] bg-card/80 px-3 py-2.5 shadow-[0_10px_32px_-14px_rgba(0,0,0,0.55)] ring-1 ring-border/40 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-500">
         <button
           onClick={onOpenMenu}
           aria-label="Abrir menu"
-          className="active-press inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted/60 hover:text-foreground"
+          className="active-press inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-muted-foreground/90 transition hover:bg-muted/50 hover:text-foreground"
         >
-          <Menu className="h-[19px] w-[19px]" />
+          <Menu className="h-[18px] w-[18px]" strokeWidth={1.75} />
         </button>
-        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-muted/50 text-muted-foreground ring-1 ring-border/60">
-          <GIcon className="h-[17px] w-[17px]" />
+        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-muted/40 text-muted-foreground/90">
+          <GIcon className="h-[16px] w-[16px]" strokeWidth={1.75} />
         </div>
         <div className="min-w-0 flex-1">
-          <div className={`${greetingClass} font-medium leading-tight tracking-tight text-foreground`}>
-            {greet}, <span className="font-semibold">{fname}</span>
+          <div className={`${greetingClass} font-normal leading-tight tracking-tight text-foreground/90`}>
+            {greet}, <span className="font-semibold text-foreground">{fname}</span>
           </div>
-          <div className="mt-0.5 flex items-center gap-1.5 truncate text-[11px] text-muted-foreground">
-            <span className="text-[12px] leading-none">{statusIcon}</span>
+          <div className="mt-1 flex items-center gap-1.5 truncate text-[11px] text-muted-foreground">
+            <span className="text-[11px] leading-none opacity-80">{statusIcon}</span>
             <span className="truncate">{statusText}</span>
           </div>
         </div>
         <button
           onClick={onLogout}
           aria-label="Sair"
-          className="active-press inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-muted-foreground transition hover:bg-destructive/15 hover:text-destructive"
+          className="active-press inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground/70 transition hover:bg-destructive/10 hover:text-destructive"
         >
-          <LogOut className="h-[18px] w-[18px]" />
+          <LogOut className="h-[16px] w-[16px]" strokeWidth={1.75} />
         </button>
       </div>
     </div>
@@ -2411,22 +2411,22 @@ function PassageiroApp() {
             className="pointer-events-none absolute inset-x-0 z-40 flex justify-center px-3"
             style={{ top: "calc(env(safe-area-inset-top) + 76px)" }}
           >
-            <div className="pointer-events-auto w-full max-w-sm rounded-2xl bg-card/95 px-4 py-3 ring-1 ring-border/60 shadow-lg backdrop-blur">
-              <div className="flex items-center justify-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                <Shield className="h-3 w-3 text-primary" />
+            <div className="pointer-events-auto w-full max-w-sm rounded-2xl bg-card/92 px-4 py-2.5 ring-1 ring-border/50 shadow-[0_10px_28px_-14px_rgba(0,0,0,0.55)] backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-400">
+              <div className="flex items-center justify-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground/90">
+                <Shield className="h-3 w-3 text-primary/80" strokeWidth={2} />
                 Código de segurança
               </div>
-              <div className="mt-2 flex items-center justify-center gap-2">
+              <div className="mt-1.5 flex items-center justify-center gap-1.5">
                 {ride.safety_code.split("").map((d, i) => (
                   <span
                     key={i}
-                    className="grid h-10 w-8 place-items-center rounded-lg bg-background/80 text-[22px] font-extrabold tabular-nums text-foreground ring-1 ring-border"
+                    className="grid h-9 w-8 place-items-center rounded-lg bg-background/70 text-[20px] font-extrabold tabular-nums text-foreground ring-1 ring-border/70"
                   >
                     {d}
                   </span>
                 ))}
               </div>
-              <p className="mt-2 text-center text-[10.5px] text-muted-foreground">
+              <p className="mt-1.5 text-center text-[10px] text-muted-foreground/80">
                 Informe ao motorista antes de iniciar a corrida.
               </p>
             </div>
@@ -3469,59 +3469,61 @@ function DriverEnRoute({
 
   return (
     <div className="pt-1 animate-in fade-in slide-in-from-bottom-2 duration-300">
-      <div className="mb-2 flex items-center justify-center gap-2 text-[10.5px] font-bold uppercase tracking-widest text-primary">
+      <div className="mb-3 flex items-center justify-center gap-2 text-[10.5px] font-bold uppercase tracking-[0.22em] text-muted-foreground/90">
         <span className="relative flex h-2 w-2">
-          <span className="absolute inset-0 animate-ping rounded-full bg-primary/70" />
+          <span className="absolute inset-0 animate-ping rounded-full bg-primary/60" />
           <span className="relative h-2 w-2 rounded-full bg-primary" />
         </span>
-        {phaseLabel}
+        <span className="text-foreground/95">{phaseLabel}</span>
       </div>
 
       {/* ETA destacado — só quando dados reais disponíveis */}
       {(eta != null || distKm != null) && ride.status !== "motorista_chegou" && (
-        <div className="mb-2 flex items-center justify-between gap-3 rounded-2xl bg-primary/10 px-3 py-2.5 ring-1 ring-primary/30">
+        <div className="mb-3 flex items-center justify-between gap-3 rounded-2xl bg-background/50 px-4 py-3 ring-1 ring-border/60">
           <div>
-            <div className="text-[9.5px] font-semibold uppercase tracking-widest text-primary leading-none">
+            <div className="text-[9.5px] font-semibold uppercase tracking-[0.2em] text-muted-foreground leading-none">
               {isInTrip ? "Tempo restante" : "Chegando em"}
             </div>
-            <div className="mt-0.5 text-[22px] font-extrabold leading-none text-foreground tabular-nums">
-              {eta ?? "—"} <span className="text-[12px] font-bold">min</span>
+            <div key={eta ?? "eta-empty"} className="mt-1.5 text-[26px] font-extrabold leading-none text-foreground tabular-nums animate-count-pop">
+              {eta ?? "—"}
+              <span className="ml-1 text-[13px] font-semibold text-muted-foreground">min</span>
             </div>
           </div>
           <div className="text-right">
-            <div className="text-[9.5px] font-semibold uppercase tracking-widest text-muted-foreground leading-none">
+            <div className="text-[9.5px] font-semibold uppercase tracking-[0.2em] text-muted-foreground leading-none">
               Distância
             </div>
-            <div className="mt-0.5 text-[15px] font-extrabold leading-none text-foreground tabular-nums">
-              {distKm != null ? distKm.toFixed(1) : "—"} <span className="text-[10px] font-bold">km</span>
+            <div key={distKm?.toFixed(1) ?? "d-empty"} className="mt-1.5 text-[17px] font-extrabold leading-none text-foreground tabular-nums animate-count-pop">
+              {distKm != null ? distKm.toFixed(1) : "—"}
+              <span className="ml-1 text-[11px] font-semibold text-muted-foreground">km</span>
             </div>
           </div>
         </div>
       )}
 
-      <div className="flex items-center gap-3.5 rounded-2xl bg-background/60 p-3.5 ring-1 ring-border/70">
-        <div className="shrink-0 rounded-full ring-2 ring-white/90 shadow-md">
+      <div className="flex items-center gap-4 rounded-2xl bg-background/50 p-4 ring-1 ring-border/60">
+        <div className="shrink-0 rounded-full ring-2 ring-white/85 shadow-[0_6px_18px_-6px_rgba(0,0,0,0.5)]">
           <Avatar
             src={driver.photo_url ?? null}
             name={driver.name}
-            size={62}
+            size={64}
           />
         </div>
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="truncate text-[15px] font-semibold tracking-tight text-foreground">
+            <span className="truncate text-[15.5px] font-semibold tracking-tight text-foreground">
               {driver.name}
             </span>
-            <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-muted/40 px-1.5 py-0.5 text-[11px] font-medium text-foreground/90">
+            <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-muted/35 px-1.5 py-0.5 text-[11px] font-medium text-foreground/85">
               <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
               {driver.rating?.toFixed(1) ?? "5.0"}
             </span>
           </div>
-          <div className="mt-1 truncate text-[12px] text-muted-foreground">
+          <div className="mt-1 truncate text-[12.5px] text-muted-foreground">
             {driver.vehicle_color} · {driver.vehicle_model}
           </div>
-          <div className="mt-1.5 inline-flex items-center rounded-md bg-white px-2 py-0.5 text-[11px] font-extrabold tracking-[0.18em] text-black shadow-sm">
+          <div className="mt-2 inline-flex items-center rounded-md bg-white px-2 py-[3px] text-[11px] font-extrabold tracking-[0.2em] text-black shadow-[0_2px_6px_-2px_rgba(0,0,0,0.35)]">
             {driver.vehicle_plate}
           </div>
         </div>
@@ -3535,15 +3537,15 @@ function DriverEnRoute({
 
 
 
-      <div className="mt-2 rounded-xl bg-background/60 px-3 py-2 text-[11.5px] ring-1 ring-border">
+      <div className="mt-3 rounded-xl bg-background/50 px-3.5 py-2.5 text-[12px] ring-1 ring-border/60">
         <div className="flex items-center gap-1.5">
           <MapPin className="h-3 w-3 shrink-0 text-destructive" />
           <span className="truncate">{ride.destination_name}</span>
         </div>
         {ride.estimated_price && (
-          <div className="mt-0.5 flex items-center justify-between text-muted-foreground">
+          <div className="mt-1 flex items-center justify-between text-muted-foreground">
             <span>Estimativa</span>
-            <span className="font-bold text-primary">
+            <span className="font-bold text-foreground">
               {formatBRL(Number(ride.estimated_price))}
             </span>
           </div>

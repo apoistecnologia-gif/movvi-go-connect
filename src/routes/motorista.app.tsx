@@ -1167,23 +1167,23 @@ function IdleBottomPanel({
 
   return (
     <div
-      className="absolute inset-x-0 z-30 rounded-t-[24px] bg-card text-foreground shadow-[0_-20px_60px_-20px_rgba(0,0,0,0.7)] ring-1 ring-border/60"
+      className="absolute inset-x-0 z-30 rounded-t-[28px] bg-card text-foreground shadow-[0_-24px_60px_-24px_rgba(0,0,0,0.65)] ring-1 ring-border/50 animate-sheet-in"
       style={{ bottom: navReserve }}
     >
-      <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-muted-foreground/30" />
+      <div className="mx-auto mt-2.5 h-[5px] w-11 rounded-full bg-muted-foreground/25" />
 
-      <div className="flex flex-col gap-2.5 px-4 pb-3 pt-2">
+      <div className="flex flex-col gap-3 px-5 pb-4 pt-2.5">
         {/* linha 1: nome + status pill */}
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
           <div className="min-w-0">
-            <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Motorista</p>
-            <h1 className="truncate text-base font-bold leading-tight">{driverName || "Bem-vindo"}</h1>
+            <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground">Motorista</p>
+            <h1 className="mt-0.5 truncate text-[17px] font-bold leading-tight tracking-tight">{driverName || "Bem-vindo"}</h1>
           </div>
           <div
-            className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${
+            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold ring-1 transition-colors ${
               online
-                ? "bg-primary/15 text-primary ring-primary/40"
-                : "bg-muted/30 text-muted-foreground ring-border"
+                ? "bg-primary/15 text-primary ring-primary/35"
+                : "bg-muted/25 text-muted-foreground ring-border/60"
             }`}
           >
             <span className="relative flex h-2 w-2">
@@ -1194,15 +1194,15 @@ function IdleBottomPanel({
           </div>
         </div>
 
-        {/* linha 2: stats */}
-        <div className="grid grid-cols-2 gap-2">
+        {/* linha 2: stats — ganhos com destaque premium */}
+        <div className="grid grid-cols-[1fr_1.35fr] gap-2.5">
           <StatBlock label="Corridas hoje" value={stats.rides.toString()} />
           <StatBlock label="Ganhos hoje" value={formatBRL(stats.earnings)} highlight />
         </div>
 
         {/* mensagem de erro do GPS (não substitui o botão) */}
         {gpsMessage && (
-          <div className="rounded-lg bg-destructive/10 px-3 py-1.5 text-[11px] text-destructive ring-1 ring-destructive/30">
+          <div className="rounded-xl bg-destructive/10 px-3 py-2 text-[11.5px] text-destructive ring-1 ring-destructive/25">
             {gpsMessage}
           </div>
         )}
@@ -1212,7 +1212,7 @@ function IdleBottomPanel({
           <button
             type="button"
             onClick={onUseTestLocation}
-            className="w-full rounded-xl border border-dashed border-primary/60 bg-primary/10 px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-primary transition hover:bg-primary/20"
+            className="press-scale w-full rounded-xl border border-dashed border-primary/50 bg-primary/10 px-3 py-2.5 text-[11px] font-semibold uppercase tracking-[0.15em] text-primary transition hover:bg-primary/20"
           >
             Usar localização de teste no Brasil
           </button>
@@ -1223,10 +1223,10 @@ function IdleBottomPanel({
           type="button"
           disabled={disabled}
           onClick={toggleOnline}
-          className={`w-full rounded-xl py-3 text-sm font-bold uppercase tracking-wider shadow-lg transition disabled:cursor-not-allowed disabled:opacity-60 ${
+          className={`press-scale w-full rounded-2xl py-4 text-[14px] font-bold uppercase tracking-[0.15em] transition disabled:cursor-not-allowed disabled:opacity-60 ${
             online
               ? "bg-card text-foreground ring-1 ring-border hover:ring-destructive/50"
-              : "bg-primary text-primary-foreground shadow-primary/30 hover:brightness-110"
+              : "bg-primary text-primary-foreground shadow-[0_12px_32px_-12px_color-mix(in_oklab,var(--color-primary)_60%,transparent)] hover:brightness-105"
           }`}
         >
           {loading ? "Obtendo localização..." : online ? "Ficar offline" : "Ficar online"}
@@ -1238,9 +1238,13 @@ function IdleBottomPanel({
 
 function StatBlock({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
   return (
-    <div className="rounded-xl bg-background/60 px-3 py-2 ring-1 ring-border">
-      <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</div>
-      <div className={`mt-0.5 text-base font-bold tabular-nums ${highlight ? "text-primary" : ""}`}>{value}</div>
+    <div className={`rounded-2xl px-3.5 py-2.5 ring-1 transition ${
+      highlight
+        ? "bg-primary/10 ring-primary/25"
+        : "bg-background/55 ring-border/60"
+    }`}>
+      <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">{label}</div>
+      <div className={`mt-1 tabular-nums leading-none ${highlight ? "text-[22px] font-extrabold text-primary" : "text-[18px] font-bold text-foreground"}`}>{value}</div>
     </div>
   );
 }
@@ -1297,13 +1301,13 @@ function IncomingOffer({
           <RouteLine color="bg-destructive" label="Destino" name={ride.destination_name} />
         </div>
 
-        <div className="mt-5 grid grid-cols-5 gap-2">
+        <div className="mt-5 grid grid-cols-5 gap-2.5">
           <button onClick={onReject}
-            className="col-span-2 rounded-2xl bg-muted/40 py-4 text-sm font-semibold text-muted-foreground ring-1 ring-border hover:bg-muted/60 hover:text-foreground transition">
+            className="press-scale col-span-2 rounded-2xl bg-muted/35 py-4 text-sm font-semibold text-muted-foreground ring-1 ring-border/70 hover:bg-muted/55 hover:text-foreground transition">
             Recusar
           </button>
           <button onClick={onAccept}
-            className="col-span-3 rounded-2xl bg-primary py-4 text-sm font-bold uppercase tracking-wider text-primary-foreground shadow-lg shadow-primary/30 hover:brightness-110 transition">
+            className="press-scale col-span-3 rounded-2xl bg-primary py-4 text-sm font-bold uppercase tracking-[0.15em] text-primary-foreground shadow-[0_14px_32px_-14px_color-mix(in_oklab,var(--color-primary)_60%,transparent)] hover:brightness-105 transition">
             Aceitar
           </button>
         </div>
@@ -1314,15 +1318,16 @@ function IncomingOffer({
 
 function CountdownRing({ seconds, pct }: { seconds: number; pct: number }) {
   const r = 18, c = 2 * Math.PI * r;
+  const isLow = seconds <= 5;
   return (
-    <div className="relative h-12 w-12">
+    <div className={`relative h-12 w-12 ${isLow ? "animate-pulse-soft" : ""}`}>
       <svg viewBox="0 0 44 44" className="h-12 w-12 -rotate-90">
         <circle cx="22" cy="22" r={r} stroke="hsl(var(--border))" strokeWidth="3" fill="none" />
         <circle cx="22" cy="22" r={r} stroke="#8DD92B" strokeWidth="3" fill="none"
           strokeDasharray={c} strokeDashoffset={c - (c * pct) / 100}
           strokeLinecap="round" className="transition-[stroke-dashoffset] duration-700 ease-linear" />
       </svg>
-      <span className="absolute inset-0 flex items-center justify-center font-mono text-sm font-bold text-primary">
+      <span className="absolute inset-0 flex items-center justify-center font-mono text-sm font-bold text-primary tabular-nums">
         {seconds}
       </span>
     </div>
@@ -1343,9 +1348,11 @@ function RouteLine({ color, label, name }: { color: string; label: string; name:
 
 function Metric({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
   return (
-    <div className="rounded-xl bg-background/60 px-2 py-2 ring-1 ring-border text-center">
-      <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</div>
-      <div className={`mt-0.5 text-sm font-bold tabular-nums ${highlight ? "text-primary" : ""}`}>{value}</div>
+    <div className={`rounded-xl px-2.5 py-2 ring-1 text-center transition ${
+      highlight ? "bg-primary/10 ring-primary/25" : "bg-background/55 ring-border/60"
+    }`}>
+      <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">{label}</div>
+      <div className={`mt-1 text-[14px] font-bold tabular-nums leading-none ${highlight ? "text-primary" : "text-foreground"}`}>{value}</div>
     </div>
   );
 }
@@ -1432,18 +1439,22 @@ function ActiveRidePanel({
       )}
 
       {/* passageiro */}
-      <div className="flex items-center gap-3 rounded-2xl bg-background/60 p-3 ring-1 ring-border">
-        <Avatar src={passenger?.avatar_url ?? (ride as { passenger_photo_url?: string | null }).passenger_photo_url ?? null} name={passenger?.name ?? "?"} size={44} />
+      <div className="flex items-center gap-3.5 rounded-2xl bg-background/55 p-3.5 ring-1 ring-border/60">
+        <div className="shrink-0 rounded-full ring-2 ring-white/85 shadow-[0_6px_18px_-6px_rgba(0,0,0,0.5)]">
+          <Avatar src={passenger?.avatar_url ?? (ride as { passenger_photo_url?: string | null }).passenger_photo_url ?? null} name={passenger?.name ?? "?"} size={56} />
+        </div>
         <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-semibold">{passenger?.name ?? "Passageiro"}</div>
-          <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
-            <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" /> 5.0 · {ride.payment_method === "cash" ? "Dinheiro" : (ride.payment_method ?? "—")}
+          <div className="truncate text-[15px] font-semibold tracking-tight">{passenger?.name ?? "Passageiro"}</div>
+          <div className="mt-1 flex items-center gap-1.5 text-[12px] text-muted-foreground">
+            <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" /> 5.0
+            <span className="text-muted-foreground/50">·</span>
+            {ride.payment_method === "cash" ? "Dinheiro" : (ride.payment_method ?? "—")}
           </div>
         </div>
         {passenger?.phone && (
           <a href={`tel:${passenger.phone}`}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/15 text-primary ring-1 ring-primary/40 hover:bg-primary/25">
-            <Phone className="h-4 w-4" />
+            className="active-press flex h-11 w-11 items-center justify-center rounded-full bg-primary/12 text-primary ring-1 ring-primary/30 hover:bg-primary/20">
+            <Phone className="h-[17px] w-[17px]" />
           </a>
         )}
       </div>
@@ -1568,11 +1579,11 @@ function ActionButton({
     <button
       disabled={busy}
       onClick={async () => { setBusy(true); try { await onClick(); } finally { setBusy(false); } }}
-      className={`mt-1 flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-sm font-bold uppercase tracking-wider shadow-lg transition active:scale-[0.98] disabled:opacity-60 ${
+      className={`press-scale mt-1 flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-[14px] font-bold uppercase tracking-[0.15em] transition disabled:opacity-60 ${
         variant === "success"
-          ? "bg-primary text-primary-foreground shadow-primary/30 hover:brightness-110"
-          : "bg-primary text-primary-foreground shadow-primary/30 hover:brightness-110"}`}>
-      <Icon className="h-4 w-4" />
+          ? "bg-primary text-primary-foreground shadow-[0_14px_32px_-14px_color-mix(in_oklab,var(--color-primary)_60%,transparent)] hover:brightness-105"
+          : "bg-primary text-primary-foreground shadow-[0_14px_32px_-14px_color-mix(in_oklab,var(--color-primary)_60%,transparent)] hover:brightness-105"}`}>
+      <Icon className="h-[17px] w-[17px]" />
       {busy ? "…" : label}
     </button>
   );
