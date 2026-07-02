@@ -1579,11 +1579,11 @@ function ActionButton({
     <button
       disabled={busy}
       onClick={async () => { setBusy(true); try { await onClick(); } finally { setBusy(false); } }}
-      className={`mt-1 flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-sm font-bold uppercase tracking-wider shadow-lg transition active:scale-[0.98] disabled:opacity-60 ${
+      className={`press-scale mt-1 flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-[14px] font-bold uppercase tracking-[0.15em] transition disabled:opacity-60 ${
         variant === "success"
-          ? "bg-primary text-primary-foreground shadow-primary/30 hover:brightness-110"
-          : "bg-primary text-primary-foreground shadow-primary/30 hover:brightness-110"}`}>
-      <Icon className="h-4 w-4" />
+          ? "bg-primary text-primary-foreground shadow-[0_14px_32px_-14px_color-mix(in_oklab,var(--color-primary)_60%,transparent)] hover:brightness-105"
+          : "bg-primary text-primary-foreground shadow-[0_14px_32px_-14px_color-mix(in_oklab,var(--color-primary)_60%,transparent)] hover:brightness-105"}`}>
+      <Icon className="h-[17px] w-[17px]" />
       {busy ? "…" : label}
     </button>
   );
