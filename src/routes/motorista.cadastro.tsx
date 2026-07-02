@@ -272,23 +272,62 @@ function DriverSignUpPage() {
               </section>
 
               <section className="space-y-4">
-                <h3 className="text-sm font-semibold uppercase text-primary">Documentos</h3>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <FileField
-                    id="cnh"
-                    label="CNH"
-                    accept="image/*,application/pdf"
-                    file={cnh}
-                    onChange={setCnh}
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="text-sm font-semibold uppercase text-primary">Documentos</h3>
+                  <span
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ring-1 ${
+                      allDocsReady
+                        ? "bg-primary/15 text-primary ring-primary/30"
+                        : "bg-muted text-muted-foreground ring-border"
+                    }`}
+                  >
+                    <ShieldCheck className="h-3.5 w-3.5" />
+                    {docsUploaded}/4 enviados
+                  </span>
+                </div>
+
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="h-full bg-primary transition-all duration-300"
+                    style={{ width: `${(docsUploaded / 4) * 100}%` }}
                   />
-                  <FileField
-                    id="vehicle_doc"
-                    label="Documento do veículo"
-                    accept="image/*,application/pdf"
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <DriverDocumentField
+                    id="doc-cnh-front"
+                    label="CNH — Frente"
+                    helper="Foto legível, sem reflexos"
+                    file={cnhFront}
+                    onChange={setCnhFront}
+                  />
+                  <DriverDocumentField
+                    id="doc-cnh-back"
+                    label="CNH — Verso"
+                    helper="Verso completo da CNH"
+                    file={cnhBack}
+                    onChange={setCnhBack}
+                  />
+                  <DriverDocumentField
+                    id="doc-crlv"
+                    label="CRLV do veículo"
+                    helper="Documento atual do veículo"
                     file={vehicleDoc}
                     onChange={setVehicleDoc}
                   />
+                  <DriverDocumentField
+                    id="doc-selfie"
+                    label="Selfie de validação"
+                    helper="Rosto visível, boa iluminação"
+                    facing="user"
+                    file={selfie}
+                    onChange={setSelfie}
+                  />
                 </div>
+
+                <p className="text-[11px] text-muted-foreground">
+                  Seus documentos ficam privados e são usados apenas para análise da conta.
+                </p>
               </section>
 
               {error && (
@@ -310,13 +349,15 @@ function DriverSignUpPage() {
                     Entrar
                   </Link>
                 </p>
-                <Button type="submit" size="lg" disabled={loading} className="sm:min-w-48">
+                <Button type="submit" size="lg" disabled={loading || !allDocsReady} className="sm:min-w-48">
                   {loading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Enviando...
                     </>
-                  ) : (
+                  ) : allDocsReady ? (
                     "Enviar cadastro"
+                  ) : (
+                    `Faltam ${4 - docsUploaded} documento(s)`
                   )}
                 </Button>
               </div>
