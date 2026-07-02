@@ -160,20 +160,20 @@ function PremiumTopBar({
 
   return (
     <div className="absolute inset-x-0 top-0 z-40 px-3 pt-[calc(env(safe-area-inset-top)+10px)]">
-      <div className="mx-auto flex max-w-5xl items-center gap-3 rounded-2xl bg-card/90 px-3 py-2.5 shadow-xl ring-1 ring-border/60 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-500">
+      <div className="mx-auto flex max-w-5xl items-center gap-3 rounded-2xl bg-card/85 px-3.5 py-2.5 shadow-lg ring-1 ring-border/50 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-500">
         <button
           onClick={onOpenMenu}
           aria-label="Abrir menu"
-          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary ring-1 ring-primary/30 transition hover:bg-primary/25 active:scale-90"
+          className="active-press inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted/60 hover:text-foreground"
         >
-          <Menu className="h-[22px] w-[22px]" />
+          <Menu className="h-[19px] w-[19px]" />
         </button>
-        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/10 text-primary ring-1 ring-primary/20">
-          <GIcon className="h-5 w-5" />
+        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-muted/50 text-muted-foreground ring-1 ring-border/60">
+          <GIcon className="h-[17px] w-[17px]" />
         </div>
         <div className="min-w-0 flex-1">
-          <div className={`${greetingClass} font-semibold leading-tight text-foreground`}>
-            {greet}, {fname} <span className="opacity-90">👋</span>
+          <div className={`${greetingClass} font-medium leading-tight tracking-tight text-foreground`}>
+            {greet}, <span className="font-semibold">{fname}</span>
           </div>
           <div className="mt-0.5 flex items-center gap-1.5 truncate text-[11px] text-muted-foreground">
             <span className="text-[12px] leading-none">{statusIcon}</span>
@@ -183,14 +183,15 @@ function PremiumTopBar({
         <button
           onClick={onLogout}
           aria-label="Sair"
-          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-destructive/15 text-destructive ring-1 ring-destructive/30 transition hover:bg-destructive/25 active:scale-90"
+          className="active-press inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-muted-foreground transition hover:bg-destructive/15 hover:text-destructive"
         >
-          <LogOut className="h-5 w-5" />
+          <LogOut className="h-[18px] w-[18px]" />
         </button>
       </div>
     </div>
   );
 }
+
 
 function PulsingUserMarker({ position }: { position: LatLng }) {
   const pulseIcon = useMemo(
@@ -2410,25 +2411,26 @@ function PassageiroApp() {
             className="pointer-events-none absolute inset-x-0 z-40 flex justify-center px-3"
             style={{ top: "calc(env(safe-area-inset-top) + 76px)" }}
           >
-            <div className="pointer-events-auto w-full max-w-sm rounded-2xl bg-card/95 p-3 ring-2 ring-primary/60 shadow-2xl shadow-primary/20 backdrop-blur">
-              <div className="flex items-center justify-center gap-1.5 text-[10.5px] font-bold uppercase tracking-widest text-primary">
-                <Shield className="h-3.5 w-3.5" />
+            <div className="pointer-events-auto w-full max-w-sm rounded-2xl bg-card/95 px-4 py-3 ring-1 ring-border/60 shadow-lg backdrop-blur">
+              <div className="flex items-center justify-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                <Shield className="h-3 w-3 text-primary" />
                 Código de segurança
               </div>
-              <div className="mt-2 flex items-center justify-center gap-1.5">
+              <div className="mt-2 flex items-center justify-center gap-2">
                 {ride.safety_code.split("").map((d, i) => (
                   <span
                     key={i}
-                    className="grid h-11 w-9 place-items-center rounded-lg bg-background text-2xl font-extrabold tabular-nums text-foreground ring-1 ring-primary/40 shadow-inner"
+                    className="grid h-10 w-8 place-items-center rounded-lg bg-background/80 text-[22px] font-extrabold tabular-nums text-foreground ring-1 ring-border"
                   >
                     {d}
                   </span>
                 ))}
               </div>
-              <p className="mt-1.5 text-center text-[10.5px] text-muted-foreground">
+              <p className="mt-2 text-center text-[10.5px] text-muted-foreground">
                 Informe ao motorista antes de iniciar a corrida.
               </p>
             </div>
+
           </div>
         )}
 
@@ -3407,18 +3409,18 @@ function SearchingPanel({
         </div>
       </div>
 
-      {/* Barra de progresso fina do raio */}
-      <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-background/80 ring-1 ring-border">
+      {/* Indeterminate premium progress bar */}
+      <div className="relative mt-3 h-1 w-full overflow-hidden rounded-full bg-muted/40">
         <div
-          className="h-full rounded-full bg-gradient-to-r from-primary via-primary to-primary/60 transition-[width] duration-700 ease-out"
-          style={{ width: `${(radiusKm / 8) * 100}%` }}
+          className="animate-movvi-indeterminate absolute inset-y-0 left-0 h-full w-2/5 rounded-full bg-gradient-to-r from-transparent via-primary to-transparent"
         />
       </div>
 
       {/* Dica de arraste — visível só nos primeiros segundos */}
-      <p className="mt-1.5 text-center text-[10px] text-muted-foreground/80">
+      <p className="mt-2 text-center text-[10px] text-muted-foreground/80">
         Arraste para cima para mais detalhes
       </p>
+
     </div>
   );
 }
@@ -3497,29 +3499,34 @@ function DriverEnRoute({
         </div>
       )}
 
-      <div className="flex items-center gap-2.5 rounded-2xl bg-background/60 p-2.5 ring-1 ring-border">
-        <Avatar
-          src={driver.photo_url ?? null}
-          name={driver.name}
-          size={48}
-        />
+      <div className="flex items-center gap-3.5 rounded-2xl bg-background/60 p-3.5 ring-1 ring-border/70">
+        <div className="shrink-0 rounded-full ring-2 ring-white/90 shadow-md">
+          <Avatar
+            src={driver.photo_url ?? null}
+            name={driver.name}
+            size={62}
+          />
+        </div>
 
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5">
-            <span className="truncate text-[13.5px] font-bold">{driver.name}</span>
-            <span className="inline-flex shrink-0 items-center gap-0.5 text-[11px] text-yellow-400">
-              <Star className="h-3 w-3 fill-current" />
+          <div className="flex items-center gap-2">
+            <span className="truncate text-[15px] font-semibold tracking-tight text-foreground">
+              {driver.name}
+            </span>
+            <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-muted/40 px-1.5 py-0.5 text-[11px] font-medium text-foreground/90">
+              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
               {driver.rating?.toFixed(1) ?? "5.0"}
             </span>
           </div>
-          <div className="truncate text-[11.5px] text-muted-foreground">
+          <div className="mt-1 truncate text-[12px] text-muted-foreground">
             {driver.vehicle_color} · {driver.vehicle_model}
           </div>
-          <div className="mt-0.5 inline-flex items-center rounded bg-white px-1.5 py-0.5 text-[10px] font-extrabold tracking-widest text-black">
+          <div className="mt-1.5 inline-flex items-center rounded-md bg-white px-2 py-0.5 text-[11px] font-extrabold tracking-[0.18em] text-black shadow-sm">
             {driver.vehicle_plate}
           </div>
         </div>
       </div>
+
 
       <RideQuickActions ride={ride} driver={driver} onCancel={onCancel} />
 
