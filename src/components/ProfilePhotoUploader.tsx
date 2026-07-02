@@ -23,12 +23,14 @@ export function ProfilePhotoUploader({
   name,
   currentUrl,
   onUploaded,
+  onRemove,
   size = 96,
   required,
   label = "Foto de perfil",
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [removing, setRemoving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
 
