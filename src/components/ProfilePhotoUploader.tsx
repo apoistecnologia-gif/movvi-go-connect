@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { Loader2, Camera } from "lucide-react";
 import { Avatar } from "./Avatar";
 import { uploadProfilePhoto, validateProfilePhotoFile } from "@/lib/profilePhoto";
+import { compressImageToSquare } from "@/lib/imageCompress";
 
 type Props = {
   userId: string;
