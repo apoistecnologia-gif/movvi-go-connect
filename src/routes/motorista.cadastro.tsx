@@ -265,10 +265,6 @@ function DriverSignUpPage() {
                 </div>
               </section>
 
-              <section className="space-y-4">
-                <h3 className="text-sm font-semibold uppercase text-primary">Foto de perfil</h3>
-                <DriverPhotoField file={selfie} onChange={setSelfie} name={undefined} />
-              </section>
 
               <section className="space-y-4">
                 <div className="flex items-center justify-between gap-3">
