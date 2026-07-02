@@ -128,6 +128,25 @@ export function PassengerSideMenu({ open, onOpenChange, onLogout }: Props) {
     }
   }
 
+  async function handlePhotoRemoved() {
+    if (!userId) return;
+    try {
+      const { error } = await supabase
+        .from("users")
+        .update({ avatar_url: null })
+        .eq("auth_user_id", userId);
+      if (error) throw error;
+      await supabase.auth.updateUser({ data: { avatar_url: "" } });
+      setPhotoUrl(null);
+      setMsg({ kind: "ok", text: "Foto removida." });
+    } catch (err) {
+      setMsg({
+        kind: "err",
+        text: err instanceof Error ? err.message : "Falha ao remover a foto.",
+      });
+    }
+  }
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
@@ -155,6 +174,7 @@ export function PassengerSideMenu({ open, onOpenChange, onLogout }: Props) {
                     name={name || email}
                     currentUrl={photoUrl}
                     onUploaded={handlePhotoUploaded}
+                    onRemove={handlePhotoRemoved}
                     size={96}
                   />
                 </div>

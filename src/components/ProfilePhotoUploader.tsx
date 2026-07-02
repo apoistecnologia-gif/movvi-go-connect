@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Loader2, Camera } from "lucide-react";
+import { Loader2, Camera, Trash2 } from "lucide-react";
 import { Avatar } from "./Avatar";
 import { uploadProfilePhoto, validateProfilePhotoFile } from "@/lib/profilePhoto";
 import { compressImageToSquare } from "@/lib/imageCompress";
@@ -10,6 +10,8 @@ type Props = {
   currentUrl: string | null;
   /** Called with `{ signedUrl, path }` after a successful upload. */
   onUploaded: (result: { signedUrl: string; path: string }) => void | Promise<void>;
+  /** Optional — when provided, a "remove" button appears while a photo exists. */
+  onRemove?: () => void | Promise<void>;
   size?: number;
   /** When true, renders a "obrigatória" hint. */
   required?: boolean;
@@ -21,12 +23,14 @@ export function ProfilePhotoUploader({
   name,
   currentUrl,
   onUploaded,
+  onRemove,
   size = 96,
   required,
   label = "Foto de perfil",
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [removing, setRemoving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
 
@@ -94,6 +98,28 @@ export function ProfilePhotoUploader({
         </p>
         <p className="text-[10px] text-muted-foreground">JPG, PNG ou WEBP · até 5 MB</p>
       </div>
+
+      {onRemove && currentUrl && !preview && (
+        <button
+          type="button"
+          disabled={uploading || removing}
+          onClick={async () => {
+            setError(null);
+            setRemoving(true);
+            try {
+              await onRemove();
+            } catch (err) {
+              setError(err instanceof Error ? err.message : "Falha ao remover.");
+            } finally {
+              setRemoving(false);
+            }
+          }}
+          className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium text-destructive transition hover:bg-destructive/10 disabled:opacity-60"
+        >
+          {removing ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
+          Remover foto
+        </button>
+      )}
 
       {error && (
         <p className="rounded-md bg-destructive/15 px-2 py-1 text-[11px] text-destructive ring-1 ring-destructive/30">
