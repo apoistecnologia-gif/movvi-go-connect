@@ -3499,29 +3499,34 @@ function DriverEnRoute({
         </div>
       )}
 
-      <div className="flex items-center gap-2.5 rounded-2xl bg-background/60 p-2.5 ring-1 ring-border">
-        <Avatar
-          src={driver.photo_url ?? null}
-          name={driver.name}
-          size={48}
-        />
+      <div className="flex items-center gap-3.5 rounded-2xl bg-background/60 p-3.5 ring-1 ring-border/70">
+        <div className="shrink-0 rounded-full ring-2 ring-white/90 shadow-md">
+          <Avatar
+            src={driver.photo_url ?? null}
+            name={driver.name}
+            size={62}
+          />
+        </div>
 
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5">
-            <span className="truncate text-[13.5px] font-bold">{driver.name}</span>
-            <span className="inline-flex shrink-0 items-center gap-0.5 text-[11px] text-yellow-400">
-              <Star className="h-3 w-3 fill-current" />
+          <div className="flex items-center gap-2">
+            <span className="truncate text-[15px] font-semibold tracking-tight text-foreground">
+              {driver.name}
+            </span>
+            <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-muted/40 px-1.5 py-0.5 text-[11px] font-medium text-foreground/90">
+              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
               {driver.rating?.toFixed(1) ?? "5.0"}
             </span>
           </div>
-          <div className="truncate text-[11.5px] text-muted-foreground">
+          <div className="mt-1 truncate text-[12px] text-muted-foreground">
             {driver.vehicle_color} · {driver.vehicle_model}
           </div>
-          <div className="mt-0.5 inline-flex items-center rounded bg-white px-1.5 py-0.5 text-[10px] font-extrabold tracking-widest text-black">
+          <div className="mt-1.5 inline-flex items-center rounded-md bg-white px-2 py-0.5 text-[11px] font-extrabold tracking-[0.18em] text-black shadow-sm">
             {driver.vehicle_plate}
           </div>
         </div>
       </div>
+
 
       <RideQuickActions ride={ride} driver={driver} onCancel={onCancel} />
 
