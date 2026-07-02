@@ -3441,7 +3441,6 @@ function DriverEnRoute({
   // ETA/distância reais quando disponíveis:
   //  - Aproximando: haversine motorista → origem (velocidade média urbana 32 km/h)
   //  - Em viagem: usa ride.duration_min / ride.distance_km calculados no aceite
-  const isArriving = ride.status === "motorista_a_caminho" || ride.status === "procurar_motorista";
   const isInTrip = ride.status === "em_viagem";
 
   const approachKm = (() => {
