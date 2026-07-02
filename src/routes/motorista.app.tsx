@@ -1335,13 +1335,14 @@ function CountdownRing({ seconds, pct }: { seconds: number; pct: number }) {
   );
 }
 
-function RouteLine({ color, label, name }: { color: string; label: string; name: string }) {
+function RouteLine({ color, label, name }: { color: string; label: string; name: string | null | undefined }) {
+  const display = (name && name.trim()) || "Endereço não identificado";
   return (
     <div className="flex items-start gap-3">
       <span className={`mt-1.5 h-3 w-3 shrink-0 rounded-full ${color} ring-2 ring-card`} />
       <div className="min-w-0 flex-1">
         <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</div>
-        <div className="line-clamp-2 text-sm font-medium">{name}</div>
+        <div className="line-clamp-2 text-sm font-medium">{display}</div>
       </div>
     </div>
   );
@@ -1468,7 +1469,7 @@ function ActiveRidePanel({
             toPickup ? "bg-blue-500 animate-pulse" : "bg-blue-500/60"}`} />
           <div className="min-w-0 flex-1">
             <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Embarque</div>
-            <div className="line-clamp-2 text-sm font-medium">{ride.pickup_short_label || ride.pickup_label || ride.origin_name}</div>
+            <div className="line-clamp-2 text-sm font-medium">{ride.pickup_short_label || ride.pickup_label || ride.origin_name || "Endereço não identificado"}</div>
           </div>
           {toPickup && (
             <a target="_blank" rel="noreferrer"
@@ -1484,7 +1485,7 @@ function ActiveRidePanel({
             phase === "em_viagem" ? "bg-destructive animate-pulse" : "bg-destructive/60"}`} />
           <div className="min-w-0 flex-1">
             <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Destino</div>
-            <div className="line-clamp-2 text-sm font-medium">{ride.destination_name}</div>
+            <div className="line-clamp-2 text-sm font-medium">{ride.destination_name || "Endereço não identificado"}</div>
           </div>
           {phase === "em_viagem" && (
             <a target="_blank" rel="noreferrer"

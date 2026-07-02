@@ -314,6 +314,15 @@
   animation: movvi-card-in 300ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+@keyframes movvi-dots {
+  0%, 20%   { opacity: 0.2; transform: translateY(0); }
+  50%       { opacity: 1;   transform: translateY(-1px); }
+  80%, 100% { opacity: 0.2; transform: translateY(0); }
+}
+@utility animate-movvi-dots {
+  animation: movvi-dots 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
 @utility active-press {
   transition: transform 160ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 160ms ease, background-color 160ms ease;
   &:active { transform: scale(0.965); }
