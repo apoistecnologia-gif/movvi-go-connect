@@ -241,8 +241,14 @@ export function ProfilePage({
                           name={fullName || email}
                           currentUrl={photoUrl}
                           onUploaded={handlePhotoUploaded}
+                          onRemove={handlePhotoRemoved}
                           size={112}
                         />
+                        <p className="text-xs text-muted-foreground">
+                          {role === "passenger" ? "Opcional. " : ""}JPG, PNG ou WEBP.
+                        </p>
+                      </div>
+                    )}
                         <p className="text-xs text-muted-foreground">
                           JPG ou PNG. Mínimo 256×256px.
                         </p>
