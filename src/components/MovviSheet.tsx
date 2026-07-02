@@ -34,9 +34,9 @@ interface Props {
   children: ReactNode;
 }
 
-const SPRING_STIFFNESS = 0.22;
-const SPRING_DAMPING = 0.72;
-const VELOCITY_THRESHOLD = 0.35; // vh/ms
+const SPRING_STIFFNESS = 0.18;
+const SPRING_DAMPING = 0.78;
+const VELOCITY_THRESHOLD = 0.32; // vh/ms
 
 export const MovviSheet = forwardRef<MovviSheetHandle, Props>(function MovviSheet(
   { snaps, initial, onSnapChange, children },

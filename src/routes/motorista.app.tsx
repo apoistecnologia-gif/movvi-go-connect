@@ -21,6 +21,11 @@ import {
 import { MovviMap } from "@/components/MovviMap";
 import { DriverSideMenu } from "@/components/DriverSideMenu";
 import { MovviSheet, type MovviSheetHandle } from "@/components/MovviSheet";
+import {
+  InterpolatedDriverMarker,
+  PlacePinMarker,
+} from "@/components/mapMarkers";
+import { smoothPanZoom } from "@/lib/mapCamera";
 import { supabase } from "@/integrations/supabase/client";
 import {
   BRAZIL_CENTER,
@@ -387,8 +392,7 @@ function MotoristaApp() {
         });
         // centraliza mapa
         if (mapRef.current && !initialCenteredRef.current) {
-          mapRef.current.panTo({ lat, lng });
-          mapRef.current.setZoom(16);
+          smoothPanZoom(mapRef.current, { lat, lng }, 16, 700);
           initialCenteredRef.current = true;
         }
         startWatch();
@@ -472,8 +476,7 @@ function MotoristaApp() {
         });
       }
       if (mapRef.current) {
-        mapRef.current.panTo({ lat, lng });
-        mapRef.current.setZoom(16);
+        smoothPanZoom(mapRef.current, { lat, lng }, 16, 700);
         initialCenteredRef.current = true;
       }
       if (!isTest) startWatch();
@@ -508,8 +511,7 @@ function MotoristaApp() {
       .eq("user_id", userId);
 
     if (mapRef.current) {
-      mapRef.current.panTo({ lat, lng });
-      mapRef.current.setZoom(16);
+      smoothPanZoom(mapRef.current, { lat, lng }, 16, 700);
     }
   }
 
@@ -819,7 +821,7 @@ function MotoristaApp() {
       handledRidesRef.current.add(offer.id);
       setIncoming(null);
       setActive(r as RideRow);
-      sheetRef.current?.snapTo(55);
+      sheetRef.current?.snapTo(50);
     } catch (e) {
       console.error("[MOVVI MOTORISTA] erro ao aceitar:", e);
       handledRidesRef.current.delete(offer.id);
@@ -931,7 +933,7 @@ function MotoristaApp() {
     autoFollowRef.current = true;
     lastFollowAtRef.current = 0;
     const pos = positionRef.current;
-    if (pos && mapRef.current) { mapRef.current.panTo(pos); mapRef.current.setZoom(16); }
+    if (pos && mapRef.current) { smoothPanZoom(mapRef.current, pos, 16, 650); }
   }
 
 
@@ -980,42 +982,36 @@ function MotoristaApp() {
           themeOverride={active ? "light" : undefined}
           onLoad={(m) => { mapRef.current = m; }}>
           {position && (
-            <Marker position={position} icon={{
-              path: safeSymbol("FORWARD_CLOSED_ARROW"),
-              scale: 6, fillColor: online ? "#8DD92B" : "#94a3b8",
-              fillOpacity: 1, strokeColor: "#05070D", strokeWeight: 2,
-            }} />
+            <InterpolatedDriverMarker
+              position={position}
+              heading={position.heading ?? 0}
+              color={online ? "#8DD92B" : "#94a3b8"}
+            />
           )}
           {active && (
             <>
-              {/* Pickup do passageiro — pin verde com halo */}
-              <Marker position={{ lat: active.origin_lat, lng: active.origin_lng }} icon={{
-                path: safeSymbol("CIRCLE"), scale: 16,
-                fillColor: "#8DD92B", fillOpacity: 0.18, strokeColor: "#8DD92B", strokeOpacity: 0.4, strokeWeight: 1,
-              }} clickable={false} zIndex={9990} />
-              <Marker position={{ lat: active.origin_lat, lng: active.origin_lng }} icon={{
-                path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z",
-                fillColor: "#8DD92B", fillOpacity: 1, strokeColor: "#ffffff",
-                strokeWeight: 2, scale: 1.8, anchor: safePoint(12, 22),
-              }} zIndex={9991} />
-              {/* Destino — pin vermelho */}
-              <Marker position={{ lat: active.destination_lat, lng: active.destination_lng }} icon={{
-                path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z",
-                fillColor: "#ef4444", fillOpacity: 1, strokeColor: "#ffffff",
-                strokeWeight: 2, scale: 1.8, anchor: safePoint(12, 22),
-              }} />
+              <PlacePinMarker
+                position={{ lat: active.origin_lat, lng: active.origin_lng }}
+                color="#8DD92B"
+                zIndexBase={9990}
+              />
+              <PlacePinMarker
+                position={{ lat: active.destination_lat, lng: active.destination_lng }}
+                color="#ef4444"
+                zIndexBase={9992}
+              />
             </>
           )}
           {polyline.length > 0 && (
             <>
               <Polyline path={polyline} options={{
-                strokeColor: "#000000", strokeOpacity: 0.18, strokeWeight: 14, geodesic: true, zIndex: 1,
+                strokeColor: "#000000", strokeOpacity: 0.18, strokeWeight: 16, geodesic: true, zIndex: 1,
               }} />
               <Polyline path={polyline} options={{
-                strokeColor: "#ffffff", strokeOpacity: 1, strokeWeight: 10, geodesic: true, zIndex: 2,
+                strokeColor: "#ffffff", strokeOpacity: 1, strokeWeight: 11, geodesic: true, zIndex: 2,
               }} />
               <Polyline path={polyline} options={{
-                strokeColor: "#8DD92B", strokeOpacity: 1, strokeWeight: 6, geodesic: true, zIndex: 3,
+                strokeColor: "#8DD92B", strokeOpacity: 1, strokeWeight: 7, geodesic: true, zIndex: 3,
               }} />
             </>
           )}
@@ -1080,7 +1076,7 @@ function MotoristaApp() {
 
       {/* ===== Corrida ativa — usa bottom sheet ===== */}
       {!incoming && !ratingRide && active && (
-        <MovviSheet ref={sheetRef} snaps={[32, 55, 88]} initial={55}>
+        <MovviSheet ref={sheetRef} snaps={[26, 50, 90]} initial={50}>
           <ActiveRidePanel
             ride={active}
             passenger={passenger}
