@@ -174,6 +174,7 @@ export function PassengerSideMenu({ open, onOpenChange, onLogout }: Props) {
                     name={name || email}
                     currentUrl={photoUrl}
                     onUploaded={handlePhotoUploaded}
+                    onRemove={handlePhotoRemoved}
                     size={96}
                   />
                 </div>
