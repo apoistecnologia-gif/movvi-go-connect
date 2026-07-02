@@ -19,6 +19,7 @@ import { MovviLogo } from "@/components/MovviLogo";
 import { ArrowLeft, Loader2, Upload } from "lucide-react";
 import { translateAuthError } from "@/lib/authErrors";
 import { cadastrarMotorista } from "@/lib/driverAuth.functions";
+import { DriverPhotoField } from "@/components/DriverPhotoField";
 
 export const Route = createFileRoute("/motorista/cadastro")({
   head: () => ({ meta: [{ title: "Cadastro do Motorista — MOVVI DRIVE" }] }),
@@ -133,8 +134,12 @@ function DriverSignUpPage() {
       setError(parsed.error.issues[0]?.message ?? "Verifique os campos");
       return;
     }
-    if (!selfie || !cnh || !vehicleDoc) {
-      setError("Envie selfie, CNH e documento do veículo");
+    if (!selfie) {
+      setError("A foto de perfil é obrigatória.");
+      return;
+    }
+    if (!cnh || !vehicleDoc) {
+      setError("Envie CNH e documento do veículo");
       return;
     }
 
@@ -286,15 +291,13 @@ function DriverSignUpPage() {
               </section>
 
               <section className="space-y-4">
+                <h3 className="text-sm font-semibold uppercase text-primary">Foto de perfil</h3>
+                <DriverPhotoField file={selfie} onChange={setSelfie} name={undefined} />
+              </section>
+
+              <section className="space-y-4">
                 <h3 className="text-sm font-semibold uppercase text-primary">Documentos</h3>
-                <div className="grid gap-4 sm:grid-cols-3">
-                  <FileField
-                    id="selfie"
-                    label="Foto de perfil (selfie) *"
-                    accept="image/jpeg,image/jpg,image/png,image/webp"
-                    file={selfie}
-                    onChange={setSelfie}
-                  />
+                <div className="grid gap-4 sm:grid-cols-2">
                   <FileField
                     id="cnh"
                     label="CNH"

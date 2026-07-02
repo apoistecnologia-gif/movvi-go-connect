@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { Loader2, Camera } from "lucide-react";
 import { Avatar } from "./Avatar";
 import { uploadProfilePhoto, validateProfilePhotoFile } from "@/lib/profilePhoto";
+import { compressImageToSquare } from "@/lib/imageCompress";
 
 type Props = {
   userId: string;
@@ -40,7 +41,8 @@ export function ProfilePhotoUploader({
     const localPreview = URL.createObjectURL(file);
     setPreview(localPreview);
     try {
-      const res = await uploadProfilePhoto(userId, file);
+      const compressed = await compressImageToSquare(file, { size: 512, quality: 0.85 });
+      const res = await uploadProfilePhoto(userId, compressed);
       await onUploaded(res);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Falha ao enviar a foto.");
