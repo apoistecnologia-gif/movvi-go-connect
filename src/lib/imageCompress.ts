@@ -71,3 +71,49 @@ async function loadBitmap(file: File): Promise<ImageBitmap | HTMLImageElement> {
     img.src = url;
   });
 }
+
+/**
+ * Compress a document image (CNH, CRLV, selfie doc) preserving aspect ratio.
+ * Fits within maxSize (default 1600px on the longest side), JPEG.
+ * Skips non-image files (e.g. PDFs) — returned as-is.
+ */
+export async function compressDocumentImage(
+  file: File,
+  opts: { maxSize?: number; quality?: number } = {},
+): Promise<File> {
+  if (!file.type.startsWith("image/")) return file;
+  const maxSize = opts.maxSize ?? 1600;
+  const quality = opts.quality ?? 0.85;
+
+  const bitmap = await loadBitmap(file);
+  try {
+    const w = (bitmap as ImageBitmap).width || (bitmap as HTMLImageElement).naturalWidth;
+    const h = (bitmap as ImageBitmap).height || (bitmap as HTMLImageElement).naturalHeight;
+    if (!w || !h) return file;
+    const scale = Math.min(1, maxSize / Math.max(w, h));
+    const outW = Math.round(w * scale);
+    const outH = Math.round(h * scale);
+
+    const canvas = document.createElement("canvas");
+    canvas.width = outW;
+    canvas.height = outH;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return file;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(bitmap as CanvasImageSource, 0, 0, outW, outH);
+
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, "image/jpeg", quality),
+    );
+    if (!blob) return file;
+
+    // Skip replacement if compression made it larger.
+    if (blob.size >= file.size) return file;
+
+    const base = file.name.replace(/\.[^.]+$/, "") || "documento";
+    return new File([blob], `${base}.jpg`, { type: "image/jpeg", lastModified: Date.now() });
+  } finally {
+    if ("close" in bitmap) (bitmap as ImageBitmap).close();
+  }
+}
