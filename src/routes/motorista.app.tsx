@@ -1348,9 +1348,11 @@ function RouteLine({ color, label, name }: { color: string; label: string; name:
 
 function Metric({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
   return (
-    <div className="rounded-xl bg-background/60 px-2 py-2 ring-1 ring-border text-center">
-      <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</div>
-      <div className={`mt-0.5 text-sm font-bold tabular-nums ${highlight ? "text-primary" : ""}`}>{value}</div>
+    <div className={`rounded-xl px-2.5 py-2 ring-1 text-center transition ${
+      highlight ? "bg-primary/10 ring-primary/25" : "bg-background/55 ring-border/60"
+    }`}>
+      <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">{label}</div>
+      <div className={`mt-1 text-[14px] font-bold tabular-nums leading-none ${highlight ? "text-primary" : "text-foreground"}`}>{value}</div>
     </div>
   );
 }
