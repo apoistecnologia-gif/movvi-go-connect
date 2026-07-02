@@ -30,7 +30,7 @@ import {
   safeSymbol,
 } from "@/lib/googleMaps";
 import { useDriverBroadcast } from "@/hooks/useDriverBroadcast";
-import { loadDriverProfile } from "@/lib/driverProfile";
+import { loadDriverProfile, driverProfileCompletionIssues } from "@/lib/driverProfile";
 import { isDevelopmentEnvironment } from "@/lib/environment";
 import { computeRoute } from "@/lib/routes.functions";
 import {
