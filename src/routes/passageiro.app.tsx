@@ -3409,18 +3409,18 @@ function SearchingPanel({
         </div>
       </div>
 
-      {/* Barra de progresso fina do raio */}
-      <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-background/80 ring-1 ring-border">
+      {/* Indeterminate premium progress bar */}
+      <div className="relative mt-3 h-1 w-full overflow-hidden rounded-full bg-muted/40">
         <div
-          className="h-full rounded-full bg-gradient-to-r from-primary via-primary to-primary/60 transition-[width] duration-700 ease-out"
-          style={{ width: `${(radiusKm / 8) * 100}%` }}
+          className="animate-movvi-indeterminate absolute inset-y-0 left-0 h-full w-2/5 rounded-full bg-gradient-to-r from-transparent via-primary to-transparent"
         />
       </div>
 
       {/* Dica de arraste — visível só nos primeiros segundos */}
-      <p className="mt-1.5 text-center text-[10px] text-muted-foreground/80">
+      <p className="mt-2 text-center text-[10px] text-muted-foreground/80">
         Arraste para cima para mais detalhes
       </p>
+
     </div>
   );
 }
