@@ -249,11 +249,6 @@ export function ProfilePage({
                         </p>
                       </div>
                     )}
-                        <p className="text-xs text-muted-foreground">
-                          JPG ou PNG. Mínimo 256×256px.
-                        </p>
-                      </div>
-                    )}
 
                     <SectionTitle>Dados pessoais</SectionTitle>
 
