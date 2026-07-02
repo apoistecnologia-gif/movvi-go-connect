@@ -65,14 +65,14 @@ export function MovviHeader({
       className={
         isFloating
           ? "absolute inset-x-0 top-0 z-30 px-3 pt-[calc(env(safe-area-inset-top)+10px)]"
-          : "sticky top-0 z-30 border-b border-border/60 bg-background/85 backdrop-blur-xl"
+          : "sticky top-0 z-30 border-b border-border/50 bg-background/80 backdrop-blur-xl"
       }
     >
       <div
         className={
           isFloating
-            ? "mx-auto flex max-w-5xl items-center gap-3 rounded-2xl bg-card/85 px-3.5 py-2.5 shadow-lg ring-1 ring-border/50 backdrop-blur-xl"
-            : "mx-auto flex h-14 max-w-5xl items-center gap-3 px-4"
+            ? "mx-auto flex max-w-5xl items-center gap-2.5 rounded-[22px] bg-card/80 px-3 py-2.5 shadow-[0_10px_32px_-14px_rgba(0,0,0,0.5)] ring-1 ring-border/40 backdrop-blur-xl"
+            : "mx-auto flex h-14 max-w-5xl items-center gap-2.5 px-4"
         }
       >
         {!hideBack && (
@@ -80,9 +80,9 @@ export function MovviHeader({
             type="button"
             onClick={handleBack}
             aria-label="Voltar"
-            className="active-press inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted/60 hover:text-foreground"
+            className="active-press inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground/80 transition hover:bg-muted/50 hover:text-foreground"
           >
-            <ArrowLeft className="h-[18px] w-[18px]" />
+            <ArrowLeft className="h-[17px] w-[17px]" strokeWidth={1.75} />
           </button>
         )}
 
@@ -97,7 +97,7 @@ export function MovviHeader({
         <div className="min-w-0 flex-1 px-1">
           {name && (
             <span
-              className="block truncate text-[13.5px] font-medium leading-tight tracking-tight text-foreground/90"
+              className="block truncate text-[13.5px] font-normal leading-tight tracking-tight text-foreground/85"
               title={name}
             >
               {name}
@@ -108,18 +108,18 @@ export function MovviHeader({
         <Link
           to="/"
           aria-label="Home"
-          className="active-press inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted/60 hover:text-foreground"
+          className="active-press inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground/80 transition hover:bg-muted/50 hover:text-foreground"
         >
-          <Home className="h-[18px] w-[18px]" />
+          <Home className="h-[17px] w-[17px]" strokeWidth={1.75} />
         </Link>
 
         <button
           type="button"
           onClick={handleLogout}
           aria-label="Sair"
-          className="active-press inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition hover:bg-destructive/15 hover:text-destructive"
+          className="active-press inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground/65 transition hover:bg-destructive/10 hover:text-destructive"
         >
-          <LogOut className="h-[17px] w-[17px]" />
+          <LogOut className="h-[16px] w-[16px]" strokeWidth={1.75} />
         </button>
       </div>
     </header>
