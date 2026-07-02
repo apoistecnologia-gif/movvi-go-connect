@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Loader2, Camera } from "lucide-react";
+import { Loader2, Camera, Trash2 } from "lucide-react";
 import { Avatar } from "./Avatar";
 import { uploadProfilePhoto, validateProfilePhotoFile } from "@/lib/profilePhoto";
 import { compressImageToSquare } from "@/lib/imageCompress";
@@ -10,6 +10,8 @@ type Props = {
   currentUrl: string | null;
   /** Called with `{ signedUrl, path }` after a successful upload. */
   onUploaded: (result: { signedUrl: string; path: string }) => void | Promise<void>;
+  /** Optional — when provided, a "remove" button appears while a photo exists. */
+  onRemove?: () => void | Promise<void>;
   size?: number;
   /** When true, renders a "obrigatória" hint. */
   required?: boolean;
