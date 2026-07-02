@@ -984,7 +984,7 @@ function MotoristaApp() {
           {position && (
             <InterpolatedDriverMarker
               position={position}
-              heading={heading ?? 0}
+              heading={position.heading ?? 0}
               color={online ? "#8DD92B" : "#94a3b8"}
             />
           )}
