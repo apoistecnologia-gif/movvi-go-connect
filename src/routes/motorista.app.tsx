@@ -1301,13 +1301,13 @@ function IncomingOffer({
           <RouteLine color="bg-destructive" label="Destino" name={ride.destination_name} />
         </div>
 
-        <div className="mt-5 grid grid-cols-5 gap-2">
+        <div className="mt-5 grid grid-cols-5 gap-2.5">
           <button onClick={onReject}
-            className="col-span-2 rounded-2xl bg-muted/40 py-4 text-sm font-semibold text-muted-foreground ring-1 ring-border hover:bg-muted/60 hover:text-foreground transition">
+            className="press-scale col-span-2 rounded-2xl bg-muted/35 py-4 text-sm font-semibold text-muted-foreground ring-1 ring-border/70 hover:bg-muted/55 hover:text-foreground transition">
             Recusar
           </button>
           <button onClick={onAccept}
-            className="col-span-3 rounded-2xl bg-primary py-4 text-sm font-bold uppercase tracking-wider text-primary-foreground shadow-lg shadow-primary/30 hover:brightness-110 transition">
+            className="press-scale col-span-3 rounded-2xl bg-primary py-4 text-sm font-bold uppercase tracking-[0.15em] text-primary-foreground shadow-[0_14px_32px_-14px_color-mix(in_oklab,var(--color-primary)_60%,transparent)] hover:brightness-105 transition">
             Aceitar
           </button>
         </div>
