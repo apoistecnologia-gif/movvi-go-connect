@@ -81,8 +81,12 @@ function DriverSignUpPage() {
   const [success, setSuccess] = useState<string | null>(null);
 
   const [selfie, setSelfie] = useState<File | null>(null);
-  const [cnh, setCnh] = useState<File | null>(null);
+  const [cnhFront, setCnhFront] = useState<File | null>(null);
+  const [cnhBack, setCnhBack] = useState<File | null>(null);
   const [vehicleDoc, setVehicleDoc] = useState<File | null>(null);
+
+  const docsUploaded = [selfie, cnhFront, cnhBack, vehicleDoc].filter(Boolean).length;
+  const allDocsReady = docsUploaded === 4;
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -96,12 +100,8 @@ function DriverSignUpPage() {
       setError(parsed.error.issues[0]?.message ?? "Verifique os campos");
       return;
     }
-    if (!selfie) {
-      setError("A foto de perfil é obrigatória.");
-      return;
-    }
-    if (!cnh || !vehicleDoc) {
-      setError("Envie CNH e documento do veículo");
+    if (!selfie || !cnhFront || !cnhBack || !vehicleDoc) {
+      setError("Envie os 4 documentos obrigatórios para continuar.");
       return;
     }
 
@@ -109,17 +109,26 @@ function DriverSignUpPage() {
     try {
       const data = parsed.data;
 
-      console.log("[MOVVI DOCS] arquivo selecionado:", {
+      console.log("[MOVVI DOCS] arquivos selecionados:", {
         selfie: selfie.name,
-        cnh: cnh.name,
+        cnhFront: cnhFront.name,
+        cnhBack: cnhBack.name,
         veiculo: vehicleDoc.name,
       });
-      console.log("[MOVVI DOCS] upload iniciado: codificando para envio ao servidor");
+
+      // Extra safety compression pass (no-op if already compressed).
+      const [cSelfie, cCnhF, cCnhB, cVeh] = await Promise.all([
+        compressDocumentImage(selfie, { maxSize: 1200, quality: 0.85 }),
+        compressDocumentImage(cnhFront),
+        compressDocumentImage(cnhBack),
+        compressDocumentImage(vehicleDoc),
+      ]);
 
       const documents = await Promise.all([
-        fileToBase64({ bucket: "driver-selfies", file: selfie, label: "selfie" }),
-        fileToBase64({ bucket: "driver-cnh", file: cnh, label: "cnh" }),
-        fileToBase64({ bucket: "vehicle-documents", file: vehicleDoc, label: "veiculo" }),
+        fileToBase64(cSelfie, "driver-selfies", "selfie"),
+        fileToBase64(cCnhF, "driver-cnh", "cnh"),
+        fileToBase64(cCnhB, "driver-cnh", "cnh_back"),
+        fileToBase64(cVeh, "vehicle-documents", "veiculo"),
       ]);
 
       const result = await callCadastrarMotorista({
@@ -128,11 +137,16 @@ function DriverSignUpPage() {
           email: data.email.toLowerCase(),
           state: data.state.toUpperCase(),
           vehicle_plate: data.vehicle_plate.toUpperCase(),
-          documents: documents as [typeof documents[0], typeof documents[1], typeof documents[2]],
+          documents: documents as [
+            typeof documents[0],
+            typeof documents[1],
+            typeof documents[2],
+            typeof documents[3],
+          ],
         },
       });
 
-      console.log("[MOVVI DOCS] upload concluído. resposta do servidor:", result);
+      console.log("[MOVVI DOCS] cadastro concluído:", result);
 
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: data.email.toLowerCase(),
