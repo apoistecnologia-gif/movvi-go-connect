@@ -57,60 +57,20 @@ const schema = z.object({
     }),
 });
 
-type UploadTarget = {
-  bucket: "driver-selfies" | "driver-cnh" | "vehicle-documents";
-  file: File;
-  label: string;
-};
+type DocFile = File | null;
 
-async function fileToBase64(t: UploadTarget) {
-  const buffer = await t.file.arrayBuffer();
+async function fileToBase64(file: File, bucket: string, label: string) {
+  const buffer = await file.arrayBuffer();
   let binary = "";
   const bytes = new Uint8Array(buffer);
   for (let i = 0; i < bytes.length; i += 1) binary += String.fromCharCode(bytes[i]);
   return {
-    bucket: t.bucket,
-    label: t.label,
-    fileName: t.file.name,
-    contentType: t.file.type || "application/octet-stream",
+    bucket,
+    label,
+    fileName: file.name,
+    contentType: file.type || "application/octet-stream",
     base64: window.btoa(binary),
   };
-}
-
-function FileField({
-  id,
-  label,
-  file,
-  onChange,
-  accept,
-}: {
-  id: string;
-  label: string;
-  file: File | null;
-  onChange: (f: File | null) => void;
-  accept: string;
-}) {
-  return (
-    <div className="space-y-2">
-      <Label htmlFor={id}>{label}</Label>
-      <label
-        htmlFor={id}
-        className="flex cursor-pointer items-center gap-3 rounded-md border border-dashed border-border bg-muted/30 px-4 py-3 text-sm transition hover:border-primary hover:bg-muted/60"
-      >
-        <Upload className="h-4 w-4 text-primary" />
-        <span className="truncate text-muted-foreground">
-          {file ? file.name : "Selecionar arquivo"}
-        </span>
-      </label>
-      <input
-        id={id}
-        type="file"
-        accept={accept}
-        className="hidden"
-        onChange={(e) => onChange(e.target.files?.[0] ?? null)}
-      />
-    </div>
-  );
 }
 
 function DriverSignUpPage() {
