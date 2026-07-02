@@ -160,32 +160,32 @@ function PremiumTopBar({
 
   return (
     <div className="absolute inset-x-0 top-0 z-40 px-3 pt-[calc(env(safe-area-inset-top)+10px)]">
-      <div className="mx-auto flex max-w-5xl items-center gap-3 rounded-2xl bg-card/85 px-3.5 py-2.5 shadow-lg ring-1 ring-border/50 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-500">
+      <div className="mx-auto flex max-w-5xl items-center gap-3 rounded-[22px] bg-card/80 px-3 py-2.5 shadow-[0_10px_32px_-14px_rgba(0,0,0,0.55)] ring-1 ring-border/40 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-500">
         <button
           onClick={onOpenMenu}
           aria-label="Abrir menu"
-          className="active-press inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted/60 hover:text-foreground"
+          className="active-press inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-muted-foreground/90 transition hover:bg-muted/50 hover:text-foreground"
         >
-          <Menu className="h-[19px] w-[19px]" />
+          <Menu className="h-[18px] w-[18px]" strokeWidth={1.75} />
         </button>
-        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-muted/50 text-muted-foreground ring-1 ring-border/60">
-          <GIcon className="h-[17px] w-[17px]" />
+        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-muted/40 text-muted-foreground/90">
+          <GIcon className="h-[16px] w-[16px]" strokeWidth={1.75} />
         </div>
         <div className="min-w-0 flex-1">
-          <div className={`${greetingClass} font-medium leading-tight tracking-tight text-foreground`}>
-            {greet}, <span className="font-semibold">{fname}</span>
+          <div className={`${greetingClass} font-normal leading-tight tracking-tight text-foreground/90`}>
+            {greet}, <span className="font-semibold text-foreground">{fname}</span>
           </div>
-          <div className="mt-0.5 flex items-center gap-1.5 truncate text-[11px] text-muted-foreground">
-            <span className="text-[12px] leading-none">{statusIcon}</span>
+          <div className="mt-1 flex items-center gap-1.5 truncate text-[11px] text-muted-foreground">
+            <span className="text-[11px] leading-none opacity-80">{statusIcon}</span>
             <span className="truncate">{statusText}</span>
           </div>
         </div>
         <button
           onClick={onLogout}
           aria-label="Sair"
-          className="active-press inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-muted-foreground transition hover:bg-destructive/15 hover:text-destructive"
+          className="active-press inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground/70 transition hover:bg-destructive/10 hover:text-destructive"
         >
-          <LogOut className="h-[18px] w-[18px]" />
+          <LogOut className="h-[16px] w-[16px]" strokeWidth={1.75} />
         </button>
       </div>
     </div>
