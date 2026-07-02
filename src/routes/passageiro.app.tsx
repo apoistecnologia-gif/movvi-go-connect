@@ -1994,7 +1994,14 @@ function PassageiroApp() {
       <div className="mx-auto flex h-[100dvh] w-full max-w-[430px] items-center justify-center bg-background text-foreground">
         <div className="flex flex-col items-center gap-3">
           <div className="h-10 w-10 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-          <p className="text-sm text-muted-foreground">Obtendo sua localização...</p>
+          <p className="text-sm text-muted-foreground inline-flex items-baseline gap-0.5">
+            Obtendo sua localização
+            <span className="inline-flex gap-0.5 ml-1">
+              <span className="animate-movvi-dots">.</span>
+              <span className="animate-movvi-dots [animation-delay:150ms]">.</span>
+              <span className="animate-movvi-dots [animation-delay:300ms]">.</span>
+            </span>
+          </p>
         </div>
       </div>
     );
