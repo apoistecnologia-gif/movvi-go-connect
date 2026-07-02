@@ -4095,8 +4095,8 @@ function OriginMapPickerOverlay({
           <div className="text-[10px] font-semibold uppercase tracking-widest text-primary">
             Novo local de partida
           </div>
-          <div className="mt-1 font-mono text-[12px] text-foreground/80">
-            {center.lat.toFixed(6)}, {center.lng.toFixed(6)}
+          <div className="mt-1 text-[12.5px] font-semibold text-foreground/80">
+            Ponto selecionado no mapa
           </div>
           {!valid && (
             <p className="mt-2 rounded-xl bg-destructive/15 px-2 py-1.5 text-[11.5px] text-destructive-foreground ring-1 ring-destructive/40">
