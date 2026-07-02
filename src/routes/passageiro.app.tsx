@@ -2743,8 +2743,8 @@ function SheetContent({
               )}
             </div>
             {addressStatus === "loading" && !pickupAddressLine ? (
-              <div className="mt-0.5 truncate text-[12px] font-medium leading-tight text-muted-foreground">
-                Obtendo seu endereço...
+              <div className="mt-0.5 truncate text-[12.5px] font-semibold leading-tight text-foreground">
+                Localização atual
               </div>
             ) : pickupAddressLine ? (
               <>
@@ -2770,13 +2770,13 @@ function SheetContent({
                   </>
                 )}
               </>
-            ) : hasPosition && position ? (
-              <div className="mt-0.5 truncate font-mono text-[12px] font-semibold text-foreground">
-                {position.lat.toFixed(6)}, {position.lng.toFixed(6)}
+            ) : hasPosition ? (
+              <div className="mt-0.5 truncate text-[12.5px] font-semibold leading-tight text-foreground">
+                Localização atual
               </div>
             ) : (
               <div className="mt-0.5 truncate text-[12px] font-medium leading-tight text-muted-foreground">
-                Localização indisponível
+                Endereço não identificado
               </div>
             )}
           </div>
