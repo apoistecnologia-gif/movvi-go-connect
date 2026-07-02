@@ -160,6 +160,25 @@ export function ProfilePage({
     }
   }
 
+  async function handlePhotoRemoved() {
+    if (!userId) return;
+    try {
+      const { error } = await supabase
+        .from("users")
+        .update({ avatar_url: null })
+        .eq("auth_user_id", userId);
+      if (error) throw error;
+      if (role === "driver") {
+        await supabase.from("drivers").update({ photo_url: null }).eq("user_id", userId);
+      }
+      await supabase.auth.updateUser({ data: { avatar_url: "" } });
+      setPhotoUrl(null);
+      toast.success("Foto removida.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha ao remover a foto.");
+    }
+  }
+
   async function handleVerifyEmail() {
     if (!email) return;
     try {
