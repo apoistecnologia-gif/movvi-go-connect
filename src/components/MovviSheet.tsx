@@ -194,24 +194,25 @@ export const MovviSheet = forwardRef<MovviSheetHandle, Props>(function MovviShee
   return (
     <div
       ref={sheetRef}
-      className="absolute inset-x-0 bottom-0 z-30 flex flex-col rounded-t-[34px] bg-card text-foreground will-change-[height] animate-sheet-in"
+      className="absolute inset-x-0 bottom-0 z-30 flex flex-col rounded-t-[36px] bg-card text-foreground will-change-[height] animate-sheet-in"
       style={{
         height: `${height}vh`,
         boxShadow:
-          "0 -28px 64px -30px rgba(0,0,0,0.55), 0 -1px 0 0 rgba(255,255,255,0.05) inset",
-        borderTop: "1px solid color-mix(in oklab, var(--color-border) 55%, transparent)",
+          "0 -32px 72px -36px rgba(0,0,0,0.6), 0 -1px 0 0 rgba(255,255,255,0.04) inset",
+        borderTop: "1px solid color-mix(in oklab, var(--color-border) 45%, transparent)",
       }}
     >
       {/* drag handle area */}
       <div
-        className="group flex shrink-0 cursor-grab touch-none flex-col items-center pb-3 pt-4 active:cursor-grabbing"
+        className="group flex shrink-0 cursor-grab touch-none flex-col items-center pb-2.5 pt-3.5 active:cursor-grabbing"
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
       >
-        <span className="h-[5px] w-12 rounded-full bg-muted-foreground/25 transition-all duration-200 group-hover:bg-muted-foreground/45 group-active:w-14 group-active:bg-muted-foreground/60" />
+        <span className="h-[4px] w-10 rounded-full bg-muted-foreground/30 transition-all duration-200 group-hover:w-12 group-hover:bg-muted-foreground/50 group-active:w-14 group-active:bg-muted-foreground/65" />
       </div>
+
 
 
       <div
