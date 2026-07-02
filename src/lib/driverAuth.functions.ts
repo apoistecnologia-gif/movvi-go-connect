@@ -10,7 +10,7 @@ const Buckets = ["driver-selfies", "driver-cnh", "vehicle-documents"] as const;
 
 const DriverDocumentSchema = z.object({
   bucket: z.enum(Buckets),
-  label: z.enum(["selfie", "cnh", "veiculo"]),
+  label: z.enum(["selfie", "cnh", "cnh_back", "veiculo"]),
   fileName: z.string().min(1),
   contentType: z.string().min(1),
   base64: z.string().min(1),
@@ -44,6 +44,7 @@ const DriverSignupSchema = z.object({
   documents: z.tuple([
     DriverDocumentSchema.extend({ bucket: z.literal("driver-selfies"), label: z.literal("selfie") }),
     DriverDocumentSchema.extend({ bucket: z.literal("driver-cnh"), label: z.literal("cnh") }),
+    DriverDocumentSchema.extend({ bucket: z.literal("driver-cnh"), label: z.literal("cnh_back") }),
     DriverDocumentSchema.extend({ bucket: z.literal("vehicle-documents"), label: z.literal("veiculo") }),
   ]),
 });
