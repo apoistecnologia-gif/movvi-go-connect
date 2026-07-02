@@ -30,7 +30,7 @@ import {
   safeSymbol,
 } from "@/lib/googleMaps";
 import { useDriverBroadcast } from "@/hooks/useDriverBroadcast";
-import { loadDriverProfile } from "@/lib/driverProfile";
+import { loadDriverProfile, driverProfileCompletionIssues } from "@/lib/driverProfile";
 import { isDevelopmentEnvironment } from "@/lib/environment";
 import { computeRoute } from "@/lib/routes.functions";
 import {
@@ -254,6 +254,11 @@ function MotoristaApp() {
           );
         } else if (d.subscription_status && d.subscription_status !== "active") {
           setStatusBlock(subscriptionBlockMessage(d.subscription_status));
+        } else {
+          const issues = driverProfileCompletionIssues(d);
+          if (!issues.complete && issues.message) {
+            setStatusBlock(issues.message);
+          }
         }
       } else if (result.reason === "not_found") {
         setStatusBlock("Cadastro de motorista não encontrado.");

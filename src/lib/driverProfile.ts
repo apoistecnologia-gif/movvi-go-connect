@@ -17,10 +17,17 @@ export type DriverProfileRow = {
   motivo_reprovacao: string | null;
   email: string | null;
   subscription_status: "active" | "inactive" | "overdue" | "pending" | "suspended" | null;
+  photo_url: string | null;
+  selfie_url: string | null;
+  cnh_url: string | null;
+  cnh_back_url: string | null;
+  vehicle_document_url: string | null;
+  documents_status: "pending_upload" | "pending_review" | "approved" | "rejected" | null;
 };
 
 const SELECT_COLS =
-  "id, user_id, approval_status, motivo_reprovacao, email, subscription_status";
+  "id, user_id, approval_status, motivo_reprovacao, email, subscription_status, photo_url, selfie_url, cnh_url, cnh_back_url, vehicle_document_url, documents_status";
+
 
 export async function loadDriverProfile(): Promise<
   | { ok: true; profile: DriverProfileRow }
@@ -71,4 +78,37 @@ export async function loadDriverProfile(): Promise<
 
   console.warn("[MOVVI MOTORISTA] nenhum motorista vinculado", { uid, email });
   return { ok: false, reason: "not_found" };
+}
+
+/**
+ * Retorna problemas que impedem o motorista de completar o perfil
+ * (foto + 4 documentos obrigatórios). Não altera nada relacionado a corridas.
+ */
+export function driverProfileCompletionIssues(p: DriverProfileRow): {
+  complete: boolean;
+  missingPhoto: boolean;
+  missingDocs: boolean;
+  message: string | null;
+} {
+  const missingPhoto = !p.photo_url && !p.selfie_url;
+  const missingDocs =
+    !p.selfie_url ||
+    !p.cnh_url ||
+    !p.cnh_back_url ||
+    !p.vehicle_document_url ||
+    p.documents_status === "pending_upload" ||
+    p.documents_status === "rejected";
+  const complete = !missingPhoto && !missingDocs;
+  let message: string | null = null;
+  if (missingPhoto && missingDocs) {
+    message = "Complete sua foto de perfil e envie todos os documentos obrigatórios para continuar.";
+  } else if (missingPhoto) {
+    message = "Adicione sua foto de perfil para continuar.";
+  } else if (missingDocs) {
+    message =
+      p.documents_status === "rejected"
+        ? "Um ou mais documentos foram reprovados. Reenvie para continuar."
+        : "Envie todos os 4 documentos obrigatórios para continuar.";
+  }
+  return { complete, missingPhoto, missingDocs, message };
 }

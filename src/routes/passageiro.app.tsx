@@ -326,16 +326,11 @@ function OriginActionsSheet({
                 )}
               </>
             ) : position ? (
-              <>
-                <div className="mt-0.5 text-[13px] font-semibold text-amber-400">
-                  Localização aproximada
-                </div>
-                <div className="mt-0.5 font-mono text-[12px] text-foreground">
-                  Lat: {position.lat.toFixed(6)} • Lng: {position.lng.toFixed(6)}
-                </div>
-              </>
+              <div className="mt-0.5 text-[13px] font-semibold text-foreground">
+                Localização atual
+              </div>
             ) : (
-              <div className="mt-0.5 text-[13px] text-muted-foreground">Sem endereço identificado</div>
+              <div className="mt-0.5 text-[13px] text-muted-foreground">Endereço não identificado</div>
             )}
           </div>
         </div>
@@ -1553,7 +1548,7 @@ function PassageiroApp() {
         geo?.pickupLabel ||
         geo?.friendly ||
         geo?.region ||
-        `GPS ${position.lat.toFixed(6)}, ${position.lng.toFixed(6)}`;
+        "Localização atual";
       const { rideId: newId } = await callRequestRide({
         data: {
           origin: { lat: position.lat, lng: position.lng },
@@ -2748,8 +2743,8 @@ function SheetContent({
               )}
             </div>
             {addressStatus === "loading" && !pickupAddressLine ? (
-              <div className="mt-0.5 truncate text-[12px] font-medium leading-tight text-muted-foreground">
-                Obtendo seu endereço...
+              <div className="mt-0.5 truncate text-[12.5px] font-semibold leading-tight text-foreground">
+                Localização atual
               </div>
             ) : pickupAddressLine ? (
               <>
@@ -2775,13 +2770,13 @@ function SheetContent({
                   </>
                 )}
               </>
-            ) : hasPosition && position ? (
-              <div className="mt-0.5 truncate font-mono text-[12px] font-semibold text-foreground">
-                {position.lat.toFixed(6)}, {position.lng.toFixed(6)}
+            ) : hasPosition ? (
+              <div className="mt-0.5 truncate text-[12.5px] font-semibold leading-tight text-foreground">
+                Localização atual
               </div>
             ) : (
               <div className="mt-0.5 truncate text-[12px] font-medium leading-tight text-muted-foreground">
-                Localização indisponível
+                Endereço não identificado
               </div>
             )}
           </div>
@@ -4100,8 +4095,8 @@ function OriginMapPickerOverlay({
           <div className="text-[10px] font-semibold uppercase tracking-widest text-primary">
             Novo local de partida
           </div>
-          <div className="mt-1 font-mono text-[12px] text-foreground/80">
-            {center.lat.toFixed(6)}, {center.lng.toFixed(6)}
+          <div className="mt-1 text-[12.5px] font-semibold text-foreground/80">
+            Ponto selecionado no mapa
           </div>
           {!valid && (
             <p className="mt-2 rounded-xl bg-destructive/15 px-2 py-1.5 text-[11.5px] text-destructive-foreground ring-1 ring-destructive/40">
