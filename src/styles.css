@@ -213,16 +213,43 @@
 }
 
 @keyframes movvi-sheet-in {
-  from { transform: translateY(12px); opacity: 0.6; }
-  to   { transform: translateY(0);    opacity: 1;   }
+  from { transform: translateY(14px); opacity: 0.55; }
+  to   { transform: translateY(0);    opacity: 1;    }
 }
 @utility animate-sheet-in {
-  animation: movvi-sheet-in 320ms cubic-bezier(0.22, 1, 0.36, 1);
+  animation: movvi-sheet-in 340ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes movvi-count-pop {
+  0%   { transform: translateY(6px); opacity: 0; }
+  100% { transform: translateY(0);   opacity: 1; }
+}
+@utility animate-count-pop {
+  animation: movvi-count-pop 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes movvi-pulse-soft {
+  0%, 100% { transform: scale(1);    opacity: 1;   }
+  50%      { transform: scale(1.05); opacity: 0.9; }
+}
+@utility animate-pulse-soft {
+  animation: movvi-pulse-soft 1.6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 @utility active-press {
-  transition: transform 180ms cubic-bezier(0.4, 0, 0.2, 1);
-  &:active { transform: scale(0.97); }
+  transition: transform 160ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 160ms ease;
+  &:active { transform: scale(0.965); }
 }
+
+@utility press-scale {
+  transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 180ms ease, filter 180ms ease;
+  &:active { transform: scale(0.97); filter: brightness(0.98); }
+}
+
+@utility surface-soft {
+  background-color: color-mix(in oklab, var(--color-surface) 92%, transparent);
+  border: 1px solid color-mix(in oklab, var(--color-border) 65%, transparent);
+}
+
 
 
