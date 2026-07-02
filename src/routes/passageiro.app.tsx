@@ -2411,25 +2411,26 @@ function PassageiroApp() {
             className="pointer-events-none absolute inset-x-0 z-40 flex justify-center px-3"
             style={{ top: "calc(env(safe-area-inset-top) + 76px)" }}
           >
-            <div className="pointer-events-auto w-full max-w-sm rounded-2xl bg-card/95 p-3 ring-2 ring-primary/60 shadow-2xl shadow-primary/20 backdrop-blur">
-              <div className="flex items-center justify-center gap-1.5 text-[10.5px] font-bold uppercase tracking-widest text-primary">
-                <Shield className="h-3.5 w-3.5" />
+            <div className="pointer-events-auto w-full max-w-sm rounded-2xl bg-card/95 px-4 py-3 ring-1 ring-border/60 shadow-lg backdrop-blur">
+              <div className="flex items-center justify-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                <Shield className="h-3 w-3 text-primary" />
                 Código de segurança
               </div>
-              <div className="mt-2 flex items-center justify-center gap-1.5">
+              <div className="mt-2 flex items-center justify-center gap-2">
                 {ride.safety_code.split("").map((d, i) => (
                   <span
                     key={i}
-                    className="grid h-11 w-9 place-items-center rounded-lg bg-background text-2xl font-extrabold tabular-nums text-foreground ring-1 ring-primary/40 shadow-inner"
+                    className="grid h-10 w-8 place-items-center rounded-lg bg-background/80 text-[22px] font-extrabold tabular-nums text-foreground ring-1 ring-border"
                   >
                     {d}
                   </span>
                 ))}
               </div>
-              <p className="mt-1.5 text-center text-[10.5px] text-muted-foreground">
+              <p className="mt-2 text-center text-[10.5px] text-muted-foreground">
                 Informe ao motorista antes de iniciar a corrida.
               </p>
             </div>
+
           </div>
         )}
 
