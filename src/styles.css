@@ -203,3 +203,26 @@
   border: 1px solid var(--color-border);
 }
 
+/* MOVVI — Premium micro-interactions */
+@keyframes movvi-indeterminate {
+  0%   { transform: translateX(-60%); }
+  100% { transform: translateX(160%); }
+}
+@utility animate-movvi-indeterminate {
+  animation: movvi-indeterminate 1.4s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+@keyframes movvi-sheet-in {
+  from { transform: translateY(12px); opacity: 0.6; }
+  to   { transform: translateY(0);    opacity: 1;   }
+}
+@utility animate-sheet-in {
+  animation: movvi-sheet-in 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@utility active-press {
+  transition: transform 180ms cubic-bezier(0.4, 0, 0.2, 1);
+  &:active { transform: scale(0.97); }
+}
+
+
