@@ -1008,6 +1008,9 @@ function MotoristaApp() {
                 strokeColor: "#000000", strokeOpacity: 0.18, strokeWeight: 16, geodesic: true, zIndex: 1,
               }} />
               <Polyline path={polyline} options={{
+                strokeColor: "#ffffff", strokeOpacity: 1, strokeWeight: 11, geodesic: true, zIndex: 2,
+              }} />
+              <Polyline path={polyline} options={{
                 strokeColor: "#8DD92B", strokeOpacity: 1, strokeWeight: 7, geodesic: true, zIndex: 3,
               }} />
             </>
