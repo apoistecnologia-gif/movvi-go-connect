@@ -64,15 +64,15 @@ export function MovviHeader({
     <header
       className={
         isFloating
-          ? "absolute inset-x-0 top-0 z-30 px-3 pt-[calc(env(safe-area-inset-top)+10px)]"
+          ? "absolute inset-x-0 top-0 z-30 px-3 pt-[calc(env(safe-area-inset-top)+12px)]"
           : "sticky top-0 z-30 border-b border-border/50 bg-background/80 backdrop-blur-xl"
       }
     >
       <div
         className={
           isFloating
-            ? "mx-auto flex max-w-5xl items-center gap-2.5 rounded-[22px] bg-card/80 px-3 py-2.5 shadow-[0_10px_32px_-14px_rgba(0,0,0,0.5)] ring-1 ring-border/40 backdrop-blur-xl"
-            : "mx-auto flex h-14 max-w-5xl items-center gap-2.5 px-4"
+            ? "mx-auto flex max-w-5xl items-center gap-2 rounded-[20px] bg-card/75 px-2.5 py-2 shadow-[0_16px_40px_-22px_rgba(0,0,0,0.55)] ring-1 ring-border/35 backdrop-blur-xl"
+            : "mx-auto flex h-14 max-w-5xl items-center gap-2 px-4"
         }
       >
         {!hideBack && (
@@ -80,24 +80,24 @@ export function MovviHeader({
             type="button"
             onClick={handleBack}
             aria-label="Voltar"
-            className="active-press inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground/80 transition hover:bg-muted/50 hover:text-foreground"
+            className="active-press inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground/75 transition hover:bg-muted/40 hover:text-foreground"
           >
-            <ArrowLeft className="h-[17px] w-[17px]" strokeWidth={1.75} />
+            <ArrowLeft className="h-[16px] w-[16px]" strokeWidth={1.75} />
           </button>
         )}
 
         <Link
           to="/"
           aria-label="Home MOVVI"
-          className="active-press flex shrink-0 items-center rounded-full px-1 transition hover:opacity-90"
+          className="active-press flex shrink-0 items-center rounded-full px-0.5 transition hover:opacity-90"
         >
           <MovviHeaderLogo />
         </Link>
 
-        <div className="min-w-0 flex-1 px-1">
+        <div className="min-w-0 flex-1 pl-1.5">
           {name && (
             <span
-              className="block truncate text-[13.5px] font-normal leading-tight tracking-tight text-foreground/85"
+              className="block truncate text-[13px] font-medium leading-tight tracking-tight text-foreground/90"
               title={name}
             >
               {name}
@@ -108,18 +108,18 @@ export function MovviHeader({
         <Link
           to="/"
           aria-label="Home"
-          className="active-press inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground/80 transition hover:bg-muted/50 hover:text-foreground"
+          className="active-press inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground/70 transition hover:bg-muted/40 hover:text-foreground"
         >
-          <Home className="h-[17px] w-[17px]" strokeWidth={1.75} />
+          <Home className="h-[16px] w-[16px]" strokeWidth={1.75} />
         </Link>
 
         <button
           type="button"
           onClick={handleLogout}
           aria-label="Sair"
-          className="active-press inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground/65 transition hover:bg-destructive/10 hover:text-destructive"
+          className="active-press inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted-foreground/45 transition hover:bg-destructive/10 hover:text-destructive"
         >
-          <LogOut className="h-[16px] w-[16px]" strokeWidth={1.75} />
+          <LogOut className="h-[14px] w-[14px]" strokeWidth={1.6} />
         </button>
       </div>
     </header>
@@ -128,7 +128,7 @@ export function MovviHeader({
 
 function MovviHeaderLogo() {
   return (
-    <svg width={24} height={24} viewBox="0 0 120 120" aria-hidden>
+    <svg width={22} height={22} viewBox="0 0 120 120" aria-hidden>
       <path d="M18 100 L18 28 L40 28 L60 70 L60 100 Z" fill="currentColor" className="text-foreground" />
       <path
         d="M60 28 Q100 28 100 64 Q100 100 60 100 L60 78 Q82 78 82 64 Q82 50 60 50 Z"
@@ -137,4 +137,5 @@ function MovviHeaderLogo() {
     </svg>
   );
 }
+
 
