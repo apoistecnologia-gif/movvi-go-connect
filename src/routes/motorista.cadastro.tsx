@@ -291,15 +291,13 @@ function DriverSignUpPage() {
               </section>
 
               <section className="space-y-4">
+                <h3 className="text-sm font-semibold uppercase text-primary">Foto de perfil</h3>
+                <DriverPhotoField file={selfie} onChange={setSelfie} name={undefined} />
+              </section>
+
+              <section className="space-y-4">
                 <h3 className="text-sm font-semibold uppercase text-primary">Documentos</h3>
-                <div className="grid gap-4 sm:grid-cols-3">
-                  <FileField
-                    id="selfie"
-                    label="Foto de perfil (selfie) *"
-                    accept="image/jpeg,image/jpg,image/png,image/webp"
-                    file={selfie}
-                    onChange={setSelfie}
-                  />
+                <div className="grid gap-4 sm:grid-cols-2">
                   <FileField
                     id="cnh"
                     label="CNH"
