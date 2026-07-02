@@ -134,8 +134,12 @@ function DriverSignUpPage() {
       setError(parsed.error.issues[0]?.message ?? "Verifique os campos");
       return;
     }
-    if (!selfie || !cnh || !vehicleDoc) {
-      setError("Envie selfie, CNH e documento do veículo");
+    if (!selfie) {
+      setError("A foto de perfil é obrigatória.");
+      return;
+    }
+    if (!cnh || !vehicleDoc) {
+      setError("Envie CNH e documento do veículo");
       return;
     }
 
