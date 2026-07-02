@@ -19,7 +19,6 @@ import { MovviLogo } from "@/components/MovviLogo";
 import { ArrowLeft, Loader2, ShieldCheck } from "lucide-react";
 import { translateAuthError } from "@/lib/authErrors";
 import { cadastrarMotorista } from "@/lib/driverAuth.functions";
-import { DriverPhotoField } from "@/components/DriverPhotoField";
 import { DriverDocumentField } from "@/components/DriverDocumentField";
 import { compressDocumentImage } from "@/lib/imageCompress";
 
