@@ -215,9 +215,9 @@ export const MovviSheet = forwardRef<MovviSheetHandle, Props>(function MovviShee
 
       <div
         ref={scrollRef}
-        className="flex-1 px-4"
+        className="flex-1 px-5"
         style={{
-          paddingBottom: "calc(env(safe-area-inset-bottom) + 24px)",
+          paddingBottom: "calc(env(safe-area-inset-bottom) + 28px)",
           overflowY: "auto",
           overscrollBehavior: "contain",
           WebkitOverflowScrolling: "touch",
@@ -226,6 +226,7 @@ export const MovviSheet = forwardRef<MovviSheetHandle, Props>(function MovviShee
       >
         {children}
       </div>
+
 
     </div>
   );
