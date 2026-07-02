@@ -10,7 +10,7 @@ const Buckets = ["driver-selfies", "driver-cnh", "vehicle-documents"] as const;
 
 const DriverDocumentSchema = z.object({
   bucket: z.enum(Buckets),
-  label: z.enum(["selfie", "cnh", "veiculo"]),
+  label: z.enum(["selfie", "cnh", "cnh_back", "veiculo"]),
   fileName: z.string().min(1),
   contentType: z.string().min(1),
   base64: z.string().min(1),
@@ -44,6 +44,7 @@ const DriverSignupSchema = z.object({
   documents: z.tuple([
     DriverDocumentSchema.extend({ bucket: z.literal("driver-selfies"), label: z.literal("selfie") }),
     DriverDocumentSchema.extend({ bucket: z.literal("driver-cnh"), label: z.literal("cnh") }),
+    DriverDocumentSchema.extend({ bucket: z.literal("driver-cnh"), label: z.literal("cnh_back") }),
     DriverDocumentSchema.extend({ bucket: z.literal("vehicle-documents"), label: z.literal("veiculo") }),
   ]),
 });
@@ -176,12 +177,13 @@ export const cadastrarMotorista = createServerFn({ method: "POST" })
       );
 
       const docMap = Object.fromEntries(uploadedDocs) as Record<
-        "selfie" | "cnh" | "veiculo",
+        "selfie" | "cnh" | "cnh_back" | "veiculo",
         { path: string; body: ArrayBuffer; contentType: string; fileName: string }
       >;
-      console.log("[MOVVI DOCS] path salvo:", {
+      console.log("[MOVVI DOCS] paths salvos:", {
         selfie: docMap.selfie.path,
         cnh: docMap.cnh.path,
+        cnh_back: docMap.cnh_back.path,
         veiculo: docMap.veiculo.path,
       });
 
@@ -237,9 +239,11 @@ export const cadastrarMotorista = createServerFn({ method: "POST" })
         vehicle_year: data.vehicle_year,
         selfie_url: docMap.selfie.path,
         cnh_url: docMap.cnh.path,
+        cnh_back_url: docMap.cnh_back.path,
         vehicle_document_url: docMap.veiculo.path,
         photo_url: photoUrl,
         approval_status: "em_analise",
+        documents_status: "pending_review",
       });
       if (driver.error) throw new Error("Falha ao criar cadastro de motorista.");
 

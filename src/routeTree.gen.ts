@@ -31,6 +31,7 @@ import { Route as MotoristaPerfilRouteImport } from './routes/motorista.perfil'
 import { Route as MotoristaNotificacoesRouteImport } from './routes/motorista.notificacoes'
 import { Route as MotoristaLoginRouteImport } from './routes/motorista.login'
 import { Route as MotoristaGanhosRouteImport } from './routes/motorista.ganhos'
+import { Route as MotoristaDocumentosRouteImport } from './routes/motorista.documentos'
 import { Route as MotoristaCorridasRouteImport } from './routes/motorista.corridas'
 import { Route as MotoristaConfiguracoesRouteImport } from './routes/motorista.configuracoes'
 import { Route as MotoristaCadastroRouteImport } from './routes/motorista.cadastro'
@@ -167,6 +168,11 @@ const MotoristaLoginRoute = MotoristaLoginRouteImport.update({
 const MotoristaGanhosRoute = MotoristaGanhosRouteImport.update({
   id: '/motorista/ganhos',
   path: '/motorista/ganhos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MotoristaDocumentosRoute = MotoristaDocumentosRouteImport.update({
+  id: '/motorista/documentos',
+  path: '/motorista/documentos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MotoristaCorridasRoute = MotoristaCorridasRouteImport.update({
@@ -336,6 +342,7 @@ export interface FileRoutesByFullPath {
   '/motorista/cadastro': typeof MotoristaCadastroRoute
   '/motorista/configuracoes': typeof MotoristaConfiguracoesRoute
   '/motorista/corridas': typeof MotoristaCorridasRouteWithChildren
+  '/motorista/documentos': typeof MotoristaDocumentosRoute
   '/motorista/ganhos': typeof MotoristaGanhosRoute
   '/motorista/login': typeof MotoristaLoginRoute
   '/motorista/notificacoes': typeof MotoristaNotificacoesRoute
@@ -387,6 +394,7 @@ export interface FileRoutesByTo {
   '/motorista/cadastro': typeof MotoristaCadastroRoute
   '/motorista/configuracoes': typeof MotoristaConfiguracoesRoute
   '/motorista/corridas': typeof MotoristaCorridasRouteWithChildren
+  '/motorista/documentos': typeof MotoristaDocumentosRoute
   '/motorista/ganhos': typeof MotoristaGanhosRoute
   '/motorista/login': typeof MotoristaLoginRoute
   '/motorista/notificacoes': typeof MotoristaNotificacoesRoute
@@ -439,6 +447,7 @@ export interface FileRoutesById {
   '/motorista/cadastro': typeof MotoristaCadastroRoute
   '/motorista/configuracoes': typeof MotoristaConfiguracoesRoute
   '/motorista/corridas': typeof MotoristaCorridasRouteWithChildren
+  '/motorista/documentos': typeof MotoristaDocumentosRoute
   '/motorista/ganhos': typeof MotoristaGanhosRoute
   '/motorista/login': typeof MotoristaLoginRoute
   '/motorista/notificacoes': typeof MotoristaNotificacoesRoute
@@ -492,6 +501,7 @@ export interface FileRouteTypes {
     | '/motorista/cadastro'
     | '/motorista/configuracoes'
     | '/motorista/corridas'
+    | '/motorista/documentos'
     | '/motorista/ganhos'
     | '/motorista/login'
     | '/motorista/notificacoes'
@@ -543,6 +553,7 @@ export interface FileRouteTypes {
     | '/motorista/cadastro'
     | '/motorista/configuracoes'
     | '/motorista/corridas'
+    | '/motorista/documentos'
     | '/motorista/ganhos'
     | '/motorista/login'
     | '/motorista/notificacoes'
@@ -594,6 +605,7 @@ export interface FileRouteTypes {
     | '/motorista/cadastro'
     | '/motorista/configuracoes'
     | '/motorista/corridas'
+    | '/motorista/documentos'
     | '/motorista/ganhos'
     | '/motorista/login'
     | '/motorista/notificacoes'
@@ -646,6 +658,7 @@ export interface RootRouteChildren {
   MotoristaCadastroRoute: typeof MotoristaCadastroRoute
   MotoristaConfiguracoesRoute: typeof MotoristaConfiguracoesRoute
   MotoristaCorridasRoute: typeof MotoristaCorridasRouteWithChildren
+  MotoristaDocumentosRoute: typeof MotoristaDocumentosRoute
   MotoristaGanhosRoute: typeof MotoristaGanhosRoute
   MotoristaLoginRoute: typeof MotoristaLoginRoute
   MotoristaNotificacoesRoute: typeof MotoristaNotificacoesRoute
@@ -821,6 +834,13 @@ declare module '@tanstack/react-router' {
       path: '/motorista/ganhos'
       fullPath: '/motorista/ganhos'
       preLoaderRoute: typeof MotoristaGanhosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/motorista/documentos': {
+      id: '/motorista/documentos'
+      path: '/motorista/documentos'
+      fullPath: '/motorista/documentos'
+      preLoaderRoute: typeof MotoristaDocumentosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/motorista/corridas': {
@@ -1056,6 +1076,7 @@ const rootRouteChildren: RootRouteChildren = {
   MotoristaCadastroRoute: MotoristaCadastroRoute,
   MotoristaConfiguracoesRoute: MotoristaConfiguracoesRoute,
   MotoristaCorridasRoute: MotoristaCorridasRouteWithChildren,
+  MotoristaDocumentosRoute: MotoristaDocumentosRoute,
   MotoristaGanhosRoute: MotoristaGanhosRoute,
   MotoristaLoginRoute: MotoristaLoginRoute,
   MotoristaNotificacoesRoute: MotoristaNotificacoesRoute,

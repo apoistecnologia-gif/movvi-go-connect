@@ -41,11 +41,17 @@ const DOC_STATUS_TONE: Record<string, string> = {
   expired: "bg-destructive/15 text-destructive border-destructive/30",
 };
 
+type DocsSummary = {
+  status: "pending_upload" | "pending_review" | "approved" | "rejected";
+  uploaded: number;
+};
+
 function DriverStatusPage() {
   const navigate = useNavigate();
   const [status, setStatus] = useState<DisplayStatus | null>(null);
   const [rejectionReason, setRejectionReason] = useState<string | null>(null);
   const [docs, setDocs] = useState<DocRow[]>([]);
+  const [docsSummary, setDocsSummary] = useState<DocsSummary | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -62,6 +68,23 @@ function DriverStatusPage() {
           .select("id,type,status,expires_at,rejected_reason")
           .eq("driver_id", result.profile.id);
         setDocs((data ?? []) as DocRow[]);
+
+        const { data: docFields } = await supabase
+          .from("drivers")
+          .select("selfie_url,cnh_url,cnh_back_url,vehicle_document_url,documents_status")
+          .eq("id", result.profile.id)
+          .maybeSingle();
+        if (docFields) {
+          const uploaded =
+            (docFields.selfie_url ? 1 : 0) +
+            (docFields.cnh_url ? 1 : 0) +
+            (docFields.cnh_back_url ? 1 : 0) +
+            (docFields.vehicle_document_url ? 1 : 0);
+          setDocsSummary({
+            status: (docFields.documents_status as DocsSummary["status"]) ?? "pending_upload",
+            uploaded,
+          });
+        }
       } else {
         setStatus("nao_encontrado");
       }
@@ -125,6 +148,37 @@ function DriverStatusPage() {
               )}
             </CardContent>
           </Card>
+
+          {!loading && docsSummary && docsSummary.status !== "approved" && (
+            <Card className={docsSummary.uploaded < 4 ? "border-yellow-500/40 bg-yellow-500/5" : "border-primary/40 bg-primary/5"}>
+              <CardContent className="flex items-start gap-3 py-4">
+                <div className={`rounded-full p-2 ${docsSummary.uploaded < 4 ? "bg-yellow-500/15 text-yellow-400" : "bg-primary/15 text-primary"}`}>
+                  {docsSummary.uploaded < 4 ? <AlertTriangle className="h-5 w-5" /> : <FileCheck2 className="h-5 w-5" />}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold">
+                    {docsSummary.uploaded < 4
+                      ? `Faltam ${4 - docsSummary.uploaded} de 4 documentos`
+                      : docsSummary.status === "rejected"
+                      ? "Documentos reprovados — reenvie"
+                      : "Documentos em análise"}
+                  </p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {docsSummary.uploaded < 4
+                      ? "Complete o envio para liberar a análise da sua conta."
+                      : "Assim que forem revisados, você será notificado."}
+                  </p>
+                  <div className="mt-3">
+                    <Button asChild size="sm" variant={docsSummary.uploaded < 4 ? "default" : "secondary"}>
+                      <Link to="/motorista/documentos">
+                        {docsSummary.uploaded < 4 ? "Completar envio" : "Ver meus documentos"}
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {!loading && status && status !== "nao_encontrado" && (
             <Card>

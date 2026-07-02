@@ -16,10 +16,11 @@ import {
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { MovviLogo } from "@/components/MovviLogo";
-import { ArrowLeft, Loader2, Upload } from "lucide-react";
+import { ArrowLeft, Loader2, ShieldCheck } from "lucide-react";
 import { translateAuthError } from "@/lib/authErrors";
 import { cadastrarMotorista } from "@/lib/driverAuth.functions";
-import { DriverPhotoField } from "@/components/DriverPhotoField";
+import { DriverDocumentField } from "@/components/DriverDocumentField";
+import { compressDocumentImage } from "@/lib/imageCompress";
 
 export const Route = createFileRoute("/motorista/cadastro")({
   head: () => ({ meta: [{ title: "Cadastro do Motorista — MOVVI DRIVE" }] }),
@@ -55,60 +56,20 @@ const schema = z.object({
     }),
 });
 
-type UploadTarget = {
-  bucket: "driver-selfies" | "driver-cnh" | "vehicle-documents";
-  file: File;
-  label: string;
-};
+type DocFile = File | null;
 
-async function fileToBase64(t: UploadTarget) {
-  const buffer = await t.file.arrayBuffer();
+async function fileToBase64(file: File, bucket: string, label: string) {
+  const buffer = await file.arrayBuffer();
   let binary = "";
   const bytes = new Uint8Array(buffer);
   for (let i = 0; i < bytes.length; i += 1) binary += String.fromCharCode(bytes[i]);
   return {
-    bucket: t.bucket,
-    label: t.label,
-    fileName: t.file.name,
-    contentType: t.file.type || "application/octet-stream",
+    bucket,
+    label,
+    fileName: file.name,
+    contentType: file.type || "application/octet-stream",
     base64: window.btoa(binary),
   };
-}
-
-function FileField({
-  id,
-  label,
-  file,
-  onChange,
-  accept,
-}: {
-  id: string;
-  label: string;
-  file: File | null;
-  onChange: (f: File | null) => void;
-  accept: string;
-}) {
-  return (
-    <div className="space-y-2">
-      <Label htmlFor={id}>{label}</Label>
-      <label
-        htmlFor={id}
-        className="flex cursor-pointer items-center gap-3 rounded-md border border-dashed border-border bg-muted/30 px-4 py-3 text-sm transition hover:border-primary hover:bg-muted/60"
-      >
-        <Upload className="h-4 w-4 text-primary" />
-        <span className="truncate text-muted-foreground">
-          {file ? file.name : "Selecionar arquivo"}
-        </span>
-      </label>
-      <input
-        id={id}
-        type="file"
-        accept={accept}
-        className="hidden"
-        onChange={(e) => onChange(e.target.files?.[0] ?? null)}
-      />
-    </div>
-  );
 }
 
 function DriverSignUpPage() {
@@ -119,8 +80,12 @@ function DriverSignUpPage() {
   const [success, setSuccess] = useState<string | null>(null);
 
   const [selfie, setSelfie] = useState<File | null>(null);
-  const [cnh, setCnh] = useState<File | null>(null);
+  const [cnhFront, setCnhFront] = useState<File | null>(null);
+  const [cnhBack, setCnhBack] = useState<File | null>(null);
   const [vehicleDoc, setVehicleDoc] = useState<File | null>(null);
+
+  const docsUploaded = [selfie, cnhFront, cnhBack, vehicleDoc].filter(Boolean).length;
+  const allDocsReady = docsUploaded === 4;
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -134,12 +99,8 @@ function DriverSignUpPage() {
       setError(parsed.error.issues[0]?.message ?? "Verifique os campos");
       return;
     }
-    if (!selfie) {
-      setError("A foto de perfil é obrigatória.");
-      return;
-    }
-    if (!cnh || !vehicleDoc) {
-      setError("Envie CNH e documento do veículo");
+    if (!selfie || !cnhFront || !cnhBack || !vehicleDoc) {
+      setError("Envie os 4 documentos obrigatórios para continuar.");
       return;
     }
 
@@ -147,17 +108,26 @@ function DriverSignUpPage() {
     try {
       const data = parsed.data;
 
-      console.log("[MOVVI DOCS] arquivo selecionado:", {
+      console.log("[MOVVI DOCS] arquivos selecionados:", {
         selfie: selfie.name,
-        cnh: cnh.name,
+        cnhFront: cnhFront.name,
+        cnhBack: cnhBack.name,
         veiculo: vehicleDoc.name,
       });
-      console.log("[MOVVI DOCS] upload iniciado: codificando para envio ao servidor");
+
+      // Extra safety compression pass (no-op if already compressed).
+      const [cSelfie, cCnhF, cCnhB, cVeh] = await Promise.all([
+        compressDocumentImage(selfie, { maxSize: 1200, quality: 0.85 }),
+        compressDocumentImage(cnhFront),
+        compressDocumentImage(cnhBack),
+        compressDocumentImage(vehicleDoc),
+      ]);
 
       const documents = await Promise.all([
-        fileToBase64({ bucket: "driver-selfies", file: selfie, label: "selfie" }),
-        fileToBase64({ bucket: "driver-cnh", file: cnh, label: "cnh" }),
-        fileToBase64({ bucket: "vehicle-documents", file: vehicleDoc, label: "veiculo" }),
+        fileToBase64(cSelfie, "driver-selfies", "selfie"),
+        fileToBase64(cCnhF, "driver-cnh", "cnh"),
+        fileToBase64(cCnhB, "driver-cnh", "cnh_back"),
+        fileToBase64(cVeh, "vehicle-documents", "veiculo"),
       ]);
 
       const result = await callCadastrarMotorista({
@@ -166,11 +136,16 @@ function DriverSignUpPage() {
           email: data.email.toLowerCase(),
           state: data.state.toUpperCase(),
           vehicle_plate: data.vehicle_plate.toUpperCase(),
-          documents: documents as [typeof documents[0], typeof documents[1], typeof documents[2]],
+          documents: documents as [
+            typeof documents[0],
+            typeof documents[1],
+            typeof documents[2],
+            typeof documents[3],
+          ],
         },
       });
 
-      console.log("[MOVVI DOCS] upload concluído. resposta do servidor:", result);
+      console.log("[MOVVI DOCS] cadastro concluído:", result);
 
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: data.email.toLowerCase(),
@@ -290,29 +265,64 @@ function DriverSignUpPage() {
                 </div>
               </section>
 
-              <section className="space-y-4">
-                <h3 className="text-sm font-semibold uppercase text-primary">Foto de perfil</h3>
-                <DriverPhotoField file={selfie} onChange={setSelfie} name={undefined} />
-              </section>
 
               <section className="space-y-4">
-                <h3 className="text-sm font-semibold uppercase text-primary">Documentos</h3>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <FileField
-                    id="cnh"
-                    label="CNH"
-                    accept="image/*,application/pdf"
-                    file={cnh}
-                    onChange={setCnh}
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="text-sm font-semibold uppercase text-primary">Documentos</h3>
+                  <span
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ring-1 ${
+                      allDocsReady
+                        ? "bg-primary/15 text-primary ring-primary/30"
+                        : "bg-muted text-muted-foreground ring-border"
+                    }`}
+                  >
+                    <ShieldCheck className="h-3.5 w-3.5" />
+                    {docsUploaded}/4 enviados
+                  </span>
+                </div>
+
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="h-full bg-primary transition-all duration-300"
+                    style={{ width: `${(docsUploaded / 4) * 100}%` }}
                   />
-                  <FileField
-                    id="vehicle_doc"
-                    label="Documento do veículo"
-                    accept="image/*,application/pdf"
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <DriverDocumentField
+                    id="doc-cnh-front"
+                    label="CNH — Frente"
+                    helper="Foto legível, sem reflexos"
+                    file={cnhFront}
+                    onChange={setCnhFront}
+                  />
+                  <DriverDocumentField
+                    id="doc-cnh-back"
+                    label="CNH — Verso"
+                    helper="Verso completo da CNH"
+                    file={cnhBack}
+                    onChange={setCnhBack}
+                  />
+                  <DriverDocumentField
+                    id="doc-crlv"
+                    label="CRLV do veículo"
+                    helper="Documento atual do veículo"
                     file={vehicleDoc}
                     onChange={setVehicleDoc}
                   />
+                  <DriverDocumentField
+                    id="doc-selfie"
+                    label="Selfie de validação"
+                    helper="Rosto visível, boa iluminação"
+                    facing="user"
+                    file={selfie}
+                    onChange={setSelfie}
+                  />
                 </div>
+
+                <p className="text-[11px] text-muted-foreground">
+                  Seus documentos ficam privados e são usados apenas para análise da conta.
+                </p>
               </section>
 
               {error && (
@@ -334,13 +344,15 @@ function DriverSignUpPage() {
                     Entrar
                   </Link>
                 </p>
-                <Button type="submit" size="lg" disabled={loading} className="sm:min-w-48">
+                <Button type="submit" size="lg" disabled={loading || !allDocsReady} className="sm:min-w-48">
                   {loading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Enviando...
                     </>
-                  ) : (
+                  ) : allDocsReady ? (
                     "Enviar cadastro"
+                  ) : (
+                    `Faltam ${4 - docsUploaded} documento(s)`
                   )}
                 </Button>
               </div>

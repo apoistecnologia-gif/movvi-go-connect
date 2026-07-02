@@ -545,6 +545,7 @@ export type Database = {
           blocked_at: string | null
           category: Database["public"]["Enums"]["ride_category"]
           city: string
+          cnh_back_url: string | null
           cnh_url: string | null
           cpf: string
           created_at: string
@@ -552,6 +553,7 @@ export type Database = {
           current_lat: number | null
           current_lng: number | null
           current_speed: number | null
+          documents_status: string
           email: string
           id: string
           insurance_url: string | null
@@ -586,6 +588,7 @@ export type Database = {
           blocked_at?: string | null
           category: Database["public"]["Enums"]["ride_category"]
           city: string
+          cnh_back_url?: string | null
           cnh_url?: string | null
           cpf: string
           created_at?: string
@@ -593,6 +596,7 @@ export type Database = {
           current_lat?: number | null
           current_lng?: number | null
           current_speed?: number | null
+          documents_status?: string
           email: string
           id?: string
           insurance_url?: string | null
@@ -627,6 +631,7 @@ export type Database = {
           blocked_at?: string | null
           category?: Database["public"]["Enums"]["ride_category"]
           city?: string
+          cnh_back_url?: string | null
           cnh_url?: string | null
           cpf?: string
           created_at?: string
@@ -634,6 +639,7 @@ export type Database = {
           current_lat?: number | null
           current_lng?: number | null
           current_speed?: number | null
+          documents_status?: string
           email?: string
           id?: string
           insurance_url?: string | null
