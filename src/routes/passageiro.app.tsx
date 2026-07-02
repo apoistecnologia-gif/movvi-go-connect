@@ -326,16 +326,11 @@ function OriginActionsSheet({
                 )}
               </>
             ) : position ? (
-              <>
-                <div className="mt-0.5 text-[13px] font-semibold text-amber-400">
-                  Localização aproximada
-                </div>
-                <div className="mt-0.5 font-mono text-[12px] text-foreground">
-                  Lat: {position.lat.toFixed(6)} • Lng: {position.lng.toFixed(6)}
-                </div>
-              </>
+              <div className="mt-0.5 text-[13px] font-semibold text-foreground">
+                Localização atual
+              </div>
             ) : (
-              <div className="mt-0.5 text-[13px] text-muted-foreground">Sem endereço identificado</div>
+              <div className="mt-0.5 text-[13px] text-muted-foreground">Endereço não identificado</div>
             )}
           </div>
         </div>
