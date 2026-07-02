@@ -537,6 +537,45 @@ export type Database = {
         }
         Relationships: []
       }
+      driver_wallets: {
+        Row: {
+          available_balance: number
+          created_at: string
+          currency: string
+          driver_id: string
+          id: string
+          last_transaction_at: string | null
+          pending_balance: number
+          updated_at: string
+          wallet_balance: number
+          wallet_status: Database["public"]["Enums"]["wallet_status"]
+        }
+        Insert: {
+          available_balance?: number
+          created_at?: string
+          currency?: string
+          driver_id: string
+          id?: string
+          last_transaction_at?: string | null
+          pending_balance?: number
+          updated_at?: string
+          wallet_balance?: number
+          wallet_status?: Database["public"]["Enums"]["wallet_status"]
+        }
+        Update: {
+          available_balance?: number
+          created_at?: string
+          currency?: string
+          driver_id?: string
+          id?: string
+          last_transaction_at?: string | null
+          pending_balance?: number
+          updated_at?: string
+          wallet_balance?: number
+          wallet_status?: Database["public"]["Enums"]["wallet_status"]
+        }
+        Relationships: []
+      }
       drivers: {
         Row: {
           approval_status: Database["public"]["Enums"]["driver_approval_status"]
@@ -729,6 +768,54 @@ export type Database = {
           sort_order?: number
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      financial_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          description: string | null
+          driver_id: string | null
+          id: string
+          metadata: Json
+          method: Database["public"]["Enums"]["payment_method_kind"] | null
+          passenger_id: string | null
+          reference_id: string | null
+          status: Database["public"]["Enums"]["financial_txn_status"]
+          type: Database["public"]["Enums"]["financial_txn_type"]
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          description?: string | null
+          driver_id?: string | null
+          id?: string
+          metadata?: Json
+          method?: Database["public"]["Enums"]["payment_method_kind"] | null
+          passenger_id?: string | null
+          reference_id?: string | null
+          status?: Database["public"]["Enums"]["financial_txn_status"]
+          type: Database["public"]["Enums"]["financial_txn_type"]
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          description?: string | null
+          driver_id?: string | null
+          id?: string
+          metadata?: Json
+          method?: Database["public"]["Enums"]["payment_method_kind"] | null
+          passenger_id?: string | null
+          reference_id?: string | null
+          status?: Database["public"]["Enums"]["financial_txn_status"]
+          type?: Database["public"]["Enums"]["financial_txn_type"]
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1728,6 +1815,33 @@ export type Database = {
         | "overdue"
         | "pending"
         | "suspended"
+        | "expired"
+        | "blocked"
+        | "cancelled"
+      financial_txn_status:
+        | "pending"
+        | "processing"
+        | "completed"
+        | "failed"
+        | "cancelled"
+        | "refunded"
+      financial_txn_type:
+        | "subscription"
+        | "ride_payment"
+        | "refund"
+        | "bonus"
+        | "adjustment"
+        | "withdrawal"
+        | "promotion"
+        | "future_pix"
+        | "future_card"
+      payment_method_kind:
+        | "pix"
+        | "credit_card"
+        | "debit_card"
+        | "cash"
+        | "wallet"
+        | "corporate"
       payment_status: "pending" | "paid" | "failed" | "refunded"
       ride_category: "carros" | "motos" | "fretes" | "guincho" | "envios"
       ride_status:
@@ -1738,6 +1852,7 @@ export type Database = {
         | "finalizada"
         | "cancelada_passageiro"
         | "cancelada_motorista"
+      wallet_status: "active" | "frozen" | "closed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1887,6 +2002,36 @@ export const Constants = {
         "overdue",
         "pending",
         "suspended",
+        "expired",
+        "blocked",
+        "cancelled",
+      ],
+      financial_txn_status: [
+        "pending",
+        "processing",
+        "completed",
+        "failed",
+        "cancelled",
+        "refunded",
+      ],
+      financial_txn_type: [
+        "subscription",
+        "ride_payment",
+        "refund",
+        "bonus",
+        "adjustment",
+        "withdrawal",
+        "promotion",
+        "future_pix",
+        "future_card",
+      ],
+      payment_method_kind: [
+        "pix",
+        "credit_card",
+        "debit_card",
+        "cash",
+        "wallet",
+        "corporate",
       ],
       payment_status: ["pending", "paid", "failed", "refunded"],
       ride_category: ["carros", "motos", "fretes", "guincho", "envios"],
@@ -1899,6 +2044,7 @@ export const Constants = {
         "cancelada_passageiro",
         "cancelada_motorista",
       ],
+      wallet_status: ["active", "frozen", "closed"],
     },
   },
 } as const
