@@ -34,6 +34,13 @@ import {
 import { PassengerSideMenu } from "@/components/PassengerSideMenu";
 import { MovviMap } from "@/components/MovviMap";
 import { MovviSheet, type MovviSheetHandle } from "@/components/MovviSheet";
+import {
+  PassengerLocationMarker,
+  PlacePinMarker,
+  NearbyDriverMarker,
+  InterpolatedDriverMarker,
+} from "@/components/mapMarkers";
+import { smoothPanZoom } from "@/lib/mapCamera";
 import { supabase } from "@/integrations/supabase/client";
 import {
   BRAZIL_CENTER,
@@ -1447,7 +1454,7 @@ function PassageiroApp() {
       setSuggestions([]);
       sessionTokenRef.current = null;
       pushRecent({ placeId: s.placeId, label: s.primary, secondary: s.secondary });
-      sheetRef.current?.snapTo(55);
+      sheetRef.current?.snapTo(50);
       searchInputRef.current?.blur();
       await calcRoute(point);
     } catch (e) {
@@ -1489,12 +1496,12 @@ function PassageiroApp() {
       console.log("[MOVVI UI] rota calculada:", result);
       setRoute(result);
       setPassengerUiStage("route_preview");
-      sheetRef.current?.snapTo(70);
+      sheetRef.current?.snapTo(50);
       if (mapRef.current) {
         const bounds = new google.maps.LatLngBounds();
         bounds.extend(position);
         bounds.extend(dest);
-        mapRef.current.fitBounds(bounds, { top: 100, bottom: Math.round(window.innerHeight * 0.34) + 16, left: 60, right: 60 });
+        mapRef.current.fitBounds(bounds, { top: 90, bottom: Math.round(window.innerHeight * 0.5) + 16, left: 48, right: 48 });
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Falha ao calcular rota.");
@@ -1511,10 +1518,9 @@ function PassageiroApp() {
     setSelectedCategoryKey(null);
     setPassengerUiStage("selecting_destination");
     setSuggestions([]);
-    sheetRef.current?.snapTo(32);
+    sheetRef.current?.snapTo(24);
     if (mapRef.current && position) {
-      mapRef.current.panTo(position);
-      mapRef.current.setZoom(16);
+      smoothPanZoom(mapRef.current, position, 16, 700);
     }
   }
 
@@ -1523,7 +1529,7 @@ function PassageiroApp() {
     if (!selectedUiCategory) {
       setError("Escolha uma categoria antes de solicitar a MOVVI.");
       setPassengerUiStage("selecting_category");
-      sheetRef.current?.snapTo(70);
+      sheetRef.current?.snapTo(50);
       return;
     }
     if (
@@ -1823,14 +1829,13 @@ function PassageiroApp() {
   function recenter() {
     autoFollowRef.current = true;
     if (mapRef.current && position) {
-      mapRef.current.panTo(position);
-      mapRef.current.setZoom(16);
+      smoothPanZoom(mapRef.current, position, 16, 650);
     }
   }
 
 
   function focusSearch() {
-    sheetRef.current?.snapTo(70);
+    sheetRef.current?.snapTo(88);
     setTimeout(() => searchInputRef.current?.focus(), 220);
   }
 
@@ -1953,7 +1958,7 @@ function PassageiroApp() {
     // bottom sheet colapsado ocupa ~32vh. Sem inflar o viewport.
     mapRef.current.fitBounds(bounds, {
       top: 150,
-      bottom: Math.round(window.innerHeight * 0.34) + 16,
+      bottom: Math.round(window.innerHeight * 0.28) + 16,
       left: 48,
       right: 48,
     });
@@ -2104,14 +2109,14 @@ function PassageiroApp() {
                 radius={Math.max(40, gpsAccuracy ?? 60)}
                 options={{
                   strokeColor: "#3b82f6",
-                  strokeOpacity: 0.35,
+                  strokeOpacity: 0.32,
                   strokeWeight: 1,
                   fillColor: "#3b82f6",
-                  fillOpacity: 0.12,
+                  fillOpacity: 0.1,
                   clickable: false,
                 }}
               />
-              <PulsingUserMarker position={position} />
+              <PassengerLocationMarker position={position} />
             </>
           )}
 
@@ -2122,52 +2127,14 @@ function PassageiroApp() {
 
           {(!ride || ride.status === "procurar_motorista") &&
             drivers.map((d) => (
-              <Marker
+              <NearbyDriverMarker
                 key={d.user_id}
                 position={{ lat: d.current_lat, lng: d.current_lng }}
-                icon={{
-                  path: "M5 11l1.5-4.5h11L19 11M6 14h12M7.5 17a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Zm12 0a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0ZM5 11h14v4H5z",
-                  fillColor: "#8DD92B",
-                  fillOpacity: 1,
-                  strokeColor: "#05070D",
-                  strokeWeight: 1.4,
-                  scale: 1.2,
-                  anchor: safePoint(12, 14),
-                }}
               />
             ))}
 
           {destination && (
-            <>
-              {/* Halo do destino — visibilidade premium */}
-              <Marker
-                position={destination.point}
-                icon={{
-                  path: safeSymbol("CIRCLE"),
-                  scale: 14,
-                  fillColor: "#ef4444",
-                  fillOpacity: 0.15,
-                  strokeColor: "#ef4444",
-                  strokeOpacity: 0.35,
-                  strokeWeight: 1,
-                }}
-                clickable={false}
-                zIndex={9990}
-              />
-              <Marker
-                position={destination.point}
-                icon={{
-                  path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z",
-                  fillColor: "#ef4444",
-                  fillOpacity: 1,
-                  strokeColor: "#ffffff",
-                  strokeWeight: 2,
-                  scale: 1.9,
-                  anchor: safePoint(12, 22),
-                }}
-                zIndex={9991}
-              />
-            </>
+            <PlacePinMarker position={destination.point} color="#ef4444" zIndexBase={9990} />
           )}
 
           {/* Marcador do motorista durante a corrida (rastreamento em tempo real) */}
@@ -2178,22 +2145,13 @@ function PassageiroApp() {
             rideDriverInfo &&
             typeof rideDriverInfo.current_lat === "number" &&
             typeof rideDriverInfo.current_lng === "number" && (
-              <Marker
+              <InterpolatedDriverMarker
                 position={{ lat: rideDriverInfo.current_lat, lng: rideDriverInfo.current_lng }}
-                icon={{
-                  path: "M5 11l1.5-4.5h11L19 11M6 14h12M7.5 17a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Zm12 0a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0ZM5 11h14v4H5z",
-                  fillColor: "#2563eb",
-                  fillOpacity: 1,
-                  strokeColor: "#ffffff",
-                  strokeWeight: 2,
-                  scale: 1.8,
-                  rotation: typeof rideDriverInfo.current_heading === "number" ? rideDriverInfo.current_heading : 0,
-                  anchor: safePoint(12, 14),
-                }}
-                zIndex={9999}
+                heading={rideDriverInfo.current_heading ?? 0}
+                color="#2563eb"
               />
-
             )}
+
 
           {polyPath.length > 0 && (
             <>
@@ -2254,7 +2212,7 @@ function PassageiroApp() {
       />
 
       {/* Floating controls */}
-      <div className="pointer-events-none absolute right-3 z-30" style={{ bottom: "calc(32vh + 12px)" }}>
+      <div className="pointer-events-none absolute right-3 z-30" style={{ bottom: "calc(24vh + 12px)" }}>
         <button
           onClick={recenter}
           className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-card text-foreground shadow-2xl ring-1 ring-border transition active:scale-90 hover:scale-105"
@@ -2266,7 +2224,7 @@ function PassageiroApp() {
 
       {/* BOTTOM SHEET — novo, próprio do MOVVI */}
       {!ride && (
-        <MovviSheet ref={sheetRef} snaps={[32, 55, 70]} initial={32}>
+        <MovviSheet ref={sheetRef} snaps={[24, 50, 88]} initial={24}>
           <SheetContent
             geo={geo}
             addressStatus={addressStatus}
@@ -2283,7 +2241,7 @@ function PassageiroApp() {
               setDestination({ point, label });
               setDestinationText(label);
               setSuggestions([]);
-              sheetRef.current?.snapTo(55);
+              sheetRef.current?.snapTo(50);
               searchInputRef.current?.blur();
               await calcRoute(point);
             }}
@@ -2325,8 +2283,7 @@ function PassageiroApp() {
             setOriginPickCenter(position ?? BRAZIL_CENTER);
             setOriginPickOnMap(true);
             if (mapRef.current && position) {
-              mapRef.current.panTo(position);
-              mapRef.current.setZoom(17);
+              smoothPanZoom(mapRef.current, position, 17, 600);
             }
           }}
           onTypeAddress={() => {
@@ -2362,7 +2319,7 @@ function PassageiroApp() {
 
 
       {ride && ride.status === "procurar_motorista" && (
-        <MovviSheet snaps={[28, 55, 85]} initial={28}>
+        <MovviSheet snaps={[22, 55, 88]} initial={22}>
           <SearchingPanel
             category={category}
             driversCount={nearbyCount}
@@ -2435,8 +2392,8 @@ function PassageiroApp() {
           phase === "motorista_chegou" ||
           phase === "em_viagem") && (
           <MovviSheet
-            snaps={[32, 60, 88]}
-            initial={32}
+            snaps={[26, 55, 92]}
+            initial={26}
           >
             <DriverEnRoute ride={ride} driver={rideDriverInfo} onCancel={cancelRide} />
           </MovviSheet>
@@ -2444,7 +2401,7 @@ function PassageiroApp() {
 
 
       {ride && phase === "finalizada" && !ride.passenger_rated_at && (
-        <MovviSheet snaps={[70]} initial={70}>
+        <MovviSheet snaps={[58]} initial={58}>
           <div className="pt-2">
             <div className="text-center">
               <div className="mx-auto mb-3 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/15 text-primary text-2xl">
@@ -2506,7 +2463,7 @@ function PassageiroApp() {
       )}
 
       {ride && phase === "finalizada" && ride.passenger_rated_at && (
-        <MovviSheet snaps={[40]} initial={40}>
+        <MovviSheet snaps={[32]} initial={32}>
           <div className="pt-2 text-center">
             <div className="mx-auto mb-3 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/15 text-primary text-3xl">
               ✓
@@ -2954,7 +2911,7 @@ function StepFlow({
   }, [route, uiStage, setUiStage]);
 
   useEffect(() => {
-    if (uiStage === "selecting_category" || uiStage === "confirming_request") onExpandSheet(70);
+    if (uiStage === "selecting_category" || uiStage === "confirming_request") onExpandSheet(50);
   }, [uiStage, onExpandSheet]);
 
   useEffect(() => {
@@ -3023,7 +2980,7 @@ function StepFlow({
             onClick={() => {
               console.log("[MOVVI UI] botão continuar clicado");
               setUiStage("selecting_category");
-              onExpandSheet(70);
+              onExpandSheet(50);
             }}
             className="w-full rounded-2xl bg-primary py-3.5 text-[14px] font-bold text-primary-foreground shadow-xl shadow-primary/25 transition active:scale-[0.98]"
           >
