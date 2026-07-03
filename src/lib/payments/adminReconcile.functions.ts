@@ -16,10 +16,9 @@ export const adminRefreshAsaasPayment = createServerFn({ method: "POST" })
     const { userId, supabase } = context;
 
     // Require admin
-    const { data: isAdmin } = await supabase.rpc("has_role", {
-      _user_id: userId,
-      _role: "admin",
-    });
+    const { data: isAdmin } = await (supabase as unknown as {
+      rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: boolean | null }>;
+    }).rpc("has_role", { _user_id: userId, _role: "admin" });
     if (!isAdmin) throw new Error("forbidden");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
