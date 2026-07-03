@@ -11,6 +11,9 @@ import {
   Loader2,
   X,
   Filter,
+  Receipt as ReceiptIcon,
+  Clock,
+  CreditCard,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -28,6 +31,8 @@ import {
 import { Avatar } from "@/components/Avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { avaliarMotorista } from "@/lib/rideLifecycle";
+import { RideReceiptDialog } from "@/components/rides/RideReceiptDialog";
+import type { ReceiptData } from "@/lib/rideReceipt";
 
 type RideRow = {
   id: string;
