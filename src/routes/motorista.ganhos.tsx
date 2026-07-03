@@ -1,28 +1,36 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import {
-  Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis,
-} from "recharts";
-import {
-  Calendar, Clock, DollarSign, Download, FileText, Loader2, MapPin, TrendingUp,
+  ArrowUpRight,
+  CalendarDays,
+  CheckCircle2,
+  Clock,
+  Download,
+  FileText,
+  Loader2,
+  MapPin,
+  ShieldAlert,
+  TrendingUp,
+  Wallet,
 } from "lucide-react";
+import { toast } from "sonner";
 import { MovviHeader } from "@/components/MovviHeader";
 import { BottomNav, DRIVER_NAV } from "@/components/BottomNav";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { downloadCsv } from "@/lib/csvExport";
+import { getDriverWallet } from "@/lib/finance/wallet";
+import { getDriverSubscriptionInfo } from "@/lib/payments/subscription.functions";
+import { SUBSCRIPTION_STATUS_UI_LABELS, toUiStatus } from "@/lib/payments/types";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
 export const Route = createFileRoute("/motorista/ganhos")({
-  head: () => ({ meta: [{ title: "Ganhos — MOVVI DRIVE" }] }),
+  head: () => ({ meta: [{ title: "Financeiro — MOVVI DRIVE" }] }),
   component: DriverEarningsPage,
 });
 
-type Filter = "today" | "yesterday" | "week" | "month" | "custom";
+type Filter = "today" | "week" | "month" | "custom";
 
 type Ride = {
   id: string;
@@ -38,43 +46,47 @@ type Ride = {
   category: string | null;
 };
 
-function range(filter: Filter, customFrom: string, customTo: string): [Date, Date] {
-  const now = new Date();
-  const start = new Date(now); start.setHours(0, 0, 0, 0);
-  const end = new Date(now); end.setHours(23, 59, 59, 999);
-  if (filter === "today") return [start, end];
-  if (filter === "yesterday") {
-    const s = new Date(start); s.setDate(s.getDate() - 1);
-    const e = new Date(end); e.setDate(e.getDate() - 1);
-    return [s, e];
-  }
-  if (filter === "week") {
-    const s = new Date(start); s.setDate(s.getDate() - 6);
-    return [s, end];
-  }
-  if (filter === "month") {
-    const s = new Date(start); s.setDate(1);
-    return [s, end];
-  }
-  return [
-    customFrom ? new Date(customFrom + "T00:00:00") : start,
-    customTo ? new Date(customTo + "T23:59:59") : end,
-  ];
-}
-
 function brl(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
+function startOf(kind: "day" | "week" | "month"): Date {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  if (kind === "week") d.setDate(d.getDate() - 6);
+  if (kind === "month") d.setDate(1);
+  return d;
+}
+
+function endOfToday(): Date {
+  const d = new Date();
+  d.setHours(23, 59, 59, 999);
+  return d;
+}
+
+function range(filter: Filter, customFrom: string, customTo: string): [Date, Date] {
+  const end = endOfToday();
+  if (filter === "today") return [startOf("day"), end];
+  if (filter === "week") return [startOf("week"), end];
+  if (filter === "month") return [startOf("month"), end];
+  return [
+    customFrom ? new Date(customFrom + "T00:00:00") : startOf("day"),
+    customTo ? new Date(customTo + "T23:59:59") : end,
+  ];
+}
+
 function DriverEarningsPage() {
   const navigate = useNavigate();
+  const loadSubscription = useServerFn(getDriverSubscriptionInfo);
   const [userId, setUserId] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>("week");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
   const [rides, setRides] = useState<Ride[]>([]);
   const [loading, setLoading] = useState(true);
-  const [totalAll, setTotalAll] = useState({ earnings: 0, trips: 0, distance: 0 });
+  const [available, setAvailable] = useState<number | null>(null);
+  const [totals, setTotals] = useState({ today: 0, week: 0, month: 0 });
+  const [sub, setSub] = useState<Awaited<ReturnType<typeof getDriverSubscriptionInfo>> | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -86,51 +98,69 @@ function DriverEarningsPage() {
 
   useEffect(() => {
     if (!userId) return;
-    const [from, to] = range(filter, customFrom, customTo);
+    (async () => {
+      try {
+        const [wallet, subInfo] = await Promise.all([
+          getDriverWallet(userId),
+          loadSubscription({}).catch(() => null),
+        ]);
+        if (wallet) setAvailable(Number(wallet.available_balance ?? 0));
+        if (subInfo) setSub(subInfo);
+      } catch {
+        /* silent */
+      }
+    })();
+  }, [userId, loadSubscription]);
+
+  useEffect(() => {
+    if (!userId) return;
     setLoading(true);
     (async () => {
-      const { data, error } = await supabase
+      const [from, to] = range(filter, customFrom, customTo);
+      const { data } = await supabase
         .from("rides")
         .select("id,created_at,completed_at,origin_name,destination_name,distance_km,duration_min,final_price,estimated_price,payment_method,category")
         .eq("driver_id", userId).eq("status", "finalizada")
         .gte("completed_at", from.toISOString())
         .lte("completed_at", to.toISOString())
         .order("completed_at", { ascending: false });
-      if (!error) setRides((data ?? []) as Ride[]);
+      setRides((data ?? []) as Ride[]);
 
-      const { data: tot } = await supabase
+      // KPI totals (independent of active filter)
+      const todayStart = startOf("day");
+      const weekStart = startOf("week");
+      const monthStart = startOf("month");
+      const { data: monthRows } = await supabase
         .from("rides")
-        .select("final_price,distance_km")
-        .eq("driver_id", userId).eq("status", "finalizada");
-      const e = (tot ?? []).reduce((s, r) => s + Number(r.final_price ?? 0), 0);
-      const km = (tot ?? []).reduce((s, r) => s + Number(r.distance_km ?? 0), 0);
-      setTotalAll({ earnings: e, trips: tot?.length ?? 0, distance: km });
+        .select("final_price,estimated_price,completed_at")
+        .eq("driver_id", userId).eq("status", "finalizada")
+        .gte("completed_at", monthStart.toISOString());
+      let t = 0, w = 0, m = 0;
+      (monthRows ?? []).forEach((r) => {
+        const v = Number(r.final_price ?? r.estimated_price ?? 0);
+        const at = new Date(r.completed_at ?? new Date());
+        m += v;
+        if (at >= weekStart) w += v;
+        if (at >= todayStart) t += v;
+      });
+      setTotals({ today: t, week: w, month: m });
       setLoading(false);
     })();
   }, [userId, filter, customFrom, customTo]);
 
-  const stats = useMemo(() => {
+  const periodStats = useMemo(() => {
     const earnings = rides.reduce((s, r) => s + Number(r.final_price ?? r.estimated_price ?? 0), 0);
-    const trips = rides.length;
-    const distance = rides.reduce((s, r) => s + Number(r.distance_km ?? 0), 0);
-    const duration = rides.reduce((s, r) => s + Number(r.duration_min ?? 0), 0);
-    const avgFare = trips ? earnings / trips : 0;
-    const perKm = distance ? earnings / distance : 0;
-    return { earnings, trips, distance, duration, avgFare, perKm };
+    return { earnings, trips: rides.length };
   }, [rides]);
 
-  const chartData = useMemo(() => {
-    const map = new Map<string, { day: string; ganhos: number; corridas: number }>();
-    rides.forEach((r) => {
-      const d = new Date(r.completed_at ?? r.created_at);
-      const key = d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
-      const cur = map.get(key) ?? { day: key, ganhos: 0, corridas: 0 };
-      cur.ganhos += Number(r.final_price ?? r.estimated_price ?? 0);
-      cur.corridas += 1;
-      map.set(key, cur);
-    });
-    return Array.from(map.values()).reverse();
-  }, [rides]);
+  const displayedBalance = available ?? totals.month;
+
+  const subUi = sub ? toUiStatus(sub.subscriptionStatus) : "expired";
+  const subLabel = SUBSCRIPTION_STATUS_UI_LABELS[subUi];
+  const subActive = subUi === "active";
+  const subExpires = sub?.nextDueAt
+    ? new Date(sub.nextDueAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })
+    : null;
 
   function exportCsv() {
     downloadCsv(
@@ -155,7 +185,7 @@ function DriverEarningsPage() {
     doc.text("MOVVI DRIVE — Extrato de Ganhos", 14, 16);
     doc.setFontSize(10);
     doc.text(`Período: ${filter} · Gerado em ${new Date().toLocaleString("pt-BR")}`, 14, 23);
-    doc.text(`Total: ${brl(stats.earnings)} · ${stats.trips} corridas · ${stats.distance.toFixed(1)} km`, 14, 30);
+    doc.text(`Total: ${brl(periodStats.earnings)} · ${periodStats.trips} corridas`, 14, 30);
     autoTable(doc, {
       startY: 36,
       head: [["Data", "Origem → Destino", "KM", "Min", "Pagto", "Valor"]],
@@ -177,130 +207,160 @@ function DriverEarningsPage() {
     <div className="flex min-h-screen flex-col bg-background">
       <MovviHeader logoutRedirect="/" />
       <main className="flex-1 px-4 py-6 pb-28">
-        <div className="container mx-auto max-w-3xl space-y-5">
-          <header className="flex items-center gap-3">
-            <div className="grid h-11 w-11 place-items-center rounded-2xl bg-primary/15 text-primary">
-              <DollarSign className="h-5 w-5" />
-            </div>
-            <div>
-              <h1 className="font-display text-xl font-bold">Meus ganhos</h1>
-              <p className="text-xs text-muted-foreground">Acompanhe seu desempenho financeiro.</p>
-            </div>
+        <div className="container mx-auto max-w-2xl space-y-5">
+          {/* ===== HEADER ===== */}
+          <header className="animate-in fade-in slide-in-from-top-2 duration-400">
+            <h1 className="text-[26px] font-bold tracking-tight text-foreground">Financeiro</h1>
+            <p className="mt-1 text-[13px] text-muted-foreground">Gerencie seus ganhos.</p>
           </header>
 
-          <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)}>
-            <TabsList className="grid w-full grid-cols-5">
-              <TabsTrigger value="today">Hoje</TabsTrigger>
-              <TabsTrigger value="yesterday">Ontem</TabsTrigger>
-              <TabsTrigger value="week">Semana</TabsTrigger>
-              <TabsTrigger value="month">Mês</TabsTrigger>
-              <TabsTrigger value="custom">Custom</TabsTrigger>
-            </TabsList>
-          </Tabs>
+          {/* ===== MAIN BALANCE CARD ===== */}
+          <section
+            className="relative overflow-hidden rounded-[28px] bg-card p-6 shadow-[0_18px_44px_-24px_rgba(0,0,0,0.28)] ring-1 ring-border/70 animate-in fade-in zoom-in-95 duration-400"
+          >
+            <div
+              className="pointer-events-none absolute -right-16 -top-16 h-52 w-52 rounded-full opacity-[0.16]"
+              style={{ background: "radial-gradient(circle, #76C139 0%, transparent 70%)" }}
+            />
+            <div className="relative">
+              <div className="flex items-center gap-2">
+                <div className="grid h-9 w-9 place-items-center rounded-full bg-primary/12 text-primary ring-1 ring-primary/25">
+                  <Wallet className="h-4 w-4" strokeWidth={1.75} />
+                </div>
+                <span className="text-[13px] font-medium text-muted-foreground">Saldo disponível</span>
+              </div>
+              <div className="mt-3 text-[36px] font-bold tabular-nums leading-none tracking-tight text-foreground">
+                {brl(displayedBalance)}
+              </div>
+              <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary ring-1 ring-primary/25">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-70" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
+                </span>
+                Disponível para saque
+              </div>
 
-          {filter === "custom" && (
-            <div className="grid grid-cols-2 gap-2">
-              <Input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} />
-              <Input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} />
+              <button
+                onClick={() => toast.info("Saque em breve — em desenvolvimento")}
+                className="press-scale mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-[18px] text-[16px] font-bold uppercase tracking-[0.06em] text-primary-foreground shadow-[0_16px_36px_-16px_color-mix(in_oklab,var(--color-primary)_70%,transparent)] transition"
+                style={{ background: "#76C139" }}
+              >
+                <ArrowUpRight className="h-5 w-5" strokeWidth={2} />
+                Solicitar saque
+              </button>
             </div>
-          )}
+          </section>
 
+          {/* ===== SECONDARY KPI CARDS ===== */}
+          <section className="grid grid-cols-3 gap-3 animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <MiniCard icon={<CalendarDays className="h-3.5 w-3.5" strokeWidth={1.75} />} label="Hoje"   value={brl(totals.today)} />
+            <MiniCard icon={<TrendingUp   className="h-3.5 w-3.5" strokeWidth={1.75} />} label="Semana" value={brl(totals.week)} />
+            <MiniCard icon={<TrendingUp   className="h-3.5 w-3.5" strokeWidth={1.75} />} label="Mês"    value={brl(totals.month)} />
+          </section>
+
+          {/* ===== SUBSCRIPTION STATUS ===== */}
+          <button
+            type="button"
+            onClick={() => navigate({ to: "/motorista/assinatura" })}
+            className="press-scale flex w-full items-center gap-3 rounded-[22px] bg-card p-4 text-left shadow-[0_10px_28px_-22px_rgba(0,0,0,0.3)] ring-1 ring-border/70 transition hover:bg-muted/20 animate-in fade-in slide-in-from-bottom-2 duration-500"
+          >
+            <div className={`grid h-11 w-11 place-items-center rounded-full ${subActive ? "bg-primary/12 text-primary ring-1 ring-primary/25" : "bg-destructive/12 text-destructive ring-1 ring-destructive/25"}`}>
+              {subActive ? <CheckCircle2 className="h-5 w-5" strokeWidth={1.75} /> : <ShieldAlert className="h-5 w-5" strokeWidth={1.75} />}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <span className="text-[15px] font-semibold text-foreground">MOVVI Premium</span>
+                <span className={`rounded-full px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wider ${subActive ? "bg-primary/12 text-primary" : "bg-destructive/12 text-destructive"}`}>
+                  {subLabel}
+                </span>
+              </div>
+              <div className="mt-0.5 text-[12px] text-muted-foreground">
+                {subExpires ? `Expira em ${subExpires}` : "Toque para ver detalhes"}
+              </div>
+            </div>
+            <ArrowUpRight className="h-4 w-4 shrink-0 rotate-45 text-muted-foreground/60" />
+          </button>
+
+          {/* ===== FILTERS ===== */}
+          <section className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-[18px] font-semibold tracking-tight">Histórico</h2>
+              <div className="flex gap-1">
+                <button onClick={exportCsv} className="press-scale flex h-9 w-9 items-center justify-center rounded-full bg-card ring-1 ring-border text-muted-foreground hover:text-foreground" aria-label="Exportar CSV">
+                  <Download className="h-4 w-4" strokeWidth={1.75} />
+                </button>
+                <button onClick={exportPdf} className="press-scale flex h-9 w-9 items-center justify-center rounded-full bg-card ring-1 ring-border text-muted-foreground hover:text-foreground" aria-label="Exportar PDF">
+                  <FileText className="h-4 w-4" strokeWidth={1.75} />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <FilterPill active={filter === "today"}  onClick={() => setFilter("today")}>Hoje</FilterPill>
+              <FilterPill active={filter === "week"}   onClick={() => setFilter("week")}>Semana</FilterPill>
+              <FilterPill active={filter === "month"}  onClick={() => setFilter("month")}>Mês</FilterPill>
+              <FilterPill active={filter === "custom"} onClick={() => setFilter("custom")}>Personalizado</FilterPill>
+            </div>
+
+            {filter === "custom" && (
+              <div className="grid grid-cols-2 gap-2">
+                <input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)}
+                  className="h-11 rounded-[14px] bg-card px-3 text-[13px] ring-1 ring-border focus:outline-none focus:ring-primary/40" />
+                <input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)}
+                  className="h-11 rounded-[14px] bg-card px-3 text-[13px] ring-1 ring-border focus:outline-none focus:ring-primary/40" />
+              </div>
+            )}
+          </section>
+
+          {/* ===== TRANSACTION LIST ===== */}
           {loading ? (
-            <div className="flex items-center gap-2 py-12 text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" /> Carregando ganhos...
+            <div className="flex items-center justify-center gap-2 py-12 text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /> <span className="text-[13px]">Carregando…</span>
+            </div>
+          ) : rides.length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-[24px] bg-card p-8 text-center ring-1 ring-border/70 animate-in fade-in duration-500">
+              <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/25">
+                <Wallet className="h-6 w-6" strokeWidth={1.5} />
+              </div>
+              <p className="text-[15px] font-semibold text-foreground">Nenhum ganho ainda</p>
+              <p className="mt-1 max-w-[240px] text-[12.5px] text-muted-foreground">
+                Suas corridas finalizadas aparecerão aqui.
+              </p>
             </div>
           ) : (
-            <>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                <Kpi icon={<DollarSign className="h-4 w-4" />} label="Ganhos" value={brl(stats.earnings)} highlight />
-                <Kpi icon={<TrendingUp className="h-4 w-4" />} label="Corridas" value={String(stats.trips)} />
-                <Kpi icon={<MapPin className="h-4 w-4" />} label="Distância" value={`${stats.distance.toFixed(1)} km`} />
-                <Kpi icon={<Clock className="h-4 w-4" />} label="Tempo viagem" value={`${Math.round(stats.duration)} min`} />
-                <Kpi icon={<DollarSign className="h-4 w-4" />} label="Tarifa média" value={brl(stats.avgFare)} />
-                <Kpi icon={<DollarSign className="h-4 w-4" />} label="R$/km" value={brl(stats.perKm)} />
-              </div>
-
-              <Card>
-                <CardContent className="p-4">
-                  <h3 className="mb-3 text-sm font-semibold">Ganhos por dia</h3>
-                  {chartData.length === 0 ? (
-                    <p className="py-8 text-center text-xs text-muted-foreground">Sem corridas no período selecionado.</p>
-                  ) : (
-                    <div className="h-56 w-full">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={chartData}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#2a2f3a" />
-                          <XAxis dataKey="day" tick={{ fontSize: 11, fill: "#9ca3af" }} />
-                          <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} />
-                          <Tooltip
-                            formatter={(v: number) => brl(v)}
-                            contentStyle={{ background: "#121826", border: "1px solid #2a2f3a" }}
-                          />
-                          <Bar dataKey="ganhos" fill="#8DD92B" radius={[6, 6, 0, 0]} />
-                        </BarChart>
-                      </ResponsiveContainer>
+            <ul className="space-y-2">
+              {rides.map((r, i) => (
+                <li
+                  key={r.id}
+                  className="animate-in fade-in slide-in-from-bottom-1"
+                  style={{ animationDelay: `${Math.min(i, 8) * 40}ms`, animationDuration: "300ms", animationFillMode: "backwards" }}
+                >
+                  <div className="flex items-center gap-3 rounded-[18px] bg-card p-3.5 ring-1 ring-border/60 shadow-[0_4px_14px_-10px_rgba(0,0,0,0.2)]">
+                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
+                      <MapPin className="h-4 w-4" strokeWidth={1.75} />
                     </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-4">
-                  <h3 className="mb-3 text-sm font-semibold flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-primary" /> Acumulado total
-                  </h3>
-                  <div className="grid grid-cols-3 gap-3 text-center">
-                    <Mini label="Ganhos" value={brl(totalAll.earnings)} />
-                    <Mini label="Corridas" value={String(totalAll.trips)} />
-                    <Mini label="KM" value={totalAll.distance.toFixed(0)} />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <Button onClick={exportCsv} variant="outline" className="flex-1">
-                  <Download className="mr-2 h-4 w-4" /> Exportar CSV
-                </Button>
-                <Button onClick={exportPdf} variant="outline" className="flex-1">
-                  <FileText className="mr-2 h-4 w-4" /> Exportar PDF
-                </Button>
-              </div>
-
-              <Card>
-                <CardContent className="p-4">
-                  <h3 className="mb-3 text-sm font-semibold">Extrato de corridas</h3>
-                  {rides.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border/70 bg-background/40 px-4 py-8 text-center">
-                      <div className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/15 text-primary ring-1 ring-primary/25">
-                        <FileText className="h-4 w-4" />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-[13.5px] font-semibold text-foreground">
+                        {r.destination_name || r.origin_name}
                       </div>
-                      <p className="text-xs font-semibold text-foreground">Sem corridas no período</p>
-                      <p className="mt-1 text-[11px] text-muted-foreground">Ajuste o filtro ou volte quando finalizar novas viagens.</p>
+                      <div className="mt-0.5 flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
+                        <Clock className="h-3 w-3" strokeWidth={1.75} />
+                        {new Date(r.completed_at ?? r.created_at).toLocaleString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                        {r.distance_km != null && <span>· {Number(r.distance_km).toFixed(1)} km</span>}
+                      </div>
                     </div>
-                  ) : (
-                    <ul className="divide-y divide-border text-sm">
-                      {rides.map((r) => (
-                        <li key={r.id} className="flex items-center justify-between gap-3 py-2.5">
-                          <div className="min-w-0">
-                            <p className="truncate text-xs font-medium">
-                              {r.origin_name} → {r.destination_name}
-                            </p>
-                            <p className="text-[11px] text-muted-foreground">
-                              {new Date(r.completed_at ?? r.created_at).toLocaleString("pt-BR")}
-                              {r.distance_km != null ? ` · ${Number(r.distance_km).toFixed(1)} km` : ""}
-                              {r.payment_method ? ` · ${r.payment_method}` : ""}
-                            </p>
-                          </div>
-                          <span className="shrink-0 text-sm font-bold text-primary">
-                            {brl(Number(r.final_price ?? r.estimated_price ?? 0))}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </CardContent>
-              </Card>
-            </>
+                    <div className="shrink-0 text-right">
+                      <div className="text-[15px] font-bold tabular-nums text-primary">
+                        {brl(Number(r.final_price ?? r.estimated_price ?? 0))}
+                      </div>
+                      <div className="text-[10.5px] font-medium uppercase tracking-wider text-muted-foreground">
+                        Concluída
+                      </div>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
           )}
         </div>
       </main>
@@ -309,22 +369,31 @@ function DriverEarningsPage() {
   );
 }
 
-function Kpi({ icon, label, value, highlight }: { icon: React.ReactNode; label: string; value: string; highlight?: boolean }) {
+function MiniCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
-    <div className={`rounded-2xl border p-3 ${highlight ? "border-primary/40 bg-primary/10" : "border-border bg-card"}`}>
-      <div className="mb-1 flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">
-        <span className={highlight ? "text-primary" : ""}>{icon}</span>
+    <div className="rounded-[20px] bg-card p-3.5 ring-1 ring-border/70 shadow-[0_6px_18px_-14px_rgba(0,0,0,0.25)]">
+      <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+        <span className="text-primary">{icon}</span>
         {label}
       </div>
-      <p className={`text-base font-bold ${highlight ? "text-primary" : "text-foreground"}`}>{value}</p>
+      <div className="mt-1.5 text-[18px] font-bold tabular-nums leading-none tracking-tight text-foreground">
+        {value}
+      </div>
     </div>
   );
 }
-function Mini({ label, value }: { label: string; value: string }) {
+
+function FilterPill({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <div className="rounded-lg border border-border bg-background/40 p-2">
-      <p className="text-[10px] text-muted-foreground">{label}</p>
-      <p className="text-sm font-bold">{value}</p>
-    </div>
+    <button
+      onClick={onClick}
+      className={`press-scale h-9 rounded-full px-4 text-[13px] font-semibold transition ${
+        active
+          ? "bg-primary text-primary-foreground shadow-[0_8px_20px_-12px_color-mix(in_oklab,var(--color-primary)_60%,transparent)]"
+          : "bg-card text-muted-foreground ring-1 ring-border hover:text-foreground"
+      }`}
+    >
+      {children}
+    </button>
   );
 }
