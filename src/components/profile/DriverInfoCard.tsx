@@ -1,10 +1,11 @@
 /**
  * MOVVI — Driver info card (informative only).
- * Shows vehicle, plate, category, rating, trip count.
+ * Shows vehicle, plate, category, rating, trip count, reputation badge.
  * Does NOT change any ride, dispatch or GPS logic.
  */
 import { Card, CardContent } from "@/components/ui/card";
 import { Car, Star, ClipboardList, IdCard, Tag } from "lucide-react";
+import { RatingBadge, RatingSummary } from "@/components/rating/RatingBadge";
 
 type Props = {
   vehicleModel: string | null;
@@ -13,20 +14,29 @@ type Props = {
   vehicleYear: number | null;
   category: string | null;
   rating: number | null;
+  totalRatings?: number | null;
   totalRides: number;
   createdAt: string | null;
 };
 
 export function DriverInfoCard({
   vehicleModel, vehicleColor, vehiclePlate, vehicleYear,
-  category, rating, totalRides, createdAt,
+  category, rating, totalRatings, totalRides, createdAt,
 }: Props) {
   return (
     <Card>
       <CardContent className="space-y-4 p-5">
-        <h3 className="flex items-center gap-2 text-sm font-semibold">
-          <Car className="h-4 w-4 text-primary" /> Veículo e desempenho
-        </h3>
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="flex items-center gap-2 text-sm font-semibold">
+            <Car className="h-4 w-4 text-primary" /> Veículo e desempenho
+          </h3>
+          <RatingBadge role="driver" average={rating} />
+        </div>
+
+        <div className="flex items-center justify-between rounded-lg border border-border bg-card/40 px-3 py-2">
+          <span className="text-xs text-muted-foreground">Reputação</span>
+          <RatingSummary average={rating} total={totalRatings ?? 0} compact />
+        </div>
 
         <div className="grid grid-cols-3 gap-2 text-center">
           <MetricTile icon={<Star className="h-4 w-4" />} label="Avaliação" value={Number(rating ?? 0).toFixed(2)} />

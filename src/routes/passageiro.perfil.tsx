@@ -19,15 +19,15 @@ function PerfilPassageiro() {
   const [verified, setVerified] = useState(false);
   const [totalRides, setTotalRides] = useState(0);
   const [rating, setRating] = useState<number | null>(null);
+  const [totalRatings, setTotalRatings] = useState(0);
 
   useEffect(() => {
     if (!userId) return;
     let alive = true;
     (async () => {
-      const [{ data: u }, { count }, { data: r }] = await Promise.all([
-        supabase.from("users").select("name,email,avatar_url,email_verified_at,phone_verified_at").eq("auth_user_id", userId).maybeSingle(),
+      const [{ data: u }, { count }] = await Promise.all([
+        supabase.from("users").select("name,email,avatar_url,email_verified_at,phone_verified_at,average_rating,total_ratings,completed_rides").eq("auth_user_id", userId).maybeSingle(),
         supabase.from("rides").select("id", { count: "exact", head: true }).eq("passenger_id", userId).eq("status", "finalizada"),
-        supabase.from("rides").select("passenger_rating").eq("passenger_id", userId).not("passenger_rating", "is", null).limit(50),
       ]);
       if (!alive) return;
       if (u) {
@@ -35,11 +35,12 @@ function PerfilPassageiro() {
         setEmail(u.email ?? null);
         setPhotoUrl(u.avatar_url ?? null);
         setVerified(Boolean(u.email_verified_at));
-      }
-      setTotalRides(count ?? 0);
-      if (r && r.length > 0) {
-        const vals = r.map((x) => Number(x.passenger_rating)).filter((n) => !Number.isNaN(n));
-        setRating(vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null);
+        const avg = Number((u as any).average_rating);
+        setRating(Number.isFinite(avg) && avg > 0 ? avg : null);
+        setTotalRatings(Number((u as any).total_ratings ?? 0));
+        setTotalRides(Number((u as any).completed_rides ?? count ?? 0));
+      } else {
+        setTotalRides(count ?? 0);
       }
     })();
     return () => { alive = false; };
@@ -59,7 +60,7 @@ function PerfilPassageiro() {
             photoUrl={photoUrl}
             badges={<VerifiedBadge verified={verified} />}
           />
-          <PassengerStatsCard totalRides={totalRides} rating={rating} />
+          <PassengerStatsCard totalRides={totalRides} rating={rating} totalRatings={totalRatings} />
         </div>
       }
     />

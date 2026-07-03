@@ -1,21 +1,29 @@
 /**
  * MOVVI — Passenger stats card (informative only).
- * Trip count today / totals + placeholders for future rating / payment.
- * Does NOT modify ride flow.
+ * Trip count / rating / badge. Does NOT modify ride flow.
  */
 import { Card, CardContent } from "@/components/ui/card";
 import { ClipboardList, Star, CreditCard, MapPin } from "lucide-react";
+import { RatingBadge, RatingSummary } from "@/components/rating/RatingBadge";
 
 type Props = {
   totalRides: number;
   rating?: number | null;
+  totalRatings?: number | null;
 };
 
-export function PassengerStatsCard({ totalRides, rating }: Props) {
+export function PassengerStatsCard({ totalRides, rating, totalRatings }: Props) {
   return (
     <Card>
       <CardContent className="space-y-4 p-5">
-        <h3 className="text-sm font-semibold">Sua conta</h3>
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="text-sm font-semibold">Sua conta</h3>
+          <RatingBadge role="passenger" average={rating} />
+        </div>
+        <div className="flex items-center justify-between rounded-lg border border-border bg-card/40 px-3 py-2">
+          <span className="text-xs text-muted-foreground">Reputação</span>
+          <RatingSummary average={rating} total={totalRatings ?? 0} compact />
+        </div>
         <div className="grid grid-cols-2 gap-2 text-center sm:grid-cols-4">
           <Tile icon={<ClipboardList className="h-4 w-4" />} label="Corridas" value={String(totalRides)} />
           <Tile
