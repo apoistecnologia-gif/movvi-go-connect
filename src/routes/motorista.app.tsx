@@ -2002,9 +2002,6 @@ function ActiveRidePanel({
         {phase === "motorista_chegou" && (
           <ActionButton label="Iniciar corrida" onClick={() => { setPinError(null); setPinCode(""); setPinOpen(true); }} icon={ChevronRight} emphasize />
         )}
-        {phase === "em_viagem" && (
-          <ActionButton label="Finalizar corrida" onClick={onComplete} icon={CheckCircle2} variant="success" />
-        )}
       </div>
 
       {/* Modal de validação do PIN de segurança */}
