@@ -379,7 +379,7 @@ function PlaceSearch({ onPick, initialValue }: { onPick: (p: PickedPlace) => voi
             .filter(Boolean) as Array<{ placeId: string; text: string }>
         );
       } catch (e) {
-        console.warn("autocomplete failed", e);
+        if (import.meta.env.DEV) console.warn("autocomplete failed", e);
       }
     }, 220);
   }, [q, isLoaded, initialValue]);

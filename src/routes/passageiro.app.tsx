@@ -636,7 +636,7 @@ function PassageiroApp() {
         : prev));
     } catch (e) {
       const msg = (e as Error)?.message ?? "Falha ao enviar avaliação.";
-      console.warn("[MOVVI] erro ao avaliar motorista:", msg);
+      if (import.meta.env.DEV) console.warn("[MOVVI] erro ao avaliar motorista:", msg);
       setRatingError(msg);
     } finally {
       setSubmittingRating(false);
@@ -772,7 +772,7 @@ function PassageiroApp() {
 
 
   useEffect(() => {
-    console.log("[MOVVI UI] etapa atual:", passengerUiStage);
+    if (import.meta.env.DEV) console.log("[MOVVI UI] etapa atual:", passengerUiStage);
   }, [passengerUiStage]);
 
   /* ---------------------- auth ---------------------- */
@@ -874,7 +874,7 @@ function PassageiroApp() {
   const lastGeocodedRef = useRef<LatLng | null>(null);
   useEffect(() => {
     if (!position) {
-      console.warn("[MOVVI Reverse Geocoding Diagnostic] reverse geocoding was not called: GPS has not returned coordinates yet.");
+      if (import.meta.env.DEV) console.warn("[MOVVI Reverse Geocoding Diagnostic] reverse geocoding was not called: GPS has not returned coordinates yet.");
       return;
     }
     const last = lastGeocodedRef.current;
@@ -884,7 +884,7 @@ function PassageiroApp() {
       Math.abs(last.lng - position.lng) < 0.002
     )
     {
-      console.warn("[MOVVI Reverse Geocoding Diagnostic] reverse geocoding was not called: coordinate delta is below throttle threshold.", {
+      if (import.meta.env.DEV) console.warn("[MOVVI Reverse Geocoding Diagnostic] reverse geocoding was not called: coordinate delta is below throttle threshold.", {
         previous: last,
         current: position,
       });
@@ -895,16 +895,16 @@ function PassageiroApp() {
     setAddressStatus("loading");
     setReverseGeocodeFailureReason(null);
     const diagnosticRequestUrl = `https://connector-gateway.lovable.dev/google_maps/maps/api/geocode/json?latlng=${position.lat},${position.lng}&language=pt-BR&region=br`;
-    console.log("[MOVVI Reverse Geocoding Diagnostic] latitude:", position.lat);
-    console.log("[MOVVI Reverse Geocoding Diagnostic] longitude:", position.lng);
-    console.log("[MOVVI Reverse Geocoding Diagnostic] exact request URL:", diagnosticRequestUrl);
-    console.log("[MOVVI] Reverse geocoding iniciado");
+    if (import.meta.env.DEV) console.log("[MOVVI Reverse Geocoding Diagnostic] latitude:", position.lat);
+    if (import.meta.env.DEV) console.log("[MOVVI Reverse Geocoding Diagnostic] longitude:", position.lng);
+    if (import.meta.env.DEV) console.log("[MOVVI Reverse Geocoding Diagnostic] exact request URL:", diagnosticRequestUrl);
+    if (import.meta.env.DEV) console.log("[MOVVI] Reverse geocoding iniciado");
     // Timeout de segurança: nunca deixar o cartão preso em "Obtendo seu endereço...".
     // Limite máximo do Reverse Geocoding: 5s. Após isso, marcamos failed se ainda estiver loading.
     const timeoutId = window.setTimeout(() => {
       if (!active) return;
       const reason = "Reverse Geocoding timed out after 5000ms.";
-      console.warn("[MOVVI] Reverse geocode timeout (5s)");
+      if (import.meta.env.DEV) console.warn("[MOVVI] Reverse geocode timeout (5s)");
       console.error("[MOVVI Reverse Geocoding Diagnostic] Reverse Geocoding failed:", reason);
       setReverseGeocodeFailureReason(reason);
       setAddressStatus((s) => {
@@ -923,7 +923,7 @@ function PassageiroApp() {
 
       if (reverseResult.status === "timeout") {
         const reason = `Reverse Geocoding timed out after ${REVERSE_GEOCODE_CLIENT_TIMEOUT_MS}ms.`;
-        console.warn("[MOVVI] Reverse geocode finished: timeout");
+        if (import.meta.env.DEV) console.warn("[MOVVI] Reverse geocode finished: timeout");
         setReverseGeocodeFailureReason(reason);
         setAddressStatus(hasDisplayablePickup(latestGeoRef.current) ? "resolved" : "failed");
         return;
@@ -939,15 +939,15 @@ function PassageiroApp() {
       }
 
       try {
-        console.log("[MOVVI] Reverse geocode finished: success");
+        if (import.meta.env.DEV) console.log("[MOVVI] Reverse geocode finished: success");
         const raw = reverseResult.value;
         const r = raw as GeocodeResult;
         const diagnostic = r.diagnostic;
-        console.log("[MOVVI Reverse Geocoding Diagnostic] returned latitude:", diagnostic?.latitude ?? position.lat);
-        console.log("[MOVVI Reverse Geocoding Diagnostic] returned longitude:", diagnostic?.longitude ?? position.lng);
-        console.log("[MOVVI Reverse Geocoding Diagnostic] returned request URL:", diagnostic?.requestUrl ?? diagnosticRequestUrl);
-        console.log("[MOVVI Reverse Geocoding Diagnostic] HTTP response status:", diagnostic?.httpStatus ?? "not returned");
-        console.log("[MOVVI Reverse Geocoding Diagnostic] complete Google JSON/body:", diagnostic?.responseBody ?? "not returned");
+        if (import.meta.env.DEV) console.log("[MOVVI Reverse Geocoding Diagnostic] returned latitude:", diagnostic?.latitude ?? position.lat);
+        if (import.meta.env.DEV) console.log("[MOVVI Reverse Geocoding Diagnostic] returned longitude:", diagnostic?.longitude ?? position.lng);
+        if (import.meta.env.DEV) console.log("[MOVVI Reverse Geocoding Diagnostic] returned request URL:", diagnostic?.requestUrl ?? diagnosticRequestUrl);
+        if (import.meta.env.DEV) console.log("[MOVVI Reverse Geocoding Diagnostic] HTTP response status:", diagnostic?.httpStatus ?? "not returned");
+        if (import.meta.env.DEV) console.log("[MOVVI Reverse Geocoding Diagnostic] complete Google JSON/body:", diagnostic?.responseBody ?? "not returned");
         if (diagnostic?.googleError) {
           console.error("[MOVVI Reverse Geocoding Diagnostic] Google returned error exactly:", diagnostic.googleError);
         }
@@ -960,7 +960,7 @@ function PassageiroApp() {
           // Fallback: tentar cache local recente (≤ 200 m do GPS atual).
           const cached = readPickupCache();
           if (cached && distanceMeters(position, { lat: cached.lat, lng: cached.lng }) < 200) {
-            console.log("[MOVVI Pickup Cache] reaproveitando label cacheado:", cached.label);
+            if (import.meta.env.DEV) console.log("[MOVVI Pickup Cache] reaproveitando label cacheado:", cached.label);
             const cachedGeo = geocodeFromPickupCache(cached);
             latestGeoRef.current = cachedGeo;
             setGeo(cachedGeo);
@@ -978,18 +978,18 @@ function PassageiroApp() {
           dist = distanceMeters(position, { lat: r.geocodedLat, lng: r.geocodedLng });
         }
 
-        console.log("[MOVVI Reverse Geocoding Diagnostic] selected formatted_address:", r.address);
-        console.log("[MOVVI Reverse Geocoding Diagnostic] selected location_type:", r.locationType || "(none)");
-        console.log("[MOVVI Reverse Geocoding Diagnostic] confidence:", r.confidence);
-        console.log("[MOVVI Reverse Geocoding Diagnostic] reason:", r.selectionReason);
-        console.log("[MOVVI] Distância GPS↔geocoding:", Number.isFinite(dist) ? `${dist.toFixed(1)} m` : "n/d");
+        if (import.meta.env.DEV) console.log("[MOVVI Reverse Geocoding Diagnostic] selected formatted_address:", r.address);
+        if (import.meta.env.DEV) console.log("[MOVVI Reverse Geocoding Diagnostic] selected location_type:", r.locationType || "(none)");
+        if (import.meta.env.DEV) console.log("[MOVVI Reverse Geocoding Diagnostic] confidence:", r.confidence);
+        if (import.meta.env.DEV) console.log("[MOVVI Reverse Geocoding Diagnostic] reason:", r.selectionReason);
+        if (import.meta.env.DEV) console.log("[MOVVI] Distância GPS↔geocoding:", Number.isFinite(dist) ? `${dist.toFixed(1)} m` : "n/d");
 
         // Stage 1: limpa erro e mostra o endereço imediatamente — sem esperar POI.
         setReverseGeocodeFailureReason(null);
         latestGeoRef.current = r;
         setGeo(r);
         setAddressStatus("resolved");
-        console.log("[MOVVI] Pickup label generated", r.pickupLabel || r.address);
+        if (import.meta.env.DEV) console.log("[MOVVI] Pickup label generated", r.pickupLabel || r.address);
         // Cache local do último pickup label bom.
         if (r.pickupLabel) {
           writePickupCache({
@@ -1010,28 +1010,28 @@ function PassageiroApp() {
           !c.rua && !c.bairro && !c.povoado &&
           (!r.pickupLabel || /zona rural|^br-|^[a-z]{2}-\d/i.test(r.pickupLabel));
         if (labelIsWeak) {
-          console.log("[MOVVI] Stage 2 POI lookup iniciado");
+          if (import.meta.env.DEV) console.log("[MOVVI] Stage 2 POI lookup iniciado");
           void (async () => {
             const poiResult = await withClientTimeout(
               callNearestPoi({ data: { lat: position.lat, lng: position.lng } }) as Promise<{ name?: string; placeId?: string }>,
               NEARBY_PLACES_CLIENT_TIMEOUT_MS,
             );
             if (poiResult.status === "timeout") {
-              console.warn("[MOVVI] Nearby Places finished: timeout — mantendo label atual");
+              if (import.meta.env.DEV) console.warn("[MOVVI] Nearby Places finished: timeout — mantendo label atual");
               return;
             }
             if (poiResult.status === "error") {
-              console.warn("[MOVVI] Nearby Places finished: error — mantendo label atual", poiResult.error);
+              if (import.meta.env.DEV) console.warn("[MOVVI] Nearby Places finished: error — mantendo label atual", poiResult.error);
               return;
             }
             const poi = poiResult.value;
               if (!active) return;
-              console.log("[MOVVI] Nearby Places finished:", poi?.name ?? "(nenhum)");
+              if (import.meta.env.DEV) console.log("[MOVVI] Nearby Places finished:", poi?.name ?? "(nenhum)");
               if (!poi?.name) return;
               setGeo((prev) => {
                 if (!prev) return prev;
                 const newLabel = `Próximo a ${poi.name}`;
-                console.log("[MOVVI] Pickup label updated", newLabel);
+                if (import.meta.env.DEV) console.log("[MOVVI] Pickup label updated", newLabel);
                 const updated: GeocodeResult = {
                   ...prev,
                   nearestPoi: poi.name,
@@ -1085,10 +1085,10 @@ function PassageiroApp() {
   const requestGps = useCallback(() => {
     // Guarda: não permitir cliques duplicados enquanto há uma solicitação em curso.
     if (gpsStateRef.current === "requesting" || gpsRequestInFlightRef.current) {
-      console.log("[MOVVI] Ignorando clique — já existe uma solicitação de GPS em andamento.");
+      if (import.meta.env.DEV) console.log("[MOVVI] Ignorando clique — já existe uma solicitação de GPS em andamento.");
       return;
     }
-    console.log("[MOVVI] Solicitando localização...");
+    if (import.meta.env.DEV) console.log("[MOVVI] Solicitando localização...");
     setPickupSource("gps");
     const fail = (msg: string) => {
       setGpsState("unavailable");
@@ -1111,7 +1111,7 @@ function PassageiroApp() {
       try {
         const lat = pos?.coords?.latitude;
         const lng = pos?.coords?.longitude;
-        console.log("[MOVVI] Permissão concedida — coordenadas recebidas:", lat, lng, "accuracy:", pos?.coords?.accuracy);
+        if (import.meta.env.DEV) console.log("[MOVVI] Permissão concedida — coordenadas recebidas:", lat, lng, "accuracy:", pos?.coords?.accuracy);
         void logGpsTelemetry("getcurrentposition_success", { extra: { lat, lng, accuracy: pos?.coords?.accuracy } });
 
         if (
@@ -1120,7 +1120,7 @@ function PassageiroApp() {
           !Number.isFinite(lat) ||
           !Number.isFinite(lng)
         ) {
-          console.warn("[MOVVI] Coordenadas inválidas recebidas do GPS — ignorando.", { lat, lng });
+          if (import.meta.env.DEV) console.warn("[MOVVI] Coordenadas inválidas recebidas do GPS — ignorando.", { lat, lng });
           setGpsState("unavailable");
           gpsStateRef.current = "unavailable";
           setGpsErrorMsg("Coordenadas inválidas recebidas do GPS.");
@@ -1128,9 +1128,9 @@ function PassageiroApp() {
         }
 
         const insideBR = isBrazilCoordinate(lat, lng);
-        console.log("[MOVVI] GPS acquired", { lat, lng, accuracy: pos?.coords?.accuracy });
+        if (import.meta.env.DEV) console.log("[MOVVI] GPS acquired", { lat, lng, accuracy: pos?.coords?.accuracy });
         if (!insideBR) {
-          console.warn("[MOVVI] Aviso: coordenada fora do Brasil — aceitando mesmo assim.", { lat, lng });
+          if (import.meta.env.DEV) console.warn("[MOVVI] Aviso: coordenada fora do Brasil — aceitando mesmo assim.", { lat, lng });
           setGpsErrorMsg(
             "Sua localização parece estar fora do Brasil. Você pode digitar a origem manualmente se preferir.",
           );
@@ -1138,7 +1138,7 @@ function PassageiroApp() {
           setGpsErrorMsg("");
         }
 
-        console.log("[MOVVI] Atualizando centro do mapa para:", lat, lng);
+        if (import.meta.env.DEV) console.log("[MOVVI] Atualizando centro do mapa para:", lat, lng);
         setPosition({ lat, lng });
         setGpsAccuracy(pos.coords.accuracy ?? null);
         setGpsDiag({
@@ -1168,14 +1168,14 @@ function PassageiroApp() {
                 setPosition({ lat: la, lng: ln });
                 setGpsAccuracy(p.coords.accuracy ?? null);
               } catch (err) {
-                console.warn("[MOVVI] watchPosition callback falhou:", err);
+                if (import.meta.env.DEV) console.warn("[MOVVI] watchPosition callback falhou:", err);
               }
             },
             (err) => { console.warn("[MOVVI] watchPosition erro:", err); },
             { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 },
           );
         } catch (err) {
-          console.warn("[MOVVI] Falha ao iniciar watchPosition:", err);
+          if (import.meta.env.DEV) console.warn("[MOVVI] Falha ao iniciar watchPosition:", err);
         }
       } catch (err) {
         console.error("[MOVVI] Erro no onSuccess do GPS:", err);
@@ -1185,7 +1185,7 @@ function PassageiroApp() {
     };
 
     const tryLowAccuracy = () => {
-      console.log("[MOVVI] Tentativa 2 — enableHighAccuracy:false");
+      if (import.meta.env.DEV) console.log("[MOVVI] Tentativa 2 — enableHighAccuracy:false");
       try {
         navigator.geolocation.getCurrentPosition(
           onSuccess,
@@ -1216,7 +1216,7 @@ function PassageiroApp() {
       navigator.geolocation.getCurrentPosition(
         onSuccess,
         (err) => {
-          console.warn("[MOVVI] Erro (high accuracy):", err);
+          if (import.meta.env.DEV) console.warn("[MOVVI] Erro (high accuracy):", err);
           void logGpsTelemetry("getcurrentposition_error", { code: err.code, message: err.message, extra: { phase: "high_accuracy" } });
           if (err.code === err.PERMISSION_DENIED) {
             gpsRequestInFlightRef.current = false;
@@ -1249,9 +1249,9 @@ function PassageiroApp() {
 
   const setManualLocation = useCallback((p: LatLng) => {
     if (!isBrazilCoordinate(p.lat, p.lng)) {
-      console.warn("[MOVVI] Origem manual fora do Brasil — aceitando assim mesmo.", p);
+      if (import.meta.env.DEV) console.warn("[MOVVI] Origem manual fora do Brasil — aceitando assim mesmo.", p);
     }
-    console.log("[MOVVI] Origem manual selecionada", p);
+    if (import.meta.env.DEV) console.log("[MOVVI] Origem manual selecionada", p);
     void logGpsTelemetry("manual_origin_set", { extra: { lat: p.lat, lng: p.lng } });
     setPosition(p);
     setPickupSource("manual");
@@ -1274,10 +1274,10 @@ function PassageiroApp() {
     try {
       purgeForeignMapCache();
     } catch (err) {
-      console.warn("[MOVVI] purgeForeignMapCache falhou:", err);
+      if (import.meta.env.DEV) console.warn("[MOVVI] purgeForeignMapCache falhou:", err);
     }
     let cancelled = false;
-    console.log("[MOVVI] Permissão de localização solicitada");
+    if (import.meta.env.DEV) console.log("[MOVVI] Permissão de localização solicitada");
 
     if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
       setPermissionStatus("unsupported");
@@ -1317,11 +1317,11 @@ function PassageiroApp() {
           try {
             void logGpsTelemetry("permissions_query_ok", { extra: { state: s } });
             if (s === "granted") {
-              console.log("[MOVVI] Permissão de localização concedida");
+              if (import.meta.env.DEV) console.log("[MOVVI] Permissão de localização concedida");
               setPermissionStatus("granted");
               requestGps();
             } else if (s === "denied") {
-              console.log("[MOVVI] Permissão de localização negada");
+              if (import.meta.env.DEV) console.log("[MOVVI] Permissão de localização negada");
               setPermissionStatus("denied");
               setGpsState("denied");
               setGpsErrorMsg("Permissão de localização negada.");
@@ -1339,7 +1339,7 @@ function PassageiroApp() {
       .catch((err) => {
         if (cancelled) return;
         window.clearTimeout(watchdog);
-        console.warn("[MOVVI] permissions.query falhou:", err);
+        if (import.meta.env.DEV) console.warn("[MOVVI] permissions.query falhou:", err);
         void logGpsTelemetry("permissions_query_error", { message: (err as Error)?.message ?? String(err) });
         setPermissionStatus("prompt");
         try { requestGps(); } catch (e) { console.warn("[MOVVI] requestGps catch falhou:", e); }
@@ -1432,7 +1432,7 @@ function PassageiroApp() {
         loc = first?.geometry?.location ?? null;
         formatted = first?.formatted_address ?? null;
       } catch (geocoderErr) {
-        console.warn("[MOVVI] Geocoder fallback falhou:", geocoderErr);
+        if (import.meta.env.DEV) console.warn("[MOVVI] Geocoder fallback falhou:", geocoderErr);
       }
       // Plano B: tentar Places New caso o Geocoder tenha retornado vazio.
       if (!loc) {
@@ -1447,7 +1447,7 @@ function PassageiroApp() {
           loc = place.location ?? null;
           formatted = formatted ?? place.formattedAddress ?? null;
         } catch (placesErr) {
-          console.warn("[MOVVI] Places.fetchFields falhou:", placesErr);
+          if (import.meta.env.DEV) console.warn("[MOVVI] Places.fetchFields falhou:", placesErr);
         }
       }
       if (!loc) throw new Error("Local sem coordenadas.");
@@ -1462,7 +1462,7 @@ function PassageiroApp() {
       searchInputRef.current?.blur();
       await calcRoute(point);
     } catch (e) {
-      console.warn("[MOVVI] pickSuggestion falhou:", e);
+      if (import.meta.env.DEV) console.warn("[MOVVI] pickSuggestion falhou:", e);
       setError(e instanceof Error ? e.message : "Falha ao buscar o local.");
     }
   }
@@ -1497,7 +1497,7 @@ function PassageiroApp() {
           destination: { lat: dest.lat, lng: dest.lng },
         },
       });
-      console.log("[MOVVI UI] rota calculada:", result);
+      if (import.meta.env.DEV) console.log("[MOVVI UI] rota calculada:", result);
       setRoute(result);
       setPassengerUiStage("route_preview");
       sheetRef.current?.snapTo(50);
@@ -1604,13 +1604,13 @@ function PassageiroApp() {
         .maybeSingle();
       if (!active) return;
       if (error) {
-        console.warn("[MOVVI PASSAGEIRO] erro ao recarregar corrida:", tag, error.message);
+        if (import.meta.env.DEV) console.warn("[MOVVI PASSAGEIRO] erro ao recarregar corrida:", tag, error.message);
         return;
       }
       if (data) {
         setRide((prev) => {
           if (prev && prev.id === data.id && prev.status !== data.status) {
-            console.log("[MOVVI PASSAGEIRO] status atualizou:", prev.status, "→", data.status);
+            if (import.meta.env.DEV) console.log("[MOVVI PASSAGEIRO] status atualizou:", prev.status, "→", data.status);
           }
           return data;
         });
@@ -1625,7 +1625,7 @@ function PassageiroApp() {
     };
     const startPolling = () => {
       if (pollTimer != null || !active) return;
-      console.log("[MOVVI PASSAGEIRO] polling de segurança da corrida ativo");
+      if (import.meta.env.DEV) console.log("[MOVVI PASSAGEIRO] polling de segurança da corrida ativo");
       pollTimer = window.setInterval(() => { void load("poll"); }, 3500);
     };
 
@@ -1639,12 +1639,12 @@ function PassageiroApp() {
         { event: "UPDATE", schema: "public", table: "rides", filter: `id=eq.${rideId}` },
         (p) => {
           const next = p.new as RideRow;
-          console.log("[MOVVI PASSAGEIRO] realtime UPDATE rides:", next.id, "status=", next.status);
+          if (import.meta.env.DEV) console.log("[MOVVI PASSAGEIRO] realtime UPDATE rides:", next.id, "status=", next.status);
           setRide(next);
         },
       )
       .subscribe((status) => {
-        console.log("[MOVVI PASSAGEIRO] canal ride-" + rideId + " status:", status);
+        if (import.meta.env.DEV) console.log("[MOVVI PASSAGEIRO] canal ride-" + rideId + " status:", status);
         if (status === "SUBSCRIBED") {
           subscribed = true;
           // recarrega para capturar updates ocorridos durante o handshake;
@@ -1664,7 +1664,7 @@ function PassageiroApp() {
     // Rede de segurança: re-sincroniza ao retomar a aba
     const onVisibility = () => {
       if (document.visibilityState === "visible") {
-        console.log("[MOVVI PASSAGEIRO] aba visível — ressincronizando corrida");
+        if (import.meta.env.DEV) console.log("[MOVVI PASSAGEIRO] aba visível — ressincronizando corrida");
         void load("visibility");
       }
     };
@@ -1695,7 +1695,7 @@ function PassageiroApp() {
       if (cancelled) return;
       try {
         const r = await callRedispatch({ data: { rideId: ride.id } });
-        console.log("[MOVVI PASSAGEIRO] re-despacho:", r);
+        if (import.meta.env.DEV) console.log("[MOVVI PASSAGEIRO] re-despacho:", r);
         const c = (r as { candidates?: number }).candidates ?? 0;
         const offered = (r as { skipped?: string | null }).skipped === "already_offered";
         if (!offered && c === 0) {
@@ -1705,7 +1705,7 @@ function PassageiroApp() {
         }
         if (!cancelled) setNoDriversAvailable(emptyStreak >= 3);
       } catch (e) {
-        console.warn("[MOVVI PASSAGEIRO] re-despacho falhou:", (e as Error).message);
+        if (import.meta.env.DEV) console.warn("[MOVVI PASSAGEIRO] re-despacho falhou:", (e as Error).message);
       }
       if (DEV_MODE || isDevelopmentEnvironment()) {
         try {
@@ -1756,7 +1756,7 @@ function PassageiroApp() {
     };
     const startPolling = () => {
       if (pollTimer != null || cancelled) return;
-      console.log("[MOVVI PASSAGEIRO] fallback polling motorista (realtime indisponível)");
+      if (import.meta.env.DEV) console.log("[MOVVI PASSAGEIRO] fallback polling motorista (realtime indisponível)");
       pollTimer = window.setInterval(load, 5000);
     };
 
@@ -2953,7 +2953,7 @@ function StepFlow({
 
   useEffect(() => {
     if (uiStage === "selecting_category") {
-      console.log("[MOVVI UI] exibindo categorias:", uiCategories.map((c) => c.label));
+      if (import.meta.env.DEV) console.log("[MOVVI UI] exibindo categorias:", uiCategories.map((c) => c.label));
     }
   }, [uiStage, uiCategories]);
 
@@ -3015,7 +3015,7 @@ function StepFlow({
           <button
             type="button"
             onClick={() => {
-              console.log("[MOVVI UI] botão continuar clicado");
+              if (import.meta.env.DEV) console.log("[MOVVI UI] botão continuar clicado");
               setUiStage("selecting_category");
               onExpandSheet(50);
             }}
@@ -3035,7 +3035,7 @@ function StepFlow({
           tariffs={tariffs}
           selectedCategoryKey={selectedCategoryKey}
           onSelect={(c) => {
-            console.log("[MOVVI UI] categoria selecionada:", c.label);
+            if (import.meta.env.DEV) console.log("[MOVVI UI] categoria selecionada:", c.label);
             setSelectedCategoryKey(c.key);
             setUiStage("confirming_request");
           }}
@@ -3920,7 +3920,7 @@ function GpsDeniedScreen({
       const loc = place.location;
       if (!loc) throw new Error("Sem coordenadas");
       const point = { lat: loc.lat(), lng: loc.lng() };
-      console.log("Manual selecionado:", label, point.lat, point.lng);
+      if (import.meta.env.DEV) console.log("Manual selecionado:", label, point.lat, point.lng);
       if (!isBrazilCoordinate(point.lat, point.lng)) {
         setManualError("Escolha uma cidade ou endereço dentro do Brasil.");
         return;
@@ -3984,7 +3984,7 @@ function GpsDeniedScreen({
         <button
           type="button"
           onClick={() => {
-            console.log("[MOVVI] Clique em", primaryLabel);
+            if (import.meta.env.DEV) console.log("[MOVVI] Clique em", primaryLabel);
             onRetry();
           }}
           disabled={requesting}

@@ -18,6 +18,6 @@ export async function logAdminAction(params: {
       after: (params.after ?? null) as never,
     });
   } catch (err) {
-    console.warn("[MOVVI] audit log failed:", err);
+    if (import.meta.env.DEV) console.warn("[MOVVI] audit log failed:", err);
   }
 }

@@ -59,7 +59,7 @@ export function UiCategoriesProvider({ children }: { children: ReactNode }) {
         .order("sort_order", { ascending: true });
       if (!alive) return;
       if (error) {
-        console.warn("[MOVVI] ride_categories load:", error.message);
+        if (import.meta.env.DEV) console.warn("[MOVVI] ride_categories load:", error.message);
         setRows([]);
         return;
       }

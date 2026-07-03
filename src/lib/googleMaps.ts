@@ -38,7 +38,7 @@ export function sanitizeBrazilCenter(c?: { lat: number; lng: number } | null) {
   if (!c || !isBrazilCoordinate(c.lat, c.lng)) {
     if (c) {
       // eslint-disable-next-line no-console
-      console.warn("[MOVVI] Coordenada fora do Brasil ignorada:", c);
+      if (import.meta.env.DEV) console.warn("[MOVVI] Coordenada fora do Brasil ignorada:", c);
     }
     return BRAZIL_CENTER;
   }

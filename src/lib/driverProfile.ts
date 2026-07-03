@@ -35,12 +35,12 @@ export async function loadDriverProfile(): Promise<
 > {
   const { data: u, error: authErr } = await supabase.auth.getUser();
   if (authErr || !u?.user) {
-    console.warn("[MOVVI MOTORISTA] sem sessão autenticada", authErr?.message);
+    if (import.meta.env.DEV) console.warn("[MOVVI MOTORISTA] sem sessão autenticada", authErr?.message);
     return { ok: false, reason: "no_session" };
   }
   const uid = u.user.id;
   const email = u.user.email ?? null;
-  console.log("[MOVVI MOTORISTA] carregando perfil", { uid, email });
+  if (import.meta.env.DEV) console.log("[MOVVI MOTORISTA] carregando perfil", { uid, email });
 
   // 1) caminho oficial: user_id = auth.uid
   const byId = await supabase
@@ -54,7 +54,7 @@ export async function loadDriverProfile(): Promise<
     return { ok: false, reason: "error", message: byId.error.message };
   }
   if (byId.data) {
-    console.log("[MOVVI MOTORISTA] perfil encontrado por user_id", byId.data);
+    if (import.meta.env.DEV) console.log("[MOVVI MOTORISTA] perfil encontrado por user_id", byId.data);
     return { ok: true, profile: byId.data as DriverProfileRow };
   }
 
@@ -66,9 +66,9 @@ export async function loadDriverProfile(): Promise<
       .eq("email", email)
       .maybeSingle();
     if (byEmail.error) {
-      console.warn("[MOVVI MOTORISTA] erro consulta por email", byEmail.error);
+      if (import.meta.env.DEV) console.warn("[MOVVI MOTORISTA] erro consulta por email", byEmail.error);
     } else if (byEmail.data) {
-      console.warn(
+      if (import.meta.env.DEV) console.warn(
         "[MOVVI MOTORISTA] perfil encontrado por EMAIL (user_id desalinhado)",
         byEmail.data,
       );
@@ -76,7 +76,7 @@ export async function loadDriverProfile(): Promise<
     }
   }
 
-  console.warn("[MOVVI MOTORISTA] nenhum motorista vinculado", { uid, email });
+  if (import.meta.env.DEV) console.warn("[MOVVI MOTORISTA] nenhum motorista vinculado", { uid, email });
   return { ok: false, reason: "not_found" };
 }
 

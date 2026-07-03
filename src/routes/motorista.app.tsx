@@ -236,7 +236,7 @@ function MotoristaApp() {
       });
       return;
     }
-    console.log("[MOVVI REQUEST REMOVAL]", {
+    if (import.meta.env.DEV) console.log("[MOVVI REQUEST REMOVAL]", {
       driverId: userId,
       rideId: ride.id,
       timestamp: new Date().toISOString(),
@@ -382,7 +382,7 @@ function MotoristaApp() {
         const speed = Number.isFinite(pos.coords.speed as number) ? (pos.coords.speed as number) : null;
         setPosition((prev) => {
           if (!prev || Math.abs(prev.lat - lat) > 0.0001 || Math.abs(prev.lng - lng) > 0.0001) {
-            console.log("[MOVVI MOTORISTA] localização:", { lat, lng, heading, speed, accuracy: pos.coords.accuracy });
+            if (import.meta.env.DEV) console.log("[MOVVI MOTORISTA] localização:", { lat, lng, heading, speed, accuracy: pos.coords.accuracy });
           }
           return { lat, lng, heading, speed };
         });
@@ -401,11 +401,11 @@ function MotoristaApp() {
     }
     setGpsStatus("loading");
     setGpsMessage(null);
-    console.log("[MOVVI MOTORISTA] solicitando GPS manualmente");
+    if (import.meta.env.DEV) console.log("[MOVVI MOTORISTA] solicitando GPS manualmente");
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const lat = pos.coords.latitude, lng = pos.coords.longitude;
-        console.log("[MOVVI MOTORISTA] GPS concedido:", { lat, lng });
+        if (import.meta.env.DEV) console.log("[MOVVI MOTORISTA] GPS concedido:", { lat, lng });
         if (!isBrazilCoordinate(lat, lng)) {
           setGpsStatus("error");
           setGpsMessage("Sua localização não parece estar no Brasil. Ative o GPS real do aparelho e tente novamente.");
@@ -435,7 +435,7 @@ function MotoristaApp() {
         startWatch();
       },
       (err) => {
-        console.warn("[MOVVI MOTORISTA] GPS erro:", err.code, err.message);
+        if (import.meta.env.DEV) console.warn("[MOVVI MOTORISTA] GPS erro:", err.code, err.message);
         if (err.code === err.PERMISSION_DENIED) {
           setGpsStatus("denied");
           setGpsMessage("Localização negada. Ative a permissão do navegador para receber corridas.");
@@ -466,7 +466,7 @@ function MotoristaApp() {
     const permsApi = (navigator as Navigator & { permissions?: { query: (p: { name: PermissionName }) => Promise<PermissionStatus> } }).permissions;
     if (permsApi?.query) {
       permsApi.query({ name: "geolocation" as PermissionName }).then((st) => {
-        console.log("[MOVVI MOTORISTA] permissão GPS:", st.state);
+        if (import.meta.env.DEV) console.log("[MOVVI MOTORISTA] permissão GPS:", st.state);
         if (st.state === "granted") {
           setGpsStatus("granted");
           setGpsMessage(null);
@@ -493,7 +493,7 @@ function MotoristaApp() {
   const activateOnlineWithCoords = useCallback(
     (lat: number, lng: number, heading: number | null, speed: number | null, isTest: boolean) => {
       if (!isBrazilCoordinate(lat, lng)) {
-        console.warn("[MOVVI MOTORISTA] activate ignorado — coord inválida:", { lat, lng });
+        if (import.meta.env.DEV) console.warn("[MOVVI MOTORISTA] activate ignorado — coord inválida:", { lat, lng });
         return;
       }
       setPosition({ lat, lng, heading, speed });
@@ -518,7 +518,7 @@ function MotoristaApp() {
       }
       if (!isTest) startWatch();
       setOnline(true);
-      console.log(`[MOVVI MOTORISTA] online: true (${isTest ? "modo teste" : "GPS real"})`);
+      if (import.meta.env.DEV) console.log(`[MOVVI MOTORISTA] online: true (${isTest ? "modo teste" : "GPS real"})`);
     },
     [userId, startWatch],
   );
@@ -559,7 +559,7 @@ function MotoristaApp() {
   const toggleOnline = useCallback(() => {
     // Se já está online → fica offline imediatamente
     if (online) {
-      console.log("[MOVVI MOTORISTA] indo offline");
+      if (import.meta.env.DEV) console.log("[MOVVI MOTORISTA] indo offline");
       // Para o watcher de GPS para não continuar consumindo bateria nem
       // gravando posições fantasmas enquanto o motorista está offline.
       if (watchIdRef.current != null && "geolocation" in navigator) {
@@ -580,19 +580,19 @@ function MotoristaApp() {
     setGpsStatus("loading");
     setGpsMessage("Obtendo sua localização...");
     setShowTestLocationButton(false);
-    console.log("[MOVVI MOTORISTA] FICAR ONLINE clicado → solicitando GPS no clique");
+    if (import.meta.env.DEV) console.log("[MOVVI MOTORISTA] FICAR ONLINE clicado → solicitando GPS no clique");
 
     const onSuccess = (pos: GeolocationPosition) => {
       const rawLat = pos.coords.latitude, rawLng = pos.coords.longitude;
-      console.log("[MOVVI MOTORISTA] GPS ok:", { lat: rawLat, lng: rawLng });
+      if (import.meta.env.DEV) console.log("[MOVVI MOTORISTA] GPS ok:", { lat: rawLat, lng: rawLng });
       if (!isBrazilCoordinate(rawLat, rawLng)) {
         if (isDevelopmentEnvironment()) {
-          console.warn("[MOVVI MOTORISTA] GPS fora do Brasil — fallback automático para localização de teste (dev):", { lat: rawLat, lng: rawLng });
+          if (import.meta.env.DEV) console.warn("[MOVVI MOTORISTA] GPS fora do Brasil — fallback automático para localização de teste (dev):", { lat: rawLat, lng: rawLng });
           setGpsMessage("GPS fora do Brasil detectado. Usando localização de teste no Brasil (modo dev).");
           activateOnlineWithCoords(TEST_DRIVER_LOCATION.lat, TEST_DRIVER_LOCATION.lng, null, null, true);
           return;
         }
-        console.warn("[MOVVI MOTORISTA] GPS fora do Brasil — bloqueando online:", { lat: rawLat, lng: rawLng });
+        if (import.meta.env.DEV) console.warn("[MOVVI MOTORISTA] GPS fora do Brasil — bloqueando online:", { lat: rawLat, lng: rawLng });
         setGpsStatus("error");
         setGpsMessage("Sua localização não parece estar no Brasil. Ative o GPS real do aparelho e tente novamente.");
         setShowTestLocationButton(true);
@@ -605,7 +605,7 @@ function MotoristaApp() {
 
 
     const finalFail = (err: GeolocationPositionError) => {
-      console.warn("[MOVVI MOTORISTA] GPS erro final:", err.code, err.message);
+      if (import.meta.env.DEV) console.warn("[MOVVI MOTORISTA] GPS erro final:", err.code, err.message);
       setGpsStatus(err.code === err.PERMISSION_DENIED ? "denied" : err.code === err.TIMEOUT ? "timeout" : "error");
       setGpsMessage("Não foi possível obter sua localização. Verifique se o GPS está ativo e tente novamente.");
       setShowTestLocationButton(isDevelopmentEnvironment());
@@ -615,7 +615,7 @@ function MotoristaApp() {
       navigator.geolocation.getCurrentPosition(
         onSuccess,
         (err) => {
-          console.warn("[MOVVI MOTORISTA] GPS tentativa rápida falhou:", err.code, err.message);
+          if (import.meta.env.DEV) console.warn("[MOVVI MOTORISTA] GPS tentativa rápida falhou:", err.code, err.message);
           if (err.code === err.PERMISSION_DENIED) {
             finalFail(err);
             return;
@@ -634,7 +634,7 @@ function MotoristaApp() {
     if (permsApi?.query) {
       permsApi.query({ name: "geolocation" as PermissionName })
         .then((st) => {
-          console.log("[MOVVI MOTORISTA] permissão GPS no clique:", st.state);
+          if (import.meta.env.DEV) console.log("[MOVVI MOTORISTA] permissão GPS no clique:", st.state);
           if (st.state === "denied") {
             setGpsStatus("denied");
             setGpsMessage("Localização negada. Ative a permissão do navegador para receber corridas.");
@@ -696,7 +696,7 @@ function MotoristaApp() {
       if (activeRef.current || ratingRef.current) return;
       if (incomingRef.current && incomingRef.current.id !== r.id) return;
 
-      console.log("[MOVVI MOTORISTA] corrida recebida (broadcast candidatos):", r.id, {
+      if (import.meta.env.DEV) console.log("[MOVVI MOTORISTA] corrida recebida (broadcast candidatos):", r.id, {
         category: r.category,
         origin: r.origin_name,
         destination: r.destination_name,
@@ -760,7 +760,7 @@ function MotoristaApp() {
       }
     };
 
-    console.log("[MOVVI MOTORISTA] escutando corridas: canal driver-rides-" + userId);
+    if (import.meta.env.DEV) console.log("[MOVVI MOTORISTA] escutando corridas: canal driver-rides-" + userId);
     // Sem filtro por coluna: a RLS já garante que só recebo rides em que estou
     // envolvido (passageiro/driver/candidate_driver_ids/accepted_driver_id).
     const ch = supabase.channel(`driver-rides-${userId}`)
@@ -773,7 +773,7 @@ function MotoristaApp() {
           applyActive(row);
         })
       .subscribe(async (status) => {
-        console.log("[MOVVI MOTORISTA] status do canal:", status);
+        if (import.meta.env.DEV) console.log("[MOVVI MOTORISTA] status do canal:", status);
         if (status !== "SUBSCRIBED") return;
         const ongoing = await supabase
           .from("rides").select("*")
@@ -794,7 +794,7 @@ function MotoristaApp() {
     // Rede de segurança 1: re-sincroniza ao retomar a aba (após background no mobile)
     const onVisibility = async () => {
       if (document.visibilityState !== "visible") return;
-      console.log("[MOVVI MOTORISTA] aba visível — ressincronizando corrida ativa");
+      if (import.meta.env.DEV) console.log("[MOVVI MOTORISTA] aba visível — ressincronizando corrida ativa");
       const ongoing = await supabase
         .from("rides").select("*").eq("driver_id", userId)
         .in("status", ["motorista_a_caminho", "motorista_chegou", "em_viagem", "finalizada"])
@@ -815,7 +815,7 @@ function MotoristaApp() {
       if (!cur) return;
       const { data } = await supabase.from("rides").select("*").eq("id", cur.id).maybeSingle();
       if (data && (data as RideRow).status !== cur.status) {
-        console.log("[MOVVI MOTORISTA] polling detectou mudança de status:", cur.status, "→", (data as RideRow).status);
+        if (import.meta.env.DEV) console.log("[MOVVI MOTORISTA] polling detectou mudança de status:", cur.status, "→", (data as RideRow).status);
         applyActive(data as RideRow);
       }
     }, 8000);
@@ -853,7 +853,7 @@ function MotoristaApp() {
     if (!offer) return;
     try {
       const r = await callAccept({ data: { rideId: offer.id } });
-      console.log("[MOVVI MOTORISTA] corrida aceita:", offer.id);
+      if (import.meta.env.DEV) console.log("[MOVVI MOTORISTA] corrida aceita:", offer.id);
       // Só remove o alerta depois que o backend confirma o aceite da MESMA corrida.
       handledRidesRef.current.add(offer.id);
       setIncoming(null);
@@ -870,7 +870,7 @@ function MotoristaApp() {
     const offer = incomingRef.current;
     if (!offer) return;
     removeIncomingRequest(offer, "driver_rejected");
-    console.log("[MOVVI MOTORISTA] corrida recusada:", offer.id);
+    if (import.meta.env.DEV) console.log("[MOVVI MOTORISTA] corrida recusada:", offer.id);
     try { await callReject({ data: { rideId: offer.id } }); }
     catch (e) { console.error("[MOVVI MOTORISTA] erro ao recusar:", e); }
   }
@@ -989,7 +989,7 @@ function MotoristaApp() {
       setRatingSubmitted(true);
     } catch (e) {
       const msg = (e as Error)?.message ?? "Falha ao enviar avaliação.";
-      console.warn("[MOVVI MOTORISTA] erro ao avaliar:", msg);
+      if (import.meta.env.DEV) console.warn("[MOVVI MOTORISTA] erro ao avaliar:", msg);
       setRatingError(msg);
     } finally { setSubmittingRating(false); }
   }

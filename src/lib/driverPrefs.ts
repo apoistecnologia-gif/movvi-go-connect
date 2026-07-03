@@ -56,7 +56,7 @@ async function refreshFromDb(userId: string): Promise<DriverPrefs> {
     .eq("user_id", userId)
     .maybeSingle();
   if (error) {
-    console.warn("[MOVVI PREFS] load erro:", error.message);
+    if (import.meta.env.DEV) console.warn("[MOVVI PREFS] load erro:", error.message);
     return DEFAULT_DRIVER_PREFS;
   }
   if (!data) {

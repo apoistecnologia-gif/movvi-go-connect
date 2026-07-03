@@ -203,12 +203,12 @@ export const reverseGeocode = createServerFn({ method: "POST" })
       responseBody: null,
     };
 
-    console.log("[MOVVI Reverse Geocoding Diagnostic] latitude:", data.lat);
-    console.log("[MOVVI Reverse Geocoding Diagnostic] longitude:", data.lng);
-    console.log("[MOVVI Reverse Geocoding Diagnostic] request URL:", url);
-    console.log("[MOVVI Reverse Geocoding Diagnostic] GOOGLE_MAPS_API_KEY:", connKey ? "present" : "missing");
-    console.log("[MOVVI Reverse Geocoding Diagnostic] GOOGLE_MAPS_PLATFORM_API_KEY:", platformKey ? "present" : "missing");
-    console.log("[MOVVI Reverse Geocoding Diagnostic] LOVABLE_API_KEY:", lovableKey ? "present" : "missing");
+    if (import.meta.env.DEV) console.log("[MOVVI Reverse Geocoding Diagnostic] latitude:", data.lat);
+    if (import.meta.env.DEV) console.log("[MOVVI Reverse Geocoding Diagnostic] longitude:", data.lng);
+    if (import.meta.env.DEV) console.log("[MOVVI Reverse Geocoding Diagnostic] request URL:", url);
+    if (import.meta.env.DEV) console.log("[MOVVI Reverse Geocoding Diagnostic] GOOGLE_MAPS_API_KEY:", connKey ? "present" : "missing");
+    if (import.meta.env.DEV) console.log("[MOVVI Reverse Geocoding Diagnostic] GOOGLE_MAPS_PLATFORM_API_KEY:", platformKey ? "present" : "missing");
+    if (import.meta.env.DEV) console.log("[MOVVI Reverse Geocoding Diagnostic] LOVABLE_API_KEY:", lovableKey ? "present" : "missing");
 
     if (!lovableKey || !connKey) {
       const missing = [
@@ -232,7 +232,7 @@ export const reverseGeocode = createServerFn({ method: "POST" })
         },
         signal: controller.signal,
       });
-      console.log("[MOVVI Reverse Geocoding Diagnostic] HTTP response status:", res.status);
+      if (import.meta.env.DEV) console.log("[MOVVI Reverse Geocoding Diagnostic] HTTP response status:", res.status);
       responseBody = await res.text();
     } catch (error) {
       const failureReason = isAbortError(error)
@@ -243,7 +243,7 @@ export const reverseGeocode = createServerFn({ method: "POST" })
     } finally {
       clearTimeout(timeoutId);
     }
-    console.log("[MOVVI Reverse Geocoding Diagnostic] complete response body:", responseBody);
+    if (import.meta.env.DEV) console.log("[MOVVI Reverse Geocoding Diagnostic] complete response body:", responseBody);
 
     let parsedBody: unknown = {};
     try {
@@ -299,12 +299,12 @@ export const reverseGeocode = createServerFn({ method: "POST" })
     const confidence: GeocodeConfidence = selection?.confidence ?? "fallback";
     const selectionReason = selection?.reason ?? "No selection produced; using first result";
 
-    console.log("[MOVVI Reverse Geocoding Diagnostic] total results:", results.length);
-    console.log("[MOVVI Reverse Geocoding Diagnostic] selected index:", selection?.index ?? 0);
-    console.log("[MOVVI Reverse Geocoding Diagnostic] selected formatted_address:", top.formatted_address ?? "(none)");
-    console.log("[MOVVI Reverse Geocoding Diagnostic] selected location_type:", top.geometry?.location_type ?? "(none)");
-    console.log("[MOVVI Reverse Geocoding Diagnostic] confidence:", confidence);
-    console.log("[MOVVI Reverse Geocoding Diagnostic] reason:", selectionReason);
+    if (import.meta.env.DEV) console.log("[MOVVI Reverse Geocoding Diagnostic] total results:", results.length);
+    if (import.meta.env.DEV) console.log("[MOVVI Reverse Geocoding Diagnostic] selected index:", selection?.index ?? 0);
+    if (import.meta.env.DEV) console.log("[MOVVI Reverse Geocoding Diagnostic] selected formatted_address:", top.formatted_address ?? "(none)");
+    if (import.meta.env.DEV) console.log("[MOVVI Reverse Geocoding Diagnostic] selected location_type:", top.geometry?.location_type ?? "(none)");
+    if (import.meta.env.DEV) console.log("[MOVVI Reverse Geocoding Diagnostic] confidence:", confidence);
+    if (import.meta.env.DEV) console.log("[MOVVI Reverse Geocoding Diagnostic] reason:", selectionReason);
 
     const address = top.formatted_address ?? "";
     const locationType = top.geometry?.location_type ?? "";
@@ -540,7 +540,7 @@ async function fetchNearestPoi(
     });
   } catch (error) {
     if (isAbortError(error)) {
-      console.warn(`[MOVVI nearestPoiLookup] Nearby Places timed out after ${NEARBY_PLACES_TIMEOUT_MS}ms.`);
+      if (import.meta.env.DEV) console.warn(`[MOVVI nearestPoiLookup] Nearby Places timed out after ${NEARBY_PLACES_TIMEOUT_MS}ms.`);
       return undefined;
     }
     throw error;
@@ -604,7 +604,7 @@ export const nearestPoiLookup = createServerFn({ method: "POST" })
       if (!poi) return {};
       return { name: poi.name, placeId: poi.placeId };
     } catch (err) {
-      console.warn("[MOVVI nearestPoiLookup] failed:", err);
+      if (import.meta.env.DEV) console.warn("[MOVVI nearestPoiLookup] failed:", err);
       return {};
     }
   });

@@ -24,7 +24,7 @@ export async function loadTariffs(): Promise<TariffMap> {
     .select("category_key, field_key, value");
 
   if (error) {
-    console.warn("[MOVVI] Falha ao carregar tariff_rules, usando fallback dev:", error.message);
+    if (import.meta.env.DEV) console.warn("[MOVVI] Falha ao carregar tariff_rules, usando fallback dev:", error.message);
     return { ...DEV_FALLBACK_TARIFFS };
   }
 

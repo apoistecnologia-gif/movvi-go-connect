@@ -162,7 +162,7 @@ export const cadastrarMotorista = createServerFn({ method: "POST" })
         data.documents.map(async (doc) => {
           const path = `${finalAuthUserId}/${doc.label}-${Date.now()}.${cleanExt(doc.fileName)}`;
           const body = decodeBase64(doc.base64);
-          console.log("[MOVVI DOCS] upload iniciado:", { bucket: doc.bucket, path });
+          if (import.meta.env.DEV) console.log("[MOVVI DOCS] upload iniciado:", { bucket: doc.bucket, path });
           const { error } = await supabaseAdmin.storage
             .from(doc.bucket)
             .upload(path, body, { upsert: true, contentType: doc.contentType });
@@ -171,7 +171,7 @@ export const cadastrarMotorista = createServerFn({ method: "POST" })
             throw new Error(`Falha no upload de ${doc.label}.`);
           }
           uploaded.push({ bucket: doc.bucket, path });
-          console.log("[MOVVI DOCS] upload concluído:", { bucket: doc.bucket, path });
+          if (import.meta.env.DEV) console.log("[MOVVI DOCS] upload concluído:", { bucket: doc.bucket, path });
           return [doc.label, { path, body, contentType: doc.contentType, fileName: doc.fileName }] as const;
         }),
       );
@@ -180,7 +180,7 @@ export const cadastrarMotorista = createServerFn({ method: "POST" })
         "selfie" | "cnh" | "cnh_back" | "veiculo",
         { path: string; body: ArrayBuffer; contentType: string; fileName: string }
       >;
-      console.log("[MOVVI DOCS] paths salvos:", {
+      if (import.meta.env.DEV) console.log("[MOVVI DOCS] paths salvos:", {
         selfie: docMap.selfie.path,
         cnh: docMap.cnh.path,
         cnh_back: docMap.cnh_back.path,
