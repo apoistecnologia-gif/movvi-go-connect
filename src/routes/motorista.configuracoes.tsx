@@ -257,11 +257,10 @@ function DriverSettingsPage() {
               </SettingsSection>
             </>
           )}
-        </div>
-      </main>
-    </div>
+    </SettingsPageShell>
   );
 }
+
 
 function ThemeBtn({ icon, label, active, onClick }: { icon?: React.ReactNode; label: string; active: boolean; onClick: () => void }) {
   return (
