@@ -79,7 +79,7 @@ export function MovviMap({
   useEffect(() => {
     if (!mapRef.current) return;
     // eslint-disable-next-line no-console
-    console.log("[MovviMap] applying theme", theme, "→", styles.length, "rules");
+    if (import.meta.env.DEV) console.log("[MovviMap] applying theme", theme, "→", styles.length, "rules");
     mapRef.current.setOptions({ styles, backgroundColor: bgColor });
   }, [theme, styles, bgColor]);
 
@@ -87,7 +87,7 @@ export function MovviMap({
     (map: google.maps.Map) => {
       mapRef.current = map;
       // eslint-disable-next-line no-console
-      console.log("[MovviMap] map loaded — initial theme:", theme);
+      if (import.meta.env.DEV) console.log("[MovviMap] map loaded — initial theme:", theme);
       map.setOptions({ styles, backgroundColor: bgColor });
       onLoad?.(map);
     },

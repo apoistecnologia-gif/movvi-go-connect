@@ -108,7 +108,7 @@ function DriverSignUpPage() {
     try {
       const data = parsed.data;
 
-      console.log("[MOVVI DOCS] arquivos selecionados:", {
+      if (import.meta.env.DEV) console.log("[MOVVI DOCS] arquivos selecionados:", {
         selfie: selfie.name,
         cnhFront: cnhFront.name,
         cnhBack: cnhBack.name,
@@ -145,7 +145,7 @@ function DriverSignUpPage() {
         },
       });
 
-      console.log("[MOVVI DOCS] cadastro concluído:", result);
+      if (import.meta.env.DEV) console.log("[MOVVI DOCS] cadastro concluído:", result);
 
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: data.email.toLowerCase(),

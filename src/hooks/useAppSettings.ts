@@ -10,7 +10,7 @@ let _channel: ReturnType<typeof supabase.channel> | null = null;
 async function loadAll(): Promise<SettingsMap> {
   const { data, error } = await supabase.from("app_settings").select("key,value");
   if (error) {
-    console.warn("[MOVVI] app_settings load:", error.message);
+    if (import.meta.env.DEV) console.warn("[MOVVI] app_settings load:", error.message);
     return {};
   }
   const map: SettingsMap = {};
