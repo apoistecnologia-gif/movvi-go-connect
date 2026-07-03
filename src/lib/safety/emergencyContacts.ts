@@ -10,25 +10,43 @@ export interface EmergencyContact {
   is_primary: boolean;
 }
 
-function tableFor(role: SafetyRole) {
+function tableFor(role: SafetyRole): "driver_emergency_contacts" | "passenger_emergency_contacts" {
   return role === "driver" ? "driver_emergency_contacts" : "passenger_emergency_contacts";
 }
 
-function userColumnFor(role: SafetyRole) {
+function userColumnFor(role: SafetyRole): "driver_user_id" | "passenger_user_id" {
   return role === "driver" ? "driver_user_id" : "passenger_user_id";
+}
+
+// The passenger_emergency_contacts table was just added and may not appear in the
+// generated Supabase types yet — bypass strict column typing where necessary.
+type AnyBuilder = {
+  select: (columns: string) => AnyBuilder;
+  insert: (row: unknown) => AnyBuilder;
+  update: (row: unknown) => AnyBuilder;
+  delete: () => AnyBuilder;
+  eq: (col: string, val: unknown) => AnyBuilder;
+  order: (col: string, opts: { ascending: boolean }) => AnyBuilder;
+  then: Promise<{ data: unknown; error: { message: string } | null }>["then"];
+};
+
+function tbl(role: SafetyRole): AnyBuilder {
+  return (supabase as unknown as { from: (t: string) => AnyBuilder }).from(tableFor(role));
 }
 
 export async function listContacts(
   role: SafetyRole,
   userId: string,
 ): Promise<EmergencyContact[]> {
-  const { data, error } = await supabase
-    .from(tableFor(role) as "driver_emergency_contacts")
+  const res = (await tbl(role)
     .select("id,name,phone,relation,is_primary")
     .eq(userColumnFor(role), userId)
-    .order("is_primary", { ascending: false });
-  if (error) throw error;
-  return (data ?? []) as EmergencyContact[];
+    .order("is_primary", { ascending: false })) as unknown as {
+    data: EmergencyContact[] | null;
+    error: { message: string } | null;
+  };
+  if (res.error) throw new Error(res.error.message);
+  return res.data ?? [];
 }
 
 export async function createContact(
@@ -43,30 +61,25 @@ export async function createContact(
     relation: input.relation?.trim() || null,
     is_primary: !!input.is_primary,
   };
-  const { error } = await supabase
-    .from(tableFor(role) as "driver_emergency_contacts")
-    .insert(row as never);
-  if (error) throw error;
+  const res = (await tbl(role).insert(row)) as unknown as {
+    error: { message: string } | null;
+  };
+  if (res.error) throw new Error(res.error.message);
 }
 
 export async function deleteContact(role: SafetyRole, id: string) {
-  const { error } = await supabase
-    .from(tableFor(role) as "driver_emergency_contacts")
-    .delete()
-    .eq("id", id);
-  if (error) throw error;
+  const res = (await tbl(role).delete().eq("id", id)) as unknown as {
+    error: { message: string } | null;
+  };
+  if (res.error) throw new Error(res.error.message);
 }
 
 export async function setPrimaryContact(role: SafetyRole, userId: string, id: string) {
-  await supabase
-    .from(tableFor(role) as "driver_emergency_contacts")
-    .update({ is_primary: false })
-    .eq(userColumnFor(role), userId);
-  const { error } = await supabase
-    .from(tableFor(role) as "driver_emergency_contacts")
-    .update({ is_primary: true })
-    .eq("id", id);
-  if (error) throw error;
+  await tbl(role).update({ is_primary: false }).eq(userColumnFor(role), userId);
+  const res = (await tbl(role).update({ is_primary: true }).eq("id", id)) as unknown as {
+    error: { message: string } | null;
+  };
+  if (res.error) throw new Error(res.error.message);
 }
 
 export async function getPrimaryContact(
@@ -76,3 +89,4 @@ export async function getPrimaryContact(
   const list = await listContacts(role, userId);
   return list.find((c) => c.is_primary) ?? list[0] ?? null;
 }
+
