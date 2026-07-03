@@ -2876,6 +2876,8 @@ function SheetContent({
           onClearDestination={onClearDestination}
           onSubmit={onSubmit}
           onExpandSheet={onExpandSheet}
+          paymentMethod={paymentMethod}
+          setPaymentMethod={setPaymentMethod}
         />
       )}
     </div>
@@ -2903,6 +2905,8 @@ type StepFlowProps = {
   onClearDestination: () => void;
   onSubmit: () => void;
   onExpandSheet: (p: number) => void;
+  paymentMethod: "cash" | "pix" | "card";
+  setPaymentMethod: (m: "cash" | "pix" | "card") => void;
 };
 
 function StepFlow({
@@ -2922,6 +2926,8 @@ function StepFlow({
   onClearDestination,
   onSubmit,
   onExpandSheet,
+  paymentMethod,
+  setPaymentMethod,
 }: StepFlowProps) {
   const uiCategories = useUiCategories();
   useEffect(() => {
@@ -3050,17 +3056,21 @@ function StepFlow({
 
           <button
             type="button"
-            className="flex w-full items-center gap-2.5 rounded-2xl bg-background/60 px-3 py-2.5 text-left ring-1 ring-border transition hover:bg-accent/20"
+            onClick={() => {
+              const next = paymentMethod === "cash" ? "pix" : paymentMethod === "pix" ? "card" : "cash";
+              setPaymentMethod(next);
+            }}
+            className="flex w-full items-center gap-2.5 rounded-2xl bg-background/60 px-3 py-2.5 text-left ring-1 ring-border transition hover:bg-accent/20 active:scale-[0.99]"
           >
             <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
               <CreditCard className="h-4 w-4" />
             </span>
             <div className="min-w-0 flex-1">
               <div className="text-[9.5px] font-semibold uppercase tracking-widest text-muted-foreground leading-none">
-                Forma de pagamento
+                Forma de pagamento (direto ao motorista)
               </div>
               <div className="mt-0.5 truncate text-[13px] font-bold text-foreground leading-tight">
-                Dinheiro
+                {paymentMethod === "cash" ? "Dinheiro" : paymentMethod === "pix" ? "PIX direto ao motorista" : "Cartão com o motorista"}
               </div>
             </div>
             <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
