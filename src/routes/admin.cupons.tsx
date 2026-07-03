@@ -54,6 +54,10 @@ const TYPES = [
 ];
 
 function AdminCuponsPage() {
+  const createFn = useServerFn(createCoupon);
+  const updateFn = useServerFn(updateCoupon);
+  const toggleFn = useServerFn(setCouponEnabled);
+  const deleteFn = useServerFn(deleteCoupon);
   const [rows, setRows] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
