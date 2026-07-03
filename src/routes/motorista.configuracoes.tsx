@@ -1,20 +1,26 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
-  Banknote, Bell, CreditCard, Globe, Languages, Loader2, MapPinned, Moon, Navigation,
-  QrCode, Save, Settings as SettingsIcon, Shield, Sun, Trash2, Volume2, Vibrate,
+  Banknote, Bell, CreditCard, Info, KeyRound, Languages, LifeBuoy, Loader2,
+  LockKeyhole, LogOut, MapPin, MapPinned, Moon, Navigation, Palette,
+  QrCode, Save, Settings as SettingsIcon, Shield, ShieldCheck, Smartphone,
+  Sun, Trash2, User, Vibrate, Volume2, FileText, Fingerprint,
 } from "lucide-react";
 import { MovviHeader } from "@/components/MovviHeader";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { requestPushPermission } from "@/lib/pushNotifications";
-import { DEFAULT_DRIVER_PREFS, loadDriverPrefs, saveDriverPrefs, type DriverPrefs } from "@/lib/driverPrefs";
+import {
+  DEFAULT_DRIVER_PREFS, loadDriverPrefs, saveDriverPrefs, type DriverPrefs,
+} from "@/lib/driverPrefs";
 import { useTheme } from "@/lib/theme";
+import {
+  SettingsSection, SettingsToggleRow, SettingsLinkRow, SettingsRow, AppAboutCard,
+} from "@/components/settings";
 
 export const Route = createFileRoute("/motorista/configuracoes")({
   head: () => ({ meta: [{ title: "Configurações — MOVVI DRIVE" }] }),
@@ -25,19 +31,31 @@ function DriverSettingsPage() {
   const navigate = useNavigate();
   const { setMode } = useTheme();
   const [userId, setUserId] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   const [prefs, setPrefs] = useState<DriverPrefs>(DEFAULT_DRIVER_PREFS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [notifState, setNotifState] = useState<NotificationPermission | "unsupported" | null>(null);
+  const [locState, setLocState] = useState<PermissionState | "unsupported" | null>(null);
 
   useEffect(() => {
     (async () => {
       const { data } = await supabase.auth.getUser();
       if (!data?.user) { navigate({ to: "/motorista/login" }); return; }
       setUserId(data.user.id);
+      setUserEmail(data.user.email ?? null);
       const p = await loadDriverPrefs(data.user.id);
       setPrefs(p);
       setLoading(false);
     })();
+
+    if (typeof Notification !== "undefined") setNotifState(Notification.permission);
+    else setNotifState("unsupported");
+    if (navigator.permissions?.query) {
+      navigator.permissions.query({ name: "geolocation" as PermissionName })
+        .then((s) => { setLocState(s.state); s.onchange = () => setLocState(s.state); })
+        .catch(() => setLocState(null));
+    } else if (!navigator.geolocation) setLocState("unsupported");
   }, [navigate]);
 
   function update<K extends keyof DriverPrefs>(key: K, value: DriverPrefs[K]) {
@@ -50,115 +68,47 @@ function DriverSettingsPage() {
     setSaving(true);
     try {
       await saveDriverPrefs(userId, prefs);
-      if (prefs.push) {
-        const r = await requestPushPermission();
-        if (r !== "granted") toast.warning("Permissão de notificações não concedida.");
-      }
       toast.success("Configurações salvas!");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Falha ao salvar.");
     } finally { setSaving(false); }
   }
 
+  async function handleEnablePush() {
+    const r = await requestPushPermission();
+    setNotifState(r);
+    if (r === "granted") {
+      update("push", true);
+      toast.success("Notificações ativadas.");
+    } else {
+      toast.error("Permissão não concedida.");
+    }
+  }
+
+  async function handleTestLocation() {
+    if (!navigator.geolocation) { toast.error("Geolocalização indisponível."); return; }
+    navigator.geolocation.getCurrentPosition(
+      () => { setLocState("granted"); toast.success("Localização OK."); },
+      () => { setLocState("denied"); toast.error("Permissão negada."); },
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
+  }
+
   async function handleClearCache() {
     const keys = Object.keys(localStorage).filter((k) => k.startsWith("movvi:") && !k.includes("prefs"));
     keys.forEach((k) => localStorage.removeItem(k));
-    toast.success(`Cache do app limpo (${keys.length} itens).`);
+    toast.success(`Cache limpo (${keys.length} itens).`);
+  }
+
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    navigate({ to: "/motorista/login" });
   }
 
   async function handleLogoutAll() {
     await supabase.auth.signOut({ scope: "global" });
     toast.success("Sessão encerrada em todos os dispositivos.");
     navigate({ to: "/motorista/login" });
-  }
-
-  const [reqNotif, setReqNotif] = useState(false);
-  const [reqLoc, setReqLoc] = useState(false);
-  const [notifState, setNotifState] = useState<NotificationPermission | "unsupported" | null>(null);
-  const [locState, setLocState] = useState<PermissionState | "unsupported" | null>(null);
-
-  useEffect(() => {
-    if (typeof Notification !== "undefined") setNotifState(Notification.permission);
-    else setNotifState("unsupported");
-    if (navigator.permissions && (navigator.permissions as any).query) {
-      navigator.permissions
-        .query({ name: "geolocation" as PermissionName })
-        .then((s) => {
-          setLocState(s.state);
-          s.onchange = () => setLocState(s.state);
-        })
-        .catch(() => setLocState(null));
-    } else if (!navigator.geolocation) setLocState("unsupported");
-  }, []);
-
-  async function requestNotifPermission() {
-    if (reqNotif) return;
-    setReqNotif(true);
-    try {
-      if (typeof Notification === "undefined") {
-        toast.error("Este navegador não suporta notificações.");
-        setNotifState("unsupported");
-        return;
-      }
-      if (Notification.permission === "denied") {
-        toast.error("Notificações bloqueadas. Ative nas configurações do navegador (cadeado ao lado do endereço).");
-        setNotifState("denied");
-        return;
-      }
-      const r = await requestPushPermission();
-      setNotifState(r);
-      if (r === "granted") toast.success("Notificações permitidas com sucesso.");
-      else if (r === "denied") toast.error("Permissão negada. Ative nas configurações do navegador.");
-      else if (r === "unsupported") toast.error("Este navegador não suporta notificações.");
-      else toast.message("Solicitação de notificações fechada.");
-      if (userId) {
-        try { await saveDriverPrefs(userId, { ...prefs, push: r === "granted" }); } catch {}
-      }
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro ao solicitar notificações.");
-    } finally { setReqNotif(false); }
-  }
-
-  async function requestLocPermission() {
-    if (reqLoc) return;
-    setReqLoc(true);
-    try {
-      if (!navigator.geolocation) {
-        toast.error("Geolocalização não suportada neste navegador.");
-        setLocState("unsupported");
-        return;
-      }
-      try {
-        if (navigator.permissions && (navigator.permissions as any).query) {
-          const s = await navigator.permissions.query({ name: "geolocation" as PermissionName });
-          if (s.state === "denied") {
-            toast.error("Localização bloqueada. Ative nas configurações do navegador (cadeado ao lado do endereço).");
-            setLocState("denied");
-            return;
-          }
-        }
-      } catch { /* segue p/ getCurrentPosition */ }
-
-      await new Promise<void>((resolve) => {
-        navigator.geolocation.getCurrentPosition(
-          () => { toast.success("Localização permitida com sucesso."); setLocState("granted"); resolve(); },
-          (err) => {
-            if (err.code === err.PERMISSION_DENIED) {
-              toast.error("Permissão de localização negada. Ative nas configurações do navegador.");
-              setLocState("denied");
-            } else if (err.code === err.POSITION_UNAVAILABLE) {
-              toast.error("Localização indisponível no momento.");
-            } else if (err.code === err.TIMEOUT) {
-              toast.error("Tempo esgotado ao obter localização.");
-            } else {
-              toast.error("Erro ao obter localização.");
-            }
-            resolve();
-          },
-          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
-        );
-      });
-    } finally { setReqLoc(false); }
   }
 
   return (
@@ -182,97 +132,136 @@ function DriverSettingsPage() {
             </div>
           ) : (
             <>
-              <Card>
-                <CardHeader><CardTitle className="flex items-center gap-2 text-base"><Bell className="h-4 w-4 text-primary" /> Notificações</CardTitle></CardHeader>
-                <CardContent className="space-y-3">
-                  <ToggleRow icon={<Bell className="h-4 w-4" />} label="Notificações push" checked={prefs.push} onChange={(v) => update("push", v)} />
-                  <ToggleRow label="Alertas de corrida" checked={prefs.ride_alerts} onChange={(v) => update("ride_alerts", v)} />
-                  <ToggleRow icon={<Volume2 className="h-4 w-4" />} label="Som" checked={prefs.sound} onChange={(v) => update("sound", v)} />
-                  <ToggleRow icon={<Vibrate className="h-4 w-4" />} label="Vibração" checked={prefs.vibration} onChange={(v) => update("vibration", v)} />
-                </CardContent>
-              </Card>
+              {/* Conta */}
+              <SettingsSection icon={User} title="Conta" description={userEmail ?? undefined}>
+                <SettingsLinkRow icon={User} title="Perfil" hint="Foto, nome e dados pessoais" to="/motorista/perfil" />
+                <SettingsLinkRow icon={Smartphone} title="Telefone e e-mail" hint="Atualize seus contatos" to="/motorista/perfil" />
+                <SettingsLinkRow icon={LogOut} title="Sair" onClick={handleLogout} />
+                <SettingsLinkRow icon={Trash2} title="Excluir conta" hint="Em breve" destructive onClick={() => toast.message("Exclusão de conta em breve.")} />
+              </SettingsSection>
 
-              <Card>
-                <CardHeader><CardTitle className="flex items-center gap-2 text-base"><MapPinned className="h-4 w-4 text-primary" /> Corridas</CardTitle></CardHeader>
-                <CardContent className="space-y-3">
-                  <ToggleRow label="Aceitar corridas curtas" checked={prefs.accept_short} onChange={(v) => update("accept_short", v)} />
-                  <ToggleRow label="Aceitar corridas longas" checked={prefs.accept_long} onChange={(v) => update("accept_long", v)} />
-                  <div className="space-y-2 rounded-lg border border-border bg-card/40 p-3">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-sm">Raio máximo de busca</Label>
-                      <span className="rounded-md bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary ring-1 ring-primary/30">{prefs.max_radius_km} km</span>
+              {/* Segurança */}
+              <SettingsSection icon={ShieldCheck} title="Segurança">
+                <SettingsLinkRow icon={KeyRound} title="Alterar senha" to="/motorista/seguranca" />
+                <SettingsLinkRow icon={Shield} title="Sessões ativas" hint="Em breve" onClick={() => toast.message("Sessões ativas em breve.")} />
+                <SettingsLinkRow icon={Fingerprint} title="Autenticação biométrica" hint="Em breve" onClick={() => toast.message("Biometria em breve.")} />
+                <SettingsLinkRow icon={LockKeyhole} title="Bloqueio por PIN" hint="Em breve" onClick={() => toast.message("PIN em breve.")} />
+                <SettingsLinkRow icon={LogOut} title="Sair de todos os dispositivos" destructive onClick={handleLogoutAll} />
+              </SettingsSection>
+
+              {/* Notificações */}
+              <SettingsSection icon={Bell} title="Notificações" description="Alertas e canais de aviso.">
+                <SettingsToggleRow icon={Bell} title="Notificações push" checked={prefs.push} onChange={(v) => v ? handleEnablePush() : update("push", false)} />
+                <SettingsToggleRow title="Alertas de corrida" hint="Novas corridas, atualizações e lembretes" checked={prefs.ride_alerts} onChange={(v) => update("ride_alerts", v)} />
+                <SettingsToggleRow icon={Volume2} title="Som" checked={prefs.sound} onChange={(v) => update("sound", v)} />
+                <SettingsToggleRow icon={Vibrate} title="Vibração" checked={prefs.vibration} onChange={(v) => update("vibration", v)} />
+                <SettingsLinkRow icon={Bell} title="Central de notificações" to="/motorista/notificacoes" />
+              </SettingsSection>
+
+              {/* Corridas */}
+              <SettingsSection icon={MapPinned} title="Corridas" description="Preferências de aceitação.">
+                <SettingsToggleRow title="Aceitar corridas curtas" checked={prefs.accept_short} onChange={(v) => update("accept_short", v)} />
+                <SettingsToggleRow title="Aceitar corridas longas" checked={prefs.accept_long} onChange={(v) => update("accept_long", v)} />
+                <div className="space-y-2 py-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm">Raio máximo de busca</Label>
+                    <span className="rounded-md bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary ring-1 ring-primary/30">
+                      {prefs.max_radius_km} km
+                    </span>
+                  </div>
+                  <Slider value={[prefs.max_radius_km]} min={1} max={50} step={1} onValueChange={(v) => update("max_radius_km", v[0] ?? 10)} />
+                </div>
+              </SettingsSection>
+
+              {/* Pagamentos aceitos */}
+              <SettingsSection icon={CreditCard} title="Formas de pagamento aceitas">
+                <SettingsToggleRow icon={Banknote} title="Dinheiro" checked={prefs.accept_cash} onChange={(v) => update("accept_cash", v)} />
+                <SettingsToggleRow icon={QrCode} title="Pix" checked={prefs.accept_pix} onChange={(v) => update("accept_pix", v)} />
+                <SettingsToggleRow icon={CreditCard} title="Maquininha" checked={prefs.accept_card} onChange={(v) => update("accept_card", v)} />
+              </SettingsSection>
+
+              {/* Aplicativo */}
+              <SettingsSection icon={Palette} title="Aplicativo">
+                <SettingsRow
+                  icon={Moon}
+                  title="Tema"
+                  right={
+                    <div className="grid grid-cols-3 gap-1.5">
+                      <ThemeBtn icon={<Sun className="h-3.5 w-3.5" />} label="Claro" active={prefs.theme === "light"} onClick={() => update("theme", "light")} />
+                      <ThemeBtn icon={<Moon className="h-3.5 w-3.5" />} label="Escuro" active={prefs.theme === "dark"} onClick={() => update("theme", "dark")} />
+                      <ThemeBtn label="Auto" active={prefs.theme === "system"} onClick={() => update("theme", "system")} />
                     </div>
-                    <Slider value={[prefs.max_radius_km]} min={1} max={50} step={1} onValueChange={(v) => update("max_radius_km", v[0] ?? 10)} />
-                  </div>
-                </CardContent>
-              </Card>
+                  }
+                />
+                <SettingsRow
+                  icon={Navigation}
+                  title="App de navegação"
+                  hint="Aplicativo aberto ao iniciar corrida"
+                  right={
+                    <select
+                      value={prefs.navigation_app}
+                      onChange={(e) => update("navigation_app", e.target.value as DriverPrefs["navigation_app"])}
+                      className="h-9 rounded-md border border-input bg-background px-2 text-xs"
+                    >
+                      <option value="internal">Interna</option>
+                      <option value="google">Google Maps</option>
+                      <option value="waze">Waze</option>
+                    </select>
+                  }
+                />
+                <SettingsRow
+                  icon={Languages}
+                  title="Idioma"
+                  hint="Em breve"
+                  right={
+                    <select
+                      value={prefs.language}
+                      onChange={(e) => update("language", e.target.value as DriverPrefs["language"])}
+                      className="h-9 rounded-md border border-input bg-background px-2 text-xs"
+                    >
+                      <option value="pt">Português</option>
+                      <option value="en">English</option>
+                      <option value="es">Español</option>
+                    </select>
+                  }
+                />
+                <SettingsLinkRow icon={Trash2} title="Limpar cache do aplicativo" onClick={handleClearCache} />
+              </SettingsSection>
 
-              <Card>
-                <CardHeader><CardTitle className="flex items-center gap-2 text-base"><CreditCard className="h-4 w-4 text-primary" /> Pagamentos</CardTitle></CardHeader>
-                <CardContent className="space-y-3">
-                  <ToggleRow icon={<Banknote className="h-4 w-4" />} label="Dinheiro" checked={prefs.accept_cash} onChange={(v) => update("accept_cash", v)} />
-                  <ToggleRow icon={<QrCode className="h-4 w-4" />} label="Pix" checked={prefs.accept_pix} onChange={(v) => update("accept_pix", v)} />
-                  <ToggleRow icon={<CreditCard className="h-4 w-4" />} label="Maquininha" checked={prefs.accept_card} onChange={(v) => update("accept_card", v)} />
-                </CardContent>
-              </Card>
+              {/* Privacidade */}
+              <SettingsSection icon={Shield} title="Privacidade">
+                <SettingsRow
+                  icon={MapPin}
+                  title="Permissão de localização"
+                  hint={locState === "granted" ? "Permitida" : locState === "denied" ? "Bloqueada — ajuste no navegador" : locState === "unsupported" ? "Indisponível" : "Pendente"}
+                  right={<Button size="sm" variant="outline" onClick={handleTestLocation}>Testar</Button>}
+                />
+                <SettingsRow
+                  icon={Bell}
+                  title="Permissão de notificações"
+                  hint={notifState === "granted" ? "Permitida" : notifState === "denied" ? "Bloqueada" : notifState === "unsupported" ? "Indisponível" : "Pendente"}
+                  right={<Button size="sm" variant="outline" onClick={handleEnablePush}>Solicitar</Button>}
+                />
+                <SettingsLinkRow icon={FileText} title="Termos de Uso" to="/passageiro/termos" />
+                <SettingsLinkRow icon={ShieldCheck} title="Política de Privacidade" to="/passageiro/privacidade" />
+              </SettingsSection>
 
-              <Card>
-                <CardHeader><CardTitle className="flex items-center gap-2 text-base"><Moon className="h-4 w-4 text-primary" /> Aparência</CardTitle><CardDescription>Tema aplicado imediatamente em todo o app.</CardDescription></CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-3 gap-2">
-                    <ThemeBtn icon={<Sun className="h-4 w-4" />} label="Claro" active={prefs.theme === "light"} onClick={() => update("theme", "light")} />
-                    <ThemeBtn icon={<Moon className="h-4 w-4" />} label="Escuro" active={prefs.theme === "dark"} onClick={() => update("theme", "dark")} />
-                    <ThemeBtn icon={<Globe className="h-4 w-4" />} label="Sistema" active={prefs.theme === "system"} onClick={() => update("theme", "system")} />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader><CardTitle className="flex items-center gap-2 text-base"><Navigation className="h-4 w-4 text-primary" /> Navegação</CardTitle></CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-3 gap-2">
-                    <ThemeBtn label="Interna" active={prefs.navigation_app === "internal"} onClick={() => update("navigation_app", "internal")} />
-                    <ThemeBtn label="Google Maps" active={prefs.navigation_app === "google"} onClick={() => update("navigation_app", "google")} />
-                    <ThemeBtn label="Waze" active={prefs.navigation_app === "waze"} onClick={() => update("navigation_app", "waze")} />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader><CardTitle className="flex items-center gap-2 text-base"><Languages className="h-4 w-4 text-primary" /> Idioma</CardTitle></CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-3 gap-2">
-                    <ThemeBtn label="Português" active={prefs.language === "pt"} onClick={() => update("language", "pt")} />
-                    <ThemeBtn label="English" active={prefs.language === "en"} onClick={() => update("language", "en")} />
-                    <ThemeBtn label="Español" active={prefs.language === "es"} onClick={() => update("language", "es")} />
-                  </div>
-                </CardContent>
-              </Card>
+              {/* Suporte */}
+              <SettingsSection icon={LifeBuoy} title="Suporte">
+                <SettingsLinkRow icon={LifeBuoy} title="Central de ajuda" to="/passageiro/suporte" />
+                <SettingsLinkRow icon={LifeBuoy} title="Perguntas frequentes" to="/passageiro/suporte" />
+                <SettingsLinkRow icon={LifeBuoy} title="Falar com o suporte" to="/passageiro/suporte" />
+              </SettingsSection>
 
               <Button onClick={handleSave} disabled={saving} className="w-full">
                 {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                 Salvar configurações
               </Button>
 
-              <Card>
-                <CardHeader><CardTitle className="flex items-center gap-2 text-base"><Shield className="h-4 w-4 text-primary" /> Privacidade & Conta</CardTitle></CardHeader>
-                <CardContent className="space-y-2">
-                  <Button type="button" variant="outline" onClick={requestLocPermission} disabled={reqLoc} className="w-full justify-between active:scale-[0.98] transition">
-                    <span className="flex items-center gap-2">{reqLoc && <Loader2 className="h-4 w-4 animate-spin" />} Permissão de localização</span>
-                    {locState && <span className="text-xs text-muted-foreground">{locState === "granted" ? "Permitida" : locState === "denied" ? "Bloqueada" : locState === "unsupported" ? "Indisponível" : "Pendente"}</span>}
-                  </Button>
-                  <Button type="button" variant="outline" onClick={requestNotifPermission} disabled={reqNotif} className="w-full justify-between active:scale-[0.98] transition">
-                    <span className="flex items-center gap-2">{reqNotif && <Loader2 className="h-4 w-4 animate-spin" />} Permissão de notificações</span>
-                    {notifState && <span className="text-xs text-muted-foreground">{notifState === "granted" ? "Permitida" : notifState === "denied" ? "Bloqueada" : notifState === "unsupported" ? "Indisponível" : "Pendente"}</span>}
-                  </Button>
-                  <Button variant="outline" onClick={handleClearCache} className="w-full justify-start"><Trash2 className="mr-2 h-4 w-4" /> Limpar cache</Button>
-                  <Button asChild variant="outline" className="w-full justify-start"><Link to="/passageiro/termos">Termos de Uso</Link></Button>
-                  <Button asChild variant="outline" className="w-full justify-start"><Link to="/passageiro/privacidade">Política de Privacidade</Link></Button>
-                  <Button variant="outline" onClick={handleLogoutAll} className="w-full justify-start text-destructive hover:text-destructive">
-                    Sair de todos os dispositivos
-                  </Button>
-                </CardContent>
-              </Card>
+              {/* Sobre */}
+              <SettingsSection icon={Info} title="Sobre">
+                <div className="py-2"><AppAboutCard /></div>
+              </SettingsSection>
             </>
           )}
         </div>
@@ -281,22 +270,11 @@ function DriverSettingsPage() {
   );
 }
 
-function ToggleRow({ icon, label, checked, onChange }: { icon?: React.ReactNode; label: string; checked: boolean; onChange: (v: boolean) => void }) {
-  return (
-    <div className="flex items-center justify-between gap-4 rounded-lg border border-border bg-card/40 p-3">
-      <div className="flex items-center gap-3">
-        {icon && <div className="grid h-8 w-8 place-items-center rounded-md bg-primary/10 text-primary">{icon}</div>}
-        <span className="text-sm font-medium">{label}</span>
-      </div>
-      <Switch checked={checked} onCheckedChange={onChange} />
-    </div>
-  );
-}
 function ThemeBtn({ icon, label, active, onClick }: { icon?: React.ReactNode; label: string; active: boolean; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className={`flex flex-col items-center gap-1 rounded-lg border p-3 text-xs font-medium transition active:scale-[0.98] ${
+      className={`flex items-center justify-center gap-1 rounded-md border px-2 py-1.5 text-[11px] font-medium transition active:scale-[0.96] ${
         active ? "border-primary bg-primary/15 text-primary" : "border-border bg-card/40 text-foreground hover:bg-accent/40"
       }`}
     >
