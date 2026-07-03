@@ -1589,8 +1589,8 @@ function ActiveRidePanel({
       {/* Modal de validação do PIN de segurança */}
       {pinOpen && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-md rounded-t-[28px] sm:rounded-[28px] bg-card p-5 shadow-2xl ring-1 ring-border animate-in slide-in-from-bottom duration-200">
-            <div className="mx-auto -mt-1 mb-4 h-1 w-10 rounded-full bg-muted-foreground/30 sm:hidden" />
+          <div className="w-full max-w-md rounded-t-[28px] sm:rounded-[28px] bg-card p-5 pb-6 shadow-premium ring-1 ring-border animate-sheet-in">
+            <div className="mx-auto -mt-1 mb-4 h-1.5 w-11 rounded-full bg-muted-foreground/30 sm:hidden" />
             <div className="text-center">
               <div className="mx-auto mb-3 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/15 text-primary ring-1 ring-primary/30">
                 <CheckCircle2 className="h-6 w-6" />
