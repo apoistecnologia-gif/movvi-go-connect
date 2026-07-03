@@ -2501,6 +2501,11 @@ function PassageiroApp() {
         </MovviSheet>
       )}
 
+      <DriverProfessionalProfileDialog
+        open={driverProfileOpen}
+        onOpenChange={setDriverProfileOpen}
+        driverUserId={ride?.driver_id ?? rideDriverInfo?.user_id ?? null}
+      />
     </div>
   );
 }
