@@ -27,7 +27,7 @@ export const Route = createFileRoute("/motorista/assinatura")({
 type Info = Awaited<ReturnType<typeof getDriverSubscriptionInfo>>;
 
 function DriverSubscriptionPage() {
-  const navigate = useNavigate();
+  // navigation is handled by SettingsPageShell / MovviHeader.
   const load = useServerFn(getDriverSubscriptionInfo);
   const createCharge = useServerFn(createDriverMonthlyCharge);
   const [info, setInfo] = useState<Info | null>(null);
