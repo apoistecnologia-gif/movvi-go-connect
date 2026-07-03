@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { SettingsRow } from "./SettingsRow";
 
 /**
- * Row that navigates to another route or triggers an action.
+ * MOVVI DS — Navigable settings row.
  * If `to` is provided, renders a <Link>. Otherwise renders a <button>.
  */
 export function SettingsLinkRow({
@@ -25,28 +25,18 @@ export function SettingsLinkRow({
   badge?: ReactNode;
 }) {
   const right = (
-    <div className="flex items-center gap-2 text-muted-foreground">
+    <div className="flex items-center gap-2 text-[#94A3B8]">
       {badge}
-      <ChevronRight className="h-4 w-4" />
+      <ChevronRight className="h-4 w-4" strokeWidth={2} />
     </div>
   );
-  const content = (
-    <SettingsRow
-      icon={icon}
-      title={
-        <span className={destructive ? "text-destructive" : undefined}>{title}</span>
-      }
-      hint={hint}
-      right={right}
-    />
+  const inner = (
+    <SettingsRow icon={icon} title={title} hint={hint} right={right} destructive={destructive} />
   );
   if (to) {
     return (
-      <Link
-        to={to}
-        className="block rounded-lg -mx-1 px-1 transition-colors active:scale-[0.99] active:opacity-90 hover:bg-muted/40"
-      >
-        {content}
+      <Link to={to} className="block transition active:bg-[#F7F9F7]">
+        {inner}
       </Link>
     );
   }
@@ -54,9 +44,9 @@ export function SettingsLinkRow({
     <button
       type="button"
       onClick={onClick}
-      className="block w-full rounded-lg -mx-1 px-1 text-left transition-colors active:scale-[0.99] active:opacity-90 hover:bg-muted/40"
+      className="block w-full text-left transition active:bg-[#F7F9F7]"
     >
-      {content}
+      {inner}
     </button>
   );
 }
