@@ -191,6 +191,8 @@ function MotoristaApp() {
 
   const [incoming, setIncoming] = useState<RideRow | null>(null);
   const [active, setActive] = useState<RideRow | null>(null);
+  const activeRef = useRef<RideRow | null>(null);
+  useEffect(() => { activeRef.current = active; }, [active]);
   const [passenger, setPassenger] = useState<Passenger | null>(null);
   const [countdown, setCountdown] = useState(RIDE_OFFER_TIMEOUT_SECONDS);
 
