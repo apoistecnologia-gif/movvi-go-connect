@@ -1310,8 +1310,8 @@ function IncomingOffer({
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-sm animate-in fade-in"
       role="dialog" aria-modal="true">
-      <div className="w-full max-w-md rounded-t-[28px] bg-card p-5 shadow-2xl ring-1 ring-primary/30 animate-in slide-in-from-bottom duration-200">
-        <div className="mx-auto -mt-1 mb-3 h-1 w-10 rounded-full bg-muted-foreground/30" />
+      <div className="w-full max-w-md rounded-t-[28px] bg-card p-5 pb-6 shadow-premium ring-1 ring-primary/30 animate-sheet-in">
+        <div className="mx-auto -mt-1 mb-3 h-1.5 w-11 rounded-full bg-muted-foreground/30" />
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
