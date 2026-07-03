@@ -523,6 +523,11 @@ function TicketDetailDialog({
   const [noteText, setNoteText] = useState("");
   const [saving, setSaving] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
+  const [pendingUpdate, setPendingUpdate] = useState<
+    | { patch: Partial<Ticket>; action: string; title: string; description: string; confirmLabel: string; destructive?: boolean }
+    | null
+  >(null);
+  const [noteToDelete, setNoteToDelete] = useState<NoteRow | null>(null);
 
   useEffect(() => {
     setRide(null);
