@@ -1563,6 +1563,20 @@ function ActiveRidePanel({
         </div>
       </div>
 
+      {/* Safety card — SOS, share, incident */}
+      <SafetyCard
+        role="driver"
+        rideId={ride.id}
+        counterpartLabel={`Passageiro ${passenger?.name ?? ""}`.trim()}
+        shareInput={{
+          role: "driver",
+          status: ride.status,
+          passengerName: passenger?.name ?? null,
+          originName: ride.pickup_label ?? ride.origin_name ?? null,
+          destinationName: ride.destination_name,
+        }}
+      />
+
       {/* CTA conforme fase */}
       {phase === "motorista_a_caminho" && (
         <ActionButton label="Cheguei ao local" onClick={onArrive} icon={MapPin} />
