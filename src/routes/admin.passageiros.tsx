@@ -623,6 +623,8 @@ function PassengerDetail({
   onUnblock: (p: Passenger) => void;
   onDelete: (p: Passenger) => void;
 }) {
+  const addNoteFn = useServerFn(addPassengerNote);
+  const removeNoteFn = useServerFn(deletePassengerNote);
   const [stats, setStats] = useState<Stats | null>(null);
   const [rides, setRides] = useState<RideRow[]>([]);
   const [ratings, setRatings] = useState<RatingRow[]>([]);
