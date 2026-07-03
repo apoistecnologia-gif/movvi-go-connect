@@ -224,7 +224,7 @@ function DriverEarningsPage() {
                 <CardContent className="p-4">
                   <h3 className="mb-3 text-sm font-semibold">Ganhos por dia</h3>
                   {chartData.length === 0 ? (
-                    <p className="py-8 text-center text-xs text-muted-foreground">Sem corridas no período.</p>
+                    <p className="py-8 text-center text-xs text-muted-foreground">Sem corridas no período selecionado.</p>
                   ) : (
                     <div className="h-56 w-full">
                       <ResponsiveContainer width="100%" height="100%">
