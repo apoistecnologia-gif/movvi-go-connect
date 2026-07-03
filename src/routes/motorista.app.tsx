@@ -387,7 +387,7 @@ function MotoristaApp() {
           return { lat, lng, heading, speed };
         });
       },
-      (err) => { console.warn("[MOVVI MOTORISTA] watch GPS:", err.message); },
+      (err) => { if (import.meta.env.DEV) console.warn("[MOVVI MOTORISTA] watch GPS:", err.message); },
       { enableHighAccuracy: true, maximumAge: 4000, timeout: 15000 },
     );
   }, []);
@@ -423,8 +423,8 @@ function MotoristaApp() {
             current_lat: lat, current_lng: lng,
             last_location_at: new Date().toISOString(),
           }).eq("user_id", u.user.id).then(({ error }) => {
-            if (error) console.warn("[MOVVI MOTORISTA] erro salvando localização:", error.message);
-            else console.log("[MOVVI MOTORISTA] localização salva no perfil");
+            if (error) { if (import.meta.env.DEV) console.warn("[MOVVI MOTORISTA] erro salvando localização:", error.message); }
+            else { if (import.meta.env.DEV) console.log("[MOVVI MOTORISTA] localização salva no perfil"); }
           });
         });
         // centraliza mapa
@@ -508,8 +508,8 @@ function MotoristaApp() {
           current_speed: speed,
           last_location_at: new Date().toISOString(),
         }).eq("user_id", userId).then(({ error }) => {
-          if (error) console.warn("[MOVVI MOTORISTA] erro salvando localização:", error.message);
-          else console.log("[MOVVI MOTORISTA] localização salva:", { lat, lng, isTest });
+          if (error) { if (import.meta.env.DEV) console.warn("[MOVVI MOTORISTA] erro salvando localização:", error.message); }
+          else { if (import.meta.env.DEV) console.log("[MOVVI MOTORISTA] localização salva:", { lat, lng, isTest }); }
         });
       }
       if (mapRef.current) {

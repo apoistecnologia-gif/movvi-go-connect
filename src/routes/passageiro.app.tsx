@@ -1171,7 +1171,7 @@ function PassageiroApp() {
                 if (import.meta.env.DEV) console.warn("[MOVVI] watchPosition callback falhou:", err);
               }
             },
-            (err) => { console.warn("[MOVVI] watchPosition erro:", err); },
+            (err) => { if (import.meta.env.DEV) console.warn("[MOVVI] watchPosition erro:", err); },
             { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 },
           );
         } catch (err) {
@@ -1294,7 +1294,7 @@ function PassageiroApp() {
       if (cancelled) return;
       setPermissionStatus((prev) => (prev === "checking" ? "prompt" : prev));
       if (gpsStateRef.current === "idle") {
-        try { requestGps(); } catch (err) { console.warn("[MOVVI] requestGps watchdog falhou:", err); }
+        try { requestGps(); } catch (err) { if (import.meta.env.DEV) console.warn("[MOVVI] requestGps watchdog falhou:", err); }
       }
     }, 1500);
 
@@ -1302,7 +1302,7 @@ function PassageiroApp() {
     if (!perms || typeof perms.query !== "function") {
       window.clearTimeout(watchdog);
       setPermissionStatus("prompt");
-      try { requestGps(); } catch (err) { console.warn("[MOVVI] requestGps fallback falhou:", err); }
+      try { requestGps(); } catch (err) { if (import.meta.env.DEV) console.warn("[MOVVI] requestGps fallback falhou:", err); }
       return () => { cancelled = true; };
     }
 
@@ -1342,7 +1342,7 @@ function PassageiroApp() {
         if (import.meta.env.DEV) console.warn("[MOVVI] permissions.query falhou:", err);
         void logGpsTelemetry("permissions_query_error", { message: (err as Error)?.message ?? String(err) });
         setPermissionStatus("prompt");
-        try { requestGps(); } catch (e) { console.warn("[MOVVI] requestGps catch falhou:", e); }
+        try { requestGps(); } catch (e) { if (import.meta.env.DEV) console.warn("[MOVVI] requestGps catch falhou:", e); }
       });
 
     return () => {
