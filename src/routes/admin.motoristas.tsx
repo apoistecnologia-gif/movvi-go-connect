@@ -28,6 +28,12 @@ import { logAdminAction } from "@/lib/adminAudit";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { getDriverDocumentUrls } from "@/lib/driverDocs.functions";
+import {
+  addDriverAdminNote,
+  deleteDriverAdminNote,
+  setDriverSuspension,
+  updateDriverApprovalStatus,
+} from "@/lib/adminDrivers.functions";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -149,7 +155,15 @@ function docsPending(d: Driver) {
   return !d.selfie_url || !d.cnh_url || !d.vehicle_document_url;
 }
 
+function mapAdminError(msg: string): string {
+  if (msg === "forbidden") return "Ação restrita a administradores.";
+  if (/^invalid_|^Required$|uuid/i.test(msg)) return "Dados inválidos.";
+  return msg;
+}
+
 function AdminMotoristas() {
+  const updateApprovalFn = useServerFn(updateDriverApprovalStatus);
+  const setSuspensionFn = useServerFn(setDriverSuspension);
   const [drivers, setDrivers] = useState<Driver[] | null>(null);
   const [activeRides, setActiveRides] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
@@ -244,57 +258,55 @@ function AdminMotoristas() {
 
   async function updateStatus(d: Driver, status: Status, reason?: string | null) {
     setBusyId(d.id);
-    const patch: Database["public"]["Tables"]["drivers"]["Update"] = {
-      approval_status: status,
-      motivo_reprovacao: status === "reprovado" ? reason ?? null : null,
-      approved_at: status === "aprovado" ? new Date().toISOString() : null,
-      blocked_at: status === "bloqueado" ? new Date().toISOString() : null,
-    };
-    const { error } = await supabase.from("drivers").update(patch).eq("id", d.id);
-    setBusyId(null);
-    if (error) {
-      toast.error("Erro ao atualizar status: " + error.message);
-      return;
+    try {
+      const { patch } = await updateApprovalFn({
+        data: { id: d.id, status, reason: reason ?? null },
+      });
+      await logAdminAction({
+        action: `driver.${status}`,
+        entity: "drivers",
+        entity_id: d.id,
+        before: { approval_status: d.approval_status },
+        after: patch,
+      });
+      if (status === "aprovado") toast.success("Motorista aprovado com sucesso");
+      if (status === "reprovado") toast.success("Motorista reprovado");
+      if (status === "bloqueado") toast.success("Motorista bloqueado");
+      if (status === "em_analise") toast.success("Cadastro reenviado para análise");
+      setRejectFor(null);
+      setBlockFor(null);
+      setUnblockFor(null);
+      setRejectReason("");
+      if (detail?.id === d.id)
+        setDetail({ ...d, ...(patch as Database["public"]["Tables"]["drivers"]["Update"]) } as Driver);
+      load();
+    } catch (e) {
+      toast.error("Erro ao atualizar status: " + (e instanceof Error ? mapAdminError(e.message) : "falha"));
+    } finally {
+      setBusyId(null);
     }
-    await logAdminAction({
-      action: `driver.${status}`,
-      entity: "drivers",
-      entity_id: d.id,
-      before: { approval_status: d.approval_status },
-      after: patch,
-    });
-    if (status === "aprovado") toast.success("Motorista aprovado com sucesso");
-    if (status === "reprovado") toast.success("Motorista reprovado");
-    if (status === "bloqueado") toast.success("Motorista bloqueado");
-    if (status === "em_analise") toast.success("Cadastro reenviado para análise");
-    setRejectFor(null);
-    setBlockFor(null);
-    setUnblockFor(null);
-    setRejectReason("");
-    if (detail?.id === d.id) setDetail({ ...d, ...patch } as Driver);
-    load();
   }
 
   async function toggleSuspend(d: Driver, suspend: boolean) {
     setBusyId(d.id);
-    const patch = { suspended_at: suspend ? new Date().toISOString() : null } as never;
-    const { error } = await supabase.from("drivers").update(patch).eq("id", d.id);
-    setBusyId(null);
-    if (error) {
-      toast.error("Erro: " + error.message);
-      return;
+    try {
+      await setSuspensionFn({ data: { id: d.id, suspend } });
+      await logAdminAction({
+        action: suspend ? "driver.suspend" : "driver.unsuspend",
+        entity: "drivers",
+        entity_id: d.id,
+        before: { suspended_at: d.suspended_at ?? null },
+        after: { suspended_at: suspend ? "now" : null },
+      });
+      toast.success(suspend ? "Motorista suspenso" : "Suspensão removida");
+      setSuspendFor(null);
+      if (detail?.id === d.id) setDetail({ ...d, suspended_at: suspend ? new Date().toISOString() : null });
+      load();
+    } catch (e) {
+      toast.error("Erro: " + (e instanceof Error ? mapAdminError(e.message) : "falha"));
+    } finally {
+      setBusyId(null);
     }
-    await logAdminAction({
-      action: suspend ? "driver.suspend" : "driver.unsuspend",
-      entity: "drivers",
-      entity_id: d.id,
-      before: { suspended_at: d.suspended_at ?? null },
-      after: { suspended_at: suspend ? "now" : null },
-    });
-    toast.success(suspend ? "Motorista suspenso" : "Suspensão removida");
-    setSuspendFor(null);
-    if (detail?.id === d.id) setDetail({ ...d, suspended_at: suspend ? new Date().toISOString() : null });
-    load();
   }
 
   return (
@@ -663,6 +675,8 @@ function DetailsDialog({
   onSubscription: (d: Driver) => void;
   busy: boolean;
 }) {
+  const addNoteFn = useServerFn(addDriverAdminNote);
+  const removeNoteFn = useServerFn(deleteDriverAdminNote);
   const [urls, setUrls] = useState<Record<string, string | null>>({});
   const [urlError, setUrlError] = useState<string | null>(null);
   const [docsLoading, setDocsLoading] = useState(false);
@@ -743,35 +757,26 @@ function DetailsDialog({
   async function addNote() {
     if (!driver || !noteDraft.trim()) return;
     setSavingNote(true);
-    const { data: auth } = await supabase.auth.getUser();
-    if (!auth.user) {
+    try {
+      const row = await addNoteFn({ data: { driverId: driver.id, note: noteDraft.trim() } });
+      setNotes((cur) => [row as AdminNote, ...cur]);
+      setNoteDraft("");
+      toast.success("Nota adicionada");
+    } catch (e) {
+      toast.error("Erro ao salvar nota: " + (e instanceof Error ? mapAdminError(e.message) : "falha"));
+    } finally {
       setSavingNote(false);
-      toast.error("Sessão expirada.");
-      return;
     }
-    const { data, error } = await supabase
-      .from("admin_driver_notes")
-      .insert({ driver_id: driver.id, admin_id: auth.user.id, note: noteDraft.trim() })
-      .select("*")
-      .single();
-    setSavingNote(false);
-    if (error) {
-      toast.error("Erro ao salvar nota: " + error.message);
-      return;
-    }
-    setNotes((cur) => [data as AdminNote, ...cur]);
-    setNoteDraft("");
-    toast.success("Nota adicionada");
   }
 
   async function removeNote(id: string) {
-    const { error } = await supabase.from("admin_driver_notes").delete().eq("id", id);
-    if (error) {
-      toast.error("Erro: " + error.message);
-      return;
+    try {
+      await removeNoteFn({ data: { id } });
+      setNotes((cur) => cur.filter((n) => n.id !== id));
+      toast.success("Nota removida");
+    } catch (e) {
+      toast.error("Erro: " + (e instanceof Error ? mapAdminError(e.message) : "falha"));
     }
-    setNotes((cur) => cur.filter((n) => n.id !== id));
-    toast.success("Nota removida");
   }
 
   const hasLocation = driver.current_lat != null && driver.current_lng != null;

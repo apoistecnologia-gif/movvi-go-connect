@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   Loader2,
@@ -43,7 +44,20 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { formatBRL, formatDate } from "@/lib/formatters";
 import { logAdminAction } from "@/lib/adminAudit";
+import {
+  blockPassenger,
+  deletePassenger,
+  suspendPassenger,
+  unblockPassenger,
+  unsuspendPassenger,
+} from "@/lib/adminPassengers.functions";
 import { downloadCsv } from "@/lib/csvExport";
+
+function mapAdminError(msg: string): string {
+  if (msg === "forbidden") return "Ação restrita a administradores.";
+  if (/^invalid_|^Required$|uuid/i.test(msg)) return "Dados inválidos.";
+  return msg;
+}
 
 export const Route = createFileRoute("/admin/passageiros")({
   head: () => ({ meta: [{ title: "Passageiros — Admin MOVVI" }] }),
@@ -106,6 +120,11 @@ function badgeForRating(r: number): string {
 }
 
 function AdminPassageirosPage() {
+  const suspendFn = useServerFn(suspendPassenger);
+  const unsuspendFn = useServerFn(unsuspendPassenger);
+  const blockFn = useServerFn(blockPassenger);
+  const unblockFn = useServerFn(unblockPassenger);
+  const deleteFn = useServerFn(deletePassenger);
   const [rows, setRows] = useState<Passenger[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
@@ -173,86 +192,94 @@ function AdminPassageirosPage() {
   async function doSuspend() {
     if (!suspendFor) return;
     setBusyId(suspendFor.id);
-    const { error } = await supabase
-      .from("users")
-      .update({ suspended_at: new Date().toISOString(), block_reason: suspendReason.trim() || null })
-      .eq("id", suspendFor.id);
-    setBusyId(null);
-    if (error) return toast.error(error.message);
-    await logAdminAction({
-      action: "passenger.suspend",
-      entity: "users",
-      entity_id: suspendFor.id,
-      after: { reason: suspendReason },
-    });
-    toast.success("Passageiro suspenso");
-    setSuspendFor(null);
-    setSuspendReason("");
-    refresh();
+    try {
+      await suspendFn({ data: { id: suspendFor.id, reason: suspendReason.trim() || null } });
+      await logAdminAction({
+        action: "passenger.suspend",
+        entity: "users",
+        entity_id: suspendFor.id,
+        after: { reason: suspendReason },
+      });
+      toast.success("Passageiro suspenso");
+      setSuspendFor(null);
+      setSuspendReason("");
+      refresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? mapAdminError(e.message) : "Falha ao suspender passageiro");
+    } finally {
+      setBusyId(null);
+    }
   }
   async function doUnsuspend() {
     if (!unsuspendFor) return;
     setBusyId(unsuspendFor.id);
-    const { error } = await supabase
-      .from("users")
-      .update({ suspended_at: null, block_reason: null })
-      .eq("id", unsuspendFor.id);
-    setBusyId(null);
-    if (error) return toast.error(error.message);
-    await logAdminAction({ action: "passenger.unsuspend", entity: "users", entity_id: unsuspendFor.id });
-    toast.success("Suspensão removida");
-    setUnsuspendFor(null);
-    refresh();
+    try {
+      await unsuspendFn({ data: { id: unsuspendFor.id } });
+      await logAdminAction({ action: "passenger.unsuspend", entity: "users", entity_id: unsuspendFor.id });
+      toast.success("Suspensão removida");
+      setUnsuspendFor(null);
+      refresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? mapAdminError(e.message) : "Falha ao remover suspensão");
+    } finally {
+      setBusyId(null);
+    }
   }
   async function doBlock() {
     if (!blockFor || !blockReason.trim()) return;
     setBusyId(blockFor.id);
-    const { error } = await supabase
-      .from("users")
-      .update({ blocked_at: new Date().toISOString(), block_reason: blockReason.trim() })
-      .eq("id", blockFor.id);
-    setBusyId(null);
-    if (error) return toast.error(error.message);
-    await logAdminAction({
-      action: "passenger.block",
-      entity: "users",
-      entity_id: blockFor.id,
-      after: { reason: blockReason },
-    });
-    toast.success("Passageiro bloqueado");
-    setBlockFor(null);
-    setBlockReason("");
-    refresh();
+    try {
+      await blockFn({ data: { id: blockFor.id, reason: blockReason.trim() } });
+      await logAdminAction({
+        action: "passenger.block",
+        entity: "users",
+        entity_id: blockFor.id,
+        after: { reason: blockReason },
+      });
+      toast.success("Passageiro bloqueado");
+      setBlockFor(null);
+      setBlockReason("");
+      refresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? mapAdminError(e.message) : "Falha ao bloquear passageiro");
+    } finally {
+      setBusyId(null);
+    }
   }
   async function doUnblock() {
     if (!unblockFor) return;
     setBusyId(unblockFor.id);
-    const { error } = await supabase
-      .from("users")
-      .update({ blocked_at: null, block_reason: null })
-      .eq("id", unblockFor.id);
-    setBusyId(null);
-    if (error) return toast.error(error.message);
-    await logAdminAction({ action: "passenger.unblock", entity: "users", entity_id: unblockFor.id });
-    toast.success("Desbloqueado");
-    setUnblockFor(null);
-    refresh();
+    try {
+      await unblockFn({ data: { id: unblockFor.id } });
+      await logAdminAction({ action: "passenger.unblock", entity: "users", entity_id: unblockFor.id });
+      toast.success("Desbloqueado");
+      setUnblockFor(null);
+      refresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? mapAdminError(e.message) : "Falha ao desbloquear");
+    } finally {
+      setBusyId(null);
+    }
   }
   async function doDelete() {
     if (!deleteFor) return;
     setBusyId(deleteFor.id);
-    const { error } = await supabase.from("users").delete().eq("id", deleteFor.id);
-    setBusyId(null);
-    if (error) return toast.error(error.message);
-    await logAdminAction({
-      action: "passenger.delete",
-      entity: "users",
-      entity_id: deleteFor.id,
-      before: { name: deleteFor.name },
-    });
-    toast.success("Passageiro excluído");
-    setDeleteFor(null);
-    refresh();
+    try {
+      await deleteFn({ data: { id: deleteFor.id } });
+      await logAdminAction({
+        action: "passenger.delete",
+        entity: "users",
+        entity_id: deleteFor.id,
+        before: { name: deleteFor.name },
+      });
+      toast.success("Passageiro excluído");
+      setDeleteFor(null);
+      refresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? mapAdminError(e.message) : "Falha ao excluir passageiro");
+    } finally {
+      setBusyId(null);
+    }
   }
 
   function exportCsv() {
