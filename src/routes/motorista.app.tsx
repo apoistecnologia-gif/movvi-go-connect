@@ -21,6 +21,7 @@ import {
 import { MovviMap } from "@/components/MovviMap";
 import { DriverSideMenu } from "@/components/DriverSideMenu";
 import { MovviSheet, type MovviSheetHandle } from "@/components/MovviSheet";
+import { PassengerProfessionalProfileDialog } from "@/components/profile/PassengerProfessionalProfileDialog";
 import {
   InterpolatedDriverMarker,
   PlacePinMarker,
@@ -193,6 +194,7 @@ function MotoristaApp() {
   const [active, setActive] = useState<RideRow | null>(null);
   const [passenger, setPassenger] = useState<Passenger | null>(null);
   const [countdown, setCountdown] = useState(RIDE_OFFER_TIMEOUT_SECONDS);
+  const [profilePassengerId, setProfilePassengerId] = useState<string | null>(null);
 
   const [polyline, setPolyline] = useState<LatLng[]>([]);
   const [etaSeconds, setEtaSeconds] = useState<number | null>(null);
@@ -1118,6 +1120,7 @@ function MotoristaApp() {
             passenger={passenger}
             etaSeconds={etaSeconds}
             legKm={legKm}
+            onOpenProfile={() => active.passenger_id && setProfilePassengerId(active.passenger_id)}
             onArrive={async () => { await callArrive({ data: { rideId: active.id } }); }}
             onStart={async (code) => { await callStart({ data: { rideId: active.id, safety_code: code } }); }}
             onComplete={async () => {
@@ -1159,9 +1162,18 @@ function MotoristaApp() {
           countdown={countdown}
           onAccept={handleAccept}
           onReject={handleReject}
+          onOpenProfile={() => incoming.passenger_id && setProfilePassengerId(incoming.passenger_id)}
         />
 
       )}
+
+      {/* Perfil profissional do passageiro (modal público de confiança) */}
+      <PassengerProfessionalProfileDialog
+        open={profilePassengerId !== null}
+        onOpenChange={(v) => { if (!v) setProfilePassengerId(null); }}
+        passengerUserId={profilePassengerId}
+      />
+
 
       {/* ===== Rating ===== */}
       {ratingRide && (
