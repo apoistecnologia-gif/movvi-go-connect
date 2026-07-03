@@ -903,6 +903,7 @@ function MotoristaApp() {
   const autoFollowRef = useRef(true);
   const lastFollowAtRef = useRef(0);
   const lastFitKeyRef = useRef<string | null>(null);
+  const routeFailToastedRef = useRef<string | null>(null);
 
   // Detecta arrasto manual → desliga follow.
   useEffect(() => {
@@ -948,6 +949,7 @@ function MotoristaApp() {
         setPolyline(decodePolyline(res.encodedPolyline));
         setEtaSeconds(res.durationSeconds);
         setLegKm(res.distanceMeters / 1000);
+        if (routeFailToastedRef.current === fitKey) routeFailToastedRef.current = null;
         // fitBounds APENAS uma vez por transição de status.
         if (mapRef.current && lastFitKeyRef.current !== fitKey) {
           lastFitKeyRef.current = fitKey;
@@ -960,9 +962,15 @@ function MotoristaApp() {
         }
       })
       .catch(() => {
+        // Fallback: mantém marcadores e desenha linha reta para não quebrar UX.
         setPolyline([pos, dest]);
         const km = haversineKm(pos, dest);
         setLegKm(km); setEtaSeconds(Math.round((km / 35) * 3600));
+        // Aviso não-bloqueante — apenas uma vez por transição de status.
+        if (routeFailToastedRef.current !== fitKey) {
+          routeFailToastedRef.current = fitKey;
+          toast.message("Não foi possível traçar a rota agora. Use navegação externa.");
+        }
       });
   }, [active?.id, active?.status]); // eslint-disable-line react-hooks/exhaustive-deps
 
