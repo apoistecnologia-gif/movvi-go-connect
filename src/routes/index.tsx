@@ -69,12 +69,6 @@ function HomePage() {
       </div>
 
       <footer className="relative w-full max-w-md pt-6 text-center text-[11px] text-muted-foreground">
-        <Link
-          to="/map-test"
-          className="mb-3 inline-block uppercase tracking-widest hover:text-primary"
-        >
-          Diagnóstico do mapa
-        </Link>
         <div>© {new Date().getFullYear()} MOVVI DRIVE</div>
       </footer>
     </main>
