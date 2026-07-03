@@ -1659,7 +1659,7 @@ function ActionButton({
     <button
       disabled={busy}
       onClick={async () => { setBusy(true); try { await onClick(); } finally { setBusy(false); } }}
-      className={`press-scale mt-1 flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-[14px] font-bold uppercase tracking-[0.15em] transition disabled:opacity-60 ${
+      className={`press-scale mt-1 flex w-full items-center justify-center gap-2 rounded-2xl min-h-14 py-4 text-[14px] font-bold uppercase tracking-[0.15em] transition disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-card ${
         variant === "success"
           ? "bg-primary text-primary-foreground shadow-[0_14px_32px_-14px_color-mix(in_oklab,var(--color-primary)_60%,transparent)] hover:brightness-105"
           : "bg-primary text-primary-foreground shadow-[0_14px_32px_-14px_color-mix(in_oklab,var(--color-primary)_60%,transparent)] hover:brightness-105"}`}>
