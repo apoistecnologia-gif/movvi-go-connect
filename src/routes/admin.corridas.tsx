@@ -476,7 +476,7 @@ function RideDetail({
     let cancelled = false;
     (async () => {
       setLoading(true);
-      const jobs: Promise<unknown>[] = [];
+      const jobs: PromiseLike<unknown>[] = [];
       if (ride.passenger_id) {
         jobs.push(
           supabase
