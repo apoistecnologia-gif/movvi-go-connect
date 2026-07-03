@@ -41,6 +41,7 @@ function RideDetailsPage() {
   const [ride, setRide] = useState<RideRow | null>(null);
   const [passengerName, setPassengerName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [receiptOpen, setReceiptOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
