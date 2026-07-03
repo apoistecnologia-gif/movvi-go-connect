@@ -1,12 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Clock, FileText, Loader2, MapPin, Navigation2, Star, User as UserIcon } from "lucide-react";
+import { ArrowLeft, Clock, FileText, Loader2, MapPin, Navigation2, Receipt as ReceiptIcon, Star } from "lucide-react";
 import { MovviHeader } from "@/components/MovviHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar } from "@/components/Avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { downloadRideReceipt } from "@/lib/driverReceipt";
+import { RideReceiptDialog } from "@/components/rides/RideReceiptDialog";
 
 export const Route = createFileRoute("/motorista/corridas/$id")({
   head: () => ({ meta: [{ title: "Detalhes da corrida — MOVVI DRIVE" }] }),
@@ -40,6 +41,7 @@ function RideDetailsPage() {
   const [ride, setRide] = useState<RideRow | null>(null);
   const [passengerName, setPassengerName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [receiptOpen, setReceiptOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -150,29 +152,54 @@ function RideDetailsPage() {
                 </div>
               )}
 
-              {ride.status === "finalizada" && (
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() =>
-                    downloadRideReceipt({
-                      ...ride,
-                      driver_name: ride.driver_name,
-                      driver_vehicle: ride.driver_vehicle,
-                      passenger_name: passengerName,
-                    })
-                  }
-                >
-                  <FileText className="mr-2 h-4 w-4" /> Baixar recibo PDF
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Button variant="outline" className="w-full" onClick={() => setReceiptOpen(true)}>
+                  <ReceiptIcon className="mr-2 h-4 w-4" /> Ver recibo
                 </Button>
-              )}
+                {ride.status === "finalizada" && (
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() =>
+                      downloadRideReceipt({
+                        ...ride,
+                        driver_name: ride.driver_name,
+                        driver_vehicle: ride.driver_vehicle,
+                        passenger_name: passengerName,
+                      })
+                    }
+                  >
+                    <FileText className="mr-2 h-4 w-4" /> Baixar PDF
+                  </Button>
+                )}
+              </div>
             </CardContent>
           </Card>
         </div>
       </main>
+
+      <RideReceiptDialog
+        open={receiptOpen}
+        onOpenChange={setReceiptOpen}
+        receipt={{
+          rideId: ride.id,
+          date: ride.completed_at ?? ride.created_at,
+          origin: ride.pickup_label || ride.origin_name,
+          destination: ride.destination_name,
+          driverName: ride.driver_name,
+          passengerName: passengerName,
+          vehicle: ride.driver_vehicle,
+          paymentMethod: ride.payment_method,
+          value: ride.final_price ?? ride.estimated_price,
+          status: ride.status,
+          distanceKm: ride.distance_km,
+          durationMin: ride.duration_min,
+        }}
+      />
     </div>
   );
 }
+
 
 function Mini({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
   return (

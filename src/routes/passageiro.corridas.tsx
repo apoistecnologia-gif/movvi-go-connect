@@ -11,6 +11,9 @@ import {
   Loader2,
   X,
   Filter,
+  Receipt as ReceiptIcon,
+  Clock,
+  CreditCard,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -28,6 +31,8 @@ import {
 import { Avatar } from "@/components/Avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { avaliarMotorista } from "@/lib/rideLifecycle";
+import { RideReceiptDialog } from "@/components/rides/RideReceiptDialog";
+import type { ReceiptData } from "@/lib/rideReceipt";
 
 type RideRow = {
   id: string;
@@ -44,14 +49,36 @@ type RideRow = {
   duration_min: number | null;
   completed_at: string | null;
   created_at: string;
+  accepted_at: string | null;
+  started_at: string | null;
+  cancelled_at: string | null;
   driver_id: string | null;
   driver_name: string | null;
   driver_photo_url: string | null;
+  driver_vehicle: string | null;
   driver_rating: number | null;
   driver_rating_comment: string | null;
   passenger_rated_at: string | null;
   category: string | null;
+  payment_method: string | null;
+  safety_code: string | null;
 };
+
+function rideToReceipt(r: RideRow): ReceiptData {
+  return {
+    rideId: r.id,
+    date: r.completed_at ?? r.created_at,
+    origin: r.origin_name,
+    destination: r.destination_name,
+    driverName: r.driver_name,
+    vehicle: r.driver_vehicle,
+    paymentMethod: r.payment_method,
+    value: r.final_price ?? r.estimated_price,
+    status: r.status,
+    distanceKm: r.distance_km,
+    durationMin: r.duration_min,
+  };
+}
 
 type FilterKey = "todas" | "finalizada" | "cancelada";
 
@@ -134,10 +161,12 @@ function RideDetailSheet({
   ride,
   onClose,
   onChange,
+  onViewReceipt,
 }: {
   ride: RideRow | null;
   onClose: () => void;
   onChange: () => void;
+  onViewReceipt: (r: RideRow) => void;
 }) {
   const navigate = useNavigate();
   const callRate = useServerFn(avaliarMotorista);
@@ -381,10 +410,51 @@ function RideDetailSheet({
             </div>
           )}
 
+          {/* Payment + PIN */}
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="rounded-xl border border-border bg-card/40 p-3">
+              <p className="flex items-center gap-1.5 text-[10px] uppercase text-muted-foreground">
+                <CreditCard className="h-3 w-3" /> Pagamento
+              </p>
+              <p className="mt-1 font-medium">{ride.payment_method ?? "Não informado"}</p>
+            </div>
+            <div className="rounded-xl border border-border bg-card/40 p-3">
+              <p className="text-[10px] uppercase text-muted-foreground">PIN segurança</p>
+              <p className="mt-1 font-mono font-medium">{ride.safety_code ?? "Não informado"}</p>
+            </div>
+          </div>
+
+          {/* Timeline */}
+          <div className="rounded-2xl border border-border bg-card p-4">
+            <p className="mb-2 text-xs font-semibold uppercase text-muted-foreground">
+              Linha do tempo
+            </p>
+            <ol className="space-y-1.5 text-xs">
+              {[
+                { label: "Solicitada", at: ride.created_at },
+                { label: "Aceita", at: ride.accepted_at },
+                { label: "Iniciada", at: ride.started_at },
+                { label: "Finalizada", at: ride.completed_at },
+                ...(ride.cancelled_at ? [{ label: "Cancelada", at: ride.cancelled_at }] : []),
+              ].map((t) => (
+                <li key={t.label} className="flex items-center gap-2">
+                  <Clock className={`h-3 w-3 ${t.at ? "text-primary" : "text-muted-foreground/40"}`} />
+                  <span className="w-20 text-muted-foreground">{t.label}</span>
+                  <span className={t.at ? "font-medium" : "text-muted-foreground/50"}>
+                    {t.at ? new Date(t.at).toLocaleString("pt-BR") : "—"}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </div>
+
           {/* Actions */}
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             <Button variant="outline" size="sm" onClick={repeatRide}>
               <Repeat className="mr-1 h-3.5 w-3.5" /> Repetir
+            </Button>
+            <Button size="sm" onClick={() => onViewReceipt(ride)}>
+              <ReceiptIcon className="mr-1 h-3.5 w-3.5" /> Recibo
             </Button>
             {ride.driver_id && (
               <Button
@@ -403,6 +473,7 @@ function RideDetailSheet({
               </Button>
             )}
           </div>
+
 
           {/* Report form */}
           {reportOpen && ride.driver_id && (
@@ -451,6 +522,7 @@ function PassengerRidesPage() {
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterKey>("todas");
   const [selected, setSelected] = useState<RideRow | null>(null);
+  const [receiptRide, setReceiptRide] = useState<RideRow | null>(null);
 
   async function load() {
     const { data: auth } = await supabase.auth.getUser();
@@ -462,7 +534,7 @@ function PassengerRidesPage() {
     const { data, error } = await supabase
       .from("rides")
       .select(
-        "id,status,origin_name,destination_name,origin_lat,origin_lng,destination_lat,destination_lng,final_price,estimated_price,distance_km,duration_min,completed_at,created_at,driver_id,driver_name,driver_photo_url,driver_rating,driver_rating_comment,passenger_rated_at,category",
+        "id,status,origin_name,destination_name,origin_lat,origin_lng,destination_lat,destination_lng,final_price,estimated_price,distance_km,duration_min,completed_at,created_at,accepted_at,started_at,cancelled_at,driver_id,driver_name,driver_photo_url,driver_vehicle,driver_rating,driver_rating_comment,passenger_rated_at,category,payment_method,safety_code",
       )
       .eq("passenger_id", uid)
       .order("created_at", { ascending: false })
@@ -549,10 +621,17 @@ function PassengerRidesPage() {
           void load();
           setSelected(null);
         }}
+        onViewReceipt={(r) => setReceiptRide(r)}
+      />
+      <RideReceiptDialog
+        open={!!receiptRide}
+        onOpenChange={(o) => !o && setReceiptRide(null)}
+        receipt={receiptRide ? rideToReceipt(receiptRide) : null}
       />
     </div>
   );
 }
+
 
 export const Route = createFileRoute("/passageiro/corridas")({
   head: () => ({ meta: [{ title: "Minhas Corridas — MOVVI DRIVE" }] }),
