@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Avatar } from "@/components/Avatar";
+import { DriverProfessionalProfileDialog } from "@/components/profile/DriverProfessionalProfileDialog";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Circle, Marker, Polyline, useJsApiLoader } from "@react-google-maps/api";
@@ -721,6 +722,7 @@ function PassageiroApp() {
   const [ride, setRide] = useState<RideRow | null>(null);
   const [sideMenuOpen, setSideMenuOpen] = useState(false);
   const [driverInfo, setDriverInfo] = useState<DriverRow | null>(null);
+  const [driverProfileOpen, setDriverProfileOpen] = useState(false);
 
   // Solicita permissão de notificações push uma vez ao montar.
   useEffect(() => { void requestPushPermission(); }, []);
@@ -2409,7 +2411,12 @@ function PassageiroApp() {
             snaps={[26, 55, 92]}
             initial={26}
           >
-            <DriverEnRoute ride={ride} driver={rideDriverInfo} onCancel={cancelRide} />
+            <DriverEnRoute
+              ride={ride}
+              driver={rideDriverInfo}
+              onCancel={cancelRide}
+              onOpenProfile={() => setDriverProfileOpen(true)}
+            />
           </MovviSheet>
         )}
 
@@ -2494,6 +2501,11 @@ function PassageiroApp() {
         </MovviSheet>
       )}
 
+      <DriverProfessionalProfileDialog
+        open={driverProfileOpen}
+        onOpenChange={setDriverProfileOpen}
+        driverUserId={ride?.driver_id ?? rideDriverInfo?.user_id ?? null}
+      />
     </div>
   );
 }
@@ -3409,10 +3421,12 @@ function DriverEnRoute({
   ride,
   driver,
   onCancel,
+  onOpenProfile,
 }: {
   ride: RideRow;
   driver: DriverRow;
   onCancel: () => void;
+  onOpenProfile?: () => void;
 }) {
   const phaseLabel =
     ride.status === "motorista_chegou"
@@ -3481,7 +3495,12 @@ function DriverEnRoute({
         </div>
       )}
 
-      <div className="flex items-center gap-4 rounded-2xl bg-background/50 p-4 ring-1 ring-border/60">
+      <button
+        type="button"
+        onClick={onOpenProfile}
+        className="flex w-full items-center gap-4 rounded-2xl bg-background/50 p-4 text-left ring-1 ring-border/60 transition active:scale-[0.99] hover:ring-primary/40"
+        aria-label="Ver perfil do motorista"
+      >
         <div className="shrink-0 rounded-full ring-2 ring-white/85 shadow-[0_6px_18px_-6px_rgba(0,0,0,0.5)]">
           <Avatar
             src={driver.photo_url ?? null}
@@ -3507,7 +3526,8 @@ function DriverEnRoute({
             {driver.vehicle_plate}
           </div>
         </div>
-      </div>
+        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/70" />
+      </button>
 
 
       <RideQuickActions ride={ride} driver={driver} onCancel={onCancel} />

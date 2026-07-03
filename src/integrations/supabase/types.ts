@@ -1861,6 +1861,27 @@ export type Database = {
           trips_today: number
         }[]
       }
+      get_driver_public_profile: {
+        Args: { target_user_id: string }
+        Returns: {
+          approval_status: string
+          average_rating: number
+          category: string
+          city: string
+          completed_rides: number
+          is_online: boolean
+          member_since: string
+          name: string
+          photo_url: string
+          state: string
+          total_ratings: number
+          user_id: string
+          vehicle_color: string
+          vehicle_model: string
+          vehicle_plate: string
+          vehicle_year: number
+        }[]
+      }
       get_driver_stats: {
         Args: { _from: string; _to: string; _user_id: string }
         Returns: {
