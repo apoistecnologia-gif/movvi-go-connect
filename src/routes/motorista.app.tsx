@@ -125,16 +125,25 @@ function computeOfferCountdown(ride: RideRow): number {
 function subscriptionBlockMessage(status: string): string {
   switch (status) {
     case "overdue":
-      return "Assinatura em atraso. Regularize o pagamento para voltar a operar.";
     case "pending":
-      return "Assinatura pendente de confirmação. Aguarde liberação do administrador.";
+      return "Sua mensalidade está pendente. Regularize para ficar online.";
+    case "expired":
+      return "Sua mensalidade expirou. Regularize para voltar a operar.";
+    case "blocked":
     case "suspended":
-      return "Assinatura suspensa pelo administrador. Entre em contato com o suporte.";
+      return "Acesso bloqueado. Regularize sua mensalidade para continuar.";
+    case "cancelled":
+      return "Assinatura cancelada. Reative seu plano para receber corridas.";
     case "inactive":
     default:
       return "Assinatura inativa. Ative seu plano para receber corridas.";
   }
 }
+
+function subscriptionBlockIsPayable(status: string): boolean {
+  return ["overdue", "pending", "expired", "blocked", "suspended", "cancelled", "inactive"].includes(status);
+}
+
 
 function MotoristaApp() {
   const navigate = useNavigate();
