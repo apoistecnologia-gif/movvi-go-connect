@@ -86,12 +86,20 @@ export const adminRefreshAsaasPayment = createServerFn({ method: "POST" })
       localStatus = "pending";
     }
 
-    const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    const patch: {
+      updated_at: string;
+      status?: string;
+      paid_at?: string;
+      invoice_url?: string;
+    } = { updated_at: new Date().toISOString() };
     if (localStatus) patch.status = localStatus;
     if (paidAt) patch.paid_at = paidAt;
     if (payment.invoiceUrl) patch.invoice_url = payment.invoiceUrl;
 
-    await supabaseAdmin.from("subscriptions").update(patch).eq("id", sub.id);
+    await supabaseAdmin
+      .from("subscriptions")
+      .update(patch as never)
+      .eq("id", sub.id);
 
     return {
       ok: true,
