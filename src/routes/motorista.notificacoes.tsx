@@ -90,35 +90,43 @@ function DriverNotificationsPage() {
           </header>
 
           {loading ? (
-            <div className="flex items-center gap-2 py-12 text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" /> Carregando...
-            </div>
+            <ul className="space-y-2" aria-busy="true" aria-label="Carregando notificações">
+              {[0, 1, 2, 3].map((i) => (
+                <li key={i} className="rounded-2xl border border-border bg-card p-4">
+                  <div className="space-y-2">
+                    <div className="h-3.5 w-2/5 animate-pulse rounded bg-muted/50" />
+                    <div className="h-3 w-4/5 animate-pulse rounded bg-muted/40" />
+                    <div className="h-2.5 w-1/4 animate-pulse rounded bg-muted/40" />
+                  </div>
+                </li>
+              ))}
+            </ul>
           ) : items.length === 0 ? (
             <p className="rounded-2xl border border-dashed border-border bg-card/40 p-6 text-center text-sm text-muted-foreground">
               Você ainda não tem notificações.
             </p>
           ) : (
-            <ul className="space-y-2">
+            <ul className="space-y-2.5">
               {items.map((n) => (
                 <li
                   key={n.id}
-                  className={`rounded-2xl border p-3 ${n.read_at ? "border-border bg-card/60" : "border-primary/40 bg-primary/5"}`}
+                  className={`rounded-2xl border p-4 transition ${n.read_at ? "border-border bg-card/60" : "border-primary/40 bg-primary/5"}`}
                 >
-                  <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold">{n.title}</p>
-                      {n.body && <p className="mt-0.5 text-xs text-muted-foreground">{n.body}</p>}
-                      <p className="mt-1 text-[11px] text-muted-foreground">
+                      <p className="text-sm font-semibold leading-snug">{n.title}</p>
+                      {n.body && <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{n.body}</p>}
+                      <p className="mt-1.5 text-[11px] text-muted-foreground">
                         {new Date(n.created_at).toLocaleString("pt-BR")}
                       </p>
                     </div>
                     <div className="flex flex-col gap-1">
                       {!n.read_at && (
-                        <button onClick={() => markRead(n.id)} className="rounded-md p-1.5 text-primary hover:bg-primary/10" aria-label="Marcar como lida">
+                        <button onClick={() => markRead(n.id)} className="flex h-9 w-9 items-center justify-center rounded-lg text-primary transition hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50" aria-label="Marcar como lida">
                           <Check className="h-4 w-4" />
                         </button>
                       )}
-                      <button onClick={() => remove(n.id)} className="rounded-md p-1.5 text-destructive hover:bg-destructive/10" aria-label="Excluir">
+                      <button onClick={() => remove(n.id)} className="flex h-9 w-9 items-center justify-center rounded-lg text-destructive transition hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/50" aria-label="Excluir">
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
