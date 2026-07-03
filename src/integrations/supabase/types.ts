@@ -2179,6 +2179,69 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_analytics_financial: { Args: never; Returns: Json }
+      admin_analytics_new_users_timeseries: {
+        Args: { _bucket?: string; _from: string; _to: string }
+        Returns: {
+          bucket: string
+          new_drivers: number
+          new_passengers: number
+        }[]
+      }
+      admin_analytics_overview: { Args: never; Returns: Json }
+      admin_analytics_rides_timeseries: {
+        Args: { _bucket?: string; _from: string; _to: string }
+        Returns: {
+          bucket: string
+          cancelled: number
+          completed: number
+          total: number
+        }[]
+      }
+      admin_analytics_subscription_growth: {
+        Args: { _bucket?: string; _from: string; _to: string }
+        Returns: {
+          bucket: string
+          paid_count: number
+          revenue: number
+        }[]
+      }
+      admin_analytics_top_cities: {
+        Args: { _limit?: number }
+        Returns: {
+          city: string
+          rides: number
+        }[]
+      }
+      admin_analytics_top_drivers: {
+        Args: { _kind?: string; _limit?: number }
+        Returns: {
+          city: string
+          driver_id: string
+          name: string
+          rating: number
+          rides_total: number
+          value: number
+        }[]
+      }
+      admin_analytics_top_passengers: {
+        Args: { _kind?: string; _limit?: number }
+        Returns: {
+          city: string
+          name: string
+          rating: number
+          rides_total: number
+          user_id: string
+          value: number
+        }[]
+      }
+      admin_analytics_top_places: {
+        Args: { _kind?: string; _limit?: number }
+        Returns: {
+          place: string
+          rides: number
+        }[]
+      }
       auto_suspend_overdue_subscriptions: { Args: never; Returns: undefined }
       get_driver_home_kpis: {
         Args: { _user_id: string }

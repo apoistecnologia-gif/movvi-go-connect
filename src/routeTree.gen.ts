@@ -65,6 +65,7 @@ import { Route as AdminConfiguracoesRouteImport } from './routes/admin.configura
 import { Route as AdminCategoriasRouteImport } from './routes/admin.categorias'
 import { Route as AdminBackupsRouteImport } from './routes/admin.backups'
 import { Route as AdminAssinaturasRouteImport } from './routes/admin.assinaturas'
+import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 import { Route as AdminAdministradoresRouteImport } from './routes/admin.administradores'
 import { Route as MotoristaCorridasIdRouteImport } from './routes/motorista.corridas.$id'
 import { Route as ApiPublicAsaasWebhookRouteImport } from './routes/api/public/asaas-webhook'
@@ -352,6 +353,11 @@ const AdminAssinaturasRoute = AdminAssinaturasRouteImport.update({
   path: '/admin/assinaturas',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
+  id: '/admin/analytics',
+  path: '/admin/analytics',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminAdministradoresRoute = AdminAdministradoresRouteImport.update({
   id: '/admin/administradores',
   path: '/admin/administradores',
@@ -380,6 +386,7 @@ export interface FileRoutesByFullPath {
   '/download': typeof DownloadRoute
   '/map-test': typeof MapTestRoute
   '/admin/administradores': typeof AdminAdministradoresRoute
+  '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/assinaturas': typeof AdminAssinaturasRoute
   '/admin/backups': typeof AdminBackupsRoute
   '/admin/categorias': typeof AdminCategoriasRoute
@@ -442,6 +449,7 @@ export interface FileRoutesByTo {
   '/download': typeof DownloadRoute
   '/map-test': typeof MapTestRoute
   '/admin/administradores': typeof AdminAdministradoresRoute
+  '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/assinaturas': typeof AdminAssinaturasRoute
   '/admin/backups': typeof AdminBackupsRoute
   '/admin/categorias': typeof AdminCategoriasRoute
@@ -505,6 +513,7 @@ export interface FileRoutesById {
   '/download': typeof DownloadRoute
   '/map-test': typeof MapTestRoute
   '/admin/administradores': typeof AdminAdministradoresRoute
+  '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/assinaturas': typeof AdminAssinaturasRoute
   '/admin/backups': typeof AdminBackupsRoute
   '/admin/categorias': typeof AdminCategoriasRoute
@@ -569,6 +578,7 @@ export interface FileRouteTypes {
     | '/download'
     | '/map-test'
     | '/admin/administradores'
+    | '/admin/analytics'
     | '/admin/assinaturas'
     | '/admin/backups'
     | '/admin/categorias'
@@ -631,6 +641,7 @@ export interface FileRouteTypes {
     | '/download'
     | '/map-test'
     | '/admin/administradores'
+    | '/admin/analytics'
     | '/admin/assinaturas'
     | '/admin/backups'
     | '/admin/categorias'
@@ -693,6 +704,7 @@ export interface FileRouteTypes {
     | '/download'
     | '/map-test'
     | '/admin/administradores'
+    | '/admin/analytics'
     | '/admin/assinaturas'
     | '/admin/backups'
     | '/admin/categorias'
@@ -756,6 +768,7 @@ export interface RootRouteChildren {
   DownloadRoute: typeof DownloadRoute
   MapTestRoute: typeof MapTestRoute
   AdminAdministradoresRoute: typeof AdminAdministradoresRoute
+  AdminAnalyticsRoute: typeof AdminAnalyticsRoute
   AdminAssinaturasRoute: typeof AdminAssinaturasRoute
   AdminBackupsRoute: typeof AdminBackupsRoute
   AdminCategoriasRoute: typeof AdminCategoriasRoute
@@ -1206,6 +1219,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAssinaturasRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/analytics': {
+      id: '/admin/analytics'
+      path: '/admin/analytics'
+      fullPath: '/admin/analytics'
+      preLoaderRoute: typeof AdminAnalyticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/administradores': {
       id: '/admin/administradores'
       path: '/admin/administradores'
@@ -1254,6 +1274,7 @@ const rootRouteChildren: RootRouteChildren = {
   DownloadRoute: DownloadRoute,
   MapTestRoute: MapTestRoute,
   AdminAdministradoresRoute: AdminAdministradoresRoute,
+  AdminAnalyticsRoute: AdminAnalyticsRoute,
   AdminAssinaturasRoute: AdminAssinaturasRoute,
   AdminBackupsRoute: AdminBackupsRoute,
   AdminCategoriasRoute: AdminCategoriasRoute,
