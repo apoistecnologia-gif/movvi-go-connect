@@ -11,6 +11,7 @@ import {
   Settings,
   FileBarChart,
   Map as MapIcon,
+  Radio,
   ShieldCheck,
   LogOut,
   Layers,
@@ -29,6 +30,7 @@ type Item = { to: string; label: string; icon: LucideIcon };
 export const ADMIN_NAV: Item[] = [
   { to: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/admin/mapa", label: "Mapa ao vivo", icon: MapIcon },
+  { to: "/admin/operacoes", label: "Central de Operações", icon: Radio },
   { to: "/admin/motoristas", label: "Motoristas", icon: Car },
   { to: "/admin/passageiros", label: "Passageiros", icon: Users },
   { to: "/admin/corridas", label: "Corridas", icon: RouteIcon },
