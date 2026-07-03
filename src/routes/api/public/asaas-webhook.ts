@@ -51,6 +51,9 @@ export const Route = createFileRoute("/api/public/asaas-webhook")({
 
         if (!sub) return new Response("subscription_not_found", { status: 200 });
 
+        // Single source of truth: only write to `subscriptions`. A DB trigger
+        // (`trg_sync_driver_subscription`) mirrors the change into
+        // `drivers.subscription_status` + `drivers.subscription_expires_at`.
         if (parsed.status === "paid") {
           const periodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
           await supabaseAdmin
@@ -61,24 +64,10 @@ export const Route = createFileRoute("/api/public/asaas-webhook")({
               period_end: periodEnd,
             })
             .eq("id", sub.id);
-          await supabaseAdmin
-            .from("drivers")
-            .update({
-              subscription_status: "active",
-              subscription_expires_at: periodEnd,
-            })
-            .eq("id", sub.driver_id);
         } else if (parsed.status === "expired") {
           await supabaseAdmin.from("subscriptions").update({ status: "expired" }).eq("id", sub.id);
-          await supabaseAdmin
-            .from("drivers")
-            .update({ subscription_status: "expired" })
-            .eq("id", sub.driver_id);
         } else if (parsed.status === "failed") {
-          await supabaseAdmin
-            .from("drivers")
-            .update({ subscription_status: "blocked" })
-            .eq("id", sub.driver_id);
+          await supabaseAdmin.from("subscriptions").update({ status: "blocked" }).eq("id", sub.id);
         } else if (parsed.status === "refunded") {
           await supabaseAdmin.from("subscriptions").update({ status: "cancelled" }).eq("id", sub.id);
         }
