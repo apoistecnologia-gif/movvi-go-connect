@@ -5,6 +5,7 @@ import {
   ClipboardList,
   DollarSign,
   Home,
+  LifeBuoy,
   Loader2,
   Lock,
   LogOut,
@@ -43,6 +44,7 @@ const NAV_LINKS = [
   { to: "/motorista/notificacoes", label: "Notificações", icon: Bell },
   { to: "/motorista/seguranca", label: "Segurança & SOS", icon: ShieldAlert },
   { to: "/motorista/status", label: "Status do cadastro", icon: ShieldCheck },
+  { to: "/motorista/suporte", label: "Central de ajuda", icon: LifeBuoy },
   { to: "/motorista/configuracoes", label: "Configurações", icon: Settings },
 ] as const;
 

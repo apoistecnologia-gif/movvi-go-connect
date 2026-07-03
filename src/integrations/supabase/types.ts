@@ -1791,6 +1791,7 @@ export type Database = {
           subject: string
           updated_at: string
           user_id: string
+          user_type: string
         }
         Insert: {
           category?: string
@@ -1802,6 +1803,7 @@ export type Database = {
           subject: string
           updated_at?: string
           user_id: string
+          user_type?: string
         }
         Update: {
           category?: string
@@ -1813,6 +1815,7 @@ export type Database = {
           subject?: string
           updated_at?: string
           user_id?: string
+          user_type?: string
         }
         Relationships: []
       }
