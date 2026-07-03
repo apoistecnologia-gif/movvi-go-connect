@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { Loader2, Plus, Trash2, Save, ShieldCheck } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
@@ -8,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { logAdminAction } from "@/lib/adminAudit";
+import { grantAdminRole, revokeAdminRole } from "@/lib/adminRoles.functions";
 import { formatDate } from "@/lib/formatters";
 
 export const Route = createFileRoute("/admin/administradores")({
@@ -18,6 +20,13 @@ export const Route = createFileRoute("/admin/administradores")({
 const ROLES = ["super_admin", "admin", "financial", "operations", "support", "readonly"] as const;
 type Role = (typeof ROLES)[number];
 
+function mapRoleError(msg: string): string {
+  if (msg === "forbidden") return "Apenas administradores podem alterar permissões.";
+  if (msg === "cannot_revoke_self_admin") return "Você não pode remover sua própria permissão de admin.";
+  if (msg === "invalid_role" || msg === "invalid_user_id") return "Dados inválidos.";
+  return msg;
+}
+
 type AdminRow = {
   user_id: string;
   roles: Role[];
@@ -27,6 +36,8 @@ type AdminRow = {
 };
 
 function AdminUsersPage() {
+  const grantRole = useServerFn(grantAdminRole);
+  const revokeRole = useServerFn(revokeAdminRole);
   const [rows, setRows] = useState<AdminRow[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -77,14 +88,20 @@ function AdminUsersPage() {
   }, []);
 
   async function addRole(userId: string, role: Role) {
-    const { error } = await supabase.from("user_roles").insert({ user_id: userId, role });
-    if (error) return toast.error(error.message);
-    await logAdminAction({ action: "admin.add_role", entity: "user_roles", entity_id: userId, after: { role } });
+    try {
+      await grantRole({ data: { userId, role } });
+      await logAdminAction({ action: "admin.add_role", entity: "user_roles", entity_id: userId, after: { role } });
+    } catch (e) {
+      toast.error(e instanceof Error ? mapRoleError(e.message) : "Falha ao conceder permissão");
+    }
   }
   async function removeRole(userId: string, role: Role) {
-    const { error } = await supabase.from("user_roles").delete().eq("user_id", userId).eq("role", role);
-    if (error) return toast.error(error.message);
-    await logAdminAction({ action: "admin.remove_role", entity: "user_roles", entity_id: userId, before: { role } });
+    try {
+      await revokeRole({ data: { userId, role } });
+      await logAdminAction({ action: "admin.remove_role", entity: "user_roles", entity_id: userId, before: { role } });
+    } catch (e) {
+      toast.error(e instanceof Error ? mapRoleError(e.message) : "Falha ao remover permissão");
+    }
   }
   async function inviteByUserId() {
     const id = prompt("auth_user_id do usuário (precisa já estar cadastrado):")?.trim();
