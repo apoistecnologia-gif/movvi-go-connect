@@ -2057,3 +2057,53 @@ function RatingScreen({
     </div>
   );
 }
+
+/* ============================================================
+   TOP FLOATING GLASS STAT (usado na fase "a caminho")
+   ============================================================ */
+function TopStat({
+  icon, value, unit, label, highlight,
+}: { icon: React.ReactNode; value: string; unit?: string; label: string; highlight?: boolean }) {
+  return (
+    <div className="flex min-w-0 flex-1 flex-col items-center">
+      <div className={`flex items-center gap-1.5 ${highlight ? "text-primary" : "text-foreground/85"}`}>
+        {icon}
+        <span className="text-[17px] font-extrabold tabular-nums leading-none">{value}</span>
+        {unit && <span className="text-[11px] font-semibold uppercase tracking-wider opacity-70">{unit}</span>}
+      </div>
+      <div className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{label}</div>
+    </div>
+  );
+}
+
+/* ============================================================
+   CIRCULAR SECONDARY ACTION (Call / Chat / Navigate)
+   ============================================================ */
+function CircleAction({
+  icon: Icon, label, onClick, href, target, disabled,
+}: {
+  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+  label: string;
+  onClick?: () => void;
+  href?: string;
+  target?: string;
+  disabled?: boolean;
+}) {
+  const cls =
+    "press-scale flex h-12 w-12 items-center justify-center rounded-full bg-background ring-1 ring-border shadow-[0_8px_20px_-12px_rgba(0,0,0,0.25)] text-foreground transition hover:bg-muted/40 disabled:opacity-40 disabled:pointer-events-none";
+  const content = <Icon className="h-[19px] w-[19px]" strokeWidth={1.75} />;
+  return (
+    <div className="flex flex-col items-center gap-1.5">
+      {href && !disabled ? (
+        <a href={href} target={target} rel={target === "_blank" ? "noreferrer" : undefined} aria-label={label} className={cls}>
+          {content}
+        </a>
+      ) : (
+        <button type="button" onClick={onClick} disabled={disabled} aria-label={label} className={cls}>
+          {content}
+        </button>
+      )}
+      <span className="sr-only">{label}</span>
+    </div>
+  );
+}
