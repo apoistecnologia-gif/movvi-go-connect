@@ -194,7 +194,7 @@ function AdminCorridasPage() {
     if (to) query = query.lt("created_at", to);
     if (status !== "all") query = query.eq("status", status);
     if (payment !== "all") query = query.eq("payment_method", payment);
-    if (category !== "all") query = query.eq("category", category);
+    if (category !== "all") query = query.eq("category", category as never);
     const { data, error } = await query;
     if (error) toast.error(error.message);
     setRows((data ?? []) as Ride[]);
