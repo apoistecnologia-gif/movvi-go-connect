@@ -168,31 +168,30 @@ function PremiumTopBar({
 
 
   return (
-    <div className="absolute inset-x-0 top-0 z-40 px-3 pt-[calc(env(safe-area-inset-top)+10px)]">
-      <div className="mx-auto flex max-w-5xl items-center gap-3 rounded-[22px] bg-card/80 px-3 py-2.5 shadow-[0_10px_32px_-14px_rgba(0,0,0,0.55)] ring-1 ring-border/40 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-500">
+    <div className="absolute inset-x-0 top-0 z-40 px-4 pt-[calc(env(safe-area-inset-top)+12px)]">
+      <div className="mx-auto flex max-w-5xl items-center gap-3 rounded-[24px] border border-border/60 bg-card/85 px-3.5 py-2.5 shadow-[0_10px_28px_-16px_rgba(15,23,42,0.28)] backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
         <button
           onClick={onOpenMenu}
           aria-label="Abrir menu"
-          className="active-press inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-muted-foreground/90 transition hover:bg-muted/50 hover:text-foreground"
+          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-foreground/80 transition hover:bg-[#76C139]/10 hover:text-[#76C139] active:scale-[0.95]"
         >
           <Menu className="h-[18px] w-[18px]" strokeWidth={1.75} />
         </button>
-        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-muted/40 text-muted-foreground/90">
-          <GIcon className="h-[16px] w-[16px]" strokeWidth={1.75} />
-        </div>
         <div className="min-w-0 flex-1">
-          <div className={`${greetingClass} font-normal leading-tight tracking-tight text-foreground/90`}>
-            {greet}, <span className="font-semibold text-foreground">{fname}</span>
+          <div className={`${greetingClass} flex items-center gap-1.5 font-normal leading-tight tracking-tight text-[#707070]`}>
+            <GIcon className="h-[13px] w-[13px] text-[#76C139]" strokeWidth={2} />
+            <span>{greet},</span>
+            <span className="truncate font-semibold text-[#1B1B1B]">{fname}</span>
           </div>
-          <div className="mt-1 flex items-center gap-1.5 truncate text-[11px] text-muted-foreground">
-            <span className="text-[11px] leading-none opacity-80">{statusIcon}</span>
+          <div className="mt-1 flex items-center gap-1.5 truncate text-[12px] text-[#707070]">
+            <MapPin className="h-[12px] w-[12px] shrink-0 text-[#76C139]" strokeWidth={2} />
             <span className="truncate">{statusText}</span>
           </div>
         </div>
         <button
           onClick={onLogout}
           aria-label="Sair"
-          className="active-press inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground/70 transition hover:bg-destructive/10 hover:text-destructive"
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#707070] transition hover:bg-destructive/10 hover:text-destructive active:scale-[0.95]"
         >
           <LogOut className="h-[16px] w-[16px]" strokeWidth={1.75} />
         </button>
@@ -2226,14 +2225,14 @@ function PassageiroApp() {
         onLogout={handleLogout}
       />
 
-      {/* Floating controls */}
-      <div className="pointer-events-none absolute right-3 z-30" style={{ bottom: "calc(24vh + 12px)" }}>
+      {/* Floating recenter — 56px, glass, MOVVI DS */}
+      <div className="pointer-events-none absolute right-4 z-30" style={{ bottom: "calc(24vh + 16px)" }}>
         <button
           onClick={recenter}
-          className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-card text-foreground shadow-2xl ring-1 ring-border transition active:scale-90 hover:scale-105"
+          className="pointer-events-auto flex h-14 w-14 items-center justify-center rounded-full border border-border/60 bg-card/90 text-[#76C139] shadow-[0_12px_28px_-14px_rgba(15,23,42,0.35)] backdrop-blur-xl transition active:scale-[0.92] hover:scale-105"
           aria-label="Recentralizar"
         >
-          <Crosshair className="h-5 w-5 text-primary" />
+          <Crosshair className="h-[22px] w-[22px]" strokeWidth={2} />
         </button>
       </div>
 
@@ -2532,23 +2531,17 @@ function FavoritesStrip({ onPick }: { onPick: (point: LatLng, label: string) => 
   const navigate = useNavigate();
 
   return (
-    <div className="-mx-1 mb-2 flex items-center gap-2 overflow-x-auto px-1 pb-1">
+    <div className="-mx-1 mb-3 flex items-center gap-2 overflow-x-auto px-1 pb-1">
       {items.slice(0, 6).map((f) => {
         const Icon = f.kind === "home" ? HomeIcon : f.kind === "work" ? Briefcase : Heart;
-        const color =
-          f.kind === "home"
-            ? "text-[#8DD92B]"
-            : f.kind === "work"
-              ? "text-blue-400"
-              : "text-pink-400";
         return (
           <button
             key={f.id}
             type="button"
             onClick={() => onPick({ lat: f.lat, lng: f.lng }, f.address)}
-            className="flex shrink-0 items-center gap-2 rounded-full border border-border/60 bg-background/60 px-3 py-2 text-xs font-semibold transition hover:border-primary/50"
+            className="flex shrink-0 items-center gap-2 rounded-full border border-border/60 bg-card px-3.5 py-2 text-[13px] font-semibold text-[#1B1B1B] shadow-[0_4px_14px_-10px_rgba(15,23,42,0.2)] transition hover:border-[#76C139]/50 hover:bg-[#76C139]/5 active:scale-[0.97]"
           >
-            <Icon className={`h-4 w-4 ${color}`} />
+            <Icon className="h-4 w-4 text-[#76C139]" strokeWidth={2} />
             <span className="max-w-[140px] truncate">{f.label}</span>
           </button>
         );
@@ -2556,9 +2549,9 @@ function FavoritesStrip({ onPick }: { onPick: (point: LatLng, label: string) => 
       <button
         type="button"
         onClick={() => navigate({ to: "/passageiro/favoritos" })}
-        className="flex shrink-0 items-center gap-2 rounded-full border border-dashed border-border/60 px-3 py-2 text-xs font-semibold text-muted-foreground transition hover:border-primary/50 hover:text-foreground"
+        className="flex shrink-0 items-center gap-2 rounded-full border border-dashed border-border/70 px-3.5 py-2 text-[13px] font-semibold text-[#707070] transition hover:border-[#76C139]/50 hover:text-[#1B1B1B] active:scale-[0.97]"
       >
-        <Heart className="h-4 w-4" />
+        <Heart className="h-4 w-4" strokeWidth={2} />
         <span>{items.length === 0 ? "Adicionar favoritos" : "Gerenciar"}</span>
       </button>
     </div>
@@ -2714,44 +2707,44 @@ function SheetContent({
               onOpenAddressDetails();
             }
           }}
-          className="mb-2.5 flex w-full cursor-pointer items-center gap-2.5 rounded-2xl bg-primary/10 px-3 py-2 text-left ring-1 ring-primary/30 transition active:scale-[0.99] hover:bg-primary/15"
+          className="mb-3 flex w-full cursor-pointer items-center gap-3 rounded-[24px] border border-border/60 bg-card px-4 py-3 text-left shadow-[0_8px_24px_-16px_rgba(15,23,42,0.18)] transition active:scale-[0.99] hover:border-[#76C139]/40 animate-in fade-in slide-in-from-bottom-1 duration-300"
         >
-          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
-            <MapPin className="h-4 w-4" />
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#76C139]/10 text-[#76C139]">
+            <MapPin className="h-[18px] w-[18px]" strokeWidth={2} />
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between gap-2">
-              <div className="text-[9px] font-semibold uppercase tracking-widest text-primary leading-none">
-                📍 Seu local de embarque
+              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#76C139] leading-none">
+                Local de embarque
               </div>
               {hasPosition && (
-                <span className="text-[9px] font-bold uppercase tracking-wider text-primary/80">
-                  Ajustar local
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-[#707070]">
+                  Ajustar
                 </span>
               )}
             </div>
             {addressStatus === "loading" && !pickupAddressLine ? (
-              <div className="mt-0.5 truncate text-[12.5px] font-semibold leading-tight text-foreground">
+              <div className="mt-1 truncate text-[14px] font-semibold leading-tight text-[#1B1B1B]">
                 Localização atual
               </div>
             ) : pickupAddressLine ? (
               <>
-                <div className="mt-0.5 truncate text-[13.5px] font-bold leading-tight text-foreground">
+                <div className="mt-1 truncate text-[15px] font-semibold leading-tight text-[#1B1B1B]">
                   {pickupAddressLine}
                 </div>
                 {pickupSubLine && pickupSubLine !== pickupAddressLine ? (
-                  <div className="truncate text-[12px] leading-tight text-foreground/80">
+                  <div className="truncate text-[12.5px] leading-tight text-[#707070]">
                     {pickupSubLine}
                   </div>
                 ) : (
                   <>
                     {bairro && bairro !== pickupAddressLine && (
-                      <div className="truncate text-[12px] leading-tight text-foreground/80">
+                      <div className="truncate text-[12.5px] leading-tight text-[#707070]">
                         {bairro}
                       </div>
                     )}
                     {region && region !== pickupAddressLine && (
-                      <div className="truncate text-[11.5px] font-medium leading-tight text-muted-foreground">
+                      <div className="truncate text-[12px] leading-tight text-[#707070]">
                         {region}
                       </div>
                     )}
@@ -2759,11 +2752,11 @@ function SheetContent({
                 )}
               </>
             ) : hasPosition ? (
-              <div className="mt-0.5 truncate text-[12.5px] font-semibold leading-tight text-foreground">
+              <div className="mt-1 truncate text-[14px] font-semibold leading-tight text-[#1B1B1B]">
                 Localização atual
               </div>
             ) : (
-              <div className="mt-0.5 truncate text-[12px] font-medium leading-tight text-muted-foreground">
+              <div className="mt-1 truncate text-[13px] leading-tight text-[#707070]">
                 Endereço não identificado
               </div>
             )}
@@ -2777,11 +2770,11 @@ function SheetContent({
             disabled={gpsRequesting}
             aria-label="Atualizar GPS"
             title="Atualizar GPS"
-            className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary/20 text-primary ring-1 ring-primary/30 transition hover:bg-primary/30 active:scale-90 disabled:opacity-60"
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#76C139]/10 text-[#76C139] transition hover:bg-[#76C139]/20 active:scale-[0.92] disabled:opacity-60"
           >
-            <Crosshair className={`h-4 w-4 ${gpsRequesting ? "animate-spin" : ""}`} />
+            <Crosshair className={`h-[16px] w-[16px] ${gpsRequesting ? "animate-spin" : ""}`} strokeWidth={2} />
           </button>
-          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <ChevronRight className="h-4 w-4 shrink-0 text-[#707070]" />
         </div>
       )}
 
@@ -2789,36 +2782,43 @@ function SheetContent({
 
 
 
-      {/* "Para onde você vai?" — só aparece antes de confirmar um destino. */}
+      {/* Hero search — "Para onde você vai?" */}
       {showDestinationInput && (
-        <div className="mb-2">
-          <div className="flex items-center gap-3 rounded-2xl bg-background/80 px-4 py-3.5 ring-1 ring-border focus-within:ring-primary/60">
-            <Search className="h-5 w-5 shrink-0 text-primary" />
-            <input
-              ref={searchInputRef}
-              value={destinationText}
-              onChange={(e) => {
-                if (destination) onClearDestination();
-                setDestinationText(e.target.value);
-              }}
-              onFocus={onFocusSearch}
-              placeholder="Para onde você vai?"
-              className="min-w-0 flex-1 bg-transparent text-[15px] font-semibold outline-none placeholder:text-muted-foreground/80"
-            />
-            {destinationText && (
-              <button
-                type="button"
-                onClick={() => {
-                  setDestinationText("");
-                  onClearDestination();
-                  searchInputRef.current?.focus();
+        <div className="mb-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div className="rounded-[24px] border border-border/60 bg-card px-4 py-4 shadow-[0_8px_24px_-16px_rgba(15,23,42,0.18)] transition focus-within:border-[#76C139]/60 focus-within:shadow-[0_12px_28px_-14px_rgba(118,193,57,0.28)]">
+            <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#707070]">
+              Destino
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#76C139]/10 text-[#76C139]">
+                <Search className="h-[18px] w-[18px]" strokeWidth={2} />
+              </span>
+              <input
+                ref={searchInputRef}
+                value={destinationText}
+                onChange={(e) => {
+                  if (destination) onClearDestination();
+                  setDestinationText(e.target.value);
                 }}
-                aria-label="Limpar"
-                className="rounded-full p-1 text-muted-foreground hover:bg-accent/30"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
+                onFocus={onFocusSearch}
+                placeholder="Para onde você vai?"
+                className="min-w-0 flex-1 bg-transparent text-[18px] font-semibold text-[#1B1B1B] outline-none placeholder:text-[#707070]/80"
+              />
+              {destinationText && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDestinationText("");
+                    onClearDestination();
+                    searchInputRef.current?.focus();
+                  }}
+                  aria-label="Limpar"
+                  className="grid h-8 w-8 place-items-center rounded-full text-[#707070] transition hover:bg-[#F7F9F7] active:scale-[0.92]"
+                >
+                  <X className="h-4 w-4" strokeWidth={2} />
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -2832,21 +2832,21 @@ function SheetContent({
 
       {/* Sugestões ao vivo */}
       {showDestinationInput && suggestions.length > 0 && !destination && (
-        <ul className="-mx-1 mb-2 space-y-1">
+        <ul className="-mx-1 mb-2 space-y-1 animate-in fade-in duration-200">
           {suggestions.map((s) => (
             <li key={s.placeId}>
               <button
                 type="button"
                 onClick={() => onPick(s)}
-                className="flex w-full items-start gap-3 rounded-xl px-3 py-3 text-left transition hover:bg-accent/30 active:scale-[0.99]"
+                className="flex w-full items-start gap-3 rounded-2xl px-3 py-3 text-left transition hover:bg-[#F7F9F7] active:scale-[0.99]"
               >
-                <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/15 text-primary">
-                  <MapPin className="h-4 w-4" />
+                <span className="mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#76C139]/10 text-[#76C139]">
+                  <MapPin className="h-[16px] w-[16px]" strokeWidth={2} />
                 </span>
                 <span className="flex min-w-0 flex-col">
-                  <span className="truncate text-sm font-semibold">{s.primary}</span>
+                  <span className="truncate text-[15px] font-semibold text-[#1B1B1B]">{s.primary}</span>
                   {s.secondary && (
-                    <span className="truncate text-xs text-muted-foreground">
+                    <span className="truncate text-[12.5px] text-[#707070]">
                       {s.secondary}
                     </span>
                   )}
@@ -2857,14 +2857,14 @@ function SheetContent({
         </ul>
       )}
 
-      {/* SEM destino: dica discreta — sem categorias aqui */}
+      {/* Dica sem destino */}
       {showDestinationInput && !destination && suggestions.length === 0 && (
-        <div className="mb-1 mt-1 rounded-2xl border border-dashed border-border/70 bg-background/40 px-4 py-3 text-center">
-          <p className="text-[12px] leading-snug text-muted-foreground">
-            Informe o destino para ver as opções de{" "}
-            <span className="font-semibold text-foreground">Corridas</span>,{" "}
-            <span className="font-semibold text-foreground">Envios</span> e{" "}
-            <span className="font-semibold text-foreground">Serviços</span>{" "}
+        <div className="mt-2 rounded-[20px] border border-dashed border-border/70 bg-[#F7F9F7]/60 px-4 py-3.5 text-center animate-in fade-in duration-300">
+          <p className="text-[12.5px] leading-snug text-[#707070]">
+            Informe o destino para ver{" "}
+            <span className="font-semibold text-[#1B1B1B]">Corridas</span>,{" "}
+            <span className="font-semibold text-[#1B1B1B]">Envios</span> e{" "}
+            <span className="font-semibold text-[#1B1B1B]">Serviços</span>{" "}
             disponíveis no trajeto.
           </p>
         </div>
