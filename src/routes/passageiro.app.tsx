@@ -2411,7 +2411,12 @@ function PassageiroApp() {
             snaps={[26, 55, 92]}
             initial={26}
           >
-            <DriverEnRoute ride={ride} driver={rideDriverInfo} onCancel={cancelRide} />
+            <DriverEnRoute
+              ride={ride}
+              driver={rideDriverInfo}
+              onCancel={cancelRide}
+              onOpenProfile={() => setDriverProfileOpen(true)}
+            />
           </MovviSheet>
         )}
 
