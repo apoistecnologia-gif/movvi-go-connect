@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { Plus, Loader2, Trash2, Save } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
@@ -11,6 +12,18 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { logAdminAction } from "@/lib/adminAudit";
 import { formatDate } from "@/lib/formatters";
+import {
+  createCoupon,
+  updateCoupon,
+  setCouponEnabled,
+  deleteCoupon,
+} from "@/lib/adminCoupons.functions";
+
+function mapAdminError(msg: string): string {
+  if (msg === "forbidden") return "Ação restrita a administradores.";
+  if (/invalid_|^Required$|uuid/i.test(msg)) return "Dados inválidos.";
+  return msg;
+}
 
 export const Route = createFileRoute("/admin/cupons")({
   head: () => ({ meta: [{ title: "Promoções — Admin MOVVI" }] }),
