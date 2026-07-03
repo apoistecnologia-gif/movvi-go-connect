@@ -854,7 +854,7 @@ function PassengerDetail({
                 title="Alertas SOS"
                 items={sos.map((t) => ({
                   key: t.id,
-                  label: t.status ?? "SOS",
+                  label: t.resolved_at ? "Resolvido" : "Ativo",
                   meta: formatDate(t.created_at),
                 }))}
               />
