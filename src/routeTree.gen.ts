@@ -45,6 +45,7 @@ import { Route as MotoristaAssinaturaRouteImport } from './routes/motorista.assi
 import { Route as MotoristaAppRouteImport } from './routes/motorista.app'
 import { Route as DevRatingTestRouteImport } from './routes/dev.rating-test'
 import { Route as DebugMotoristaAuthRouteImport } from './routes/debug.motorista-auth'
+import { Route as AdminSuporteRouteImport } from './routes/admin.suporte'
 import { Route as AdminSegurancaRouteImport } from './routes/admin.seguranca'
 import { Route as AdminRelatoriosRouteImport } from './routes/admin.relatorios'
 import { Route as AdminPrecosRouteImport } from './routes/admin.precos'
@@ -250,6 +251,11 @@ const DebugMotoristaAuthRoute = DebugMotoristaAuthRouteImport.update({
   path: '/debug/motorista-auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminSuporteRoute = AdminSuporteRouteImport.update({
+  id: '/admin/suporte',
+  path: '/admin/suporte',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminSegurancaRoute = AdminSegurancaRouteImport.update({
   id: '/admin/seguranca',
   path: '/admin/seguranca',
@@ -386,6 +392,7 @@ export interface FileRoutesByFullPath {
   '/admin/precos': typeof AdminPrecosRoute
   '/admin/relatorios': typeof AdminRelatoriosRoute
   '/admin/seguranca': typeof AdminSegurancaRoute
+  '/admin/suporte': typeof AdminSuporteRoute
   '/debug/motorista-auth': typeof DebugMotoristaAuthRoute
   '/dev/rating-test': typeof DevRatingTestRoute
   '/motorista/app': typeof MotoristaAppRoute
@@ -446,6 +453,7 @@ export interface FileRoutesByTo {
   '/admin/precos': typeof AdminPrecosRoute
   '/admin/relatorios': typeof AdminRelatoriosRoute
   '/admin/seguranca': typeof AdminSegurancaRoute
+  '/admin/suporte': typeof AdminSuporteRoute
   '/debug/motorista-auth': typeof DebugMotoristaAuthRoute
   '/dev/rating-test': typeof DevRatingTestRoute
   '/motorista/app': typeof MotoristaAppRoute
@@ -507,6 +515,7 @@ export interface FileRoutesById {
   '/admin/precos': typeof AdminPrecosRoute
   '/admin/relatorios': typeof AdminRelatoriosRoute
   '/admin/seguranca': typeof AdminSegurancaRoute
+  '/admin/suporte': typeof AdminSuporteRoute
   '/debug/motorista-auth': typeof DebugMotoristaAuthRoute
   '/dev/rating-test': typeof DevRatingTestRoute
   '/motorista/app': typeof MotoristaAppRoute
@@ -569,6 +578,7 @@ export interface FileRouteTypes {
     | '/admin/precos'
     | '/admin/relatorios'
     | '/admin/seguranca'
+    | '/admin/suporte'
     | '/debug/motorista-auth'
     | '/dev/rating-test'
     | '/motorista/app'
@@ -629,6 +639,7 @@ export interface FileRouteTypes {
     | '/admin/precos'
     | '/admin/relatorios'
     | '/admin/seguranca'
+    | '/admin/suporte'
     | '/debug/motorista-auth'
     | '/dev/rating-test'
     | '/motorista/app'
@@ -689,6 +700,7 @@ export interface FileRouteTypes {
     | '/admin/precos'
     | '/admin/relatorios'
     | '/admin/seguranca'
+    | '/admin/suporte'
     | '/debug/motorista-auth'
     | '/dev/rating-test'
     | '/motorista/app'
@@ -750,6 +762,7 @@ export interface RootRouteChildren {
   AdminPrecosRoute: typeof AdminPrecosRoute
   AdminRelatoriosRoute: typeof AdminRelatoriosRoute
   AdminSegurancaRoute: typeof AdminSegurancaRoute
+  AdminSuporteRoute: typeof AdminSuporteRoute
   DebugMotoristaAuthRoute: typeof DebugMotoristaAuthRoute
   DevRatingTestRoute: typeof DevRatingTestRoute
   MotoristaAppRoute: typeof MotoristaAppRoute
@@ -1040,6 +1053,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DebugMotoristaAuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/suporte': {
+      id: '/admin/suporte'
+      path: '/admin/suporte'
+      fullPath: '/admin/suporte'
+      preLoaderRoute: typeof AdminSuporteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/seguranca': {
       id: '/admin/seguranca'
       path: '/admin/seguranca'
@@ -1232,6 +1252,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminPrecosRoute: AdminPrecosRoute,
   AdminRelatoriosRoute: AdminRelatoriosRoute,
   AdminSegurancaRoute: AdminSegurancaRoute,
+  AdminSuporteRoute: AdminSuporteRoute,
   DebugMotoristaAuthRoute: DebugMotoristaAuthRoute,
   DevRatingTestRoute: DevRatingTestRoute,
   MotoristaAppRoute: MotoristaAppRoute,
