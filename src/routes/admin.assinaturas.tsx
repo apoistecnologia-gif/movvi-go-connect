@@ -32,6 +32,7 @@ import { toast } from "sonner";
 import { logAdminAction } from "@/lib/adminAudit";
 import { formatBRL, formatDate } from "@/lib/formatters";
 import { adminRefreshAsaasPayment } from "@/lib/payments/adminReconcile.functions";
+import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 
 export const Route = createFileRoute("/admin/assinaturas")({
   head: () => ({ meta: [{ title: "Assinaturas — Admin MOVVI" }] }),
