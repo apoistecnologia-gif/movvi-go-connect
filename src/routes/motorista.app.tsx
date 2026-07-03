@@ -124,10 +124,16 @@ function computeOfferCountdown(ride: RideRow): number {
 
 function paymentLabelFor(method: string | null | undefined): string {
   switch (method) {
-    case "cash": return "Dinheiro";
-    case "pix": return "PIX";
-    case "card": return "Cartão";
-    default: return method ?? "—";
+    case "dinheiro":
+    case "cash":
+      return "Dinheiro";
+    case "pix":
+      return "PIX";
+    case "cartao_credito":
+    case "card":
+      return "Cartão de crédito";
+    default:
+      return method ?? "—";
   }
 }
 
