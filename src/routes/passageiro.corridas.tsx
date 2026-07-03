@@ -522,6 +522,7 @@ function PassengerRidesPage() {
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterKey>("todas");
   const [selected, setSelected] = useState<RideRow | null>(null);
+  const [receiptRide, setReceiptRide] = useState<RideRow | null>(null);
 
   async function load() {
     const { data: auth } = await supabase.auth.getUser();
