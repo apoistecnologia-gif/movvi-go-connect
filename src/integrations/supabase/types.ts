@@ -1876,12 +1876,46 @@ export type Database = {
           },
         ]
       }
+      support_ticket_notes: {
+        Row: {
+          admin_id: string
+          created_at: string
+          id: string
+          note: string
+          ticket_id: string
+        }
+        Insert: {
+          admin_id: string
+          created_at?: string
+          id?: string
+          note: string
+          ticket_id: string
+        }
+        Update: {
+          admin_id?: string
+          created_at?: string
+          id?: string
+          note?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_ticket_notes_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       support_tickets: {
         Row: {
+          admin_status_note: string | null
           category: string
           created_at: string
           description: string
           id: string
+          priority: string
           ride_id: string | null
           status: string
           subject: string
@@ -1890,10 +1924,12 @@ export type Database = {
           user_type: string
         }
         Insert: {
+          admin_status_note?: string | null
           category?: string
           created_at?: string
           description: string
           id?: string
+          priority?: string
           ride_id?: string | null
           status?: string
           subject: string
@@ -1902,10 +1938,12 @@ export type Database = {
           user_type?: string
         }
         Update: {
+          admin_status_note?: string | null
           category?: string
           created_at?: string
           description?: string
           id?: string
+          priority?: string
           ride_id?: string | null
           status?: string
           subject?: string
