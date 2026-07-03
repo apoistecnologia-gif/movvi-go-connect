@@ -1578,16 +1578,18 @@ function ActiveRidePanel({
         }}
       />
 
-      {/* CTA conforme fase */}
-      {phase === "motorista_a_caminho" && (
-        <ActionButton label="Cheguei ao local" onClick={onArrive} icon={MapPin} />
-      )}
-      {phase === "motorista_chegou" && (
-        <ActionButton label="Iniciar corrida" onClick={() => { setPinError(null); setPinCode(""); setPinOpen(true); }} icon={ChevronRight} />
-      )}
-      {phase === "em_viagem" && (
-        <ActionButton label="Finalizar corrida" onClick={onComplete} icon={CheckCircle2} variant="success" />
-      )}
+      {/* CTA conforme fase — transições suaves entre estados */}
+      <div key={phase} className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+        {phase === "motorista_a_caminho" && (
+          <ActionButton label="Cheguei ao local" onClick={onArrive} icon={MapPin} emphasize />
+        )}
+        {phase === "motorista_chegou" && (
+          <ActionButton label="Iniciar corrida" onClick={() => { setPinError(null); setPinCode(""); setPinOpen(true); }} icon={ChevronRight} emphasize />
+        )}
+        {phase === "em_viagem" && (
+          <ActionButton label="Finalizar corrida" onClick={onComplete} icon={CheckCircle2} variant="success" />
+        )}
+      </div>
 
       {/* Modal de validação do PIN de segurança */}
       {pinOpen && (
