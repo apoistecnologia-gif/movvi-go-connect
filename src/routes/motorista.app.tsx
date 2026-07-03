@@ -1106,13 +1106,13 @@ function MotoristaApp() {
         </div>
       )}
 
-      {/* Recenter */}
+      {/* Recenter — floating action button, consistent size + shadow */}
       {!incoming && !ratingRide && (
         <button onClick={recenter}
-          className="absolute right-4 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-card/95 text-foreground shadow-lg ring-1 ring-border backdrop-blur hover:ring-primary/40"
+          aria-label="Centralizar mapa"
+          className="press-scale absolute right-4 z-20 flex h-12 w-12 items-center justify-center rounded-full bg-card/95 text-foreground shadow-[0_10px_28px_-10px_rgba(0,0,0,0.55)] ring-1 ring-border/70 backdrop-blur-md transition hover:ring-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
           style={{ bottom: active ? "calc(58vh + 16px)" : "calc(env(safe-area-inset-bottom) + 320px)" }}>
-
-          <Crosshair className="h-5 w-5" />
+          <Crosshair className="h-[18px] w-[18px]" />
         </button>
       )}
 
