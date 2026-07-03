@@ -580,6 +580,7 @@ export type Database = {
         Row: {
           approval_status: Database["public"]["Enums"]["driver_approval_status"]
           approved_at: string | null
+          asaas_customer_id: string | null
           birth_date: string | null
           blocked_at: string | null
           category: Database["public"]["Enums"]["ride_category"]
@@ -623,6 +624,7 @@ export type Database = {
         Insert: {
           approval_status?: Database["public"]["Enums"]["driver_approval_status"]
           approved_at?: string | null
+          asaas_customer_id?: string | null
           birth_date?: string | null
           blocked_at?: string | null
           category: Database["public"]["Enums"]["ride_category"]
@@ -666,6 +668,7 @@ export type Database = {
         Update: {
           approval_status?: Database["public"]["Enums"]["driver_approval_status"]
           approved_at?: string | null
+          asaas_customer_id?: string | null
           birth_date?: string | null
           blocked_at?: string | null
           category?: Database["public"]["Enums"]["ride_category"]
@@ -1490,13 +1493,19 @@ export type Database = {
       subscriptions: {
         Row: {
           amount: number
+          asaas_payment_id: string | null
           auto_suspend: boolean
           created_at: string
           driver_id: string
           grace_until: string | null
           id: string
+          invoice_url: string | null
+          paid_at: string | null
+          payment_method: string | null
           period_end: string | null
           period_start: string | null
+          pix_copy_paste: string | null
+          pix_qr_code: string | null
           plan_id: string | null
           provider_reference: string | null
           status: Database["public"]["Enums"]["driver_subscription_status"]
@@ -1504,13 +1513,19 @@ export type Database = {
         }
         Insert: {
           amount?: number
+          asaas_payment_id?: string | null
           auto_suspend?: boolean
           created_at?: string
           driver_id: string
           grace_until?: string | null
           id?: string
+          invoice_url?: string | null
+          paid_at?: string | null
+          payment_method?: string | null
           period_end?: string | null
           period_start?: string | null
+          pix_copy_paste?: string | null
+          pix_qr_code?: string | null
           plan_id?: string | null
           provider_reference?: string | null
           status?: Database["public"]["Enums"]["driver_subscription_status"]
@@ -1518,13 +1533,19 @@ export type Database = {
         }
         Update: {
           amount?: number
+          asaas_payment_id?: string | null
           auto_suspend?: boolean
           created_at?: string
           driver_id?: string
           grace_until?: string | null
           id?: string
+          invoice_url?: string | null
+          paid_at?: string | null
+          payment_method?: string | null
           period_end?: string | null
           period_start?: string | null
+          pix_copy_paste?: string | null
+          pix_qr_code?: string | null
           plan_id?: string | null
           provider_reference?: string | null
           status?: Database["public"]["Enums"]["driver_subscription_status"]
