@@ -122,6 +122,15 @@ function computeOfferCountdown(ride: RideRow): number {
   return Math.max(0, Math.ceil((expiresAtMs - Date.now()) / 1000));
 }
 
+function paymentLabelFor(method: string | null | undefined): string {
+  switch (method) {
+    case "cash": return "Dinheiro";
+    case "pix": return "PIX";
+    case "card": return "Cartão";
+    default: return method ?? "—";
+  }
+}
+
 function subscriptionBlockMessage(status: string): string {
   switch (status) {
     case "overdue":
@@ -1294,7 +1303,7 @@ function IncomingOffer({
           <div className="min-w-0 flex-1">
             <div className="truncate text-sm font-semibold">{passenger?.name ?? "Passageiro"}</div>
             <div className="text-[11px] text-muted-foreground">
-              {ride.payment_method === "cash" ? "Pagamento em dinheiro" : (ride.payment_method ?? "Pagamento")}
+              Pagamento: {paymentLabelFor(ride.payment_method)}
             </div>
           </div>
         </div>
@@ -1461,7 +1470,7 @@ function ActiveRidePanel({
           <div className="mt-1 flex items-center gap-1.5 text-[12px] text-muted-foreground">
             <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" /> 5.0
             <span className="text-muted-foreground/50">·</span>
-            {ride.payment_method === "cash" ? "Dinheiro" : (ride.payment_method ?? "—")}
+            {paymentLabelFor(ride.payment_method)}
           </div>
         </div>
         {passenger?.phone && (
@@ -1617,7 +1626,7 @@ function RatingScreen({
   onSubmit: () => void; onDismiss: () => void; onSkip: () => void;
 }) {
   const total = Number(ride.final_price ?? ride.estimated_price ?? 0);
-  const paymentLabel = ride.payment_method === "cash" ? "Dinheiro" : (ride.payment_method ?? "—");
+  const paymentLabel = paymentLabelFor(ride.payment_method);
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/75 backdrop-blur-sm animate-in fade-in">
       <div className="w-full max-w-md rounded-t-[28px] bg-card p-5 shadow-2xl ring-1 ring-border animate-in slide-in-from-bottom duration-200">
