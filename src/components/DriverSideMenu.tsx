@@ -40,7 +40,7 @@ const NAV_LINKS = [
   { to: "/motorista/app", label: "Início", icon: Home },
   { to: "/motorista/perfil", label: "Meu perfil", icon: UserIcon },
   { to: "/motorista/corridas", label: "Minhas corridas", icon: ClipboardList },
-  { to: "/motorista/ganhos", label: "Ganhos", icon: DollarSign },
+  { to: "/motorista/ganhos", label: "Financeiro", icon: Wallet },
   { to: "/motorista/notificacoes", label: "Notificações", icon: Bell },
   { to: "/motorista/seguranca", label: "Segurança & SOS", icon: ShieldAlert },
   { to: "/motorista/status", label: "Status do cadastro", icon: ShieldCheck },
