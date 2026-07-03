@@ -704,7 +704,7 @@ function PassageiroApp() {
   const [route, setRoute] = useState<RouteResult | null>(null);
   const [passengerUiStage, setPassengerUiStage] = useState<PassengerUiStage>("selecting_destination");
   const [selectedCategoryKey, setSelectedCategoryKey] = useState<string | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<"cash" | "pix" | "card">("cash");
+  const [paymentMethod, setPaymentMethod] = useState<"dinheiro" | "pix" | "cartao_credito">("dinheiro");
   const uiCategories = useUiCategories();
   const selectedUiCategory = useMemo(
     () => uiCategories.find((c) => c.key === selectedCategoryKey) ?? null,
@@ -2616,8 +2616,8 @@ function SheetContent({
   gpsRequesting: boolean;
   onRetryGps: () => void;
   onExpandSheet: (p: number) => void;
-  paymentMethod: "cash" | "pix" | "card";
-  setPaymentMethod: (m: "cash" | "pix" | "card") => void;
+  paymentMethod: "dinheiro" | "pix" | "cartao_credito";
+  setPaymentMethod: (m: "dinheiro" | "pix" | "cartao_credito") => void;
 }) {
   const km = route ? route.distanceMeters / 1000 : 0;
   const min = route ? route.durationSeconds / 60 : 0;
@@ -2905,8 +2905,8 @@ type StepFlowProps = {
   onClearDestination: () => void;
   onSubmit: () => void;
   onExpandSheet: (p: number) => void;
-  paymentMethod: "cash" | "pix" | "card";
-  setPaymentMethod: (m: "cash" | "pix" | "card") => void;
+  paymentMethod: "dinheiro" | "pix" | "cartao_credito";
+  setPaymentMethod: (m: "dinheiro" | "pix" | "cartao_credito") => void;
 };
 
 function StepFlow({
@@ -3057,7 +3057,7 @@ function StepFlow({
           <button
             type="button"
             onClick={() => {
-              const next = paymentMethod === "cash" ? "pix" : paymentMethod === "pix" ? "card" : "cash";
+              const next = paymentMethod === "dinheiro" ? "pix" : paymentMethod === "pix" ? "cartao_credito" : "dinheiro";
               setPaymentMethod(next);
             }}
             className="flex w-full items-center gap-2.5 rounded-2xl bg-background/60 px-3 py-2.5 text-left ring-1 ring-border transition hover:bg-accent/20 active:scale-[0.99]"
@@ -3070,7 +3070,7 @@ function StepFlow({
                 Forma de pagamento (direto ao motorista)
               </div>
               <div className="mt-0.5 truncate text-[13px] font-bold text-foreground leading-tight">
-                {paymentMethod === "cash" ? "Dinheiro" : paymentMethod === "pix" ? "PIX direto ao motorista" : "Cartão com o motorista"}
+                {paymentMethod === "dinheiro" ? "Dinheiro" : paymentMethod === "pix" ? "PIX" : "Cartão de crédito"}
               </div>
             </div>
             <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />

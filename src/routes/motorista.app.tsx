@@ -124,10 +124,16 @@ function computeOfferCountdown(ride: RideRow): number {
 
 function paymentLabelFor(method: string | null | undefined): string {
   switch (method) {
-    case "cash": return "Dinheiro";
-    case "pix": return "PIX";
-    case "card": return "Cartão";
-    default: return method ?? "—";
+    case "dinheiro":
+    case "cash":
+      return "Dinheiro";
+    case "pix":
+      return "PIX";
+    case "cartao_credito":
+    case "card":
+      return "Cartão de crédito";
+    default:
+      return method ?? "—";
   }
 }
 
@@ -323,9 +329,19 @@ function MotoristaApp() {
           }
           if (row.subscription_status && row.subscription_status !== "active") {
             setStatusBlock(subscriptionBlockMessage(row.subscription_status));
-            setOnline(false);
-            if (userId) {
-              void supabase.from("drivers").update({ is_online: false }).eq("user_id", userId);
+            // Se já há corrida em andamento, NÃO forçar offline imediatamente:
+            // deixamos a corrida atual terminar. Apenas impedimos novas ofertas
+            // marcando is_online=false no banco (o dispatch ignora offline).
+            // Após finalizar, o statusBlock permanece e bloqueia voltar a online.
+            if (activeRef.current) {
+              if (userId) {
+                void supabase.from("drivers").update({ is_online: false }).eq("user_id", userId);
+              }
+            } else {
+              setOnline(false);
+              if (userId) {
+                void supabase.from("drivers").update({ is_online: false }).eq("user_id", userId);
+              }
             }
             return;
           }
