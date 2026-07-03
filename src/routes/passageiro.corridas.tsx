@@ -49,14 +49,36 @@ type RideRow = {
   duration_min: number | null;
   completed_at: string | null;
   created_at: string;
+  accepted_at: string | null;
+  started_at: string | null;
+  cancelled_at: string | null;
   driver_id: string | null;
   driver_name: string | null;
   driver_photo_url: string | null;
+  driver_vehicle: string | null;
   driver_rating: number | null;
   driver_rating_comment: string | null;
   passenger_rated_at: string | null;
   category: string | null;
+  payment_method: string | null;
+  safety_code: string | null;
 };
+
+function rideToReceipt(r: RideRow): ReceiptData {
+  return {
+    rideId: r.id,
+    date: r.completed_at ?? r.created_at,
+    origin: r.origin_name,
+    destination: r.destination_name,
+    driverName: r.driver_name,
+    vehicle: r.driver_vehicle,
+    paymentMethod: r.payment_method,
+    value: r.final_price ?? r.estimated_price,
+    status: r.status,
+    distanceKm: r.distance_km,
+    durationMin: r.duration_min,
+  };
+}
 
 type FilterKey = "todas" | "finalizada" | "cancelada";
 
