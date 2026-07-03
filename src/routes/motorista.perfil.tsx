@@ -98,17 +98,44 @@ function DriverProfilePage() {
       }
       extraSlot={
         driver ? (
-          <DriverInfoCard
-            vehicleModel={driver.vehicle_model}
-            vehicleColor={driver.vehicle_color}
-            vehiclePlate={driver.vehicle_plate}
-            vehicleYear={driver.vehicle_year}
-            category={driver.category}
-            rating={(driver as any).average_rating ?? driver.rating}
-            totalRatings={(driver as any).total_ratings ?? 0}
-            totalRides={(driver as any).completed_rides ?? totalRides}
-            createdAt={driver.created_at}
-          />
+          <div className="space-y-4">
+            <button
+              type="button"
+              onClick={() => setPublicProfileOpen(true)}
+              className="flex w-full items-center justify-between gap-3 rounded-2xl bg-card p-4 text-left ring-1 ring-border transition active:scale-[0.99] hover:ring-primary/40"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/15 text-primary">
+                  <Eye className="h-4 w-4" />
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-foreground">Ver perfil público</div>
+                  <div className="text-[11.5px] text-muted-foreground">
+                    Assim é como os passageiros te veem.
+                  </div>
+                </div>
+              </div>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-primary">Abrir</span>
+            </button>
+
+            <DriverInfoCard
+              vehicleModel={driver.vehicle_model}
+              vehicleColor={driver.vehicle_color}
+              vehiclePlate={driver.vehicle_plate}
+              vehicleYear={driver.vehicle_year}
+              category={driver.category}
+              rating={(driver as any).average_rating ?? driver.rating}
+              totalRatings={(driver as any).total_ratings ?? 0}
+              totalRides={(driver as any).completed_rides ?? totalRides}
+              createdAt={driver.created_at}
+            />
+
+            <DriverProfessionalProfileDialog
+              open={publicProfileOpen}
+              onOpenChange={setPublicProfileOpen}
+              driverUserId={userId}
+            />
+          </div>
         ) : null
       }
     />
