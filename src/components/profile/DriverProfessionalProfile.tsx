@@ -99,7 +99,7 @@ export function DriverProfessionalProfile({
       <div className="flex flex-col items-center text-center">
         <div className="relative">
           <div className="rounded-full ring-2 ring-white/85 shadow-[0_10px_30px_-8px_rgba(0,0,0,0.6)]">
-            <DSAvatar src={profile.photo_url} name={profile.name ?? "Motorista"} size={104} />
+            <Avatar src={profile.photo_url} name={profile.name ?? "Motorista"} size={104} />
           </div>
           {profile.is_online && (
             <span className="absolute bottom-1 right-1 flex h-4 w-4">
