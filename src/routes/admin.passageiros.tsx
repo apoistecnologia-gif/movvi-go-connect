@@ -120,6 +120,11 @@ function badgeForRating(r: number): string {
 }
 
 function AdminPassageirosPage() {
+  const suspendFn = useServerFn(suspendPassenger);
+  const unsuspendFn = useServerFn(unsuspendPassenger);
+  const blockFn = useServerFn(blockPassenger);
+  const unblockFn = useServerFn(unblockPassenger);
+  const deleteFn = useServerFn(deletePassenger);
   const [rows, setRows] = useState<Passenger[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
