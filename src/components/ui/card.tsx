@@ -2,11 +2,15 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
+// MOVVI DS — unified card (24px radius, soft elevation, hairline border).
 const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn("rounded-xl border bg-card text-card-foreground shadow", className)}
+      className={cn(
+        "rounded-[24px] border border-border/60 bg-card text-card-foreground shadow-[0_8px_24px_-16px_rgba(15,23,42,0.18)]",
+        className,
+      )}
       {...props}
     />
   ),

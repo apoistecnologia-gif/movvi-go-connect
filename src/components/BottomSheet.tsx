@@ -73,21 +73,25 @@ export function BottomSheet({
   return (
     <div
       ref={sheetRef}
-      className="absolute inset-x-0 z-30 flex flex-col rounded-t-3xl bg-card/95 text-foreground shadow-[0_-24px_60px_-12px_rgba(0,0,0,0.55)] ring-1 ring-border/70 backdrop-blur-xl transition-[height] duration-300 ease-out animate-in slide-in-from-bottom-4 fade-in"
+      // MOVVI DS — unified sheet (36px radius, sheet elevation, 220ms spring easing).
+      className="absolute inset-x-0 z-30 flex flex-col bg-card/95 text-foreground ring-1 ring-border/70 backdrop-blur-xl animate-in slide-in-from-bottom-4 fade-in"
       style={{
         bottom: "calc(76px + env(safe-area-inset-bottom))",
         height: `${height}vh`,
-        transitionProperty: dragH == null ? "height" : "none",
+        borderTopLeftRadius: "var(--ds-radius-2xl)",
+        borderTopRightRadius: "var(--ds-radius-2xl)",
+        boxShadow: "var(--ds-shadow-sheet)",
+        transition: dragH == null ? "height 240ms cubic-bezier(0.22, 1, 0.36, 1)" : "none",
       }}
     >
       <div
-        className="flex cursor-grab touch-none select-none flex-col items-center pb-1 pt-2 active:cursor-grabbing"
+        className="flex cursor-grab touch-none select-none flex-col items-center pb-1 pt-2.5 active:cursor-grabbing"
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
       >
-        <span className="h-1.5 w-12 rounded-full bg-muted-foreground/40" />
+        <span className="h-1 w-10 rounded-full bg-muted-foreground/45" />
         {handleLabel && (
           <span className="mt-1.5 text-[10px] uppercase tracking-widest text-muted-foreground">
             {handleLabel}
