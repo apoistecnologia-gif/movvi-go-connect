@@ -859,6 +859,30 @@ function TicketDetailDialog({
           </div>
         </Section>
       </DialogContent>
+
+      <ConfirmDialog
+        open={!!pendingUpdate}
+        onOpenChange={(o) => !o && setPendingUpdate(null)}
+        title={pendingUpdate?.title ?? ""}
+        description={pendingUpdate?.description}
+        confirmLabel={pendingUpdate?.confirmLabel ?? "Confirmar"}
+        destructive={pendingUpdate?.destructive}
+        onConfirm={async () => {
+          if (pendingUpdate) await updateTicket(pendingUpdate.patch, pendingUpdate.action);
+        }}
+      />
+
+      <ConfirmDialog
+        open={!!noteToDelete}
+        onOpenChange={(o) => !o && setNoteToDelete(null)}
+        title="Excluir nota interna?"
+        description="A nota será removida permanentemente do histórico deste ticket."
+        confirmLabel="Excluir nota"
+        destructive
+        onConfirm={async () => {
+          if (noteToDelete) await deleteNote(noteToDelete.id);
+        }}
+      />
     </Dialog>
   );
 }
