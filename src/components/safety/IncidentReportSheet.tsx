@@ -39,14 +39,17 @@ export function IncidentReportSheet({ open, onClose, role, rideId }: Props) {
     try {
       const { data: auth } = await supabase.auth.getUser();
       if (!auth?.user) throw new Error("Sessão expirada");
-      const { error } = await supabase.from("incident_reports").insert({
+      const client = supabase as unknown as {
+        from: (t: string) => { insert: (row: unknown) => Promise<{ error: { message: string } | null }> };
+      };
+      const { error } = await client.from("incident_reports").insert({
         user_id: auth.user.id,
         role,
         ride_id: rideId ?? null,
         category,
         description: description.trim() || null,
       });
-      if (error) throw error;
+      if (error) throw new Error(error.message);
       toast.success("Denúncia registrada. Nossa equipe vai analisar.");
       close();
     } catch (err) {
