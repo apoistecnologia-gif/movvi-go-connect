@@ -1235,8 +1235,16 @@ function MotoristaApp() {
    IDLE — painel fixo (sem bottom sheet)
    Sempre visível, nunca exige rolagem para mostrar o CTA.
    ============================================================ */
+function greetingForNow(): string {
+  const h = new Date().getHours();
+  if (h < 5) return "Boa madrugada";
+  if (h < 12) return "Bom dia";
+  if (h < 18) return "Boa tarde";
+  return "Boa noite";
+}
+
 function IdleBottomPanel({
-  driverName, online, disabled, toggleOnline, stats, gpsMessage, loading,
+  driverName: _driverName, online, disabled, toggleOnline, stats, gpsMessage, loading,
   canUseTestLocation, onUseTestLocation,
 }: {
   driverName: string; online: boolean; disabled: boolean;
@@ -1246,84 +1254,100 @@ function IdleBottomPanel({
   canUseTestLocation: boolean;
   onUseTestLocation: () => void;
 }) {
-  // Espaço para BottomNav flutuante (~84px + safe-area).
   const navReserve = "calc(env(safe-area-inset-bottom) + 84px)";
 
   return (
     <div
-      className="absolute inset-x-0 z-30 rounded-t-[24px] bg-card text-foreground shadow-[0_-18px_44px_-24px_rgba(0,0,0,0.55)] ring-1 ring-border/50 animate-sheet-in"
-      style={{ bottom: navReserve }}
+      className="absolute inset-x-0 z-30 rounded-t-[28px] text-foreground shadow-[0_-24px_60px_-28px_rgba(0,0,0,0.7)] animate-sheet-in"
+      style={{
+        bottom: navReserve,
+        background: "#111418",
+        borderTop: "1px solid rgba(255,255,255,0.06)",
+      }}
     >
-      <div className="mx-auto mt-2 h-[4px] w-10 rounded-full bg-muted-foreground/25" />
+      <div className="mx-auto mt-2.5 h-[4px] w-10 rounded-full bg-white/10" />
 
-      <div className="flex flex-col gap-2.5 px-5 pb-3 pt-1.5">
-        {/* linha 1: saudação + status pill */}
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-          <div className="min-w-0">
-            <h1 className="truncate text-[16px] font-bold leading-tight tracking-tight">
-              Olá, {driverName || "motorista"}
-            </h1>
-            <p className="mt-0.5 truncate text-[11.5px] leading-tight text-muted-foreground">
-              {online ? "Disponível para receber viagens" : "Você está offline"}
-            </p>
-          </div>
+      <div className="flex flex-col gap-4 px-6 pb-5 pt-3">
+        {/* Status badge (capsule) */}
+        <div className="flex items-center justify-between">
           <div
-            className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10.5px] font-semibold ring-1 transition-colors ${
+            className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[12px] font-semibold transition ${
               online
-                ? "bg-primary/15 text-primary ring-primary/35"
-                : "bg-muted/25 text-muted-foreground ring-border/60"
+                ? "bg-primary/12 text-primary"
+                : "bg-white/5 text-muted-foreground"
             }`}
+            style={{ border: online ? "1px solid color-mix(in oklab, var(--color-primary) 30%, transparent)" : "1px solid rgba(255,255,255,0.06)" }}
           >
-            <span className="relative flex h-1.5 w-1.5">
+            <span className="relative flex h-2 w-2">
               {online && <span className="absolute inset-0 animate-ping rounded-full bg-primary/60" />}
-              <span className={`relative h-1.5 w-1.5 rounded-full ${online ? "bg-primary" : "bg-muted-foreground"}`} />
+              <span className={`relative h-2 w-2 rounded-full ${online ? "bg-primary" : "bg-muted-foreground/60"}`} />
             </span>
             {online ? "ONLINE" : "OFFLINE"}
           </div>
-        </div>
-
-        {/* stat compacto — apenas corridas de hoje (financeiro fica no menu Financeiro) */}
-        <div className="flex items-center justify-between rounded-xl bg-background/55 px-3 py-2 ring-1 ring-border/50">
-          <span className="text-[10.5px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
-            Corridas hoje
-          </span>
-          <span className="tabular-nums text-[17px] font-extrabold leading-none text-primary">
-            {stats.rides.toString()}
+          <span className="text-[13px] font-medium text-muted-foreground">
+            {online ? "Recebendo solicitações" : "Toque para ativar"}
           </span>
         </div>
 
-        {/* mensagem de erro do GPS (não substitui o botão) */}
+        {/* Stat card premium */}
+        <div className="grid grid-cols-1 gap-3">
+          <StatMini label="Corridas hoje" value={stats.rides.toString()} />
+        </div>
+
+        {/* GPS error */}
         {gpsMessage && (
-          <div className="rounded-lg bg-destructive/10 px-3 py-1.5 text-[11px] text-destructive ring-1 ring-destructive/25">
+          <div
+            className="rounded-xl px-3 py-2 text-[12px] text-destructive"
+            style={{ background: "color-mix(in oklab, var(--color-destructive) 12%, transparent)", border: "1px solid color-mix(in oklab, var(--color-destructive) 22%, transparent)" }}
+          >
             {gpsMessage}
           </div>
         )}
 
-        {/* Botão de modo teste — apenas em preview/dev quando o GPS real falha */}
         {canUseTestLocation && (
           <button
             type="button"
             onClick={onUseTestLocation}
-            className="press-scale w-full rounded-xl border border-dashed border-primary/50 bg-primary/10 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary transition hover:bg-primary/20"
+            className="press-scale w-full rounded-xl px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary transition hover:bg-primary/15"
+            style={{ background: "color-mix(in oklab, var(--color-primary) 8%, transparent)", border: "1px dashed color-mix(in oklab, var(--color-primary) 45%, transparent)" }}
           >
             Usar localização de teste no Brasil
           </button>
         )}
 
-        {/* Botão principal — FICAR ONLINE / FICAR OFFLINE */}
+        {/* Primary CTA — 56px, radius 18, 1px border */}
         <button
           type="button"
           disabled={disabled}
           onClick={toggleOnline}
-          className={`press-scale w-full rounded-2xl min-h-12 py-3 text-[13px] font-bold uppercase tracking-[0.14em] transition disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-card ${
+          className={`press-scale w-full h-14 rounded-[18px] text-[15px] font-semibold tracking-[0.01em] transition disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 ${
             online
-              ? "bg-card text-foreground ring-1 ring-border hover:ring-destructive/50"
-              : "bg-primary text-primary-foreground shadow-[0_10px_28px_-14px_color-mix(in_oklab,var(--color-primary)_60%,transparent)] hover:brightness-105"
+              ? "text-foreground hover:bg-white/[0.04]"
+              : "bg-primary text-primary-foreground shadow-[0_14px_36px_-16px_color-mix(in_oklab,var(--color-primary)_70%,transparent)] hover:brightness-105"
           }`}
+          style={
+            online
+              ? { background: "#0e1114", border: "1px solid rgba(255,255,255,0.08)" }
+              : { border: "1px solid color-mix(in oklab, var(--color-primary) 40%, transparent)" }
+          }
         >
           {loading ? "Obtendo localização..." : online ? "Ficar offline" : "Ficar online"}
         </button>
       </div>
+    </div>
+  );
+}
+
+function StatMini({ label, value }: { label: string; value: string }) {
+  return (
+    <div
+      className="flex items-center justify-between rounded-2xl px-4 py-3"
+      style={{ background: "#0e1114", border: "1px solid rgba(255,255,255,0.06)" }}
+    >
+      <span className="text-[13px] font-normal text-muted-foreground">{label}</span>
+      <span className="tabular-nums text-[24px] font-bold leading-none text-foreground">
+        {value}
+      </span>
     </div>
   );
 }
