@@ -1240,41 +1240,50 @@ function IdleBottomPanel({
 
   return (
     <div
-      className="absolute inset-x-0 z-30 rounded-t-[28px] bg-card text-foreground shadow-[0_-24px_60px_-24px_rgba(0,0,0,0.65)] ring-1 ring-border/50 animate-sheet-in"
+      className="absolute inset-x-0 z-30 rounded-t-[24px] bg-card text-foreground shadow-[0_-18px_44px_-24px_rgba(0,0,0,0.55)] ring-1 ring-border/50 animate-sheet-in"
       style={{ bottom: navReserve }}
     >
-      <div className="mx-auto mt-2.5 h-[5px] w-11 rounded-full bg-muted-foreground/25" />
+      <div className="mx-auto mt-2 h-[4px] w-10 rounded-full bg-muted-foreground/25" />
 
-      <div className="flex flex-col gap-3 px-5 pb-4 pt-2.5">
-        {/* linha 1: nome + status pill */}
+      <div className="flex flex-col gap-2.5 px-5 pb-3 pt-1.5">
+        {/* linha 1: saudação + status pill */}
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
           <div className="min-w-0">
-            <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground">Motorista</p>
-            <h1 className="mt-0.5 truncate text-[17px] font-bold leading-tight tracking-tight">{driverName || "Bem-vindo"}</h1>
+            <h1 className="truncate text-[16px] font-bold leading-tight tracking-tight">
+              Olá, {driverName || "motorista"}
+            </h1>
+            <p className="mt-0.5 truncate text-[11.5px] leading-tight text-muted-foreground">
+              {online ? "Disponível para receber viagens" : "Você está offline"}
+            </p>
           </div>
           <div
-            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold ring-1 transition-colors ${
+            className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10.5px] font-semibold ring-1 transition-colors ${
               online
                 ? "bg-primary/15 text-primary ring-primary/35"
                 : "bg-muted/25 text-muted-foreground ring-border/60"
             }`}
           >
-            <span className="relative flex h-2 w-2">
+            <span className="relative flex h-1.5 w-1.5">
               {online && <span className="absolute inset-0 animate-ping rounded-full bg-primary/60" />}
-              <span className={`relative h-2 w-2 rounded-full ${online ? "bg-primary" : "bg-muted-foreground"}`} />
+              <span className={`relative h-1.5 w-1.5 rounded-full ${online ? "bg-primary" : "bg-muted-foreground"}`} />
             </span>
             {online ? "ONLINE" : "OFFLINE"}
           </div>
         </div>
 
-        {/* linha 2: stats — apenas corridas (informação financeira fica em Financeiro) */}
-        <div className="grid grid-cols-1">
-          <StatBlock label="Corridas hoje" value={stats.rides.toString()} highlight />
+        {/* stat compacto — apenas corridas de hoje (financeiro fica no menu Financeiro) */}
+        <div className="flex items-center justify-between rounded-xl bg-background/55 px-3 py-2 ring-1 ring-border/50">
+          <span className="text-[10.5px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+            Corridas hoje
+          </span>
+          <span className="tabular-nums text-[17px] font-extrabold leading-none text-primary">
+            {stats.rides.toString()}
+          </span>
         </div>
 
         {/* mensagem de erro do GPS (não substitui o botão) */}
         {gpsMessage && (
-          <div className="rounded-xl bg-destructive/10 px-3 py-2 text-[11.5px] text-destructive ring-1 ring-destructive/25">
+          <div className="rounded-lg bg-destructive/10 px-3 py-1.5 text-[11px] text-destructive ring-1 ring-destructive/25">
             {gpsMessage}
           </div>
         )}
@@ -1284,21 +1293,21 @@ function IdleBottomPanel({
           <button
             type="button"
             onClick={onUseTestLocation}
-            className="press-scale w-full rounded-xl border border-dashed border-primary/50 bg-primary/10 px-3 py-2.5 text-[11px] font-semibold uppercase tracking-[0.15em] text-primary transition hover:bg-primary/20"
+            className="press-scale w-full rounded-xl border border-dashed border-primary/50 bg-primary/10 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary transition hover:bg-primary/20"
           >
             Usar localização de teste no Brasil
           </button>
         )}
 
-        {/* Botão principal — SEMPRE FICAR ONLINE / FICAR OFFLINE */}
+        {/* Botão principal — FICAR ONLINE / FICAR OFFLINE */}
         <button
           type="button"
           disabled={disabled}
           onClick={toggleOnline}
-          className={`press-scale w-full rounded-2xl min-h-14 py-4 text-[14px] font-bold uppercase tracking-[0.15em] transition disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-card ${
+          className={`press-scale w-full rounded-2xl min-h-12 py-3 text-[13px] font-bold uppercase tracking-[0.14em] transition disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-card ${
             online
               ? "bg-card text-foreground ring-1 ring-border hover:ring-destructive/50"
-              : "bg-primary text-primary-foreground shadow-[0_12px_32px_-12px_color-mix(in_oklab,var(--color-primary)_60%,transparent)] hover:brightness-105"
+              : "bg-primary text-primary-foreground shadow-[0_10px_28px_-14px_color-mix(in_oklab,var(--color-primary)_60%,transparent)] hover:brightness-105"
           }`}
         >
           {loading ? "Obtendo localização..." : online ? "Ficar offline" : "Ficar online"}
@@ -1308,18 +1317,6 @@ function IdleBottomPanel({
   );
 }
 
-function StatBlock({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
-  return (
-    <div className={`rounded-2xl px-3.5 py-2.5 ring-1 transition ${
-      highlight
-        ? "bg-primary/10 ring-primary/25"
-        : "bg-background/55 ring-border/60"
-    }`}>
-      <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">{label}</div>
-      <div className={`mt-1 tabular-nums leading-none ${highlight ? "text-[22px] font-extrabold text-primary" : "text-[18px] font-bold text-foreground"}`}>{value}</div>
-    </div>
-  );
-}
 
 /* ============================================================
    OFERTA ENTRANTE
