@@ -1975,19 +1975,11 @@ function ActiveRidePanel({
         </div>
         <div className="ml-[7px] h-3 w-px bg-border" />
         <div className="flex items-start gap-3">
-          <span className={`mt-1 h-3 w-3 shrink-0 rounded-full ring-2 ring-card ${
-            phase === "em_viagem" ? "bg-destructive animate-pulse" : "bg-destructive/60"}`} />
+          <span className="mt-1 h-3 w-3 shrink-0 rounded-full ring-2 ring-card bg-destructive/60" />
           <div className="min-w-0 flex-1">
             <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Destino</div>
             <div className="line-clamp-2 text-sm font-medium">{ride.destination_name || "Endereço não identificado"}</div>
           </div>
-          {phase === "em_viagem" && (
-            <a target="_blank" rel="noreferrer"
-              href={`https://www.google.com/maps/dir/?api=1&destination=${ride.destination_lat},${ride.destination_lng}&travelmode=driving`}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground shadow shadow-primary/30">
-              <Navigation2 className="h-4 w-4" />
-            </a>
-          )}
         </div>
       </div>
 
