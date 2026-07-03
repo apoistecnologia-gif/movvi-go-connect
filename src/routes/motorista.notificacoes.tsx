@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Bell, Check, Loader2, Trash2 } from "lucide-react";
+import { Bell, Check, Trash2 } from "lucide-react";
 import { MovviHeader } from "@/components/MovviHeader";
 import { BottomNav, DRIVER_NAV } from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
