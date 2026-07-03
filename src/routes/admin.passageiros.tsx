@@ -571,7 +571,7 @@ type AdminNote = { id: string; passenger_id: string; admin_id: string; note: str
 type RatingRow = { passenger_rating: number | null; passenger_comment: string | null; passenger_rated_at: string | null };
 type TicketRow = { id: string; subject: string | null; status: string | null; created_at: string };
 type IncidentRow = { id: string; category: string | null; description: string | null; created_at: string };
-type SosRow = { id: string; status: string | null; created_at: string };
+type SosRow = { id: string; resolved_at: string | null; created_at: string };
 
 function PassengerDetail({
   open,
