@@ -6,8 +6,6 @@ import {
   QrCode, Save, Settings as SettingsIcon, Shield, ShieldCheck, Smartphone,
   Sun, Trash2, User, Vibrate, Volume2, FileText, Fingerprint,
 } from "lucide-react";
-import { MovviHeader } from "@/components/MovviHeader";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
