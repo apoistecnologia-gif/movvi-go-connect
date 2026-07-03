@@ -22,6 +22,7 @@ import { MovviMap } from "@/components/MovviMap";
 import { DriverSideMenu } from "@/components/DriverSideMenu";
 import { MovviSheet, type MovviSheetHandle } from "@/components/MovviSheet";
 import { PassengerProfessionalProfileDialog } from "@/components/profile/PassengerProfessionalProfileDialog";
+import { SafetyCard } from "@/components/safety/SafetyCard";
 import {
   InterpolatedDriverMarker,
   PlacePinMarker,
@@ -1561,6 +1562,20 @@ function ActiveRidePanel({
           )}
         </div>
       </div>
+
+      {/* Safety card — SOS, share, incident */}
+      <SafetyCard
+        role="driver"
+        rideId={ride.id}
+        counterpartLabel={`Passageiro ${passenger?.name ?? ""}`.trim()}
+        shareInput={{
+          role: "driver",
+          status: ride.status,
+          passengerName: passenger?.name ?? null,
+          originName: ride.pickup_label ?? ride.origin_name ?? null,
+          destinationName: ride.destination_name,
+        }}
+      />
 
       {/* CTA conforme fase */}
       {phase === "motorista_a_caminho" && (
