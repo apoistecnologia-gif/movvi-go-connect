@@ -1326,69 +1326,154 @@ function IdleBottomPanel({
    OFERTA ENTRANTE
    ============================================================ */
 function IncomingOffer({
-  ride, passenger, countdown, onAccept, onReject, onOpenProfile,
+  ride, passenger, countdown, driverPos, onAccept, onReject, onOpenProfile,
 }: {
-  ride: RideRow; passenger: Passenger | null; countdown: number; onAccept: () => void; onReject: () => void; onOpenProfile?: () => void;
+  ride: RideRow; passenger: Passenger | null; countdown: number;
+  driverPos: LatLng | null;
+  onAccept: () => void; onReject: () => void; onOpenProfile?: () => void;
 }) {
   const pct = (countdown / RIDE_OFFER_TIMEOUT_SECONDS) * 100;
-  return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-sm animate-in fade-in"
-      role="dialog" aria-modal="true">
-      <div className="w-full max-w-md rounded-t-[28px] bg-card p-5 pb-6 shadow-premium ring-1 ring-primary/30 animate-sheet-in">
-        <div className="mx-auto -mt-1 mb-3 h-1.5 w-11 rounded-full bg-muted-foreground/30" />
 
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
-              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-primary" />
-            </span>
-            <span className="text-[11px] font-bold uppercase tracking-widest text-primary">
+  // Distância motorista → embarque (haversine local; sem chamadas de rede).
+  const pickupKm = useMemo(() => {
+    if (!driverPos || ride.origin_lat == null || ride.origin_lng == null) return null;
+    return haversineKm(driverPos, { lat: ride.origin_lat, lng: ride.origin_lng });
+  }, [driverPos, ride.origin_lat, ride.origin_lng]);
+  const pickupMin = pickupKm != null ? Math.max(1, Math.round((pickupKm / 32) * 60)) : null;
+
+  const cat = RIDE_CATEGORIES.find((c) => c.key === ride.category);
+  const CatIcon = cat?.icon ?? RouteIcon;
+  const catLabel = cat?.label?.toUpperCase() ?? "CORRIDA";
+
+  // Badge visual de qualidade (apenas rótulo — sem novos cálculos no backend).
+  const quality = useMemo(() => {
+    const km = Number(ride.distance_km ?? 0);
+    if (km >= 10) return { label: "Longa distância", tone: "bg-sky-500/12 text-sky-600 ring-sky-500/25" };
+    if (km >= 5)  return { label: "Ótima corrida",   tone: "bg-primary/12 text-primary ring-primary/25" };
+    if (km > 0)   return { label: "Boa corrida",      tone: "bg-amber-500/12 text-amber-600 ring-amber-500/25" };
+    return { label: "Corrida disponível", tone: "bg-primary/12 text-primary ring-primary/25" };
+  }, [ride.distance_km]);
+
+  const rating = (passenger as { rating?: number | null } | null)?.rating;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/45 animate-in fade-in duration-200"
+      role="dialog" aria-modal="true"
+    >
+      <div
+        className="w-full max-w-md rounded-t-[24px] bg-card px-5 pb-[calc(env(safe-area-inset-bottom)+18px)] pt-3 shadow-[0_-8px_30px_rgba(0,0,0,0.12)] ring-1 ring-border/50 animate-in fade-in slide-in-from-bottom-4 zoom-in-95 duration-[240ms] ease-out"
+        style={{ maxHeight: "80vh" }}
+      >
+        <div className="mx-auto mb-2 h-1 w-10 rounded-full bg-muted-foreground/25" />
+
+        {/* Header: título + countdown circular */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
               Nova corrida
-            </span>
+            </div>
+            <div className="mt-0.5 text-[13px] font-medium text-muted-foreground">
+              Toque em <span className="text-foreground font-semibold">Aceitar</span> para iniciar
+            </div>
           </div>
           <CountdownRing seconds={countdown} pct={pct} />
         </div>
 
+        {/* Preço central — elemento visual principal */}
+        <div className="mt-4 flex flex-col items-center">
+          <div className="text-[32px] font-extrabold leading-none tracking-tight text-foreground tabular-nums">
+            {ride.estimated_price != null ? formatBRL(Number(ride.estimated_price)) : "—"}
+          </div>
+          <div className="mt-1 text-[12px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+            Ganho da corrida
+          </div>
+        </div>
+
+        {/* Três info cards */}
+        <div className="mt-4 grid grid-cols-3 gap-2.5">
+          <InfoCard
+            icon={<Clock className="h-4 w-4 text-primary" />}
+            value={pickupMin != null ? `${pickupMin} min` : "—"}
+            label="Até o passageiro"
+          />
+          <InfoCard
+            icon={<MapPin className="h-4 w-4 text-primary" />}
+            value={pickupKm != null ? `${pickupKm.toFixed(1)} km` : "—"}
+            label="Distância"
+          />
+          <InfoCard
+            icon={<CatIcon className="h-4 w-4 text-primary" />}
+            value={catLabel}
+            label="Categoria"
+            compactValue
+          />
+        </div>
+
+        {/* Badge de qualidade */}
+        <div className="mt-4 flex items-center justify-center">
+          <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold ring-1 ${quality.tone}`}>
+            <Circle className="h-2 w-2 fill-current" />
+            {quality.label}
+          </span>
+        </div>
+
+        {/* Passageiro — apenas nome + rating */}
         <button
           type="button"
           onClick={onOpenProfile}
-          className="mt-3 flex w-full items-center gap-3 rounded-2xl bg-background/60 p-2.5 text-left ring-1 ring-border transition active:scale-[0.99] hover:ring-primary/40"
+          className="mt-3 flex w-full items-center gap-3 rounded-2xl bg-background/60 p-2.5 text-left ring-1 ring-border/60 transition active:scale-[0.99] hover:ring-primary/40"
           aria-label="Ver perfil do passageiro"
         >
-          <Avatar src={passenger?.avatar_url ?? (ride as { passenger_photo_url?: string | null }).passenger_photo_url ?? null} name={passenger?.name ?? "Passageiro"} size={40} />
+          <Avatar
+            src={passenger?.avatar_url ?? (ride as { passenger_photo_url?: string | null }).passenger_photo_url ?? null}
+            name={passenger?.name ?? "Passageiro"}
+            size={38}
+          />
           <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-semibold">{passenger?.name ?? "Passageiro"}</div>
-            <div className="text-[11px] text-muted-foreground">
-              Pagamento: {paymentLabelFor(ride.payment_method)}
+            <div className="truncate text-[14px] font-semibold text-foreground">
+              {passenger?.name ?? "Passageiro"}
+            </div>
+            <div className="mt-0.5 flex items-center gap-1 text-[12px] text-muted-foreground">
+              <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+              <span className="tabular-nums">{rating != null ? Number(rating).toFixed(2) : "5.00"}</span>
             </div>
           </div>
-          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/70" />
+          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" />
         </button>
 
-
-
-
-        <div className="mt-4 grid grid-cols-3 gap-2">
-          <Metric label="Distância" value={ride.distance_km ? `${Number(ride.distance_km).toFixed(1)} km` : "—"} />
-          <Metric label="Tempo" value={ride.duration_min ? `${Math.round(Number(ride.duration_min))} min` : "—"} />
-          <Metric label="Ganho" value={ride.estimated_price ? formatBRL(Number(ride.estimated_price)) : "—"} highlight />
+        {/* Endereços — embarque + destino */}
+        <div className="mt-3 rounded-2xl bg-background/60 p-3.5 ring-1 ring-border/60">
+          <AddressRow
+            iconColor="text-primary"
+            dotColor="bg-primary"
+            label="Embarque"
+            name={ride.pickup_label || ride.origin_name}
+          />
+          <div className="my-2 ml-[7px] h-3 w-px bg-border/70" />
+          <AddressRow
+            iconColor="text-destructive"
+            dotColor="bg-destructive"
+            label="Destino"
+            name={ride.destination_name}
+          />
         </div>
 
-        <div className="mt-4 space-y-3 rounded-2xl bg-background/60 p-3 ring-1 ring-border">
-          <RouteLine color="bg-blue-500" label="Embarque" name={ride.pickup_label || ride.origin_name} />
-          <div className="ml-[7px] h-3 w-px bg-border" />
-          <RouteLine color="bg-destructive" label="Destino" name={ride.destination_name} />
-        </div>
-
-        <div className="mt-5 grid grid-cols-5 gap-2.5">
-          <button onClick={onReject}
-            className="press-scale col-span-2 rounded-2xl bg-muted/35 min-h-14 py-4 text-sm font-semibold text-muted-foreground ring-1 ring-border/70 hover:bg-muted/55 hover:text-foreground transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border">
+        {/* Botões — Recusar / Aceitar */}
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={onReject}
+            className="press-scale h-14 rounded-[18px] border border-border bg-card text-[14px] font-semibold text-muted-foreground transition hover:text-foreground hover:border-foreground/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border"
+          >
             Recusar
           </button>
-          <button onClick={onAccept}
-            className="press-scale col-span-3 rounded-2xl bg-primary min-h-14 py-4 text-sm font-bold uppercase tracking-[0.15em] text-primary-foreground shadow-[0_14px_32px_-14px_color-mix(in_oklab,var(--color-primary)_60%,transparent)] hover:brightness-105 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-card">
-            Aceitar
+          <button
+            type="button"
+            onClick={onAccept}
+            className="press-scale h-14 rounded-[18px] bg-primary text-[14px] font-bold text-primary-foreground shadow-[0_10px_28px_-14px_color-mix(in_oklab,var(--color-primary)_60%,transparent)] transition hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
+          >
+            Aceitar corrida
           </button>
         </div>
       </div>
@@ -1396,44 +1481,35 @@ function IncomingOffer({
   );
 }
 
-function CountdownRing({ seconds, pct }: { seconds: number; pct: number }) {
-  const r = 18, c = 2 * Math.PI * r;
-  const isLow = seconds <= 5;
+function InfoCard({
+  icon, value, label, compactValue,
+}: { icon: React.ReactNode; value: string; label: string; compactValue?: boolean }) {
   return (
-    <div className={`relative h-12 w-12 ${isLow ? "animate-pulse-soft" : ""}`}>
-      <svg viewBox="0 0 44 44" className="h-12 w-12 -rotate-90">
-        <circle cx="22" cy="22" r={r} stroke="hsl(var(--border))" strokeWidth="3" fill="none" />
-        <circle cx="22" cy="22" r={r} stroke="#8DD92B" strokeWidth="3" fill="none"
-          strokeDasharray={c} strokeDashoffset={c - (c * pct) / 100}
-          strokeLinecap="round" className="transition-[stroke-dashoffset] duration-700 ease-linear" />
-      </svg>
-      <span className="absolute inset-0 flex items-center justify-center font-mono text-sm font-bold text-primary tabular-nums">
-        {seconds}
-      </span>
+    <div className="flex flex-col items-center gap-1 rounded-2xl bg-background/60 px-2 py-3 ring-1 ring-border/60">
+      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10">
+        {icon}
+      </div>
+      <div className={`mt-0.5 font-bold tabular-nums text-foreground leading-none ${compactValue ? "text-[12px] tracking-wide" : "text-[15px]"}`}>
+        {value}
+      </div>
+      <div className="text-[10.5px] font-medium text-muted-foreground text-center leading-tight">
+        {label}
+      </div>
     </div>
   );
 }
 
-function RouteLine({ color, label, name }: { color: string; label: string; name: string | null | undefined }) {
+function AddressRow({
+  iconColor, dotColor, label, name,
+}: { iconColor: string; dotColor: string; label: string; name: string | null | undefined }) {
   const display = (name && name.trim()) || "Endereço não identificado";
   return (
     <div className="flex items-start gap-3">
-      <span className={`mt-1.5 h-3 w-3 shrink-0 rounded-full ${color} ring-2 ring-card`} />
+      <span className={`mt-1.5 h-3 w-3 shrink-0 rounded-full ${dotColor} ring-2 ring-card`} />
       <div className="min-w-0 flex-1">
-        <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</div>
-        <div className="line-clamp-2 text-sm font-medium">{display}</div>
+        <div className={`text-[10.5px] font-semibold uppercase tracking-[0.16em] ${iconColor}`}>{label}</div>
+        <div className="mt-0.5 line-clamp-2 text-[14px] font-medium text-foreground">{display}</div>
       </div>
-    </div>
-  );
-}
-
-function Metric({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
-  return (
-    <div className={`rounded-xl px-2.5 py-2 ring-1 text-center transition ${
-      highlight ? "bg-primary/10 ring-primary/25" : "bg-background/55 ring-border/60"
-    }`}>
-      <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">{label}</div>
-      <div className={`mt-1 text-[14px] font-bold tabular-nums leading-none ${highlight ? "text-primary" : "text-foreground"}`}>{value}</div>
     </div>
   );
 }
