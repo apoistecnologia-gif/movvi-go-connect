@@ -3533,6 +3533,24 @@ function DriverEnRoute({
 
       <RideQuickActions ride={ride} driver={driver} onCancel={onCancel} />
 
+      <div className="mt-3">
+        <SafetyCard
+          role="passenger"
+          rideId={ride.id}
+          counterpartLabel={`Motorista ${driver.name}${driver.vehicle_plate ? ` · ${driver.vehicle_plate}` : ""}`}
+          shareInput={{
+            role: "passenger",
+            status: ride.status,
+            driverName: driver.name,
+            vehicleModel: driver.vehicle_model,
+            vehicleColor: driver.vehicle_color,
+            vehiclePlate: driver.vehicle_plate,
+            originName: ride.origin_name ?? ride.pickup_label ?? null,
+            destinationName: ride.destination_name,
+          }}
+        />
+      </div>
+
       {/* Código de segurança exibido somente no cartão fixo no topo da tela. */}
 
 
