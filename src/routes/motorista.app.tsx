@@ -1514,6 +1514,35 @@ function AddressRow({
   );
 }
 
+function CountdownRing({ seconds, pct }: { seconds: number; pct: number }) {
+  const r = 18, c = 2 * Math.PI * r;
+  const isLow = seconds <= 5;
+  return (
+    <div className={`relative h-12 w-12 ${isLow ? "animate-pulse-soft" : ""}`}>
+      <svg viewBox="0 0 44 44" className="h-12 w-12 -rotate-90">
+        <circle cx="22" cy="22" r={r} stroke="hsl(var(--border))" strokeWidth="3" fill="none" />
+        <circle cx="22" cy="22" r={r} stroke="#76C139" strokeWidth="3" fill="none"
+          strokeDasharray={c} strokeDashoffset={c - (c * pct) / 100}
+          strokeLinecap="round" className="transition-[stroke-dashoffset] duration-700 ease-linear" />
+      </svg>
+      <span className="absolute inset-0 flex items-center justify-center text-[13px] font-bold text-primary tabular-nums">
+        {seconds}
+      </span>
+    </div>
+  );
+}
+
+function Metric({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
+  return (
+    <div className={`rounded-xl px-2.5 py-2 ring-1 text-center transition ${
+      highlight ? "bg-primary/10 ring-primary/25" : "bg-background/55 ring-border/60"
+    }`}>
+      <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">{label}</div>
+      <div className={`mt-1 text-[14px] font-bold tabular-nums leading-none ${highlight ? "text-primary" : "text-foreground"}`}>{value}</div>
+    </div>
+  );
+}
+
 /* ============================================================
    CORRIDA ATIVA
    ============================================================ */
