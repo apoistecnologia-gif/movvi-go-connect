@@ -1460,10 +1460,10 @@ function ActiveRidePanel({
   const toPickup = phase === "motorista_a_caminho" || phase === "motorista_chegou";
 
   const header = useMemo(() => {
-    if (phase === "motorista_a_caminho") return { title: "A caminho do passageiro", tone: "text-primary" };
-    if (phase === "motorista_chegou")  return { title: "Aguardando passageiro",   tone: "text-yellow-400" };
-    if (phase === "em_viagem")     return { title: "Em viagem",               tone: "text-primary" };
-    return { title: "", tone: "" };
+    if (phase === "motorista_a_caminho") return { title: "A caminho do passageiro", tone: "text-primary", dot: "bg-primary" };
+    if (phase === "motorista_chegou")  return { title: "Aguardando passageiro",   tone: "text-[color:var(--color-status-arrived)]", dot: "bg-[color:var(--color-status-arrived)]" };
+    if (phase === "em_viagem")     return { title: "Em viagem",               tone: "text-primary", dot: "bg-primary" };
+    return { title: "", tone: "", dot: "bg-primary" };
   }, [phase]);
 
   const minutes = etaSeconds != null ? Math.max(1, Math.round(etaSeconds / 60)) : null;
