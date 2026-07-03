@@ -101,8 +101,9 @@ function DriverProfilePage() {
             vehiclePlate={driver.vehicle_plate}
             vehicleYear={driver.vehicle_year}
             category={driver.category}
-            rating={driver.rating}
-            totalRides={totalRides}
+            rating={(driver as any).average_rating ?? driver.rating}
+            totalRatings={(driver as any).total_ratings ?? 0}
+            totalRides={(driver as any).completed_rides ?? totalRides}
             createdAt={driver.created_at}
           />
         ) : null
