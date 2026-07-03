@@ -939,6 +939,45 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_logs: {
+        Row: {
+          body: string | null
+          channel: string
+          created_at: string
+          data: Json | null
+          error: string | null
+          event: string
+          id: string
+          status: string
+          title: string | null
+          user_id: string | null
+        }
+        Insert: {
+          body?: string | null
+          channel?: string
+          created_at?: string
+          data?: Json | null
+          error?: string | null
+          event: string
+          id?: string
+          status?: string
+          title?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          body?: string | null
+          channel?: string
+          created_at?: string
+          data?: Json | null
+          error?: string | null
+          event?: string
+          id?: string
+          status?: string
+          title?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           body: string | null
@@ -1737,6 +1776,84 @@ export type Database = {
             referencedColumns: ["key"]
           },
         ]
+      }
+      user_notification_preferences: {
+        Row: {
+          created_at: string
+          payment_reminders: boolean
+          promotions: boolean
+          ride_requests: boolean
+          ride_updates: boolean
+          sound: boolean
+          updated_at: string
+          user_id: string
+          vibration: boolean
+        }
+        Insert: {
+          created_at?: string
+          payment_reminders?: boolean
+          promotions?: boolean
+          ride_requests?: boolean
+          ride_updates?: boolean
+          sound?: boolean
+          updated_at?: string
+          user_id: string
+          vibration?: boolean
+        }
+        Update: {
+          created_at?: string
+          payment_reminders?: boolean
+          promotions?: boolean
+          ride_requests?: boolean
+          ride_updates?: boolean
+          sound?: boolean
+          updated_at?: string
+          user_id?: string
+          vibration?: boolean
+        }
+        Relationships: []
+      }
+      user_notification_tokens: {
+        Row: {
+          auth_key: string | null
+          created_at: string
+          endpoint: string | null
+          id: string
+          last_seen_at: string
+          p256dh: string | null
+          platform: string
+          token: string
+          updated_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth_key?: string | null
+          created_at?: string
+          endpoint?: string | null
+          id?: string
+          last_seen_at?: string
+          p256dh?: string | null
+          platform: string
+          token: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          auth_key?: string | null
+          created_at?: string
+          endpoint?: string | null
+          id?: string
+          last_seen_at?: string
+          p256dh?: string | null
+          platform?: string
+          token?: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
