@@ -88,13 +88,9 @@ export const createDriverMonthlyCharge = createServerFn({ method: "POST" })
       .single();
     if (subErr) throw new Error(subErr.message);
 
-    // Move driver into pending state if currently inactive/expired/blocked.
-    if (driver.subscription_status !== "active") {
-      await supabaseAdmin
-        .from("drivers")
-        .update({ subscription_status: "pending" })
-        .eq("id", driver.id);
-    }
+    // Note: we do NOT write drivers.subscription_status here. The DB trigger
+    // `trg_sync_driver_subscription` mirrors subscriptions.status into
+    // drivers.subscription_status automatically — one source of truth.
 
     return {
       subscriptionId: sub.id,
