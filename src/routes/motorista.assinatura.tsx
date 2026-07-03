@@ -80,11 +80,14 @@ function DriverSubscriptionPage() {
   const Icon = ui === "active" ? CheckCircle2 : ui === "pending_payment" ? Clock : ShieldAlert;
 
   return (
-    <div className="min-h-svh bg-background text-foreground">
-      <MovviHeader />
+    <SettingsPageShell>
+      <SettingsHero
+        icon={Crown}
+        title="Mensalidade"
+        subtitle="Plano Motorista MOVVI Premium"
+      />
 
-      <main className="mx-auto w-full max-w-lg space-y-4 px-4 pb-24 pt-4">
-        <h1 className="text-xl font-extrabold text-foreground">Mensalidade</h1>
+
 
         <Card>
           <CardHeader>
