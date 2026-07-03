@@ -17,6 +17,7 @@ import { Route as PassageiroTermosRouteImport } from './routes/passageiro.termos
 import { Route as PassageiroSuporteRouteImport } from './routes/passageiro.suporte'
 import { Route as PassageiroSobreRouteImport } from './routes/passageiro.sobre'
 import { Route as PassageiroPrivacidadeRouteImport } from './routes/passageiro.privacidade'
+import { Route as PassageiroPreferenciasNotificacoesRouteImport } from './routes/passageiro.preferencias-notificacoes'
 import { Route as PassageiroPerfilRouteImport } from './routes/passageiro.perfil'
 import { Route as PassageiroNotificacoesRouteImport } from './routes/passageiro.notificacoes'
 import { Route as PassageiroLoginRouteImport } from './routes/passageiro.login'
@@ -27,6 +28,7 @@ import { Route as PassageiroCadastroRouteImport } from './routes/passageiro.cada
 import { Route as PassageiroAppRouteImport } from './routes/passageiro.app'
 import { Route as MotoristaStatusRouteImport } from './routes/motorista.status'
 import { Route as MotoristaSegurancaRouteImport } from './routes/motorista.seguranca'
+import { Route as MotoristaPreferenciasNotificacoesRouteImport } from './routes/motorista.preferencias-notificacoes'
 import { Route as MotoristaPerfilRouteImport } from './routes/motorista.perfil'
 import { Route as MotoristaNotificacoesRouteImport } from './routes/motorista.notificacoes'
 import { Route as MotoristaLoginRouteImport } from './routes/motorista.login'
@@ -102,6 +104,12 @@ const PassageiroPrivacidadeRoute = PassageiroPrivacidadeRouteImport.update({
   path: '/passageiro/privacidade',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PassageiroPreferenciasNotificacoesRoute =
+  PassageiroPreferenciasNotificacoesRouteImport.update({
+    id: '/passageiro/preferencias-notificacoes',
+    path: '/passageiro/preferencias-notificacoes',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const PassageiroPerfilRoute = PassageiroPerfilRouteImport.update({
   id: '/passageiro/perfil',
   path: '/passageiro/perfil',
@@ -152,6 +160,12 @@ const MotoristaSegurancaRoute = MotoristaSegurancaRouteImport.update({
   path: '/motorista/seguranca',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MotoristaPreferenciasNotificacoesRoute =
+  MotoristaPreferenciasNotificacoesRouteImport.update({
+    id: '/motorista/preferencias-notificacoes',
+    path: '/motorista/preferencias-notificacoes',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const MotoristaPerfilRoute = MotoristaPerfilRouteImport.update({
   id: '/motorista/perfil',
   path: '/motorista/perfil',
@@ -360,6 +374,7 @@ export interface FileRoutesByFullPath {
   '/motorista/login': typeof MotoristaLoginRoute
   '/motorista/notificacoes': typeof MotoristaNotificacoesRoute
   '/motorista/perfil': typeof MotoristaPerfilRoute
+  '/motorista/preferencias-notificacoes': typeof MotoristaPreferenciasNotificacoesRoute
   '/motorista/seguranca': typeof MotoristaSegurancaRoute
   '/motorista/status': typeof MotoristaStatusRoute
   '/passageiro/app': typeof PassageiroAppRoute
@@ -370,6 +385,7 @@ export interface FileRoutesByFullPath {
   '/passageiro/login': typeof PassageiroLoginRoute
   '/passageiro/notificacoes': typeof PassageiroNotificacoesRoute
   '/passageiro/perfil': typeof PassageiroPerfilRoute
+  '/passageiro/preferencias-notificacoes': typeof PassageiroPreferenciasNotificacoesRoute
   '/passageiro/privacidade': typeof PassageiroPrivacidadeRoute
   '/passageiro/sobre': typeof PassageiroSobreRoute
   '/passageiro/suporte': typeof PassageiroSuporteRoute
@@ -414,6 +430,7 @@ export interface FileRoutesByTo {
   '/motorista/login': typeof MotoristaLoginRoute
   '/motorista/notificacoes': typeof MotoristaNotificacoesRoute
   '/motorista/perfil': typeof MotoristaPerfilRoute
+  '/motorista/preferencias-notificacoes': typeof MotoristaPreferenciasNotificacoesRoute
   '/motorista/seguranca': typeof MotoristaSegurancaRoute
   '/motorista/status': typeof MotoristaStatusRoute
   '/passageiro/app': typeof PassageiroAppRoute
@@ -424,6 +441,7 @@ export interface FileRoutesByTo {
   '/passageiro/login': typeof PassageiroLoginRoute
   '/passageiro/notificacoes': typeof PassageiroNotificacoesRoute
   '/passageiro/perfil': typeof PassageiroPerfilRoute
+  '/passageiro/preferencias-notificacoes': typeof PassageiroPreferenciasNotificacoesRoute
   '/passageiro/privacidade': typeof PassageiroPrivacidadeRoute
   '/passageiro/sobre': typeof PassageiroSobreRoute
   '/passageiro/suporte': typeof PassageiroSuporteRoute
@@ -469,6 +487,7 @@ export interface FileRoutesById {
   '/motorista/login': typeof MotoristaLoginRoute
   '/motorista/notificacoes': typeof MotoristaNotificacoesRoute
   '/motorista/perfil': typeof MotoristaPerfilRoute
+  '/motorista/preferencias-notificacoes': typeof MotoristaPreferenciasNotificacoesRoute
   '/motorista/seguranca': typeof MotoristaSegurancaRoute
   '/motorista/status': typeof MotoristaStatusRoute
   '/passageiro/app': typeof PassageiroAppRoute
@@ -479,6 +498,7 @@ export interface FileRoutesById {
   '/passageiro/login': typeof PassageiroLoginRoute
   '/passageiro/notificacoes': typeof PassageiroNotificacoesRoute
   '/passageiro/perfil': typeof PassageiroPerfilRoute
+  '/passageiro/preferencias-notificacoes': typeof PassageiroPreferenciasNotificacoesRoute
   '/passageiro/privacidade': typeof PassageiroPrivacidadeRoute
   '/passageiro/sobre': typeof PassageiroSobreRoute
   '/passageiro/suporte': typeof PassageiroSuporteRoute
@@ -525,6 +545,7 @@ export interface FileRouteTypes {
     | '/motorista/login'
     | '/motorista/notificacoes'
     | '/motorista/perfil'
+    | '/motorista/preferencias-notificacoes'
     | '/motorista/seguranca'
     | '/motorista/status'
     | '/passageiro/app'
@@ -535,6 +556,7 @@ export interface FileRouteTypes {
     | '/passageiro/login'
     | '/passageiro/notificacoes'
     | '/passageiro/perfil'
+    | '/passageiro/preferencias-notificacoes'
     | '/passageiro/privacidade'
     | '/passageiro/sobre'
     | '/passageiro/suporte'
@@ -579,6 +601,7 @@ export interface FileRouteTypes {
     | '/motorista/login'
     | '/motorista/notificacoes'
     | '/motorista/perfil'
+    | '/motorista/preferencias-notificacoes'
     | '/motorista/seguranca'
     | '/motorista/status'
     | '/passageiro/app'
@@ -589,6 +612,7 @@ export interface FileRouteTypes {
     | '/passageiro/login'
     | '/passageiro/notificacoes'
     | '/passageiro/perfil'
+    | '/passageiro/preferencias-notificacoes'
     | '/passageiro/privacidade'
     | '/passageiro/sobre'
     | '/passageiro/suporte'
@@ -633,6 +657,7 @@ export interface FileRouteTypes {
     | '/motorista/login'
     | '/motorista/notificacoes'
     | '/motorista/perfil'
+    | '/motorista/preferencias-notificacoes'
     | '/motorista/seguranca'
     | '/motorista/status'
     | '/passageiro/app'
@@ -643,6 +668,7 @@ export interface FileRouteTypes {
     | '/passageiro/login'
     | '/passageiro/notificacoes'
     | '/passageiro/perfil'
+    | '/passageiro/preferencias-notificacoes'
     | '/passageiro/privacidade'
     | '/passageiro/sobre'
     | '/passageiro/suporte'
@@ -688,6 +714,7 @@ export interface RootRouteChildren {
   MotoristaLoginRoute: typeof MotoristaLoginRoute
   MotoristaNotificacoesRoute: typeof MotoristaNotificacoesRoute
   MotoristaPerfilRoute: typeof MotoristaPerfilRoute
+  MotoristaPreferenciasNotificacoesRoute: typeof MotoristaPreferenciasNotificacoesRoute
   MotoristaSegurancaRoute: typeof MotoristaSegurancaRoute
   MotoristaStatusRoute: typeof MotoristaStatusRoute
   PassageiroAppRoute: typeof PassageiroAppRoute
@@ -698,6 +725,7 @@ export interface RootRouteChildren {
   PassageiroLoginRoute: typeof PassageiroLoginRoute
   PassageiroNotificacoesRoute: typeof PassageiroNotificacoesRoute
   PassageiroPerfilRoute: typeof PassageiroPerfilRoute
+  PassageiroPreferenciasNotificacoesRoute: typeof PassageiroPreferenciasNotificacoesRoute
   PassageiroPrivacidadeRoute: typeof PassageiroPrivacidadeRoute
   PassageiroSobreRoute: typeof PassageiroSobreRoute
   PassageiroSuporteRoute: typeof PassageiroSuporteRoute
@@ -762,6 +790,13 @@ declare module '@tanstack/react-router' {
       path: '/passageiro/privacidade'
       fullPath: '/passageiro/privacidade'
       preLoaderRoute: typeof PassageiroPrivacidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/passageiro/preferencias-notificacoes': {
+      id: '/passageiro/preferencias-notificacoes'
+      path: '/passageiro/preferencias-notificacoes'
+      fullPath: '/passageiro/preferencias-notificacoes'
+      preLoaderRoute: typeof PassageiroPreferenciasNotificacoesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/passageiro/perfil': {
@@ -832,6 +867,13 @@ declare module '@tanstack/react-router' {
       path: '/motorista/seguranca'
       fullPath: '/motorista/seguranca'
       preLoaderRoute: typeof MotoristaSegurancaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/motorista/preferencias-notificacoes': {
+      id: '/motorista/preferencias-notificacoes'
+      path: '/motorista/preferencias-notificacoes'
+      fullPath: '/motorista/preferencias-notificacoes'
+      preLoaderRoute: typeof MotoristaPreferenciasNotificacoesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/motorista/perfil': {
@@ -1122,6 +1164,8 @@ const rootRouteChildren: RootRouteChildren = {
   MotoristaLoginRoute: MotoristaLoginRoute,
   MotoristaNotificacoesRoute: MotoristaNotificacoesRoute,
   MotoristaPerfilRoute: MotoristaPerfilRoute,
+  MotoristaPreferenciasNotificacoesRoute:
+    MotoristaPreferenciasNotificacoesRoute,
   MotoristaSegurancaRoute: MotoristaSegurancaRoute,
   MotoristaStatusRoute: MotoristaStatusRoute,
   PassageiroAppRoute: PassageiroAppRoute,
@@ -1132,6 +1176,8 @@ const rootRouteChildren: RootRouteChildren = {
   PassageiroLoginRoute: PassageiroLoginRoute,
   PassageiroNotificacoesRoute: PassageiroNotificacoesRoute,
   PassageiroPerfilRoute: PassageiroPerfilRoute,
+  PassageiroPreferenciasNotificacoesRoute:
+    PassageiroPreferenciasNotificacoesRoute,
   PassageiroPrivacidadeRoute: PassageiroPrivacidadeRoute,
   PassageiroSobreRoute: PassageiroSobreRoute,
   PassageiroSuporteRoute: PassageiroSuporteRoute,
