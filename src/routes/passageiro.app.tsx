@@ -2788,36 +2788,43 @@ function SheetContent({
 
 
 
-      {/* "Para onde você vai?" — só aparece antes de confirmar um destino. */}
+      {/* Hero search — "Para onde você vai?" */}
       {showDestinationInput && (
-        <div className="mb-2">
-          <div className="flex items-center gap-3 rounded-2xl bg-background/80 px-4 py-3.5 ring-1 ring-border focus-within:ring-primary/60">
-            <Search className="h-5 w-5 shrink-0 text-primary" />
-            <input
-              ref={searchInputRef}
-              value={destinationText}
-              onChange={(e) => {
-                if (destination) onClearDestination();
-                setDestinationText(e.target.value);
-              }}
-              onFocus={onFocusSearch}
-              placeholder="Para onde você vai?"
-              className="min-w-0 flex-1 bg-transparent text-[15px] font-semibold outline-none placeholder:text-muted-foreground/80"
-            />
-            {destinationText && (
-              <button
-                type="button"
-                onClick={() => {
-                  setDestinationText("");
-                  onClearDestination();
-                  searchInputRef.current?.focus();
+        <div className="mb-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div className="rounded-[24px] border border-border/60 bg-card px-4 py-4 shadow-[0_8px_24px_-16px_rgba(15,23,42,0.18)] transition focus-within:border-[#76C139]/60 focus-within:shadow-[0_12px_28px_-14px_rgba(118,193,57,0.28)]">
+            <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#707070]">
+              Destino
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#76C139]/10 text-[#76C139]">
+                <Search className="h-[18px] w-[18px]" strokeWidth={2} />
+              </span>
+              <input
+                ref={searchInputRef}
+                value={destinationText}
+                onChange={(e) => {
+                  if (destination) onClearDestination();
+                  setDestinationText(e.target.value);
                 }}
-                aria-label="Limpar"
-                className="rounded-full p-1 text-muted-foreground hover:bg-accent/30"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
+                onFocus={onFocusSearch}
+                placeholder="Para onde você vai?"
+                className="min-w-0 flex-1 bg-transparent text-[18px] font-semibold text-[#1B1B1B] outline-none placeholder:text-[#707070]/80"
+              />
+              {destinationText && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDestinationText("");
+                    onClearDestination();
+                    searchInputRef.current?.focus();
+                  }}
+                  aria-label="Limpar"
+                  className="grid h-8 w-8 place-items-center rounded-full text-[#707070] transition hover:bg-[#F7F9F7] active:scale-[0.92]"
+                >
+                  <X className="h-4 w-4" strokeWidth={2} />
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -2831,21 +2838,21 @@ function SheetContent({
 
       {/* Sugestões ao vivo */}
       {showDestinationInput && suggestions.length > 0 && !destination && (
-        <ul className="-mx-1 mb-2 space-y-1">
+        <ul className="-mx-1 mb-2 space-y-1 animate-in fade-in duration-200">
           {suggestions.map((s) => (
             <li key={s.placeId}>
               <button
                 type="button"
                 onClick={() => onPick(s)}
-                className="flex w-full items-start gap-3 rounded-xl px-3 py-3 text-left transition hover:bg-accent/30 active:scale-[0.99]"
+                className="flex w-full items-start gap-3 rounded-2xl px-3 py-3 text-left transition hover:bg-[#F7F9F7] active:scale-[0.99]"
               >
-                <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/15 text-primary">
-                  <MapPin className="h-4 w-4" />
+                <span className="mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#76C139]/10 text-[#76C139]">
+                  <MapPin className="h-[16px] w-[16px]" strokeWidth={2} />
                 </span>
                 <span className="flex min-w-0 flex-col">
-                  <span className="truncate text-sm font-semibold">{s.primary}</span>
+                  <span className="truncate text-[15px] font-semibold text-[#1B1B1B]">{s.primary}</span>
                   {s.secondary && (
-                    <span className="truncate text-xs text-muted-foreground">
+                    <span className="truncate text-[12.5px] text-[#707070]">
                       {s.secondary}
                     </span>
                   )}
@@ -2856,14 +2863,14 @@ function SheetContent({
         </ul>
       )}
 
-      {/* SEM destino: dica discreta — sem categorias aqui */}
+      {/* Dica sem destino */}
       {showDestinationInput && !destination && suggestions.length === 0 && (
-        <div className="mb-1 mt-1 rounded-2xl border border-dashed border-border/70 bg-background/40 px-4 py-3 text-center">
-          <p className="text-[12px] leading-snug text-muted-foreground">
-            Informe o destino para ver as opções de{" "}
-            <span className="font-semibold text-foreground">Corridas</span>,{" "}
-            <span className="font-semibold text-foreground">Envios</span> e{" "}
-            <span className="font-semibold text-foreground">Serviços</span>{" "}
+        <div className="mt-2 rounded-[20px] border border-dashed border-border/70 bg-[#F7F9F7]/60 px-4 py-3.5 text-center animate-in fade-in duration-300">
+          <p className="text-[12.5px] leading-snug text-[#707070]">
+            Informe o destino para ver{" "}
+            <span className="font-semibold text-[#1B1B1B]">Corridas</span>,{" "}
+            <span className="font-semibold text-[#1B1B1B]">Envios</span> e{" "}
+            <span className="font-semibold text-[#1B1B1B]">Serviços</span>{" "}
             disponíveis no trajeto.
           </p>
         </div>
