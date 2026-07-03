@@ -17,7 +17,7 @@ export const Route = createFileRoute("/passageiro/seguranca")({
 function PassengerSafetyPage() {
   return (
     <div className="min-h-screen bg-background pb-24">
-      <MovviHeader title="Segurança" />
+      <MovviHeader />
       <main className="mx-auto max-w-md space-y-4 px-4 pt-4">
         <section className="rounded-2xl bg-card p-4 ring-1 ring-border">
           <div className="flex items-center gap-3">
