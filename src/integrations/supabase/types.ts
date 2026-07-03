@@ -867,6 +867,50 @@ export type Database = {
         }
         Relationships: []
       }
+      incident_reports: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          ride_id: string | null
+          role: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          ride_id?: string | null
+          role: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          ride_id?: string | null
+          role?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incident_reports_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "rides"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_channels: {
         Row: {
           channel: string
@@ -1038,6 +1082,39 @@ export type Database = {
           sent_at?: string
           sent_by?: string | null
           title?: string
+        }
+        Relationships: []
+      }
+      passenger_emergency_contacts: {
+        Row: {
+          created_at: string
+          id: string
+          is_primary: boolean
+          name: string
+          passenger_user_id: string
+          phone: string
+          relation: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          name: string
+          passenger_user_id: string
+          phone: string
+          relation?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          name?: string
+          passenger_user_id?: string
+          phone?: string
+          relation?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
