@@ -20,6 +20,7 @@ import {
 import { useTheme } from "@/lib/theme";
 import {
   SettingsSection, SettingsToggleRow, SettingsLinkRow, SettingsRow, AppAboutCard,
+  SettingsPageShell, SettingsHero,
 } from "@/components/settings";
 
 export const Route = createFileRoute("/motorista/configuracoes")({
