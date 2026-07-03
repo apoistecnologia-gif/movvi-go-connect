@@ -621,10 +621,17 @@ function PassengerRidesPage() {
           void load();
           setSelected(null);
         }}
+        onViewReceipt={(r) => setReceiptRide(r)}
+      />
+      <RideReceiptDialog
+        open={!!receiptRide}
+        onOpenChange={(o) => !o && setReceiptRide(null)}
+        receipt={receiptRide ? rideToReceipt(receiptRide) : null}
       />
     </div>
   );
 }
+
 
 export const Route = createFileRoute("/passageiro/corridas")({
   head: () => ({ meta: [{ title: "Minhas Corridas — MOVVI DRIVE" }] }),
