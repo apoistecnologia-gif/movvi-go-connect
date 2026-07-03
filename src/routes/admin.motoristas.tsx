@@ -757,35 +757,26 @@ function DetailsDialog({
   async function addNote() {
     if (!driver || !noteDraft.trim()) return;
     setSavingNote(true);
-    const { data: auth } = await supabase.auth.getUser();
-    if (!auth.user) {
+    try {
+      const row = await addNoteFn({ data: { driverId: driver.id, note: noteDraft.trim() } });
+      setNotes((cur) => [row as AdminNote, ...cur]);
+      setNoteDraft("");
+      toast.success("Nota adicionada");
+    } catch (e) {
+      toast.error("Erro ao salvar nota: " + (e instanceof Error ? mapAdminError(e.message) : "falha"));
+    } finally {
       setSavingNote(false);
-      toast.error("Sessão expirada.");
-      return;
     }
-    const { data, error } = await supabase
-      .from("admin_driver_notes")
-      .insert({ driver_id: driver.id, admin_id: auth.user.id, note: noteDraft.trim() })
-      .select("*")
-      .single();
-    setSavingNote(false);
-    if (error) {
-      toast.error("Erro ao salvar nota: " + error.message);
-      return;
-    }
-    setNotes((cur) => [data as AdminNote, ...cur]);
-    setNoteDraft("");
-    toast.success("Nota adicionada");
   }
 
   async function removeNote(id: string) {
-    const { error } = await supabase.from("admin_driver_notes").delete().eq("id", id);
-    if (error) {
-      toast.error("Erro: " + error.message);
-      return;
+    try {
+      await removeNoteFn({ data: { id } });
+      setNotes((cur) => cur.filter((n) => n.id !== id));
+      toast.success("Nota removida");
+    } catch (e) {
+      toast.error("Erro: " + (e instanceof Error ? mapAdminError(e.message) : "falha"));
     }
-    setNotes((cur) => cur.filter((n) => n.id !== id));
-    toast.success("Nota removida");
   }
 
   const hasLocation = driver.current_lat != null && driver.current_lng != null;
