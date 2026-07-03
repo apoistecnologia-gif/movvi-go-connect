@@ -10,9 +10,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
+import { DevOrAdminGuard } from "@/components/DevOrAdminGuard";
+
 export const Route = createFileRoute("/debug/motorista-auth")({
-  head: () => ({ meta: [{ title: "Diagnóstico Auth Motorista — MOVVI" }] }),
-  component: DriverAuthDebugPage,
+  head: () => ({
+    meta: [
+      { title: "Diagnóstico Auth Motorista — MOVVI" },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
+  component: () => (
+    <DevOrAdminGuard>
+      <DriverAuthDebugPage />
+    </DevOrAdminGuard>
+  ),
 });
 
 type DiagnosticResult = {
