@@ -3,7 +3,6 @@ import { Link } from "@tanstack/react-router";
 import {
   Bell,
   ClipboardList,
-  DollarSign,
   Home,
   LifeBuoy,
   Loader2,
@@ -16,6 +15,7 @@ import {
   ShieldAlert,
   ShieldCheck,
   User as UserIcon,
+  Wallet,
 } from "lucide-react";
 import {
   Sheet,
