@@ -3057,7 +3057,7 @@ function StepFlow({
           <button
             type="button"
             onClick={() => {
-              const next = paymentMethod === "cash" ? "pix" : paymentMethod === "pix" ? "card" : "cash";
+              const next = paymentMethod === "dinheiro" ? "pix" : paymentMethod === "pix" ? "cartao_credito" : "dinheiro";
               setPaymentMethod(next);
             }}
             className="flex w-full items-center gap-2.5 rounded-2xl bg-background/60 px-3 py-2.5 text-left ring-1 ring-border transition hover:bg-accent/20 active:scale-[0.99]"
@@ -3070,7 +3070,7 @@ function StepFlow({
                 Forma de pagamento (direto ao motorista)
               </div>
               <div className="mt-0.5 truncate text-[13px] font-bold text-foreground leading-tight">
-                {paymentMethod === "cash" ? "Dinheiro" : paymentMethod === "pix" ? "PIX direto ao motorista" : "Cartão com o motorista"}
+                {paymentMethod === "dinheiro" ? "Dinheiro" : paymentMethod === "pix" ? "PIX" : "Cartão de crédito"}
               </div>
             </div>
             <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
