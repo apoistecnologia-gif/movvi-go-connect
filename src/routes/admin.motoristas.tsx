@@ -155,7 +155,15 @@ function docsPending(d: Driver) {
   return !d.selfie_url || !d.cnh_url || !d.vehicle_document_url;
 }
 
+function mapAdminError(msg: string): string {
+  if (msg === "forbidden") return "Ação restrita a administradores.";
+  if (/^invalid_|^Required$|uuid/i.test(msg)) return "Dados inválidos.";
+  return msg;
+}
+
 function AdminMotoristas() {
+  const updateApprovalFn = useServerFn(updateDriverApprovalStatus);
+  const setSuspensionFn = useServerFn(setDriverSuspension);
   const [drivers, setDrivers] = useState<Driver[] | null>(null);
   const [activeRides, setActiveRides] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
