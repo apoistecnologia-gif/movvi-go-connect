@@ -33,6 +33,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/formatters";
 import { logAdminAction } from "@/lib/adminAudit";
+import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 
 export const Route = createFileRoute("/admin/suporte")({
   head: () => ({ meta: [{ title: "Suporte — Admin MOVVI" }] }),
