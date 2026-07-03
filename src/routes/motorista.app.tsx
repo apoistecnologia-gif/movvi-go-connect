@@ -1063,12 +1063,14 @@ function MotoristaApp() {
         <div className="absolute left-1/2 top-24 z-20 -translate-x-1/2 max-w-xs rounded-2xl bg-card/95 px-4 py-3 text-center shadow-2xl ring-1 ring-border backdrop-blur-md">
           <div className="flex items-center justify-center gap-2 text-yellow-400">
             <AlertTriangle className="h-4 w-4" />
-            <span className="text-xs font-semibold uppercase tracking-wide">Aguardando aprovação</span>
+            <span className="text-xs font-semibold uppercase tracking-wide">Mensalidade</span>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">{statusBlock}</p>
-          <button onClick={() => navigate({ to: "/motorista/status" })}
-            className="mt-2 text-xs font-medium text-primary hover:underline">
-            Ver status do cadastro →
+          <button
+            onClick={() => navigate({ to: "/motorista/assinatura" })}
+            className="mt-2 inline-flex items-center justify-center rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow hover:brightness-110"
+          >
+            Pagar mensalidade
           </button>
         </div>
       )}
