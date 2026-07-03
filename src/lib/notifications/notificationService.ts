@@ -93,7 +93,7 @@ async function log(payload: NotifyPayload, status: "sent" | "suppressed" | "erro
       channel: "web",
       title: payload.title,
       body: payload.body ?? null,
-      data: payload.data ?? null,
+      data: (payload.data ?? null) as never,
       status,
       error: error ?? null,
     });
