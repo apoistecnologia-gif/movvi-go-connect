@@ -3490,7 +3490,12 @@ function DriverEnRoute({
         </div>
       )}
 
-      <div className="flex items-center gap-4 rounded-2xl bg-background/50 p-4 ring-1 ring-border/60">
+      <button
+        type="button"
+        onClick={onOpenProfile}
+        className="flex w-full items-center gap-4 rounded-2xl bg-background/50 p-4 text-left ring-1 ring-border/60 transition active:scale-[0.99] hover:ring-primary/40"
+        aria-label="Ver perfil do motorista"
+      >
         <div className="shrink-0 rounded-full ring-2 ring-white/85 shadow-[0_6px_18px_-6px_rgba(0,0,0,0.5)]">
           <Avatar
             src={driver.photo_url ?? null}
@@ -3516,7 +3521,8 @@ function DriverEnRoute({
             {driver.vehicle_plate}
           </div>
         </div>
-      </div>
+        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/70" />
+      </button>
 
 
       <RideQuickActions ride={ride} driver={driver} onCancel={onCancel} />
