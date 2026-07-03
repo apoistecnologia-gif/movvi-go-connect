@@ -168,6 +168,38 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_subscription_notes: {
+        Row: {
+          admin_user_id: string
+          created_at: string
+          id: string
+          note: string
+          subscription_id: string
+        }
+        Insert: {
+          admin_user_id: string
+          created_at?: string
+          id?: string
+          note: string
+          subscription_id: string
+        }
+        Update: {
+          admin_user_id?: string
+          created_at?: string
+          id?: string
+          note?: string
+          subscription_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_subscription_notes_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admin_users_meta: {
         Row: {
           created_at: string
