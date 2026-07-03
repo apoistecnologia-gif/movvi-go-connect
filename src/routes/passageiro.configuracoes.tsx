@@ -1,8 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { MovviHeader } from "@/components/MovviHeader";
-import { BottomNav, PASSENGER_NAV } from "@/components/BottomNav";
+import { PASSENGER_NAV } from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import {
   Bell, Volume2, Vibrate, Languages, Moon, Sun, MonitorSmartphone, MapPin,
@@ -15,10 +14,11 @@ import { requestPushPermission } from "@/lib/pushNotifications";
 import { useTheme } from "@/lib/theme";
 import {
   SettingsSection, SettingsToggleRow, SettingsLinkRow, SettingsRow, AppAboutCard,
+  SettingsPageShell, SettingsHero,
 } from "@/components/settings";
 
 export const Route = createFileRoute("/passageiro/configuracoes")({
-  head: () => ({ meta: [{ title: "Configurações — MOVVI DRIVE" }] }),
+  head: () => ({ meta: [{ title: "Configurações — MOVVI" }] }),
   component: ConfiguracoesPassageiro,
 });
 
