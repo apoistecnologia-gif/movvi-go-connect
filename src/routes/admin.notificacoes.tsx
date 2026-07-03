@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { Loader2, Send } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
@@ -11,6 +12,16 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { logAdminAction } from "@/lib/adminAudit";
 import { formatDate } from "@/lib/formatters";
+import { sendAdminBroadcast } from "@/lib/adminNotifications.functions";
+
+function mapAdminError(msg: string): string {
+  if (msg === "forbidden") return "Ação restrita a administradores.";
+  if (msg === "no_recipients") return "Nenhum destinatário encontrado";
+  if (msg === "too_many_recipients") return "Público muito grande para um único envio.";
+  if (msg === "missing_filter") return "Preencha o filtro";
+  if (/invalid_|^Required$|uuid/i.test(msg)) return "Dados inválidos.";
+  return msg;
+}
 
 export const Route = createFileRoute("/admin/notificacoes")({
   head: () => ({ meta: [{ title: "Notificações — Admin MOVVI" }] }),
