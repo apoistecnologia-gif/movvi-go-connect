@@ -150,8 +150,19 @@ function RatingTestPage() {
   );
 }
 
+import { DevOrAdminGuard } from "@/components/DevOrAdminGuard";
+
 export const Route = createFileRoute("/dev/rating-test")({
   ssr: false,
-  head: () => ({ meta: [{ title: "Rating Test Harness — MOVVI" }] }),
-  component: RatingTestPage,
+  head: () => ({
+    meta: [
+      { title: "Rating Test Harness — MOVVI" },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
+  component: () => (
+    <DevOrAdminGuard>
+      <RatingTestPage />
+    </DevOrAdminGuard>
+  ),
 });

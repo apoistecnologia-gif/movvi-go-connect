@@ -32,6 +32,7 @@ import { toast } from "sonner";
 import { logAdminAction } from "@/lib/adminAudit";
 import { formatBRL, formatDate } from "@/lib/formatters";
 import { adminRefreshAsaasPayment } from "@/lib/payments/adminReconcile.functions";
+import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 
 export const Route = createFileRoute("/admin/assinaturas")({
   head: () => ({ meta: [{ title: "Assinaturas — Admin MOVVI" }] }),
@@ -154,6 +155,8 @@ function AdminAssinaturasPage() {
   const [filter, setFilter] = useState<FilterKey>("all");
   const [query, setQuery] = useState("");
   const [openSubId, setOpenSubId] = useState<string | null>(null);
+  const [planToDelete, setPlanToDelete] = useState<Plan | null>(null);
+  const [confirmAutoSuspend, setConfirmAutoSuspend] = useState(false);
 
   async function refresh() {
     setLoading(true);
@@ -278,10 +281,11 @@ function AdminAssinaturasPage() {
     toast.success("Plano criado");
   }
   async function deletePlan(p: Plan) {
-    if (!window.confirm(`Excluir plano "${p.name}"?`)) return;
     const { error } = await supabase.from("subscription_plans").delete().eq("id", p.id);
     if (error) return toast.error(error.message);
     await logAdminAction({ action: "plan.delete", entity: "subscription_plans", entity_id: p.id });
+    toast.success("Plano excluído");
+    refresh();
   }
 
   async function runAutoSuspend() {
@@ -300,7 +304,7 @@ function AdminAssinaturasPage() {
       description={`${subs.length} assinaturas · ${plans.length} planos · MOVVI recebe apenas a mensalidade do motorista`}
       actions={
         <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={runAutoSuspend}>
+          <Button size="sm" variant="outline" onClick={() => setConfirmAutoSuspend(true)}>
             Verificar vencidas
           </Button>
           <Button size="sm" onClick={createPlan} className="gap-1">
@@ -487,7 +491,7 @@ function AdminAssinaturasPage() {
                         size="sm"
                         variant="ghost"
                         className="text-destructive"
-                        onClick={() => deletePlan(p)}
+                        onClick={() => setPlanToDelete(p)}
                       >
                         <Trash2 className="h-3 w-3" />
                       </Button>
@@ -507,6 +511,36 @@ function AdminAssinaturasPage() {
         open={!!openSubId}
         onOpenChange={(o) => !o && setOpenSubId(null)}
         onRefreshed={refresh}
+      />
+
+      <ConfirmDialog
+        open={!!planToDelete}
+        onOpenChange={(o) => !o && setPlanToDelete(null)}
+        title="Excluir plano de assinatura?"
+        description={
+          <>
+            Você está prestes a excluir o plano{" "}
+            <strong className="text-foreground">{planToDelete?.name}</strong>. Esta ação não pode ser
+            desfeita e removerá o plano do catálogo.
+          </>
+        }
+        confirmLabel="Excluir plano"
+        confirmWord="EXCLUIR"
+        destructive
+        onConfirm={async () => {
+          if (planToDelete) await deletePlan(planToDelete);
+        }}
+      />
+
+      <ConfirmDialog
+        open={confirmAutoSuspend}
+        onOpenChange={setConfirmAutoSuspend}
+        title="Suspender assinaturas vencidas?"
+        description="Todas as assinaturas expiradas com suspensão automática habilitada serão marcadas como vencidas. Motoristas com essas assinaturas ficarão bloqueados de receber corridas."
+        confirmLabel="Executar verificação"
+        onConfirm={async () => {
+          await runAutoSuspend();
+        }}
       />
     </AdminLayout>
   );
@@ -547,6 +581,8 @@ function SubscriptionDetailSheet({
   const [notes, setNotes] = useState<Note[]>([]);
   const [noteDraft, setNoteDraft] = useState("");
   const [savingNote, setSavingNote] = useState(false);
+  const [confirmRefresh, setConfirmRefresh] = useState(false);
+  const [noteToDelete, setNoteToDelete] = useState<Note | null>(null);
 
   useEffect(() => {
     setProviderStatus(null);
@@ -735,7 +771,7 @@ function SubscriptionDetailSheet({
                 }
               />
               <div className="flex flex-wrap items-center gap-2 pt-1">
-                <Button size="sm" variant="outline" onClick={handleRefresh} disabled={refreshing}>
+                <Button size="sm" variant="outline" onClick={() => setConfirmRefresh(true)} disabled={refreshing}>
                   {refreshing ? (
                     <Loader2 className="mr-1 h-3 w-3 animate-spin" />
                   ) : (
@@ -844,7 +880,7 @@ function SubscriptionDetailSheet({
                     size="sm"
                     variant="ghost"
                     className="text-destructive"
-                    onClick={() => deleteNote(n.id)}
+                    onClick={() => setNoteToDelete(n)}
                   >
                     <Trash2 className="h-3 w-3" />
                   </Button>
@@ -859,6 +895,27 @@ function SubscriptionDetailSheet({
           </p>
         </div>
       </SheetContent>
+
+      <ConfirmDialog
+        open={confirmRefresh}
+        onOpenChange={setConfirmRefresh}
+        title="Consultar Asaas agora?"
+        description="Isso consulta o status da cobrança diretamente no provedor. O painel é somente consulta — o pagamento continua sendo confirmado apenas pelo webhook oficial."
+        confirmLabel="Consultar status"
+        onConfirm={handleRefresh}
+      />
+
+      <ConfirmDialog
+        open={!!noteToDelete}
+        onOpenChange={(o) => !o && setNoteToDelete(null)}
+        title="Excluir nota interna?"
+        description="A nota será removida permanentemente do histórico administrativo desta assinatura."
+        confirmLabel="Excluir nota"
+        destructive
+        onConfirm={async () => {
+          if (noteToDelete) await deleteNote(noteToDelete.id);
+        }}
+      />
     </Sheet>
   );
 }

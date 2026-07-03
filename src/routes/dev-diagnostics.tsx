@@ -14,11 +14,20 @@ import {
 import { reverseGeocode } from "@/lib/geocode.functions";
 import { computeRoute } from "@/lib/routes.functions";
 
+import { DevOrAdminGuard } from "@/components/DevOrAdminGuard";
+
 export const Route = createFileRoute("/dev-diagnostics")({
   head: () => ({
-    meta: [{ title: "MOVVI — Diagnóstico (DEV)" }],
+    meta: [
+      { title: "MOVVI — Diagnóstico (DEV)" },
+      { name: "robots", content: "noindex" },
+    ],
   }),
-  component: DevDiagnosticsPage,
+  component: () => (
+    <DevOrAdminGuard>
+      <DevDiagnosticsPage />
+    </DevOrAdminGuard>
+  ),
 });
 
 type PermState = "checking" | "granted" | "denied" | "prompt" | "unsupported";

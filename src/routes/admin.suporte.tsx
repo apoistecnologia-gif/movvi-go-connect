@@ -33,6 +33,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/formatters";
 import { logAdminAction } from "@/lib/adminAudit";
+import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 
 export const Route = createFileRoute("/admin/suporte")({
   head: () => ({ meta: [{ title: "Suporte — Admin MOVVI" }] }),
@@ -522,6 +523,11 @@ function TicketDetailDialog({
   const [noteText, setNoteText] = useState("");
   const [saving, setSaving] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
+  const [pendingUpdate, setPendingUpdate] = useState<
+    | { patch: Partial<Ticket>; action: string; title: string; description: string; confirmLabel: string; destructive?: boolean }
+    | null
+  >(null);
+  const [noteToDelete, setNoteToDelete] = useState<NoteRow | null>(null);
 
   useEffect(() => {
     setRide(null);
@@ -768,7 +774,7 @@ function TicketDetailDialog({
                       {formatDate(n.created_at)}
                     </p>
                   </div>
-                  <Button variant="ghost" size="icon" onClick={() => deleteNote(n.id)}>
+                  <Button variant="ghost" size="icon" onClick={() => setNoteToDelete(n)}>
                     <Trash2 className="h-4 w-4 text-muted-foreground" />
                   </Button>
                 </div>
@@ -784,7 +790,15 @@ function TicketDetailDialog({
               variant="secondary"
               size="sm"
               disabled={busy !== null}
-              onClick={() => updateTicket({ status: "in_review" }, "support_status_in_review")}
+              onClick={() =>
+                setPendingUpdate({
+                  patch: { status: "in_review" },
+                  action: "support_status_in_review",
+                  title: "Marcar ticket em análise?",
+                  description: "O ticket será movido para o fluxo de análise pela equipe de suporte.",
+                  confirmLabel: "Marcar em análise",
+                })
+              }
             >
               <Clock className="mr-2 h-4 w-4" /> Marcar em análise
             </Button>
@@ -792,7 +806,15 @@ function TicketDetailDialog({
               variant="secondary"
               size="sm"
               disabled={busy !== null}
-              onClick={() => updateTicket({ status: "resolved" }, "support_status_resolved")}
+              onClick={() =>
+                setPendingUpdate({
+                  patch: { status: "resolved" },
+                  action: "support_status_resolved",
+                  title: "Marcar ticket como resolvido?",
+                  description: "O ticket será encerrado. Você pode reabrir editando o status depois.",
+                  confirmLabel: "Marcar resolvido",
+                })
+              }
             >
               <CheckCircle2 className="mr-2 h-4 w-4" /> Marcar resolvido
             </Button>
@@ -800,7 +822,16 @@ function TicketDetailDialog({
               variant="secondary"
               size="sm"
               disabled={busy !== null}
-              onClick={() => updateTicket({ priority: "urgent" }, "support_priority_urgent")}
+              onClick={() =>
+                setPendingUpdate({
+                  patch: { priority: "urgent" },
+                  action: "support_priority_urgent",
+                  title: "Elevar prioridade para urgente?",
+                  description: "O ticket será destacado como urgente para toda a equipe de suporte.",
+                  confirmLabel: "Marcar urgente",
+                  destructive: true,
+                })
+              }
             >
               <Flame className="mr-2 h-4 w-4" /> Marcar urgente
             </Button>
@@ -828,6 +859,30 @@ function TicketDetailDialog({
           </div>
         </Section>
       </DialogContent>
+
+      <ConfirmDialog
+        open={!!pendingUpdate}
+        onOpenChange={(o) => !o && setPendingUpdate(null)}
+        title={pendingUpdate?.title ?? ""}
+        description={pendingUpdate?.description}
+        confirmLabel={pendingUpdate?.confirmLabel ?? "Confirmar"}
+        destructive={pendingUpdate?.destructive}
+        onConfirm={async () => {
+          if (pendingUpdate) await updateTicket(pendingUpdate.patch, pendingUpdate.action);
+        }}
+      />
+
+      <ConfirmDialog
+        open={!!noteToDelete}
+        onOpenChange={(o) => !o && setNoteToDelete(null)}
+        title="Excluir nota interna?"
+        description="A nota será removida permanentemente do histórico deste ticket."
+        confirmLabel="Excluir nota"
+        destructive
+        onConfirm={async () => {
+          if (noteToDelete) await deleteNote(noteToDelete.id);
+        }}
+      />
     </Dialog>
   );
 }

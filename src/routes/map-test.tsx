@@ -4,6 +4,7 @@ import { Marker } from "@react-google-maps/api";
 import { MovviMap } from "@/components/MovviMap";
 import { BRAZIL_CENTER, GOOGLE_MAPS_API_KEY } from "@/lib/googleMaps";
 import { isDevelopmentEnvironment } from "@/lib/environment";
+import { DevOrAdminGuard } from "@/components/DevOrAdminGuard";
 import { ArrowLeft, CheckCircle2, XCircle } from "lucide-react";
 
 export const Route = createFileRoute("/map-test")({
@@ -11,17 +12,22 @@ export const Route = createFileRoute("/map-test")({
     meta: [
       { title: "Diagnóstico do mapa — MOVVI DRIVE" },
       { name: "description", content: "Página de teste do Google Maps na plataforma MOVVI DRIVE." },
+      { name: "robots", content: "noindex" },
     ],
   }),
-  component: MapTest,
+  component: () => (
+    <DevOrAdminGuard>
+      <MapTest />
+    </DevOrAdminGuard>
+  ),
 });
 
 function MapTest() {
-  const navigate = useNavigate();
-  useEffect(() => {
-    if (!isDevelopmentEnvironment()) void navigate({ to: "/" });
-  }, [navigate]);
-  if (!isDevelopmentEnvironment()) return null;
+  // In production the DevOrAdminGuard already restricts access to admins.
+  // Keep useNavigate reference to avoid unused-import warnings for existing code.
+  useNavigate();
+  useEffect(() => {}, []);
+  void isDevelopmentEnvironment;
   const hasKey = Boolean(GOOGLE_MAPS_API_KEY);
 
   return (
