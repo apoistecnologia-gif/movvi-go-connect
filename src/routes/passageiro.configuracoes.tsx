@@ -249,10 +249,8 @@ function ConfiguracoesPassageiro() {
             <div className="py-2"><AppAboutCard /></div>
             <SettingsLinkRow icon={Info} title="Mais sobre a MOVVI" to="/passageiro/sobre" />
           </SettingsSection>
-        </div>
-      </main>
-      <BottomNav items={PASSENGER_NAV} />
-    </div>
+      </div>
+    </SettingsPageShell>
   );
 }
 
