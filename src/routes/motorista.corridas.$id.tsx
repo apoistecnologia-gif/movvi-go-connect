@@ -152,29 +152,54 @@ function RideDetailsPage() {
                 </div>
               )}
 
-              {ride.status === "finalizada" && (
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() =>
-                    downloadRideReceipt({
-                      ...ride,
-                      driver_name: ride.driver_name,
-                      driver_vehicle: ride.driver_vehicle,
-                      passenger_name: passengerName,
-                    })
-                  }
-                >
-                  <FileText className="mr-2 h-4 w-4" /> Baixar recibo PDF
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Button variant="outline" className="w-full" onClick={() => setReceiptOpen(true)}>
+                  <ReceiptIcon className="mr-2 h-4 w-4" /> Ver recibo
                 </Button>
-              )}
+                {ride.status === "finalizada" && (
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() =>
+                      downloadRideReceipt({
+                        ...ride,
+                        driver_name: ride.driver_name,
+                        driver_vehicle: ride.driver_vehicle,
+                        passenger_name: passengerName,
+                      })
+                    }
+                  >
+                    <FileText className="mr-2 h-4 w-4" /> Baixar PDF
+                  </Button>
+                )}
+              </div>
             </CardContent>
           </Card>
         </div>
       </main>
+
+      <RideReceiptDialog
+        open={receiptOpen}
+        onOpenChange={setReceiptOpen}
+        receipt={{
+          rideId: ride.id,
+          date: ride.completed_at ?? ride.created_at,
+          origin: ride.pickup_label || ride.origin_name,
+          destination: ride.destination_name,
+          driverName: ride.driver_name,
+          passengerName: passengerName,
+          vehicle: ride.driver_vehicle,
+          paymentMethod: ride.payment_method,
+          value: ride.final_price ?? ride.estimated_price,
+          status: ride.status,
+          distanceKm: ride.distance_km,
+          durationMin: ride.duration_min,
+        }}
+      />
     </div>
   );
 }
+
 
 function Mini({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
   return (
