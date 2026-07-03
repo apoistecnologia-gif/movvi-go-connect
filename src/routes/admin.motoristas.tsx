@@ -258,57 +258,55 @@ function AdminMotoristas() {
 
   async function updateStatus(d: Driver, status: Status, reason?: string | null) {
     setBusyId(d.id);
-    const patch: Database["public"]["Tables"]["drivers"]["Update"] = {
-      approval_status: status,
-      motivo_reprovacao: status === "reprovado" ? reason ?? null : null,
-      approved_at: status === "aprovado" ? new Date().toISOString() : null,
-      blocked_at: status === "bloqueado" ? new Date().toISOString() : null,
-    };
-    const { error } = await supabase.from("drivers").update(patch).eq("id", d.id);
-    setBusyId(null);
-    if (error) {
-      toast.error("Erro ao atualizar status: " + error.message);
-      return;
+    try {
+      const { patch } = await updateApprovalFn({
+        data: { id: d.id, status, reason: reason ?? null },
+      });
+      await logAdminAction({
+        action: `driver.${status}`,
+        entity: "drivers",
+        entity_id: d.id,
+        before: { approval_status: d.approval_status },
+        after: patch,
+      });
+      if (status === "aprovado") toast.success("Motorista aprovado com sucesso");
+      if (status === "reprovado") toast.success("Motorista reprovado");
+      if (status === "bloqueado") toast.success("Motorista bloqueado");
+      if (status === "em_analise") toast.success("Cadastro reenviado para análise");
+      setRejectFor(null);
+      setBlockFor(null);
+      setUnblockFor(null);
+      setRejectReason("");
+      if (detail?.id === d.id)
+        setDetail({ ...d, ...(patch as Database["public"]["Tables"]["drivers"]["Update"]) } as Driver);
+      load();
+    } catch (e) {
+      toast.error("Erro ao atualizar status: " + (e instanceof Error ? mapAdminError(e.message) : "falha"));
+    } finally {
+      setBusyId(null);
     }
-    await logAdminAction({
-      action: `driver.${status}`,
-      entity: "drivers",
-      entity_id: d.id,
-      before: { approval_status: d.approval_status },
-      after: patch,
-    });
-    if (status === "aprovado") toast.success("Motorista aprovado com sucesso");
-    if (status === "reprovado") toast.success("Motorista reprovado");
-    if (status === "bloqueado") toast.success("Motorista bloqueado");
-    if (status === "em_analise") toast.success("Cadastro reenviado para análise");
-    setRejectFor(null);
-    setBlockFor(null);
-    setUnblockFor(null);
-    setRejectReason("");
-    if (detail?.id === d.id) setDetail({ ...d, ...patch } as Driver);
-    load();
   }
 
   async function toggleSuspend(d: Driver, suspend: boolean) {
     setBusyId(d.id);
-    const patch = { suspended_at: suspend ? new Date().toISOString() : null } as never;
-    const { error } = await supabase.from("drivers").update(patch).eq("id", d.id);
-    setBusyId(null);
-    if (error) {
-      toast.error("Erro: " + error.message);
-      return;
+    try {
+      await setSuspensionFn({ data: { id: d.id, suspend } });
+      await logAdminAction({
+        action: suspend ? "driver.suspend" : "driver.unsuspend",
+        entity: "drivers",
+        entity_id: d.id,
+        before: { suspended_at: d.suspended_at ?? null },
+        after: { suspended_at: suspend ? "now" : null },
+      });
+      toast.success(suspend ? "Motorista suspenso" : "Suspensão removida");
+      setSuspendFor(null);
+      if (detail?.id === d.id) setDetail({ ...d, suspended_at: suspend ? new Date().toISOString() : null });
+      load();
+    } catch (e) {
+      toast.error("Erro: " + (e instanceof Error ? mapAdminError(e.message) : "falha"));
+    } finally {
+      setBusyId(null);
     }
-    await logAdminAction({
-      action: suspend ? "driver.suspend" : "driver.unsuspend",
-      entity: "drivers",
-      entity_id: d.id,
-      before: { suspended_at: d.suspended_at ?? null },
-      after: { suspended_at: suspend ? "now" : null },
-    });
-    toast.success(suspend ? "Motorista suspenso" : "Suspensão removida");
-    setSuspendFor(null);
-    if (detail?.id === d.id) setDetail({ ...d, suspended_at: suspend ? new Date().toISOString() : null });
-    load();
   }
 
   return (
