@@ -1069,40 +1069,42 @@ function MotoristaApp() {
         </MovviMap>
       </div>
 
-      {/* Top bar — compacta (apenas hambúrguer + logout; identidade vive no painel) */}
-      <div className="absolute inset-x-0 top-0 z-40 px-3 pt-[calc(env(safe-area-inset-top)+6px)]">
-        <div className="mx-auto flex max-w-5xl items-center gap-2 rounded-2xl bg-card/85 px-2 py-1.5 shadow-lg ring-1 ring-border/50 backdrop-blur-xl">
+      {/* Top bar — glass flutuante premium (60px, radius 22, backdrop blur) */}
+      <div className="absolute inset-x-0 top-0 z-40 px-3 pt-[calc(env(safe-area-inset-top)+8px)] motion-safe:animate-[fadeIn_320ms_ease-out]">
+        <div
+          className="mx-auto flex h-[60px] max-w-5xl items-center gap-3 rounded-[22px] px-3 shadow-[0_12px_32px_-16px_rgba(0,0,0,0.55)]"
+          style={{
+            background: "color-mix(in oklab, #0b0d10 62%, transparent)",
+            border: "1px solid rgba(255,255,255,0.06)",
+            backdropFilter: "blur(10px) saturate(140%)",
+          }}
+        >
           <button
             onClick={() => setSideMenuOpen(true)}
             aria-label="Abrir menu"
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary ring-1 ring-primary/30 transition hover:bg-primary/25 active:scale-90"
+            className="press-scale inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-foreground/90 transition hover:bg-white/5"
+            style={{ border: "1px solid rgba(255,255,255,0.08)" }}
           >
-            <Menu className="h-[18px] w-[18px]" />
+            <Menu className="h-[18px] w-[18px]" strokeWidth={1.75} />
           </button>
-          <div className="min-w-0 flex-1 truncate text-[12.5px] font-semibold text-foreground/90">
-            {driverName ? `Olá, ${driverName}` : "MOVVI DRIVE"}
+          <div className="min-w-0 flex-1 leading-tight">
+            <div className="truncate text-[11px] font-normal text-muted-foreground">
+              {greetingForNow()},
+            </div>
+            <div className="truncate text-[15px] font-bold text-foreground">
+              {driverName || "Motorista"}
+            </div>
           </div>
           <button
             onClick={handleLogout}
             aria-label="Sair"
-            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-destructive/15 text-destructive ring-1 ring-destructive/30 transition hover:bg-destructive/25 active:scale-90"
+            className="press-scale inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-foreground/80 transition hover:bg-white/5 hover:text-destructive"
+            style={{ border: "1px solid rgba(255,255,255,0.08)" }}
           >
-            <LogOut className="h-[14px] w-[14px]" />
+            <LogOut className="h-[16px] w-[16px]" strokeWidth={1.75} />
           </button>
         </div>
       </div>
-
-      {/* Suaviza a área central do mapa (evita sensação de "branco puro" no idle) */}
-      {!incoming && !ratingRide && !active && (
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 z-10"
-          style={{
-            background:
-              "radial-gradient(120% 60% at 50% 40%, transparent 55%, color-mix(in oklab, var(--color-foreground) 6%, transparent) 100%)",
-          }}
-        />
-      )}
 
       <DriverSideMenu
         open={sideMenuOpen}
