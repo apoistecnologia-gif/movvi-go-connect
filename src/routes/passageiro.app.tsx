@@ -3416,10 +3416,12 @@ function DriverEnRoute({
   ride,
   driver,
   onCancel,
+  onOpenProfile,
 }: {
   ride: RideRow;
   driver: DriverRow;
   onCancel: () => void;
+  onOpenProfile?: () => void;
 }) {
   const phaseLabel =
     ride.status === "motorista_chegou"
