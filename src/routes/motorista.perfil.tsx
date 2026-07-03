@@ -1,9 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { Eye } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ProfileForm } from "@/components/profile/ProfileForm";
 import { ProfileHero } from "@/components/profile/ProfileHero";
 import { DriverInfoCard } from "@/components/profile/DriverInfoCard";
+import { DriverProfessionalProfileDialog } from "@/components/profile/DriverProfessionalProfileDialog";
 import {
   ApprovalBadge, SubscriptionBadge, OnlineBadge, DocumentsBadge, VerifiedBadge,
 } from "@/components/profile/ProfileStatusBadges";
