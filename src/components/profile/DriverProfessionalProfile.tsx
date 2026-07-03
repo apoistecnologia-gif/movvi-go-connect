@@ -267,7 +267,8 @@ export function useDriverPublicProfile(userId: string | null | undefined) {
           setError(err.message);
           setData(null);
         } else {
-          const first = Array.isArray(rows) && rows.length > 0 ? (rows[0] as DriverPublicProfile) : null;
+          const arr = rows as unknown as DriverPublicProfile[] | null;
+          const first = Array.isArray(arr) && arr.length > 0 ? arr[0] : null;
           setData(first);
         }
       })
