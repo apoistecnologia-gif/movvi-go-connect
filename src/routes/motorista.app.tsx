@@ -1376,133 +1376,112 @@ function IncomingOffer({
   const CatIcon = cat?.icon ?? RouteIcon;
   const catLabel = cat?.label?.toUpperCase() ?? "CORRIDA";
 
-  // Badge visual de qualidade (apenas rótulo — sem novos cálculos no backend).
-  const quality = useMemo(() => {
+  // MOVVI Ride Score — badge visual (deriva de distance_km, sem backend novo).
+  const score = useMemo(() => {
     const km = Number(ride.distance_km ?? 0);
-    if (km >= 10) return { label: "Longa distância", tone: "bg-sky-500/12 text-sky-600 ring-sky-500/25" };
-    if (km >= 5)  return { label: "Ótima corrida",   tone: "bg-primary/12 text-primary ring-primary/25" };
-    if (km > 0)   return { label: "Boa corrida",      tone: "bg-amber-500/12 text-amber-600 ring-amber-500/25" };
-    return { label: "Corrida disponível", tone: "bg-primary/12 text-primary ring-primary/25" };
-  }, [ride.distance_km]);
+    const pk = pickupKm ?? 0;
+    if (pk >= 4) return { label: "Embarque distante", tone: "text-sky-400", dot: "bg-sky-400", bg: "bg-sky-400/10", border: "border-sky-400/25" };
+    if (km >= 10) return { label: "Corrida excelente", tone: "text-primary", dot: "bg-primary", bg: "bg-primary/12", border: "border-primary/30" };
+    if (km >= 5)  return { label: "Ótima corrida",     tone: "text-primary", dot: "bg-primary", bg: "bg-primary/10", border: "border-primary/25" };
+    if (km > 0)   return { label: "Boa corrida",        tone: "text-amber-400", dot: "bg-amber-400", bg: "bg-amber-400/10", border: "border-amber-400/25" };
+    return { label: "Corrida disponível", tone: "text-primary", dot: "bg-primary", bg: "bg-primary/10", border: "border-primary/25" };
+  }, [ride.distance_km, pickupKm]);
 
   const rating = (passenger as { rating?: number | null } | null)?.rating;
+  const ratingText = rating != null ? Number(rating).toFixed(2) : "5.00";
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/45 animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 animate-in fade-in duration-200"
       role="dialog" aria-modal="true"
     >
       <div
-        className="w-full max-w-md rounded-t-[24px] bg-card px-5 pb-[calc(env(safe-area-inset-bottom)+18px)] pt-3 shadow-[0_-8px_30px_rgba(0,0,0,0.12)] ring-1 ring-border/50 animate-in fade-in slide-in-from-bottom-4 zoom-in-95 duration-[240ms] ease-out"
-        style={{ maxHeight: "80vh" }}
+        className="relative w-full max-w-md rounded-t-[28px] px-5 pb-[calc(env(safe-area-inset-bottom)+16px)] pt-4 shadow-[0_-20px_60px_-24px_rgba(0,0,0,0.55)] animate-in fade-in slide-in-from-bottom-6 zoom-in-95 duration-[260ms] ease-out"
+        style={{
+          maxHeight: "45vh",
+          background: "#111418",
+          border: "1px solid rgba(255,255,255,0.06)",
+          overflow: "auto",
+        }}
       >
-        <div className="mx-auto mb-2 h-1 w-10 rounded-full bg-muted-foreground/25" />
-
-        {/* Header: título + countdown circular */}
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              Nova corrida
-            </div>
-            <div className="mt-0.5 text-[13px] font-medium text-muted-foreground">
-              Toque em <span className="text-foreground font-semibold">Aceitar</span> para iniciar
-            </div>
-          </div>
+        {/* Countdown top-right */}
+        <div className="absolute right-4 top-3">
           <CountdownRing seconds={countdown} pct={pct} />
         </div>
 
-        {/* Preço central — elemento visual principal */}
-        <div className="mt-4 flex flex-col items-center">
+        {/* Score badge top-left */}
+        <div className={`inline-flex items-center gap-1.5 rounded-full border ${score.border} ${score.bg} px-3 py-1 text-[11px] font-semibold ${score.tone}`}>
+          <span className={`h-1.5 w-1.5 rounded-full ${score.dot}`} />
+          {score.label}
+        </div>
+
+        {/* Preço hero */}
+        <div className="mt-3 flex flex-col items-center">
           <div className="text-[32px] font-extrabold leading-none tracking-tight text-foreground tabular-nums">
             {ride.estimated_price != null ? formatBRL(Number(ride.estimated_price)) : "—"}
           </div>
-          <div className="mt-1 text-[12px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+          <div className="mt-1 text-[12px] font-medium text-muted-foreground">
             Ganho da corrida
           </div>
         </div>
 
-        {/* Três info cards */}
-        <div className="mt-4 grid grid-cols-3 gap-2.5">
-          <InfoCard
-            icon={<Clock className="h-4 w-4 text-primary" />}
-            value={pickupMin != null ? `${pickupMin} min` : "—"}
-            label="Até o passageiro"
-          />
-          <InfoCard
-            icon={<MapPin className="h-4 w-4 text-primary" />}
-            value={pickupKm != null ? `${pickupKm.toFixed(1)} km` : "—"}
-            label="Distância"
-          />
-          <InfoCard
-            icon={<CatIcon className="h-4 w-4 text-primary" />}
-            value={catLabel}
-            label="Categoria"
-            compactValue
-          />
+        {/* Quatro cards compactos */}
+        <div className="mt-4 grid grid-cols-4 gap-2">
+          <InfoCard icon={<Clock className="h-[14px] w-[14px]" strokeWidth={1.75} />} value={pickupMin != null ? `${pickupMin} min` : "—"} label="ETA" />
+          <InfoCard icon={<MapPin className="h-[14px] w-[14px]" strokeWidth={1.75} />} value={pickupKm != null ? `${pickupKm.toFixed(1)} km` : "—"} label="Embarque" />
+          <InfoCard icon={<CatIcon className="h-[14px] w-[14px]" strokeWidth={1.75} />} value={catLabel} label="Categoria" compactValue />
+          <InfoCard icon={<Star className="h-[14px] w-[14px] fill-amber-400 text-amber-400" strokeWidth={0} />} value={ratingText} label="Passageiro" />
         </div>
 
-        {/* Badge de qualidade */}
-        <div className="mt-4 flex items-center justify-center">
-          <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold ring-1 ${quality.tone}`}>
-            <Circle className="h-2 w-2 fill-current" />
-            {quality.label}
-          </span>
-        </div>
-
-        {/* Passageiro — apenas nome + rating */}
+        {/* Passageiro — nome + rating */}
         <button
           type="button"
           onClick={onOpenProfile}
-          className="mt-3 flex w-full items-center gap-3 rounded-2xl bg-background/60 p-2.5 text-left ring-1 ring-border/60 transition active:scale-[0.99] hover:ring-primary/40"
+          className="press-scale mt-3 flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition hover:bg-white/[0.03]"
+          style={{ background: "#0e1114", border: "1px solid rgba(255,255,255,0.06)" }}
           aria-label="Ver perfil do passageiro"
         >
           <Avatar
             src={passenger?.avatar_url ?? (ride as { passenger_photo_url?: string | null }).passenger_photo_url ?? null}
             name={passenger?.name ?? "Passageiro"}
-            size={38}
+            size={36}
           />
           <div className="min-w-0 flex-1">
-            <div className="truncate text-[14px] font-semibold text-foreground">
+            <div className="truncate text-[15px] font-semibold text-foreground">
               {passenger?.name ?? "Passageiro"}
             </div>
-            <div className="mt-0.5 flex items-center gap-1 text-[12px] text-muted-foreground">
-              <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-              <span className="tabular-nums">{rating != null ? Number(rating).toFixed(2) : "5.00"}</span>
+            <div className="mt-0.5 flex items-center gap-1 text-[13px] text-muted-foreground">
+              <Star className="h-3 w-3 fill-amber-400 text-amber-400" strokeWidth={0} />
+              <span className="tabular-nums">{ratingText}</span>
             </div>
           </div>
           <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" />
         </button>
 
-        {/* Endereços — embarque + destino */}
-        <div className="mt-3 rounded-2xl bg-background/60 p-3.5 ring-1 ring-border/60">
-          <AddressRow
-            iconColor="text-primary"
-            dotColor="bg-primary"
-            label="Embarque"
-            name={ride.pickup_label || ride.origin_name}
-          />
-          <div className="my-2 ml-[7px] h-3 w-px bg-border/70" />
-          <AddressRow
-            iconColor="text-destructive"
-            dotColor="bg-destructive"
-            label="Destino"
-            name={ride.destination_name}
-          />
+        {/* Endereços */}
+        <div
+          className="mt-3 rounded-2xl px-4 py-3.5"
+          style={{ background: "#0e1114", border: "1px solid rgba(255,255,255,0.06)" }}
+        >
+          <AddressRow dotColor="bg-primary" label="Embarque" name={ride.pickup_label || ride.origin_name} />
+          <div className="my-2.5 ml-[5px] h-px w-full bg-white/[0.06]" />
+          <AddressRow dotColor="bg-destructive" label="Destino" name={ride.destination_name} />
         </div>
 
-        {/* Botões — Recusar / Aceitar */}
+        {/* Botões */}
         <div className="mt-4 grid grid-cols-2 gap-3">
           <button
             type="button"
             onClick={onReject}
-            className="press-scale h-14 rounded-[18px] border border-border bg-card text-[14px] font-semibold text-muted-foreground transition hover:text-foreground hover:border-foreground/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border"
+            className="press-scale h-14 rounded-[18px] text-[15px] font-semibold text-muted-foreground transition duration-[250ms] hover:text-foreground"
+            style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }}
           >
             Recusar
           </button>
           <button
             type="button"
             onClick={onAccept}
-            className="press-scale h-14 rounded-[18px] bg-primary text-[14px] font-bold text-primary-foreground shadow-[0_10px_28px_-14px_color-mix(in_oklab,var(--color-primary)_60%,transparent)] transition hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
+            className="press-scale h-14 rounded-[18px] bg-primary text-[15px] font-bold text-primary-foreground shadow-[0_14px_36px_-16px_color-mix(in_oklab,var(--color-primary)_70%,transparent)] transition duration-[250ms] hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2"
           >
             Aceitar corrida
           </button>
@@ -1516,14 +1495,17 @@ function InfoCard({
   icon, value, label, compactValue,
 }: { icon: React.ReactNode; value: string; label: string; compactValue?: boolean }) {
   return (
-    <div className="flex flex-col items-center gap-1 rounded-2xl bg-background/60 px-2 py-3 ring-1 ring-border/60">
-      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10">
+    <div
+      className="flex flex-col items-center gap-1 rounded-2xl px-1.5 py-2.5"
+      style={{ background: "#0e1114", border: "1px solid rgba(255,255,255,0.06)" }}
+    >
+      <div className="flex h-6 w-6 items-center justify-center rounded-full text-primary" style={{ background: "color-mix(in oklab, var(--color-primary) 12%, transparent)" }}>
         {icon}
       </div>
-      <div className={`mt-0.5 font-bold tabular-nums text-foreground leading-none ${compactValue ? "text-[12px] tracking-wide" : "text-[15px]"}`}>
+      <div className={`font-bold tabular-nums text-foreground leading-none ${compactValue ? "text-[11px] tracking-wide" : "text-[14px]"}`}>
         {value}
       </div>
-      <div className="text-[10.5px] font-medium text-muted-foreground text-center leading-tight">
+      <div className="text-[10px] font-medium text-muted-foreground text-center leading-tight">
         {label}
       </div>
     </div>
@@ -1531,15 +1513,15 @@ function InfoCard({
 }
 
 function AddressRow({
-  iconColor, dotColor, label, name,
-}: { iconColor: string; dotColor: string; label: string; name: string | null | undefined }) {
+  dotColor, label, name,
+}: { dotColor: string; label: string; name: string | null | undefined }) {
   const display = (name && name.trim()) || "Endereço não identificado";
   return (
     <div className="flex items-start gap-3">
-      <span className={`mt-1.5 h-3 w-3 shrink-0 rounded-full ${dotColor} ring-2 ring-card`} />
+      <span className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${dotColor}`} />
       <div className="min-w-0 flex-1">
-        <div className={`text-[10.5px] font-semibold uppercase tracking-[0.16em] ${iconColor}`}>{label}</div>
-        <div className="mt-0.5 line-clamp-2 text-[14px] font-medium text-foreground">{display}</div>
+        <div className="text-[13px] font-normal text-muted-foreground">{label}</div>
+        <div className="mt-0.5 line-clamp-1 text-[15px] font-semibold text-foreground">{display}</div>
       </div>
     </div>
   );
