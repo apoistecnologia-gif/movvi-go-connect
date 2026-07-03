@@ -270,9 +270,13 @@ function DriverEarningsPage() {
                 <CardContent className="p-4">
                   <h3 className="mb-3 text-sm font-semibold">Extrato de corridas</h3>
                   {rides.length === 0 ? (
-                    <p className="py-6 text-center text-xs text-muted-foreground">
-                      Nenhuma corrida finalizada no período.
-                    </p>
+                    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border/70 bg-background/40 px-4 py-8 text-center">
+                      <div className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/15 text-primary ring-1 ring-primary/25">
+                        <FileText className="h-4 w-4" />
+                      </div>
+                      <p className="text-xs font-semibold text-foreground">Sem corridas no período</p>
+                      <p className="mt-1 text-[11px] text-muted-foreground">Ajuste o filtro ou volte quando finalizar novas viagens.</p>
+                    </div>
                   ) : (
                     <ul className="divide-y divide-border text-sm">
                       {rides.map((r) => (
