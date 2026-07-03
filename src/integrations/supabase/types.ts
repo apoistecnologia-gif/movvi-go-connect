@@ -1896,6 +1896,19 @@ export type Database = {
           trips: number
         }[]
       }
+      get_passenger_public_profile: {
+        Args: { target_user_id: string }
+        Returns: {
+          average_rating: number
+          city: string
+          completed_rides: number
+          member_since: string
+          name: string
+          photo_url: string
+          total_ratings: number
+          user_id: string
+        }[]
+      }
       get_passenger_stats: {
         Args: { _user_id: string }
         Returns: {
