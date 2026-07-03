@@ -28,6 +28,12 @@ import { logAdminAction } from "@/lib/adminAudit";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { getDriverDocumentUrls } from "@/lib/driverDocs.functions";
+import {
+  addDriverAdminNote,
+  deleteDriverAdminNote,
+  setDriverSuspension,
+  updateDriverApprovalStatus,
+} from "@/lib/adminDrivers.functions";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
