@@ -1,19 +1,23 @@
 import type { LucideIcon } from "lucide-react";
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import { MovviHeader } from "@/components/MovviHeader";
 import { BottomNav, DRIVER_NAV } from "@/components/BottomNav";
 
+type NavItems = ComponentProps<typeof BottomNav>["items"];
+
 /**
- * MOVVI DS — Shell padrão de toda tela secundária do motorista.
+ * MOVVI DS — Shell padrão de toda tela secundária (motorista e passageiro).
  * Fundo #F7F9F7, header MOVVI fixo, largura máxima 2xl,
  * espaçamento inferior seguro para a BottomNav.
  */
 export function SettingsPageShell({
   children,
   hideBottomNav = false,
+  nav = DRIVER_NAV,
 }: {
   children: ReactNode;
   hideBottomNav?: boolean;
+  nav?: NavItems;
 }) {
   return (
     <div className="flex min-h-dvh flex-col bg-[#F7F9F7]">
@@ -24,7 +28,7 @@ export function SettingsPageShell({
       >
         <div className="mx-auto w-full max-w-2xl space-y-5">{children}</div>
       </main>
-      {!hideBottomNav ? <BottomNav items={DRIVER_NAV} /> : null}
+      {!hideBottomNav ? <BottomNav items={nav} /> : null}
     </div>
   );
 }
