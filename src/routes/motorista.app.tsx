@@ -1418,7 +1418,7 @@ function Metric({ label, value, highlight }: { label: string; value: string; hig
    CORRIDA ATIVA
    ============================================================ */
 function ActiveRidePanel({
-  ride, passenger, etaSeconds, legKm, onArrive, onStart, onComplete, onCancel,
+  ride, passenger, etaSeconds, legKm, onArrive, onStart, onComplete, onCancel, onOpenProfile,
 }: {
   ride: RideRow; passenger: Passenger | null;
   etaSeconds: number | null; legKm: number | null;
@@ -1426,6 +1426,7 @@ function ActiveRidePanel({
   onStart: (code: string) => Promise<void> | void;
   onComplete: () => Promise<void> | void;
   onCancel: () => Promise<void> | void;
+  onOpenProfile?: () => void;
 }) {
   const [pinOpen, setPinOpen] = useState(false);
   const [pinCode, setPinCode] = useState("");
@@ -1495,26 +1496,35 @@ function ActiveRidePanel({
         </div>
       )}
 
-      {/* passageiro */}
-      <div className="flex items-center gap-3.5 rounded-2xl bg-background/55 p-3.5 ring-1 ring-border/60">
-        <div className="shrink-0 rounded-full ring-2 ring-white/85 shadow-[0_6px_18px_-6px_rgba(0,0,0,0.5)]">
-          <Avatar src={passenger?.avatar_url ?? (ride as { passenger_photo_url?: string | null }).passenger_photo_url ?? null} name={passenger?.name ?? "?"} size={56} />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="truncate text-[15px] font-semibold tracking-tight">{passenger?.name ?? "Passageiro"}</div>
-          <div className="mt-1 flex items-center gap-1.5 text-[12px] text-muted-foreground">
-            <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" /> 5.0
-            <span className="text-muted-foreground/50">·</span>
-            {paymentLabelFor(ride.payment_method)}
+      {/* passageiro — tap para abrir perfil profissional */}
+      <div className="flex items-center gap-2 rounded-2xl bg-background/55 p-2 ring-1 ring-border/60">
+        <button
+          type="button"
+          onClick={onOpenProfile}
+          className="flex min-w-0 flex-1 items-center gap-3.5 rounded-xl p-1.5 text-left transition active:scale-[0.99] hover:bg-background/70"
+          aria-label="Ver perfil do passageiro"
+        >
+          <div className="shrink-0 rounded-full ring-2 ring-white/85 shadow-[0_6px_18px_-6px_rgba(0,0,0,0.5)]">
+            <Avatar src={passenger?.avatar_url ?? (ride as { passenger_photo_url?: string | null }).passenger_photo_url ?? null} name={passenger?.name ?? "?"} size={56} />
           </div>
-        </div>
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-[15px] font-semibold tracking-tight">{passenger?.name ?? "Passageiro"}</div>
+            <div className="mt-1 flex items-center gap-1.5 text-[12px] text-muted-foreground">
+              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" /> 5.0
+              <span className="text-muted-foreground/50">·</span>
+              {paymentLabelFor(ride.payment_method)}
+            </div>
+          </div>
+          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/70" />
+        </button>
         {passenger?.phone && (
           <a href={`tel:${passenger.phone}`}
-            className="active-press flex h-11 w-11 items-center justify-center rounded-full bg-primary/12 text-primary ring-1 ring-primary/30 hover:bg-primary/20">
+            className="active-press flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/12 text-primary ring-1 ring-primary/30 hover:bg-primary/20">
             <Phone className="h-[17px] w-[17px]" />
           </a>
         )}
       </div>
+
 
 
       {/* endereços */}
