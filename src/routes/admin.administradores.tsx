@@ -20,6 +20,13 @@ export const Route = createFileRoute("/admin/administradores")({
 const ROLES = ["super_admin", "admin", "financial", "operations", "support", "readonly"] as const;
 type Role = (typeof ROLES)[number];
 
+function mapRoleError(msg: string): string {
+  if (msg === "forbidden") return "Apenas administradores podem alterar permissões.";
+  if (msg === "cannot_revoke_self_admin") return "Você não pode remover sua própria permissão de admin.";
+  if (msg === "invalid_role" || msg === "invalid_user_id") return "Dados inválidos.";
+  return msg;
+}
+
 type AdminRow = {
   user_id: string;
   roles: Role[];
