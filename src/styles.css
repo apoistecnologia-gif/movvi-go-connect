@@ -26,6 +26,15 @@
   --color-offline: var(--muted-foreground);
   --color-map-accent: var(--primary);
 
+  /* MOVVI DS — ride status palette (Phase 2 standardization) */
+  --color-status-online: oklch(0.78 0.20 145);       /* green */
+  --color-status-searching: oklch(0.72 0.16 240);    /* MOVVI blue */
+  --color-status-arrived: oklch(0.78 0.17 60);       /* orange */
+  --color-status-inride: var(--primary);             /* MOVVI primary */
+  --color-status-offline: var(--muted-foreground);   /* gray */
+  --color-status-cancelled: var(--destructive);      /* red */
+
+
   /* MOVVI DS — spacing scale (px tokens usable via var()) */
   --ds-space-1: 4px;
   --ds-space-2: 8px;

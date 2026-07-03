@@ -1272,7 +1272,7 @@ function IdleBottomPanel({
           type="button"
           disabled={disabled}
           onClick={toggleOnline}
-          className={`press-scale w-full rounded-2xl py-4 text-[14px] font-bold uppercase tracking-[0.15em] transition disabled:cursor-not-allowed disabled:opacity-60 ${
+          className={`press-scale w-full rounded-2xl min-h-14 py-4 text-[14px] font-bold uppercase tracking-[0.15em] transition disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-card ${
             online
               ? "bg-card text-foreground ring-1 ring-border hover:ring-destructive/50"
               : "bg-primary text-primary-foreground shadow-[0_12px_32px_-12px_color-mix(in_oklab,var(--color-primary)_60%,transparent)] hover:brightness-105"
@@ -1310,8 +1310,8 @@ function IncomingOffer({
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-sm animate-in fade-in"
       role="dialog" aria-modal="true">
-      <div className="w-full max-w-md rounded-t-[28px] bg-card p-5 shadow-2xl ring-1 ring-primary/30 animate-in slide-in-from-bottom duration-200">
-        <div className="mx-auto -mt-1 mb-3 h-1 w-10 rounded-full bg-muted-foreground/30" />
+      <div className="w-full max-w-md rounded-t-[28px] bg-card p-5 pb-6 shadow-premium ring-1 ring-primary/30 animate-sheet-in">
+        <div className="mx-auto -mt-1 mb-3 h-1.5 w-11 rounded-full bg-muted-foreground/30" />
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -1359,11 +1359,11 @@ function IncomingOffer({
 
         <div className="mt-5 grid grid-cols-5 gap-2.5">
           <button onClick={onReject}
-            className="press-scale col-span-2 rounded-2xl bg-muted/35 py-4 text-sm font-semibold text-muted-foreground ring-1 ring-border/70 hover:bg-muted/55 hover:text-foreground transition">
+            className="press-scale col-span-2 rounded-2xl bg-muted/35 min-h-14 py-4 text-sm font-semibold text-muted-foreground ring-1 ring-border/70 hover:bg-muted/55 hover:text-foreground transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border">
             Recusar
           </button>
           <button onClick={onAccept}
-            className="press-scale col-span-3 rounded-2xl bg-primary py-4 text-sm font-bold uppercase tracking-[0.15em] text-primary-foreground shadow-[0_14px_32px_-14px_color-mix(in_oklab,var(--color-primary)_60%,transparent)] hover:brightness-105 transition">
+            className="press-scale col-span-3 rounded-2xl bg-primary min-h-14 py-4 text-sm font-bold uppercase tracking-[0.15em] text-primary-foreground shadow-[0_14px_32px_-14px_color-mix(in_oklab,var(--color-primary)_60%,transparent)] hover:brightness-105 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-card">
             Aceitar
           </button>
         </div>
@@ -1460,10 +1460,10 @@ function ActiveRidePanel({
   const toPickup = phase === "motorista_a_caminho" || phase === "motorista_chegou";
 
   const header = useMemo(() => {
-    if (phase === "motorista_a_caminho") return { title: "A caminho do passageiro", tone: "text-primary" };
-    if (phase === "motorista_chegou")  return { title: "Aguardando passageiro",   tone: "text-yellow-400" };
-    if (phase === "em_viagem")     return { title: "Em viagem",               tone: "text-primary" };
-    return { title: "", tone: "" };
+    if (phase === "motorista_a_caminho") return { title: "A caminho do passageiro", tone: "text-primary", dot: "bg-primary" };
+    if (phase === "motorista_chegou")  return { title: "Aguardando passageiro",   tone: "text-[color:var(--color-status-arrived)]", dot: "bg-[color:var(--color-status-arrived)]" };
+    if (phase === "em_viagem")     return { title: "Em viagem",               tone: "text-primary", dot: "bg-primary" };
+    return { title: "", tone: "", dot: "bg-primary" };
   }, [phase]);
 
   const minutes = etaSeconds != null ? Math.max(1, Math.round(etaSeconds / 60)) : null;
@@ -1474,14 +1474,14 @@ function ActiveRidePanel({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className={`relative flex h-2 w-2`}>
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/70" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+            <span className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-70 ${header.dot}`} />
+            <span className={`relative inline-flex h-2 w-2 rounded-full ${header.dot}`} />
           </span>
           <span className={`text-[11px] font-bold uppercase tracking-widest ${header.tone}`}>{header.title}</span>
         </div>
         {phase === "motorista_a_caminho" && (
-          <button onClick={onCancel}
-            className="rounded-full p-1.5 text-muted-foreground hover:bg-muted/30 hover:text-destructive">
+          <button onClick={onCancel} aria-label="Cancelar corrida"
+            className="rounded-full p-2 min-h-11 min-w-11 flex items-center justify-center text-muted-foreground hover:bg-muted/30 hover:text-destructive transition">
             <X className="h-4 w-4" />
           </button>
         )}
@@ -1589,8 +1589,8 @@ function ActiveRidePanel({
       {/* Modal de validação do PIN de segurança */}
       {pinOpen && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-md rounded-t-[28px] sm:rounded-[28px] bg-card p-5 shadow-2xl ring-1 ring-border animate-in slide-in-from-bottom duration-200">
-            <div className="mx-auto -mt-1 mb-4 h-1 w-10 rounded-full bg-muted-foreground/30 sm:hidden" />
+          <div className="w-full max-w-md rounded-t-[28px] sm:rounded-[28px] bg-card p-5 pb-6 shadow-premium ring-1 ring-border animate-sheet-in">
+            <div className="mx-auto -mt-1 mb-4 h-1.5 w-11 rounded-full bg-muted-foreground/30 sm:hidden" />
             <div className="text-center">
               <div className="mx-auto mb-3 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/15 text-primary ring-1 ring-primary/30">
                 <CheckCircle2 className="h-6 w-6" />
@@ -1659,7 +1659,7 @@ function ActionButton({
     <button
       disabled={busy}
       onClick={async () => { setBusy(true); try { await onClick(); } finally { setBusy(false); } }}
-      className={`press-scale mt-1 flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-[14px] font-bold uppercase tracking-[0.15em] transition disabled:opacity-60 ${
+      className={`press-scale mt-1 flex w-full items-center justify-center gap-2 rounded-2xl min-h-14 py-4 text-[14px] font-bold uppercase tracking-[0.15em] transition disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-card ${
         variant === "success"
           ? "bg-primary text-primary-foreground shadow-[0_14px_32px_-14px_color-mix(in_oklab,var(--color-primary)_60%,transparent)] hover:brightness-105"
           : "bg-primary text-primary-foreground shadow-[0_14px_32px_-14px_color-mix(in_oklab,var(--color-primary)_60%,transparent)] hover:brightness-105"}`}>
@@ -1687,8 +1687,8 @@ function RatingScreen({
   const paymentLabel = paymentLabelFor(ride.payment_method);
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/75 backdrop-blur-sm animate-in fade-in">
-      <div className="w-full max-w-md rounded-t-[28px] bg-card p-5 shadow-2xl ring-1 ring-border animate-in slide-in-from-bottom duration-200">
-        <div className="mx-auto -mt-1 mb-4 h-1 w-10 rounded-full bg-muted-foreground/30" />
+      <div className="w-full max-w-md rounded-t-[28px] bg-card p-5 pb-6 shadow-premium ring-1 ring-border animate-sheet-in">
+        <div className="mx-auto -mt-1 mb-4 h-1.5 w-11 rounded-full bg-muted-foreground/30" />
 
         {/* recebimento */}
         <div className="rounded-2xl bg-gradient-to-br from-primary/20 via-primary/10 to-transparent p-5 ring-1 ring-primary/30 text-center">
