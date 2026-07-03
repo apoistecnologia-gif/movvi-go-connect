@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Avatar } from "@/components/Avatar";
+import { DriverProfessionalProfileDialog } from "@/components/profile/DriverProfessionalProfileDialog";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Circle, Marker, Polyline, useJsApiLoader } from "@react-google-maps/api";
