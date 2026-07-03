@@ -132,31 +132,22 @@ function ConfiguracoesPassageiro() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">
+      <div className="flex min-h-dvh items-center justify-center bg-[#F7F9F7] text-[#707070]">
         <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Carregando...
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <MovviHeader logoutRedirect="/" />
-      <main className="flex-1 px-4 py-6 pb-24">
-        <div className="container mx-auto max-w-2xl space-y-5">
-          <header className="flex items-center gap-3">
-            <div className="grid h-11 w-11 place-items-center rounded-full bg-primary/15 text-primary ring-1 ring-primary/30">
-              <SettingsIcon className="h-5 w-5" />
-            </div>
-            <div className="min-w-0">
-              <h1 className="text-2xl font-bold">Configurações</h1>
-              <p className="text-xs text-muted-foreground">Personalize sua conta MOVVI.</p>
-              {saving && (
-                <p className="mt-1 inline-flex items-center gap-1 text-[11px] text-muted-foreground">
-                  <Save className="h-3 w-3 animate-pulse" /> Salvando...
-                </p>
-              )}
-            </div>
-          </header>
+    <SettingsPageShell nav={PASSENGER_NAV}>
+      <SettingsHero
+        icon={SettingsIcon}
+        title="Configurações"
+        subtitle={saving ? "Salvando…" : (userEmail ?? "Personalize sua conta MOVVI.")}
+        action={saving ? <Save className="h-4 w-4 animate-pulse text-[#5A9A2A]" /> : undefined}
+      />
+      <div className="space-y-5">
+
 
           {/* Conta */}
           <SettingsSection icon={User} title="Conta" description={userEmail ?? undefined}>
