@@ -3,8 +3,9 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * Base row for a settings item: icon + title + optional hint on the left,
- * arbitrary control (switch, button, chevron) on the right.
+ * MOVVI DS — Settings row.
+ * Matches the Profile MenuRow: 40px rounded green icon tile,
+ * 15px semibold title, 12.5px muted hint, right-aligned control.
  */
 export function SettingsRow({
   icon: Icon,
@@ -15,6 +16,7 @@ export function SettingsRow({
   onClick,
   as = "div",
   disabled,
+  destructive,
 }: {
   icon?: LucideIcon;
   title: ReactNode;
@@ -24,6 +26,7 @@ export function SettingsRow({
   onClick?: () => void;
   as?: "div" | "button";
   disabled?: boolean;
+  destructive?: boolean;
 }) {
   const Tag = as as any;
   const interactive = as === "button" || !!onClick;
@@ -33,21 +36,34 @@ export function SettingsRow({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "flex w-full items-center gap-3 py-3 text-left",
-        interactive &&
-          "rounded-lg -mx-1 px-1 transition-colors active:scale-[0.99] active:opacity-90 hover:bg-muted/40 disabled:pointer-events-none disabled:opacity-60",
+        "flex w-full items-center gap-3 px-4 py-3.5 text-left transition",
+        interactive && "active:bg-[#F7F9F7] disabled:pointer-events-none disabled:opacity-60",
         className,
       )}
     >
       {Icon ? (
-        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-muted/50 text-foreground/80">
-          <Icon className="h-4 w-4" />
+        <div
+          className={cn(
+            "flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl",
+            destructive
+              ? "bg-[#FEE2E2] text-[#DC2626]"
+              : "bg-[#76C139]/10 text-[#5A9A2A]",
+          )}
+        >
+          <Icon className="h-[18px] w-[18px]" strokeWidth={1.75} />
         </div>
       ) : null}
       <div className="min-w-0 flex-1">
-        <div className="truncate text-sm font-medium text-foreground">{title}</div>
+        <div
+          className={cn(
+            "text-[15px] font-semibold",
+            destructive ? "text-[#DC2626]" : "text-[#1B1B1B]",
+          )}
+        >
+          {title}
+        </div>
         {hint ? (
-          <div className="truncate text-xs text-muted-foreground">{hint}</div>
+          <div className="truncate text-[12.5px] text-[#707070]">{hint}</div>
         ) : null}
       </div>
       {right ? <div className="shrink-0">{right}</div> : null}
