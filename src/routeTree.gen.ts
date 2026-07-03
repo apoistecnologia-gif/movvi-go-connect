@@ -35,6 +35,7 @@ import { Route as MotoristaDocumentosRouteImport } from './routes/motorista.docu
 import { Route as MotoristaCorridasRouteImport } from './routes/motorista.corridas'
 import { Route as MotoristaConfiguracoesRouteImport } from './routes/motorista.configuracoes'
 import { Route as MotoristaCadastroRouteImport } from './routes/motorista.cadastro'
+import { Route as MotoristaAssinaturaRouteImport } from './routes/motorista.assinatura'
 import { Route as MotoristaAppRouteImport } from './routes/motorista.app'
 import { Route as DevRatingTestRouteImport } from './routes/dev.rating-test'
 import { Route as DebugMotoristaAuthRouteImport } from './routes/debug.motorista-auth'
@@ -58,6 +59,7 @@ import { Route as AdminBackupsRouteImport } from './routes/admin.backups'
 import { Route as AdminAssinaturasRouteImport } from './routes/admin.assinaturas'
 import { Route as AdminAdministradoresRouteImport } from './routes/admin.administradores'
 import { Route as MotoristaCorridasIdRouteImport } from './routes/motorista.corridas.$id'
+import { Route as ApiPublicAsaasWebhookRouteImport } from './routes/api/public/asaas-webhook'
 import { Route as ApiPublicDownloadMovviSourceRouteImport } from './routes/api/public/download.movvi-source'
 
 const MapTestRoute = MapTestRouteImport.update({
@@ -190,6 +192,11 @@ const MotoristaCadastroRoute = MotoristaCadastroRouteImport.update({
   path: '/motorista/cadastro',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MotoristaAssinaturaRoute = MotoristaAssinaturaRouteImport.update({
+  id: '/motorista/assinatura',
+  path: '/motorista/assinatura',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MotoristaAppRoute = MotoristaAppRouteImport.update({
   id: '/motorista/app',
   path: '/motorista/app',
@@ -305,6 +312,11 @@ const MotoristaCorridasIdRoute = MotoristaCorridasIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => MotoristaCorridasRoute,
 } as any)
+const ApiPublicAsaasWebhookRoute = ApiPublicAsaasWebhookRouteImport.update({
+  id: '/api/public/asaas-webhook',
+  path: '/api/public/asaas-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicDownloadMovviSourceRoute =
   ApiPublicDownloadMovviSourceRouteImport.update({
     id: '/api/public/download/movvi-source',
@@ -339,6 +351,7 @@ export interface FileRoutesByFullPath {
   '/debug/motorista-auth': typeof DebugMotoristaAuthRoute
   '/dev/rating-test': typeof DevRatingTestRoute
   '/motorista/app': typeof MotoristaAppRoute
+  '/motorista/assinatura': typeof MotoristaAssinaturaRoute
   '/motorista/cadastro': typeof MotoristaCadastroRoute
   '/motorista/configuracoes': typeof MotoristaConfiguracoesRoute
   '/motorista/corridas': typeof MotoristaCorridasRouteWithChildren
@@ -361,6 +374,7 @@ export interface FileRoutesByFullPath {
   '/passageiro/sobre': typeof PassageiroSobreRoute
   '/passageiro/suporte': typeof PassageiroSuporteRoute
   '/passageiro/termos': typeof PassageiroTermosRoute
+  '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
   '/motorista/corridas/$id': typeof MotoristaCorridasIdRoute
   '/api/public/download/movvi-source': typeof ApiPublicDownloadMovviSourceRoute
 }
@@ -391,6 +405,7 @@ export interface FileRoutesByTo {
   '/debug/motorista-auth': typeof DebugMotoristaAuthRoute
   '/dev/rating-test': typeof DevRatingTestRoute
   '/motorista/app': typeof MotoristaAppRoute
+  '/motorista/assinatura': typeof MotoristaAssinaturaRoute
   '/motorista/cadastro': typeof MotoristaCadastroRoute
   '/motorista/configuracoes': typeof MotoristaConfiguracoesRoute
   '/motorista/corridas': typeof MotoristaCorridasRouteWithChildren
@@ -413,6 +428,7 @@ export interface FileRoutesByTo {
   '/passageiro/sobre': typeof PassageiroSobreRoute
   '/passageiro/suporte': typeof PassageiroSuporteRoute
   '/passageiro/termos': typeof PassageiroTermosRoute
+  '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
   '/motorista/corridas/$id': typeof MotoristaCorridasIdRoute
   '/api/public/download/movvi-source': typeof ApiPublicDownloadMovviSourceRoute
 }
@@ -444,6 +460,7 @@ export interface FileRoutesById {
   '/debug/motorista-auth': typeof DebugMotoristaAuthRoute
   '/dev/rating-test': typeof DevRatingTestRoute
   '/motorista/app': typeof MotoristaAppRoute
+  '/motorista/assinatura': typeof MotoristaAssinaturaRoute
   '/motorista/cadastro': typeof MotoristaCadastroRoute
   '/motorista/configuracoes': typeof MotoristaConfiguracoesRoute
   '/motorista/corridas': typeof MotoristaCorridasRouteWithChildren
@@ -466,6 +483,7 @@ export interface FileRoutesById {
   '/passageiro/sobre': typeof PassageiroSobreRoute
   '/passageiro/suporte': typeof PassageiroSuporteRoute
   '/passageiro/termos': typeof PassageiroTermosRoute
+  '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
   '/motorista/corridas/$id': typeof MotoristaCorridasIdRoute
   '/api/public/download/movvi-source': typeof ApiPublicDownloadMovviSourceRoute
 }
@@ -498,6 +516,7 @@ export interface FileRouteTypes {
     | '/debug/motorista-auth'
     | '/dev/rating-test'
     | '/motorista/app'
+    | '/motorista/assinatura'
     | '/motorista/cadastro'
     | '/motorista/configuracoes'
     | '/motorista/corridas'
@@ -520,6 +539,7 @@ export interface FileRouteTypes {
     | '/passageiro/sobre'
     | '/passageiro/suporte'
     | '/passageiro/termos'
+    | '/api/public/asaas-webhook'
     | '/motorista/corridas/$id'
     | '/api/public/download/movvi-source'
   fileRoutesByTo: FileRoutesByTo
@@ -550,6 +570,7 @@ export interface FileRouteTypes {
     | '/debug/motorista-auth'
     | '/dev/rating-test'
     | '/motorista/app'
+    | '/motorista/assinatura'
     | '/motorista/cadastro'
     | '/motorista/configuracoes'
     | '/motorista/corridas'
@@ -572,6 +593,7 @@ export interface FileRouteTypes {
     | '/passageiro/sobre'
     | '/passageiro/suporte'
     | '/passageiro/termos'
+    | '/api/public/asaas-webhook'
     | '/motorista/corridas/$id'
     | '/api/public/download/movvi-source'
   id:
@@ -602,6 +624,7 @@ export interface FileRouteTypes {
     | '/debug/motorista-auth'
     | '/dev/rating-test'
     | '/motorista/app'
+    | '/motorista/assinatura'
     | '/motorista/cadastro'
     | '/motorista/configuracoes'
     | '/motorista/corridas'
@@ -624,6 +647,7 @@ export interface FileRouteTypes {
     | '/passageiro/sobre'
     | '/passageiro/suporte'
     | '/passageiro/termos'
+    | '/api/public/asaas-webhook'
     | '/motorista/corridas/$id'
     | '/api/public/download/movvi-source'
   fileRoutesById: FileRoutesById
@@ -655,6 +679,7 @@ export interface RootRouteChildren {
   DebugMotoristaAuthRoute: typeof DebugMotoristaAuthRoute
   DevRatingTestRoute: typeof DevRatingTestRoute
   MotoristaAppRoute: typeof MotoristaAppRoute
+  MotoristaAssinaturaRoute: typeof MotoristaAssinaturaRoute
   MotoristaCadastroRoute: typeof MotoristaCadastroRoute
   MotoristaConfiguracoesRoute: typeof MotoristaConfiguracoesRoute
   MotoristaCorridasRoute: typeof MotoristaCorridasRouteWithChildren
@@ -677,6 +702,7 @@ export interface RootRouteChildren {
   PassageiroSobreRoute: typeof PassageiroSobreRoute
   PassageiroSuporteRoute: typeof PassageiroSuporteRoute
   PassageiroTermosRoute: typeof PassageiroTermosRoute
+  ApiPublicAsaasWebhookRoute: typeof ApiPublicAsaasWebhookRoute
   ApiPublicDownloadMovviSourceRoute: typeof ApiPublicDownloadMovviSourceRoute
 }
 
@@ -864,6 +890,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MotoristaCadastroRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/motorista/assinatura': {
+      id: '/motorista/assinatura'
+      path: '/motorista/assinatura'
+      fullPath: '/motorista/assinatura'
+      preLoaderRoute: typeof MotoristaAssinaturaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/motorista/app': {
       id: '/motorista/app'
       path: '/motorista/app'
@@ -1025,6 +1058,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MotoristaCorridasIdRouteImport
       parentRoute: typeof MotoristaCorridasRoute
     }
+    '/api/public/asaas-webhook': {
+      id: '/api/public/asaas-webhook'
+      path: '/api/public/asaas-webhook'
+      fullPath: '/api/public/asaas-webhook'
+      preLoaderRoute: typeof ApiPublicAsaasWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/download/movvi-source': {
       id: '/api/public/download/movvi-source'
       path: '/api/public/download/movvi-source'
@@ -1073,6 +1113,7 @@ const rootRouteChildren: RootRouteChildren = {
   DebugMotoristaAuthRoute: DebugMotoristaAuthRoute,
   DevRatingTestRoute: DevRatingTestRoute,
   MotoristaAppRoute: MotoristaAppRoute,
+  MotoristaAssinaturaRoute: MotoristaAssinaturaRoute,
   MotoristaCadastroRoute: MotoristaCadastroRoute,
   MotoristaConfiguracoesRoute: MotoristaConfiguracoesRoute,
   MotoristaCorridasRoute: MotoristaCorridasRouteWithChildren,
@@ -1095,6 +1136,7 @@ const rootRouteChildren: RootRouteChildren = {
   PassageiroSobreRoute: PassageiroSobreRoute,
   PassageiroSuporteRoute: PassageiroSuporteRoute,
   PassageiroTermosRoute: PassageiroTermosRoute,
+  ApiPublicAsaasWebhookRoute: ApiPublicAsaasWebhookRoute,
   ApiPublicDownloadMovviSourceRoute: ApiPublicDownloadMovviSourceRoute,
 }
 export const routeTree = rootRouteImport
