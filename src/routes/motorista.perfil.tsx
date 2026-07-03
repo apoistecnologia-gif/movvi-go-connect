@@ -36,20 +36,26 @@ function DriverProfilePage() {
     if (!userId) return;
     let alive = true;
     (async () => {
-      const [{ data: d }, { count }, { data: docs }, { data: u }] = await Promise.all([
-        supabase.from("drivers")
-          .select("name,email,photo_url,category,vehicle_model,vehicle_color,vehicle_plate,vehicle_year,rating,approval_status,subscription_status,is_online,created_at")
-          .eq("user_id", userId).maybeSingle(),
+      const { data: d } = await supabase.from("drivers")
+        .select("id,name,email,photo_url,category,vehicle_model,vehicle_color,vehicle_plate,vehicle_year,rating,approval_status,subscription_status,is_online,created_at")
+        .eq("user_id", userId).maybeSingle();
+      if (!alive) return;
+      setDriver((d ?? null) as Driver | null);
+
+      const driverId = (d as { id?: string } | null)?.id;
+      const [{ count }, docsRes, { data: u }] = await Promise.all([
         supabase.from("rides").select("id", { count: "exact", head: true })
           .eq("driver_id", userId).eq("status", "finalizada"),
-        supabase.from("driver_documents").select("status").eq("user_id", userId),
+        driverId
+          ? supabase.from("driver_documents").select("status").eq("driver_id", driverId)
+          : Promise.resolve({ data: [] as { status: string | null }[] }),
         supabase.from("users").select("email_verified_at").eq("auth_user_id", userId).maybeSingle(),
       ]);
       if (!alive) return;
-      setDriver((d ?? null) as Driver | null);
       setTotalRides(count ?? 0);
       setVerified(Boolean(u?.email_verified_at));
-      if (docs && docs.length > 0) {
+      const docs = (docsRes as { data: { status: string | null }[] | null }).data ?? [];
+      if (docs.length > 0) {
         const statuses = docs.map((x) => String(x.status ?? "").toLowerCase());
         if (statuses.every((s) => s === "aprovado" || s === "approved" || s === "ok")) setDocsStatus("ok");
         else if (statuses.some((s) => s === "reprovado" || s === "rejected" || s === "missing")) setDocsStatus("missing");
