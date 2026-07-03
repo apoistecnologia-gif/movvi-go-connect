@@ -704,7 +704,7 @@ function PassageiroApp() {
   const [route, setRoute] = useState<RouteResult | null>(null);
   const [passengerUiStage, setPassengerUiStage] = useState<PassengerUiStage>("selecting_destination");
   const [selectedCategoryKey, setSelectedCategoryKey] = useState<string | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<"cash" | "pix" | "card">("cash");
+  const [paymentMethod, setPaymentMethod] = useState<"dinheiro" | "pix" | "cartao_credito">("dinheiro");
   const uiCategories = useUiCategories();
   const selectedUiCategory = useMemo(
     () => uiCategories.find((c) => c.key === selectedCategoryKey) ?? null,
