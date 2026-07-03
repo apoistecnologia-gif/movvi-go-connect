@@ -132,8 +132,8 @@ function AnalyticsPage() {
         supabase.rpc("admin_analytics_top_passengers" as never, { _kind: "new", _limit: 15 } as never),
       ]);
       if (cancelled) return;
-      setOverview((ov.data as Overview) ?? null);
-      setFinancial((fi.data as Financial) ?? null);
+      setOverview((ov.data as unknown as Overview) ?? null);
+      setFinancial((fi.data as unknown as Financial) ?? null);
       setRidesSeries(((rs.data ?? []) as SeriesPoint[]));
       setUsersSeries(((us.data ?? []) as SeriesPoint[]));
       setSubsSeries(((ss.data ?? []) as SeriesPoint[]));
