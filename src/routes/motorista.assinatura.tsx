@@ -81,12 +81,11 @@ function DriverSubscriptionPage() {
 
   return (
     <div className="min-h-svh bg-background text-foreground">
-      <MovviHeader
-        title="Mensalidade"
-        onBack={() => navigate({ to: "/motorista/app" })}
-      />
+      <MovviHeader />
 
       <main className="mx-auto w-full max-w-lg space-y-4 px-4 pb-24 pt-4">
+        <h1 className="text-xl font-extrabold text-foreground">Mensalidade</h1>
+
         <Card>
           <CardHeader>
             <CardTitle>Plano Motorista MOVVI</CardTitle>

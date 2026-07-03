@@ -56,7 +56,7 @@ export const Route = createFileRoute("/api/public/asaas-webhook")({
           await supabaseAdmin
             .from("subscriptions")
             .update({
-              status: "ativa",
+              status: "active",
               paid_at: parsed.paidAt ?? new Date().toISOString(),
               period_end: periodEnd,
             })
@@ -69,7 +69,7 @@ export const Route = createFileRoute("/api/public/asaas-webhook")({
             })
             .eq("id", sub.driver_id);
         } else if (parsed.status === "expired") {
-          await supabaseAdmin.from("subscriptions").update({ status: "vencida" }).eq("id", sub.id);
+          await supabaseAdmin.from("subscriptions").update({ status: "expired" }).eq("id", sub.id);
           await supabaseAdmin
             .from("drivers")
             .update({ subscription_status: "expired" })
@@ -80,7 +80,7 @@ export const Route = createFileRoute("/api/public/asaas-webhook")({
             .update({ subscription_status: "blocked" })
             .eq("id", sub.driver_id);
         } else if (parsed.status === "refunded") {
-          await supabaseAdmin.from("subscriptions").update({ status: "cancelada" }).eq("id", sub.id);
+          await supabaseAdmin.from("subscriptions").update({ status: "cancelled" }).eq("id", sub.id);
         }
 
         return Response.json({ ok: true });
