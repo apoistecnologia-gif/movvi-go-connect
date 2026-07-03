@@ -581,12 +581,14 @@ export type Database = {
           approval_status: Database["public"]["Enums"]["driver_approval_status"]
           approved_at: string | null
           asaas_customer_id: string | null
+          average_rating: number
           birth_date: string | null
           blocked_at: string | null
           category: Database["public"]["Enums"]["ride_category"]
           city: string
           cnh_back_url: string | null
           cnh_url: string | null
+          completed_rides: number
           cpf: string
           created_at: string
           current_heading: number | null
@@ -612,6 +614,7 @@ export type Database = {
           subscription_grace_days: number
           subscription_status: Database["public"]["Enums"]["driver_subscription_status"]
           suspended_at: string | null
+          total_ratings: number
           updated_at: string
           user_id: string
           vehicle_color: string
@@ -625,12 +628,14 @@ export type Database = {
           approval_status?: Database["public"]["Enums"]["driver_approval_status"]
           approved_at?: string | null
           asaas_customer_id?: string | null
+          average_rating?: number
           birth_date?: string | null
           blocked_at?: string | null
           category: Database["public"]["Enums"]["ride_category"]
           city: string
           cnh_back_url?: string | null
           cnh_url?: string | null
+          completed_rides?: number
           cpf: string
           created_at?: string
           current_heading?: number | null
@@ -656,6 +661,7 @@ export type Database = {
           subscription_grace_days?: number
           subscription_status?: Database["public"]["Enums"]["driver_subscription_status"]
           suspended_at?: string | null
+          total_ratings?: number
           updated_at?: string
           user_id: string
           vehicle_color: string
@@ -669,12 +675,14 @@ export type Database = {
           approval_status?: Database["public"]["Enums"]["driver_approval_status"]
           approved_at?: string | null
           asaas_customer_id?: string | null
+          average_rating?: number
           birth_date?: string | null
           blocked_at?: string | null
           category?: Database["public"]["Enums"]["ride_category"]
           city?: string
           cnh_back_url?: string | null
           cnh_url?: string | null
+          completed_rides?: number
           cpf?: string
           created_at?: string
           current_heading?: number | null
@@ -700,6 +708,7 @@ export type Database = {
           subscription_grace_days?: number
           subscription_status?: Database["public"]["Enums"]["driver_subscription_status"]
           suspended_at?: string | null
+          total_ratings?: number
           updated_at?: string
           user_id?: string
           vehicle_color?: string
@@ -1156,6 +1165,59 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      ride_ratings: {
+        Row: {
+          created_at: string
+          driver_comment: string | null
+          driver_id: string | null
+          driver_rated_at: string | null
+          driver_rating: number | null
+          id: string
+          passenger_comment: string | null
+          passenger_id: string | null
+          passenger_rated_at: string | null
+          passenger_rating: number | null
+          ride_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          driver_comment?: string | null
+          driver_id?: string | null
+          driver_rated_at?: string | null
+          driver_rating?: number | null
+          id?: string
+          passenger_comment?: string | null
+          passenger_id?: string | null
+          passenger_rated_at?: string | null
+          passenger_rating?: number | null
+          ride_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          driver_comment?: string | null
+          driver_id?: string | null
+          driver_rated_at?: string | null
+          driver_rating?: number | null
+          id?: string
+          passenger_comment?: string | null
+          passenger_id?: string | null
+          passenger_rated_at?: string | null
+          passenger_rating?: number | null
+          ride_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ride_ratings_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: true
+            referencedRelation: "rides"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ride_tips: {
         Row: {
@@ -1701,10 +1763,12 @@ export type Database = {
         Row: {
           auth_user_id: string
           avatar_url: string | null
+          average_rating: number
           birth_date: string | null
           block_reason: string | null
           blocked_at: string | null
           city: string | null
+          completed_rides: number
           cpf: string | null
           created_at: string
           deleted_at: string | null
@@ -1720,15 +1784,18 @@ export type Database = {
           phone_verified_at: string | null
           preferences: Json
           suspended_at: string | null
+          total_ratings: number
           updated_at: string
         }
         Insert: {
           auth_user_id: string
           avatar_url?: string | null
+          average_rating?: number
           birth_date?: string | null
           block_reason?: string | null
           blocked_at?: string | null
           city?: string | null
+          completed_rides?: number
           cpf?: string | null
           created_at?: string
           deleted_at?: string | null
@@ -1744,15 +1811,18 @@ export type Database = {
           phone_verified_at?: string | null
           preferences?: Json
           suspended_at?: string | null
+          total_ratings?: number
           updated_at?: string
         }
         Update: {
           auth_user_id?: string
           avatar_url?: string | null
+          average_rating?: number
           birth_date?: string | null
           block_reason?: string | null
           blocked_at?: string | null
           city?: string | null
+          completed_rides?: number
           cpf?: string | null
           created_at?: string
           deleted_at?: string | null
@@ -1768,6 +1838,7 @@ export type Database = {
           phone_verified_at?: string | null
           preferences?: Json
           suspended_at?: string | null
+          total_ratings?: number
           updated_at?: string
         }
         Relationships: []
@@ -1813,6 +1884,14 @@ export type Database = {
           total_rides: number
           total_spent: number
         }[]
+      }
+      recompute_driver_rating: {
+        Args: { _driver_id: string }
+        Returns: undefined
+      }
+      recompute_passenger_rating: {
+        Args: { _passenger_id: string }
+        Returns: undefined
       }
     }
     Enums: {
