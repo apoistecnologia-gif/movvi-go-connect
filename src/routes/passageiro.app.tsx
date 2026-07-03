@@ -2616,8 +2616,8 @@ function SheetContent({
   gpsRequesting: boolean;
   onRetryGps: () => void;
   onExpandSheet: (p: number) => void;
-  paymentMethod: "cash" | "pix" | "card";
-  setPaymentMethod: (m: "cash" | "pix" | "card") => void;
+  paymentMethod: "dinheiro" | "pix" | "cartao_credito";
+  setPaymentMethod: (m: "dinheiro" | "pix" | "cartao_credito") => void;
 }) {
   const km = route ? route.distanceMeters / 1000 : 0;
   const min = route ? route.durationSeconds / 60 : 0;
