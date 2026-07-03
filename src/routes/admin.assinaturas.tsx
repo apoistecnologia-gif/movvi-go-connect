@@ -771,7 +771,7 @@ function SubscriptionDetailSheet({
                 }
               />
               <div className="flex flex-wrap items-center gap-2 pt-1">
-                <Button size="sm" variant="outline" onClick={handleRefresh} disabled={refreshing}>
+                <Button size="sm" variant="outline" onClick={() => setConfirmRefresh(true)} disabled={refreshing}>
                   {refreshing ? (
                     <Loader2 className="mr-1 h-3 w-3 animate-spin" />
                   ) : (
@@ -880,7 +880,7 @@ function SubscriptionDetailSheet({
                     size="sm"
                     variant="ghost"
                     className="text-destructive"
-                    onClick={() => deleteNote(n.id)}
+                    onClick={() => setNoteToDelete(n)}
                   >
                     <Trash2 className="h-3 w-3" />
                   </Button>
@@ -895,6 +895,27 @@ function SubscriptionDetailSheet({
           </p>
         </div>
       </SheetContent>
+
+      <ConfirmDialog
+        open={confirmRefresh}
+        onOpenChange={setConfirmRefresh}
+        title="Consultar Asaas agora?"
+        description="Isso consulta o status da cobrança diretamente no provedor. O painel é somente consulta — o pagamento continua sendo confirmado apenas pelo webhook oficial."
+        confirmLabel="Consultar status"
+        onConfirm={handleRefresh}
+      />
+
+      <ConfirmDialog
+        open={!!noteToDelete}
+        onOpenChange={(o) => !o && setNoteToDelete(null)}
+        title="Excluir nota interna?"
+        description="A nota será removida permanentemente do histórico administrativo desta assinatura."
+        confirmLabel="Excluir nota"
+        destructive
+        onConfirm={async () => {
+          if (noteToDelete) await deleteNote(noteToDelete.id);
+        }}
+      />
     </Sheet>
   );
 }
