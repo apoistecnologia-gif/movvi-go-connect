@@ -1272,7 +1272,7 @@ function IdleBottomPanel({
           type="button"
           disabled={disabled}
           onClick={toggleOnline}
-          className={`press-scale w-full rounded-2xl py-4 text-[14px] font-bold uppercase tracking-[0.15em] transition disabled:cursor-not-allowed disabled:opacity-60 ${
+          className={`press-scale w-full rounded-2xl min-h-14 py-4 text-[14px] font-bold uppercase tracking-[0.15em] transition disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-card ${
             online
               ? "bg-card text-foreground ring-1 ring-border hover:ring-destructive/50"
               : "bg-primary text-primary-foreground shadow-[0_12px_32px_-12px_color-mix(in_oklab,var(--color-primary)_60%,transparent)] hover:brightness-105"
