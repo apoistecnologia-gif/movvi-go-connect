@@ -903,6 +903,7 @@ function MotoristaApp() {
   const autoFollowRef = useRef(true);
   const lastFollowAtRef = useRef(0);
   const lastFitKeyRef = useRef<string | null>(null);
+  const routeFailToastedRef = useRef<string | null>(null);
 
   // Detecta arrasto manual → desliga follow.
   useEffect(() => {
