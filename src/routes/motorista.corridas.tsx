@@ -156,7 +156,24 @@ function DriverRidesPage() {
           )}
 
           {rides === null && (
-            <p className="text-sm text-muted-foreground">Carregando…</p>
+            <div className="space-y-3" aria-busy="true" aria-label="Carregando corridas">
+              {[0, 1, 2, 3].map((i) => (
+                <div key={i} className="rounded-2xl border border-border bg-card p-4">
+                  <div className="mb-3 flex items-start gap-3">
+                    <div className="h-11 w-11 shrink-0 animate-pulse rounded-full bg-muted/50" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-3 w-1/3 animate-pulse rounded bg-muted/50" />
+                      <div className="h-2.5 w-2/3 animate-pulse rounded bg-muted/40" />
+                    </div>
+                    <div className="h-4 w-16 animate-pulse rounded bg-muted/50" />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="h-3 w-5/6 animate-pulse rounded bg-muted/40" />
+                    <div className="h-3 w-4/6 animate-pulse rounded bg-muted/40" />
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
 
           {rides && rides.length === 0 && (
