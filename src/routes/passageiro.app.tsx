@@ -2225,14 +2225,14 @@ function PassageiroApp() {
         onLogout={handleLogout}
       />
 
-      {/* Floating controls */}
-      <div className="pointer-events-none absolute right-3 z-30" style={{ bottom: "calc(24vh + 12px)" }}>
+      {/* Floating recenter — 56px, glass, MOVVI DS */}
+      <div className="pointer-events-none absolute right-4 z-30" style={{ bottom: "calc(24vh + 16px)" }}>
         <button
           onClick={recenter}
-          className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-card text-foreground shadow-2xl ring-1 ring-border transition active:scale-90 hover:scale-105"
+          className="pointer-events-auto flex h-14 w-14 items-center justify-center rounded-full border border-border/60 bg-card/90 text-[#76C139] shadow-[0_12px_28px_-14px_rgba(15,23,42,0.35)] backdrop-blur-xl transition active:scale-[0.92] hover:scale-105"
           aria-label="Recentralizar"
         >
-          <Crosshair className="h-5 w-5 text-primary" />
+          <Crosshair className="h-[22px] w-[22px]" strokeWidth={2} />
         </button>
       </div>
 
