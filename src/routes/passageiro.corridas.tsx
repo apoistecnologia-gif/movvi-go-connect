@@ -410,10 +410,51 @@ function RideDetailSheet({
             </div>
           )}
 
+          {/* Payment + PIN */}
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="rounded-xl border border-border bg-card/40 p-3">
+              <p className="flex items-center gap-1.5 text-[10px] uppercase text-muted-foreground">
+                <CreditCard className="h-3 w-3" /> Pagamento
+              </p>
+              <p className="mt-1 font-medium">{ride.payment_method ?? "Não informado"}</p>
+            </div>
+            <div className="rounded-xl border border-border bg-card/40 p-3">
+              <p className="text-[10px] uppercase text-muted-foreground">PIN segurança</p>
+              <p className="mt-1 font-mono font-medium">{ride.safety_code ?? "Não informado"}</p>
+            </div>
+          </div>
+
+          {/* Timeline */}
+          <div className="rounded-2xl border border-border bg-card p-4">
+            <p className="mb-2 text-xs font-semibold uppercase text-muted-foreground">
+              Linha do tempo
+            </p>
+            <ol className="space-y-1.5 text-xs">
+              {[
+                { label: "Solicitada", at: ride.created_at },
+                { label: "Aceita", at: ride.accepted_at },
+                { label: "Iniciada", at: ride.started_at },
+                { label: "Finalizada", at: ride.completed_at },
+                ...(ride.cancelled_at ? [{ label: "Cancelada", at: ride.cancelled_at }] : []),
+              ].map((t) => (
+                <li key={t.label} className="flex items-center gap-2">
+                  <Clock className={`h-3 w-3 ${t.at ? "text-primary" : "text-muted-foreground/40"}`} />
+                  <span className="w-20 text-muted-foreground">{t.label}</span>
+                  <span className={t.at ? "font-medium" : "text-muted-foreground/50"}>
+                    {t.at ? new Date(t.at).toLocaleString("pt-BR") : "—"}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </div>
+
           {/* Actions */}
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             <Button variant="outline" size="sm" onClick={repeatRide}>
               <Repeat className="mr-1 h-3.5 w-3.5" /> Repetir
+            </Button>
+            <Button size="sm" onClick={() => onViewReceipt(ride)}>
+              <ReceiptIcon className="mr-1 h-3.5 w-3.5" /> Recibo
             </Button>
             {ride.driver_id && (
               <Button
@@ -432,6 +473,7 @@ function RideDetailSheet({
               </Button>
             )}
           </div>
+
 
           {/* Report form */}
           {reportOpen && ride.driver_id && (
