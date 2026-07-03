@@ -166,7 +166,7 @@ export function ProfileForm({
       // Keep driver display fields in sync for driver-side name display only —
       // does NOT touch dispatch, GPS or ride tables.
       if (role === "driver") {
-        await supabase.from("drivers").update({ name: fullName.trim(), phone: phone.trim(), city: city || null }).eq("user_id", userId);
+        await supabase.from("drivers").update({ name: fullName.trim(), phone: phone.trim(), city: city || undefined }).eq("user_id", userId);
       }
 
       const authUpdate: { data?: Record<string, string>; password?: string } = {
