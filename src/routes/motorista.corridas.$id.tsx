@@ -1,12 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Clock, FileText, Loader2, MapPin, Navigation2, Star, User as UserIcon } from "lucide-react";
+import { ArrowLeft, Clock, FileText, Loader2, MapPin, Navigation2, Receipt as ReceiptIcon, Star } from "lucide-react";
 import { MovviHeader } from "@/components/MovviHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar } from "@/components/Avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { downloadRideReceipt } from "@/lib/driverReceipt";
+import { RideReceiptDialog } from "@/components/rides/RideReceiptDialog";
 
 export const Route = createFileRoute("/motorista/corridas/$id")({
   head: () => ({ meta: [{ title: "Detalhes da corrida — MOVVI DRIVE" }] }),
