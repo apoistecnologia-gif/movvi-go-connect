@@ -102,9 +102,15 @@ function DriverNotificationsPage() {
               ))}
             </ul>
           ) : items.length === 0 ? (
-            <p className="rounded-2xl border border-dashed border-border bg-card/40 p-6 text-center text-sm text-muted-foreground">
-              Você ainda não tem notificações.
-            </p>
+            <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-border/70 bg-card/40 px-6 py-12 text-center">
+              <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/15 text-primary ring-1 ring-primary/25">
+                <Bell className="h-6 w-6" />
+              </div>
+              <p className="text-sm font-semibold text-foreground">Tudo em dia</p>
+              <p className="mt-1 max-w-xs text-xs text-muted-foreground">
+                Você não tem novas notificações. Avisos sobre corridas, pagamentos e atualizações aparecem aqui.
+              </p>
+            </div>
           ) : (
             <ul className="space-y-2.5">
               {items.map((n) => (
