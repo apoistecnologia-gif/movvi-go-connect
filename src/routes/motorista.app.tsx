@@ -1865,9 +1865,6 @@ function ActiveRidePanel({
 
       {/* CTA conforme fase — transições suaves entre estados */}
       <div key={phase} className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-        {phase === "motorista_a_caminho" && (
-          <ActionButton label="Cheguei ao local" onClick={onArrive} icon={MapPin} emphasize />
-        )}
         {phase === "motorista_chegou" && (
           <ActionButton label="Iniciar corrida" onClick={() => { setPinError(null); setPinCode(""); setPinOpen(true); }} icon={ChevronRight} emphasize />
         )}
