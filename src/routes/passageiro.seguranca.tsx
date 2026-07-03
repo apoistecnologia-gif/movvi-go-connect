@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ShieldCheck } from "lucide-react";
-import { MovviHeader } from "@/components/MovviHeader";
-import { BottomNav, PASSENGER_NAV } from "@/components/BottomNav";
+import { ShieldAlert } from "lucide-react";
+import { SettingsPageShell, SettingsHero } from "@/components/settings";
+import { PASSENGER_NAV } from "@/components/BottomNav";
 import { EmergencyContactsManager } from "@/components/safety/EmergencyContactsManager";
 
 export const Route = createFileRoute("/passageiro/seguranca")({
@@ -16,30 +16,21 @@ export const Route = createFileRoute("/passageiro/seguranca")({
 
 function PassengerSafetyPage() {
   return (
-    <div className="min-h-screen bg-background pb-24">
-      <MovviHeader />
-      <main className="mx-auto max-w-md space-y-4 px-4 pt-4">
-        <section className="rounded-2xl bg-card p-4 ring-1 ring-border">
-          <div className="flex items-center gap-3">
-            <div className="grid h-11 w-11 place-items-center rounded-2xl bg-primary/12 text-primary ring-1 ring-primary/25">
-              <ShieldCheck className="h-5 w-5" />
-            </div>
-            <div className="min-w-0">
-              <div className="text-[14px] font-bold">Sua segurança em primeiro lugar</div>
-              <div className="text-[12px] text-muted-foreground">
-                Cadastre um contato de confiança. Ele aparece no botão de emergência durante suas corridas.
-              </div>
-            </div>
-          </div>
-        </section>
+    <SettingsPageShell nav={PASSENGER_NAV}>
+      <SettingsHero
+        icon={ShieldAlert}
+        title="Segurança"
+        subtitle="Cadastre um contato de confiança para o botão de emergência."
+        tone="danger"
+      />
 
+      <div className="overflow-hidden rounded-[24px] bg-white shadow-[0_6px_20px_-14px_rgba(15,23,42,0.12)] ring-1 ring-black/5">
         <EmergencyContactsManager role="passenger" />
+      </div>
 
-        <p className="text-center text-[11px] text-muted-foreground">
-          Em caso de emergência real, ligue 190. A MOVVI registra alertas SOS com sua localização e dados da corrida.
-        </p>
-      </main>
-      <BottomNav items={PASSENGER_NAV} />
-    </div>
+      <p className="text-center text-[11.5px] text-[#707070]">
+        Em caso de emergência real, ligue 190. A MOVVI registra alertas SOS com sua localização e dados da corrida.
+      </p>
+    </SettingsPageShell>
   );
 }
