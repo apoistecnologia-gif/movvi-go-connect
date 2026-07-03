@@ -1474,14 +1474,14 @@ function ActiveRidePanel({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className={`relative flex h-2 w-2`}>
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/70" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+            <span className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-70 ${header.dot}`} />
+            <span className={`relative inline-flex h-2 w-2 rounded-full ${header.dot}`} />
           </span>
           <span className={`text-[11px] font-bold uppercase tracking-widest ${header.tone}`}>{header.title}</span>
         </div>
         {phase === "motorista_a_caminho" && (
-          <button onClick={onCancel}
-            className="rounded-full p-1.5 text-muted-foreground hover:bg-muted/30 hover:text-destructive">
+          <button onClick={onCancel} aria-label="Cancelar corrida"
+            className="rounded-full p-2 min-h-11 min-w-11 flex items-center justify-center text-muted-foreground hover:bg-muted/30 hover:text-destructive transition">
             <X className="h-4 w-4" />
           </button>
         )}
