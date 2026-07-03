@@ -69,7 +69,6 @@ import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 import { Route as AdminAdministradoresRouteImport } from './routes/admin.administradores'
 import { Route as MotoristaCorridasIdRouteImport } from './routes/motorista.corridas.$id'
 import { Route as ApiPublicAsaasWebhookRouteImport } from './routes/api/public/asaas-webhook'
-import { Route as ApiPublicDownloadMovviSourceRouteImport } from './routes/api/public/download.movvi-source'
 
 const MapTestRoute = MapTestRouteImport.update({
   id: '/map-test',
@@ -373,12 +372,6 @@ const ApiPublicAsaasWebhookRoute = ApiPublicAsaasWebhookRouteImport.update({
   path: '/api/public/asaas-webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicDownloadMovviSourceRoute =
-  ApiPublicDownloadMovviSourceRouteImport.update({
-    id: '/api/public/download/movvi-source',
-    path: '/api/public/download/movvi-source',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -441,7 +434,6 @@ export interface FileRoutesByFullPath {
   '/passageiro/termos': typeof PassageiroTermosRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
   '/motorista/corridas/$id': typeof MotoristaCorridasIdRoute
-  '/api/public/download/movvi-source': typeof ApiPublicDownloadMovviSourceRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -504,7 +496,6 @@ export interface FileRoutesByTo {
   '/passageiro/termos': typeof PassageiroTermosRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
   '/motorista/corridas/$id': typeof MotoristaCorridasIdRoute
-  '/api/public/download/movvi-source': typeof ApiPublicDownloadMovviSourceRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -568,7 +559,6 @@ export interface FileRoutesById {
   '/passageiro/termos': typeof PassageiroTermosRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
   '/motorista/corridas/$id': typeof MotoristaCorridasIdRoute
-  '/api/public/download/movvi-source': typeof ApiPublicDownloadMovviSourceRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -633,7 +623,6 @@ export interface FileRouteTypes {
     | '/passageiro/termos'
     | '/api/public/asaas-webhook'
     | '/motorista/corridas/$id'
-    | '/api/public/download/movvi-source'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -696,7 +685,6 @@ export interface FileRouteTypes {
     | '/passageiro/termos'
     | '/api/public/asaas-webhook'
     | '/motorista/corridas/$id'
-    | '/api/public/download/movvi-source'
   id:
     | '__root__'
     | '/'
@@ -759,7 +747,6 @@ export interface FileRouteTypes {
     | '/passageiro/termos'
     | '/api/public/asaas-webhook'
     | '/motorista/corridas/$id'
-    | '/api/public/download/movvi-source'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -822,7 +809,6 @@ export interface RootRouteChildren {
   PassageiroSuporteRoute: typeof PassageiroSuporteRoute
   PassageiroTermosRoute: typeof PassageiroTermosRoute
   ApiPublicAsaasWebhookRoute: typeof ApiPublicAsaasWebhookRoute
-  ApiPublicDownloadMovviSourceRoute: typeof ApiPublicDownloadMovviSourceRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1247,13 +1233,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAsaasWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/download/movvi-source': {
-      id: '/api/public/download/movvi-source'
-      path: '/api/public/download/movvi-source'
-      fullPath: '/api/public/download/movvi-source'
-      preLoaderRoute: typeof ApiPublicDownloadMovviSourceRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
@@ -1330,18 +1309,7 @@ const rootRouteChildren: RootRouteChildren = {
   PassageiroSuporteRoute: PassageiroSuporteRoute,
   PassageiroTermosRoute: PassageiroTermosRoute,
   ApiPublicAsaasWebhookRoute: ApiPublicAsaasWebhookRoute,
-  ApiPublicDownloadMovviSourceRoute: ApiPublicDownloadMovviSourceRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

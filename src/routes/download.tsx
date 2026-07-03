@@ -1,17 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { Check, Copy, Download, Package } from "lucide-react";
+import { Download, Loader2, Package, ShieldCheck } from "lucide-react";
+import { AdminGuard } from "@/components/AdminGuard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { getMovviSourceSignedUrl } from "@/lib/adminDownloads.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/download")({
   head: () => ({
     meta: [
       { title: "Download — MOVVI DRIVE" },
-      { name: "description", content: "Baixe o código-fonte do MOVVI DRIVE." },
-      { property: "og:title", content: "Download — MOVVI DRIVE" },
-      { property: "og:description", content: "Baixe o código-fonte do MOVVI DRIVE." },
+      { name: "description", content: "Download restrito do código-fonte do MOVVI DRIVE (admin)." },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -19,20 +20,30 @@ export const Route = createFileRoute("/download")({
 });
 
 function DownloadPage() {
-  const [copied, setCopied] = useState(false);
-  const url =
-    typeof window !== "undefined"
-      ? `${window.location.origin}/api/public/download/movvi-source`
-      : "/api/public/download/movvi-source";
+  return (
+    <AdminGuard>
+      <DownloadInner />
+    </AdminGuard>
+  );
+}
 
-  async function handleCopy() {
+function DownloadInner() {
+  const getUrl = useServerFn(getMovviSourceSignedUrl);
+  const [loading, setLoading] = useState(false);
+
+  async function handleDownload() {
+    setLoading(true);
     try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      toast.success("Link copiado!");
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      toast.error("Não foi possível copiar. Copie manualmente.");
+      const { url } = await getUrl({ data: undefined as never });
+      window.location.href = url;
+    } catch (e) {
+      toast.error(
+        e instanceof Error && e.message === "forbidden"
+          ? "Acesso restrito a administradores."
+          : "Não foi possível gerar o link de download.",
+      );
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -47,44 +58,27 @@ function DownloadPage() {
             <div>
               <h1 className="text-xl font-bold">MOVVI DRIVE — Código-fonte</h1>
               <p className="text-xs text-muted-foreground">
-                Arquivo ZIP · ~1.6 MB · React + TypeScript + Vite
+                Arquivo ZIP · acesso restrito a administradores
               </p>
             </div>
           </div>
 
-          <p className="text-sm text-muted-foreground">
-            Use o botão abaixo para baixar o pacote completo do projeto, ou copie o
-            link público para compartilhar.
-          </p>
-
-          <a href={url}>
-            <Button className="w-full" size="lg">
-              <Download className="mr-2 h-5 w-5" />
-              Baixar movvi-drive-source.zip
-            </Button>
-          </a>
-
-          <div className="space-y-2">
-            <label className="text-xs font-semibold uppercase text-muted-foreground">
-              Link público
-            </label>
-            <div className="flex gap-2">
-              <input
-                readOnly
-                value={url}
-                onFocus={(e) => e.currentTarget.select()}
-                className="flex-1 truncate rounded-md border border-border bg-background/60 px-3 py-2 text-xs"
-              />
-              <Button variant="outline" onClick={handleCopy} aria-label="Copiar link">
-                {copied ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
-              </Button>
-            </div>
+          <div className="flex items-start gap-2 rounded-md border border-border bg-background/50 p-3 text-xs text-muted-foreground">
+            <ShieldCheck className="mt-0.5 h-4 w-4 text-primary" />
+            <p>
+              Este download é privado. Cada acesso gera uma URL assinada válida por poucos minutos
+              e é registrado no log administrativo.
+            </p>
           </div>
 
-          <p className="text-[11px] text-muted-foreground">
-            O link gera uma URL assinada de download a cada acesso. Compartilhe esta
-            página ou o link acima.
-          </p>
+          <Button className="w-full" size="lg" onClick={handleDownload} disabled={loading}>
+            {loading ? (
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+            ) : (
+              <Download className="mr-2 h-5 w-5" />
+            )}
+            Gerar link e baixar
+          </Button>
         </CardContent>
       </Card>
     </main>
