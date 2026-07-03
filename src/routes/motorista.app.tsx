@@ -1487,12 +1487,11 @@ function ActiveRidePanel({
         )}
       </div>
 
-      {/* ETA / distância */}
+      {/* ETA / distância — sem informação financeira durante a corrida */}
       {(minutes != null || legKm != null) && (
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2">
           <Metric label="ETA" value={minutes != null ? `${minutes} min` : "—"} highlight />
           <Metric label="Distância" value={legKm != null ? `${legKm.toFixed(1)} km` : "—"} />
-          <Metric label="Ganho" value={ride.estimated_price ? formatBRL(Number(ride.estimated_price)) : "—"} />
         </div>
       )}
 
