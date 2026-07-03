@@ -51,6 +51,10 @@ import {
   unblockPassenger,
   unsuspendPassenger,
 } from "@/lib/adminPassengers.functions";
+import {
+  addPassengerNote,
+  deletePassengerNote,
+} from "@/lib/adminPassengerNotes.functions";
 import { downloadCsv } from "@/lib/csvExport";
 
 function mapAdminError(msg: string): string {
