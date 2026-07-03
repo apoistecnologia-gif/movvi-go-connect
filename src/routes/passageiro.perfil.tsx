@@ -60,7 +60,7 @@ function PerfilPassageiro() {
             photoUrl={photoUrl}
             badges={<VerifiedBadge verified={verified} />}
           />
-          <PassengerStatsCard totalRides={totalRides} rating={rating} />
+          <PassengerStatsCard totalRides={totalRides} rating={rating} totalRatings={totalRatings} />
         </div>
       }
     />
