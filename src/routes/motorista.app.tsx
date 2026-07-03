@@ -1773,12 +1773,6 @@ function ActiveRidePanel({
           </span>
           <span className={`text-[11px] font-bold uppercase tracking-widest ${header.tone}`}>{header.title}</span>
         </div>
-        {phase === "motorista_a_caminho" && (
-          <button onClick={onCancel} aria-label="Cancelar corrida"
-            className="rounded-full p-2 min-h-11 min-w-11 flex items-center justify-center text-muted-foreground hover:bg-muted/30 hover:text-destructive transition">
-            <X className="h-4 w-4" />
-          </button>
-        )}
       </div>
 
       {/* ETA / distância — sem informação financeira durante a corrida */}
