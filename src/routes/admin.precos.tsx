@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { Plus, Save, Trash2, Loader2 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
@@ -9,6 +10,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { logAdminAction } from "@/lib/adminAudit";
+import { upsertTariffRules, deleteTariffRule } from "@/lib/adminPricing.functions";
+
+function mapAdminError(msg: string): string {
+  if (msg === "forbidden") return "Ação restrita a administradores.";
+  if (/invalid_|^Required$|uuid/i.test(msg)) return "Dados inválidos.";
+  return msg;
+}
 
 export const Route = createFileRoute("/admin/precos")({
   head: () => ({ meta: [{ title: "Preços — Admin MOVVI" }] }),
@@ -72,6 +80,8 @@ const CANONICAL_FIELDS: Record<string, { key: string; label: string; hint?: stri
 };
 
 function AdminPrecosPage() {
+  const upsertFn = useServerFn(upsertTariffRules);
+  const deleteFn = useServerFn(deleteTariffRule);
   const [cats, setCats] = useState<Category[]>([]);
   const [rules, setRules] = useState<Rule[]>([]);
   const [loading, setLoading] = useState(true);
@@ -132,18 +142,23 @@ function AdminPrecosPage() {
     const payload = dirty.map((r) => ({
       category_key: r.category_key,
       field_key: r.field_key,
-      value: r.value,
+      value: Number(r.value) || 0,
     }));
-    const { error } = await supabase
-      .from("tariff_rules")
-      .upsert(payload, { onConflict: "category_key,field_key" });
-    setBusy(false);
-    if (error) {
-      toast.error("Erro ao salvar: " + error.message);
-      return;
+    try {
+      await upsertFn({ data: { rows: payload } });
+      await logAdminAction({
+        action: "tariff_rules.upsert",
+        entity: "tariff_rules",
+        after: { category, count: payload.length },
+      });
+      toast.success(`Tarifas de "${category}" salvas — refletindo no app em tempo real`);
+    } catch (e) {
+      toast.error(
+        "Erro ao salvar: " + (e instanceof Error ? mapAdminError(e.message) : String(e)),
+      );
+    } finally {
+      setBusy(false);
     }
-    await logAdminAction({ action: "tariff_rules.upsert", entity: "tariff_rules", after: { category, count: payload.length } });
-    toast.success(`Tarifas de "${category}" salvas — refletindo no app em tempo real`);
   }
 
   async function deleteRule(rule: Rule) {
@@ -152,9 +167,16 @@ function AdminPrecosPage() {
       return;
     }
     if (!confirm(`Excluir o campo "${rule.field_key}"?`)) return;
-    const { error } = await supabase.from("tariff_rules").delete().eq("id", rule.id);
-    if (error) toast.error(error.message);
-    else await logAdminAction({ action: "tariff_rules.delete", entity: "tariff_rules", entity_id: rule.id });
+    try {
+      await deleteFn({ data: { id: rule.id } });
+      await logAdminAction({
+        action: "tariff_rules.delete",
+        entity: "tariff_rules",
+        entity_id: rule.id,
+      });
+    } catch (e) {
+      toast.error(e instanceof Error ? mapAdminError(e.message) : String(e));
+    }
   }
 
   async function addCustomField(category: string) {
@@ -166,13 +188,18 @@ function AdminPrecosPage() {
       toast.error("Valor inválido");
       return;
     }
-    const { error } = await supabase
-      .from("tariff_rules")
-      .upsert({ category_key: category, field_key: key, value }, { onConflict: "category_key,field_key" });
-    if (error) toast.error(error.message);
-    else {
-      await logAdminAction({ action: "tariff_rules.add_field", entity: "tariff_rules", after: { category, field: key } });
+    try {
+      await upsertFn({
+        data: { rows: [{ category_key: category, field_key: key, value }] },
+      });
+      await logAdminAction({
+        action: "tariff_rules.add_field",
+        entity: "tariff_rules",
+        after: { category, field: key },
+      });
       toast.success("Campo adicionado");
+    } catch (e) {
+      toast.error(e instanceof Error ? mapAdminError(e.message) : String(e));
     }
   }
 

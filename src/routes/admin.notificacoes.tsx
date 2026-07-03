@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { Loader2, Send } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
@@ -11,6 +12,16 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { logAdminAction } from "@/lib/adminAudit";
 import { formatDate } from "@/lib/formatters";
+import { sendAdminBroadcast } from "@/lib/adminNotifications.functions";
+
+function mapAdminError(msg: string): string {
+  if (msg === "forbidden") return "Ação restrita a administradores.";
+  if (msg === "no_recipients") return "Nenhum destinatário encontrado";
+  if (msg === "too_many_recipients") return "Público muito grande para um único envio.";
+  if (msg === "missing_filter") return "Preencha o filtro";
+  if (/invalid_|^Required$|uuid/i.test(msg)) return "Dados inválidos.";
+  return msg;
+}
 
 export const Route = createFileRoute("/admin/notificacoes")({
   head: () => ({ meta: [{ title: "Notificações — Admin MOVVI" }] }),
@@ -29,6 +40,7 @@ type Broadcast = {
 };
 
 function AdminNotificacoesPage() {
+  const sendFn = useServerFn(sendAdminBroadcast);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [audience, setAudience] = useState<Audience>("all");
@@ -50,84 +62,32 @@ function AdminNotificacoesPage() {
     refresh();
   }, []);
 
-  async function resolveRecipients(): Promise<string[]> {
-    if (audience === "all") {
-      const [d, p] = await Promise.all([
-        supabase.from("drivers").select("user_id"),
-        supabase.from("users").select("auth_user_id"),
-      ]);
-      const ids = new Set<string>();
-      for (const r of (d.data ?? []) as { user_id: string }[]) r.user_id && ids.add(r.user_id);
-      for (const r of (p.data ?? []) as { auth_user_id: string }[]) r.auth_user_id && ids.add(r.auth_user_id);
-      return Array.from(ids);
-    }
-    if (audience === "drivers") {
-      const { data } = await supabase.from("drivers").select("user_id");
-      return ((data ?? []) as { user_id: string }[]).map((r) => r.user_id).filter(Boolean);
-    }
-    if (audience === "passengers") {
-      const { data } = await supabase.from("users").select("auth_user_id");
-      return ((data ?? []) as { auth_user_id: string }[]).map((r) => r.auth_user_id).filter(Boolean);
-    }
-    if (audience === "city") {
-      const [d, p] = await Promise.all([
-        supabase.from("drivers").select("user_id").ilike("city", filter),
-        supabase.from("users").select("auth_user_id").ilike("city", filter),
-      ]);
-      const ids = new Set<string>();
-      for (const r of (d.data ?? []) as { user_id: string }[]) r.user_id && ids.add(r.user_id);
-      for (const r of (p.data ?? []) as { auth_user_id: string }[]) r.auth_user_id && ids.add(r.auth_user_id);
-      return Array.from(ids);
-    }
-    if (audience === "category") {
-      const { data } = await supabase.from("drivers").select("user_id").eq("category", filter as never);
-      return ((data ?? []) as { user_id: string }[]).map((r) => r.user_id).filter(Boolean);
-    }
-    if (audience === "driver" || audience === "passenger") {
-      return filter ? [filter] : [];
-    }
-    return [];
-  }
-
   async function send() {
     if (!title.trim() || !body.trim()) return toast.error("Título e mensagem são obrigatórios");
     if ((audience === "city" || audience === "category" || audience === "driver" || audience === "passenger") && !filter.trim())
       return toast.error("Preencha o filtro");
     setSending(true);
     try {
-      const recipients = await resolveRecipients();
-      if (recipients.length === 0) {
-        setSending(false);
-        return toast.error("Nenhum destinatário encontrado");
-      }
-      // Apps (driver + passenger) leem de `notification_inbox`. Inserimos lá para que
-      // o admin -> usuário chegue em tempo real nas duas pontas.
-      const rows = recipients.map((user_id) => ({
-        user_id,
-        title,
-        body,
-        category: "admin",
-        data: { audience, filter: filter || null },
-      }));
-      const { error } = await supabase.from("notification_inbox").insert(rows);
-      if (error) throw error;
-      const { data: u } = await supabase.auth.getUser();
-      await supabase.from("notifications_broadcast").insert({
-        title,
-        body,
-        audience_type: audience,
-        audience_filter: filter ? { value: filter } : null,
-        sent_by: u?.user?.id ?? null,
-        delivery_count: recipients.length,
+      const res = await sendFn({
+        data: {
+          title: title.trim(),
+          body: body.trim(),
+          audience,
+          filter: filter.trim() || null,
+        },
       });
-      await logAdminAction({ action: "notification.send", entity: "notifications_broadcast", after: { audience, recipients: recipients.length } });
-      toast.success(`Enviado para ${recipients.length} usuários`);
+      await logAdminAction({
+        action: "notification.send",
+        entity: "notifications_broadcast",
+        after: { audience, recipients: res.delivered },
+      });
+      toast.success(`Enviado para ${res.delivered} usuários`);
       setTitle("");
       setBody("");
       setFilter("");
       refresh();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : String(e));
+      toast.error(e instanceof Error ? mapAdminError(e.message) : String(e));
     } finally {
       setSending(false);
     }

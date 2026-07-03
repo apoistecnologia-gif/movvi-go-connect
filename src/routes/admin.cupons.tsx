@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { Plus, Loader2, Trash2, Save } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
@@ -11,6 +12,18 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { logAdminAction } from "@/lib/adminAudit";
 import { formatDate } from "@/lib/formatters";
+import {
+  createCoupon,
+  updateCoupon,
+  setCouponEnabled,
+  deleteCoupon,
+} from "@/lib/adminCoupons.functions";
+
+function mapAdminError(msg: string): string {
+  if (msg === "forbidden") return "Ação restrita a administradores.";
+  if (/invalid_|^Required$|uuid/i.test(msg)) return "Dados inválidos.";
+  return msg;
+}
 
 export const Route = createFileRoute("/admin/cupons")({
   head: () => ({ meta: [{ title: "Promoções — Admin MOVVI" }] }),
@@ -41,6 +54,10 @@ const TYPES = [
 ];
 
 function AdminCuponsPage() {
+  const createFn = useServerFn(createCoupon);
+  const updateFn = useServerFn(updateCoupon);
+  const toggleFn = useServerFn(setCouponEnabled);
+  const deleteFn = useServerFn(deleteCoupon);
   const [rows, setRows] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -73,47 +90,69 @@ function AdminCuponsPage() {
 
   async function save(c: Coupon) {
     setBusyId(c.id);
-    const { error } = await supabase
-      .from("coupons")
-      .update({
-        code: c.code.toUpperCase(),
-        description: c.description,
-        type: c.type,
-        value: c.value,
-        max_discount: c.max_discount,
-        valid_from: c.valid_from,
-        valid_to: c.valid_to,
-        usage_limit: c.usage_limit,
-        scope_category: c.scope_category,
-        enabled: c.enabled,
-      })
-      .eq("id", c.id);
-    setBusyId(null);
-    if (error) return toast.error(error.message);
-    await logAdminAction({ action: "coupon.update", entity: "coupons", entity_id: c.id });
-    toast.success("Cupom salvo");
+    try {
+      await updateFn({
+        data: {
+          id: c.id,
+          code: c.code.toUpperCase(),
+          description: c.description,
+          type: c.type,
+          value: Number(c.value) || 0,
+          max_discount: c.max_discount,
+          valid_from: c.valid_from,
+          valid_to: c.valid_to,
+          usage_limit: c.usage_limit,
+          scope_category: c.scope_category,
+          enabled: c.enabled,
+        },
+      });
+      await logAdminAction({ action: "coupon.update", entity: "coupons", entity_id: c.id });
+      toast.success("Cupom salvo");
+    } catch (e) {
+      toast.error(e instanceof Error ? mapAdminError(e.message) : String(e));
+    } finally {
+      setBusyId(null);
+    }
   }
   async function toggle(c: Coupon, enabled: boolean) {
     patch(c.id, { enabled });
-    await supabase.from("coupons").update({ enabled }).eq("id", c.id);
-    await logAdminAction({ action: enabled ? "coupon.enable" : "coupon.disable", entity: "coupons", entity_id: c.id });
+    try {
+      await toggleFn({ data: { id: c.id, enabled } });
+      await logAdminAction({
+        action: enabled ? "coupon.enable" : "coupon.disable",
+        entity: "coupons",
+        entity_id: c.id,
+      });
+    } catch (e) {
+      patch(c.id, { enabled: !enabled });
+      toast.error(e instanceof Error ? mapAdminError(e.message) : String(e));
+    }
   }
   async function del(c: Coupon) {
     if (!confirm(`Excluir cupom ${c.code}?`)) return;
-    const { error } = await supabase.from("coupons").delete().eq("id", c.id);
-    if (error) return toast.error(error.message);
-    await logAdminAction({ action: "coupon.delete", entity: "coupons", entity_id: c.id, before: { code: c.code } });
-    toast.success("Excluído");
+    try {
+      await deleteFn({ data: { id: c.id } });
+      await logAdminAction({
+        action: "coupon.delete",
+        entity: "coupons",
+        entity_id: c.id,
+        before: { code: c.code },
+      });
+      toast.success("Excluído");
+    } catch (e) {
+      toast.error(e instanceof Error ? mapAdminError(e.message) : String(e));
+    }
   }
   async function create() {
     const code = prompt("Código (ex: BEMVINDO20):")?.trim().toUpperCase();
     if (!code) return;
-    const { error } = await supabase
-      .from("coupons")
-      .insert({ code, type: "percent", value: 10, enabled: true });
-    if (error) return toast.error(error.message);
-    await logAdminAction({ action: "coupon.create", entity: "coupons", after: { code } });
-    toast.success("Criado");
+    try {
+      await createFn({ data: { code } });
+      await logAdminAction({ action: "coupon.create", entity: "coupons", after: { code } });
+      toast.success("Criado");
+    } catch (e) {
+      toast.error(e instanceof Error ? mapAdminError(e.message) : String(e));
+    }
   }
 
   return (
