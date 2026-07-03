@@ -1244,10 +1244,9 @@ function IdleBottomPanel({
           </div>
         </div>
 
-        {/* linha 2: stats — ganhos com destaque premium */}
-        <div className="grid grid-cols-[1fr_1.35fr] gap-2.5">
-          <StatBlock label="Corridas hoje" value={stats.rides.toString()} />
-          <StatBlock label="Ganhos hoje" value={formatBRL(stats.earnings)} highlight />
+        {/* linha 2: stats — apenas corridas (informação financeira fica em Financeiro) */}
+        <div className="grid grid-cols-1">
+          <StatBlock label="Corridas hoje" value={stats.rides.toString()} highlight />
         </div>
 
         {/* mensagem de erro do GPS (não substitui o botão) */}
