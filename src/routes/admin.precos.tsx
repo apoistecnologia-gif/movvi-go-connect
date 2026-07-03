@@ -142,18 +142,23 @@ function AdminPrecosPage() {
     const payload = dirty.map((r) => ({
       category_key: r.category_key,
       field_key: r.field_key,
-      value: r.value,
+      value: Number(r.value) || 0,
     }));
-    const { error } = await supabase
-      .from("tariff_rules")
-      .upsert(payload, { onConflict: "category_key,field_key" });
-    setBusy(false);
-    if (error) {
-      toast.error("Erro ao salvar: " + error.message);
-      return;
+    try {
+      await upsertFn({ data: { rows: payload } });
+      await logAdminAction({
+        action: "tariff_rules.upsert",
+        entity: "tariff_rules",
+        after: { category, count: payload.length },
+      });
+      toast.success(`Tarifas de "${category}" salvas — refletindo no app em tempo real`);
+    } catch (e) {
+      toast.error(
+        "Erro ao salvar: " + (e instanceof Error ? mapAdminError(e.message) : String(e)),
+      );
+    } finally {
+      setBusy(false);
     }
-    await logAdminAction({ action: "tariff_rules.upsert", entity: "tariff_rules", after: { category, count: payload.length } });
-    toast.success(`Tarifas de "${category}" salvas — refletindo no app em tempo real`);
   }
 
   async function deleteRule(rule: Rule) {
@@ -162,9 +167,16 @@ function AdminPrecosPage() {
       return;
     }
     if (!confirm(`Excluir o campo "${rule.field_key}"?`)) return;
-    const { error } = await supabase.from("tariff_rules").delete().eq("id", rule.id);
-    if (error) toast.error(error.message);
-    else await logAdminAction({ action: "tariff_rules.delete", entity: "tariff_rules", entity_id: rule.id });
+    try {
+      await deleteFn({ data: { id: rule.id } });
+      await logAdminAction({
+        action: "tariff_rules.delete",
+        entity: "tariff_rules",
+        entity_id: rule.id,
+      });
+    } catch (e) {
+      toast.error(e instanceof Error ? mapAdminError(e.message) : String(e));
+    }
   }
 
   async function addCustomField(category: string) {
@@ -176,13 +188,18 @@ function AdminPrecosPage() {
       toast.error("Valor inválido");
       return;
     }
-    const { error } = await supabase
-      .from("tariff_rules")
-      .upsert({ category_key: category, field_key: key, value }, { onConflict: "category_key,field_key" });
-    if (error) toast.error(error.message);
-    else {
-      await logAdminAction({ action: "tariff_rules.add_field", entity: "tariff_rules", after: { category, field: key } });
+    try {
+      await upsertFn({
+        data: { rows: [{ category_key: category, field_key: key, value }] },
+      });
+      await logAdminAction({
+        action: "tariff_rules.add_field",
+        entity: "tariff_rules",
+        after: { category, field: key },
+      });
       toast.success("Campo adicionado");
+    } catch (e) {
+      toast.error(e instanceof Error ? mapAdminError(e.message) : String(e));
     }
   }
 
