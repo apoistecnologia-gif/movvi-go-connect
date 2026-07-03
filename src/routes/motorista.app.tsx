@@ -14,10 +14,13 @@ import {
   Navigation2,
   Phone,
   Star,
-
+  Clock,
+  Circle,
+  Route as RouteIcon,
   X,
   ChevronRight,
 } from "lucide-react";
+import { RIDE_CATEGORIES } from "@/lib/rideCategories";
 import { MovviMap } from "@/components/MovviMap";
 import { DriverSideMenu } from "@/components/DriverSideMenu";
 import { MovviSheet, type MovviSheetHandle } from "@/components/MovviSheet";
