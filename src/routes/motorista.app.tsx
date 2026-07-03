@@ -1302,9 +1302,9 @@ function StatBlock({ label, value, highlight }: { label: string; value: string; 
    OFERTA ENTRANTE
    ============================================================ */
 function IncomingOffer({
-  ride, passenger, countdown, onAccept, onReject,
+  ride, passenger, countdown, onAccept, onReject, onOpenProfile,
 }: {
-  ride: RideRow; passenger: Passenger | null; countdown: number; onAccept: () => void; onReject: () => void;
+  ride: RideRow; passenger: Passenger | null; countdown: number; onAccept: () => void; onReject: () => void; onOpenProfile?: () => void;
 }) {
   const pct = (countdown / RIDE_OFFER_TIMEOUT_SECONDS) * 100;
   return (
@@ -1326,7 +1326,12 @@ function IncomingOffer({
           <CountdownRing seconds={countdown} pct={pct} />
         </div>
 
-        <div className="mt-3 flex items-center gap-3 rounded-2xl bg-background/60 p-2.5 ring-1 ring-border">
+        <button
+          type="button"
+          onClick={onOpenProfile}
+          className="mt-3 flex w-full items-center gap-3 rounded-2xl bg-background/60 p-2.5 text-left ring-1 ring-border transition active:scale-[0.99] hover:ring-primary/40"
+          aria-label="Ver perfil do passageiro"
+        >
           <Avatar src={passenger?.avatar_url ?? (ride as { passenger_photo_url?: string | null }).passenger_photo_url ?? null} name={passenger?.name ?? "Passageiro"} size={40} />
           <div className="min-w-0 flex-1">
             <div className="truncate text-sm font-semibold">{passenger?.name ?? "Passageiro"}</div>
@@ -1334,7 +1339,9 @@ function IncomingOffer({
               Pagamento: {paymentLabelFor(ride.payment_method)}
             </div>
           </div>
-        </div>
+          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/70" />
+        </button>
+
 
 
 
