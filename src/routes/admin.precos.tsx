@@ -80,6 +80,8 @@ const CANONICAL_FIELDS: Record<string, { key: string; label: string; hint?: stri
 };
 
 function AdminPrecosPage() {
+  const upsertFn = useServerFn(upsertTariffRules);
+  const deleteFn = useServerFn(deleteTariffRule);
   const [cats, setCats] = useState<Category[]>([]);
   const [rules, setRules] = useState<Rule[]>([]);
   const [loading, setLoading] = useState(true);
