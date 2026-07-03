@@ -50,6 +50,38 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_driver_notes: {
+        Row: {
+          admin_id: string
+          created_at: string
+          driver_id: string
+          id: string
+          note: string
+        }
+        Insert: {
+          admin_id: string
+          created_at?: string
+          driver_id: string
+          id?: string
+          note: string
+        }
+        Update: {
+          admin_id?: string
+          created_at?: string
+          driver_id?: string
+          id?: string
+          note?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_driver_notes_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admin_login_history: {
         Row: {
           created_at: string
