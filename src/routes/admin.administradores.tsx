@@ -29,6 +29,8 @@ type AdminRow = {
 };
 
 function AdminUsersPage() {
+  const grantRole = useServerFn(grantAdminRole);
+  const revokeRole = useServerFn(revokeAdminRole);
   const [rows, setRows] = useState<AdminRow[]>([]);
   const [loading, setLoading] = useState(true);
 
