@@ -1494,7 +1494,7 @@ function IncomingOffer({
 
 function InfoCard({
   icon, value, label, compactValue,
-}: { icon: React.ReactNode; value: string; label: string; compactValue?: boolean }) {
+}: { icon: ReactNode; value: string; label: string; compactValue?: boolean }) {
   return (
     <div
       className="flex flex-col items-center gap-1 rounded-2xl px-1.5 py-2.5"
@@ -2063,7 +2063,7 @@ function RatingScreen({
    ============================================================ */
 function TopStat({
   icon, value, unit, label, highlight,
-}: { icon: React.ReactNode; value: string; unit?: string; label: string; highlight?: boolean }) {
+}: { icon: ReactNode; value: string; unit?: string; label: string; highlight?: boolean }) {
   return (
     <div className="flex min-w-0 flex-1 flex-col items-center">
       <div className={`flex items-center gap-1.5 ${highlight ? "text-primary" : "text-foreground/85"}`}>
