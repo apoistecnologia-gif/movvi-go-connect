@@ -73,14 +73,14 @@ export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
     const column = isDriver ? "driver_id" : "passenger_id";
     const { data } = await supabase
       .from("rides")
-      .select("id, created_at, origin_address, destination_address")
+      .select("id, created_at, origin_name, destination_name")
       .eq(column, uid)
       .order("created_at", { ascending: false })
       .limit(10);
     setRides(
       (data ?? []).map((r) => ({
         id: r.id,
-        label: `${new Date(r.created_at).toLocaleDateString("pt-BR")} • ${(r.origin_address ?? "").slice(0, 22)} → ${(r.destination_address ?? "").slice(0, 22)}`,
+        label: `${new Date(r.created_at).toLocaleDateString("pt-BR")} • ${(r.origin_name ?? "Origem").slice(0, 22)} → ${(r.destination_name ?? "Destino").slice(0, 22)}`,
       })),
     );
   }
