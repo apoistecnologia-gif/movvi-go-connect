@@ -81,14 +81,20 @@ function AdminUsersPage() {
   }, []);
 
   async function addRole(userId: string, role: Role) {
-    const { error } = await supabase.from("user_roles").insert({ user_id: userId, role });
-    if (error) return toast.error(error.message);
-    await logAdminAction({ action: "admin.add_role", entity: "user_roles", entity_id: userId, after: { role } });
+    try {
+      await grantRole({ data: { userId, role } });
+      await logAdminAction({ action: "admin.add_role", entity: "user_roles", entity_id: userId, after: { role } });
+    } catch (e) {
+      toast.error(e instanceof Error ? mapRoleError(e.message) : "Falha ao conceder permissão");
+    }
   }
   async function removeRole(userId: string, role: Role) {
-    const { error } = await supabase.from("user_roles").delete().eq("user_id", userId).eq("role", role);
-    if (error) return toast.error(error.message);
-    await logAdminAction({ action: "admin.remove_role", entity: "user_roles", entity_id: userId, before: { role } });
+    try {
+      await revokeRole({ data: { userId, role } });
+      await logAdminAction({ action: "admin.remove_role", entity: "user_roles", entity_id: userId, before: { role } });
+    } catch (e) {
+      toast.error(e instanceof Error ? mapRoleError(e.message) : "Falha ao remover permissão");
+    }
   }
   async function inviteByUserId() {
     const id = prompt("auth_user_id do usuário (precisa já estar cadastrado):")?.trim();
