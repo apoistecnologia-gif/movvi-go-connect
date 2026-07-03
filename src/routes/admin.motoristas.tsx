@@ -675,6 +675,8 @@ function DetailsDialog({
   onSubscription: (d: Driver) => void;
   busy: boolean;
 }) {
+  const addNoteFn = useServerFn(addDriverAdminNote);
+  const removeNoteFn = useServerFn(deleteDriverAdminNote);
   const [urls, setUrls] = useState<Record<string, string | null>>({});
   const [urlError, setUrlError] = useState<string | null>(null);
   const [docsLoading, setDocsLoading] = useState(false);
