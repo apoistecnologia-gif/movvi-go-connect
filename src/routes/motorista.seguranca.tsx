@@ -1,12 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AlertTriangle, Loader2, Phone, Plus, Share2, ShieldAlert, Trash2 } from "lucide-react";
-import { MovviHeader } from "@/components/MovviHeader";
-import { BottomNav, DRIVER_NAV } from "@/components/BottomNav";
+import { SettingsPageShell, SettingsHero, SettingsSection } from "@/components/settings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -105,93 +103,100 @@ function DriverSecurityPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <MovviHeader logoutRedirect="/" />
-      <main className="flex-1 px-4 py-6 pb-28">
-        <div className="container mx-auto max-w-xl space-y-5">
-          <header className="flex items-center gap-3">
-            <div className="grid h-11 w-11 place-items-center rounded-2xl bg-destructive/15 text-destructive">
-              <ShieldAlert className="h-5 w-5" />
-            </div>
-            <div>
-              <h1 className="font-display text-xl font-bold">Segurança</h1>
-              <p className="text-xs text-muted-foreground">Acione ajuda rápida e gerencie contatos de emergência.</p>
-            </div>
-          </header>
+    <SettingsPageShell>
+      <SettingsHero
+        icon={ShieldAlert}
+        title="Segurança"
+        subtitle="Acione ajuda rápida e gerencie contatos de emergência."
+        tone="danger"
+      />
 
-          <Card className="border-destructive/40">
-            <CardContent className="space-y-3 p-4">
-              <Button onClick={triggerSOS} variant="destructive" className="w-full" size="lg">
-                <AlertTriangle className="mr-2 h-5 w-5" /> Acionar SOS
-              </Button>
-              <div className="grid grid-cols-2 gap-2">
-                <Button asChild variant="outline">
-                  <a href="tel:190"><Phone className="mr-2 h-4 w-4" /> Polícia 190</a>
-                </Button>
-                <Button onClick={shareLocation} variant="outline">
-                  <Share2 className="mr-2 h-4 w-4" /> Compartilhar local
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Contatos de emergência</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {loading ? (
-                <p className="text-xs text-muted-foreground"><Loader2 className="inline h-3 w-3 animate-spin" /> Carregando...</p>
-              ) : contacts.length === 0 ? (
-                <p className="text-xs text-muted-foreground">Nenhum contato cadastrado.</p>
-              ) : (
-                <ul className="space-y-2">
-                  {contacts.map((c) => (
-                    <li key={c.id} className="flex items-center justify-between gap-2 rounded-lg border border-border bg-card/60 p-3">
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold">
-                          {c.name} {c.is_primary && <span className="ml-1 rounded bg-primary/20 px-1.5 py-0.5 text-[10px] text-primary">PRINCIPAL</span>}
-                        </p>
-                        <p className="text-xs text-muted-foreground">{c.phone}{c.relation ? ` · ${c.relation}` : ""}</p>
-                      </div>
-                      <div className="flex gap-1">
-                        <a href={`tel:${c.phone}`} className="rounded-md p-1.5 text-primary hover:bg-primary/10" aria-label="Ligar"><Phone className="h-4 w-4" /></a>
-                        {!c.is_primary && (
-                          <button onClick={() => setPrimary(c.id)} className="rounded-md px-2 text-[10px] text-foreground hover:bg-accent/40">Definir</button>
-                        )}
-                        <button onClick={() => remove(c.id)} className="rounded-md p-1.5 text-destructive hover:bg-destructive/10" aria-label="Excluir"><Trash2 className="h-4 w-4" /></button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-
-              <div className="space-y-2 rounded-lg border border-dashed border-border p-3">
-                <p className="text-xs font-semibold">Adicionar contato</p>
-                <div className="grid grid-cols-1 gap-2">
-                  <div>
-                    <Label className="text-[11px]">Nome</Label>
-                    <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Maria Silva" />
-                  </div>
-                  <div>
-                    <Label className="text-[11px]">Telefone</Label>
-                    <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(11) 99999-9999" inputMode="tel" />
-                  </div>
-                  <div>
-                    <Label className="text-[11px]">Parentesco (opcional)</Label>
-                    <Input value={relation} onChange={(e) => setRelation(e.target.value)} placeholder="Esposa, irmão..." />
-                  </div>
-                  <Button onClick={addContact} disabled={!name || !phone || adding}>
-                    {adding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
-                    Adicionar
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+      <section className="rounded-[24px] bg-white p-5 shadow-[0_6px_20px_-14px_rgba(15,23,42,0.12)] ring-1 ring-black/5 space-y-3">
+        <Button onClick={triggerSOS} variant="destructive" className="w-full" size="lg">
+          <AlertTriangle className="mr-2 h-5 w-5" /> Acionar SOS
+        </Button>
+        <div className="grid grid-cols-2 gap-2">
+          <Button asChild variant="outline">
+            <a href="tel:190"><Phone className="mr-2 h-4 w-4" /> Polícia 190</a>
+          </Button>
+          <Button onClick={shareLocation} variant="outline">
+            <Share2 className="mr-2 h-4 w-4" /> Compartilhar
+          </Button>
         </div>
-      </main>
-      <BottomNav items={DRIVER_NAV} />
-    </div>
+      </section>
+
+      <SettingsSection title="Contatos de emergência">
+        {loading ? (
+          <div className="px-4 py-4 text-[12.5px] text-[#707070]">
+            <Loader2 className="inline h-3.5 w-3.5 animate-spin" /> Carregando...
+          </div>
+        ) : contacts.length === 0 ? (
+          <div className="px-4 py-4 text-[12.5px] text-[#707070]">Nenhum contato cadastrado.</div>
+        ) : (
+          contacts.map((c) => (
+            <div key={c.id} className="flex items-center justify-between gap-2 px-4 py-3.5">
+              <div className="min-w-0">
+                <p className="truncate text-[15px] font-semibold text-[#1B1B1B]">
+                  {c.name}
+                  {c.is_primary && (
+                    <span className="ml-2 rounded-full bg-[#76C139]/15 px-2 py-0.5 text-[10px] font-semibold text-[#3F7A17] ring-1 ring-[#76C139]/25">
+                      PRINCIPAL
+                    </span>
+                  )}
+                </p>
+                <p className="text-[12.5px] text-[#707070]">
+                  {c.phone}{c.relation ? ` · ${c.relation}` : ""}
+                </p>
+              </div>
+              <div className="flex items-center gap-1">
+                <a
+                  href={`tel:${c.phone}`}
+                  className="flex h-9 w-9 items-center justify-center rounded-xl text-[#5A9A2A] hover:bg-[#76C139]/10"
+                  aria-label="Ligar"
+                >
+                  <Phone className="h-4 w-4" />
+                </a>
+                {!c.is_primary && (
+                  <button
+                    onClick={() => setPrimary(c.id)}
+                    className="rounded-xl px-2.5 py-1 text-[11px] font-semibold text-[#1B1B1B] hover:bg-[#F7F9F7]"
+                  >
+                    Definir
+                  </button>
+                )}
+                <button
+                  onClick={() => remove(c.id)}
+                  className="flex h-9 w-9 items-center justify-center rounded-xl text-[#DC2626] hover:bg-[#FEE2E2]"
+                  aria-label="Excluir"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </SettingsSection>
+
+      <SettingsSection title="Adicionar contato">
+        <div className="space-y-3 p-4">
+          <div>
+            <Label className="text-[12px] text-[#707070]">Nome</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Maria Silva" />
+          </div>
+          <div>
+            <Label className="text-[12px] text-[#707070]">Telefone</Label>
+            <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(11) 99999-9999" inputMode="tel" />
+          </div>
+          <div>
+            <Label className="text-[12px] text-[#707070]">Parentesco (opcional)</Label>
+            <Input value={relation} onChange={(e) => setRelation(e.target.value)} placeholder="Esposa, irmão..." />
+          </div>
+          <Button onClick={addContact} disabled={!name || !phone || adding} className="w-full">
+            {adding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
+            Adicionar
+          </Button>
+        </div>
+      </SettingsSection>
+    </SettingsPageShell>
   );
 }

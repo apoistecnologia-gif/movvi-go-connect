@@ -6,8 +6,6 @@ import {
   QrCode, Save, Settings as SettingsIcon, Shield, ShieldCheck, Smartphone,
   Sun, Trash2, User, Vibrate, Volume2, FileText, Fingerprint,
 } from "lucide-react";
-import { MovviHeader } from "@/components/MovviHeader";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
@@ -20,6 +18,7 @@ import {
 import { useTheme } from "@/lib/theme";
 import {
   SettingsSection, SettingsToggleRow, SettingsLinkRow, SettingsRow, AppAboutCard,
+  SettingsPageShell, SettingsHero,
 } from "@/components/settings";
 
 export const Route = createFileRoute("/motorista/configuracoes")({
@@ -112,19 +111,12 @@ function DriverSettingsPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background pb-10">
-      <MovviHeader logoutRedirect="/" />
-      <main className="flex-1 px-4 py-6">
-        <div className="container mx-auto max-w-2xl space-y-5">
-          <header className="flex items-center gap-3">
-            <div className="grid h-11 w-11 place-items-center rounded-full bg-primary/15 text-primary ring-1 ring-primary/30">
-              <SettingsIcon className="h-5 w-5" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold">Configurações</h1>
-              <p className="text-xs text-muted-foreground">Personalize seu app e preferências.</p>
-            </div>
-          </header>
+    <SettingsPageShell>
+      <SettingsHero
+        icon={SettingsIcon}
+        title="Configurações"
+        subtitle="Personalize seu app e preferências."
+      />
 
           {loading ? (
             <div className="flex items-center gap-2 py-12 text-muted-foreground">
@@ -264,11 +256,10 @@ function DriverSettingsPage() {
               </SettingsSection>
             </>
           )}
-        </div>
-      </main>
-    </div>
+    </SettingsPageShell>
   );
 }
+
 
 function ThemeBtn({ icon, label, active, onClick }: { icon?: React.ReactNode; label: string; active: boolean; onClick: () => void }) {
   return (

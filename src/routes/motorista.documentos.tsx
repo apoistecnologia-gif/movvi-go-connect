@@ -4,12 +4,12 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { MovviHeader } from "@/components/MovviHeader";
 import { DriverDocumentField } from "@/components/DriverDocumentField";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, ShieldCheck, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { Loader2, ShieldCheck, CheckCircle2, FileText } from "lucide-react";
 import { compressDocumentImage } from "@/lib/imageCompress";
 import { updateDriverDocument } from "@/lib/driverDocuments.functions";
+import { SettingsPageShell, SettingsHero } from "@/components/settings";
 
 export const Route = createFileRoute("/motorista/documentos")({
   head: () => ({ meta: [{ title: "Meus documentos — MOVVI DRIVE" }] }),
@@ -146,89 +146,77 @@ function DriverDocumentsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-16">
-      <MovviHeader />
-      <div className="container mx-auto max-w-2xl px-4 py-8">
-        <div className="mb-4 flex items-center justify-between">
-          <Link to="/motorista/status" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-4 w-4" /> Voltar ao status
-          </Link>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary ring-1 ring-primary/30">
-            <ShieldCheck className="h-3.5 w-3.5" /> {uploadedCount}/4 enviados
+    <SettingsPageShell>
+      <SettingsHero
+        icon={FileText}
+        title="Meus documentos"
+        subtitle="Envie os documentos necessários para análise da sua conta."
+        action={
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#76C139]/12 px-3 py-1.5 text-[12px] font-semibold text-[#3F7A17] ring-1 ring-[#76C139]/25">
+            <ShieldCheck className="h-3.5 w-3.5" /> {uploadedCount}/4
           </span>
+        }
+      />
+
+      <section className="rounded-[24px] bg-white p-5 shadow-[0_6px_20px_-14px_rgba(15,23,42,0.12)] ring-1 ring-black/5 space-y-4">
+        <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#F1F5F1]">
+          <div
+            className="h-full rounded-full bg-[#76C139] transition-all duration-300"
+            style={{ width: `${(uploadedCount / 4) * 100}%` }}
+          />
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Meus documentos</CardTitle>
-            <CardDescription>
-              Envie os documentos necessários para análise da sua conta. Eles ficam privados.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-              <div
-                className="h-full bg-primary transition-all duration-300"
-                style={{ width: `${(uploadedCount / 4) * 100}%` }}
-              />
-            </div>
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        {message && (
+          <Alert>
+            <AlertDescription>{message}</AlertDescription>
+          </Alert>
+        )}
 
-            {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-            {message && (
-              <Alert>
-                <AlertDescription>{message}</AlertDescription>
-              </Alert>
-            )}
+        <div className="grid gap-4 sm:grid-cols-2">
+          {SLOTS.map((s) => {
+            const hasValue = slotHasValue(driver, s.slot);
+            const pendingFile = pending[s.slot] ?? null;
+            const busy = saving === s.slot;
+            return (
+              <div key={s.slot} className="space-y-2">
+                <DriverDocumentField
+                  id={`doc-${s.slot}`}
+                  label={s.label}
+                  helper={s.helper}
+                  file={pendingFile}
+                  onChange={(f) => setPending((prev) => ({ ...prev, [s.slot]: f }))}
+                  facing={s.facing}
+                />
+                <div className="flex items-center justify-between gap-2 px-1">
+                  {hasValue && !pendingFile ? (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#5A9A2A]">
+                      <CheckCircle2 className="h-3.5 w-3.5" /> Enviado
+                    </span>
+                  ) : (
+                    <span className="text-[11px] text-[#707070]">
+                      {pendingFile ? "Pronto para enviar" : "Nenhum arquivo"}
+                    </span>
+                  )}
+                  <Button size="sm" disabled={!pendingFile || busy} onClick={() => handleSave(s)}>
+                    {busy ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
+                    {hasValue ? "Substituir" : "Enviar"}
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              {SLOTS.map((s) => {
-                const hasValue = slotHasValue(driver, s.slot);
-                const pendingFile = pending[s.slot] ?? null;
-                const busy = saving === s.slot;
-                return (
-                  <div key={s.slot} className="space-y-2">
-                    <DriverDocumentField
-                      id={`doc-${s.slot}`}
-                      label={s.label}
-                      helper={s.helper}
-                      file={pendingFile}
-                      onChange={(f) => setPending((prev) => ({ ...prev, [s.slot]: f }))}
-                      facing={s.facing}
-                    />
-                    <div className="flex items-center justify-between gap-2 px-1">
-                      {hasValue && !pendingFile ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-primary">
-                          <CheckCircle2 className="h-3.5 w-3.5" /> Enviado
-                        </span>
-                      ) : (
-                        <span className="text-[11px] text-muted-foreground">
-                          {pendingFile ? "Pronto para enviar" : "Nenhum arquivo"}
-                        </span>
-                      )}
-                      <Button
-                        size="sm"
-                        disabled={!pendingFile || busy}
-                        onClick={() => handleSave(s)}
-                      >
-                        {busy ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
-                        {hasValue ? "Substituir" : "Enviar"}
-                      </Button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            <p className="text-[11px] text-muted-foreground">
-              Após enviar os 4 documentos, sua conta entra em análise (pending_review).
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+        <p className="text-[11.5px] text-[#707070]">
+          Após enviar os 4 documentos, sua conta entra em análise.
+        </p>
+      </section>
+    </SettingsPageShell>
   );
 }
+

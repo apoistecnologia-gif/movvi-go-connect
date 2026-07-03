@@ -1,8 +1,8 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, CheckCircle2, Clock, ShieldAlert, Copy, ExternalLink } from "lucide-react";
-import { MovviHeader } from "@/components/MovviHeader";
+import { Loader2, CheckCircle2, Clock, ShieldAlert, Copy, ExternalLink, Crown } from "lucide-react";
+import { SettingsPageShell, SettingsHero } from "@/components/settings";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -27,7 +27,7 @@ export const Route = createFileRoute("/motorista/assinatura")({
 type Info = Awaited<ReturnType<typeof getDriverSubscriptionInfo>>;
 
 function DriverSubscriptionPage() {
-  const navigate = useNavigate();
+  // navigation is handled by SettingsPageShell / MovviHeader.
   const load = useServerFn(getDriverSubscriptionInfo);
   const createCharge = useServerFn(createDriverMonthlyCharge);
   const [info, setInfo] = useState<Info | null>(null);
@@ -80,11 +80,14 @@ function DriverSubscriptionPage() {
   const Icon = ui === "active" ? CheckCircle2 : ui === "pending_payment" ? Clock : ShieldAlert;
 
   return (
-    <div className="min-h-svh bg-background text-foreground">
-      <MovviHeader />
+    <SettingsPageShell>
+      <SettingsHero
+        icon={Crown}
+        title="Mensalidade"
+        subtitle="Plano Motorista MOVVI Premium"
+      />
 
-      <main className="mx-auto w-full max-w-lg space-y-4 px-4 pb-24 pt-4">
-        <h1 className="text-xl font-extrabold text-foreground">Mensalidade</h1>
+
 
         <Card>
           <CardHeader>
@@ -205,7 +208,7 @@ function DriverSubscriptionPage() {
             <Loader2 className="h-4 w-4 animate-spin" /> Carregando…
           </p>
         )}
-      </main>
-    </div>
+    </SettingsPageShell>
   );
 }
+
