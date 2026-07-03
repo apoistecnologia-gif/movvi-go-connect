@@ -89,7 +89,7 @@ type PassengerLite = {
   completed_rides: number | null;
 };
 
-const ACTIVE_STATUSES = ["procurar_motorista", "motorista_a_caminho", "motorista_chegou", "em_viagem"];
+const ACTIVE_STATUSES = ["procurar_motorista", "motorista_a_caminho", "motorista_chegou", "em_viagem"] as const;
 const ALL = "__all__";
 
 const STATUS_LABEL: Record<string, string> = {

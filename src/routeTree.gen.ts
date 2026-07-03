@@ -51,6 +51,7 @@ import { Route as AdminRelatoriosRouteImport } from './routes/admin.relatorios'
 import { Route as AdminPrecosRouteImport } from './routes/admin.precos'
 import { Route as AdminPassageirosRouteImport } from './routes/admin.passageiros'
 import { Route as AdminPagamentosRouteImport } from './routes/admin.pagamentos'
+import { Route as AdminOperacoesRouteImport } from './routes/admin.operacoes'
 import { Route as AdminNotificacoesRouteImport } from './routes/admin.notificacoes'
 import { Route as AdminMotoristasRouteImport } from './routes/admin.motoristas'
 import { Route as AdminMapaRouteImport } from './routes/admin.mapa'
@@ -281,6 +282,11 @@ const AdminPagamentosRoute = AdminPagamentosRouteImport.update({
   path: '/admin/pagamentos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminOperacoesRoute = AdminOperacoesRouteImport.update({
+  id: '/admin/operacoes',
+  path: '/admin/operacoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminNotificacoesRoute = AdminNotificacoesRouteImport.update({
   id: '/admin/notificacoes',
   path: '/admin/notificacoes',
@@ -387,6 +393,7 @@ export interface FileRoutesByFullPath {
   '/admin/mapa': typeof AdminMapaRoute
   '/admin/motoristas': typeof AdminMotoristasRoute
   '/admin/notificacoes': typeof AdminNotificacoesRoute
+  '/admin/operacoes': typeof AdminOperacoesRoute
   '/admin/pagamentos': typeof AdminPagamentosRoute
   '/admin/passageiros': typeof AdminPassageirosRoute
   '/admin/precos': typeof AdminPrecosRoute
@@ -448,6 +455,7 @@ export interface FileRoutesByTo {
   '/admin/mapa': typeof AdminMapaRoute
   '/admin/motoristas': typeof AdminMotoristasRoute
   '/admin/notificacoes': typeof AdminNotificacoesRoute
+  '/admin/operacoes': typeof AdminOperacoesRoute
   '/admin/pagamentos': typeof AdminPagamentosRoute
   '/admin/passageiros': typeof AdminPassageirosRoute
   '/admin/precos': typeof AdminPrecosRoute
@@ -510,6 +518,7 @@ export interface FileRoutesById {
   '/admin/mapa': typeof AdminMapaRoute
   '/admin/motoristas': typeof AdminMotoristasRoute
   '/admin/notificacoes': typeof AdminNotificacoesRoute
+  '/admin/operacoes': typeof AdminOperacoesRoute
   '/admin/pagamentos': typeof AdminPagamentosRoute
   '/admin/passageiros': typeof AdminPassageirosRoute
   '/admin/precos': typeof AdminPrecosRoute
@@ -573,6 +582,7 @@ export interface FileRouteTypes {
     | '/admin/mapa'
     | '/admin/motoristas'
     | '/admin/notificacoes'
+    | '/admin/operacoes'
     | '/admin/pagamentos'
     | '/admin/passageiros'
     | '/admin/precos'
@@ -634,6 +644,7 @@ export interface FileRouteTypes {
     | '/admin/mapa'
     | '/admin/motoristas'
     | '/admin/notificacoes'
+    | '/admin/operacoes'
     | '/admin/pagamentos'
     | '/admin/passageiros'
     | '/admin/precos'
@@ -695,6 +706,7 @@ export interface FileRouteTypes {
     | '/admin/mapa'
     | '/admin/motoristas'
     | '/admin/notificacoes'
+    | '/admin/operacoes'
     | '/admin/pagamentos'
     | '/admin/passageiros'
     | '/admin/precos'
@@ -757,6 +769,7 @@ export interface RootRouteChildren {
   AdminMapaRoute: typeof AdminMapaRoute
   AdminMotoristasRoute: typeof AdminMotoristasRoute
   AdminNotificacoesRoute: typeof AdminNotificacoesRoute
+  AdminOperacoesRoute: typeof AdminOperacoesRoute
   AdminPagamentosRoute: typeof AdminPagamentosRoute
   AdminPassageirosRoute: typeof AdminPassageirosRoute
   AdminPrecosRoute: typeof AdminPrecosRoute
@@ -1095,6 +1108,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPagamentosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/operacoes': {
+      id: '/admin/operacoes'
+      path: '/admin/operacoes'
+      fullPath: '/admin/operacoes'
+      preLoaderRoute: typeof AdminOperacoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/notificacoes': {
       id: '/admin/notificacoes'
       path: '/admin/notificacoes'
@@ -1247,6 +1267,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminMapaRoute: AdminMapaRoute,
   AdminMotoristasRoute: AdminMotoristasRoute,
   AdminNotificacoesRoute: AdminNotificacoesRoute,
+  AdminOperacoesRoute: AdminOperacoesRoute,
   AdminPagamentosRoute: AdminPagamentosRoute,
   AdminPassageirosRoute: AdminPassageirosRoute,
   AdminPrecosRoute: AdminPrecosRoute,
