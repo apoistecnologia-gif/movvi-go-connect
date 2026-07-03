@@ -304,7 +304,7 @@ function AdminAssinaturasPage() {
       description={`${subs.length} assinaturas · ${plans.length} planos · MOVVI recebe apenas a mensalidade do motorista`}
       actions={
         <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={runAutoSuspend}>
+          <Button size="sm" variant="outline" onClick={() => setConfirmAutoSuspend(true)}>
             Verificar vencidas
           </Button>
           <Button size="sm" onClick={createPlan} className="gap-1">
@@ -491,7 +491,7 @@ function AdminAssinaturasPage() {
                         size="sm"
                         variant="ghost"
                         className="text-destructive"
-                        onClick={() => deletePlan(p)}
+                        onClick={() => setPlanToDelete(p)}
                       >
                         <Trash2 className="h-3 w-3" />
                       </Button>
@@ -511,6 +511,34 @@ function AdminAssinaturasPage() {
         open={!!openSubId}
         onOpenChange={(o) => !o && setOpenSubId(null)}
         onRefreshed={refresh}
+      />
+
+      <ConfirmDialog
+        open={!!planToDelete}
+        onOpenChange={(o) => !o && setPlanToDelete(null)}
+        title="Excluir plano de assinatura?"
+        description={
+          <>
+            Você está prestes a excluir o plano{" "}
+            <strong className="text-foreground">{planToDelete?.name}</strong>. Esta ação não pode ser
+            desfeita e removerá o plano do catálogo.
+          </>
+        }
+        confirmLabel="Excluir plano"
+        confirmWord="EXCLUIR"
+        destructive
+        onConfirm={async () => {
+          if (planToDelete) await deletePlan(planToDelete);
+        }}
+      />
+
+      <ConfirmDialog
+        open={confirmAutoSuspend}
+        onOpenChange={setConfirmAutoSuspend}
+        title="Suspender assinaturas vencidas?"
+        description="Todas as assinaturas expiradas com suspensão automática habilitada serão marcadas como vencidas. Motoristas com essas assinaturas ficarão bloqueados de receber corridas."
+        confirmLabel="Executar verificação"
+        onConfirm={runAutoSuspend}
       />
     </AdminLayout>
   );
