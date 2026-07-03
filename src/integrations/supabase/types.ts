@@ -112,6 +112,38 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_passenger_notes: {
+        Row: {
+          admin_id: string
+          created_at: string
+          id: string
+          note: string
+          passenger_id: string
+        }
+        Insert: {
+          admin_id: string
+          created_at?: string
+          id?: string
+          note: string
+          passenger_id: string
+        }
+        Update: {
+          admin_id?: string
+          created_at?: string
+          id?: string
+          note?: string
+          passenger_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_passenger_notes_passenger_id_fkey"
+            columns: ["passenger_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admin_settings: {
         Row: {
           description: string | null
