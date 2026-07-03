@@ -1,17 +1,21 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { MovviHeader } from "@/components/MovviHeader";
-import { BottomNav, PASSENGER_NAV } from "@/components/BottomNav";
+import { BellRing } from "lucide-react";
+import { SettingsPageShell, SettingsHero } from "@/components/settings";
+import { PASSENGER_NAV } from "@/components/BottomNav";
 import { NotificationPreferencesPage } from "@/components/notifications/NotificationPreferencesPage";
 
 function Page() {
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <MovviHeader logoutRedirect="/" />
-      <main className="flex-1">
+    <SettingsPageShell nav={PASSENGER_NAV}>
+      <SettingsHero
+        icon={BellRing}
+        title="Preferências de notificação"
+        subtitle="Escolha quais alertas você quer receber."
+      />
+      <div className="overflow-hidden rounded-[24px] bg-white shadow-[0_6px_20px_-14px_rgba(15,23,42,0.12)] ring-1 ring-black/5">
         <NotificationPreferencesPage audience="passenger" />
-      </main>
-      <BottomNav items={PASSENGER_NAV} />
-    </div>
+      </div>
+    </SettingsPageShell>
   );
 }
 
