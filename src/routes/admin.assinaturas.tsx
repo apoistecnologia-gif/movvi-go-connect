@@ -538,7 +538,9 @@ function AdminAssinaturasPage() {
         title="Suspender assinaturas vencidas?"
         description="Todas as assinaturas expiradas com suspensão automática habilitada serão marcadas como vencidas. Motoristas com essas assinaturas ficarão bloqueados de receber corridas."
         confirmLabel="Executar verificação"
-        onConfirm={runAutoSuspend}
+        onConfirm={async () => {
+          await runAutoSuspend();
+        }}
       />
     </AdminLayout>
   );
