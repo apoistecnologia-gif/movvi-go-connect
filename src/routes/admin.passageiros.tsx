@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   Loader2,
@@ -43,7 +44,20 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { formatBRL, formatDate } from "@/lib/formatters";
 import { logAdminAction } from "@/lib/adminAudit";
+import {
+  blockPassenger,
+  deletePassenger,
+  suspendPassenger,
+  unblockPassenger,
+  unsuspendPassenger,
+} from "@/lib/adminPassengers.functions";
 import { downloadCsv } from "@/lib/csvExport";
+
+function mapAdminError(msg: string): string {
+  if (msg === "forbidden") return "Ação restrita a administradores.";
+  if (/^invalid_|^Required$|uuid/i.test(msg)) return "Dados inválidos.";
+  return msg;
+}
 
 export const Route = createFileRoute("/admin/passageiros")({
   head: () => ({ meta: [{ title: "Passageiros — Admin MOVVI" }] }),
