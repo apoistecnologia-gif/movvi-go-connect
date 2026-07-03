@@ -13,7 +13,7 @@ import {
   BadgeCheck,
   Sparkles,
 } from "lucide-react";
-import { DSAvatar } from "@/design-system/Avatar";
+import { Avatar } from "@/components/Avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { RatingBadge, RatingSummary } from "@/components/rating/RatingBadge";
 import { cn } from "@/lib/utils";
