@@ -1041,14 +1041,17 @@ function MotoristaApp() {
           )}
           {polyline.length > 0 && (
             <>
+              {/* sombra difusa — profundidade sutil */}
               <Polyline path={polyline} options={{
-                strokeColor: "#000000", strokeOpacity: 0.18, strokeWeight: 16, geodesic: true, zIndex: 1,
+                strokeColor: "#000000", strokeOpacity: 0.12, strokeWeight: 20, geodesic: true, zIndex: 1,
               }} />
+              {/* halo branco — legibilidade em qualquer terreno */}
               <Polyline path={polyline} options={{
-                strokeColor: "#ffffff", strokeOpacity: 1, strokeWeight: 11, geodesic: true, zIndex: 2,
+                strokeColor: "#ffffff", strokeOpacity: 0.95, strokeWeight: 14, geodesic: true, zIndex: 2,
               }} />
+              {/* rota — verde MOVVI, encorpado */}
               <Polyline path={polyline} options={{
-                strokeColor: "#8DD92B", strokeOpacity: 1, strokeWeight: 7, geodesic: true, zIndex: 3,
+                strokeColor: "#8DD92B", strokeOpacity: 1, strokeWeight: 9, geodesic: true, zIndex: 3,
               }} />
             </>
           )}
@@ -1103,13 +1106,13 @@ function MotoristaApp() {
         </div>
       )}
 
-      {/* Recenter */}
+      {/* Recenter — floating action button, consistent size + shadow */}
       {!incoming && !ratingRide && (
         <button onClick={recenter}
-          className="absolute right-4 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-card/95 text-foreground shadow-lg ring-1 ring-border backdrop-blur hover:ring-primary/40"
+          aria-label="Centralizar mapa"
+          className="press-scale absolute right-4 z-20 flex h-12 w-12 items-center justify-center rounded-full bg-card/95 text-foreground shadow-[0_10px_28px_-10px_rgba(0,0,0,0.55)] ring-1 ring-border/70 backdrop-blur-md transition hover:ring-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
           style={{ bottom: active ? "calc(58vh + 16px)" : "calc(env(safe-area-inset-bottom) + 320px)" }}>
-
-          <Crosshair className="h-5 w-5" />
+          <Crosshair className="h-[18px] w-[18px]" />
         </button>
       )}
 
@@ -1575,16 +1578,18 @@ function ActiveRidePanel({
         }}
       />
 
-      {/* CTA conforme fase */}
-      {phase === "motorista_a_caminho" && (
-        <ActionButton label="Cheguei ao local" onClick={onArrive} icon={MapPin} />
-      )}
-      {phase === "motorista_chegou" && (
-        <ActionButton label="Iniciar corrida" onClick={() => { setPinError(null); setPinCode(""); setPinOpen(true); }} icon={ChevronRight} />
-      )}
-      {phase === "em_viagem" && (
-        <ActionButton label="Finalizar corrida" onClick={onComplete} icon={CheckCircle2} variant="success" />
-      )}
+      {/* CTA conforme fase — transições suaves entre estados */}
+      <div key={phase} className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+        {phase === "motorista_a_caminho" && (
+          <ActionButton label="Cheguei ao local" onClick={onArrive} icon={MapPin} emphasize />
+        )}
+        {phase === "motorista_chegou" && (
+          <ActionButton label="Iniciar corrida" onClick={() => { setPinError(null); setPinCode(""); setPinOpen(true); }} icon={ChevronRight} emphasize />
+        )}
+        {phase === "em_viagem" && (
+          <ActionButton label="Finalizar corrida" onClick={onComplete} icon={CheckCircle2} variant="success" />
+        )}
+      </div>
 
       {/* Modal de validação do PIN de segurança */}
       {pinOpen && (
@@ -1647,22 +1652,27 @@ function ActiveRidePanel({
 }
 
 function ActionButton({
-  label, onClick, icon: Icon, variant = "primary",
+  label, onClick, icon: Icon, variant = "primary", emphasize = false,
 }: {
   label: string;
   onClick: () => void | Promise<void>;
   icon: React.ComponentType<{ className?: string }>;
   variant?: "primary" | "success";
+  emphasize?: boolean;
 }) {
   const [busy, setBusy] = useState(false);
   return (
     <button
       disabled={busy}
       onClick={async () => { setBusy(true); try { await onClick(); } finally { setBusy(false); } }}
-      className={`press-scale mt-1 flex w-full items-center justify-center gap-2 rounded-2xl min-h-14 py-4 text-[14px] font-bold uppercase tracking-[0.15em] transition disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-card ${
+      className={`press-scale relative mt-1 flex w-full items-center justify-center gap-2 rounded-2xl min-h-14 py-4 text-[14px] font-bold uppercase tracking-[0.15em] transition disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-card ${
         variant === "success"
           ? "bg-primary text-primary-foreground shadow-[0_14px_32px_-14px_color-mix(in_oklab,var(--color-primary)_60%,transparent)] hover:brightness-105"
-          : "bg-primary text-primary-foreground shadow-[0_14px_32px_-14px_color-mix(in_oklab,var(--color-primary)_60%,transparent)] hover:brightness-105"}`}>
+          : "bg-primary text-primary-foreground shadow-[0_14px_32px_-14px_color-mix(in_oklab,var(--color-primary)_60%,transparent)] hover:brightness-105"} ${
+        emphasize ? "ring-2 ring-primary/40 ring-offset-2 ring-offset-card" : ""}`}>
+      {emphasize && (
+        <span className="pointer-events-none absolute inset-0 rounded-2xl ring-2 ring-primary/50 animate-ping opacity-40" />
+      )}
       <Icon className="h-[17px] w-[17px]" />
       {busy ? "…" : label}
     </button>
