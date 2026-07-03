@@ -1,12 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { MovviHeader } from "@/components/MovviHeader";
-import { BottomNav, PASSENGER_NAV } from "@/components/BottomNav";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Globe2, Heart, Info, Shield, Zap } from "lucide-react";
+import { SettingsPageShell, SettingsHero } from "@/components/settings";
+import { PASSENGER_NAV } from "@/components/BottomNav";
 import { MovviLogo } from "@/components/MovviLogo";
-import { Shield, Zap, Globe2, Heart } from "lucide-react";
 
 export const Route = createFileRoute("/passageiro/sobre")({
-  head: () => ({ meta: [{ title: "Sobre — MOVVI DRIVE" }] }),
+  head: () => ({ meta: [{ title: "Sobre — MOVVI" }] }),
   component: SobrePage,
 });
 
@@ -14,58 +13,53 @@ const APP_VERSION = "1.0.0";
 
 function SobrePage() {
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <MovviHeader logoutRedirect="/" />
-      <main className="flex-1 px-4 py-6 pb-24">
-        <div className="container mx-auto max-w-2xl space-y-5">
-          <Card>
-            <CardHeader className="items-center text-center">
-              <div className="mx-auto mb-3">
-                <MovviLogo />
-              </div>
-              <CardTitle className="text-xl">MOVVI DRIVE</CardTitle>
-              <CardDescription>
-                Mobilidade urbana profissional, segura e premium para todo o Brasil.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2 text-center text-sm text-muted-foreground">
-              <p>Versão do app: <span className="font-mono text-foreground">{APP_VERSION}</span></p>
-              <p>© {new Date().getFullYear()} MOVVI Tecnologia. Todos os direitos reservados.</p>
-            </CardContent>
-          </Card>
+    <SettingsPageShell nav={PASSENGER_NAV}>
+      <SettingsHero
+        icon={Info}
+        title="Sobre a MOVVI"
+        subtitle="Mobilidade urbana premium para todo o Brasil."
+      />
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Feature icon={Shield} title="Segurança em primeiro lugar" text="Verificação de motoristas, PIN de segurança e suporte 24/7." />
-            <Feature icon={Zap} title="Tecnologia premium" text="Rastreamento em tempo real, despacho inteligente e mapas precisos." />
-            <Feature icon={Globe2} title="Brasil inteiro" text="Operação em todas as regiões com tarifas justas e transparentes." />
-            <Feature icon={Heart} title="Feito por quem se importa" text="Construído com carinho para passageiros e motoristas." />
-          </div>
+      <section className="flex flex-col items-center gap-3 rounded-[24px] bg-white p-8 text-center shadow-[0_6px_20px_-14px_rgba(15,23,42,0.12)] ring-1 ring-black/5">
+        <MovviLogo />
+        <p className="text-[13px] text-[#707070]">
+          Versão do app: <span className="font-mono text-[#1B1B1B]">{APP_VERSION}</span>
+        </p>
+        <p className="text-[12px] text-[#707070]">
+          © {new Date().getFullYear()} MOVVI Tecnologia. Todos os direitos reservados.
+        </p>
+      </section>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Links úteis</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm">
-              <a href="mailto:suporte@movvi.app" className="block rounded-lg border border-border bg-card/50 px-3 py-2 transition hover:bg-accent/40 active:scale-[0.99]">suporte@movvi.app</a>
-              <Link to="/passageiro/termos" className="block rounded-lg border border-border bg-card/50 px-3 py-2 transition hover:bg-accent/40 active:scale-[0.99]">Termos de Uso</Link>
-              <Link to="/passageiro/privacidade" className="block rounded-lg border border-border bg-card/50 px-3 py-2 transition hover:bg-accent/40 active:scale-[0.99]">Política de Privacidade</Link>
-            </CardContent>
-          </Card>
-        </div>
-      </main>
-      <BottomNav items={PASSENGER_NAV} />
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Feature icon={Shield} title="Segurança em primeiro lugar" text="Verificação de motoristas, PIN de segurança e suporte 24/7." />
+        <Feature icon={Zap} title="Tecnologia premium" text="Rastreamento em tempo real, despacho inteligente e mapas precisos." />
+        <Feature icon={Globe2} title="Brasil inteiro" text="Operação em todas as regiões com tarifas justas e transparentes." />
+        <Feature icon={Heart} title="Feito com carinho" text="Construído por quem se importa com passageiros e motoristas." />
+      </div>
+
+      <section className="overflow-hidden rounded-[24px] bg-white shadow-[0_6px_20px_-14px_rgba(15,23,42,0.12)] ring-1 ring-black/5">
+        <LinkRow href="mailto:suporte@movvi.app" label="suporte@movvi.app" external />
+        <LinkRow to="/passageiro/termos" label="Termos de Uso" />
+        <LinkRow to="/passageiro/privacidade" label="Política de Privacidade" />
+      </section>
+    </SettingsPageShell>
+  );
+}
+
+function Feature({ icon: Icon, title, text }: { icon: React.ComponentType<{ className?: string; strokeWidth?: number }>; title: string; text: string }) {
+  return (
+    <div className="rounded-[24px] bg-white p-5 shadow-[0_6px_20px_-14px_rgba(15,23,42,0.12)] ring-1 ring-black/5">
+      <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[#76C139]/10 text-[#5A9A2A]">
+        <Icon className="h-5 w-5" strokeWidth={1.75} />
+      </div>
+      <h3 className="text-[14px] font-semibold text-[#1B1B1B]">{title}</h3>
+      <p className="mt-1 text-[12.5px] leading-relaxed text-[#707070]">{text}</p>
     </div>
   );
 }
 
-function Feature({ icon: Icon, title, text }: { icon: React.ComponentType<{ className?: string }>; title: string; text: string }) {
-  return (
-    <div className="rounded-xl border border-border bg-card/50 p-4">
-      <div className="mb-2 inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary/15 text-primary">
-        <Icon className="h-4 w-4" />
-      </div>
-      <h3 className="text-sm font-semibold">{title}</h3>
-      <p className="mt-1 text-xs text-muted-foreground">{text}</p>
-    </div>
-  );
+function LinkRow({ href, to, label, external }: { href?: string; to?: string; label: string; external?: boolean }) {
+  const cls = "block border-b border-[#F0F2F0] px-5 py-3.5 text-[14px] font-medium text-[#1B1B1B] transition last:border-b-0 hover:bg-[#F7F9F7] active:bg-[#F7F9F7]";
+  if (to) return <Link to={to} className={cls}>{label}</Link>;
+  return <a href={href} className={cls} target={external ? "_blank" : undefined} rel={external ? "noreferrer" : undefined}>{label}</a>;
 }

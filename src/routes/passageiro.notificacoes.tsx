@@ -1,167 +1,155 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
-import { Bell, CheckCheck, Loader2, Inbox } from "lucide-react";
-import { MovviHeader } from "@/components/MovviHeader";
-import { BottomNav, PASSENGER_NAV } from "@/components/BottomNav";
+import { Bell, Check, Trash2 } from "lucide-react";
+import { SettingsPageShell, SettingsHero } from "@/components/settings";
+import { PASSENGER_NAV } from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
-type InboxRow = {
+type Notif = {
   id: string;
-  category: string | null;
   title: string;
   body: string | null;
-  data: Record<string, unknown> | null;
+  category: string | null;
   read_at: string | null;
   created_at: string;
 };
 
-function timeAgo(iso: string) {
-  const d = new Date(iso).getTime();
-  const diff = Date.now() - d;
-  const m = Math.floor(diff / 60000);
-  if (m < 1) return "agora";
-  if (m < 60) return `${m} min`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h} h`;
-  const days = Math.floor(h / 24);
-  if (days < 7) return `${days} d`;
-  return new Date(iso).toLocaleDateString("pt-BR");
-}
-
 function PassengerInboxPage() {
-  const [rows, setRows] = useState<InboxRow[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const navigate = useNavigate();
+  const [userId, setUserId] = useState<string | null>(null);
+  const [items, setItems] = useState<Notif[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const load = useCallback(async () => {
-    const { data: auth } = await supabase.auth.getUser();
-    const uid = auth?.user?.id;
-    if (!uid) {
-      setRows([]);
-      return;
-    }
-    const { data, error } = await supabase
+  const load = useCallback(async (uid: string) => {
+    const { data } = await supabase
       .from("notification_inbox")
-      .select("id,category,title,body,data,read_at,created_at")
+      .select("id,title,body,category,read_at,created_at")
       .eq("user_id", uid)
       .order("created_at", { ascending: false })
       .limit(100);
-    if (error) setError(error.message);
-    else setRows((data ?? []) as InboxRow[]);
+    setItems((data ?? []) as Notif[]);
+    setLoading(false);
   }, []);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    (async () => {
+      const { data: a } = await supabase.auth.getUser();
+      if (!a?.user) { navigate({ to: "/passageiro/login" }); return; }
+      setUserId(a.user.id);
+      await load(a.user.id);
+    })();
+  }, [navigate, load]);
 
-  async function markAllRead() {
-    setBusy(true);
-    try {
-      const { data: auth } = await supabase.auth.getUser();
-      const uid = auth?.user?.id;
-      if (!uid) return;
-      await supabase
-        .from("notification_inbox")
-        .update({ read_at: new Date().toISOString() })
-        .eq("user_id", uid)
-        .is("read_at", null);
-      await load();
-    } finally {
-      setBusy(false);
-    }
+  async function markRead(id: string) {
+    if (!userId) return;
+    await supabase.from("notification_inbox").update({ read_at: new Date().toISOString() }).eq("id", id);
+    setItems((prev) => prev.map((n) => (n.id === id ? { ...n, read_at: new Date().toISOString() } : n)));
   }
-
-  async function markOne(id: string) {
+  async function markAll() {
+    if (!userId) return;
     await supabase
       .from("notification_inbox")
       .update({ read_at: new Date().toISOString() })
-      .eq("id", id);
-    setRows((prev) =>
-      prev ? prev.map((r) => (r.id === id ? { ...r, read_at: new Date().toISOString() } : r)) : prev,
-    );
+      .eq("user_id", userId)
+      .is("read_at", null);
+    await load(userId);
+    toast.success("Todas marcadas como lidas.");
+  }
+  async function remove(id: string) {
+    await supabase.from("notification_inbox").delete().eq("id", id);
+    setItems((prev) => prev.filter((n) => n.id !== id));
   }
 
-  const unread = rows?.filter((r) => !r.read_at).length ?? 0;
+  const unread = items.filter((i) => !i.read_at).length;
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <MovviHeader logoutRedirect="/" />
-      <main className="flex-1 px-4 py-6 pb-24">
-        <div className="container mx-auto max-w-xl">
-          <header className="mb-5 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/15 text-primary">
-                <Bell className="h-5 w-5" />
+    <SettingsPageShell nav={PASSENGER_NAV}>
+      <SettingsHero
+        icon={Bell}
+        title="Notificações"
+        subtitle={`${unread} não ${unread === 1 ? "lida" : "lidas"}`}
+        action={
+          items.length > 0 ? (
+            <Button variant="outline" size="sm" onClick={markAll}>
+              <Check className="mr-1 h-3.5 w-3.5" /> Marcar todas
+            </Button>
+          ) : undefined
+        }
+      />
+
+      {loading ? (
+        <ul className="space-y-2.5" aria-busy="true" aria-label="Carregando notificações">
+          {[0, 1, 2, 3].map((i) => (
+            <li
+              key={i}
+              className="rounded-[24px] bg-white p-4 shadow-[0_6px_20px_-14px_rgba(15,23,42,0.12)] ring-1 ring-black/5"
+            >
+              <div className="space-y-2">
+                <div className="h-3.5 w-2/5 animate-pulse rounded bg-[#F1F5F1]" />
+                <div className="h-3 w-4/5 animate-pulse rounded bg-[#F1F5F1]" />
+                <div className="h-2.5 w-1/4 animate-pulse rounded bg-[#F1F5F1]" />
               </div>
-              <div>
-                <h1 className="font-display text-xl font-bold">Notificações</h1>
-                <p className="text-xs text-muted-foreground">
-                  {unread > 0 ? `${unread} não lida${unread > 1 ? "s" : ""}` : "Tudo em dia"}
-                </p>
-              </div>
-            </div>
-            {unread > 0 && (
-              <Button size="sm" variant="outline" onClick={markAllRead} disabled={busy}>
-                {busy ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <CheckCheck className="mr-1 h-3.5 w-3.5" />}
-                Marcar lidas
-              </Button>
-            )}
-          </header>
-
-          {error && (
-            <p className="mb-3 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
-              {error}
-            </p>
-          )}
-
-          {rows === null && (
-            <p className="text-sm text-muted-foreground">Carregando…</p>
-          )}
-
-          {rows && rows.length === 0 && (
-            <div className="rounded-2xl border border-dashed border-border bg-card/40 p-8 text-center text-sm text-muted-foreground">
-              <Inbox className="mx-auto mb-3 h-10 w-10 opacity-40" />
-              Você ainda não tem notificações.
-            </div>
-          )}
-
-          {rows && rows.length > 0 && (
-            <div className="space-y-2">
-              {rows.map((n) => (
-                <button
-                  key={n.id}
-                  onClick={() => !n.read_at && markOne(n.id)}
-                  className={`w-full rounded-2xl border p-4 text-left transition ${
-                    n.read_at
-                      ? "border-border bg-card/40"
-                      : "border-primary/40 bg-primary/5 hover:bg-primary/10"
-                  }`}
-                >
-                  <div className="mb-1 flex items-start justify-between gap-2">
-                    <p className="text-sm font-semibold">{n.title}</p>
-                    <span className="shrink-0 text-[11px] text-muted-foreground">{timeAgo(n.created_at)}</span>
-                  </div>
-                  {n.body && (
-                    <p className="text-xs text-muted-foreground">{n.body}</p>
-                  )}
-                  {n.category && (
-                    <span className="mt-2 inline-block rounded-full bg-secondary/40 px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
-                      {n.category}
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
-          )}
+            </li>
+          ))}
+        </ul>
+      ) : items.length === 0 ? (
+        <div className="flex flex-col items-center justify-center rounded-[24px] bg-white px-6 py-14 text-center shadow-[0_6px_20px_-14px_rgba(15,23,42,0.12)] ring-1 ring-black/5">
+          <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[#76C139]/10 text-[#5A9A2A]">
+            <Bell className="h-6 w-6" strokeWidth={1.75} />
+          </div>
+          <p className="text-[15px] font-semibold text-[#1B1B1B]">Tudo em dia</p>
+          <p className="mt-1 max-w-xs text-[12.5px] text-[#707070]">
+            Você não tem novas notificações. Avisos sobre corridas, promoções e atualizações aparecem aqui.
+          </p>
         </div>
-      </main>
-      <BottomNav items={PASSENGER_NAV} />
-    </div>
+      ) : (
+        <ul className="space-y-2.5">
+          {items.map((n, i) => (
+            <li
+              key={n.id}
+              className={`animate-fade-in rounded-[24px] p-4 shadow-[0_6px_20px_-14px_rgba(15,23,42,0.12)] ring-1 ring-black/5 transition ${
+                n.read_at ? "bg-white" : "bg-[#F3FBEA]"
+              }`}
+              style={{ animationDelay: `${i * 40}ms`, animationFillMode: "backwards" }}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="text-[15px] font-semibold leading-snug text-[#1B1B1B]">{n.title}</p>
+                  {n.body && <p className="mt-1 text-[12.5px] leading-relaxed text-[#707070]">{n.body}</p>}
+                  <p className="mt-1.5 text-[11px] text-[#94A3B8]">
+                    {new Date(n.created_at).toLocaleString("pt-BR")}
+                  </p>
+                </div>
+                <div className="flex flex-col gap-1">
+                  {!n.read_at && (
+                    <button
+                      onClick={() => markRead(n.id)}
+                      className="flex h-9 w-9 items-center justify-center rounded-xl text-[#5A9A2A] transition hover:bg-[#76C139]/10 active:scale-95"
+                      aria-label="Marcar como lida"
+                    >
+                      <Check className="h-4 w-4" />
+                    </button>
+                  )}
+                  <button
+                    onClick={() => remove(n.id)}
+                    className="flex h-9 w-9 items-center justify-center rounded-xl text-[#DC2626] transition hover:bg-[#FEE2E2] active:scale-95"
+                    aria-label="Excluir"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </SettingsPageShell>
   );
 }
 
 export const Route = createFileRoute("/passageiro/notificacoes")({
-  head: () => ({ meta: [{ title: "Notificações — MOVVI DRIVE" }] }),
+  head: () => ({ meta: [{ title: "Notificações — MOVVI" }] }),
   component: PassengerInboxPage,
 });
