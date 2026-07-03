@@ -122,19 +122,37 @@ function computeOfferCountdown(ride: RideRow): number {
   return Math.max(0, Math.ceil((expiresAtMs - Date.now()) / 1000));
 }
 
+function paymentLabelFor(method: string | null | undefined): string {
+  switch (method) {
+    case "cash": return "Dinheiro";
+    case "pix": return "PIX";
+    case "card": return "Cartão";
+    default: return method ?? "—";
+  }
+}
+
 function subscriptionBlockMessage(status: string): string {
   switch (status) {
     case "overdue":
-      return "Assinatura em atraso. Regularize o pagamento para voltar a operar.";
     case "pending":
-      return "Assinatura pendente de confirmação. Aguarde liberação do administrador.";
+      return "Sua mensalidade está pendente. Regularize para ficar online.";
+    case "expired":
+      return "Sua mensalidade expirou. Regularize para voltar a operar.";
+    case "blocked":
     case "suspended":
-      return "Assinatura suspensa pelo administrador. Entre em contato com o suporte.";
+      return "Acesso bloqueado. Regularize sua mensalidade para continuar.";
+    case "cancelled":
+      return "Assinatura cancelada. Reative seu plano para receber corridas.";
     case "inactive":
     default:
       return "Assinatura inativa. Ative seu plano para receber corridas.";
   }
 }
+
+function subscriptionBlockIsPayable(status: string): boolean {
+  return ["overdue", "pending", "expired", "blocked", "suspended", "cancelled", "inactive"].includes(status);
+}
+
 
 function MotoristaApp() {
   const navigate = useNavigate();
@@ -1054,12 +1072,14 @@ function MotoristaApp() {
         <div className="absolute left-1/2 top-24 z-20 -translate-x-1/2 max-w-xs rounded-2xl bg-card/95 px-4 py-3 text-center shadow-2xl ring-1 ring-border backdrop-blur-md">
           <div className="flex items-center justify-center gap-2 text-yellow-400">
             <AlertTriangle className="h-4 w-4" />
-            <span className="text-xs font-semibold uppercase tracking-wide">Aguardando aprovação</span>
+            <span className="text-xs font-semibold uppercase tracking-wide">Mensalidade</span>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">{statusBlock}</p>
-          <button onClick={() => navigate({ to: "/motorista/status" })}
-            className="mt-2 text-xs font-medium text-primary hover:underline">
-            Ver status do cadastro →
+          <button
+            onClick={() => navigate({ to: "/motorista/assinatura" })}
+            className="mt-2 inline-flex items-center justify-center rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow hover:brightness-110"
+          >
+            Pagar mensalidade
           </button>
         </div>
       )}
@@ -1283,7 +1303,7 @@ function IncomingOffer({
           <div className="min-w-0 flex-1">
             <div className="truncate text-sm font-semibold">{passenger?.name ?? "Passageiro"}</div>
             <div className="text-[11px] text-muted-foreground">
-              {ride.payment_method === "cash" ? "Pagamento em dinheiro" : (ride.payment_method ?? "Pagamento")}
+              Pagamento: {paymentLabelFor(ride.payment_method)}
             </div>
           </div>
         </div>
@@ -1450,7 +1470,7 @@ function ActiveRidePanel({
           <div className="mt-1 flex items-center gap-1.5 text-[12px] text-muted-foreground">
             <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" /> 5.0
             <span className="text-muted-foreground/50">·</span>
-            {ride.payment_method === "cash" ? "Dinheiro" : (ride.payment_method ?? "—")}
+            {paymentLabelFor(ride.payment_method)}
           </div>
         </div>
         {passenger?.phone && (
@@ -1606,7 +1626,7 @@ function RatingScreen({
   onSubmit: () => void; onDismiss: () => void; onSkip: () => void;
 }) {
   const total = Number(ride.final_price ?? ride.estimated_price ?? 0);
-  const paymentLabel = ride.payment_method === "cash" ? "Dinheiro" : (ride.payment_method ?? "—");
+  const paymentLabel = paymentLabelFor(ride.payment_method);
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/75 backdrop-blur-sm animate-in fade-in">
       <div className="w-full max-w-md rounded-t-[28px] bg-card p-5 shadow-2xl ring-1 ring-border animate-in slide-in-from-bottom duration-200">
