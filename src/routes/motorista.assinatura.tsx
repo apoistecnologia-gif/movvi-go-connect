@@ -1,8 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, CheckCircle2, Clock, ShieldAlert, Copy, ExternalLink } from "lucide-react";
-import { MovviHeader } from "@/components/MovviHeader";
+import { Loader2, CheckCircle2, Clock, ShieldAlert, Copy, ExternalLink, Crown } from "lucide-react";
+import { SettingsPageShell, SettingsHero } from "@/components/settings";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
