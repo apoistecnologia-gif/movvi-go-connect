@@ -40,6 +40,7 @@ type Broadcast = {
 };
 
 function AdminNotificacoesPage() {
+  const sendFn = useServerFn(sendAdminBroadcast);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [audience, setAudience] = useState<Audience>("all");
