@@ -90,47 +90,69 @@ function AdminCuponsPage() {
 
   async function save(c: Coupon) {
     setBusyId(c.id);
-    const { error } = await supabase
-      .from("coupons")
-      .update({
-        code: c.code.toUpperCase(),
-        description: c.description,
-        type: c.type,
-        value: c.value,
-        max_discount: c.max_discount,
-        valid_from: c.valid_from,
-        valid_to: c.valid_to,
-        usage_limit: c.usage_limit,
-        scope_category: c.scope_category,
-        enabled: c.enabled,
-      })
-      .eq("id", c.id);
-    setBusyId(null);
-    if (error) return toast.error(error.message);
-    await logAdminAction({ action: "coupon.update", entity: "coupons", entity_id: c.id });
-    toast.success("Cupom salvo");
+    try {
+      await updateFn({
+        data: {
+          id: c.id,
+          code: c.code.toUpperCase(),
+          description: c.description,
+          type: c.type,
+          value: Number(c.value) || 0,
+          max_discount: c.max_discount,
+          valid_from: c.valid_from,
+          valid_to: c.valid_to,
+          usage_limit: c.usage_limit,
+          scope_category: c.scope_category,
+          enabled: c.enabled,
+        },
+      });
+      await logAdminAction({ action: "coupon.update", entity: "coupons", entity_id: c.id });
+      toast.success("Cupom salvo");
+    } catch (e) {
+      toast.error(e instanceof Error ? mapAdminError(e.message) : String(e));
+    } finally {
+      setBusyId(null);
+    }
   }
   async function toggle(c: Coupon, enabled: boolean) {
     patch(c.id, { enabled });
-    await supabase.from("coupons").update({ enabled }).eq("id", c.id);
-    await logAdminAction({ action: enabled ? "coupon.enable" : "coupon.disable", entity: "coupons", entity_id: c.id });
+    try {
+      await toggleFn({ data: { id: c.id, enabled } });
+      await logAdminAction({
+        action: enabled ? "coupon.enable" : "coupon.disable",
+        entity: "coupons",
+        entity_id: c.id,
+      });
+    } catch (e) {
+      patch(c.id, { enabled: !enabled });
+      toast.error(e instanceof Error ? mapAdminError(e.message) : String(e));
+    }
   }
   async function del(c: Coupon) {
     if (!confirm(`Excluir cupom ${c.code}?`)) return;
-    const { error } = await supabase.from("coupons").delete().eq("id", c.id);
-    if (error) return toast.error(error.message);
-    await logAdminAction({ action: "coupon.delete", entity: "coupons", entity_id: c.id, before: { code: c.code } });
-    toast.success("Excluído");
+    try {
+      await deleteFn({ data: { id: c.id } });
+      await logAdminAction({
+        action: "coupon.delete",
+        entity: "coupons",
+        entity_id: c.id,
+        before: { code: c.code },
+      });
+      toast.success("Excluído");
+    } catch (e) {
+      toast.error(e instanceof Error ? mapAdminError(e.message) : String(e));
+    }
   }
   async function create() {
     const code = prompt("Código (ex: BEMVINDO20):")?.trim().toUpperCase();
     if (!code) return;
-    const { error } = await supabase
-      .from("coupons")
-      .insert({ code, type: "percent", value: 10, enabled: true });
-    if (error) return toast.error(error.message);
-    await logAdminAction({ action: "coupon.create", entity: "coupons", after: { code } });
-    toast.success("Criado");
+    try {
+      await createFn({ data: { code } });
+      await logAdminAction({ action: "coupon.create", entity: "coupons", after: { code } });
+      toast.success("Criado");
+    } catch (e) {
+      toast.error(e instanceof Error ? mapAdminError(e.message) : String(e));
+    }
   }
 
   return (
