@@ -633,12 +633,12 @@ function PassengerDetail({
         supabase
           .from("incident_reports")
           .select("id,category,description,created_at")
-          .eq("reporter_id", uid)
+          .eq("user_id", uid)
           .order("created_at", { ascending: false })
           .limit(10),
         supabase
           .from("sos_alerts")
-          .select("id,status,created_at")
+          .select("id,resolved_at,created_at")
           .eq("user_id", uid)
           .order("created_at", { ascending: false })
           .limit(10),
