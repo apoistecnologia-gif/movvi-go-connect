@@ -22,6 +22,7 @@ import { MovviMap } from "@/components/MovviMap";
 import { DriverSideMenu } from "@/components/DriverSideMenu";
 import { MovviSheet, type MovviSheetHandle } from "@/components/MovviSheet";
 import { PassengerProfessionalProfileDialog } from "@/components/profile/PassengerProfessionalProfileDialog";
+import { SafetyCard } from "@/components/safety/SafetyCard";
 import {
   InterpolatedDriverMarker,
   PlacePinMarker,
