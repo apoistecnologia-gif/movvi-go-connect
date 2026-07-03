@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { Plus, Save, Trash2, GripVertical, Loader2 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
@@ -10,6 +11,19 @@ import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import { logAdminAction } from "@/lib/adminAudit";
 import { ICON_REGISTRY } from "@/lib/uiCategories";
+import {
+  createRideCategory,
+  updateRideCategory,
+  setRideCategoryEnabled,
+  deleteRideCategory,
+  reorderRideCategories,
+} from "@/lib/adminCategories.functions";
+
+function mapAdminError(msg: string): string {
+  if (msg === "forbidden") return "Ação restrita a administradores.";
+  if (/invalid_|^Required$|uuid/i.test(msg)) return "Dados inválidos.";
+  return msg;
+}
 
 export const Route = createFileRoute("/admin/categorias")({
   head: () => ({ meta: [{ title: "Categorias — Admin MOVVI" }] }),
