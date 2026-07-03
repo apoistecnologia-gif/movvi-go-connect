@@ -161,10 +161,12 @@ function RideDetailSheet({
   ride,
   onClose,
   onChange,
+  onViewReceipt,
 }: {
   ride: RideRow | null;
   onClose: () => void;
   onChange: () => void;
+  onViewReceipt: (r: RideRow) => void;
 }) {
   const navigate = useNavigate();
   const callRate = useServerFn(avaliarMotorista);
