@@ -237,15 +237,38 @@
   html, body, #root { height: 100%; }
   html {
     transition: background-color 280ms ease, color 280ms ease;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
   }
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
     transition: background-color 280ms ease, color 280ms ease;
+    overscroll-behavior-y: none;
   }
   h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.02em; }
+  /* Smooth momentum scrolling on iOS wherever we scroll. */
+  [data-scroll], .movvi-scroll {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    scroll-behavior: smooth;
+  }
+  /* Consistent caret color for all inputs across the app. */
+  input, textarea, [contenteditable="true"] { caret-color: var(--color-primary); }
+  /* Kill blue tap flash on touch devices — we own the feedback via animations. */
+  button, a, [role="button"], [data-tap] { -webkit-tap-highlight-color: transparent; }
+  /* Respect reduced motion. */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 }
 
 @utility glow-primary {
