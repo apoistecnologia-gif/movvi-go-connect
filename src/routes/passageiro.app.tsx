@@ -704,6 +704,7 @@ function PassageiroApp() {
   const [route, setRoute] = useState<RouteResult | null>(null);
   const [passengerUiStage, setPassengerUiStage] = useState<PassengerUiStage>("selecting_destination");
   const [selectedCategoryKey, setSelectedCategoryKey] = useState<string | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<"cash" | "pix" | "card">("cash");
   const uiCategories = useUiCategories();
   const selectedUiCategory = useMemo(
     () => uiCategories.find((c) => c.key === selectedCategoryKey) ?? null,
@@ -1573,6 +1574,10 @@ function PassageiroApp() {
         },
       });
       setRideId(newId);
+      // Payment method is informational (MOVVI does not process ride payments).
+      try {
+        await supabase.from("rides").update({ payment_method: paymentMethod }).eq("id", newId);
+      } catch { /* ignore — column is optional metadata */ }
       setPassengerUiStage("searching_driver");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Falha ao solicitar corrida.");
