@@ -6,6 +6,7 @@ import {
   Route as RouteIcon,
   DollarSign,
   Ticket,
+  LifeBuoy,
   Bell,
   Settings,
   FileBarChart,
