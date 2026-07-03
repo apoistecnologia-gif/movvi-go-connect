@@ -19,6 +19,7 @@ function PerfilPassageiro() {
   const [verified, setVerified] = useState(false);
   const [totalRides, setTotalRides] = useState(0);
   const [rating, setRating] = useState<number | null>(null);
+  const [totalRatings, setTotalRatings] = useState(0);
 
   useEffect(() => {
     if (!userId) return;
