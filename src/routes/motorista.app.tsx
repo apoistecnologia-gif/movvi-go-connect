@@ -2108,83 +2108,185 @@ function RatingScreen({
 }) {
   const total = Number(ride.final_price ?? ride.estimated_price ?? 0);
   const paymentLabel = paymentLabelFor(ride.payment_method);
+  const distanceLabel = ride.distance_km ? `${Number(ride.distance_km).toFixed(1)} km` : "—";
+  const durationLabel = ride.duration_min ? `${Math.round(Number(ride.duration_min))} min` : "—";
+  const category = RIDE_CATEGORIES.find((c) => c.key === ride.category);
+  const CatIcon = category?.icon ?? RIDE_CATEGORIES[0].icon;
+  const pickupLabel = ride.pickup_short_label || ride.pickup_label || ride.origin_name || "—";
+  const destinationLabel = ride.destination_name || "—";
+
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/75 backdrop-blur-sm animate-in fade-in">
-      <div className="w-full max-w-md rounded-t-[28px] bg-card p-5 pb-6 shadow-premium ring-1 ring-border animate-sheet-in">
-        <div className="mx-auto -mt-1 mb-4 h-1.5 w-11 rounded-full bg-muted-foreground/30" />
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 animate-in fade-in duration-300"
+      style={{ backdropFilter: "blur(10px) saturate(140%)" }}
+    >
+      <div className="w-full max-w-md rounded-t-[28px] bg-card p-5 pb-6 shadow-[0_-24px_80px_-24px_rgba(0,0,0,0.55)] ring-1 ring-border animate-sheet-in">
+        <div className="mx-auto -mt-1 mb-5 h-1.5 w-11 rounded-full bg-muted-foreground/25" />
 
-        {/* recebimento */}
-        <div className="rounded-2xl bg-gradient-to-br from-primary/20 via-primary/10 to-transparent p-5 ring-1 ring-primary/30 text-center">
-          <div className="mx-auto mb-2 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
-            <CheckCircle2 className="h-6 w-6" />
+        {/* ===== SUCCESS HEADER — premium animated checkmark ===== */}
+        <div className="flex flex-col items-center text-center">
+          <div className="relative">
+            <span
+              className="absolute inset-0 rounded-full animate-ping"
+              style={{ background: "color-mix(in oklab, #76C139 30%, transparent)", animationDuration: "1600ms" }}
+            />
+            <div
+              className="relative flex h-16 w-16 items-center justify-center rounded-full shadow-[0_14px_36px_-14px_color-mix(in_oklab,#76C139_60%,transparent)] animate-in zoom-in-50 duration-500"
+              style={{ background: "#76C139" }}
+            >
+              <CheckCircle2 className="h-8 w-8 text-white animate-in fade-in zoom-in-75 duration-700" strokeWidth={2.2} />
+            </div>
           </div>
-          <p className="text-[11px] uppercase tracking-widest text-muted-foreground">Corrida concluída</p>
-          <p className="mt-1 text-3xl font-bold tabular-nums text-primary">{formatBRL(total)}</p>
-          <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-background/70 px-3 py-1 text-[11px] font-medium ring-1 ring-border">
-            <Banknote className="h-3 w-3" /> Receba em {paymentLabel.toLowerCase()}
-          </div>
-        </div>
-
-        {/* resumo viagem */}
-        <div className="mt-3 grid grid-cols-2 gap-2 text-center">
-          <Metric label="Distância" value={ride.distance_km ? `${Number(ride.distance_km).toFixed(1)} km` : "—"} />
-          <Metric label="Duração" value={ride.duration_min ? `${Math.round(Number(ride.duration_min))} min` : "—"} />
+          <h2 className="mt-4 text-[26px] font-bold tracking-tight text-foreground">Corrida concluída</h2>
+          <p className="mt-1 text-[13px] text-muted-foreground">O passageiro chegou com segurança.</p>
         </div>
 
         {submitted ? (
-          <div className="mt-4 rounded-2xl bg-primary/10 p-5 text-center ring-1 ring-primary/30 animate-in fade-in zoom-in-95 duration-200">
-            <div className="mx-auto mb-2 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
-              <CheckCircle2 className="h-7 w-7" />
+          <>
+            {/* Earnings card */}
+            <div className="mt-5 rounded-[24px] bg-background/70 p-5 text-center ring-1 ring-border shadow-[0_10px_28px_-18px_rgba(0,0,0,0.25)] animate-in fade-in zoom-in-95 duration-400">
+              <div className="text-[13px] font-medium text-muted-foreground">Ganhos da corrida</div>
+              <div className="mt-1 text-[36px] font-bold tabular-nums leading-none tracking-tight text-primary">
+                {formatBRL(total)}
+              </div>
+              <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-primary ring-1 ring-primary/25">
+                <Banknote className="h-3 w-3" /> {paymentLabel}
+              </div>
             </div>
-            <p className="text-base font-bold text-foreground">Avaliação registrada</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Você deu {stars} {stars === 1 ? "estrela" : "estrelas"} para {passenger?.name ?? "o passageiro"}. Obrigado!
-            </p>
-            <button onClick={onDismiss}
-              className="mt-4 w-full rounded-2xl bg-primary py-4 text-sm font-bold uppercase tracking-wider text-primary-foreground shadow-lg shadow-primary/30 hover:brightness-110">
+
+            {/* Next status */}
+            <div className="mt-4 flex items-center gap-3 rounded-[18px] bg-primary/8 p-3.5 ring-1 ring-primary/25 animate-in fade-in slide-in-from-bottom-2 duration-500">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
+                <CheckCircle2 className="h-4 w-4" strokeWidth={2} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-[13.5px] font-semibold text-foreground">Pronto para novas corridas</div>
+                <div className="text-[12px] text-muted-foreground">Você segue online e disponível.</div>
+              </div>
+            </div>
+
+            <button
+              onClick={onDismiss}
+              className="press-scale mt-5 flex h-14 w-full items-center justify-center rounded-[18px] text-[16px] font-bold uppercase tracking-[0.06em] text-primary-foreground shadow-[0_16px_36px_-16px_color-mix(in_oklab,var(--color-primary)_70%,transparent)] transition"
+              style={{ background: "#76C139" }}
+            >
               Concluir
             </button>
-          </div>
+          </>
         ) : (
           <>
-            {/* rating */}
-            <div className="mt-4">
-              <div className="text-center text-sm font-semibold">
-                Avalie {passenger?.name ?? "o passageiro"}
+            {/* ===== EARNINGS CARD ===== */}
+            <div className="mt-5 rounded-[24px] bg-background/70 p-5 text-center ring-1 ring-border shadow-[0_10px_28px_-18px_rgba(0,0,0,0.25)] animate-in fade-in zoom-in-95 duration-400">
+              <div className="text-[13px] font-medium text-muted-foreground">Ganhos da corrida</div>
+              <div className="mt-1 text-[36px] font-bold tabular-nums leading-none tracking-tight text-primary">
+                {formatBRL(total)}
               </div>
-              <div className="mt-2 flex items-center justify-center gap-1.5">
-                {[1, 2, 3, 4, 5].map((n) => (
-                  <button key={n} type="button" onClick={() => setStars(n)}
-                    className="transition active:scale-90">
-                    <Star className={`h-9 w-9 transition ${
-                      n <= stars ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/40"}`} />
-                  </button>
-                ))}
+              <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-primary ring-1 ring-primary/25">
+                <Banknote className="h-3 w-3" /> {paymentLabel}
               </div>
-              <textarea value={comment} onChange={(e) => setComment(e.target.value)}
-                placeholder="Comentário (opcional)"
-                className="mt-3 w-full resize-none rounded-2xl bg-background/60 p-3 text-sm ring-1 ring-border focus:outline-none focus:ring-primary/50"
-                rows={2} />
             </div>
 
+            {/* ===== TRIP SUMMARY ===== */}
+            <div className="mt-3 rounded-[20px] bg-background/60 p-3.5 ring-1 ring-border animate-in fade-in slide-in-from-bottom-2 duration-500">
+              <div className="grid grid-cols-2 gap-3">
+                <SummaryRow icon={<RouteIcon className="h-3.5 w-3.5" strokeWidth={1.75} />} label="Distância" value={distanceLabel} />
+                <SummaryRow icon={<Clock className="h-3.5 w-3.5" strokeWidth={1.75} />} label="Duração" value={durationLabel} />
+              </div>
+              <div className="mt-3 space-y-2 border-t border-border/60 pt-3">
+                <div className="flex items-start gap-2.5">
+                  <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Embarque</div>
+                    <div className="line-clamp-1 text-[13px] text-foreground">{pickupLabel}</div>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2.5">
+                  <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-destructive" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Destino</div>
+                    <div className="line-clamp-1 text-[13px] text-foreground">{destinationLabel}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ===== PASSENGER CARD + RATING ===== */}
+            <div className="mt-3 rounded-[20px] bg-background/60 p-4 ring-1 ring-border animate-in fade-in slide-in-from-bottom-2 duration-500">
+              <div className="flex items-center gap-3">
+                <Avatar
+                  src={passenger?.avatar_url ?? (ride as { passenger_photo_url?: string | null }).passenger_photo_url ?? null}
+                  name={passenger?.name ?? "?"}
+                  size={48}
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-[16px] font-semibold leading-tight tracking-tight">{passenger?.name ?? "Passageiro"}</div>
+                  <div className="mt-0.5 flex items-center gap-1.5 text-[12px] text-muted-foreground">
+                    <CatIcon className="h-3 w-3" strokeWidth={1.75} />
+                    <span>MOVVI {(category?.label ?? "CAR").toUpperCase()}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-3 text-center">
+                <div className="text-[12px] font-medium text-muted-foreground">Como foi o passageiro?</div>
+                <div className="mt-1.5 flex items-center justify-center gap-1">
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <button key={n} type="button" onClick={() => setStars(n)} className="p-1 transition active:scale-90">
+                      <Star
+                        className={`h-8 w-8 transition ${
+                          n <= stars ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/35"
+                        }`}
+                        strokeWidth={1.5}
+                      />
+                    </button>
+                  ))}
+                </div>
+                <textarea
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  placeholder="Comentário (opcional)"
+                  className="mt-2.5 w-full resize-none rounded-[14px] bg-card p-2.5 text-[13px] ring-1 ring-border focus:outline-none focus:ring-primary/40"
+                  rows={2}
+                />
+              </div>
+            </div>
 
             {errorMessage && (
-              <div className="mt-3 rounded-xl bg-destructive/10 px-3 py-2 text-xs text-destructive ring-1 ring-destructive/30">
+              <div className="mt-3 rounded-[14px] bg-destructive/10 px-3 py-2 text-[12px] text-destructive ring-1 ring-destructive/30">
                 {errorMessage} Toque em <strong>Tentar novamente</strong> ou pule esta avaliação.
               </div>
             )}
 
-            <button disabled={submitting} onClick={onSubmit}
-              className="mt-4 w-full rounded-2xl bg-primary py-4 text-sm font-bold uppercase tracking-wider text-primary-foreground shadow-lg shadow-primary/30 hover:brightness-110 disabled:opacity-60">
-              {submitting ? "Enviando…" : (errorMessage ? "Tentar novamente" : "Enviar avaliação")}
+            <button
+              disabled={submitting}
+              onClick={onSubmit}
+              className="press-scale mt-4 flex h-14 w-full items-center justify-center rounded-[18px] text-[16px] font-bold uppercase tracking-[0.06em] text-primary-foreground shadow-[0_16px_36px_-16px_color-mix(in_oklab,var(--color-primary)_70%,transparent)] transition disabled:opacity-60"
+              style={{ background: "#76C139" }}
+            >
+              {submitting ? "Enviando…" : errorMessage ? "Tentar novamente" : "Concluir"}
             </button>
-            <button type="button" onClick={onSkip} disabled={submitting}
-              className="mt-2 w-full rounded-2xl bg-transparent py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground disabled:opacity-60">
+            <button
+              type="button"
+              onClick={onSkip}
+              disabled={submitting}
+              className="mt-2 w-full rounded-[14px] bg-transparent py-3 text-[12px] font-semibold uppercase tracking-wider text-muted-foreground transition hover:text-foreground disabled:opacity-60"
+            >
               Pular avaliação
             </button>
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+function SummaryRow({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <div className="flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+        {icon}
+        {label}
+      </div>
+      <div className="text-[15px] font-semibold tabular-nums text-foreground">{value}</div>
     </div>
   );
 }
