@@ -155,6 +155,8 @@ function AdminAssinaturasPage() {
   const [filter, setFilter] = useState<FilterKey>("all");
   const [query, setQuery] = useState("");
   const [openSubId, setOpenSubId] = useState<string | null>(null);
+  const [planToDelete, setPlanToDelete] = useState<Plan | null>(null);
+  const [confirmAutoSuspend, setConfirmAutoSuspend] = useState(false);
 
   async function refresh() {
     setLoading(true);
@@ -279,10 +281,11 @@ function AdminAssinaturasPage() {
     toast.success("Plano criado");
   }
   async function deletePlan(p: Plan) {
-    if (!window.confirm(`Excluir plano "${p.name}"?`)) return;
     const { error } = await supabase.from("subscription_plans").delete().eq("id", p.id);
     if (error) return toast.error(error.message);
     await logAdminAction({ action: "plan.delete", entity: "subscription_plans", entity_id: p.id });
+    toast.success("Plano excluído");
+    refresh();
   }
 
   async function runAutoSuspend() {
