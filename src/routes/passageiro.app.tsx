@@ -2905,8 +2905,8 @@ type StepFlowProps = {
   onClearDestination: () => void;
   onSubmit: () => void;
   onExpandSheet: (p: number) => void;
-  paymentMethod: "cash" | "pix" | "card";
-  setPaymentMethod: (m: "cash" | "pix" | "card") => void;
+  paymentMethod: "dinheiro" | "pix" | "cartao_credito";
+  setPaymentMethod: (m: "dinheiro" | "pix" | "cartao_credito") => void;
 };
 
 function StepFlow({
