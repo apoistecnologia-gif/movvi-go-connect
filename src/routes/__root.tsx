@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { ThemeProvider, THEME_INIT_SCRIPT } from "../lib/theme";
 import { MapThemeProvider } from "../lib/mapTheme";
+import { NotificationPermissionPrompt } from "../components/notifications/NotificationPermissionPrompt";
 
 function NotFoundComponent() {
   return (
@@ -131,6 +132,7 @@ function RootComponent() {
       <ThemeProvider>
         <MapThemeProvider>
           <Outlet />
+          <NotificationPermissionPrompt />
         </MapThemeProvider>
       </ThemeProvider>
     </QueryClientProvider>
