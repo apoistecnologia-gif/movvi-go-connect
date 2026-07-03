@@ -11,6 +11,7 @@ import {
   LogOut,
   MapPin,
   Menu,
+  MessageCircle,
   Navigation2,
   Phone,
   Star,
