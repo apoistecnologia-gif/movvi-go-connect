@@ -731,28 +731,39 @@ function PassengerDetail({
   async function addNote() {
     if (!passenger || !noteDraft.trim()) return;
     setSavingNote(true);
-    const { data: auth } = await supabase.auth.getUser();
-    if (!auth.user) {
+    try {
+      const row = await addNoteFn({
+        data: { passengerId: passenger.id, note: noteDraft.trim() },
+      });
+      setNotes((cur) => [row as AdminNote, ...cur]);
+      setNoteDraft("");
+      toast.success("Nota adicionada");
+      await logAdminAction({
+        action: "passenger.note.add",
+        entity: "admin_passenger_notes",
+        entity_id: passenger.id,
+      });
+    } catch (e) {
+      toast.error(
+        "Erro ao salvar nota: " + (e instanceof Error ? mapAdminError(e.message) : String(e)),
+      );
+    } finally {
       setSavingNote(false);
-      toast.error("Sessão expirada.");
-      return;
     }
-    const { data, error } = await supabase
-      .from("admin_passenger_notes")
-      .insert({ passenger_id: passenger.id, admin_id: auth.user.id, note: noteDraft.trim() })
-      .select("*")
-      .single();
-    setSavingNote(false);
-    if (error) return toast.error("Erro ao salvar nota: " + error.message);
-    setNotes((cur) => [data as AdminNote, ...cur]);
-    setNoteDraft("");
-    toast.success("Nota adicionada");
   }
 
   async function removeNote(id: string) {
-    const { error } = await supabase.from("admin_passenger_notes").delete().eq("id", id);
-    if (error) return toast.error(error.message);
-    setNotes((cur) => cur.filter((n) => n.id !== id));
+    try {
+      await removeNoteFn({ data: { id } });
+      setNotes((cur) => cur.filter((n) => n.id !== id));
+      await logAdminAction({
+        action: "passenger.note.delete",
+        entity: "admin_passenger_notes",
+        entity_id: id,
+      });
+    } catch (e) {
+      toast.error(e instanceof Error ? mapAdminError(e.message) : String(e));
+    }
   }
 
   if (!passenger) return null;
