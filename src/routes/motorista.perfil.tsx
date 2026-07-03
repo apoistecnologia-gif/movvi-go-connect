@@ -37,7 +37,7 @@ function DriverProfilePage() {
     let alive = true;
     (async () => {
       const { data: d } = await supabase.from("drivers")
-        .select("id,name,email,photo_url,category,vehicle_model,vehicle_color,vehicle_plate,vehicle_year,rating,approval_status,subscription_status,is_online,created_at")
+        .select("id,name,email,photo_url,category,vehicle_model,vehicle_color,vehicle_plate,vehicle_year,rating,average_rating,total_ratings,completed_rides,approval_status,subscription_status,is_online,created_at")
         .eq("user_id", userId).maybeSingle();
       if (!alive) return;
       setDriver((d ?? null) as Driver | null);
