@@ -85,49 +85,63 @@ function AdminCategoriasPage() {
 
   async function saveRow(row: Row) {
     setSavingId(row.id);
-    const { error } = await supabase
-      .from("ride_categories")
-      .update({
-        label: row.label,
-        icon: row.icon,
-        color: row.color,
-        enabled: row.enabled,
-        sort_order: row.sort_order,
-      })
-      .eq("id", row.id);
-    setSavingId(null);
-    if (error) {
-      toast.error("Erro ao salvar: " + error.message);
-      return;
+    try {
+      await updateFn({
+        data: {
+          id: row.id,
+          label: row.label,
+          icon: row.icon,
+          color: row.color,
+          enabled: row.enabled,
+          sort_order: row.sort_order,
+        },
+      });
+      await logAdminAction({
+        action: "ride_category.update",
+        entity: "ride_categories",
+        entity_id: row.id,
+        after: { key: row.key },
+      });
+      toast.success(`"${row.label}" atualizada`);
+    } catch (e) {
+      toast.error("Erro ao salvar: " + (e instanceof Error ? mapAdminError(e.message) : String(e)));
+    } finally {
+      setSavingId(null);
     }
-    await logAdminAction({ action: "ride_category.update", entity: "ride_categories", entity_id: row.id, after: { key: row.key } });
-    toast.success(`"${row.label}" atualizada`);
   }
 
   async function toggleEnabled(row: Row, enabled: boolean) {
     patch(row.id, { enabled });
-    const { error } = await supabase
-      .from("ride_categories")
-      .update({ enabled })
-      .eq("id", row.id);
-    if (error) {
-      toast.error("Falha ao alternar: " + error.message);
+    try {
+      await toggleFn({ data: { id: row.id, enabled } });
+      await logAdminAction({
+        action: enabled ? "ride_category.enable" : "ride_category.disable",
+        entity: "ride_categories",
+        entity_id: row.id,
+      });
+      toast.success(`${row.label} ${enabled ? "habilitada" : "desabilitada"}`);
+    } catch (e) {
       patch(row.id, { enabled: !enabled });
-      return;
+      toast.error(
+        "Falha ao alternar: " + (e instanceof Error ? mapAdminError(e.message) : String(e)),
+      );
     }
-    await logAdminAction({ action: enabled ? "ride_category.enable" : "ride_category.disable", entity: "ride_categories", entity_id: row.id });
-    toast.success(`${row.label} ${enabled ? "habilitada" : "desabilitada"}`);
   }
 
   async function deleteRow(row: Row) {
     if (!confirm(`Excluir categoria "${row.label}"? Esta ação não pode ser desfeita.`)) return;
-    const { error } = await supabase.from("ride_categories").delete().eq("id", row.id);
-    if (error) {
-      toast.error("Erro ao excluir: " + error.message);
-      return;
+    try {
+      await deleteFn({ data: { id: row.id } });
+      await logAdminAction({
+        action: "ride_category.delete",
+        entity: "ride_categories",
+        entity_id: row.id,
+        before: { key: row.key },
+      });
+      toast.success("Categoria excluída");
+    } catch (e) {
+      toast.error("Erro ao excluir: " + (e instanceof Error ? mapAdminError(e.message) : String(e)));
     }
-    await logAdminAction({ action: "ride_category.delete", entity: "ride_categories", entity_id: row.id, before: { key: row.key } });
-    toast.success("Categoria excluída");
   }
 
   async function createNew() {
@@ -136,25 +150,35 @@ function AdminCategoriasPage() {
     const label = prompt("Nome exibido:")?.trim();
     if (!label) return;
     const sort = (rows.at(-1)?.sort_order ?? 0) + 1;
-    const { error } = await supabase
-      .from("ride_categories")
-      .insert({ key, label, icon: "Car", color: "#8DD92B", enabled: true, sort_order: sort });
-    if (error) {
-      toast.error("Erro ao criar: " + error.message);
-      return;
+    try {
+      await createFn({ data: { key, label, sort_order: sort } });
+      await logAdminAction({
+        action: "ride_category.create",
+        entity: "ride_categories",
+        after: { key, label },
+      });
+      toast.success("Categoria criada");
+    } catch (e) {
+      toast.error("Erro ao criar: " + (e instanceof Error ? mapAdminError(e.message) : String(e)));
     }
-    await logAdminAction({ action: "ride_category.create", entity: "ride_categories", after: { key, label } });
-    toast.success("Categoria criada");
   }
 
   async function reorder(row: Row, dir: -1 | 1) {
     const idx = rows.findIndex((r) => r.id === row.id);
     const swap = rows[idx + dir];
     if (!swap) return;
-    await Promise.all([
-      supabase.from("ride_categories").update({ sort_order: swap.sort_order }).eq("id", row.id),
-      supabase.from("ride_categories").update({ sort_order: row.sort_order }).eq("id", swap.id),
-    ]);
+    try {
+      await reorderFn({
+        data: {
+          updates: [
+            { id: row.id, sort_order: swap.sort_order },
+            { id: swap.id, sort_order: row.sort_order },
+          ],
+        },
+      });
+    } catch (e) {
+      toast.error(e instanceof Error ? mapAdminError(e.message) : String(e));
+    }
   }
 
   return (
