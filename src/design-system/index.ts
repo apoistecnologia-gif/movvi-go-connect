@@ -16,6 +16,7 @@ export * from "./Avatar";
 export * from "./Icon";
 export * from "./StatusPill";
 export * from "./Loading";
+export * from "./EmptyState";
 
 // Re-export the shared premium Button + Sheet so consumers hit ONE import path.
 export { Button as DSButton, buttonVariants as dsButtonVariants } from "@/components/ui/button";
