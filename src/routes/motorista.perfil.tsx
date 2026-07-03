@@ -33,6 +33,7 @@ function DriverProfilePage() {
   const [totalRides, setTotalRides] = useState(0);
   const [docsStatus, setDocsStatus] = useState<"ok" | "pending" | "missing">("pending");
   const [verified, setVerified] = useState(false);
+  const [publicProfileOpen, setPublicProfileOpen] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
