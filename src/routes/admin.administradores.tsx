@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { Loader2, Plus, Trash2, Save, ShieldCheck } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
@@ -8,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { logAdminAction } from "@/lib/adminAudit";
+import { grantAdminRole, revokeAdminRole } from "@/lib/adminRoles.functions";
 import { formatDate } from "@/lib/formatters";
 
 export const Route = createFileRoute("/admin/administradores")({
