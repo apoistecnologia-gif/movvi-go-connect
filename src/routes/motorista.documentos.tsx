@@ -4,12 +4,12 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { MovviHeader } from "@/components/MovviHeader";
 import { DriverDocumentField } from "@/components/DriverDocumentField";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, ShieldCheck, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { Loader2, ShieldCheck, CheckCircle2, FileText } from "lucide-react";
 import { compressDocumentImage } from "@/lib/imageCompress";
 import { updateDriverDocument } from "@/lib/driverDocuments.functions";
+import { SettingsPageShell, SettingsHero } from "@/components/settings";
 
 export const Route = createFileRoute("/motorista/documentos")({
   head: () => ({ meta: [{ title: "Meus documentos — MOVVI DRIVE" }] }),
