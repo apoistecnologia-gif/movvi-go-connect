@@ -1611,6 +1611,157 @@ function ActiveRidePanel({
 
   const minutes = etaSeconds != null ? Math.max(1, Math.round(etaSeconds / 60)) : null;
 
+  // ==========================================================
+  // FASE 1 — A CAMINHO DO PASSAGEIRO (redesign premium 2026)
+  // ==========================================================
+  if (phase === "motorista_a_caminho") {
+    const arrivalTime = etaSeconds != null
+      ? new Date(Date.now() + etaSeconds * 1000).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+      : null;
+    const category = RIDE_CATEGORIES.find((c) => c.key === ride.category);
+    const CatIcon = category?.icon ?? RIDE_CATEGORIES[0].icon;
+    const navHref = `https://www.google.com/maps/dir/?api=1&destination=${ride.origin_lat},${ride.origin_lng}&travelmode=driving`;
+
+    return (
+      <>
+        {/* ===== TOP FLOATING GLASS CARD — ETA · Distância · Chegada ===== */}
+        <div
+          className="fixed left-1/2 z-40 -translate-x-1/2 px-4 w-full max-w-md pointer-events-none"
+          style={{ top: "calc(env(safe-area-inset-top) + 12px)" }}
+        >
+          <div
+            className="pointer-events-auto flex items-center justify-between gap-2 rounded-[22px] px-4 py-3 shadow-[0_12px_36px_-16px_rgba(0,0,0,0.35)] animate-in fade-in slide-in-from-top-3 duration-300"
+            style={{
+              background: "color-mix(in oklab, #ffffff 82%, transparent)",
+              border: "1px solid rgba(255,255,255,0.65)",
+              backdropFilter: "blur(14px) saturate(160%)",
+            }}
+          >
+            <TopStat icon={<Clock className="h-[15px] w-[15px]" strokeWidth={1.75} />} value={minutes != null ? String(minutes) : "—"} unit="min" label="ETA" highlight />
+            <div className="h-9 w-px bg-black/10" />
+            <TopStat icon={<RouteIcon className="h-[15px] w-[15px]" strokeWidth={1.75} />} value={legKm != null ? legKm.toFixed(1) : "—"} unit="km" label="Distância" />
+            <div className="h-9 w-px bg-black/10" />
+            <TopStat icon={<MapPin className="h-[15px] w-[15px]" strokeWidth={1.75} />} value={arrivalTime ?? "—"} unit="" label="Chegada" />
+          </div>
+        </div>
+
+        {/* ===== BOTTOM SHEET CONTENT ===== */}
+        <div className="flex flex-col gap-4 pt-1 animate-sheet-in">
+          {/* Progress indicator */}
+          <div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-70" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+                </span>
+                <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">A caminho do passageiro</span>
+              </div>
+              <button
+                onClick={onCancel}
+                aria-label="Cancelar corrida"
+                className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted/30 hover:text-destructive"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="mt-2 h-[3px] w-full overflow-hidden rounded-full bg-muted/50">
+              <div className="animate-movvi-indeterminate h-full w-1/3 rounded-full bg-primary" />
+            </div>
+          </div>
+
+          {/* Live ETA hero */}
+          <div className="text-center">
+            <div className="text-[13px] font-medium text-muted-foreground">Chegando em</div>
+            <div className="mt-0.5 text-[28px] font-extrabold tabular-nums leading-none tracking-tight text-foreground">
+              {minutes != null ? `${minutes} min` : "—"}
+            </div>
+          </div>
+
+          {/* Passenger card */}
+          <button
+            type="button"
+            onClick={onOpenProfile}
+            aria-label="Ver perfil do passageiro"
+            className="flex items-center gap-3 rounded-[20px] bg-background/70 p-3 text-left ring-1 ring-border transition active:scale-[0.99] hover:bg-background/85"
+          >
+            <Avatar
+              src={passenger?.avatar_url ?? (ride as { passenger_photo_url?: string | null }).passenger_photo_url ?? null}
+              name={passenger?.name ?? "?"}
+              size={52}
+            />
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-[20px] font-bold leading-tight tracking-tight">{passenger?.name ?? "Passageiro"}</div>
+              <div className="mt-1 flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground">
+                <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" /> 5.0
+                <span className="text-muted-foreground/50">·</span>
+                <CatIcon className="h-3.5 w-3.5" strokeWidth={1.75} />
+                <span>MOVVI {(category?.label ?? "CAR").toUpperCase()}</span>
+              </div>
+            </div>
+            <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/70" />
+          </button>
+
+          {/* Pickup address */}
+          <div className="flex items-start gap-3 rounded-[20px] bg-background/70 p-3 ring-1 ring-border">
+            <span className="mt-1.5 h-3 w-3 shrink-0 rounded-full bg-primary ring-2 ring-card animate-pulse" />
+            <div className="min-w-0 flex-1">
+              <div className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-primary">Embarque</div>
+              <div className="mt-0.5 line-clamp-2 text-[15px] text-foreground">
+                {ride.pickup_label || ride.origin_name || "Endereço não identificado"}
+              </div>
+            </div>
+          </div>
+
+          {/* Primary CTA — Cheguei ao local */}
+          <button
+            onClick={() => onArrive()}
+            className="press-scale flex h-14 w-full items-center justify-center gap-2 rounded-[18px] text-[15px] font-bold uppercase tracking-[0.06em] text-primary-foreground shadow-[0_16px_36px_-16px_color-mix(in_oklab,var(--color-primary)_70%,transparent)] transition"
+            style={{ background: "#76C139" }}
+          >
+            <CheckCircle2 className="h-5 w-5" strokeWidth={2} />
+            Cheguei ao local
+          </button>
+
+          {/* Secondary circular actions — Call · Chat · Navigate */}
+          <div className="mt-1 flex items-center justify-center gap-6">
+            <CircleAction
+              icon={Phone}
+              label="Ligar"
+              href={passenger?.phone ? `tel:${passenger.phone}` : undefined}
+              disabled={!passenger?.phone}
+            />
+            <CircleAction
+              icon={MessageCircle}
+              label="Chat"
+              onClick={() => toast.info("Chat em breve")}
+            />
+            <CircleAction
+              icon={Navigation2}
+              label="Navegar"
+              href={navHref}
+              target="_blank"
+            />
+          </div>
+
+          {/* Safety card mantida (SOS, share, incidente) */}
+          <SafetyCard
+            role="driver"
+            rideId={ride.id}
+            counterpartLabel={`Passageiro ${passenger?.name ?? ""}`.trim()}
+            shareInput={{
+              role: "driver",
+              status: ride.status,
+              passengerName: passenger?.name ?? null,
+              originName: ride.pickup_label ?? ride.origin_name ?? null,
+              destinationName: ride.destination_name,
+            }}
+          />
+        </div>
+      </>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-3 pt-1">
       {/* status pill */}
