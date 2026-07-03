@@ -1069,40 +1069,42 @@ function MotoristaApp() {
         </MovviMap>
       </div>
 
-      {/* Top bar — compacta (apenas hambúrguer + logout; identidade vive no painel) */}
-      <div className="absolute inset-x-0 top-0 z-40 px-3 pt-[calc(env(safe-area-inset-top)+6px)]">
-        <div className="mx-auto flex max-w-5xl items-center gap-2 rounded-2xl bg-card/85 px-2 py-1.5 shadow-lg ring-1 ring-border/50 backdrop-blur-xl">
+      {/* Top bar — glass flutuante premium (60px, radius 22, backdrop blur) */}
+      <div className="absolute inset-x-0 top-0 z-40 px-3 pt-[calc(env(safe-area-inset-top)+8px)] motion-safe:animate-[fadeIn_320ms_ease-out]">
+        <div
+          className="mx-auto flex h-[60px] max-w-5xl items-center gap-3 rounded-[22px] px-3 shadow-[0_12px_32px_-16px_rgba(0,0,0,0.55)]"
+          style={{
+            background: "color-mix(in oklab, #0b0d10 62%, transparent)",
+            border: "1px solid rgba(255,255,255,0.06)",
+            backdropFilter: "blur(10px) saturate(140%)",
+          }}
+        >
           <button
             onClick={() => setSideMenuOpen(true)}
             aria-label="Abrir menu"
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary ring-1 ring-primary/30 transition hover:bg-primary/25 active:scale-90"
+            className="press-scale inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-foreground/90 transition hover:bg-white/5"
+            style={{ border: "1px solid rgba(255,255,255,0.08)" }}
           >
-            <Menu className="h-[18px] w-[18px]" />
+            <Menu className="h-[18px] w-[18px]" strokeWidth={1.75} />
           </button>
-          <div className="min-w-0 flex-1 truncate text-[12.5px] font-semibold text-foreground/90">
-            {driverName ? `Olá, ${driverName}` : "MOVVI DRIVE"}
+          <div className="min-w-0 flex-1 leading-tight">
+            <div className="truncate text-[11px] font-normal text-muted-foreground">
+              {greetingForNow()},
+            </div>
+            <div className="truncate text-[15px] font-bold text-foreground">
+              {driverName || "Motorista"}
+            </div>
           </div>
           <button
             onClick={handleLogout}
             aria-label="Sair"
-            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-destructive/15 text-destructive ring-1 ring-destructive/30 transition hover:bg-destructive/25 active:scale-90"
+            className="press-scale inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-foreground/80 transition hover:bg-white/5 hover:text-destructive"
+            style={{ border: "1px solid rgba(255,255,255,0.08)" }}
           >
-            <LogOut className="h-[14px] w-[14px]" />
+            <LogOut className="h-[16px] w-[16px]" strokeWidth={1.75} />
           </button>
         </div>
       </div>
-
-      {/* Suaviza a área central do mapa (evita sensação de "branco puro" no idle) */}
-      {!incoming && !ratingRide && !active && (
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 z-10"
-          style={{
-            background:
-              "radial-gradient(120% 60% at 50% 40%, transparent 55%, color-mix(in oklab, var(--color-foreground) 6%, transparent) 100%)",
-          }}
-        />
-      )}
 
       <DriverSideMenu
         open={sideMenuOpen}
@@ -1129,13 +1131,18 @@ function MotoristaApp() {
         </div>
       )}
 
-      {/* Recenter — floating action button, consistent size + shadow */}
+      {/* Recenter — floating GPS button (56px, glass) */}
       {!incoming && !ratingRide && (
         <button onClick={recenter}
           aria-label="Centralizar mapa"
-          className="press-scale absolute right-4 z-20 flex h-12 w-12 items-center justify-center rounded-full bg-card/95 text-foreground shadow-[0_10px_28px_-10px_rgba(0,0,0,0.55)] ring-1 ring-border/70 backdrop-blur-md transition hover:ring-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
-          style={{ bottom: active ? "calc(58vh + 16px)" : "calc(env(safe-area-inset-bottom) + 320px)" }}>
-          <Crosshair className="h-[18px] w-[18px]" />
+          className="press-scale absolute right-4 z-20 flex h-14 w-14 items-center justify-center rounded-full text-foreground shadow-[0_16px_36px_-14px_rgba(0,0,0,0.6)] transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+          style={{
+            bottom: active ? "calc(58vh + 16px)" : "calc(env(safe-area-inset-bottom) + 340px)",
+            background: "color-mix(in oklab, #111418 70%, transparent)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            backdropFilter: "blur(10px) saturate(140%)",
+          }}>
+          <Crosshair className="h-[20px] w-[20px]" strokeWidth={1.75} />
         </button>
       )}
 
@@ -1228,8 +1235,16 @@ function MotoristaApp() {
    IDLE — painel fixo (sem bottom sheet)
    Sempre visível, nunca exige rolagem para mostrar o CTA.
    ============================================================ */
+function greetingForNow(): string {
+  const h = new Date().getHours();
+  if (h < 5) return "Boa madrugada";
+  if (h < 12) return "Bom dia";
+  if (h < 18) return "Boa tarde";
+  return "Boa noite";
+}
+
 function IdleBottomPanel({
-  driverName, online, disabled, toggleOnline, stats, gpsMessage, loading,
+  driverName: _driverName, online, disabled, toggleOnline, stats, gpsMessage, loading,
   canUseTestLocation, onUseTestLocation,
 }: {
   driverName: string; online: boolean; disabled: boolean;
@@ -1239,84 +1254,100 @@ function IdleBottomPanel({
   canUseTestLocation: boolean;
   onUseTestLocation: () => void;
 }) {
-  // Espaço para BottomNav flutuante (~84px + safe-area).
   const navReserve = "calc(env(safe-area-inset-bottom) + 84px)";
 
   return (
     <div
-      className="absolute inset-x-0 z-30 rounded-t-[24px] bg-card text-foreground shadow-[0_-18px_44px_-24px_rgba(0,0,0,0.55)] ring-1 ring-border/50 animate-sheet-in"
-      style={{ bottom: navReserve }}
+      className="absolute inset-x-0 z-30 rounded-t-[28px] text-foreground shadow-[0_-24px_60px_-28px_rgba(0,0,0,0.7)] animate-sheet-in"
+      style={{
+        bottom: navReserve,
+        background: "#111418",
+        borderTop: "1px solid rgba(255,255,255,0.06)",
+      }}
     >
-      <div className="mx-auto mt-2 h-[4px] w-10 rounded-full bg-muted-foreground/25" />
+      <div className="mx-auto mt-2.5 h-[4px] w-10 rounded-full bg-white/10" />
 
-      <div className="flex flex-col gap-2.5 px-5 pb-3 pt-1.5">
-        {/* linha 1: saudação + status pill */}
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-          <div className="min-w-0">
-            <h1 className="truncate text-[16px] font-bold leading-tight tracking-tight">
-              Olá, {driverName || "motorista"}
-            </h1>
-            <p className="mt-0.5 truncate text-[11.5px] leading-tight text-muted-foreground">
-              {online ? "Disponível para receber viagens" : "Você está offline"}
-            </p>
-          </div>
+      <div className="flex flex-col gap-4 px-6 pb-5 pt-3">
+        {/* Status badge (capsule) */}
+        <div className="flex items-center justify-between">
           <div
-            className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10.5px] font-semibold ring-1 transition-colors ${
+            className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[12px] font-semibold transition ${
               online
-                ? "bg-primary/15 text-primary ring-primary/35"
-                : "bg-muted/25 text-muted-foreground ring-border/60"
+                ? "bg-primary/12 text-primary"
+                : "bg-white/5 text-muted-foreground"
             }`}
+            style={{ border: online ? "1px solid color-mix(in oklab, var(--color-primary) 30%, transparent)" : "1px solid rgba(255,255,255,0.06)" }}
           >
-            <span className="relative flex h-1.5 w-1.5">
+            <span className="relative flex h-2 w-2">
               {online && <span className="absolute inset-0 animate-ping rounded-full bg-primary/60" />}
-              <span className={`relative h-1.5 w-1.5 rounded-full ${online ? "bg-primary" : "bg-muted-foreground"}`} />
+              <span className={`relative h-2 w-2 rounded-full ${online ? "bg-primary" : "bg-muted-foreground/60"}`} />
             </span>
             {online ? "ONLINE" : "OFFLINE"}
           </div>
-        </div>
-
-        {/* stat compacto — apenas corridas de hoje (financeiro fica no menu Financeiro) */}
-        <div className="flex items-center justify-between rounded-xl bg-background/55 px-3 py-2 ring-1 ring-border/50">
-          <span className="text-[10.5px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
-            Corridas hoje
-          </span>
-          <span className="tabular-nums text-[17px] font-extrabold leading-none text-primary">
-            {stats.rides.toString()}
+          <span className="text-[13px] font-medium text-muted-foreground">
+            {online ? "Recebendo solicitações" : "Toque para ativar"}
           </span>
         </div>
 
-        {/* mensagem de erro do GPS (não substitui o botão) */}
+        {/* Stat card premium */}
+        <div className="grid grid-cols-1 gap-3">
+          <StatMini label="Corridas hoje" value={stats.rides.toString()} />
+        </div>
+
+        {/* GPS error */}
         {gpsMessage && (
-          <div className="rounded-lg bg-destructive/10 px-3 py-1.5 text-[11px] text-destructive ring-1 ring-destructive/25">
+          <div
+            className="rounded-xl px-3 py-2 text-[12px] text-destructive"
+            style={{ background: "color-mix(in oklab, var(--color-destructive) 12%, transparent)", border: "1px solid color-mix(in oklab, var(--color-destructive) 22%, transparent)" }}
+          >
             {gpsMessage}
           </div>
         )}
 
-        {/* Botão de modo teste — apenas em preview/dev quando o GPS real falha */}
         {canUseTestLocation && (
           <button
             type="button"
             onClick={onUseTestLocation}
-            className="press-scale w-full rounded-xl border border-dashed border-primary/50 bg-primary/10 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary transition hover:bg-primary/20"
+            className="press-scale w-full rounded-xl px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary transition hover:bg-primary/15"
+            style={{ background: "color-mix(in oklab, var(--color-primary) 8%, transparent)", border: "1px dashed color-mix(in oklab, var(--color-primary) 45%, transparent)" }}
           >
             Usar localização de teste no Brasil
           </button>
         )}
 
-        {/* Botão principal — FICAR ONLINE / FICAR OFFLINE */}
+        {/* Primary CTA — 56px, radius 18, 1px border */}
         <button
           type="button"
           disabled={disabled}
           onClick={toggleOnline}
-          className={`press-scale w-full rounded-2xl min-h-12 py-3 text-[13px] font-bold uppercase tracking-[0.14em] transition disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-card ${
+          className={`press-scale w-full h-14 rounded-[18px] text-[15px] font-semibold tracking-[0.01em] transition disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 ${
             online
-              ? "bg-card text-foreground ring-1 ring-border hover:ring-destructive/50"
-              : "bg-primary text-primary-foreground shadow-[0_10px_28px_-14px_color-mix(in_oklab,var(--color-primary)_60%,transparent)] hover:brightness-105"
+              ? "text-foreground hover:bg-white/[0.04]"
+              : "bg-primary text-primary-foreground shadow-[0_14px_36px_-16px_color-mix(in_oklab,var(--color-primary)_70%,transparent)] hover:brightness-105"
           }`}
+          style={
+            online
+              ? { background: "#0e1114", border: "1px solid rgba(255,255,255,0.08)" }
+              : { border: "1px solid color-mix(in oklab, var(--color-primary) 40%, transparent)" }
+          }
         >
           {loading ? "Obtendo localização..." : online ? "Ficar offline" : "Ficar online"}
         </button>
       </div>
+    </div>
+  );
+}
+
+function StatMini({ label, value }: { label: string; value: string }) {
+  return (
+    <div
+      className="flex items-center justify-between rounded-2xl px-4 py-3"
+      style={{ background: "#0e1114", border: "1px solid rgba(255,255,255,0.06)" }}
+    >
+      <span className="text-[13px] font-normal text-muted-foreground">{label}</span>
+      <span className="tabular-nums text-[24px] font-bold leading-none text-foreground">
+        {value}
+      </span>
     </div>
   );
 }
