@@ -1187,6 +1187,7 @@ function MotoristaApp() {
           ride={incoming}
           passenger={passenger}
           countdown={countdown}
+          driverPos={position}
           onAccept={handleAccept}
           onReject={handleReject}
           onOpenProfile={() => incoming.passenger_id && setProfilePassengerId(incoming.passenger_id)}
