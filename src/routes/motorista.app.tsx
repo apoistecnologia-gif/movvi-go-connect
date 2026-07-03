@@ -1687,8 +1687,8 @@ function RatingScreen({
   const paymentLabel = paymentLabelFor(ride.payment_method);
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/75 backdrop-blur-sm animate-in fade-in">
-      <div className="w-full max-w-md rounded-t-[28px] bg-card p-5 shadow-2xl ring-1 ring-border animate-in slide-in-from-bottom duration-200">
-        <div className="mx-auto -mt-1 mb-4 h-1 w-10 rounded-full bg-muted-foreground/30" />
+      <div className="w-full max-w-md rounded-t-[28px] bg-card p-5 pb-6 shadow-premium ring-1 ring-border animate-sheet-in">
+        <div className="mx-auto -mt-1 mb-4 h-1.5 w-11 rounded-full bg-muted-foreground/30" />
 
         {/* recebimento */}
         <div className="rounded-2xl bg-gradient-to-br from-primary/20 via-primary/10 to-transparent p-5 ring-1 ring-primary/30 text-center">
