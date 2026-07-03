@@ -581,6 +581,8 @@ function SubscriptionDetailSheet({
   const [notes, setNotes] = useState<Note[]>([]);
   const [noteDraft, setNoteDraft] = useState("");
   const [savingNote, setSavingNote] = useState(false);
+  const [confirmRefresh, setConfirmRefresh] = useState(false);
+  const [noteToDelete, setNoteToDelete] = useState<Note | null>(null);
 
   useEffect(() => {
     setProviderStatus(null);
