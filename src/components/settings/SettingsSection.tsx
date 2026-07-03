@@ -1,11 +1,12 @@
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 /**
- * Settings section — MOVVI Design System wrapper.
- * Standardizes header (icon + title + description) and body spacing
- * for every group inside the Settings screens.
+ * MOVVI DS — Settings section.
+ * Unified visual language with the Profile hub:
+ * - uppercase micro-label above the group,
+ * - white grouped card, 24px radius, soft shadow, hairline ring,
+ * - children auto-separated by hairline dividers.
  */
 export function SettingsSection({
   icon: Icon,
@@ -21,20 +22,22 @@ export function SettingsSection({
   children: ReactNode;
 }) {
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-start justify-between gap-3">
+    <section className="space-y-2">
+      <div className="flex items-end justify-between gap-3 px-2">
         <div className="min-w-0">
-          <CardTitle className="flex items-center gap-2 text-base">
-            {Icon ? <Icon className="h-4 w-4 text-primary" /> : null}
+          <h2 className="flex items-center gap-1.5 text-[13px] font-semibold uppercase tracking-wider text-[#707070]">
+            {Icon ? <Icon className="h-3.5 w-3.5 text-[#76C139]" strokeWidth={2} /> : null}
             <span className="truncate">{title}</span>
-          </CardTitle>
-          {description ? <CardDescription>{description}</CardDescription> : null}
+          </h2>
+          {description ? (
+            <p className="mt-0.5 text-[12.5px] text-[#707070]">{description}</p>
+          ) : null}
         </div>
         {action}
-      </CardHeader>
-      <CardContent className="space-y-1.5 divide-y divide-border/60">
+      </div>
+      <div className="overflow-hidden rounded-[24px] bg-white shadow-[0_6px_20px_-14px_rgba(15,23,42,0.12)] ring-1 ring-black/5 [&>*+*]:border-t [&>*+*]:border-[#F1F5F1]">
         {children}
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }
