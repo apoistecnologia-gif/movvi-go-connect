@@ -2378,38 +2378,7 @@ function PassageiroApp() {
         </div>
       )}
 
-      {/* Cartão FIXO do código de segurança — visível sobre tudo,
-          enquanto o motorista está a caminho ou chegou, antes da viagem iniciar.
-          Não fica escondido atrás do bottom sheet. */}
-      {ride &&
-        ride.safety_code &&
-        (phase === "motorista_a_caminho" || phase === "motorista_chegou") && (
-          <div
-            className="pointer-events-none absolute inset-x-0 z-40 flex justify-center px-3"
-            style={{ top: "calc(env(safe-area-inset-top) + 200px)" }}
-          >
-            <div className="pointer-events-auto w-full max-w-sm rounded-2xl bg-card/92 px-4 py-2.5 ring-1 ring-border/50 shadow-[0_10px_28px_-14px_rgba(0,0,0,0.55)] backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-400">
-              <div className="flex items-center justify-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground/90">
-                <Shield className="h-3 w-3 text-primary/80" strokeWidth={2} />
-                Código de segurança
-              </div>
-              <div className="mt-1.5 flex items-center justify-center gap-1.5">
-                {ride.safety_code.split("").map((d, i) => (
-                  <span
-                    key={i}
-                    className="grid h-9 w-8 place-items-center rounded-lg bg-background/70 text-[20px] font-extrabold tabular-nums text-foreground ring-1 ring-border/70"
-                  >
-                    {d}
-                  </span>
-                ))}
-              </div>
-              <p className="mt-1.5 text-center text-[10px] text-muted-foreground/80">
-                Informe ao motorista antes de iniciar a corrida.
-              </p>
-            </div>
-
-          </div>
-        )}
+      {/* PIN de segurança exibido no bottom sheet (DriverEnRoute). */}
 
       {ride &&
         rideDriverInfo &&
