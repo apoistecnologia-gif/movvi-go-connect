@@ -1955,9 +1955,18 @@ function PassageiroApp() {
     const driverLng = rideDriverInfo?.current_lng;
     const fitKey = `${ride.id}-${ride.status}`;
     if (lastPassengerFitKeyRef.current === fitKey) return;
+    // Se o usuário já mexeu no mapa, respeite a visão dele.
+    if (userMovedMapRef.current) return;
     let a: LatLng | null = null;
     let b: LatLng | null = null;
-    if (ride.status === "motorista_a_caminho" || ride.status === "motorista_chegou") {
+    if (ride.status === "procurar_motorista") {
+      // pickup + destino, enquadrado UMA vez ao entrar na busca
+      if (isBrazilCoordinate(ride.origin_lat, ride.origin_lng) &&
+          isBrazilCoordinate(ride.destination_lat, ride.destination_lng)) {
+        a = { lat: ride.origin_lat, lng: ride.origin_lng };
+        b = { lat: ride.destination_lat, lng: ride.destination_lng };
+      }
+    } else if (ride.status === "motorista_a_caminho" || ride.status === "motorista_chegou") {
       // passageiro + motorista aceito
       if (typeof driverLat === "number" && typeof driverLng === "number" &&
           isBrazilCoordinate(driverLat, driverLng)) {
@@ -1983,11 +1992,15 @@ function PassageiroApp() {
     autoFollowRef.current = false;
     const bounds = new google.maps.LatLngBounds();
     bounds.extend(a); bounds.extend(b);
-    // Padding enxuto: o cartão fixo do código ocupa ~140px no topo e o
-    // bottom sheet colapsado ocupa ~32vh. Sem inflar o viewport.
+    // Na busca de motorista o sheet ocupa ~44vh e mostramos a rota inteira,
+    // por isso o bottom padding precisa ser generoso (>= 360px) e o zoom
+    // NÃO deve estourar em cima do pickup.
+    const bottomPad = ride.status === "procurar_motorista"
+      ? Math.max(360, Math.round(window.innerHeight * 0.48))
+      : Math.round(window.innerHeight * 0.28) + 16;
     mapRef.current.fitBounds(bounds, {
       top: 150,
-      bottom: Math.round(window.innerHeight * 0.28) + 16,
+      bottom: bottomPad,
       left: 48,
       right: 48,
     });
