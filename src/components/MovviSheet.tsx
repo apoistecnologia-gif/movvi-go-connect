@@ -251,9 +251,9 @@ export const MovviSheet = forwardRef<MovviSheetHandle, Props>(function MovviShee
 
       {footer && (
         <div
-          className="shrink-0 border-t border-border/40 bg-card/95 px-6 pt-3 backdrop-blur-xl"
+          className="shrink-0 border-t border-border/40 bg-card/95 px-5 pt-2.5 backdrop-blur-xl"
           style={{
-            paddingBottom: "calc(env(safe-area-inset-bottom) + 16px)",
+            paddingBottom: "calc(env(safe-area-inset-bottom) + 12px)",
             boxShadow: "0 -12px 24px -18px rgba(0,0,0,0.5)",
           }}
         >
