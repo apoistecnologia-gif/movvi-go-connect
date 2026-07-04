@@ -3715,40 +3715,40 @@ function RideCategorySelector({
                 type="button"
                 onClick={() => onSelect(c)}
                 aria-pressed={active}
-                className={`group grid w-full items-center rounded-[16px] bg-white px-3 py-2 text-left transition-[transform,box-shadow,border-color] duration-200 active:scale-[0.99] ${
+                className={`group grid w-full items-center rounded-[14px] bg-white px-2.5 py-1.5 text-left transition-[transform,box-shadow,border-color] duration-200 active:scale-[0.99] ${
                   active
-                    ? "border-2 border-[#76C139] shadow-[0_16px_36px_-18px_rgba(118,193,57,0.4)]"
-                    : "border border-border/60 shadow-[0_6px_18px_-14px_rgba(15,23,42,0.18)] hover:border-[#76C139]/40"
+                    ? "border-2 border-[#76C139] shadow-[0_10px_24px_-18px_rgba(118,193,57,0.28)]"
+                    : "border border-border/60 shadow-[0_4px_14px_-14px_rgba(15,23,42,0.15)] hover:border-[#76C139]/40"
                 }`}
-                style={{ gridTemplateColumns: "36px minmax(72px,1fr) auto 22px", columnGap: "10px" }}
+                style={{ gridTemplateColumns: "32px minmax(64px,1fr) auto 20px", columnGap: "10px" }}
               >
                 <span
-                  className={`grid h-9 w-9 shrink-0 place-items-center rounded-[10px] transition ${
+                  className={`grid h-8 w-8 shrink-0 place-items-center rounded-[10px] transition ${
                     active
-                      ? "bg-[#76C139] text-white shadow-[0_10px_22px_-12px_rgba(118,193,57,0.55)]"
+                      ? "bg-[#76C139] text-white shadow-[0_6px_14px_-10px_rgba(118,193,57,0.4)]"
                       : "bg-[#76C139]/10 text-[#5A9A2A] group-hover:bg-[#76C139]/15"
                   }`}
                 >
-                  <Icon className="h-[18px] w-[18px]" strokeWidth={1.75} />
+                  <Icon className="h-[16px] w-[16px]" strokeWidth={1.75} />
                 </span>
 
                 <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="whitespace-nowrap text-[14px] font-bold text-[#111418] leading-tight">
+                  <div className="flex items-center gap-1.5">
+                    <span className="whitespace-nowrap text-[13.5px] font-bold text-[#111418] leading-tight">
                       {c.label}
                     </span>
-                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#76C139]/12 px-1.5 py-0.5 text-[10px] font-semibold text-[#5A9A2A]">
-                      <Clock className="h-3 w-3" strokeWidth={2.25} />
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#76C139]/12 px-1.5 py-[1px] text-[9.5px] font-semibold text-[#5A9A2A]">
+                      <Clock className="h-2.5 w-2.5" strokeWidth={2.25} />
                       {etaLabel}
                     </span>
                   </div>
-                  <p className="mt-0.5 line-clamp-1 text-[11px] text-[#707070] leading-snug">
+                  <p className="line-clamp-1 text-[10.5px] text-[#707070] leading-tight">
                     {c.tagline}
                   </p>
                 </div>
 
                 <span
-                  className={`shrink-0 whitespace-nowrap text-[16px] font-bold leading-none tracking-tight ${
+                  className={`shrink-0 whitespace-nowrap text-[15px] font-bold leading-none tracking-tight ${
                     active ? "text-[#5A9A2A]" : "text-[#111418]"
                   }`}
                 >
@@ -3756,9 +3756,9 @@ function RideCategorySelector({
                 </span>
 
                 <span
-                  className={`grid h-[22px] w-[22px] shrink-0 place-items-center rounded-full transition ${
+                  className={`grid h-[20px] w-[20px] shrink-0 place-items-center rounded-full transition ${
                     active
-                      ? "bg-[#76C139] text-white shadow-[0_4px_10px_-4px_rgba(118,193,57,0.55)]"
+                      ? "bg-[#76C139] text-white shadow-[0_3px_8px_-4px_rgba(118,193,57,0.4)]"
                       : "bg-transparent text-transparent ring-1 ring-border/70"
                   }`}
                   aria-hidden
