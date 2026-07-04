@@ -3172,7 +3172,7 @@ function SheetContent({
       {showDestinationInput && (
         <div className="mb-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
           <div className="rounded-[24px] border border-border/60 bg-card px-4 py-4 shadow-[0_8px_24px_-16px_rgba(15,23,42,0.18)] transition focus-within:border-[#76C139]/60 focus-within:shadow-[0_12px_28px_-14px_rgba(118,193,57,0.28)]">
-            <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#707070]">
+            <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#76C139]">
               Destino
             </div>
             <div className="flex items-center gap-3">
@@ -3188,8 +3188,9 @@ function SheetContent({
                 }}
                 onFocus={onFocusSearch}
                 placeholder="Para onde você vai?"
-                className="min-w-0 flex-1 bg-transparent text-[18px] font-semibold text-[#1B1B1B] outline-none placeholder:text-[#707070]/80"
+                className="min-w-0 flex-1 bg-transparent text-[18px] font-semibold text-foreground outline-none placeholder:text-muted-foreground"
               />
+
               {destinationText && (
                 <button
                   type="button"
