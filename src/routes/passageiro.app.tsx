@@ -3375,7 +3375,7 @@ function StepFlow({
           <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#76C139]/10 text-[#76C139]">
             <MapPin className="h-[16px] w-[16px]" strokeWidth={2} />
           </span>
-          <span className="line-clamp-1 flex-1 text-[13px] font-semibold text-[#111418]">
+          <span className="line-clamp-2 flex-1 text-[13px] font-semibold text-[#111418]">
             {destination.label}
           </span>
           <button
