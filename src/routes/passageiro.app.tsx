@@ -2336,15 +2336,20 @@ function PassageiroApp() {
 
 
       {ride && ride.status === "procurar_motorista" && (
-        <MovviSheet snaps={[22, 55, 88]} initial={22}>
+        <MovviSheet snaps={[42, 68, 92]} initial={68}>
           <SearchingPanel
             category={category}
             driversCount={nearbyCount}
             noDriversAvailable={noDriversAvailable}
             onCancel={cancelRide}
+            pickupLabel={ride.origin_name ?? ride.pickup_label ?? ""}
+            destinationLabel={ride.destination_name ?? ""}
+            fare={ride.estimated_price != null ? Number(ride.estimated_price) : null}
+            paymentMethod={paymentMethod}
           />
         </MovviSheet>
       )}
+
 
       {(DEV_MODE || isDevelopmentEnvironment()) && ride && ride.status === "procurar_motorista" && dispatchDiag && (
         <div className="pointer-events-auto absolute left-2 top-20 z-50 max-w-[280px] rounded-lg bg-black/85 p-2 font-mono text-[10px] text-white ring-1 ring-white/20">
