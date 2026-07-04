@@ -99,18 +99,18 @@ export function PlacePinMarker({
 }) {
   return (
     <>
-      {/* halo colorido */}
+      {/* halo colorido — reduzido ~40% */}
       <Marker
         position={position}
         clickable={false}
         zIndex={zIndexBase}
         icon={{
           path: safeSymbol("CIRCLE"),
-          scale: 16,
+          scale: 10,
           fillColor: color,
-          fillOpacity: 0.16,
+          fillOpacity: 0.1,
           strokeColor: color,
-          strokeOpacity: 0.4,
+          strokeOpacity: 0.25,
           strokeWeight: 1,
         }}
       />
@@ -121,14 +121,14 @@ export function PlacePinMarker({
         zIndex={zIndexBase + 1}
         icon={{
           path: safeSymbol("CIRCLE"),
-          scale: 6,
+          scale: 5,
           fillColor: "#000000",
-          fillOpacity: 0.25,
+          fillOpacity: 0.2,
           strokeWeight: 0,
           anchor: safePoint(0, -2),
         }}
       />
-      {/* pino em si — maior + borda branca grossa */}
+      {/* pino em si — 36px de altura visual */}
       <Marker
         position={position}
         zIndex={zIndexBase + 2}
@@ -137,8 +137,8 @@ export function PlacePinMarker({
           fillColor: color,
           fillOpacity: 1,
           strokeColor: "#ffffff",
-          strokeWeight: 2.5,
-          scale: 2.2,
+          strokeWeight: 2,
+          scale: 1.7,
           anchor: safePoint(12, 22),
         }}
       />
