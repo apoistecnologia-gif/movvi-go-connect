@@ -2634,8 +2634,11 @@ function PassageiroApp() {
         const paidValue = ride.final_price ?? (ride as any).estimated_price ?? null;
         const driverName = ride.driver_name ?? "Motorista MOVVI";
         const driverPhoto = (ride as any).driver_photo_url ?? null;
-        const driverVehicle = (ride as any).driver_vehicle ?? rideDriverInfo?.vehicle_label ?? "";
-        const driverPlate = rideDriverInfo?.plate ?? (ride as any).driver_plate ?? "";
+        const driverVehicle =
+          (ride as any).driver_vehicle ??
+          (rideDriverInfo?.vehicle_model ?? "");
+        const driverPlate =
+          rideDriverInfo?.vehicle_plate ?? (ride as any).driver_plate ?? "";
         const driverRating =
           (ride as any).driver_rating ?? rideDriverInfo?.rating ?? null;
         const receipt: ReceiptData = {
