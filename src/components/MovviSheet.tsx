@@ -228,12 +228,15 @@ export const MovviSheet = forwardRef<MovviSheetHandle, Props>(function MovviShee
         animateTo(maxSnap);
         onSnapChange?.(maxSnap);
       }
-      // Ensure the focused input is scrolled into view within the sheet.
+      // Ensure the focused input is scrolled into view within the sheet,
+      // but softly — avoid a jarring jump.
       requestAnimationFrame(() => {
-        (e.target as HTMLElement).scrollIntoView({
-          block: "center",
-          behavior: "smooth",
-        });
+        try {
+          (e.target as HTMLElement).scrollIntoView({
+            block: "nearest",
+            behavior: "smooth",
+          });
+        } catch { /* noop */ }
       });
     };
 
