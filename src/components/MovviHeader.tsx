@@ -81,7 +81,7 @@ export function MovviHeader({
         className={
           isFloating
             ? "mx-auto flex max-w-5xl items-center gap-2 rounded-[20px] bg-card/75 px-2.5 py-2 shadow-[0_16px_40px_-22px_rgba(0,0,0,0.55)] ring-1 ring-border/35 backdrop-blur-xl"
-            : "mx-auto flex h-14 max-w-5xl items-center gap-2 px-4"
+            : "mx-auto flex h-12 max-w-5xl items-center gap-2 px-3"
         }
       >
         {!hideBack && (
