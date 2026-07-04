@@ -3121,44 +3121,44 @@ function SheetContent({
               onOpenAddressDetails();
             }
           }}
-          className="mb-3 flex w-full cursor-pointer items-center gap-3 rounded-[24px] border border-border/60 bg-card px-4 py-3 text-left shadow-[0_8px_24px_-16px_rgba(15,23,42,0.18)] transition active:scale-[0.99] hover:border-[#76C139]/40 animate-in fade-in slide-in-from-bottom-1 duration-300"
+          className="mb-2.5 flex w-full cursor-pointer items-center gap-2.5 rounded-[18px] border border-border/60 bg-card px-3 py-2 text-left shadow-[0_8px_24px_-16px_rgba(15,23,42,0.18)] transition active:scale-[0.99] hover:border-[#76C139]/40 animate-in fade-in slide-in-from-bottom-1 duration-300"
         >
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#76C139]/10 text-[#76C139]">
-            <MapPin className="h-[18px] w-[18px]" strokeWidth={2} />
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#76C139]/10 text-[#76C139]">
+            <MapPin className="h-[15px] w-[15px]" strokeWidth={2} />
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between gap-2">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#76C139] leading-none">
+              <div className="text-[9.5px] font-semibold uppercase tracking-[0.14em] text-[#76C139] leading-none">
                 Local de embarque
               </div>
               {hasPosition && (
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                <span className="text-[9.5px] font-semibold uppercase tracking-wider text-muted-foreground">
                   Ajustar
                 </span>
               )}
             </div>
             {addressStatus === "loading" && !pickupAddressLine ? (
-              <div className="mt-1 truncate text-[14px] font-semibold leading-tight text-foreground">
+              <div className="mt-0.5 truncate text-[13px] font-semibold leading-tight text-foreground">
                 Localização atual
               </div>
             ) : pickupAddressLine ? (
               <>
-                <div className="mt-1 truncate text-[15px] font-semibold leading-tight text-foreground">
+                <div className="mt-0.5 truncate text-[14px] font-semibold leading-tight text-foreground">
                   {pickupAddressLine}
                 </div>
                 {pickupSubLine && pickupSubLine !== pickupAddressLine ? (
-                  <div className="truncate text-[12.5px] leading-tight text-muted-foreground">
+                  <div className="truncate text-[11.5px] leading-tight text-muted-foreground">
                     {pickupSubLine}
                   </div>
                 ) : (
                   <>
                     {bairro && bairro !== pickupAddressLine && (
-                      <div className="truncate text-[12.5px] leading-tight text-muted-foreground">
+                      <div className="truncate text-[11.5px] leading-tight text-muted-foreground">
                         {bairro}
                       </div>
                     )}
                     {region && region !== pickupAddressLine && (
-                      <div className="truncate text-[12px] leading-tight text-muted-foreground">
+                      <div className="truncate text-[11px] leading-tight text-muted-foreground">
                         {region}
                       </div>
                     )}
@@ -3166,11 +3166,11 @@ function SheetContent({
                 )}
               </>
             ) : hasPosition ? (
-              <div className="mt-1 truncate text-[14px] font-semibold leading-tight text-foreground">
+              <div className="mt-0.5 truncate text-[13px] font-semibold leading-tight text-foreground">
                 Localização atual
               </div>
             ) : (
-              <div className="mt-1 truncate text-[13px] leading-tight text-muted-foreground">
+              <div className="mt-0.5 truncate text-[12.5px] leading-tight text-muted-foreground">
                 Endereço não identificado
               </div>
             )}
@@ -3185,12 +3185,13 @@ function SheetContent({
             disabled={gpsRequesting}
             aria-label="Atualizar GPS"
             title="Atualizar GPS"
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#76C139]/10 text-[#76C139] transition hover:bg-[#76C139]/20 active:scale-[0.92] disabled:opacity-60"
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#76C139]/10 text-[#76C139] transition hover:bg-[#76C139]/20 active:scale-[0.92] disabled:opacity-60"
           >
-            <Crosshair className={`h-[16px] w-[16px] ${gpsRequesting ? "animate-spin" : ""}`} strokeWidth={2} />
+            <Crosshair className={`h-[14px] w-[14px] ${gpsRequesting ? "animate-spin" : ""}`} strokeWidth={2} />
           </button>
-          <ChevronRight className="h-4 w-4 shrink-0 text-[#707070]" />
+          <ChevronRight className="h-3.5 w-3.5 shrink-0 text-[#707070]" />
         </div>
+
       )}
 
 
