@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Avatar } from "@/components/Avatar";
 import { DriverProfessionalProfileDialog } from "@/components/profile/DriverProfessionalProfileDialog";
 import { SafetyCard } from "@/components/safety/SafetyCard";
+import { SosSheet } from "@/components/safety/SosSheet";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Circle, Marker, Polyline, useJsApiLoader } from "@react-google-maps/api";
@@ -727,6 +728,7 @@ function PassageiroApp() {
   const [sideMenuOpen, setSideMenuOpen] = useState(false);
   const [driverInfo, setDriverInfo] = useState<DriverRow | null>(null);
   const [driverProfileOpen, setDriverProfileOpen] = useState(false);
+  const [tripSosOpen, setTripSosOpen] = useState(false);
 
   // Solicita permissão de notificações push uma vez ao montar.
   useEffect(() => { void requestPushPermission(); }, []);
@@ -2493,6 +2495,94 @@ function PassageiroApp() {
           );
         })()}
 
+      {/* Trip in Progress — top floating navigation card + SOS */}
+      {ride && rideDriverInfo && phase === "em_viagem" && (() => {
+        const remainingMin =
+          ride.duration_min != null
+            ? Math.max(1, Math.round(Number(ride.duration_min)))
+            : null;
+        const remainingKm =
+          ride.distance_km != null ? Number(ride.distance_km) : null;
+        const arrivalLabel =
+          remainingMin != null
+            ? new Date(Date.now() + remainingMin * 60_000).toLocaleTimeString("pt-BR", {
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+            : null;
+        return (
+          <>
+            <div
+              className="pointer-events-none absolute inset-x-0 z-40 flex justify-center px-3"
+              style={{ top: "calc(env(safe-area-inset-top) + 16px)" }}
+            >
+              <div className="pointer-events-auto w-full max-w-sm rounded-[22px] bg-white/90 px-4 py-3.5 shadow-[0_18px_44px_-22px_rgba(15,23,42,0.45)] ring-1 ring-black/5 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
+                <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[#707070]">
+                  <span className="relative flex h-2 w-2">
+                    <span className="absolute inset-0 animate-ping rounded-full bg-[#76C139]/60" />
+                    <span className="relative h-2 w-2 rounded-full bg-[#76C139]" />
+                  </span>
+                  <span className="text-[#111418]">Viagem em andamento</span>
+                </div>
+                <div className="mt-2.5 grid grid-cols-3 gap-2">
+                  <div>
+                    <div className="text-[11px] font-medium text-[#707070] leading-none">
+                      Tempo restante
+                    </div>
+                    <div
+                      key={remainingMin ?? "eta"}
+                      className="mt-1.5 text-[30px] font-bold leading-none tracking-tight text-[#111418] tabular-nums animate-count-pop"
+                    >
+                      {remainingMin ?? "—"}
+                      <span className="ml-1 text-[13px] font-semibold text-[#707070]">min</span>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] font-medium text-[#707070] leading-none">Distância</div>
+                    <div
+                      key={remainingKm?.toFixed(1) ?? "d"}
+                      className="mt-1.5 text-[18px] font-bold leading-none text-[#111418] tabular-nums animate-count-pop"
+                    >
+                      {remainingKm != null ? remainingKm.toFixed(1) : "—"}
+                      <span className="ml-1 text-[12px] font-semibold text-[#707070]">km</span>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] font-medium text-[#707070] leading-none">Chegada</div>
+                    <div className="mt-1.5 text-[18px] font-bold leading-none text-[#111418] tabular-nums">
+                      {arrivalLabel ?? "—"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Floating SOS button */}
+            <button
+              type="button"
+              aria-label="Acionar SOS"
+              onClick={() => setTripSosOpen(true)}
+              className="group pointer-events-auto absolute z-40 right-4 grid h-12 w-12 place-items-center rounded-full bg-white text-[#c53030] shadow-[0_16px_36px_-14px_rgba(197,48,48,0.55)] ring-1 ring-[#c53030]/25 transition duration-[220ms] active:scale-90 hover:ring-[#c53030]/60"
+              style={{ top: "calc(env(safe-area-inset-top) + 172px)" }}
+            >
+              <Shield className="h-5 w-5" strokeWidth={2.25} />
+              <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[10px] font-bold uppercase tracking-[0.18em] text-[#c53030]">
+                SOS
+              </span>
+            </button>
+
+            <SosSheet
+              open={tripSosOpen}
+              onClose={() => setTripSosOpen(false)}
+              role="passenger"
+              rideId={ride.id}
+              counterpartLabel={`Motorista ${rideDriverInfo.name}${rideDriverInfo.vehicle_plate ? ` · ${rideDriverInfo.vehicle_plate}` : ""}`}
+            />
+          </>
+        );
+      })()}
+
+
       {ride &&
         rideDriverInfo &&
         (phase === "motorista_a_caminho" ||
@@ -3841,7 +3931,7 @@ function DriverEnRoute({
       </button>
 
       {/* ETA — hero */}
-      {(eta != null || distKm != null) && ride.status !== "motorista_chegou" && (
+      {(eta != null || distKm != null) && ride.status === "motorista_a_caminho" && (
         <div
           className="mt-3 flex items-center justify-between gap-3 rounded-[24px] bg-white p-5 ring-1 ring-black/5 shadow-[0_14px_36px_-22px_rgba(118,193,57,0.45)] animate-in fade-in slide-in-from-bottom-1"
           style={{ animationDelay: "80ms", animationFillMode: "backwards" }}
@@ -4045,21 +4135,68 @@ function DriverEnRoute({
         />
       </div>
 
-      {/* Destination + fare summary */}
-      <div className="mt-4 rounded-[20px] bg-white p-4 ring-1 ring-black/5">
-        <div className="flex items-center gap-2 text-[13px] text-[#111418]">
-          <MapPin className="h-4 w-4 shrink-0 text-[#76C139]" strokeWidth={2} />
-          <span className="truncate font-medium">{ride.destination_name}</span>
-        </div>
-        {ride.estimated_price && (
-          <div className="mt-2 flex items-center justify-between text-[12px]">
-            <span className="text-[#707070]">Estimativa</span>
-            <span className="text-[14px] font-bold text-[#111418] tabular-nums">
-              {formatBRL(Number(ride.estimated_price))}
-            </span>
+      {/* Destination — premium card for em_viagem, compact otherwise */}
+      {ride.status === "em_viagem" ? (
+        <div
+          className="mt-4 flex items-center gap-4 rounded-[24px] bg-white p-5 ring-1 ring-black/5 shadow-[0_14px_36px_-22px_rgba(15,23,42,0.3)] animate-in fade-in slide-in-from-bottom-1"
+          style={{ animationDelay: "80ms", animationFillMode: "backwards" }}
+        >
+          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[#76C139]/12 text-[#76C139]">
+            <MapPin className="h-6 w-6" strokeWidth={2} />
           </div>
-        )}
-      </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#707070]">
+              Destino
+            </div>
+            <div className="mt-1 truncate text-[16px] font-semibold text-[#111418]">
+              {ride.destination_name ?? "—"}
+            </div>
+            {eta != null && (
+              <div className="mt-1.5 inline-flex items-center gap-1.5 rounded-full bg-[#76C139]/12 px-2.5 py-0.5 text-[12px] font-bold text-[#4a8a1e]">
+                <Clock className="h-3 w-3" strokeWidth={2.5} />
+                Chegando em {eta} min
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="mt-4 rounded-[20px] bg-white p-4 ring-1 ring-black/5">
+          <div className="flex items-center gap-2 text-[13px] text-[#111418]">
+            <MapPin className="h-4 w-4 shrink-0 text-[#76C139]" strokeWidth={2} />
+            <span className="truncate font-medium">{ride.destination_name}</span>
+          </div>
+          {ride.estimated_price && (
+            <div className="mt-2 flex items-center justify-between text-[12px]">
+              <span className="text-[#707070]">Estimativa</span>
+              <span className="text-[14px] font-bold text-[#111418] tabular-nums">
+                {formatBRL(Number(ride.estimated_price))}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Trip in Progress — primary message + live tracking pill */}
+      {ride.status === "em_viagem" && (
+        <div
+          className="mt-4 text-center animate-in fade-in"
+          style={{ animationDelay: "160ms", animationFillMode: "backwards" }}
+        >
+          <p className="text-[15px] font-semibold text-[#111418]">
+            Relaxe e aproveite sua viagem.
+          </p>
+          <p className="mt-1 text-[12px] font-medium text-[#707070]">
+            Vamos avisar quando você estiver perto do destino.
+          </p>
+          <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[#76C139]/12 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#4a8a1e]">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="absolute inset-0 animate-ping rounded-full bg-[#76C139]/60" />
+              <span className="relative h-1.5 w-1.5 rounded-full bg-[#76C139]" />
+            </span>
+            Rastreamento ao vivo
+          </div>
+        </div>
+      )}
 
       {/* Cancel — outlined secondary */}
       {ride.status !== "em_viagem" && (
