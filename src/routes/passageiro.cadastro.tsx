@@ -58,28 +58,29 @@ function PassengerSignUpPage() {
         </>
       }
     >
-      <form onSubmit={onSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="name">Nome completo</Label>
-          <Input id="name" name="name" required />
+      <form onSubmit={onSubmit} className="space-y-3">
+        <div className="space-y-1.5">
+          <Label htmlFor="name" className="text-[13px]">Nome completo</Label>
+          <Input id="name" name="name" required className="h-9 text-[14px]" />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="email">E-mail</Label>
-          <Input id="email" name="email" type="email" required autoComplete="email" />
+        <div className="space-y-1.5">
+          <Label htmlFor="email" className="text-[13px]">E-mail</Label>
+          <Input id="email" name="email" type="email" required autoComplete="email" className="h-9 text-[14px]" />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="phone">Telefone</Label>
-          <Input id="phone" name="phone" required autoComplete="tel" />
+        <div className="space-y-1.5">
+          <Label htmlFor="phone" className="text-[13px]">Telefone</Label>
+          <Input id="phone" name="phone" required autoComplete="tel" className="h-9 text-[14px]" />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="password">Senha</Label>
+        <div className="space-y-1.5">
+          <Label htmlFor="password" className="text-[13px]">Senha</Label>
           <Input
             id="password"
             name="password"
             type="password"
             required
-            minLength={8}
+            minLength={4}
             autoComplete="new-password"
+            className="h-9 text-[14px]"
           />
         </div>
         {error && (
@@ -87,7 +88,7 @@ function PassengerSignUpPage() {
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
-        <Button type="submit" className="w-full" disabled={loading}>
+        <Button type="submit" size="sm" className="w-full h-10" disabled={loading}>
           {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
           Criar conta
         </Button>
