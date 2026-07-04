@@ -56,7 +56,7 @@ function PerfilPassageiro() {
           .select("id", { count: "exact", head: true })
           .eq("passenger_id", userId)
           .eq("status", "finalizada"),
-        listFavorites(userId).catch(() => []),
+        listFavorites().catch(() => []),
       ]);
       if (!alive) return;
       if (u) {
