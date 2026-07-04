@@ -3574,22 +3574,23 @@ function StepFlow({
 
           {/* Fare card — compact hero */}
           <div
-            className="flex items-center justify-between gap-3 rounded-[16px] bg-white px-3 py-2.5 ring-1 ring-[#76C139]/25 shadow-[0_16px_36px_-20px_rgba(118,193,57,0.35)] animate-in fade-in duration-[220ms]"
+            className="flex items-center justify-between gap-3 rounded-[16px] bg-white px-3 py-2 ring-1 ring-[#76C139]/25 shadow-[0_16px_36px_-20px_rgba(118,193,57,0.35)] animate-in fade-in duration-[220ms]"
             style={{ animationDelay: "80ms", animationFillMode: "backwards" }}
           >
-            <div className="min-w-0">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#707070] leading-none">
-                Valor estimado
-              </div>
-              <div className="mt-1 text-[22px] font-bold leading-none tracking-tight text-[#111418]">
+            <div className="flex items-baseline gap-2 min-w-0">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#707070] leading-none">
+                Valor
+              </span>
+              <span className="text-[22px] font-bold leading-none tracking-tight text-[#111418] tabular-nums">
                 {formatBRL(selectedFare)}
-              </div>
+              </span>
             </div>
             <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#76C139]/12 px-2 py-0.5 text-[10.5px] font-semibold text-[#5A9A2A]">
               <Zap className="h-3 w-3" strokeWidth={2.25} />
               MOVVI Preço
             </span>
           </div>
+
 
           {/* Payment card */}
           <button
