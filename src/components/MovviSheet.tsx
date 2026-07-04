@@ -223,7 +223,7 @@ export const MovviSheet = forwardRef<MovviSheetHandle, Props>(function MovviShee
 
       {/* drag handle area — MOVVI green tint on active */}
       <div
-        className="group flex shrink-0 cursor-grab touch-none flex-col items-center pb-2.5 pt-3.5 active:cursor-grabbing"
+        className="group flex shrink-0 cursor-grab touch-none flex-col items-center pb-1.5 pt-2.5 active:cursor-grabbing"
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
