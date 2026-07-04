@@ -202,13 +202,26 @@ export const MovviSheet = forwardRef<MovviSheetHandle, Props>(function MovviShee
       ref={sheetRef}
       className="absolute inset-x-0 bottom-0 z-30 flex flex-col rounded-t-[36px] bg-card text-foreground will-change-[height] animate-sheet-in"
       style={{
-        height: `${height}vh`,
+        // Use `dvh` (dynamic viewport height) so the sheet adapts to Android
+        // URL-bar changes and safe-area insets — never a fixed pixel height.
+        height: `${height}dvh`,
+        maxHeight: "100dvh",
         boxShadow:
           "0 -32px 72px -36px rgba(0,0,0,0.6), 0 -1px 0 0 rgba(255,255,255,0.04) inset",
         borderTop: "1px solid color-mix(in oklab, var(--color-border) 45%, transparent)",
       }}
     >
-      {/* drag handle area */}
+      {/* MOVVI brand: subtle green top accent line */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-[2px] rounded-t-[36px]"
+        style={{
+          background:
+            "linear-gradient(90deg, transparent 0%, color-mix(in oklab, var(--color-primary) 70%, transparent) 50%, transparent 100%)",
+        }}
+      />
+
+      {/* drag handle area — MOVVI green tint on active */}
       <div
         className="group flex shrink-0 cursor-grab touch-none flex-col items-center pb-2.5 pt-3.5 active:cursor-grabbing"
         onPointerDown={onPointerDown}
@@ -216,17 +229,17 @@ export const MovviSheet = forwardRef<MovviSheetHandle, Props>(function MovviShee
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
       >
-        <span className="h-[4px] w-10 rounded-full bg-muted-foreground/30 transition-all duration-200 group-hover:w-12 group-hover:bg-muted-foreground/50 group-active:w-14 group-active:bg-muted-foreground/65" />
+        <span className="h-[4px] w-10 rounded-full bg-muted-foreground/30 transition-all duration-200 group-hover:w-12 group-hover:bg-muted-foreground/50 group-active:w-14 group-active:bg-primary/70" />
       </div>
-
-
 
       <div
         ref={scrollRef}
         data-scroll
         className="movvi-scroll flex-1 px-6"
         style={{
-          paddingBottom: "calc(env(safe-area-inset-bottom) + 32px)",
+          // When there's a pinned footer, leave less bottom padding — the footer
+          // handles the safe-area itself so the CTA sits above the gesture bar.
+          paddingBottom: footer ? 16 : "calc(env(safe-area-inset-bottom) + 32px)",
           overflowY: "auto",
           overscrollBehavior: "contain",
           WebkitOverflowScrolling: "touch",
@@ -236,7 +249,17 @@ export const MovviSheet = forwardRef<MovviSheetHandle, Props>(function MovviShee
         {children}
       </div>
 
-
+      {footer && (
+        <div
+          className="shrink-0 border-t border-border/40 bg-card/95 px-6 pt-3 backdrop-blur-xl"
+          style={{
+            paddingBottom: "calc(env(safe-area-inset-bottom) + 16px)",
+            boxShadow: "0 -12px 24px -18px rgba(0,0,0,0.5)",
+          }}
+        >
+          {footer}
+        </div>
+      )}
     </div>
   );
 });
