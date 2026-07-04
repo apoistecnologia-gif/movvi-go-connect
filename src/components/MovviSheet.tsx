@@ -301,16 +301,23 @@ export const MovviSheet = forwardRef<MovviSheetHandle, Props>(function MovviShee
         borderTop: "1px solid color-mix(in oklab, var(--color-border) 45%, transparent)",
       }}
     >
-...
+      <div
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+        className="shrink-0 flex items-center justify-center pt-2 pb-1 cursor-grab active:cursor-grabbing touch-none select-none"
+        style={{ touchAction: "none" }}
+      >
+        <div className="h-1.5 w-10 rounded-full bg-muted-foreground/30" />
+      </div>
       <div
         ref={scrollRef}
         data-scroll
-        className="movvi-scroll flex-1 px-5"
+        className="movvi-scroll flex-1 px-4"
         style={{
-          // Reserve enough room so the pinned footer / on-screen keyboard
-          // never covers the last piece of content (card, price, CTA).
           paddingBottom: footer
-            ? "180px"
+            ? "160px"
             : `calc(env(safe-area-inset-bottom) + 24px)`,
           overflowY: "auto",
           overscrollBehavior: "contain",
@@ -320,6 +327,7 @@ export const MovviSheet = forwardRef<MovviSheetHandle, Props>(function MovviShee
       >
         {children}
       </div>
+
 
       {footer && (
         <div
