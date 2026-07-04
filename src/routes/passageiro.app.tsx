@@ -2744,7 +2744,7 @@ function PassageiroApp() {
               {/* Driver card */}
               <div className="rounded-[24px] bg-white p-4 ring-1 ring-black/5 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.22)] animate-in fade-in slide-in-from-bottom-2 duration-[220ms]">
                 <div className="flex items-center gap-3">
-                  <Avatar name={driverName} url={driverPhoto} size={52} />
+                  <Avatar name={driverName} src={driverPhoto} size={52} />
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-[16px] font-semibold text-[#111418]">{driverName}</div>
                     {driverVehicle && (
