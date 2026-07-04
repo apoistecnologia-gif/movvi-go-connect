@@ -3865,19 +3865,7 @@ function DriverEnRoute({
         </div>
       )}
 
-      {ride.status === "motorista_chegou" && (
-        <div
-          className="mt-3 rounded-[24px] bg-[#76C139] p-5 text-white shadow-[0_18px_44px_-20px_rgba(118,193,57,0.75)] animate-in fade-in slide-in-from-bottom-1"
-          style={{ animationDelay: "80ms", animationFillMode: "backwards" }}
-        >
-          <div className="text-[13px] font-semibold uppercase tracking-[0.14em] text-white/85">
-            Chegou
-          </div>
-          <div className="mt-1 text-[22px] font-bold leading-tight">
-            Seu motorista está no ponto de embarque.
-          </div>
-        </div>
-      )}
+      {/* "Chegou" agora é comunicado pelo cartão flutuante superior. */}
 
       {/* Vehicle card */}
       <div
