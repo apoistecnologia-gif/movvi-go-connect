@@ -84,21 +84,33 @@ FIND_LOW_CONTRAST_JS = r"""
     return (hi + 0.05) / (lo + 0.05);
   };
   const effectiveBg = (el) => {
-    let node = el;
-    // Default page background fallback (from body/html)
-    const bodyBg = parseColor(getComputedStyle(document.body).backgroundColor);
-    while (node && node !== document.documentElement) {
-      const c = parseColor(getComputedStyle(node).backgroundColor);
-      if (c && c.a > 0) {
-        if (c.a >= 0.999) return c;
-        // Partially transparent — composite over its own ancestor bg
-        node = node.parentElement;
-        continue;
+    // Point-sample the stack at the element's center. elementsFromPoint
+    // returns front-to-back; we scan back-to-front looking for the first
+    // ancestor/underlay with an opaque background-color OR background-image
+    // (gradients count as opaque for contrast purposes).
+    const rect = el.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    let stack = document.elementsFromPoint(cx, cy) || [];
+    // Filter to ancestors + the element itself so overlays that don't
+    // actually sit behind the text don't skew the result.
+    stack = stack.filter(n => n === el || n.contains(el) || el.contains(n));
+    // Walk furthest-back first (stack is front-to-back → reverse)
+    for (let i = stack.length - 1; i >= 0; i--) {
+      const node = stack[i];
+      const s = getComputedStyle(node);
+      const bgc = parseColor(s.backgroundColor);
+      if (s.backgroundImage && s.backgroundImage !== 'none') {
+        // Approximate gradient by falling back to the underlying bg color
+        // of this same node, then defaulting to body bg.
+        if (bgc && bgc.a >= 0.999) return bgc;
       }
-      node = node.parentElement;
+      if (bgc && bgc.a >= 0.999) return bgc;
     }
-    return bodyBg || { r: 255, g: 255, b: 255, a: 1 };
+    return parseColor(getComputedStyle(document.body).backgroundColor)
+        || { r: 255, g: 255, b: 255, a: 1 };
   };
+
   const hasOwnText = (el) => {
     for (const n of el.childNodes) {
       if (n.nodeType === Node.TEXT_NODE && n.textContent.trim().length > 0) return true;
