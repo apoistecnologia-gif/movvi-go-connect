@@ -3102,11 +3102,11 @@ function SheetContent({
           </button>
         </div>
       ) : addressStatus === "failed" && reverseGeocodeFailureReason ? (
-        <div className="mb-2.5 w-full rounded-2xl bg-red-950/90 px-3 py-2.5 text-left ring-1 ring-red-500/70">
-          <div className="text-[11px] font-black uppercase tracking-widest text-red-200">
+        <div className="mb-2.5 w-full rounded-2xl bg-destructive/10 px-3 py-2.5 text-left ring-1 ring-destructive/40">
+          <div className="text-[11px] font-black uppercase tracking-widest text-destructive">
             Reverse Geocoding failed
           </div>
-          <div className="mt-1 break-words font-mono text-[11px] leading-snug text-red-100">
+          <div className="mt-1 break-words font-mono text-[11px] leading-snug text-destructive/90">
             {reverseGeocodeFailureReason}
           </div>
         </div>
