@@ -3947,6 +3947,9 @@ function DriverEnRoute({
                 </span>
               ))}
             </div>
+            <p className="mt-1.5 text-[11px] font-medium text-[#707070] leading-snug">
+              Mostre este código ao seu motorista antes de iniciar a viagem.
+            </p>
           </div>
         </div>
       )}
