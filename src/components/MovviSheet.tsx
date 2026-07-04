@@ -195,7 +195,89 @@ export const MovviSheet = forwardRef<MovviSheetHandle, Props>(function MovviShee
     }
   }, [height, minSnap]);
 
-  
+  // ─── Keyboard-aware behavior (Android/iOS) ───────────────────────────────
+  // When any input/textarea inside the sheet gains focus, expand to the
+  // largest snap so the field is visible above the on-screen keyboard, and
+  // apply a bottom offset equal to the keyboard height (via visualViewport).
+  // Restore the previous snap after blur.
+  const preFocusSnapRef = useRef<number | null>(null);
+  const [keyboardOffset, setKeyboardOffset] = useState<number>(0);
+
+  useEffect(() => {
+    const root = sheetRef.current;
+    if (!root) return;
+
+    const isEditable = (el: EventTarget | null) => {
+      if (!(el instanceof HTMLElement)) return false;
+      const tag = el.tagName;
+      return (
+        tag === "INPUT" ||
+        tag === "TEXTAREA" ||
+        el.isContentEditable
+      );
+    };
+
+    const onFocusIn = (e: FocusEvent) => {
+      if (!isEditable(e.target)) return;
+      if (preFocusSnapRef.current == null) {
+        preFocusSnapRef.current = heightRef.current;
+      }
+      // Expand to max snap so field + suggestions are visible.
+      if (heightRef.current < maxSnap - 1) {
+        velocityRef.current = 0;
+        animateTo(maxSnap);
+        onSnapChange?.(maxSnap);
+      }
+      // Ensure the focused input is scrolled into view within the sheet.
+      requestAnimationFrame(() => {
+        (e.target as HTMLElement).scrollIntoView({
+          block: "center",
+          behavior: "smooth",
+        });
+      });
+    };
+
+    const onFocusOut = (e: FocusEvent) => {
+      if (!isEditable(e.target)) return;
+      // Restore previous snap only if focus leaves the sheet entirely.
+      setTimeout(() => {
+        const active = document.activeElement;
+        if (root.contains(active) && isEditable(active)) return;
+        const prev = preFocusSnapRef.current;
+        preFocusSnapRef.current = null;
+        if (prev != null && Math.abs(heightRef.current - prev) > 1) {
+          velocityRef.current = 0;
+          animateTo(prev);
+          onSnapChange?.(prev);
+        }
+      }, 50);
+    };
+
+    root.addEventListener("focusin", onFocusIn);
+    root.addEventListener("focusout", onFocusOut);
+    return () => {
+      root.removeEventListener("focusin", onFocusIn);
+      root.removeEventListener("focusout", onFocusOut);
+    };
+  }, [animateTo, maxSnap, onSnapChange]);
+
+  // Track keyboard height via visualViewport so the sticky footer / content
+  // never sits behind the on-screen keyboard on Android.
+  useEffect(() => {
+    const vv = typeof window !== "undefined" ? window.visualViewport : null;
+    if (!vv) return;
+    const update = () => {
+      const kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      setKeyboardOffset(kb > 40 ? kb : 0);
+    };
+    update();
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    return () => {
+      vv.removeEventListener("resize", update);
+      vv.removeEventListener("scroll", update);
+    };
+  }, []);
 
   return (
     <div
@@ -205,7 +287,12 @@ export const MovviSheet = forwardRef<MovviSheetHandle, Props>(function MovviShee
         // Use `dvh` (dynamic viewport height) so the sheet adapts to Android
         // URL-bar changes and safe-area insets — never a fixed pixel height.
         height: `${height}dvh`,
-        maxHeight: "100dvh",
+        // Cap the height so the sheet never covers the top status/safe area.
+        maxHeight: "calc(100dvh - env(safe-area-inset-top) - 12px)",
+        // Lift the whole sheet by the keyboard height on mobile so inputs and
+        // sticky CTAs stay visible when the keyboard is open.
+        transform: keyboardOffset > 0 ? `translateY(-${keyboardOffset}px)` : undefined,
+        transition: keyboardOffset > 0 ? "transform 180ms ease-out" : undefined,
         boxShadow:
           "0 -32px 72px -36px rgba(0,0,0,0.6), 0 -1px 0 0 rgba(255,255,255,0.04) inset",
         borderTop: "1px solid color-mix(in oklab, var(--color-border) 45%, transparent)",
@@ -263,3 +350,4 @@ export const MovviSheet = forwardRef<MovviSheetHandle, Props>(function MovviShee
     </div>
   );
 });
+
