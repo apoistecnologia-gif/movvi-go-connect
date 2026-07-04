@@ -2694,6 +2694,15 @@ function PassageiroApp() {
           rideDriverInfo?.vehicle_plate ?? (ride as any).driver_plate ?? "";
         const driverRating =
           (ride as any).driver_rating ?? rideDriverInfo?.rating ?? null;
+        const rideCategory = uiCategories.find((c) => c.backend === (ride as any).category) ?? null;
+        const CategoryIcon = rideCategory?.icon ?? null;
+        const paymentRaw = (ride as any).payment_method as string | null | undefined;
+        const paymentLabel = paymentRaw
+          ? paymentRaw === "pix" ? "Pix"
+            : paymentRaw === "dinheiro" ? "Dinheiro"
+            : paymentRaw === "cartao_credito" ? "Cartão de crédito"
+            : String(paymentRaw).replace(/_/g, " ")
+          : null;
         const receipt: ReceiptData = {
           rideId: ride.id,
           date: (ride as any).completed_at ?? (ride as any).created_at ?? new Date().toISOString(),
@@ -2701,7 +2710,7 @@ function PassageiroApp() {
           destination: destinationLabel,
           driverName: ride.driver_name ?? null,
           vehicle: driverVehicle || null,
-          paymentMethod: (ride as any).payment_method ?? null,
+          paymentMethod: paymentLabel,
           value: paidValue,
           status: ride.status,
           distanceKm: ride.distance_km ?? null,
@@ -2709,109 +2718,111 @@ function PassageiroApp() {
         };
 
         return (
-          <MovviSheet snaps={[72, 92]} initial={72}>
-            <div className="pt-1 pb-[calc(env(safe-area-inset-bottom)+8px)] space-y-4">
+          <MovviSheet snaps={[74, 92]} initial={74}>
+            <div className="pt-1 pb-[calc(env(safe-area-inset-bottom)+8px)] space-y-3">
               {/* Success header */}
               <div className="text-center animate-in fade-in slide-in-from-bottom-2 duration-[220ms]">
-                <div className="relative mx-auto flex h-[72px] w-[72px] items-center justify-center">
-                  <span className="absolute inset-0 rounded-full bg-[#76C139]/15 animate-ping [animation-duration:1.8s]" />
-                  <div className="relative flex h-[72px] w-[72px] items-center justify-center rounded-full bg-[#76C139] shadow-[0_12px_28px_-16px_rgba(118,193,57,0.35)] animate-success-pop">
-                    <svg viewBox="0 0 32 32" className="h-9 w-9" fill="none" aria-hidden>
-                      <path
-                        d="M8 16.5 L14 22 L24 11"
-                        stroke="white"
-                        strokeWidth="3.2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="animate-check-draw"
-                      />
+                <div className="relative mx-auto flex h-16 w-16 items-center justify-center">
+                  <span className="absolute inset-0 rounded-full bg-[#76C139]/12 animate-ping [animation-duration:1.8s]" />
+                  <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-[#76C139] shadow-[0_8px_18px_-14px_rgba(118,193,57,0.28)] animate-success-pop">
+                    <svg viewBox="0 0 32 32" className="h-8 w-8" fill="none" aria-hidden>
+                      <path d="M8 16.5 L14 22 L24 11" stroke="white" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" className="animate-check-draw" />
                     </svg>
                   </div>
                 </div>
-                <h2 className="mt-3 text-[19px] font-bold leading-tight tracking-tight text-[#111418]">
-                  Viagem concluída
+                <h2 className="mt-2.5 text-[18px] font-bold leading-tight tracking-tight text-[#111418]">
+                  Corrida finalizada
                 </h2>
-                <p className="mt-1 text-[13px] text-[#707070]">
-                  Obrigado por escolher a MOVVI.
+                <p className="mt-0.5 text-[12.5px] text-[#707070]">
+                  Obrigado por usar a MOVVI.
                 </p>
               </div>
 
-              {/* Trip summary card */}
-              <div className="rounded-[20px] bg-white p-3 ring-1 ring-black/5 shadow-[0_6px_16px_-14px_rgba(15,23,42,0.16)] animate-in fade-in slide-in-from-bottom-2 duration-[220ms]">
-                <div className="space-y-3">
-                  <div className="flex items-start gap-3">
-                    <div className="mt-1 flex h-2.5 w-2.5 shrink-0 items-center justify-center rounded-full bg-[#76C139] ring-4 ring-[#76C139]/15" />
-                    <div className="min-w-0">
-                      <div className="text-[11px] font-semibold uppercase tracking-wider text-[#707070]">Origem</div>
-                      <div className="mt-0.5 truncate text-[15px] font-medium text-[#111418]">{pickupLabel}</div>
+              {/* Fare hero */}
+              <div className="rounded-[20px] bg-white p-3.5 ring-1 ring-[#76C139]/25 shadow-[0_4px_12px_-12px_rgba(118,193,57,0.12)] animate-in fade-in slide-in-from-bottom-2 duration-[220ms]">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-[10.5px] font-semibold uppercase tracking-wider text-[#707070]">Valor pago</div>
+                    <div className="mt-1 text-[26px] font-bold leading-none tracking-tight text-[#111418]">
+                      {paidValue != null ? formatBRL(Number(paidValue)) : "—"}
                     </div>
+                    {paymentLabel && (
+                      <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-[#F7F9F7] px-2.5 py-1 text-[11px] font-medium text-[#707070]">
+                        <CreditCard className="h-3 w-3" strokeWidth={2} />
+                        {paymentLabel}
+                      </div>
+                    )}
                   </div>
-                  <div className="ml-[5px] h-4 w-px border-l border-dashed border-[#707070]/30" />
-                  <div className="flex items-start gap-3">
-                    <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#c53030]" strokeWidth={2.4} />
-                    <div className="min-w-0">
-                      <div className="text-[11px] font-semibold uppercase tracking-wider text-[#707070]">Destino</div>
-                      <div className="mt-0.5 truncate text-[15px] font-medium text-[#111418]">{destinationLabel}</div>
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-4 grid grid-cols-2 gap-3 border-t border-black/5 pt-3">
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-[#707070]" strokeWidth={2} />
-                    <div>
-                      <div className="text-[11px] text-[#707070]">Duração</div>
-                      <div className="text-[15px] font-semibold text-[#111418]">{durationLabel}</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Navigation2 className="h-4 w-4 text-[#707070]" strokeWidth={2} />
-                    <div>
-                      <div className="text-[11px] text-[#707070]">Distância</div>
-                      <div className="text-[15px] font-semibold text-[#111418]">{distanceLabel}</div>
-                    </div>
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#76C139]/12 text-[#76C139]">
+                    <Check className="h-5 w-5" strokeWidth={2.6} />
                   </div>
                 </div>
               </div>
 
-              {/* Fare card */}
-              <div className="rounded-[20px] bg-white p-3.5 ring-1 ring-[#76C139]/25 shadow-[0_6px_16px_-14px_rgba(118,193,57,0.18)] animate-in fade-in slide-in-from-bottom-2 duration-[220ms]">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-[11px] font-semibold uppercase tracking-wider text-[#707070]">Total pago</div>
-                    <div className="mt-1.5 text-[28px] font-bold leading-none tracking-tight text-[#111418]">
-                      {paidValue != null ? formatBRL(Number(paidValue)) : "—"}
+              {/* Trip summary card */}
+              <div className="rounded-[20px] bg-white p-3 ring-1 ring-black/5 shadow-[0_4px_12px_-14px_rgba(15,23,42,0.12)] animate-in fade-in slide-in-from-bottom-2 duration-[220ms]">
+                <div className="space-y-2.5">
+                  <div className="flex items-start gap-3">
+                    <div className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-[#76C139] ring-4 ring-[#76C139]/15" />
+                    <div className="min-w-0">
+                      <div className="text-[10.5px] font-semibold uppercase tracking-wider text-[#707070]">Origem</div>
+                      <div className="mt-0.5 truncate text-[14px] font-medium text-[#111418]">{pickupLabel}</div>
                     </div>
-                    {(ride as any).payment_method && (
-                      <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-[#F7F9F7] px-2.5 py-1 text-[11px] font-medium text-[#707070]">
-                        <CreditCard className="h-3 w-3" />
-                        {String((ride as any).payment_method).replace("_", " ")}
+                  </div>
+                  <div className="ml-[5px] h-3 w-px border-l border-dashed border-[#707070]/30" />
+                  <div className="flex items-start gap-3">
+                    <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#c53030]" strokeWidth={2.4} />
+                    <div className="min-w-0">
+                      <div className="text-[10.5px] font-semibold uppercase tracking-wider text-[#707070]">Destino</div>
+                      <div className="mt-0.5 truncate text-[14px] font-medium text-[#111418]">{destinationLabel}</div>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-3 grid grid-cols-3 gap-2 border-t border-black/5 pt-2.5">
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="h-3.5 w-3.5 text-[#707070]" strokeWidth={2} />
+                    <div>
+                      <div className="text-[10px] text-[#707070]">Duração</div>
+                      <div className="text-[13px] font-semibold text-[#111418]">{durationLabel}</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Navigation2 className="h-3.5 w-3.5 text-[#707070]" strokeWidth={2} />
+                    <div>
+                      <div className="text-[10px] text-[#707070]">Distância</div>
+                      <div className="text-[13px] font-semibold text-[#111418]">{distanceLabel}</div>
+                    </div>
+                  </div>
+                  {rideCategory && CategoryIcon && (
+                    <div className="flex items-center gap-1.5">
+                      <CategoryIcon className="h-3.5 w-3.5 text-[#707070]" strokeWidth={2} />
+                      <div>
+                        <div className="text-[10px] text-[#707070]">Categoria</div>
+                        <div className="text-[13px] font-semibold text-[#111418]">{rideCategory.label}</div>
                       </div>
-                    )}
-                  </div>
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#76C139]/12 text-[#76C139]">
-                    <Check className="h-6 w-6" strokeWidth={2.6} />
-                  </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* Driver card */}
-              <div className="rounded-[20px] bg-white p-3 ring-1 ring-black/5 shadow-[0_6px_16px_-14px_rgba(15,23,42,0.16)] animate-in fade-in slide-in-from-bottom-2 duration-[220ms]">
+              <div className="rounded-[20px] bg-white p-3 ring-1 ring-black/5 shadow-[0_4px_12px_-14px_rgba(15,23,42,0.12)] animate-in fade-in slide-in-from-bottom-2 duration-[220ms]">
                 <div className="flex items-center gap-3">
-                  <Avatar name={driverName} src={driverPhoto} size={52} />
+                  <Avatar name={driverName} src={driverPhoto} size={48} />
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-[16px] font-semibold text-[#111418]">{driverName}</div>
+                    <div className="truncate text-[15px] font-semibold text-[#111418]">{driverName}</div>
                     {driverVehicle && (
-                      <div className="mt-0.5 truncate text-[13px] text-[#707070]">{driverVehicle}</div>
+                      <div className="mt-0.5 truncate text-[12.5px] text-[#707070]">{driverVehicle}</div>
                     )}
                   </div>
-                  <div className="flex flex-col items-end gap-1.5">
+                  <div className="flex flex-col items-end gap-1">
                     {driverPlate && (
-                      <div className="rounded-md bg-[#111418] px-2 py-0.5 font-mono text-[12px] font-bold tracking-wider text-white">
+                      <div className="rounded-md bg-[#111418] px-2 py-0.5 font-mono text-[11.5px] font-bold tracking-wider text-white">
                         {driverPlate}
                       </div>
                     )}
                     {driverRating != null && (
-                      <div className="flex items-center gap-1 text-[12px] font-semibold text-[#111418]">
+                      <div className="flex items-center gap-1 text-[11.5px] font-semibold text-[#111418]">
                         <Star className="h-3.5 w-3.5 fill-[#76C139] text-[#76C139]" />
                         {Number(driverRating).toFixed(1)}
                       </div>
@@ -2821,18 +2832,18 @@ function PassageiroApp() {
               </div>
 
               {/* Rating card */}
-              <div className="rounded-[20px] bg-white p-3.5 ring-1 ring-black/5 shadow-[0_6px_16px_-14px_rgba(15,23,42,0.16)] animate-in fade-in slide-in-from-bottom-2 duration-[220ms]">
+              <div className="rounded-[20px] bg-white p-3.5 ring-1 ring-black/5 shadow-[0_4px_12px_-14px_rgba(15,23,42,0.12)] animate-in fade-in slide-in-from-bottom-2 duration-[220ms]">
                 {!rated ? (
                   <>
                     <div className="text-center">
-                      <div className="text-[18px] font-semibold text-[#111418]">
+                      <div className="text-[15px] font-semibold text-[#111418]">
                         Como foi sua viagem?
                       </div>
-                      <div className="mt-1 text-[13px] text-[#707070]">
+                      <div className="mt-0.5 text-[12px] text-[#707070]">
                         Avalie {ride.driver_name ?? "o motorista"}
                       </div>
                     </div>
-                    <div className="mt-4 flex items-center justify-center gap-2">
+                    <div className="mt-3 flex items-center justify-center gap-1.5">
                       {[1, 2, 3, 4, 5].map((n) => {
                         const active = n <= ratingStars;
                         return (
@@ -2840,17 +2851,11 @@ function PassageiroApp() {
                             key={n}
                             type="button"
                             onClick={() => setRatingStars(n)}
-                            className={`flex h-10 w-10 items-center justify-center rounded-full transition duration-[220ms] active:scale-90 ${
-                              active ? "bg-[#76C139]/12" : "bg-transparent"
-                            }`}
+                            className={`flex h-11 w-11 items-center justify-center rounded-full transition duration-[220ms] active:scale-90 ${active ? "bg-[#76C139]/12" : "bg-transparent"}`}
                             aria-label={`${n} estrelas`}
                           >
                             <Star
-                              className={`h-6 w-6 transition ${
-                                active
-                                  ? "fill-[#76C139] text-[#76C139] animate-star-pop"
-                                  : "text-[#707070]/50"
-                              }`}
+                              className={`h-6 w-6 transition ${active ? "fill-[#76C139] text-[#76C139] animate-star-pop" : "text-[#707070]/45"}`}
                               strokeWidth={1.75}
                             />
                           </button>
@@ -2860,20 +2865,20 @@ function PassageiroApp() {
                     <textarea
                       value={ratingComment}
                       onChange={(e) => setRatingComment(e.target.value)}
-                      placeholder="Deixe um comentário (opcional)"
+                      placeholder="Comentário (opcional)"
                       maxLength={500}
                       rows={2}
-                      className="mt-4 w-full resize-none rounded-[16px] border border-black/10 bg-[#F7F9F7] px-3.5 py-2.5 text-[14px] text-[#111418] placeholder:text-[#707070] focus:outline-none focus:ring-2 focus:ring-[#76C139]/40"
+                      className="mt-3 w-full resize-none rounded-[14px] border border-black/10 bg-[#F7F9F7] px-3 py-2 text-[13px] text-[#111418] placeholder:text-[#707070] focus:outline-none focus:ring-2 focus:ring-[#76C139]/40"
                     />
                     {ratingError && (
-                      <div className="mt-3 rounded-xl bg-destructive/10 px-3 py-2 text-[12px] text-destructive ring-1 ring-destructive/30">
+                      <div className="mt-2 rounded-xl bg-destructive/10 px-3 py-2 text-[11.5px] text-destructive ring-1 ring-destructive/30">
                         {ratingError}
                       </div>
                     )}
                     <button
                       onClick={submitDriverRating}
                       disabled={submittingRating}
-                      className="mt-4 h-12 w-full rounded-[16px] bg-[#111418] text-[14px] font-semibold text-white transition duration-[220ms] active:scale-[0.98] disabled:opacity-60"
+                      className="mt-3 h-11 w-full rounded-[14px] bg-[#111418] text-[13.5px] font-semibold text-white transition duration-[220ms] active:scale-[0.98] disabled:opacity-60"
                     >
                       {submittingRating ? "Enviando…" : ratingError ? "Tentar novamente" : "Enviar avaliação"}
                     </button>
@@ -2881,7 +2886,7 @@ function PassageiroApp() {
                       type="button"
                       onClick={skipDriverRating}
                       disabled={submittingRating}
-                      className="mt-2 w-full py-2 text-[12px] font-semibold uppercase tracking-wider text-[#707070] hover:text-[#111418] disabled:opacity-60"
+                      className="mt-1.5 w-full py-1.5 text-[11.5px] font-semibold uppercase tracking-wider text-[#707070] hover:text-[#111418] disabled:opacity-60"
                     >
                       Pular avaliação
                     </button>
@@ -2889,7 +2894,7 @@ function PassageiroApp() {
                 ) : (
                   <div className="flex items-center justify-center gap-2 py-1">
                     <CheckCircle2 className="h-5 w-5 text-[#76C139]" strokeWidth={2.4} />
-                    <span className="text-[14px] font-semibold text-[#111418]">
+                    <span className="text-[13.5px] font-semibold text-[#111418]">
                       Avaliação enviada
                     </span>
                   </div>
@@ -2900,7 +2905,7 @@ function PassageiroApp() {
               <button
                 type="button"
                 onClick={() => setReceiptOpen(true)}
-                className="flex h-12 w-full items-center justify-center gap-2 rounded-[16px] border border-[#111418]/20 bg-white text-[14px] font-semibold text-[#111418] transition duration-[220ms] hover:bg-[#F7F9F7] hover:border-[#111418]/40 active:scale-[0.98]"
+                className="flex h-11 w-full items-center justify-center gap-2 rounded-[14px] border border-[#111418]/15 bg-white text-[13px] font-semibold text-[#111418] transition duration-[220ms] hover:bg-[#F7F9F7] hover:border-[#111418]/30 active:scale-[0.98]"
               >
                 <ReceiptIcon className="h-4 w-4" strokeWidth={2} />
                 Recibo da viagem
@@ -2909,14 +2914,10 @@ function PassageiroApp() {
               {/* Primary DONE button */}
               <button
                 onClick={resetRide}
-                className="flex h-12 w-full items-center justify-center rounded-[16px] bg-[#76C139] text-[15px] font-bold uppercase tracking-wider text-white shadow-[0_10px_22px_-14px_rgba(118,193,57,0.35)] transition duration-[220ms] active:scale-[0.98] hover:brightness-[1.04]"
+                className="flex h-11 w-full items-center justify-center rounded-[14px] bg-[#76C139] text-[14px] font-bold uppercase tracking-wider text-white shadow-[0_6px_14px_-12px_rgba(118,193,57,0.22)] transition duration-[220ms] active:scale-[0.98] hover:brightness-[1.04]"
               >
                 Concluir
               </button>
-
-              <p className="text-center text-[13px] text-[#707070]">
-                Esperamos vê-lo novamente em breve.
-              </p>
             </div>
 
             <RideReceiptDialog
