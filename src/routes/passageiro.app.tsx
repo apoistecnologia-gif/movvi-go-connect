@@ -3931,7 +3931,7 @@ function DriverEnRoute({
       </button>
 
       {/* ETA — hero */}
-      {(eta != null || distKm != null) && ride.status !== "motorista_chegou" && (
+      {(eta != null || distKm != null) && ride.status === "motorista_a_caminho" && (
         <div
           className="mt-3 flex items-center justify-between gap-3 rounded-[24px] bg-white p-5 ring-1 ring-black/5 shadow-[0_14px_36px_-22px_rgba(118,193,57,0.45)] animate-in fade-in slide-in-from-bottom-1"
           style={{ animationDelay: "80ms", animationFillMode: "backwards" }}
