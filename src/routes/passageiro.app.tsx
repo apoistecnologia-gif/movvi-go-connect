@@ -3446,6 +3446,7 @@ function StepFlow({
           >
             Continuar
           </button>
+          <div style={{ height: "calc(env(safe-area-inset-bottom) + 40px)" }} />
         </div>
       )}
 
