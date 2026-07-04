@@ -3694,25 +3694,26 @@ function RideCategorySelector({
                 type="button"
                 onClick={() => onSelect(c)}
                 aria-pressed={active}
-                className={`group flex w-full items-center gap-3 rounded-[18px] bg-white px-3 py-3 text-left transition-[transform,box-shadow,border-color] duration-200 active:scale-[0.99] ${
+                className={`group grid w-full items-center rounded-[18px] bg-white p-3 text-left transition-[transform,box-shadow,border-color] duration-200 active:scale-[0.99] ${
                   active
-                    ? "scale-[1.01] border-2 border-[#76C139] shadow-[0_16px_36px_-18px_rgba(118,193,57,0.4)]"
+                    ? "border-2 border-[#76C139] shadow-[0_16px_36px_-18px_rgba(118,193,57,0.4)]"
                     : "border border-border/60 shadow-[0_6px_18px_-14px_rgba(15,23,42,0.18)] hover:border-[#76C139]/40"
                 }`}
+                style={{ gridTemplateColumns: "44px minmax(0,1fr) auto 28px", columnGap: "12px" }}
               >
                 <span
-                  className={`grid h-12 w-12 shrink-0 place-items-center rounded-[14px] transition ${
+                  className={`grid h-11 w-11 shrink-0 place-items-center rounded-[12px] transition ${
                     active
                       ? "bg-[#76C139] text-white shadow-[0_10px_22px_-12px_rgba(118,193,57,0.55)]"
                       : "bg-[#76C139]/10 text-[#5A9A2A] group-hover:bg-[#76C139]/15"
                   }`}
                 >
-                  <Icon className="h-[22px] w-[22px]" strokeWidth={1.75} />
+                  <Icon className="h-[20px] w-[20px]" strokeWidth={1.75} />
                 </span>
 
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-start gap-2">
-                    <span className="line-clamp-2 break-words text-[16px] font-bold text-[#111418] leading-tight">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <span className="whitespace-nowrap text-[17px] font-bold text-[#111418] leading-tight">
                       {c.label}
                     </span>
                     <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#76C139]/12 px-2 py-0.5 text-[11px] font-semibold text-[#5A9A2A]">
@@ -3720,30 +3721,29 @@ function RideCategorySelector({
                       {etaLabel}
                     </span>
                   </div>
-                  <p className="mt-1 line-clamp-2 text-[13px] text-[#707070] leading-snug">
+                  <p className="mt-0.5 line-clamp-1 text-[13px] text-[#707070] leading-snug">
                     {c.tagline}
                   </p>
                 </div>
 
-                <div className="flex shrink-0 flex-col items-end gap-1.5">
-                  <span
-                    className={`text-[20px] font-bold leading-none tracking-tight ${
-                      active ? "text-[#5A9A2A]" : "text-[#111418]"
-                    }`}
-                  >
-                    {formatBRL(fare)}
-                  </span>
-                  <span
-                    className={`grid h-5 w-5 place-items-center rounded-full transition ${
-                      active
-                        ? "bg-[#76C139] text-white shadow-[0_4px_10px_-4px_rgba(118,193,57,0.55)]"
-                        : "bg-transparent text-transparent ring-1 ring-border/70"
-                    }`}
-                    aria-hidden
-                  >
-                    <Check className="h-3 w-3" strokeWidth={3} />
-                  </span>
-                </div>
+                <span
+                  className={`shrink-0 whitespace-nowrap text-[20px] font-bold leading-none tracking-tight ${
+                    active ? "text-[#5A9A2A]" : "text-[#111418]"
+                  }`}
+                >
+                  {formatBRL(fare)}
+                </span>
+
+                <span
+                  className={`grid h-7 w-7 shrink-0 place-items-center rounded-full transition ${
+                    active
+                      ? "bg-[#76C139] text-white shadow-[0_4px_10px_-4px_rgba(118,193,57,0.55)]"
+                      : "bg-transparent text-transparent ring-1 ring-border/70"
+                  }`}
+                  aria-hidden
+                >
+                  <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                </span>
               </button>
             </li>
           );
