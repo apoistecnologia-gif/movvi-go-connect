@@ -3220,9 +3220,9 @@ function SheetContent({
                   <MapPin className="h-[16px] w-[16px]" strokeWidth={2} />
                 </span>
                 <span className="flex min-w-0 flex-col">
-                  <span className="truncate text-[15px] font-semibold text-[#1B1B1B]">{s.primary}</span>
+                  <span className="line-clamp-2 text-[15px] font-semibold text-foreground">{s.primary}</span>
                   {s.secondary && (
-                    <span className="truncate text-[12.5px] text-[#707070]">
+                    <span className="line-clamp-2 text-[12.5px] text-muted-foreground">
                       {s.secondary}
                     </span>
                   )}
