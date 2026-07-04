@@ -3128,7 +3128,7 @@ function SheetContent({
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between gap-2">
-              <div className="text-[9.5px] font-semibold uppercase tracking-[0.14em] text-[#76C139] leading-none">
+              <div className="text-[9.5px] font-semibold uppercase tracking-[0.14em] text-primary leading-none">
                 Local de embarque
               </div>
               {hasPosition && (
