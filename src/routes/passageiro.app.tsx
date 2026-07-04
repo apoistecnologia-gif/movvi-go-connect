@@ -3355,7 +3355,7 @@ function StepFlow({
 
   useEffect(() => {
     if (uiStage === "selecting_category") onExpandSheet(88);
-    else if (uiStage === "confirming_request") onExpandSheet(88);
+    else if (uiStage === "confirming_request") onExpandSheet(92);
   }, [uiStage, onExpandSheet]);
 
   useEffect(() => {
