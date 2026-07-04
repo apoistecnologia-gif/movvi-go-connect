@@ -2972,14 +2972,11 @@ function StepFlow({
   return (
     <div className="animate-in fade-in duration-200">
       {/* Header MOVVI DS — título quando escolhendo categoria */}
-      {(uiStage === "selecting_category" || uiStage === "confirming_request") && (
+      {uiStage === "selecting_category" && (
         <div className="mb-3 flex items-start gap-3 animate-in fade-in slide-in-from-top-1 duration-200">
           <button
             type="button"
-            onClick={() => {
-              if (uiStage === "confirming_request") setUiStage("selecting_category");
-              else setUiStage("route_preview");
-            }}
+            onClick={() => setUiStage("route_preview")}
             aria-label="Voltar"
             className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-card text-[#1B1B1B] ring-1 ring-border/60 shadow-[0_6px_18px_-14px_rgba(15,23,42,0.25)] transition active:scale-[0.92]"
           >
@@ -2995,6 +2992,7 @@ function StepFlow({
           </div>
         </div>
       )}
+
 
       {/* Cabeçalho do destino */}
       <div className="mb-3 flex items-center gap-2.5 rounded-[20px] bg-white px-3.5 py-2.5 ring-1 ring-border/60 shadow-[0_6px_18px_-14px_rgba(15,23,42,0.18)]">
