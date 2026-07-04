@@ -3185,11 +3185,11 @@ function SheetContent({
             disabled={gpsRequesting}
             aria-label="Atualizar GPS"
             title="Atualizar GPS"
-            className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#76C139]/10 text-[#76C139] transition hover:bg-[#76C139]/20 active:scale-[0.92] disabled:opacity-60"
+            className="active-press grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-60"
           >
             <Crosshair className={`h-[14px] w-[14px] ${gpsRequesting ? "animate-spin" : ""}`} strokeWidth={2} />
           </button>
-          <ChevronRight className="h-3.5 w-3.5 shrink-0 text-[#707070]" />
+          <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
         </div>
 
       )}
