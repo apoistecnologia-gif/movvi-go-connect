@@ -617,6 +617,7 @@ function PassageiroApp() {
   const [ratingComment, setRatingComment] = useState("");
   const [submittingRating, setSubmittingRating] = useState(false);
   const [ratingError, setRatingError] = useState<string | null>(null);
+  const [receiptOpen, setReceiptOpen] = useState(false);
 
   const ratedRideIdsRef = useRef<Set<string>>(new Set());
 
