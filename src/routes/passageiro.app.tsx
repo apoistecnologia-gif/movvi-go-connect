@@ -3414,9 +3414,9 @@ function StepFlow({
             onClick={() => {
               if (import.meta.env.DEV) console.log("[MOVVI UI] botão continuar clicado");
               setUiStage("selecting_category");
-              onExpandSheet(50);
+              onExpandSheet(62);
             }}
-            className="w-full rounded-2xl bg-primary py-3.5 text-[14px] font-bold text-primary-foreground shadow-xl shadow-primary/25 transition active:scale-[0.98]"
+            className="sticky bottom-0 z-50 flex h-14 w-full items-center justify-center rounded-[18px] bg-[#76C139] text-[15px] font-bold text-[#071008] shadow-[0_16px_32px_-16px_rgba(118,193,57,0.55)] transition active:scale-[0.98]"
           >
             Continuar
           </button>
