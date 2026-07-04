@@ -2495,6 +2495,94 @@ function PassageiroApp() {
           );
         })()}
 
+      {/* Trip in Progress — top floating navigation card + SOS */}
+      {ride && rideDriverInfo && phase === "em_viagem" && (() => {
+        const remainingMin =
+          ride.duration_min != null
+            ? Math.max(1, Math.round(Number(ride.duration_min)))
+            : null;
+        const remainingKm =
+          ride.distance_km != null ? Number(ride.distance_km) : null;
+        const arrivalLabel =
+          remainingMin != null
+            ? new Date(Date.now() + remainingMin * 60_000).toLocaleTimeString("pt-BR", {
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+            : null;
+        return (
+          <>
+            <div
+              className="pointer-events-none absolute inset-x-0 z-40 flex justify-center px-3"
+              style={{ top: "calc(env(safe-area-inset-top) + 16px)" }}
+            >
+              <div className="pointer-events-auto w-full max-w-sm rounded-[22px] bg-white/90 px-4 py-3.5 shadow-[0_18px_44px_-22px_rgba(15,23,42,0.45)] ring-1 ring-black/5 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
+                <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[#707070]">
+                  <span className="relative flex h-2 w-2">
+                    <span className="absolute inset-0 animate-ping rounded-full bg-[#76C139]/60" />
+                    <span className="relative h-2 w-2 rounded-full bg-[#76C139]" />
+                  </span>
+                  <span className="text-[#111418]">Viagem em andamento</span>
+                </div>
+                <div className="mt-2.5 grid grid-cols-3 gap-2">
+                  <div>
+                    <div className="text-[11px] font-medium text-[#707070] leading-none">
+                      Tempo restante
+                    </div>
+                    <div
+                      key={remainingMin ?? "eta"}
+                      className="mt-1.5 text-[30px] font-bold leading-none tracking-tight text-[#111418] tabular-nums animate-count-pop"
+                    >
+                      {remainingMin ?? "—"}
+                      <span className="ml-1 text-[13px] font-semibold text-[#707070]">min</span>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] font-medium text-[#707070] leading-none">Distância</div>
+                    <div
+                      key={remainingKm?.toFixed(1) ?? "d"}
+                      className="mt-1.5 text-[18px] font-bold leading-none text-[#111418] tabular-nums animate-count-pop"
+                    >
+                      {remainingKm != null ? remainingKm.toFixed(1) : "—"}
+                      <span className="ml-1 text-[12px] font-semibold text-[#707070]">km</span>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] font-medium text-[#707070] leading-none">Chegada</div>
+                    <div className="mt-1.5 text-[18px] font-bold leading-none text-[#111418] tabular-nums">
+                      {arrivalLabel ?? "—"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Floating SOS button */}
+            <button
+              type="button"
+              aria-label="Acionar SOS"
+              onClick={() => setTripSosOpen(true)}
+              className="group pointer-events-auto absolute z-40 right-4 grid h-12 w-12 place-items-center rounded-full bg-white text-[#c53030] shadow-[0_16px_36px_-14px_rgba(197,48,48,0.55)] ring-1 ring-[#c53030]/25 transition duration-[220ms] active:scale-90 hover:ring-[#c53030]/60"
+              style={{ top: "calc(env(safe-area-inset-top) + 172px)" }}
+            >
+              <Shield className="h-5 w-5" strokeWidth={2.25} />
+              <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[10px] font-bold uppercase tracking-[0.18em] text-[#c53030]">
+                SOS
+              </span>
+            </button>
+
+            <SosSheet
+              open={tripSosOpen}
+              onClose={() => setTripSosOpen(false)}
+              role="passenger"
+              rideId={ride.id}
+              counterpartLabel={`Motorista ${rideDriverInfo.name}${rideDriverInfo.vehicle_plate ? ` · ${rideDriverInfo.vehicle_plate}` : ""}`}
+            />
+          </>
+        );
+      })()}
+
+
       {ride &&
         rideDriverInfo &&
         (phase === "motorista_a_caminho" ||
