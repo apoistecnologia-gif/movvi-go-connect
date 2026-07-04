@@ -1511,7 +1511,7 @@ function PassageiroApp() {
       if (import.meta.env.DEV) console.log("[MOVVI UI] rota calculada:", result);
       setRoute(result);
       setPassengerUiStage("route_preview");
-      sheetRef.current?.snapTo(50);
+      sheetRef.current?.snapTo(88);
       if (mapRef.current) {
         const bounds = new google.maps.LatLngBounds();
         bounds.extend(position);
