@@ -2875,6 +2875,7 @@ function SheetContent({
       {destination && (
         <StepFlow
           destination={destination}
+          pickupLabel={pickupAddressLine}
           route={route}
           uiStage={uiStage}
           setUiStage={setUiStage}
@@ -2893,6 +2894,7 @@ function SheetContent({
           paymentMethod={paymentMethod}
           setPaymentMethod={setPaymentMethod}
         />
+
       )}
     </div>
   );
@@ -2904,6 +2906,7 @@ function SheetContent({
 
 type StepFlowProps = {
   destination: { point: LatLng; label: string };
+  pickupLabel: string;
   route: RouteResult | null;
   uiStage: PassengerUiStage;
   setUiStage: (stage: PassengerUiStage) => void;
@@ -2923,8 +2926,10 @@ type StepFlowProps = {
   setPaymentMethod: (m: "dinheiro" | "pix" | "cartao_credito") => void;
 };
 
+
 function StepFlow({
   destination,
+  pickupLabel,
   route,
   uiStage,
   setUiStage,
@@ -2943,6 +2948,7 @@ function StepFlow({
   paymentMethod,
   setPaymentMethod,
 }: StepFlowProps) {
+
   const uiCategories = useUiCategories();
   useEffect(() => {
     if (route && uiStage === "selecting_destination") setUiStage("route_preview");
@@ -2966,14 +2972,11 @@ function StepFlow({
   return (
     <div className="animate-in fade-in duration-200">
       {/* Header MOVVI DS — título quando escolhendo categoria */}
-      {(uiStage === "selecting_category" || uiStage === "confirming_request") && (
+      {uiStage === "selecting_category" && (
         <div className="mb-3 flex items-start gap-3 animate-in fade-in slide-in-from-top-1 duration-200">
           <button
             type="button"
-            onClick={() => {
-              if (uiStage === "confirming_request") setUiStage("selecting_category");
-              else setUiStage("route_preview");
-            }}
+            onClick={() => setUiStage("route_preview")}
             aria-label="Voltar"
             className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-card text-[#1B1B1B] ring-1 ring-border/60 shadow-[0_6px_18px_-14px_rgba(15,23,42,0.25)] transition active:scale-[0.92]"
           >
@@ -2990,22 +2993,26 @@ function StepFlow({
         </div>
       )}
 
-      {/* Cabeçalho do destino */}
-      <div className="mb-3 flex items-center gap-2.5 rounded-[20px] bg-white px-3.5 py-2.5 ring-1 ring-border/60 shadow-[0_6px_18px_-14px_rgba(15,23,42,0.18)]">
-        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#76C139]/10 text-[#76C139]">
-          <MapPin className="h-[16px] w-[16px]" strokeWidth={2} />
-        </span>
-        <span className="line-clamp-1 flex-1 text-[13px] font-semibold text-[#111418]">
-          {destination.label}
-        </span>
-        <button
-          onClick={onClearDestination}
-          aria-label="Remover destino"
-          className="grid h-8 w-8 place-items-center rounded-full text-[#707070] transition hover:bg-[#F7F9F7] active:scale-[0.92]"
-        >
-          <X className="h-4 w-4" strokeWidth={2} />
-        </button>
-      </div>
+
+      {/* Cabeçalho do destino (oculto na etapa de confirmação — tem card de rota próprio) */}
+      {uiStage !== "confirming_request" && (
+        <div className="mb-3 flex items-center gap-2.5 rounded-[20px] bg-white px-3.5 py-2.5 ring-1 ring-border/60 shadow-[0_6px_18px_-14px_rgba(15,23,42,0.18)]">
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#76C139]/10 text-[#76C139]">
+            <MapPin className="h-[16px] w-[16px]" strokeWidth={2} />
+          </span>
+          <span className="line-clamp-1 flex-1 text-[13px] font-semibold text-[#111418]">
+            {destination.label}
+          </span>
+          <button
+            onClick={onClearDestination}
+            aria-label="Remover destino"
+            className="grid h-8 w-8 place-items-center rounded-full text-[#707070] transition hover:bg-[#F7F9F7] active:scale-[0.92]"
+          >
+            <X className="h-4 w-4" strokeWidth={2} />
+          </button>
+        </div>
+      )}
+
 
       {error && (
         <p className="mb-3 rounded-2xl bg-destructive/10 px-4 py-3 text-[12.5px] font-medium text-destructive ring-1 ring-destructive/30 animate-in fade-in duration-200">
@@ -3057,56 +3064,146 @@ function StepFlow({
         />
       )}
 
-      {/* ETAPA 4 — confirmação + botão inline */}
+      {/* ETAPA 4 — CONFIRMAÇÃO PREMIUM */}
       {uiStage === "confirming_request" && route && selectedCategory && selectedFare != null && (
-        <div className="animate-in fade-in slide-in-from-bottom-2 duration-200 space-y-3">
-          <div className="flex items-center gap-3 rounded-[20px] bg-white px-4 py-3.5 ring-1 ring-[#76C139]/40 shadow-[0_10px_28px_-18px_rgba(118,193,57,0.35)]">
-            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[#76C139] text-white shadow-[0_8px_20px_-10px_rgba(118,193,57,0.55)]">
-              <selectedCategory.icon className="h-[22px] w-[22px]" strokeWidth={1.75} />
-            </span>
+        <div className="space-y-3.5 animate-in fade-in slide-in-from-bottom-2 duration-[220ms]">
+          {/* Header minimal flutuante */}
+          <div className="flex items-start gap-3 animate-in fade-in slide-in-from-top-1 duration-[220ms]">
+            <button
+              type="button"
+              onClick={() => setUiStage("selecting_category")}
+              aria-label="Voltar"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white text-[#111418] ring-1 ring-border/60 shadow-[0_6px_18px_-14px_rgba(15,23,42,0.25)] transition active:scale-[0.92]"
+            >
+              <ArrowLeft className="h-[18px] w-[18px]" strokeWidth={2} />
+            </button>
             <div className="min-w-0 flex-1">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#5A9A2A] leading-none">
-                Categoria
-              </div>
-              <div className="mt-1 truncate text-[18px] font-bold text-[#111418] leading-tight">
-                {selectedCategory.label}
-              </div>
+              <h2 className="truncate text-[24px] font-bold leading-tight tracking-tight text-[#111418]">
+                Confirme sua corrida
+              </h2>
+              <p className="mt-0.5 truncate text-[13px] text-[#707070]">
+                Revise sua viagem antes de solicitar.
+              </p>
             </div>
-            <div className="text-right">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#707070] leading-none">
-                Estimado
+          </div>
+
+          {/* Route card — Embarque → Destino */}
+          <div className="rounded-[24px] bg-white p-4 ring-1 ring-border/60 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.22)] animate-in fade-in slide-in-from-bottom-1 duration-[220ms]">
+            <div className="flex items-stretch gap-3.5">
+              <div className="flex flex-col items-center pt-1">
+                <span className="grid h-3 w-3 place-items-center rounded-full bg-[#76C139] ring-4 ring-[#76C139]/15" />
+                <span className="my-1.5 w-px flex-1 bg-gradient-to-b from-[#76C139]/40 via-border/60 to-[#111418]/30" />
+                <span className="grid h-6 w-6 place-items-center rounded-full bg-[#111418] text-white">
+                  <MapPin className="h-[12px] w-[12px]" strokeWidth={2.25} />
+                </span>
               </div>
-              <div className="mt-1 text-[22px] font-bold text-[#111418] leading-none tracking-tight">
-                {formatBRL(selectedFare)}
+              <div className="min-w-0 flex-1">
+                <div>
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#707070] leading-none">
+                    Embarque
+                  </div>
+                  <div className="mt-1.5 truncate text-[15px] font-semibold text-[#111418] leading-snug">
+                    {pickupLabel || "Localização atual"}
+                  </div>
+                </div>
+                <div className="my-3 h-px bg-border/50" />
+                <div>
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#707070] leading-none">
+                    Destino
+                  </div>
+                  <div className="mt-1.5 truncate text-[15px] font-semibold text-[#111418] leading-snug">
+                    {destination.label}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
+          {/* Category card */}
+          <div
+            className="flex items-center gap-3.5 rounded-[24px] bg-white p-4 ring-1 ring-border/60 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.22)] animate-in fade-in slide-in-from-bottom-1 duration-[220ms]"
+            style={{ animationDelay: "40ms", animationFillMode: "backwards" }}
+          >
+            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-[16px] bg-[#76C139]/12 text-[#5A9A2A]">
+              <selectedCategory.icon className="h-[22px] w-[22px]" strokeWidth={1.75} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-[18px] font-semibold text-[#111418] leading-tight">
+                {selectedCategory.label}
+              </div>
+              <div className="mt-1 flex items-center gap-1.5 text-[13px] text-[#707070]">
+                <Clock className="h-3.5 w-3.5 text-[#76C139]" strokeWidth={2} />
+                Trajeto ~{fmtMin(route.durationSeconds)} · {fmtKm(route.distanceMeters)}
+              </div>
+            </div>
+          </div>
+
+          {/* Fare card — hero */}
+          <div
+            className="rounded-[24px] bg-white p-5 ring-1 ring-[#76C139]/25 shadow-[0_16px_36px_-20px_rgba(118,193,57,0.35)] animate-in fade-in duration-[220ms]"
+            style={{ animationDelay: "80ms", animationFillMode: "backwards" }}
+          >
+            <div className="flex items-end justify-between gap-3">
+              <div className="min-w-0">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#707070] leading-none">
+                  Valor estimado
+                </div>
+                <div className="mt-2 text-[32px] font-bold leading-none tracking-tight text-[#111418] animate-in fade-in duration-[300ms]">
+                  {formatBRL(selectedFare)}
+                </div>
+              </div>
+              <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[#76C139]/12 px-3 py-1.5 text-[12px] font-semibold text-[#5A9A2A]">
+                <Zap className="h-3.5 w-3.5" strokeWidth={2.25} />
+                MOVVI Preço
+              </span>
+            </div>
+            <p className="mt-2.5 text-[12px] leading-snug text-[#707070]">
+              Pode variar conforme rota, trânsito e disponibilidade.
+            </p>
+          </div>
+
+          {/* Payment card */}
           <button
             type="button"
             onClick={() => {
-              const next = paymentMethod === "dinheiro" ? "pix" : paymentMethod === "pix" ? "cartao_credito" : "dinheiro";
+              const next =
+                paymentMethod === "dinheiro"
+                  ? "pix"
+                  : paymentMethod === "pix"
+                  ? "cartao_credito"
+                  : "dinheiro";
               setPaymentMethod(next);
             }}
-            className="flex w-full items-center gap-3 rounded-[20px] bg-white px-4 py-3.5 text-left ring-1 ring-border/60 shadow-[0_6px_18px_-14px_rgba(15,23,42,0.18)] transition hover:bg-[#F7F9F7] active:scale-[0.99]"
+            className="flex w-full items-center gap-3.5 rounded-[24px] bg-white p-4 text-left ring-1 ring-border/60 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.22)] transition hover:bg-[#F7F9F7] active:scale-[0.99] animate-in fade-in slide-in-from-bottom-1 duration-[220ms]"
+            style={{ animationDelay: "120ms", animationFillMode: "backwards" }}
           >
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#76C139]/10 text-[#5A9A2A]">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[14px] bg-[#76C139]/12 text-[#5A9A2A]">
               <CreditCard className="h-[18px] w-[18px]" strokeWidth={1.75} />
             </span>
             <div className="min-w-0 flex-1">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#707070] leading-none">
-                Pagamento (direto ao motorista)
+              <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#707070] leading-none">
+                Pagamento
               </div>
               <div className="mt-1 truncate text-[15px] font-semibold text-[#111418] leading-tight">
-                {paymentMethod === "dinheiro" ? "Dinheiro" : paymentMethod === "pix" ? "PIX" : "Cartão de crédito"}
+                {paymentMethod === "dinheiro"
+                  ? "Dinheiro"
+                  : paymentMethod === "pix"
+                  ? "PIX"
+                  : "Cartão de crédito"}
               </div>
             </div>
             <ChevronRight className="h-4 w-4 shrink-0 text-[#94A3B8]" strokeWidth={2} />
           </button>
 
-          <RequestRideButton busy={busy} categoryLabel={selectedCategory.label} onSubmit={onSubmit} />
+          <div
+            className="pt-1 animate-in fade-in slide-in-from-bottom-1 duration-[220ms]"
+            style={{ animationDelay: "160ms", animationFillMode: "backwards" }}
+          >
+            <RequestRideButton busy={busy} categoryLabel={selectedCategory.label} onSubmit={onSubmit} />
+          </div>
         </div>
       )}
+
     </div>
   );
 }
