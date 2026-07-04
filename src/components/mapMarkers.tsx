@@ -155,7 +155,7 @@ export function InterpolatedDriverMarker({
   position,
   heading,
   color = "#2563eb",
-  scale = 2.1,
+  scale = 1.7,
 }: {
   position: LatLng;
   heading?: number | null;
