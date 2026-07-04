@@ -1469,7 +1469,7 @@ function PassageiroApp() {
       setSuggestions([]);
       sessionTokenRef.current = null;
       pushRecent({ placeId: s.placeId, label: s.primary, secondary: s.secondary });
-      sheetRef.current?.snapTo(50);
+      sheetRef.current?.snapTo(88);
       searchInputRef.current?.blur();
       await calcRoute(point);
     } catch (e) {
@@ -1511,7 +1511,7 @@ function PassageiroApp() {
       if (import.meta.env.DEV) console.log("[MOVVI UI] rota calculada:", result);
       setRoute(result);
       setPassengerUiStage("route_preview");
-      sheetRef.current?.snapTo(50);
+      sheetRef.current?.snapTo(88);
       if (mapRef.current) {
         const bounds = new google.maps.LatLngBounds();
         bounds.extend(position);
@@ -1877,20 +1877,30 @@ function PassageiroApp() {
 
   // Auto-follow do passageiro com throttle + zona morta (anti-shake).
   const autoFollowRef = useRef(true);
+  const userMovedMapRef = useRef(false);
   const lastFollowAtRef = useRef(0);
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    const onDragStart = () => { autoFollowRef.current = false; };
-    const listener = google.maps.event.addListener(map, "dragstart", onDragStart);
-    return () => { google.maps.event.removeListener(listener); };
+    const markMoved = () => {
+      autoFollowRef.current = false;
+      userMovedMapRef.current = true;
+    };
+    const l1 = google.maps.event.addListener(map, "dragstart", markMoved);
+    // `zoom_changed` também dispara em zoom programático; usamos-o em conjunto
+    // com um gesto/clique do usuário para não bloquear o auto-fit inicial.
+    const l2 = google.maps.event.addListener(map, "click", markMoved);
+    return () => {
+      google.maps.event.removeListener(l1);
+      google.maps.event.removeListener(l2);
+    };
   }, [stableInitialCenter]);
   useEffect(() => {
     if (!position || !mapRef.current || !autoFollowRef.current) return;
     // Durante uma corrida ativa o passageiro normalmente está parado;
     // não faz sentido ficar reposicionando o mapa em cima dele e brigar
-    // com a visualização do motorista chegando.
-    if (ride && (ride.status === "motorista_a_caminho" || ride.status === "motorista_chegou" || ride.status === "em_viagem")) return;
+    // com a visualização do motorista chegando OU da busca de motorista.
+    if (ride && (ride.status === "procurar_motorista" || ride.status === "motorista_a_caminho" || ride.status === "motorista_chegou" || ride.status === "em_viagem")) return;
     const now = Date.now();
     if (now - lastFollowAtRef.current < 1500) return;
     const c = mapRef.current.getCenter();
@@ -1945,9 +1955,18 @@ function PassageiroApp() {
     const driverLng = rideDriverInfo?.current_lng;
     const fitKey = `${ride.id}-${ride.status}`;
     if (lastPassengerFitKeyRef.current === fitKey) return;
+    // Se o usuário já mexeu no mapa, respeite a visão dele.
+    if (userMovedMapRef.current) return;
     let a: LatLng | null = null;
     let b: LatLng | null = null;
-    if (ride.status === "motorista_a_caminho" || ride.status === "motorista_chegou") {
+    if (ride.status === "procurar_motorista") {
+      // pickup + destino, enquadrado UMA vez ao entrar na busca
+      if (isBrazilCoordinate(ride.origin_lat, ride.origin_lng) &&
+          isBrazilCoordinate(ride.destination_lat, ride.destination_lng)) {
+        a = { lat: ride.origin_lat, lng: ride.origin_lng };
+        b = { lat: ride.destination_lat, lng: ride.destination_lng };
+      }
+    } else if (ride.status === "motorista_a_caminho" || ride.status === "motorista_chegou") {
       // passageiro + motorista aceito
       if (typeof driverLat === "number" && typeof driverLng === "number" &&
           isBrazilCoordinate(driverLat, driverLng)) {
@@ -1973,11 +1992,15 @@ function PassageiroApp() {
     autoFollowRef.current = false;
     const bounds = new google.maps.LatLngBounds();
     bounds.extend(a); bounds.extend(b);
-    // Padding enxuto: o cartão fixo do código ocupa ~140px no topo e o
-    // bottom sheet colapsado ocupa ~32vh. Sem inflar o viewport.
+    // Na busca de motorista o sheet ocupa ~44vh e mostramos a rota inteira,
+    // por isso o bottom padding precisa ser generoso (>= 360px) e o zoom
+    // NÃO deve estourar em cima do pickup.
+    const bottomPad = ride.status === "procurar_motorista"
+      ? Math.max(360, Math.round(window.innerHeight * 0.48))
+      : Math.round(window.innerHeight * 0.28) + 16;
     mapRef.current.fitBounds(bounds, {
       top: 150,
-      bottom: Math.round(window.innerHeight * 0.28) + 16,
+      bottom: bottomPad,
       left: 48,
       right: 48,
     });
@@ -2261,10 +2284,11 @@ function PassageiroApp() {
       {/* BOTTOM SHEET — novo, próprio do MOVVI */}
       {!ride && (() => {
         const bigStage =
+          passengerUiStage === "route_preview" ||
           passengerUiStage === "selecting_category" ||
           passengerUiStage === "confirming_request";
         const snaps = bigStage ? [72, 88, 96] : [38, 62, 88];
-        const initial = bigStage ? 72 : 38;
+        const initial = bigStage ? 88 : 38;
         return (
         <MovviSheet ref={sheetRef} key={bigStage ? "big" : "small"} snaps={snaps} initial={initial}>
           <SheetContent
@@ -3217,31 +3241,42 @@ function SheetContent({
 
 
 
-      {/* Sugestões ao vivo */}
+      {/* Sugestões ao vivo — área rolável limitada acima do teclado */}
       {showDestinationInput && suggestions.length > 0 && !destination && (
-        <ul className="-mx-1 mb-2 space-y-1 animate-in fade-in duration-200">
-          {suggestions.map((s) => (
-            <li key={s.placeId}>
-              <button
-                type="button"
-                onClick={() => onPick(s)}
-                className="flex w-full items-start gap-3 rounded-2xl px-3 py-3 text-left transition hover:bg-[#F7F9F7] active:scale-[0.99]"
-              >
-                <span className="mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#76C139]/10 text-[#76C139]">
-                  <MapPin className="h-[16px] w-[16px]" strokeWidth={2} />
-                </span>
-                <span className="flex min-w-0 flex-col">
-                  <span className="line-clamp-2 text-[15px] font-semibold text-foreground">{s.primary}</span>
-                  {s.secondary && (
-                    <span className="line-clamp-2 text-[12.5px] text-muted-foreground">
-                      {s.secondary}
-                    </span>
-                  )}
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
+        <div
+          className="mb-2 -mx-1 animate-in fade-in duration-200"
+          style={{
+            maxHeight: "calc(100dvh - 360px)",
+            overflowY: "auto",
+            overscrollBehavior: "contain",
+            WebkitOverflowScrolling: "touch",
+            paddingBottom: 24,
+          }}
+        >
+          <ul className="space-y-1">
+            {suggestions.map((s) => (
+              <li key={s.placeId}>
+                <button
+                  type="button"
+                  onClick={() => onPick(s)}
+                  className="flex w-full items-start gap-3 rounded-2xl px-3 py-3 text-left transition hover:bg-[#F7F9F7] active:scale-[0.99]"
+                >
+                  <span className="mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#76C139]/10 text-[#76C139]">
+                    <MapPin className="h-[16px] w-[16px]" strokeWidth={2} />
+                  </span>
+                  <span className="flex min-w-0 flex-col">
+                    <span className="line-clamp-2 text-[15px] font-semibold text-foreground">{s.primary}</span>
+                    {s.secondary && (
+                      <span className="line-clamp-2 text-[12.5px] text-muted-foreground">
+                        {s.secondary}
+                      </span>
+                    )}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
       {/* Dica sem destino */}
@@ -3343,7 +3378,7 @@ function StepFlow({
 
   useEffect(() => {
     if (uiStage === "selecting_category") onExpandSheet(88);
-    else if (uiStage === "confirming_request") onExpandSheet(88);
+    else if (uiStage === "confirming_request") onExpandSheet(92);
   }, [uiStage, onExpandSheet]);
 
   useEffect(() => {
@@ -3434,6 +3469,7 @@ function StepFlow({
           >
             Continuar
           </button>
+          <div style={{ height: "calc(env(safe-area-inset-bottom) + 40px)" }} />
         </div>
       )}
 
@@ -3590,6 +3626,7 @@ function StepFlow({
           >
             <RequestRideButton busy={busy} categoryLabel={selectedCategory.label} onSubmit={onSubmit} />
           </div>
+          <div style={{ height: "calc(env(safe-area-inset-bottom) + 40px)" }} />
         </div>
       )}
 

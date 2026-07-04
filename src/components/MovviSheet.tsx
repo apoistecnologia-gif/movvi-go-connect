@@ -285,48 +285,33 @@ export const MovviSheet = forwardRef<MovviSheetHandle, Props>(function MovviShee
   return (
     <div
       ref={sheetRef}
-      className="absolute inset-x-0 bottom-0 z-30 flex flex-col rounded-t-[36px] bg-card text-foreground will-change-[height] animate-sheet-in"
+      className="absolute inset-x-0 z-30 flex flex-col rounded-t-[36px] bg-card text-foreground will-change-[height] animate-sheet-in"
       style={{
         // Use `dvh` (dynamic viewport height) so the sheet adapts to Android
         // URL-bar changes and safe-area insets — never a fixed pixel height.
         height: `${height}dvh`,
-        // Cap the height so the sheet never covers the top status/safe area.
-        maxHeight: "calc(100dvh - env(safe-area-inset-top) - 12px)",
+        // Cap the height so the sheet never covers the top status/safe area
+        // AND never sits behind the on-screen keyboard.
+        maxHeight: `calc(100dvh - env(safe-area-inset-top) - 12px - ${keyboardOffset}px)`,
+        // When keyboard is open, lift the whole sheet above it so the sticky
+        // footer / suggestions area stay visible.
+        bottom: keyboardOffset > 0 ? `${keyboardOffset}px` : 0,
         boxShadow:
           "0 -32px 72px -36px rgba(0,0,0,0.6), 0 -1px 0 0 rgba(255,255,255,0.04) inset",
         borderTop: "1px solid color-mix(in oklab, var(--color-border) 45%, transparent)",
       }}
     >
-      {/* MOVVI brand: subtle green top accent line */}
-      <span
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-[2px] rounded-t-[36px]"
-        style={{
-          background:
-            "linear-gradient(90deg, transparent 0%, color-mix(in oklab, var(--color-primary) 70%, transparent) 50%, transparent 100%)",
-        }}
-      />
-
-      {/* drag handle area — MOVVI green tint on active */}
-      <div
-        className="group flex shrink-0 cursor-grab touch-none flex-col items-center pb-1.5 pt-2.5 active:cursor-grabbing"
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
-      >
-        <span className="h-[4px] w-10 rounded-full bg-muted-foreground/30 transition-all duration-200 group-hover:w-12 group-hover:bg-muted-foreground/50 group-active:w-14 group-active:bg-primary/70" />
-      </div>
-
+...
       <div
         ref={scrollRef}
         data-scroll
         className="movvi-scroll flex-1 px-5"
         style={{
-          // Reserve enough room for the pinned footer so the last content isn't hidden behind it.
+          // Reserve enough room so the pinned footer / on-screen keyboard
+          // never covers the last piece of content (card, price, CTA).
           paddingBottom: footer
-            ? `calc(150px + ${keyboardOffset}px)`
-            : `calc(env(safe-area-inset-bottom) + 24px + ${keyboardOffset}px)`,
+            ? "180px"
+            : `calc(env(safe-area-inset-bottom) + 24px)`,
           overflowY: "auto",
           overscrollBehavior: "contain",
           WebkitOverflowScrolling: "touch",
@@ -342,10 +327,10 @@ export const MovviSheet = forwardRef<MovviSheetHandle, Props>(function MovviShee
           style={{
             position: "sticky",
             bottom: 0,
-            zIndex: 50,
-            padding: "12px 24px calc(env(safe-area-inset-bottom) + 20px)",
+            zIndex: 60,
+            padding: "12px 24px calc(env(safe-area-inset-bottom) + 24px)",
             background:
-              "linear-gradient(to top, var(--color-card) 80%, transparent)",
+              "linear-gradient(to top, var(--color-card) 82%, transparent)",
           }}
         >
           {footer}
