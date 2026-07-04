@@ -2509,7 +2509,7 @@ function PassageiroApp() {
               className="pointer-events-none absolute inset-x-0 z-40 flex justify-center px-3"
               style={{ top: "calc(env(safe-area-inset-top) + 16px)" }}
             >
-              <div className="pointer-events-auto w-full max-w-sm rounded-[22px] bg-white/90 px-4 py-3.5 shadow-[0_18px_44px_-22px_rgba(15,23,42,0.45)] ring-1 ring-black/5 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="pointer-events-auto w-full max-w-sm rounded-[18px] bg-white/92 px-3.5 py-2 shadow-[0_12px_28px_-18px_rgba(15,23,42,0.35)] ring-1 ring-black/5 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
                 <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[#707070]">
                   <span className="relative flex h-2 w-2">
                     <span className="absolute inset-0 animate-ping rounded-full bg-[#76C139]/60" />
@@ -2522,7 +2522,7 @@ function PassageiroApp() {
                     <div className="text-[11px] font-medium text-[#707070] leading-none">Chega em</div>
                     <div
                       key={etaMin ?? "eta"}
-                      className="mt-1.5 text-[30px] font-bold leading-none tracking-tight text-[#111418] tabular-nums animate-count-pop"
+                      className="mt-1.5 text-[22px] font-bold leading-none tracking-tight text-[#111418] tabular-nums animate-count-pop"
                     >
                       {etaMin ?? "—"}
                       <span className="ml-1 text-[13px] font-semibold text-[#707070]">min</span>
@@ -2532,7 +2532,7 @@ function PassageiroApp() {
                     <div className="text-[11px] font-medium text-[#707070] leading-none">Distância</div>
                     <div
                       key={approachKm?.toFixed(1) ?? "d"}
-                      className="mt-1.5 text-[18px] font-bold leading-none text-[#111418] tabular-nums animate-count-pop"
+                      className="mt-1 text-[15px] font-bold leading-none text-[#111418] tabular-nums animate-count-pop"
                     >
                       {approachKm != null ? approachKm.toFixed(1) : "—"}
                       <span className="ml-1 text-[12px] font-semibold text-[#707070]">km</span>
@@ -2540,7 +2540,7 @@ function PassageiroApp() {
                   </div>
                   <div>
                     <div className="text-[11px] font-medium text-[#707070] leading-none">Previsão</div>
-                    <div className="mt-1.5 text-[18px] font-bold leading-none text-[#111418] tabular-nums">
+                    <div className="mt-1 text-[15px] font-bold leading-none text-[#111418] tabular-nums">
                       {arrivalLabel ?? "—"}
                     </div>
                   </div>
@@ -2583,7 +2583,7 @@ function PassageiroApp() {
               className="pointer-events-none absolute inset-x-0 z-40 flex justify-center px-3"
               style={{ top: "calc(env(safe-area-inset-top) + 16px)" }}
             >
-              <div className="pointer-events-auto w-full max-w-sm rounded-[22px] bg-white/90 px-4 py-3.5 shadow-[0_18px_44px_-22px_rgba(15,23,42,0.45)] ring-1 ring-black/5 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="pointer-events-auto w-full max-w-sm rounded-[18px] bg-white/92 px-3.5 py-2 shadow-[0_12px_28px_-18px_rgba(15,23,42,0.35)] ring-1 ring-black/5 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
                 <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[#707070]">
                   <span className="relative flex h-2 w-2">
                     <span className="absolute inset-0 animate-ping rounded-full bg-[#76C139]/60" />
@@ -2598,7 +2598,7 @@ function PassageiroApp() {
                     </div>
                     <div
                       key={remainingMin ?? "eta"}
-                      className="mt-1.5 text-[30px] font-bold leading-none tracking-tight text-[#111418] tabular-nums animate-count-pop"
+                      className="mt-1.5 text-[22px] font-bold leading-none tracking-tight text-[#111418] tabular-nums animate-count-pop"
                     >
                       {remainingMin ?? "—"}
                       <span className="ml-1 text-[13px] font-semibold text-[#707070]">min</span>
@@ -2608,7 +2608,7 @@ function PassageiroApp() {
                     <div className="text-[11px] font-medium text-[#707070] leading-none">Distância</div>
                     <div
                       key={remainingKm?.toFixed(1) ?? "d"}
-                      className="mt-1.5 text-[18px] font-bold leading-none text-[#111418] tabular-nums animate-count-pop"
+                      className="mt-1 text-[15px] font-bold leading-none text-[#111418] tabular-nums animate-count-pop"
                     >
                       {remainingKm != null ? remainingKm.toFixed(1) : "—"}
                       <span className="ml-1 text-[12px] font-semibold text-[#707070]">km</span>
@@ -2616,7 +2616,7 @@ function PassageiroApp() {
                   </div>
                   <div>
                     <div className="text-[11px] font-medium text-[#707070] leading-none">Chegada</div>
-                    <div className="mt-1.5 text-[18px] font-bold leading-none text-[#111418] tabular-nums">
+                    <div className="mt-1 text-[15px] font-bold leading-none text-[#111418] tabular-nums">
                       {arrivalLabel ?? "—"}
                     </div>
                   </div>
@@ -4211,7 +4211,7 @@ function DriverEnRoute({
             </div>
             <div
               key={eta ?? "eta-empty"}
-              className="mt-1 text-[30px] font-bold leading-none tracking-tight text-[#111418] tabular-nums animate-count-pop"
+              className="mt-1 text-[22px] font-bold leading-none tracking-tight text-[#111418] tabular-nums animate-count-pop"
             >
               {eta ?? "—"}
               <span className="ml-1.5 text-[15px] font-semibold text-[#707070]">min</span>
