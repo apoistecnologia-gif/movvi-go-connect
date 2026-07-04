@@ -3201,13 +3201,13 @@ function SheetContent({
       {/* Hero search — "Para onde você vai?" */}
       {showDestinationInput && (
         <div className="mb-3 animate-fade-slide">
-          <div className="surface-card rounded-3xl px-4 py-4 shadow-[var(--ds-shadow-card)] transition focus-within:border-primary/60 focus-within:shadow-[var(--ds-shadow-floating)]">
-            <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">
+          <div className="surface-card rounded-2xl px-3.5 py-3 shadow-[var(--ds-shadow-card)] transition focus-within:border-primary/60 focus-within:shadow-[var(--ds-shadow-floating)]">
+            <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">
               Destino
             </div>
-            <div className="flex items-center gap-3">
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
-                <Search className="h-[18px] w-[18px]" strokeWidth={2} />
+            <div className="flex items-center gap-2.5">
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
+                <Search className="h-4 w-4" strokeWidth={2} />
               </span>
               <input
                 ref={searchInputRef}
@@ -3218,7 +3218,7 @@ function SheetContent({
                 }}
                 onFocus={onFocusSearch}
                 placeholder="Para onde você vai?"
-                className="min-w-0 flex-1 bg-transparent text-[18px] font-semibold text-foreground outline-none placeholder:text-muted-foreground"
+                className="min-w-0 flex-1 bg-transparent text-[15px] sm:text-base font-semibold text-foreground outline-none placeholder:text-muted-foreground"
               />
 
               {destinationText && (
