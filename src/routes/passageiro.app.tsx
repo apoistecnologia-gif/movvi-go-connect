@@ -3059,24 +3059,24 @@ function StepFlow({
 
       {/* ETAPA 4 — confirmação + botão inline */}
       {uiStage === "confirming_request" && route && selectedCategory && selectedFare != null && (
-        <div className="animate-in fade-in slide-in-from-bottom-2 duration-200 space-y-2">
-          <div className="flex items-center gap-2.5 rounded-2xl bg-primary/5 px-3 py-2.5 ring-1 ring-primary/30">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground">
-              <selectedCategory.icon className="h-5 w-5" />
+        <div className="animate-in fade-in slide-in-from-bottom-2 duration-200 space-y-3">
+          <div className="flex items-center gap-3 rounded-[20px] bg-white px-4 py-3.5 ring-1 ring-[#76C139]/40 shadow-[0_10px_28px_-18px_rgba(118,193,57,0.35)]">
+            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[#76C139] text-white shadow-[0_8px_20px_-10px_rgba(118,193,57,0.55)]">
+              <selectedCategory.icon className="h-[22px] w-[22px]" strokeWidth={1.75} />
             </span>
             <div className="min-w-0 flex-1">
-              <div className="text-[9.5px] font-semibold uppercase tracking-widest text-primary leading-none">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#5A9A2A] leading-none">
                 Categoria
               </div>
-              <div className="mt-0.5 truncate text-[14px] font-extrabold text-foreground leading-tight">
+              <div className="mt-1 truncate text-[18px] font-bold text-[#111418] leading-tight">
                 {selectedCategory.label}
               </div>
             </div>
             <div className="text-right">
-              <div className="text-[9.5px] font-semibold uppercase tracking-widest text-muted-foreground leading-none">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#707070] leading-none">
                 Estimado
               </div>
-              <div className="mt-0.5 text-[16px] font-extrabold text-foreground leading-none">
+              <div className="mt-1 text-[22px] font-bold text-[#111418] leading-none tracking-tight">
                 {formatBRL(selectedFare)}
               </div>
             </div>
@@ -3088,20 +3088,20 @@ function StepFlow({
               const next = paymentMethod === "dinheiro" ? "pix" : paymentMethod === "pix" ? "cartao_credito" : "dinheiro";
               setPaymentMethod(next);
             }}
-            className="flex w-full items-center gap-2.5 rounded-2xl bg-background/60 px-3 py-2.5 text-left ring-1 ring-border transition hover:bg-accent/20 active:scale-[0.99]"
+            className="flex w-full items-center gap-3 rounded-[20px] bg-white px-4 py-3.5 text-left ring-1 ring-border/60 shadow-[0_6px_18px_-14px_rgba(15,23,42,0.18)] transition hover:bg-[#F7F9F7] active:scale-[0.99]"
           >
-            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
-              <CreditCard className="h-4 w-4" />
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#76C139]/10 text-[#5A9A2A]">
+              <CreditCard className="h-[18px] w-[18px]" strokeWidth={1.75} />
             </span>
             <div className="min-w-0 flex-1">
-              <div className="text-[9.5px] font-semibold uppercase tracking-widest text-muted-foreground leading-none">
-                Forma de pagamento (direto ao motorista)
+              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#707070] leading-none">
+                Pagamento (direto ao motorista)
               </div>
-              <div className="mt-0.5 truncate text-[13px] font-bold text-foreground leading-tight">
+              <div className="mt-1 truncate text-[15px] font-semibold text-[#111418] leading-tight">
                 {paymentMethod === "dinheiro" ? "Dinheiro" : paymentMethod === "pix" ? "PIX" : "Cartão de crédito"}
               </div>
             </div>
-            <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <ChevronRight className="h-4 w-4 shrink-0 text-[#94A3B8]" strokeWidth={2} />
           </button>
 
           <RequestRideButton busy={busy} categoryLabel={selectedCategory.label} onSubmit={onSubmit} />
@@ -3113,21 +3113,20 @@ function StepFlow({
 
 function FareEstimateCard({ route, fare }: { route: RouteResult; fare: number | null }) {
   return (
-    <div className="mb-3 rounded-2xl bg-primary/5 px-4 py-4 ring-1 ring-primary/30">
-      <div className="flex flex-wrap items-baseline justify-center gap-x-2 gap-y-1 text-center">
-        <span className="text-[15px] font-extrabold text-foreground">
-          {fmtMin(route.durationSeconds)}
-        </span>
-        <span className="text-muted-foreground">•</span>
-        <span className="text-[15px] font-extrabold text-foreground">
-          {fmtKm(route.distanceMeters)}
-        </span>
-        <span className="text-muted-foreground">•</span>
-        <span className="text-[15px] font-extrabold text-primary">
-          {fare != null ? formatBRL(fare) : "Valor estimado"}
+    <div className="mb-3 rounded-[24px] bg-white px-5 py-4 ring-1 ring-border/60 shadow-[0_8px_24px_-16px_rgba(15,23,42,0.18)]">
+      <div className="flex items-baseline justify-between gap-3">
+        <div className="flex items-baseline gap-2">
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#76C139]/10 text-[#76C139]">
+            <Clock className="h-[15px] w-[15px]" strokeWidth={2} />
+          </span>
+          <span className="text-[15px] font-bold text-[#111418]">{fmtMin(route.durationSeconds)}</span>
+          <span className="text-[13px] text-[#707070]">· {fmtKm(route.distanceMeters)}</span>
+        </div>
+        <span className="text-[20px] font-bold text-[#111418] tracking-tight">
+          {fare != null ? formatBRL(fare) : "—"}
         </span>
       </div>
-      <p className="mt-1.5 text-center text-[10.5px] text-muted-foreground">
+      <p className="mt-2 text-[11.5px] text-[#707070]">
         Valor estimado. Pode variar conforme rota e disponibilidade.
       </p>
     </div>
@@ -3150,48 +3149,83 @@ function RideCategorySelector({
   onSelect: (category: UiCategory) => void;
 }) {
   const uiCategories = useUiCategories();
+  const etaLabel = fmtMin(route.durationSeconds);
   return (
     <div className="animate-in fade-in slide-in-from-bottom-2 duration-200">
-      <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-        Escolha a categoria
-      </div>
-      <div className="-mx-4 mb-3 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <div className="flex snap-x snap-mandatory gap-2.5 pb-1">
-          {uiCategories.map((c) => {
-            const active = c.key === selectedCategoryKey;
-            const fare = estimateFare(c.backend, km, min, tariffs);
-            const Icon = c.icon;
-            return (
+      <ul className="space-y-2.5">
+        {uiCategories.map((c, idx) => {
+          const active = c.key === selectedCategoryKey;
+          const fare = estimateFare(c.backend, km, min, tariffs);
+          const Icon = c.icon;
+          return (
+            <li
+              key={c.key}
+              className="animate-in fade-in slide-in-from-bottom-1"
+              style={{
+                animationDuration: "220ms",
+                animationDelay: `${Math.min(idx, 5) * 40}ms`,
+                animationFillMode: "backwards",
+              }}
+            >
               <button
-                key={c.key}
                 type="button"
                 onClick={() => onSelect(c)}
                 aria-pressed={active}
-                className={`flex w-[120px] shrink-0 snap-start flex-col items-center gap-1.5 rounded-2xl border-2 px-3 py-3 text-center transition active:scale-95 ${
+                className={`group flex w-full items-center gap-3 rounded-[24px] bg-white px-4 py-3.5 text-left transition-[transform,box-shadow,border-color] duration-200 active:scale-[0.99] ${
                   active
-                    ? "border-primary bg-primary/10 shadow-md shadow-primary/20"
-                    : "border-border bg-background/60 hover:border-primary/40"
+                    ? "scale-[1.01] border-2 border-[#76C139] shadow-[0_16px_36px_-18px_rgba(118,193,57,0.4)]"
+                    : "border border-border/60 shadow-[0_6px_18px_-14px_rgba(15,23,42,0.18)] hover:border-[#76C139]/40"
                 }`}
               >
                 <span
-                  className={`grid h-10 w-10 place-items-center rounded-xl ${
-                    active ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary"
+                  className={`grid h-14 w-14 shrink-0 place-items-center rounded-[18px] transition ${
+                    active
+                      ? "bg-[#76C139] text-white shadow-[0_10px_22px_-12px_rgba(118,193,57,0.55)]"
+                      : "bg-[#76C139]/10 text-[#5A9A2A] group-hover:bg-[#76C139]/15"
                   }`}
                 >
-                  <Icon className="h-5 w-5" />
+                  <Icon className="h-[26px] w-[26px]" strokeWidth={1.75} />
                 </span>
-                <span className="text-[12.5px] font-bold leading-none">{c.label}</span>
-                <span className="text-[10px] leading-none text-muted-foreground">
-                  {fmtMin(route.durationSeconds)}
-                </span>
-                <span className="text-[12.5px] font-extrabold leading-none text-primary">
-                  {formatBRL(fare)}
-                </span>
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="truncate text-[17px] font-bold text-[#111418] leading-tight">
+                      {c.label}
+                    </span>
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#76C139]/12 px-2 py-0.5 text-[11px] font-semibold text-[#5A9A2A]">
+                      <Clock className="h-3 w-3" strokeWidth={2.25} />
+                      {etaLabel}
+                    </span>
+                  </div>
+                  <p className="mt-1 line-clamp-2 text-[13px] text-[#707070] leading-snug">
+                    {c.tagline}
+                  </p>
+                </div>
+
+                <div className="flex shrink-0 flex-col items-end gap-1.5">
+                  <span
+                    className={`text-[20px] font-bold leading-none tracking-tight ${
+                      active ? "text-[#5A9A2A]" : "text-[#111418]"
+                    }`}
+                  >
+                    {formatBRL(fare)}
+                  </span>
+                  <span
+                    className={`grid h-5 w-5 place-items-center rounded-full transition ${
+                      active
+                        ? "bg-[#76C139] text-white shadow-[0_4px_10px_-4px_rgba(118,193,57,0.55)]"
+                        : "bg-transparent text-transparent ring-1 ring-border/70"
+                    }`}
+                    aria-hidden
+                  >
+                    <Check className="h-3 w-3" strokeWidth={3} />
+                  </span>
+                </div>
               </button>
-            );
-          })}
-        </div>
-      </div>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }
@@ -3210,9 +3244,16 @@ function RequestRideButton({
       type="button"
       disabled={busy}
       onClick={onSubmit}
-      className="mt-1 w-full rounded-2xl bg-primary py-3.5 text-[15px] font-extrabold text-primary-foreground shadow-xl shadow-primary/30 transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+      className="mt-1 flex h-14 w-full items-center justify-center gap-2 rounded-[18px] bg-[#76C139] text-[15px] font-bold text-white shadow-[0_16px_32px_-16px_rgba(118,193,57,0.55)] transition-[transform,filter,box-shadow] duration-200 active:scale-[0.98] hover:brightness-[1.04] disabled:cursor-not-allowed disabled:opacity-60"
     >
-      {busy ? "Solicitando..." : `Solicitar MOVVI ${categoryLabel}`}
+      {busy ? (
+        <>
+          <span className="h-4 w-4 rounded-full border-2 border-white/70 border-t-transparent animate-spin" />
+          Solicitando...
+        </>
+      ) : (
+        `Confirmar MOVVI ${categoryLabel}`
+      )}
     </button>
   );
 }
