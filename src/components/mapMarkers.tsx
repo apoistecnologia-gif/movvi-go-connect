@@ -219,18 +219,18 @@ export function InterpolatedDriverMarker({
 
   return (
     <>
-      {/* halo suave — sensação "vivo" quando parado */}
+      {/* halo suave — reduzido ~40% */}
       <Marker
         position={display}
         clickable={false}
         zIndex={9997}
         icon={{
           path: safeSymbol("CIRCLE"),
-          scale: 22,
+          scale: 13,
           fillColor: color,
-          fillOpacity: 0.12,
+          fillOpacity: 0.08,
           strokeColor: color,
-          strokeOpacity: 0.3,
+          strokeOpacity: 0.2,
           strokeWeight: 1,
         }}
       />
@@ -241,13 +241,13 @@ export function InterpolatedDriverMarker({
         zIndex={9998}
         icon={{
           path: safeSymbol("CIRCLE"),
-          scale: 13,
+          scale: 10,
           fillColor: "#000000",
-          fillOpacity: 0.22,
+          fillOpacity: 0.18,
           strokeWeight: 0,
         }}
       />
-      {/* carro */}
+      {/* carro — 32px */}
       <Marker
         position={display}
         zIndex={10000}
@@ -256,7 +256,7 @@ export function InterpolatedDriverMarker({
           fillColor: color,
           fillOpacity: 1,
           strokeColor: "#ffffff",
-          strokeWeight: 2.4,
+          strokeWeight: 2.2,
           scale,
           rotation: displayHeading,
           anchor: safePoint(12, 14),
