@@ -3603,6 +3603,7 @@ function StepFlow({
           >
             <RequestRideButton busy={busy} categoryLabel={selectedCategory.label} onSubmit={onSubmit} />
           </div>
+          <div style={{ height: "calc(env(safe-area-inset-bottom) + 40px)" }} />
         </div>
       )}
 
