@@ -1,6 +1,18 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Briefcase, Heart, Home, MapPin, Pencil, Plus, Search, Trash2, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  ArrowLeft,
+  Briefcase,
+  ChevronRight,
+  Heart,
+  Home,
+  MapPin,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   createFavorite,
@@ -18,10 +30,10 @@ export const Route = createFileRoute("/passageiro/favoritos")({
   component: FavoritosPage,
 });
 
-function kindMeta(kind: FavoriteKind): { label: string; Icon: typeof Home; color: string } {
-  if (kind === "home") return { label: "Casa", Icon: Home, color: "text-[#8DD92B]" };
-  if (kind === "work") return { label: "Trabalho", Icon: Briefcase, color: "text-blue-400" };
-  return { label: "Personalizado", Icon: Heart, color: "text-pink-400" };
+function kindMeta(kind: FavoriteKind): { label: string; Icon: typeof Home } {
+  if (kind === "home") return { label: "Casa", Icon: Home };
+  if (kind === "work") return { label: "Trabalho", Icon: Briefcase };
+  return { label: "Personalizado", Icon: Heart };
 }
 
 function FavoritosPage() {
@@ -62,59 +74,90 @@ function FavoritosPage() {
   };
 
   return (
-    <div className="min-h-dvh bg-[#05070D] text-white">
-      <header className="sticky top-0 z-10 flex items-center gap-3 border-b border-white/5 bg-[#05070D]/95 px-4 py-3 backdrop-blur">
+    <div className="min-h-dvh bg-[#F7F9F7] text-[#111418]">
+      <header className="sticky top-0 z-10 flex items-center gap-3 border-b border-black/5 bg-[#F7F9F7]/90 px-4 py-3 backdrop-blur-xl">
         <button
           onClick={() => navigate({ to: "/passageiro/app" })}
-          className="rounded-full p-2 transition hover:bg-white/5"
+          className="rounded-full p-2 transition duration-200 hover:bg-black/5 active:scale-95"
           aria-label="Voltar"
         >
-          <ArrowLeft className="h-5 w-5" />
+          <ArrowLeft className="h-5 w-5 text-[#111418]" strokeWidth={2} />
         </button>
-        <div className="flex-1">
-          <h1 className="text-lg font-semibold">Endereços favoritos</h1>
-          <p className="text-xs text-white/50">Casa, trabalho e lugares frequentes</p>
-        </div>
+        <span className="flex-1" />
       </header>
 
-      <main className="mx-auto max-w-2xl space-y-5 px-4 py-5">
+      <main className="mx-auto max-w-2xl px-4 py-6 pb-32">
+        {/* Header */}
+        <section className="mb-6 animate-in fade-in slide-in-from-top-1 duration-300">
+          <h1 className="text-[24px] font-bold tracking-tight text-[#111418]">
+            Locais favoritos
+          </h1>
+          <p className="mt-1 text-[13px] text-[#707070]">
+            Acesse seus destinos mais usados em segundos.
+          </p>
+        </section>
+
         {loading ? (
-          <p className="py-10 text-center text-sm text-white/40">Carregando…</p>
+          <div className="space-y-3">
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                className="h-[76px] animate-pulse rounded-[24px] bg-white ring-1 ring-black/5"
+              />
+            ))}
+          </div>
         ) : (
           <>
-            <FavoriteSlot
-              kind="home"
-              fav={home}
-              onAdd={() => setCreatingKind("home")}
-              onEdit={(f) => setEditing(f)}
-              onRemove={onRemove}
-            />
-            <FavoriteSlot
-              kind="work"
-              fav={work}
-              onAdd={() => setCreatingKind("work")}
-              onEdit={(f) => setEditing(f)}
-              onRemove={onRemove}
-            />
+            {/* Home & Work */}
+            <section className="mb-6 space-y-3 animate-in fade-in slide-in-from-bottom-1 duration-[220ms]">
+              <FavoriteSlot
+                kind="home"
+                fav={home}
+                onAdd={() => setCreatingKind("home")}
+                onEdit={(f) => setEditing(f)}
+                onRemove={onRemove}
+              />
+              <FavoriteSlot
+                kind="work"
+                fav={work}
+                onAdd={() => setCreatingKind("work")}
+                onEdit={(f) => setEditing(f)}
+                onRemove={onRemove}
+              />
+            </section>
 
-            <section className="space-y-2">
-              <div className="flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-white/80">Personalizados</h2>
-                <button
-                  onClick={() => setCreatingKind("custom")}
-                  className="inline-flex items-center gap-1 rounded-full bg-[#8DD92B]/10 px-3 py-1.5 text-xs font-semibold text-[#8DD92B] transition hover:bg-[#8DD92B]/20"
-                >
-                  <Plus className="h-3.5 w-3.5" /> Adicionar
-                </button>
+            {/* Favorites */}
+            <section className="animate-in fade-in slide-in-from-bottom-2 duration-[220ms]">
+              <div className="mb-3 flex items-center justify-between px-1">
+                <h2 className="text-[13px] font-semibold uppercase tracking-wider text-[#707070]">
+                  Meus favoritos
+                </h2>
+                <span className="text-[12px] text-[#707070]">
+                  {custom.length} {custom.length === 1 ? "local" : "locais"}
+                </span>
               </div>
+
               {custom.length === 0 ? (
-                <p className="rounded-2xl border border-dashed border-white/10 px-4 py-6 text-center text-xs text-white/40">
-                  Nenhum favorito personalizado ainda.
-                </p>
+                <div className="rounded-[24px] bg-white p-8 text-center ring-1 ring-black/5 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.22)]">
+                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#76C139]/12">
+                    <Heart className="h-7 w-7 text-[#76C139]" strokeWidth={1.75} />
+                  </div>
+                  <h3 className="text-[18px] font-semibold text-[#111418]">
+                    Nenhum favorito ainda
+                  </h3>
+                  <p className="mt-1 text-[13px] text-[#707070]">
+                    Salve seus destinos mais visitados para pedir corridas mais rápido.
+                  </p>
+                </div>
               ) : (
-                <ul className="space-y-2">
+                <ul className="space-y-3">
                   {custom.map((f) => (
-                    <FavoriteRow key={f.id} fav={f} onEdit={() => setEditing(f)} onRemove={() => onRemove(f.id)} />
+                    <FavoriteRow
+                      key={f.id}
+                      fav={f}
+                      onEdit={() => setEditing(f)}
+                      onRemove={() => onRemove(f.id)}
+                    />
                   ))}
                 </ul>
               )}
@@ -122,6 +165,17 @@ function FavoritosPage() {
           </>
         )}
       </main>
+
+      {/* Floating add button */}
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-20 flex justify-center px-4 pb-[calc(env(safe-area-inset-bottom)+16px)]">
+        <button
+          onClick={() => setCreatingKind("custom")}
+          className="pointer-events-auto flex h-14 items-center justify-center gap-2 rounded-full border-2 border-[#76C139] bg-white px-6 text-[14px] font-bold text-[#76C139] shadow-[0_18px_40px_-18px_rgba(118,193,57,0.55)] transition duration-[220ms] active:scale-[0.97] hover:bg-[#76C139]/8"
+        >
+          <Plus className="h-5 w-5" strokeWidth={2.4} />
+          Adicionar local
+        </button>
+      </div>
 
       {(creatingKind || editing) && (
         <FavoriteEditor
@@ -155,47 +209,59 @@ function FavoriteSlot({
   onEdit: (f: FavoritePlace) => void;
   onRemove: (id: string) => void;
 }) {
-  const { label, Icon, color } = kindMeta(kind);
+  const { label, Icon } = kindMeta(kind);
   if (fav) {
     return (
-      <button
-        onClick={() => onEdit(fav)}
-        className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-[#121826] px-4 py-3 text-left transition hover:border-[#8DD92B]/40"
-      >
-        <span className={`grid h-10 w-10 place-items-center rounded-full bg-white/5 ${color}`}>
-          <Icon className="h-5 w-5" />
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block text-sm font-semibold">{label}</span>
-          <span className="block truncate text-xs text-white/60">{fav.address}</span>
-        </span>
+      <div className="group flex w-full items-center gap-3.5 rounded-[24px] bg-white p-4 ring-1 ring-black/5 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.22)] transition duration-[220ms] hover:ring-[#76C139]/25">
+        <button
+          onClick={() => onEdit(fav)}
+          className="flex min-w-0 flex-1 items-center gap-3.5 text-left"
+        >
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#76C139]/12 text-[#76C139]">
+            <Icon className="h-5 w-5" strokeWidth={1.8} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[18px] font-semibold leading-tight text-[#111418]">
+              {label}
+            </span>
+            <span className="mt-0.5 block truncate text-[13px] text-[#707070]">
+              {fav.address}
+            </span>
+          </span>
+        </button>
         <button
           onClick={(e) => {
             e.stopPropagation();
             onRemove(fav.id);
           }}
-          className="rounded-full p-2 text-white/40 transition hover:bg-white/5 hover:text-red-400"
+          className="rounded-full p-2 text-[#707070] transition duration-200 hover:bg-[#F7F9F7] hover:text-[#c53030] active:scale-90"
           aria-label="Remover"
         >
-          <Trash2 className="h-4 w-4" />
+          <Trash2 className="h-4 w-4" strokeWidth={2} />
         </button>
-        <Pencil className="h-4 w-4 text-white/40" />
-      </button>
+        <ChevronRight className="h-5 w-5 shrink-0 text-[#707070]/60" strokeWidth={2} />
+      </div>
     );
   }
   return (
     <button
       onClick={onAdd}
-      className="flex w-full items-center gap-3 rounded-2xl border border-dashed border-white/15 bg-white/[0.02] px-4 py-3 text-left transition hover:border-[#8DD92B]/40 hover:bg-[#8DD92B]/[0.04]"
+      className="flex w-full items-center gap-3.5 rounded-[24px] border-2 border-dashed border-[#707070]/20 bg-white/60 p-4 text-left transition duration-[220ms] hover:border-[#76C139]/40 hover:bg-white active:scale-[0.99]"
     >
-      <span className={`grid h-10 w-10 place-items-center rounded-full bg-white/5 ${color}`}>
-        <Icon className="h-5 w-5" />
+      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#F7F9F7] text-[#707070]">
+        <Icon className="h-5 w-5" strokeWidth={1.8} />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block text-sm font-semibold">Adicionar {label}</span>
-        <span className="block text-xs text-white/40">Defina seu endereço de {label.toLowerCase()}</span>
+        <span className="block text-[18px] font-semibold leading-tight text-[#111418]">
+          Adicionar {label}
+        </span>
+        <span className="mt-0.5 block text-[13px] text-[#707070]">
+          Defina seu endereço de {label.toLowerCase()}
+        </span>
       </span>
-      <Plus className="h-4 w-4 text-[#8DD92B]" />
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#76C139]/12 text-[#76C139]">
+        <Plus className="h-4 w-4" strokeWidth={2.4} />
+      </span>
     </button>
   );
 }
@@ -210,31 +276,37 @@ function FavoriteRow({
   onRemove: () => void;
 }) {
   return (
-    <li className="flex items-center gap-3 rounded-2xl border border-white/10 bg-[#121826] px-4 py-3">
-      <span className="grid h-10 w-10 place-items-center rounded-full bg-pink-500/10 text-pink-400">
-        <Heart className="h-5 w-5" />
+    <li className="group flex items-center gap-3.5 rounded-[24px] bg-white p-4 ring-1 ring-black/5 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.22)] transition duration-[220ms] hover:ring-[#76C139]/25 animate-in fade-in slide-in-from-bottom-1">
+      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#76C139]/12 text-[#76C139]">
+        <MapPin className="h-5 w-5" strokeWidth={1.8} />
       </span>
       <button onClick={onEdit} className="min-w-0 flex-1 text-left">
-        <span className="block truncate text-sm font-semibold">{fav.label}</span>
-        <span className="block truncate text-xs text-white/60">{fav.address}</span>
+        <span className="block truncate text-[18px] font-semibold leading-tight text-[#111418]">
+          {fav.label}
+        </span>
+        <span className="mt-0.5 block truncate text-[13px] text-[#707070]">
+          {fav.address}
+        </span>
       </button>
       <button
         onClick={onEdit}
-        className="rounded-full p-2 text-white/40 transition hover:bg-white/5 hover:text-white"
+        className="rounded-full p-2 text-[#707070] transition duration-200 hover:bg-[#F7F9F7] hover:text-[#111418] active:scale-90"
         aria-label="Editar"
       >
-        <Pencil className="h-4 w-4" />
+        <Pencil className="h-4 w-4" strokeWidth={2} />
       </button>
       <button
         onClick={onRemove}
-        className="rounded-full p-2 text-white/40 transition hover:bg-white/5 hover:text-red-400"
+        className="rounded-full p-2 text-[#707070] transition duration-200 hover:bg-[#F7F9F7] hover:text-[#c53030] active:scale-90"
         aria-label="Remover"
       >
-        <Trash2 className="h-4 w-4" />
+        <Trash2 className="h-4 w-4" strokeWidth={2} />
       </button>
+      <ChevronRight className="h-5 w-5 shrink-0 text-[#707070]/60" strokeWidth={2} />
     </li>
   );
 }
+
 
 interface PickedPlace {
   address: string;
