@@ -3925,23 +3925,23 @@ function SearchingPanel({
       </div>
 
       {/* Radar / searching animation — primary visual focus */}
-      <div className="relative mx-auto mb-2 grid h-[168px] w-[168px] place-items-center">
+      <div className="relative mx-auto mb-2 grid h-[120px] w-[120px] place-items-center">
         {/* concentric rings */}
         <span className="absolute inset-0 rounded-full bg-[#76C139]/8 animate-ping [animation-duration:2.4s]" />
         <span
-          className="absolute inset-4 rounded-full bg-[#76C139]/10 animate-ping [animation-duration:2.4s]"
+          className="absolute inset-3 rounded-full bg-[#76C139]/10 animate-ping [animation-duration:2.4s]"
           style={{ animationDelay: "0.4s" }}
         />
         <span
-          className="absolute inset-9 rounded-full bg-[#76C139]/14 animate-ping [animation-duration:2.4s]"
+          className="absolute inset-6 rounded-full bg-[#76C139]/14 animate-ping [animation-duration:2.4s]"
           style={{ animationDelay: "0.8s" }}
         />
-        <span className="absolute inset-[52px] rounded-full bg-white ring-1 ring-[#76C139]/25 shadow-[0_10px_28px_-14px_rgba(118,193,57,0.5)]" />
-        <span className="relative grid h-16 w-16 place-items-center rounded-full bg-gradient-to-br from-[#8FD24A] to-[#5A9A2A] text-white shadow-[0_12px_28px_-12px_rgba(118,193,57,0.65)]">
+        <span className="absolute inset-[38px] rounded-full bg-white ring-1 ring-[#76C139]/25 shadow-[0_10px_28px_-14px_rgba(118,193,57,0.5)]" />
+        <span className="relative grid h-12 w-12 place-items-center rounded-full bg-gradient-to-br from-[#8FD24A] to-[#5A9A2A] text-white shadow-[0_12px_28px_-12px_rgba(118,193,57,0.65)]">
           {CatIcon ? (
-            <CatIcon className="h-7 w-7" strokeWidth={1.75} />
+            <CatIcon className="h-6 w-6" strokeWidth={1.75} />
           ) : (
-            <Navigation2 className="h-7 w-7" strokeWidth={1.75} />
+            <Navigation2 className="h-6 w-6" strokeWidth={1.75} />
           )}
         </span>
       </div>
