@@ -3643,25 +3643,25 @@ function RideCategorySelector({
                 type="button"
                 onClick={() => onSelect(c)}
                 aria-pressed={active}
-                className={`group flex w-full items-center gap-3 rounded-[24px] bg-white px-4 py-3.5 text-left transition-[transform,box-shadow,border-color] duration-200 active:scale-[0.99] ${
+                className={`group flex w-full items-center gap-3 rounded-[18px] bg-white px-3 py-3 text-left transition-[transform,box-shadow,border-color] duration-200 active:scale-[0.99] ${
                   active
                     ? "scale-[1.01] border-2 border-[#76C139] shadow-[0_16px_36px_-18px_rgba(118,193,57,0.4)]"
                     : "border border-border/60 shadow-[0_6px_18px_-14px_rgba(15,23,42,0.18)] hover:border-[#76C139]/40"
                 }`}
               >
                 <span
-                  className={`grid h-14 w-14 shrink-0 place-items-center rounded-[18px] transition ${
+                  className={`grid h-12 w-12 shrink-0 place-items-center rounded-[14px] transition ${
                     active
                       ? "bg-[#76C139] text-white shadow-[0_10px_22px_-12px_rgba(118,193,57,0.55)]"
                       : "bg-[#76C139]/10 text-[#5A9A2A] group-hover:bg-[#76C139]/15"
                   }`}
                 >
-                  <Icon className="h-[26px] w-[26px]" strokeWidth={1.75} />
+                  <Icon className="h-[22px] w-[22px]" strokeWidth={1.75} />
                 </span>
 
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="truncate text-[17px] font-bold text-[#111418] leading-tight">
+                  <div className="flex items-start gap-2">
+                    <span className="line-clamp-2 break-words text-[16px] font-bold text-[#111418] leading-tight">
                       {c.label}
                     </span>
                     <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#76C139]/12 px-2 py-0.5 text-[11px] font-semibold text-[#5A9A2A]">
