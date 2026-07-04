@@ -11,6 +11,7 @@ import {
   Box,
   Car,
   Check,
+  CheckCircle2,
   ChevronRight,
   Clock,
   CreditCard,
@@ -18,12 +19,14 @@ import {
   LogOut,
   MapPin,
   Menu,
+  MessageCircle,
   Moon,
   Navigation2,
   Package,
   Phone,
   Search,
   Send,
+  Share2,
   Shield,
   Star,
   Sun,
@@ -2383,7 +2386,7 @@ function PassageiroApp() {
         (phase === "motorista_a_caminho" || phase === "motorista_chegou") && (
           <div
             className="pointer-events-none absolute inset-x-0 z-40 flex justify-center px-3"
-            style={{ top: "calc(env(safe-area-inset-top) + 76px)" }}
+            style={{ top: "calc(env(safe-area-inset-top) + 96px)" }}
           >
             <div className="pointer-events-auto w-full max-w-sm rounded-2xl bg-card/92 px-4 py-2.5 ring-1 ring-border/50 shadow-[0_10px_28px_-14px_rgba(0,0,0,0.55)] backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-400">
               <div className="flex items-center justify-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground/90">
@@ -2410,12 +2413,35 @@ function PassageiroApp() {
 
       {ride &&
         rideDriverInfo &&
+        phase === "motorista_a_caminho" && (
+          <div
+            className="pointer-events-none absolute inset-x-0 z-40 flex justify-center px-3"
+            style={{ top: "calc(env(safe-area-inset-top) + 16px)" }}
+          >
+            <div className="pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-[22px] bg-white/95 px-4 py-3 shadow-[0_18px_44px_-22px_rgba(15,23,42,0.45)] ring-1 ring-black/5 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#76C139]/15 text-[#76C139]">
+                <CheckCircle2 className="h-5 w-5" strokeWidth={2.25} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-[15px] font-bold leading-tight text-[#111418]">
+                  Motorista encontrado!
+                </div>
+                <div className="mt-0.5 text-[12px] font-medium text-[#707070]">
+                  Seu motorista está a caminho.
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+      {ride &&
+        rideDriverInfo &&
         (phase === "motorista_a_caminho" ||
           phase === "motorista_chegou" ||
           phase === "em_viagem") && (
           <MovviSheet
-            snaps={[26, 55, 92]}
-            initial={26}
+            snaps={[42, 68, 92]}
+            initial={42}
           >
             <DriverEnRoute
               ride={ride}
@@ -3713,78 +3739,183 @@ function DriverEnRoute({
     ? (ride.distance_km != null ? Number(ride.distance_km) : null)
     : approachKm;
 
+  const driverPhoneDigits = (driver.phone ?? "").replace(/\D/g, "");
+  const telHref = driverPhoneDigits
+    ? `tel:+${driverPhoneDigits.startsWith("55") ? driverPhoneDigits : "55" + driverPhoneDigits}`
+    : undefined;
+
   return (
-    <div className="pt-1 animate-in fade-in slide-in-from-bottom-2 duration-300">
-      <div className="mb-3 flex items-center justify-center gap-2 text-[10.5px] font-bold uppercase tracking-[0.22em] text-muted-foreground/90">
+    <div className="pt-1 pb-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
+      {/* Phase label */}
+      <div className="mb-3 flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-[#707070]">
         <span className="relative flex h-2 w-2">
-          <span className="absolute inset-0 animate-ping rounded-full bg-primary/60" />
-          <span className="relative h-2 w-2 rounded-full bg-primary" />
+          <span className="absolute inset-0 animate-ping rounded-full bg-[#76C139]/60" />
+          <span className="relative h-2 w-2 rounded-full bg-[#76C139]" />
         </span>
-        <span className="text-foreground/95">{phaseLabel}</span>
+        <span className="text-[#111418]">{phaseLabel}</span>
       </div>
 
-      {/* ETA destacado — só quando dados reais disponíveis */}
+      {/* Driver card */}
+      <button
+        type="button"
+        onClick={onOpenProfile}
+        aria-label="Ver perfil do motorista"
+        className="flex w-full items-center gap-4 rounded-[24px] bg-white p-5 text-left ring-1 ring-black/5 shadow-[0_14px_36px_-22px_rgba(15,23,42,0.35)] transition duration-[220ms] active:scale-[0.99] animate-in fade-in slide-in-from-bottom-1"
+        style={{ animationDelay: "40ms", animationFillMode: "backwards" }}
+      >
+        <div className="shrink-0 rounded-full ring-2 ring-white shadow-[0_8px_20px_-8px_rgba(0,0,0,0.35)]">
+          <Avatar src={driver.photo_url ?? null} name={driver.name} size={68} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-[22px] font-bold leading-tight tracking-tight text-[#111418]">
+            {driver.name}
+          </div>
+          <div className="mt-1 flex items-center gap-2">
+            <span className="inline-flex items-center gap-1 rounded-full bg-[#F7F9F7] px-2 py-0.5 text-[12px] font-semibold text-[#111418] ring-1 ring-black/5">
+              <Star className="h-3 w-3 fill-[#F5B301] text-[#F5B301]" strokeWidth={0} />
+              {driver.rating?.toFixed(1) ?? "5.0"}
+            </span>
+            <span className="text-[12px] font-medium text-[#707070]">MOVVI Driver</span>
+          </div>
+        </div>
+        <ChevronRight className="h-5 w-5 shrink-0 text-[#707070]" strokeWidth={2} />
+      </button>
+
+      {/* ETA — hero */}
       {(eta != null || distKm != null) && ride.status !== "motorista_chegou" && (
-        <div className="mb-3 flex items-center justify-between gap-3 rounded-2xl bg-background/50 px-4 py-3 ring-1 ring-border/60">
+        <div
+          className="mt-3 flex items-center justify-between gap-3 rounded-[24px] bg-white p-5 ring-1 ring-black/5 shadow-[0_14px_36px_-22px_rgba(118,193,57,0.45)] animate-in fade-in slide-in-from-bottom-1"
+          style={{ animationDelay: "80ms", animationFillMode: "backwards" }}
+        >
           <div>
-            <div className="text-[9.5px] font-semibold uppercase tracking-[0.2em] text-muted-foreground leading-none">
-              {isInTrip ? "Tempo restante" : "Chegando em"}
+            <div className="text-[13px] font-medium text-[#707070]">
+              {isInTrip ? "Tempo restante" : "Motorista chega em"}
             </div>
-            <div key={eta ?? "eta-empty"} className="mt-1.5 text-[26px] font-extrabold leading-none text-foreground tabular-nums animate-count-pop">
+            <div
+              key={eta ?? "eta-empty"}
+              className="mt-1 text-[30px] font-bold leading-none tracking-tight text-[#111418] tabular-nums animate-count-pop"
+            >
               {eta ?? "—"}
-              <span className="ml-1 text-[13px] font-semibold text-muted-foreground">min</span>
+              <span className="ml-1.5 text-[15px] font-semibold text-[#707070]">min</span>
             </div>
           </div>
-          <div className="text-right">
-            <div className="text-[9.5px] font-semibold uppercase tracking-[0.2em] text-muted-foreground leading-none">
-              Distância
+          <div className="flex items-center gap-2 rounded-full bg-[#76C139]/15 px-3.5 py-2 text-[12px] font-bold uppercase tracking-[0.14em] text-[#4a8a1e]">
+            <Clock className="h-3.5 w-3.5" strokeWidth={2.25} />
+            {distKm != null ? `${distKm.toFixed(1)} km` : "no caminho"}
+          </div>
+        </div>
+      )}
+
+      {ride.status === "motorista_chegou" && (
+        <div
+          className="mt-3 rounded-[24px] bg-[#76C139] p-5 text-white shadow-[0_18px_44px_-20px_rgba(118,193,57,0.75)] animate-in fade-in slide-in-from-bottom-1"
+          style={{ animationDelay: "80ms", animationFillMode: "backwards" }}
+        >
+          <div className="text-[13px] font-semibold uppercase tracking-[0.14em] text-white/85">
+            Chegou
+          </div>
+          <div className="mt-1 text-[22px] font-bold leading-tight">
+            Seu motorista está no ponto de embarque.
+          </div>
+        </div>
+      )}
+
+      {/* Vehicle card */}
+      <div
+        className="mt-3 flex items-center gap-4 rounded-[24px] bg-white p-4 ring-1 ring-black/5 shadow-[0_10px_28px_-20px_rgba(15,23,42,0.3)] animate-in fade-in slide-in-from-bottom-1"
+        style={{ animationDelay: "120ms", animationFillMode: "backwards" }}
+      >
+        <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-[#F7F9F7] text-[#111418]">
+          <Car className="h-7 w-7" strokeWidth={1.75} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-[16px] font-semibold text-[#111418]">
+            {driver.vehicle_model || "Veículo"}
+          </div>
+          <div className="mt-0.5 truncate text-[13px] font-medium text-[#707070]">
+            {driver.vehicle_color || "—"}
+          </div>
+        </div>
+        {driver.vehicle_plate && (
+          <div className="inline-flex items-center rounded-lg bg-[#111418] px-2.5 py-1.5 text-[12px] font-extrabold tracking-[0.2em] text-white shadow-[0_4px_10px_-4px_rgba(0,0,0,0.4)]">
+            {driver.vehicle_plate}
+          </div>
+        )}
+      </div>
+
+      {/* Quick actions — circular */}
+      <div
+        className="mt-4 grid grid-cols-3 gap-3 animate-in fade-in slide-in-from-bottom-1"
+        style={{ animationDelay: "160ms", animationFillMode: "backwards" }}
+      >
+        <QuickCircleAction
+          icon={<Phone className="h-5 w-5" strokeWidth={2} />}
+          label="Ligar"
+          href={telHref}
+          onClick={telHref ? undefined : () => toast.info("Telefone do motorista indisponível")}
+        />
+        <QuickCircleAction
+          icon={<MessageCircle className="h-5 w-5" strokeWidth={2} />}
+          label="Mensagem"
+          onClick={() => toast.info("Chat em breve")}
+        />
+        <QuickCircleAction
+          icon={<Share2 className="h-5 w-5" strokeWidth={2} />}
+          label="Compartilhar"
+          onClick={() => {
+            const text =
+              `MOVVI — Estou em uma corrida\n` +
+              `Motorista: ${driver.name}\n` +
+              `Veículo: ${driver.vehicle_color ?? ""} ${driver.vehicle_model ?? ""} (${driver.vehicle_plate ?? "-"})\n` +
+              `Destino: ${ride.destination_name ?? "-"}`;
+            if (navigator.share) {
+              navigator.share({ title: "MOVVI", text }).catch(() => {});
+            } else {
+              navigator.clipboard.writeText(text).then(() => toast.success("Detalhes copiados"));
+            }
+          }}
+        />
+      </div>
+
+      {/* Primary message */}
+      {ride.status === "motorista_a_caminho" && (
+        <p
+          className="mt-4 text-center text-[13px] font-medium leading-relaxed text-[#707070] animate-in fade-in"
+          style={{ animationDelay: "200ms", animationFillMode: "backwards" }}
+        >
+          Seu motorista está indo até o local de embarque.
+        </p>
+      )}
+
+      {/* PIN security card */}
+      {ride.safety_code && ride.status !== "em_viagem" && (
+        <div
+          className="mt-4 flex items-center gap-3 rounded-[24px] bg-white p-4 ring-1 ring-[#76C139]/25 shadow-[0_12px_32px_-22px_rgba(118,193,57,0.5)] animate-in fade-in slide-in-from-bottom-1"
+          style={{ animationDelay: "220ms", animationFillMode: "backwards" }}
+        >
+          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[#76C139]/15 text-[#76C139]">
+            <Shield className="h-5 w-5" strokeWidth={2} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#707070]">
+              Código de segurança
             </div>
-            <div key={distKm?.toFixed(1) ?? "d-empty"} className="mt-1.5 text-[17px] font-extrabold leading-none text-foreground tabular-nums animate-count-pop">
-              {distKm != null ? distKm.toFixed(1) : "—"}
-              <span className="ml-1 text-[11px] font-semibold text-muted-foreground">km</span>
+            <div className="mt-1 flex items-center gap-1.5">
+              {ride.safety_code.split("").map((d, i) => (
+                <span
+                  key={i}
+                  className="grid h-8 w-7 place-items-center rounded-md bg-[#F7F9F7] text-[16px] font-extrabold tabular-nums text-[#111418] ring-1 ring-black/5"
+                >
+                  {d}
+                </span>
+              ))}
             </div>
           </div>
         </div>
       )}
 
-      <button
-        type="button"
-        onClick={onOpenProfile}
-        className="flex w-full items-center gap-4 rounded-2xl bg-background/50 p-4 text-left ring-1 ring-border/60 transition active:scale-[0.99] hover:ring-primary/40"
-        aria-label="Ver perfil do motorista"
-      >
-        <div className="shrink-0 rounded-full ring-2 ring-white/85 shadow-[0_6px_18px_-6px_rgba(0,0,0,0.5)]">
-          <Avatar
-            src={driver.photo_url ?? null}
-            name={driver.name}
-            size={64}
-          />
-        </div>
-
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="truncate text-[15.5px] font-semibold tracking-tight text-foreground">
-              {driver.name}
-            </span>
-            <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-muted/35 px-1.5 py-0.5 text-[11px] font-medium text-foreground/85">
-              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-              {driver.rating?.toFixed(1) ?? "5.0"}
-            </span>
-          </div>
-          <div className="mt-1 truncate text-[12.5px] text-muted-foreground">
-            {driver.vehicle_color} · {driver.vehicle_model}
-          </div>
-          <div className="mt-2 inline-flex items-center rounded-md bg-white px-2 py-[3px] text-[11px] font-extrabold tracking-[0.2em] text-black shadow-[0_2px_6px_-2px_rgba(0,0,0,0.35)]">
-            {driver.vehicle_plate}
-          </div>
-        </div>
-        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/70" />
-      </button>
-
-
-      <RideQuickActions ride={ride} driver={driver} onCancel={onCancel} />
-
-      <div className="mt-3">
+      {/* Safety extras (SOS/incident) */}
+      <div className="mt-4">
         <SafetyCard
           role="passenger"
           rideId={ride.id}
@@ -3802,26 +3933,68 @@ function DriverEnRoute({
         />
       </div>
 
-      {/* Código de segurança exibido somente no cartão fixo no topo da tela. */}
-
-
-
-
-      <div className="mt-3 rounded-xl bg-background/50 px-3.5 py-2.5 text-[12px] ring-1 ring-border/60">
-        <div className="flex items-center gap-1.5">
-          <MapPin className="h-3 w-3 shrink-0 text-destructive" />
-          <span className="truncate">{ride.destination_name}</span>
+      {/* Destination + fare summary */}
+      <div className="mt-4 rounded-[20px] bg-white p-4 ring-1 ring-black/5">
+        <div className="flex items-center gap-2 text-[13px] text-[#111418]">
+          <MapPin className="h-4 w-4 shrink-0 text-[#76C139]" strokeWidth={2} />
+          <span className="truncate font-medium">{ride.destination_name}</span>
         </div>
         {ride.estimated_price && (
-          <div className="mt-1 flex items-center justify-between text-muted-foreground">
-            <span>Estimativa</span>
-            <span className="font-bold text-foreground">
+          <div className="mt-2 flex items-center justify-between text-[12px]">
+            <span className="text-[#707070]">Estimativa</span>
+            <span className="text-[14px] font-bold text-[#111418] tabular-nums">
               {formatBRL(Number(ride.estimated_price))}
             </span>
           </div>
         )}
       </div>
+
+      {/* Cancel — outlined secondary */}
+      {ride.status !== "em_viagem" && (
+        <button
+          type="button"
+          onClick={onCancel}
+          className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-[16px] border border-[#111418]/20 bg-white text-[14px] font-semibold text-[#111418] transition duration-[220ms] hover:border-[#111418]/40 hover:bg-[#F7F9F7] active:scale-[0.98]"
+        >
+          <X className="h-4 w-4" strokeWidth={2} />
+          Cancelar corrida
+        </button>
+      )}
     </div>
+  );
+}
+
+function QuickCircleAction({
+  icon,
+  label,
+  onClick,
+  href,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick?: () => void;
+  href?: string;
+}) {
+  const inner = (
+    <>
+      <span className="grid h-14 w-14 place-items-center rounded-full bg-white text-[#111418] ring-1 ring-black/5 shadow-[0_8px_20px_-12px_rgba(15,23,42,0.4)] transition duration-[220ms] group-active:scale-90 group-hover:ring-[#76C139]/40">
+        {icon}
+      </span>
+      <span className="text-[12px] font-semibold text-[#111418]">{label}</span>
+    </>
+  );
+  const cls = "group flex flex-col items-center gap-2";
+  if (href) {
+    return (
+      <a href={href} className={cls}>
+        {inner}
+      </a>
+    );
+  }
+  return (
+    <button type="button" onClick={onClick} className={cls}>
+      {inner}
+    </button>
   );
 }
 
