@@ -667,72 +667,139 @@ function PassengerRidesPage() {
     void load();
   }, []);
 
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const startOfWeek = startOfToday - 6 * 24 * 60 * 60 * 1000; // últimos 7 dias
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+
   const filtered = useMemo(() => {
     if (!rides) return null;
     if (filter === "todas") return rides;
-    if (filter === "finalizada") return rides.filter((r) => r.status === "finalizada");
-    return rides.filter((r) => r.status.startsWith("cancelada"));
-  }, [rides, filter]);
+    const threshold =
+      filter === "hoje" ? startOfToday : filter === "semana" ? startOfWeek : startOfMonth;
+    return rides.filter((r) => {
+      const iso = r.completed_at ?? r.created_at;
+      return new Date(iso).getTime() >= threshold;
+    });
+  }, [rides, filter, startOfToday, startOfWeek, startOfMonth]);
+
+  const stats = useMemo(() => {
+    if (!rides) return { today: 0, month: 0, total: 0 };
+    let today = 0;
+    let month = 0;
+    for (const r of rides) {
+      if (r.status !== "finalizada") continue;
+      const t = new Date(r.completed_at ?? r.created_at).getTime();
+      if (t >= startOfToday) today++;
+      if (t >= startOfMonth) month++;
+    }
+    const total = rides.filter((r) => r.status === "finalizada").length;
+    return { today, month, total };
+  }, [rides, startOfToday, startOfMonth]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="flex min-h-screen flex-col bg-[#F7F9F7]">
       <MovviHeader logoutRedirect="/" />
-      <main className="flex-1 px-4 py-6 pb-24">
+      <main className="flex-1 px-4 py-6 pb-28">
         <div className="container mx-auto max-w-xl">
-          <header className="mb-5 flex items-center gap-3">
-            <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/15 text-primary">
-              <ClipboardList className="h-5 w-5" />
-            </div>
-            <div>
-              <h1 className="font-display text-xl font-bold">Minhas corridas</h1>
-              <p className="text-xs text-muted-foreground">
-                Histórico das suas viagens com a MOVVI.
-              </p>
-            </div>
+          {/* Header */}
+          <header className="mb-5 animate-in fade-in slide-in-from-top-1 duration-300">
+            <h1 className="text-[28px] font-bold tracking-tight text-[#111418]">
+              Histórico de viagens
+            </h1>
+            <p className="mt-1 text-[13px] text-[#707070]">
+              Revise todas as suas corridas concluídas.
+            </p>
           </header>
 
-          <div className="mb-4 flex items-center gap-2 overflow-x-auto">
-            <Filter className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-            {(["todas", "finalizada", "cancelada"] as FilterKey[]).map((k) => (
-              <button
-                key={k}
-                onClick={() => setFilter(k)}
-                className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition ${
-                  filter === k
-                    ? "bg-primary text-primary-foreground"
-                    : "border border-border bg-card text-muted-foreground hover:text-foreground"
-                }`}
+          {/* Summary cards */}
+          <section
+            aria-label="Resumo"
+            className="mb-5 grid grid-cols-3 gap-2.5 animate-in fade-in slide-in-from-bottom-1 duration-300"
+          >
+            {[
+              { label: "Hoje", value: stats.today },
+              { label: "Este mês", value: stats.month },
+              { label: "Total", value: stats.total },
+            ].map((s) => (
+              <div
+                key={s.label}
+                className="rounded-[20px] bg-white p-3.5 ring-1 ring-black/5 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.22)]"
               >
-                {k === "todas" ? "Todas" : k === "finalizada" ? "Finalizadas" : "Canceladas"}
-              </button>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-[#707070]">
+                  {s.label}
+                </p>
+                <p className="mt-1 text-[26px] font-bold leading-none tracking-tight text-[#111418]">
+                  {rides === null ? "—" : s.value}
+                </p>
+              </div>
             ))}
+          </section>
+
+          {/* Filter pills */}
+          <div className="mb-4 -mx-1 flex items-center gap-2 overflow-x-auto px-1 pb-1 animate-in fade-in slide-in-from-left-2 duration-300">
+            {FILTERS.map((f) => {
+              const active = filter === f.key;
+              return (
+                <button
+                  key={f.key}
+                  onClick={() => setFilter(f.key)}
+                  className={`shrink-0 rounded-full px-4 py-2 text-[13px] font-semibold transition duration-200 active:scale-95 ${
+                    active
+                      ? "bg-[#111418] text-white shadow-[0_10px_24px_-14px_rgba(17,20,24,0.5)]"
+                      : "bg-white text-[#707070] ring-1 ring-black/5 hover:text-[#111418]"
+                  }`}
+                >
+                  {f.label}
+                </button>
+              );
+            })}
           </div>
 
           {error && (
-            <p className="rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
+            <p className="rounded-2xl bg-destructive/10 p-3 text-[13px] text-destructive ring-1 ring-destructive/30">
               {error}
             </p>
           )}
 
           {filtered === null && (
-            <p className="text-sm text-muted-foreground">Carregando…</p>
+            <div className="space-y-3">
+              {[0, 1, 2].map((i) => (
+                <div
+                  key={i}
+                  className="h-[140px] animate-pulse rounded-[24px] bg-white ring-1 ring-black/5"
+                />
+              ))}
+            </div>
           )}
 
           {filtered && filtered.length === 0 && (
-            <p className="rounded-2xl border border-dashed border-border bg-card/40 p-5 text-sm text-muted-foreground">
-              Nenhuma corrida encontrada neste filtro.
-            </p>
+            <div className="rounded-[24px] bg-white p-8 text-center ring-1 ring-black/5 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.22)] animate-in fade-in duration-300">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#76C139]/12">
+                <ClipboardList className="h-7 w-7 text-[#76C139]" strokeWidth={1.75} />
+              </div>
+              <h2 className="text-[18px] font-bold text-[#111418]">Nenhuma viagem ainda</h2>
+              <p className="mt-1 text-[13px] text-[#707070]">
+                Suas corridas concluídas aparecerão aqui.
+              </p>
+            </div>
           )}
 
           {filtered && filtered.length > 0 && (
             <div className="space-y-3">
               {filtered.map((r) => (
-                <RideCard key={r.id} ride={r} onOpen={() => setSelected(r)} />
+                <RideCard
+                  key={r.id}
+                  ride={r}
+                  onOpen={() => setSelected(r)}
+                  onReceipt={() => setReceiptRide(r)}
+                />
               ))}
             </div>
           )}
         </div>
       </main>
+
       <BottomNav items={PASSENGER_NAV} />
       <RideDetailSheet
         ride={selected}
