@@ -2413,26 +2413,95 @@ function PassageiroApp() {
 
       {ride &&
         rideDriverInfo &&
-        phase === "motorista_a_caminho" && (
-          <div
-            className="pointer-events-none absolute inset-x-0 z-40 flex justify-center px-3"
-            style={{ top: "calc(env(safe-area-inset-top) + 16px)" }}
-          >
-            <div className="pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-[22px] bg-white/95 px-4 py-3 shadow-[0_18px_44px_-22px_rgba(15,23,42,0.45)] ring-1 ring-black/5 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
-              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#76C139]/15 text-[#76C139]">
-                <CheckCircle2 className="h-5 w-5" strokeWidth={2.25} />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="text-[15px] font-bold leading-tight text-[#111418]">
-                  Motorista encontrado!
+        phase === "motorista_a_caminho" &&
+        (() => {
+          const dLat = rideDriverInfo.current_lat as number | null | undefined;
+          const dLng = rideDriverInfo.current_lng as number | null | undefined;
+          let approachKm: number | null = null;
+          if (
+            typeof dLat === "number" &&
+            typeof dLng === "number" &&
+            typeof ride.origin_lat === "number" &&
+            typeof ride.origin_lng === "number"
+          ) {
+            const R = 6371;
+            const toRad = (v: number) => (v * Math.PI) / 180;
+            const dφ = toRad(ride.origin_lat - dLat);
+            const dλ = toRad(ride.origin_lng - dLng);
+            const a =
+              Math.sin(dφ / 2) ** 2 +
+              Math.cos(toRad(dLat)) *
+                Math.cos(toRad(ride.origin_lat)) *
+                Math.sin(dλ / 2) ** 2;
+            approachKm = 2 * R * Math.asin(Math.min(1, Math.sqrt(a)));
+          }
+          const etaMin =
+            approachKm != null ? Math.max(1, Math.round((approachKm / 32) * 60)) : null;
+          const arrivalLabel =
+            etaMin != null
+              ? new Date(Date.now() + etaMin * 60_000).toLocaleTimeString("pt-BR", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              : null;
+          return (
+            <div
+              className="pointer-events-none absolute inset-x-0 z-40 flex justify-center px-3"
+              style={{ top: "calc(env(safe-area-inset-top) + 16px)" }}
+            >
+              <div className="pointer-events-auto w-full max-w-sm rounded-[22px] bg-white/90 px-4 py-3.5 shadow-[0_18px_44px_-22px_rgba(15,23,42,0.45)] ring-1 ring-black/5 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
+                <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[#707070]">
+                  <span className="relative flex h-2 w-2">
+                    <span className="absolute inset-0 animate-ping rounded-full bg-[#76C139]/60" />
+                    <span className="relative h-2 w-2 rounded-full bg-[#76C139]" />
+                  </span>
+                  <span className="text-[#111418]">Motorista a caminho</span>
                 </div>
-                <div className="mt-0.5 text-[12px] font-medium text-[#707070]">
-                  Seu motorista está a caminho.
+                <div className="mt-2.5 grid grid-cols-3 gap-2">
+                  <div>
+                    <div className="text-[11px] font-medium text-[#707070] leading-none">Chega em</div>
+                    <div
+                      key={etaMin ?? "eta"}
+                      className="mt-1.5 text-[30px] font-bold leading-none tracking-tight text-[#111418] tabular-nums animate-count-pop"
+                    >
+                      {etaMin ?? "—"}
+                      <span className="ml-1 text-[13px] font-semibold text-[#707070]">min</span>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] font-medium text-[#707070] leading-none">Distância</div>
+                    <div
+                      key={approachKm?.toFixed(1) ?? "d"}
+                      className="mt-1.5 text-[18px] font-bold leading-none text-[#111418] tabular-nums animate-count-pop"
+                    >
+                      {approachKm != null ? approachKm.toFixed(1) : "—"}
+                      <span className="ml-1 text-[12px] font-semibold text-[#707070]">km</span>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] font-medium text-[#707070] leading-none">Previsão</div>
+                    <div className="mt-1.5 text-[18px] font-bold leading-none text-[#111418] tabular-nums">
+                      {arrivalLabel ?? "—"}
+                    </div>
+                  </div>
+                </div>
+                {/* Subtle route progress line — visual only */}
+                <div className="mt-3 flex items-center gap-2">
+                  <span className="grid h-4 w-4 place-items-center rounded-full bg-[#111418] text-white">
+                    <Car className="h-2.5 w-2.5" strokeWidth={2.5} />
+                  </span>
+                  <div className="relative h-[3px] flex-1 overflow-hidden rounded-full bg-[#F7F9F7]">
+                    <div className="absolute inset-y-0 left-0 w-1/2 rounded-full bg-[#76C139]" />
+                    <div className="absolute inset-y-0 left-0 h-full w-1/3 animate-[shimmer_2.2s_ease-in-out_infinite] rounded-full bg-gradient-to-r from-transparent via-white/70 to-transparent" />
+                  </div>
+                  <span className="grid h-4 w-4 place-items-center rounded-full bg-[#76C139] text-white">
+                    <MapPin className="h-2.5 w-2.5" strokeWidth={2.5} />
+                  </span>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
       {ride &&
         rideDriverInfo &&
