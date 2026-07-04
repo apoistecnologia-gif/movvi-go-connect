@@ -728,6 +728,7 @@ function PassageiroApp() {
   const [sideMenuOpen, setSideMenuOpen] = useState(false);
   const [driverInfo, setDriverInfo] = useState<DriverRow | null>(null);
   const [driverProfileOpen, setDriverProfileOpen] = useState(false);
+  const [tripSosOpen, setTripSosOpen] = useState(false);
 
   // Solicita permissão de notificações push uma vez ao montar.
   useEffect(() => { void requestPushPermission(); }, []);
