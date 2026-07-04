@@ -3252,7 +3252,7 @@ function SheetContent({
         <div
           className="mb-2 -mx-1 animate-fade-slide"
           style={{
-            maxHeight: "calc(100dvh - 360px)",
+            maxHeight: "min(48dvh, calc(100dvh - 320px))",
             overflowY: "auto",
             overscrollBehavior: "contain",
             WebkitOverflowScrolling: "touch",
