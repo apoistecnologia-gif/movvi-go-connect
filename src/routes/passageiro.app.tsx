@@ -2336,15 +2336,20 @@ function PassageiroApp() {
 
 
       {ride && ride.status === "procurar_motorista" && (
-        <MovviSheet snaps={[22, 55, 88]} initial={22}>
+        <MovviSheet snaps={[42, 68, 92]} initial={68}>
           <SearchingPanel
             category={category}
             driversCount={nearbyCount}
             noDriversAvailable={noDriversAvailable}
             onCancel={cancelRide}
+            pickupLabel={ride.origin_name ?? ride.pickup_label ?? ""}
+            destinationLabel={ride.destination_name ?? ""}
+            fare={ride.estimated_price != null ? Number(ride.estimated_price) : null}
+            paymentMethod={paymentMethod}
           />
         </MovviSheet>
       )}
+
 
       {(DEV_MODE || isDevelopmentEnvironment()) && ride && ride.status === "procurar_motorista" && dispatchDiag && (
         <div className="pointer-events-auto absolute left-2 top-20 z-50 max-w-[280px] rounded-lg bg-black/85 p-2 font-mono text-[10px] text-white ring-1 ring-white/20">
@@ -3481,95 +3486,188 @@ function SearchingPanel({
   driversCount,
   noDriversAvailable,
   onCancel,
+  pickupLabel,
+  destinationLabel,
+  fare,
+  paymentMethod,
 }: {
   category: RideCategory;
   driversCount: number;
   noDriversAvailable?: boolean;
   onCancel: () => void;
+  pickupLabel?: string;
+  destinationLabel?: string;
+  fare?: number | null;
+  paymentMethod?: "dinheiro" | "pix" | "cartao_credito";
 }) {
   const cat = RIDE_CATEGORIES.find((c) => c.key === category)!;
-  const [elapsed, setElapsed] = useState(0);
+  const CatIcon = (cat as unknown as { icon?: LucideIcon }).icon;
+
+  // Rotating status messages — visual only, no backend logic.
+  const messages = noDriversAvailable
+    ? [
+        "Ampliando o raio de busca...",
+        "Verificando novos motoristas...",
+        "Aguarde só mais um instante...",
+      ]
+    : [
+        "Buscando motoristas próximos...",
+        "Verificando disponibilidade...",
+        "Escolhendo o melhor motorista...",
+        "Quase lá, preparando sua viagem...",
+      ];
+  const [msgIdx, setMsgIdx] = useState(0);
   useEffect(() => {
-    const i = setInterval(() => setElapsed((s) => s + 1), 1000);
-    return () => clearInterval(i);
-  }, []);
-  // raio em km cresce com o tempo (cap 8km), animado
-  const radiusKm = Math.min(8, 1 + elapsed * 0.25);
-  const mm = Math.floor(elapsed / 60)
-    .toString()
-    .padStart(2, "0");
-  const ss = (elapsed % 60).toString().padStart(2, "0");
+    const t = setInterval(() => setMsgIdx((i) => (i + 1) % messages.length), 2600);
+    return () => clearInterval(t);
+  }, [messages.length]);
+
+  const paymentLabel =
+    paymentMethod === "dinheiro"
+      ? "Dinheiro"
+      : paymentMethod === "pix"
+      ? "PIX"
+      : paymentMethod === "cartao_credito"
+      ? "Cartão de crédito"
+      : null;
 
   return (
-    <div className="px-1 pt-0.5">
-      {/* Header compacto: indicador pulsante + título + cancelar */}
-      <div className="flex items-center gap-3">
-        <div className="relative grid h-10 w-10 shrink-0 place-items-center">
-          <span className="absolute inset-0 animate-ping rounded-full bg-primary/25 [animation-duration:1.6s]" />
-          <span className="relative grid h-7 w-7 place-items-center rounded-full bg-primary text-base shadow-lg shadow-primary/40">
-            {cat.emoji}
+    <div className="pt-0.5 animate-in fade-in duration-[220ms]">
+      {/* Top status card — floating glass */}
+      <div className="mb-4 rounded-[22px] bg-white/95 px-4 py-3.5 ring-1 ring-border/60 shadow-[0_12px_32px_-20px_rgba(15,23,42,0.25)] backdrop-blur-xl animate-in fade-in slide-in-from-top-1 duration-[220ms]">
+        <div className="flex items-center gap-3">
+          <span className="relative grid h-9 w-9 shrink-0 place-items-center">
+            <span className="absolute inset-0 rounded-full bg-[#76C139]/25 animate-ping [animation-duration:1.8s]" />
+            <span className="relative grid h-3 w-3 place-items-center rounded-full bg-[#76C139] shadow-[0_0_0_4px_rgba(118,193,57,0.18)]" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-[16px] font-bold leading-tight text-[#111418]">
+              {noDriversAvailable ? "Ampliando busca..." : "Encontrando seu motorista"}
+            </div>
+            <div className="mt-0.5 truncate text-[12.5px] text-[#707070]">
+              Buscando motoristas próximos.
+            </div>
+          </div>
+          <span className="shrink-0 rounded-full bg-[#76C139]/12 px-2.5 py-1 text-[11px] font-semibold text-[#5A9A2A] tabular-nums">
+            {driversCount} {driversCount === 1 ? "próximo" : "próximos"}
           </span>
         </div>
-        <div className="min-w-0 flex-1">
-          <h2 className="truncate font-display text-[14px] font-extrabold leading-tight">
-            {noDriversAvailable ? "Nenhum motorista disponível" : "Procurando motoristas..."}
-          </h2>
-          <p className="truncate text-[11px] text-muted-foreground">
-            {noDriversAvailable ? "Tentando novamente" : `Conectando com ${cat.label} próximos`}
-          </p>
-        </div>
-        <button
-          onClick={onCancel}
-          aria-label="Cancelar solicitação"
-          className="shrink-0 rounded-full border border-destructive/40 bg-destructive/10 px-3 py-1.5 text-[11px] font-semibold text-destructive-foreground transition active:scale-[0.96] hover:bg-destructive/20"
-        >
-          Cancelar
-        </button>
       </div>
 
-      {/* Métricas compactas em linha */}
-      <div className="mt-2.5 grid grid-cols-3 gap-1.5">
-        <div className="rounded-lg bg-primary/10 px-2 py-1.5 text-center ring-1 ring-primary/30">
-          <div className="text-[13px] font-extrabold tabular-nums leading-none text-primary">
-            {driversCount}
-          </div>
-          <div className="mt-0.5 text-[9px] uppercase tracking-wider text-muted-foreground">
-            Motoristas
-          </div>
-        </div>
-        <div className="rounded-lg bg-background/60 px-2 py-1.5 text-center ring-1 ring-border">
-          <div className="text-[13px] font-extrabold tabular-nums leading-none text-foreground">
-            {radiusKm.toFixed(1)}<span className="text-[9px] font-bold">km</span>
-          </div>
-          <div className="mt-0.5 text-[9px] uppercase tracking-wider text-muted-foreground">
-            Raio
-          </div>
-        </div>
-        <div className="rounded-lg bg-background/60 px-2 py-1.5 text-center ring-1 ring-border">
-          <div className="text-[13px] font-extrabold tabular-nums leading-none text-foreground">
-            {mm}:{ss}
-          </div>
-          <div className="mt-0.5 text-[9px] uppercase tracking-wider text-muted-foreground">
-            Tempo
-          </div>
-        </div>
-      </div>
-
-      {/* Indeterminate premium progress bar */}
-      <div className="relative mt-3 h-1 w-full overflow-hidden rounded-full bg-muted/40">
-        <div
-          className="animate-movvi-indeterminate absolute inset-y-0 left-0 h-full w-2/5 rounded-full bg-gradient-to-r from-transparent via-primary to-transparent"
+      {/* Radar / searching animation — primary visual focus */}
+      <div className="relative mx-auto mb-2 grid h-[168px] w-[168px] place-items-center">
+        {/* concentric rings */}
+        <span className="absolute inset-0 rounded-full bg-[#76C139]/8 animate-ping [animation-duration:2.4s]" />
+        <span
+          className="absolute inset-4 rounded-full bg-[#76C139]/10 animate-ping [animation-duration:2.4s]"
+          style={{ animationDelay: "0.4s" }}
         />
+        <span
+          className="absolute inset-9 rounded-full bg-[#76C139]/14 animate-ping [animation-duration:2.4s]"
+          style={{ animationDelay: "0.8s" }}
+        />
+        <span className="absolute inset-[52px] rounded-full bg-white ring-1 ring-[#76C139]/25 shadow-[0_10px_28px_-14px_rgba(118,193,57,0.5)]" />
+        <span className="relative grid h-16 w-16 place-items-center rounded-full bg-gradient-to-br from-[#8FD24A] to-[#5A9A2A] text-white shadow-[0_12px_28px_-12px_rgba(118,193,57,0.65)]">
+          {CatIcon ? (
+            <CatIcon className="h-7 w-7" strokeWidth={1.75} />
+          ) : (
+            <Navigation2 className="h-7 w-7" strokeWidth={1.75} />
+          )}
+        </span>
       </div>
 
-      {/* Dica de arraste — visível só nos primeiros segundos */}
-      <p className="mt-2 text-center text-[10px] text-muted-foreground/80">
-        Arraste para cima para mais detalhes
+      {/* Rotating status message */}
+      <div className="mb-1 flex min-h-[22px] items-center justify-center">
+        <p
+          key={msgIdx}
+          className="animate-in fade-in slide-in-from-bottom-1 duration-[300ms] text-[15px] font-medium text-[#111418]"
+        >
+          {messages[msgIdx]}
+        </p>
+      </div>
+      <p className="mb-4 text-center text-[12.5px] text-[#707070]">
+        Costuma levar menos de 30 segundos.
       </p>
 
+      {/* Trip summary card */}
+      {(pickupLabel || destinationLabel || fare != null || paymentLabel) && (
+        <div className="mb-3.5 rounded-[24px] bg-white p-4 ring-1 ring-border/60 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.22)] animate-in fade-in slide-in-from-bottom-1 duration-[220ms]">
+          {(pickupLabel || destinationLabel) && (
+            <div className="flex items-stretch gap-3.5">
+              <div className="flex flex-col items-center pt-1">
+                <span className="h-2.5 w-2.5 rounded-full bg-[#76C139] ring-4 ring-[#76C139]/15" />
+                <span className="my-1.5 w-px flex-1 bg-gradient-to-b from-[#76C139]/40 via-border/60 to-[#111418]/30" />
+                <span className="grid h-5 w-5 place-items-center rounded-full bg-[#111418] text-white">
+                  <MapPin className="h-[11px] w-[11px]" strokeWidth={2.25} />
+                </span>
+              </div>
+              <div className="min-w-0 flex-1">
+                <div>
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#707070] leading-none">
+                    Embarque
+                  </div>
+                  <div className="mt-1 truncate text-[14.5px] font-semibold text-[#111418] leading-snug">
+                    {pickupLabel || "Localização atual"}
+                  </div>
+                </div>
+                <div className="my-2.5 h-px bg-border/50" />
+                <div>
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#707070] leading-none">
+                    Destino
+                  </div>
+                  <div className="mt-1 truncate text-[14.5px] font-semibold text-[#111418] leading-snug">
+                    {destinationLabel || "—"}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {(cat || fare != null || paymentLabel) && (
+            <div className="mt-3.5 grid grid-cols-3 gap-2.5 border-t border-border/50 pt-3.5">
+              <div className="min-w-0">
+                <div className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-[#707070] leading-none">
+                  Categoria
+                </div>
+                <div className="mt-1 truncate text-[13.5px] font-semibold text-[#111418]">
+                  {cat.label}
+                </div>
+              </div>
+              <div className="min-w-0">
+                <div className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-[#707070] leading-none">
+                  Valor
+                </div>
+                <div className="mt-1 truncate text-[13.5px] font-bold text-[#111418] tabular-nums">
+                  {fare != null ? formatBRL(fare) : "—"}
+                </div>
+              </div>
+              <div className="min-w-0">
+                <div className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-[#707070] leading-none">
+                  Pagamento
+                </div>
+                <div className="mt-1 truncate text-[13.5px] font-semibold text-[#111418]">
+                  {paymentLabel ?? "—"}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Cancel — outlined, secondary */}
+      <button
+        type="button"
+        onClick={onCancel}
+        aria-label="Cancelar solicitação"
+        className="flex h-12 w-full items-center justify-center gap-2 rounded-[16px] border border-[#111418]/25 bg-white text-[14px] font-semibold text-[#111418] transition duration-[220ms] hover:bg-[#F7F9F7] hover:border-[#111418]/40 active:scale-[0.98]"
+      >
+        <X className="h-4 w-4" strokeWidth={2} />
+        Cancelar solicitação
+      </button>
     </div>
   );
 }
+
 
 function DriverEnRoute({
   ride,
