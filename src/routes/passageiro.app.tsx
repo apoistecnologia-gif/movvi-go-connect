@@ -2965,9 +2965,9 @@ function StepFlow({
 
   return (
     <div className="animate-in fade-in duration-200">
-      {/* Cabeçalho do destino com voltar */}
-      <div className="mb-3 flex items-center gap-2 rounded-xl bg-background/60 px-2.5 py-2 ring-1 ring-border">
-        {(uiStage === "selecting_category" || uiStage === "confirming_request") && (
+      {/* Header MOVVI DS — título quando escolhendo categoria */}
+      {(uiStage === "selecting_category" || uiStage === "confirming_request") && (
+        <div className="mb-3 flex items-start gap-3 animate-in fade-in slide-in-from-top-1 duration-200">
           <button
             type="button"
             onClick={() => {
@@ -2975,26 +2975,40 @@ function StepFlow({
               else setUiStage("route_preview");
             }}
             aria-label="Voltar"
-            className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-accent/40"
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-card text-[#1B1B1B] ring-1 ring-border/60 shadow-[0_6px_18px_-14px_rgba(15,23,42,0.25)] transition active:scale-[0.92]"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="h-[18px] w-[18px]" strokeWidth={2} />
           </button>
-        )}
-        <MapPin className="h-4 w-4 shrink-0 text-destructive" />
-        <span className="line-clamp-1 flex-1 text-[12.5px] font-medium">
+          <div className="min-w-0 flex-1">
+            <h2 className="truncate text-[24px] font-bold leading-tight tracking-tight text-[#111418]">
+              Escolha sua corrida
+            </h2>
+            <p className="mt-0.5 truncate text-[13px] text-[#707070]">
+              Selecione a melhor opção para sua viagem.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Cabeçalho do destino */}
+      <div className="mb-3 flex items-center gap-2.5 rounded-[20px] bg-white px-3.5 py-2.5 ring-1 ring-border/60 shadow-[0_6px_18px_-14px_rgba(15,23,42,0.18)]">
+        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#76C139]/10 text-[#76C139]">
+          <MapPin className="h-[16px] w-[16px]" strokeWidth={2} />
+        </span>
+        <span className="line-clamp-1 flex-1 text-[13px] font-semibold text-[#111418]">
           {destination.label}
         </span>
         <button
           onClick={onClearDestination}
           aria-label="Remover destino"
-          className="rounded-full p-1 text-muted-foreground hover:bg-accent/40"
+          className="grid h-8 w-8 place-items-center rounded-full text-[#707070] transition hover:bg-[#F7F9F7] active:scale-[0.92]"
         >
-          <X className="h-4 w-4" />
+          <X className="h-4 w-4" strokeWidth={2} />
         </button>
       </div>
 
       {error && (
-        <p className="mb-2 rounded-xl bg-destructive/15 px-3 py-2 text-xs text-destructive-foreground ring-1 ring-destructive/40">
+        <p className="mb-3 rounded-2xl bg-destructive/10 px-4 py-3 text-[12.5px] font-medium text-destructive ring-1 ring-destructive/30 animate-in fade-in duration-200">
           {error}
         </p>
       )}
