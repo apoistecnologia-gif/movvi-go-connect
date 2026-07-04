@@ -22,11 +22,11 @@ const buttonVariants = cva(
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {
-        // Unified 56px primary CTA per launch QA spec.
-        default: "h-14 px-6",
-        sm: "h-10 rounded-[14px] px-4 text-[13px]",
-        lg: "h-14 rounded-[18px] px-8 text-[15px]",
-        icon: "h-11 w-11 rounded-full",
+        // Mobile-density pass: 48px primary CTA (was 56) — thumb-comfortable but no wasted height.
+        default: "h-12 px-5",
+        sm: "h-9 rounded-[12px] px-3.5 text-[13px]",
+        lg: "h-12 rounded-[16px] px-7 text-[15px]",
+        icon: "h-10 w-10 rounded-full",
       },
     },
     defaultVariants: {
