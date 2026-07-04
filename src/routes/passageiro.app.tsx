@@ -3121,9 +3121,9 @@ function SheetContent({
               onOpenAddressDetails();
             }
           }}
-          className="mb-2.5 flex w-full cursor-pointer items-center gap-2.5 rounded-[18px] border border-border/60 bg-card px-3 py-2 text-left shadow-[0_8px_24px_-16px_rgba(15,23,42,0.18)] transition active:scale-[0.99] hover:border-[#76C139]/40 animate-in fade-in slide-in-from-bottom-1 duration-300"
+          className="press-scale surface-card animate-card-in mb-2.5 flex w-full cursor-pointer items-center gap-2.5 rounded-2xl px-3 py-2 text-left shadow-[var(--ds-shadow-card)] hover:border-primary/40"
         >
-          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#76C139]/10 text-[#76C139]">
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
             <MapPin className="h-[15px] w-[15px]" strokeWidth={2} />
           </span>
           <div className="min-w-0 flex-1">
