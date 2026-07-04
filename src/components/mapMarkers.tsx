@@ -28,18 +28,18 @@ export function PassengerLocationMarker({
 }) {
   return (
     <>
-      {/* glow externo — pulsa via zIndex baixo, respiração implícita da UI */}
+      {/* glow externo — reduzido ~40% para acabamento premium */}
       <Marker
         position={position}
         clickable={false}
         zIndex={9996}
         icon={{
           path: safeSymbol("CIRCLE"),
-          scale: 28,
+          scale: 17,
           fillColor: color,
-          fillOpacity: 0.1,
+          fillOpacity: 0.06,
           strokeColor: color,
-          strokeOpacity: 0.25,
+          strokeOpacity: 0.15,
           strokeWeight: 1,
         }}
       />
@@ -49,11 +49,11 @@ export function PassengerLocationMarker({
         zIndex={9997}
         icon={{
           path: safeSymbol("CIRCLE"),
-          scale: 18,
+          scale: 12,
           fillColor: color,
-          fillOpacity: 0.22,
+          fillOpacity: 0.14,
           strokeColor: color,
-          strokeOpacity: 0.5,
+          strokeOpacity: 0.3,
           strokeWeight: 1,
         }}
       />
@@ -64,23 +64,23 @@ export function PassengerLocationMarker({
         zIndex={9998}
         icon={{
           path: safeSymbol("CIRCLE"),
-          scale: 11,
+          scale: 9,
           fillColor: "#000000",
-          fillOpacity: 0.2,
+          fillOpacity: 0.16,
           strokeWeight: 0,
         }}
       />
-      {/* núcleo */}
+      {/* núcleo — 32px total (scale 8 = ~16px raio) */}
       <Marker
         position={position}
         zIndex={9999}
         icon={{
           path: safeSymbol("CIRCLE"),
-          scale: 9,
+          scale: 8,
           fillColor: color,
           fillOpacity: 1,
           strokeColor: "#ffffff",
-          strokeWeight: 3.5,
+          strokeWeight: 3,
         }}
       />
     </>
@@ -99,18 +99,18 @@ export function PlacePinMarker({
 }) {
   return (
     <>
-      {/* halo colorido */}
+      {/* halo colorido — reduzido ~40% */}
       <Marker
         position={position}
         clickable={false}
         zIndex={zIndexBase}
         icon={{
           path: safeSymbol("CIRCLE"),
-          scale: 16,
+          scale: 10,
           fillColor: color,
-          fillOpacity: 0.16,
+          fillOpacity: 0.1,
           strokeColor: color,
-          strokeOpacity: 0.4,
+          strokeOpacity: 0.25,
           strokeWeight: 1,
         }}
       />
@@ -121,14 +121,14 @@ export function PlacePinMarker({
         zIndex={zIndexBase + 1}
         icon={{
           path: safeSymbol("CIRCLE"),
-          scale: 6,
+          scale: 5,
           fillColor: "#000000",
-          fillOpacity: 0.25,
+          fillOpacity: 0.2,
           strokeWeight: 0,
           anchor: safePoint(0, -2),
         }}
       />
-      {/* pino em si — maior + borda branca grossa */}
+      {/* pino em si — 36px de altura visual */}
       <Marker
         position={position}
         zIndex={zIndexBase + 2}
@@ -137,8 +137,8 @@ export function PlacePinMarker({
           fillColor: color,
           fillOpacity: 1,
           strokeColor: "#ffffff",
-          strokeWeight: 2.5,
-          scale: 2.2,
+          strokeWeight: 2,
+          scale: 1.7,
           anchor: safePoint(12, 22),
         }}
       />
@@ -155,7 +155,7 @@ export function InterpolatedDriverMarker({
   position,
   heading,
   color = "#2563eb",
-  scale = 2.1,
+  scale = 1.7,
 }: {
   position: LatLng;
   heading?: number | null;
@@ -219,18 +219,18 @@ export function InterpolatedDriverMarker({
 
   return (
     <>
-      {/* halo suave — sensação "vivo" quando parado */}
+      {/* halo suave — reduzido ~40% */}
       <Marker
         position={display}
         clickable={false}
         zIndex={9997}
         icon={{
           path: safeSymbol("CIRCLE"),
-          scale: 22,
+          scale: 13,
           fillColor: color,
-          fillOpacity: 0.12,
+          fillOpacity: 0.08,
           strokeColor: color,
-          strokeOpacity: 0.3,
+          strokeOpacity: 0.2,
           strokeWeight: 1,
         }}
       />
@@ -241,13 +241,13 @@ export function InterpolatedDriverMarker({
         zIndex={9998}
         icon={{
           path: safeSymbol("CIRCLE"),
-          scale: 13,
+          scale: 10,
           fillColor: "#000000",
-          fillOpacity: 0.22,
+          fillOpacity: 0.18,
           strokeWeight: 0,
         }}
       />
-      {/* carro */}
+      {/* carro — 32px */}
       <Marker
         position={display}
         zIndex={10000}
@@ -256,7 +256,7 @@ export function InterpolatedDriverMarker({
           fillColor: color,
           fillOpacity: 1,
           strokeColor: "#ffffff",
-          strokeWeight: 2.4,
+          strokeWeight: 2.2,
           scale,
           rotation: displayHeading,
           anchor: safePoint(12, 14),

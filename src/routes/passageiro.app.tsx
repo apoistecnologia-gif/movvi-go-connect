@@ -1518,6 +1518,12 @@ function PassageiroApp() {
         bounds.extend(position);
         bounds.extend(dest);
         mapRef.current.fitBounds(bounds, { top: 90, bottom: Math.round(window.innerHeight * 0.5) + 16, left: 48, right: 48 });
+        // Nunca zoom < 13: enquadra apenas o par de pontos, jamais o estado inteiro.
+        const listener = google.maps.event.addListenerOnce(mapRef.current, "idle", () => {
+          const z = mapRef.current?.getZoom();
+          if (typeof z === "number" && z < 13) mapRef.current?.setZoom(13);
+        });
+        void listener;
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Falha ao calcular rota.");
@@ -1997,14 +2003,23 @@ function PassageiroApp() {
     // por isso o bottom padding precisa ser generoso (>= 360px) e o zoom
     // NÃO deve estourar em cima do pickup.
     const bottomPad = ride.status === "procurar_motorista"
-      ? Math.max(360, Math.round(window.innerHeight * 0.48))
-      : Math.round(window.innerHeight * 0.28) + 16;
+      ? Math.max(280, Math.round(window.innerHeight * 0.42))
+      : Math.round(window.innerHeight * 0.24) + 12;
     mapRef.current.fitBounds(bounds, {
-      top: 150,
+      top: 130,
       bottom: bottomPad,
-      left: 48,
-      right: 48,
+      left: 56,
+      right: 56,
     });
+    // Enquadra APENAS os pontos (passageiro + motorista/destino).
+    // Bloqueia zoom-out excessivo que mostraria estados inteiros.
+    const m = mapRef.current;
+    const listener = google.maps.event.addListenerOnce(m, "idle", () => {
+      const z = m.getZoom();
+      if (typeof z === "number" && z < 13) m.setZoom(13);
+      if (typeof z === "number" && z > 17) m.setZoom(17);
+    });
+    void listener;
   }, [ride?.id, ride?.status, rideDriverInfo?.current_lat, rideDriverInfo?.current_lng, position]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ---------------------- GPS initial loading ---------------------- */
@@ -2439,7 +2454,7 @@ function PassageiroApp() {
           className="pointer-events-none absolute inset-x-0 z-40 flex justify-center px-3"
           style={{ top: "calc(env(safe-area-inset-top) + 16px)" }}
         >
-          <div className="pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-[22px] bg-white/95 px-4 py-3.5 shadow-[0_18px_44px_-22px_rgba(118,193,57,0.55)] ring-1 ring-[#76C139]/25 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-[22px] bg-white/95 px-4 py-3.5 shadow-[0_12px_28px_-20px_rgba(118,193,57,0.32)] ring-1 ring-[#76C139]/25 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
             <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[#76C139] text-white shadow-[0_8px_20px_-8px_rgba(118,193,57,0.8)]">
               <CheckCircle2 className="h-6 w-6" strokeWidth={2.25} />
             </div>
@@ -2494,7 +2509,7 @@ function PassageiroApp() {
               className="pointer-events-none absolute inset-x-0 z-40 flex justify-center px-3"
               style={{ top: "calc(env(safe-area-inset-top) + 16px)" }}
             >
-              <div className="pointer-events-auto w-full max-w-sm rounded-[22px] bg-white/90 px-4 py-3.5 shadow-[0_18px_44px_-22px_rgba(15,23,42,0.45)] ring-1 ring-black/5 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="pointer-events-auto w-full max-w-sm rounded-[18px] bg-white/92 px-3.5 py-2 shadow-[0_12px_28px_-18px_rgba(15,23,42,0.35)] ring-1 ring-black/5 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
                 <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[#707070]">
                   <span className="relative flex h-2 w-2">
                     <span className="absolute inset-0 animate-ping rounded-full bg-[#76C139]/60" />
@@ -2507,7 +2522,7 @@ function PassageiroApp() {
                     <div className="text-[11px] font-medium text-[#707070] leading-none">Chega em</div>
                     <div
                       key={etaMin ?? "eta"}
-                      className="mt-1.5 text-[30px] font-bold leading-none tracking-tight text-[#111418] tabular-nums animate-count-pop"
+                      className="mt-1.5 text-[22px] font-bold leading-none tracking-tight text-[#111418] tabular-nums animate-count-pop"
                     >
                       {etaMin ?? "—"}
                       <span className="ml-1 text-[13px] font-semibold text-[#707070]">min</span>
@@ -2517,7 +2532,7 @@ function PassageiroApp() {
                     <div className="text-[11px] font-medium text-[#707070] leading-none">Distância</div>
                     <div
                       key={approachKm?.toFixed(1) ?? "d"}
-                      className="mt-1.5 text-[18px] font-bold leading-none text-[#111418] tabular-nums animate-count-pop"
+                      className="mt-1 text-[15px] font-bold leading-none text-[#111418] tabular-nums animate-count-pop"
                     >
                       {approachKm != null ? approachKm.toFixed(1) : "—"}
                       <span className="ml-1 text-[12px] font-semibold text-[#707070]">km</span>
@@ -2525,7 +2540,7 @@ function PassageiroApp() {
                   </div>
                   <div>
                     <div className="text-[11px] font-medium text-[#707070] leading-none">Previsão</div>
-                    <div className="mt-1.5 text-[18px] font-bold leading-none text-[#111418] tabular-nums">
+                    <div className="mt-1 text-[15px] font-bold leading-none text-[#111418] tabular-nums">
                       {arrivalLabel ?? "—"}
                     </div>
                   </div>
@@ -2568,7 +2583,7 @@ function PassageiroApp() {
               className="pointer-events-none absolute inset-x-0 z-40 flex justify-center px-3"
               style={{ top: "calc(env(safe-area-inset-top) + 16px)" }}
             >
-              <div className="pointer-events-auto w-full max-w-sm rounded-[22px] bg-white/90 px-4 py-3.5 shadow-[0_18px_44px_-22px_rgba(15,23,42,0.45)] ring-1 ring-black/5 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="pointer-events-auto w-full max-w-sm rounded-[18px] bg-white/92 px-3.5 py-2 shadow-[0_12px_28px_-18px_rgba(15,23,42,0.35)] ring-1 ring-black/5 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
                 <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[#707070]">
                   <span className="relative flex h-2 w-2">
                     <span className="absolute inset-0 animate-ping rounded-full bg-[#76C139]/60" />
@@ -2583,7 +2598,7 @@ function PassageiroApp() {
                     </div>
                     <div
                       key={remainingMin ?? "eta"}
-                      className="mt-1.5 text-[30px] font-bold leading-none tracking-tight text-[#111418] tabular-nums animate-count-pop"
+                      className="mt-1.5 text-[22px] font-bold leading-none tracking-tight text-[#111418] tabular-nums animate-count-pop"
                     >
                       {remainingMin ?? "—"}
                       <span className="ml-1 text-[13px] font-semibold text-[#707070]">min</span>
@@ -2593,7 +2608,7 @@ function PassageiroApp() {
                     <div className="text-[11px] font-medium text-[#707070] leading-none">Distância</div>
                     <div
                       key={remainingKm?.toFixed(1) ?? "d"}
-                      className="mt-1.5 text-[18px] font-bold leading-none text-[#111418] tabular-nums animate-count-pop"
+                      className="mt-1 text-[15px] font-bold leading-none text-[#111418] tabular-nums animate-count-pop"
                     >
                       {remainingKm != null ? remainingKm.toFixed(1) : "—"}
                       <span className="ml-1 text-[12px] font-semibold text-[#707070]">km</span>
@@ -2601,7 +2616,7 @@ function PassageiroApp() {
                   </div>
                   <div>
                     <div className="text-[11px] font-medium text-[#707070] leading-none">Chegada</div>
-                    <div className="mt-1.5 text-[18px] font-bold leading-none text-[#111418] tabular-nums">
+                    <div className="mt-1 text-[15px] font-bold leading-none text-[#111418] tabular-nums">
                       {arrivalLabel ?? "—"}
                     </div>
                   </div>
@@ -2759,7 +2774,7 @@ function PassageiroApp() {
               </div>
 
               {/* Fare card */}
-              <div className="rounded-[24px] bg-white p-5 ring-1 ring-[#76C139]/25 shadow-[0_16px_36px_-20px_rgba(118,193,57,0.35)] animate-in fade-in slide-in-from-bottom-2 duration-[220ms]">
+              <div className="rounded-[24px] bg-white p-5 ring-1 ring-[#76C139]/25 shadow-[0_10px_24px_-18px_rgba(118,193,57,0.22)] animate-in fade-in slide-in-from-bottom-2 duration-[220ms]">
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-[11px] font-semibold uppercase tracking-wider text-[#707070]">Total pago</div>
@@ -2894,7 +2909,7 @@ function PassageiroApp() {
               {/* Primary DONE button */}
               <button
                 onClick={resetRide}
-                className="flex h-14 w-full items-center justify-center rounded-[18px] bg-[#76C139] text-[15px] font-bold uppercase tracking-wider text-white shadow-[0_16px_32px_-16px_rgba(118,193,57,0.55)] transition duration-[220ms] active:scale-[0.98] hover:brightness-[1.04]"
+                className="flex h-12 w-full items-center justify-center rounded-[16px] bg-[#76C139] text-[15px] font-bold uppercase tracking-wider text-white shadow-[0_10px_22px_-14px_rgba(118,193,57,0.35)] transition duration-[220ms] active:scale-[0.98] hover:brightness-[1.04]"
               >
                 Concluir
               </button>
@@ -2952,9 +2967,9 @@ function FavoritesStrip({ onPick }: { onPick: (point: LatLng, label: string) => 
             key={f.id}
             type="button"
             onClick={() => onPick({ lat: f.lat, lng: f.lng }, f.address)}
-            className="flex shrink-0 items-center gap-2 rounded-full border border-border/60 bg-card px-3.5 py-2 text-[13px] font-semibold text-foreground shadow-[0_4px_14px_-10px_rgba(15,23,42,0.2)] transition hover:border-[#76C139]/50 hover:bg-[#76C139]/5 active:scale-[0.97]"
+            className="flex shrink-0 items-center gap-2 rounded-full border border-border/60 bg-card px-3 py-1.5 text-[12.5px] font-semibold text-foreground shadow-[0_4px_14px_-10px_rgba(15,23,42,0.2)] transition hover:border-[#76C139]/50 hover:bg-[#76C139]/5 active:scale-[0.97]"
           >
-            <Icon className="h-4 w-4 text-[#76C139]" strokeWidth={2} />
+            <Icon className="h-3.5 w-3.5 text-[#76C139]" strokeWidth={2} />
             <span className="max-w-[140px] truncate">{f.label}</span>
           </button>
         );
@@ -2962,10 +2977,10 @@ function FavoritesStrip({ onPick }: { onPick: (point: LatLng, label: string) => 
       <button
         type="button"
         onClick={() => navigate({ to: "/passageiro/favoritos" })}
-        className="flex shrink-0 items-center gap-2 rounded-full border border-dashed border-border/70 px-3.5 py-2 text-[13px] font-semibold text-muted-foreground transition hover:border-[#76C139]/50 hover:text-foreground active:scale-[0.97]"
+        className="flex shrink-0 items-center gap-2 rounded-full border border-dashed border-border/70 px-3 py-1.5 text-[12.5px] font-semibold text-muted-foreground transition hover:border-[#76C139]/50 hover:text-foreground active:scale-[0.97]"
 
       >
-        <Heart className="h-4 w-4" strokeWidth={2} />
+        <Heart className="h-3.5 w-3.5" strokeWidth={2} />
         <span>{items.length === 0 ? "Adicionar favoritos" : "Gerenciar"}</span>
       </button>
     </div>
@@ -3472,7 +3487,7 @@ function StepFlow({
               setUiStage("selecting_category");
               onExpandSheet(88);
             }}
-            className="flex h-14 w-full items-center justify-center rounded-[18px] bg-[#76C139] text-[15px] font-bold text-[#071008] shadow-[0_16px_32px_-16px_rgba(118,193,57,0.55)] transition active:scale-[0.98]"
+            className="flex h-12 w-full items-center justify-center rounded-[16px] bg-[#76C139] text-[15px] font-bold text-[#071008] shadow-[0_10px_22px_-14px_rgba(118,193,57,0.35)] transition active:scale-[0.98]"
           >
             Continuar
           </button>
@@ -3574,7 +3589,7 @@ function StepFlow({
 
           {/* Fare card — compact hero */}
           <div
-            className="flex items-center justify-between gap-3 rounded-[16px] bg-white px-3 py-2 ring-1 ring-[#76C139]/25 shadow-[0_16px_36px_-20px_rgba(118,193,57,0.35)] animate-in fade-in duration-[220ms]"
+            className="flex items-center justify-between gap-3 rounded-[16px] bg-white px-3 py-2 ring-1 ring-[#76C139]/25 shadow-[0_10px_24px_-18px_rgba(118,193,57,0.22)] animate-in fade-in duration-[220ms]"
             style={{ animationDelay: "80ms", animationFillMode: "backwards" }}
           >
             <div className="flex items-baseline gap-2 min-w-0">
@@ -3642,20 +3657,20 @@ function StepFlow({
 
 function FareEstimateCard({ route, fare }: { route: RouteResult; fare: number | null }) {
   return (
-    <div className="mb-3 rounded-[24px] bg-white px-5 py-4 ring-1 ring-border/60 shadow-[0_8px_24px_-16px_rgba(15,23,42,0.18)]">
-      <div className="flex items-baseline justify-between gap-3">
-        <div className="flex items-baseline gap-2">
-          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#76C139]/10 text-[#76C139]">
-            <Clock className="h-[15px] w-[15px]" strokeWidth={2} />
+    <div className="mb-2.5 rounded-[18px] bg-white px-3.5 py-2.5 ring-1 ring-border/60 shadow-[0_6px_18px_-14px_rgba(15,23,42,0.15)]">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[#76C139]/10 text-[#76C139]">
+            <Clock className="h-[13px] w-[13px]" strokeWidth={2} />
           </span>
-          <span className="text-[15px] font-bold text-[#111418]">{fmtMin(route.durationSeconds)}</span>
-          <span className="text-[13px] text-[#707070]">· {fmtKm(route.distanceMeters)}</span>
+          <span className="text-[13.5px] font-bold text-[#111418] leading-none">{fmtMin(route.durationSeconds)}</span>
+          <span className="text-[12px] text-[#707070] leading-none">· {fmtKm(route.distanceMeters)}</span>
         </div>
-        <span className="text-[20px] font-bold text-[#111418] tracking-tight">
+        <span className="text-[17px] font-bold text-[#111418] tracking-tight leading-none">
           {fare != null ? formatBRL(fare) : "—"}
         </span>
       </div>
-      <p className="mt-2 text-[11.5px] text-[#707070]">
+      <p className="mt-1.5 text-[10.5px] text-[#707070] leading-tight">
         Valor estimado. Pode variar conforme rota e disponibilidade.
       </p>
     </div>
@@ -3700,40 +3715,40 @@ function RideCategorySelector({
                 type="button"
                 onClick={() => onSelect(c)}
                 aria-pressed={active}
-                className={`group grid w-full items-center rounded-[16px] bg-white px-3 py-2 text-left transition-[transform,box-shadow,border-color] duration-200 active:scale-[0.99] ${
+                className={`group grid w-full items-center rounded-[14px] bg-white px-2.5 py-1.5 text-left transition-[transform,box-shadow,border-color] duration-200 active:scale-[0.99] ${
                   active
-                    ? "border-2 border-[#76C139] shadow-[0_16px_36px_-18px_rgba(118,193,57,0.4)]"
-                    : "border border-border/60 shadow-[0_6px_18px_-14px_rgba(15,23,42,0.18)] hover:border-[#76C139]/40"
+                    ? "border-2 border-[#76C139] shadow-[0_10px_24px_-18px_rgba(118,193,57,0.28)]"
+                    : "border border-border/60 shadow-[0_4px_14px_-14px_rgba(15,23,42,0.15)] hover:border-[#76C139]/40"
                 }`}
-                style={{ gridTemplateColumns: "36px minmax(72px,1fr) auto 22px", columnGap: "10px" }}
+                style={{ gridTemplateColumns: "32px minmax(64px,1fr) auto 20px", columnGap: "10px" }}
               >
                 <span
-                  className={`grid h-9 w-9 shrink-0 place-items-center rounded-[10px] transition ${
+                  className={`grid h-8 w-8 shrink-0 place-items-center rounded-[10px] transition ${
                     active
-                      ? "bg-[#76C139] text-white shadow-[0_10px_22px_-12px_rgba(118,193,57,0.55)]"
+                      ? "bg-[#76C139] text-white shadow-[0_6px_14px_-10px_rgba(118,193,57,0.4)]"
                       : "bg-[#76C139]/10 text-[#5A9A2A] group-hover:bg-[#76C139]/15"
                   }`}
                 >
-                  <Icon className="h-[18px] w-[18px]" strokeWidth={1.75} />
+                  <Icon className="h-[16px] w-[16px]" strokeWidth={1.75} />
                 </span>
 
                 <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="whitespace-nowrap text-[14px] font-bold text-[#111418] leading-tight">
+                  <div className="flex items-center gap-1.5">
+                    <span className="whitespace-nowrap text-[13.5px] font-bold text-[#111418] leading-tight">
                       {c.label}
                     </span>
-                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#76C139]/12 px-1.5 py-0.5 text-[10px] font-semibold text-[#5A9A2A]">
-                      <Clock className="h-3 w-3" strokeWidth={2.25} />
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#76C139]/12 px-1.5 py-[1px] text-[9.5px] font-semibold text-[#5A9A2A]">
+                      <Clock className="h-2.5 w-2.5" strokeWidth={2.25} />
                       {etaLabel}
                     </span>
                   </div>
-                  <p className="mt-0.5 line-clamp-1 text-[11px] text-[#707070] leading-snug">
+                  <p className="line-clamp-1 text-[10.5px] text-[#707070] leading-tight">
                     {c.tagline}
                   </p>
                 </div>
 
                 <span
-                  className={`shrink-0 whitespace-nowrap text-[16px] font-bold leading-none tracking-tight ${
+                  className={`shrink-0 whitespace-nowrap text-[15px] font-bold leading-none tracking-tight ${
                     active ? "text-[#5A9A2A]" : "text-[#111418]"
                   }`}
                 >
@@ -3741,9 +3756,9 @@ function RideCategorySelector({
                 </span>
 
                 <span
-                  className={`grid h-[22px] w-[22px] shrink-0 place-items-center rounded-full transition ${
+                  className={`grid h-[20px] w-[20px] shrink-0 place-items-center rounded-full transition ${
                     active
-                      ? "bg-[#76C139] text-white shadow-[0_4px_10px_-4px_rgba(118,193,57,0.55)]"
+                      ? "bg-[#76C139] text-white shadow-[0_3px_8px_-4px_rgba(118,193,57,0.4)]"
                       : "bg-transparent text-transparent ring-1 ring-border/70"
                   }`}
                   aria-hidden
@@ -3774,7 +3789,7 @@ function RequestRideButton({
       type="button"
       disabled={busy}
       onClick={onSubmit}
-      className="flex h-12 w-full items-center justify-center gap-2 rounded-[16px] bg-[#76C139] text-[15px] font-bold text-[#071008] shadow-[0_16px_32px_-16px_rgba(118,193,57,0.55)] transition-[transform,filter,box-shadow] duration-200 active:scale-[0.98] hover:brightness-[1.04] disabled:cursor-not-allowed disabled:opacity-60"
+      className="flex h-11 w-full items-center justify-center gap-2 rounded-[14px] bg-[#76C139] text-[15px] font-bold text-[#071008] shadow-[0_10px_22px_-14px_rgba(118,193,57,0.35)] transition-[transform,filter,box-shadow] duration-200 active:scale-[0.98] hover:brightness-[1.04] disabled:cursor-not-allowed disabled:opacity-60"
     >
       {busy ? (
         <>
@@ -4196,7 +4211,7 @@ function DriverEnRoute({
             </div>
             <div
               key={eta ?? "eta-empty"}
-              className="mt-1 text-[30px] font-bold leading-none tracking-tight text-[#111418] tabular-nums animate-count-pop"
+              className="mt-1 text-[22px] font-bold leading-none tracking-tight text-[#111418] tabular-nums animate-count-pop"
             >
               {eta ?? "—"}
               <span className="ml-1.5 text-[15px] font-semibold text-[#707070]">min</span>
