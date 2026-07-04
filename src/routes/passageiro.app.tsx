@@ -3337,7 +3337,8 @@ function StepFlow({
   }, [route, uiStage, setUiStage]);
 
   useEffect(() => {
-    if (uiStage === "selecting_category" || uiStage === "confirming_request") onExpandSheet(50);
+    if (uiStage === "selecting_category") onExpandSheet(88);
+    else if (uiStage === "confirming_request") onExpandSheet(88);
   }, [uiStage, onExpandSheet]);
 
   useEffect(() => {
