@@ -2454,7 +2454,7 @@ function PassageiroApp() {
           className="pointer-events-none absolute inset-x-0 z-40 flex justify-center px-3"
           style={{ top: "calc(env(safe-area-inset-top) + 16px)" }}
         >
-          <div className="pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-[22px] bg-white/95 px-4 py-3.5 shadow-[0_18px_44px_-22px_rgba(118,193,57,0.55)] ring-1 ring-[#76C139]/25 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-[22px] bg-white/95 px-4 py-3.5 shadow-[0_12px_28px_-20px_rgba(118,193,57,0.32)] ring-1 ring-[#76C139]/25 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
             <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[#76C139] text-white shadow-[0_8px_20px_-8px_rgba(118,193,57,0.8)]">
               <CheckCircle2 className="h-6 w-6" strokeWidth={2.25} />
             </div>
@@ -2774,7 +2774,7 @@ function PassageiroApp() {
               </div>
 
               {/* Fare card */}
-              <div className="rounded-[24px] bg-white p-5 ring-1 ring-[#76C139]/25 shadow-[0_16px_36px_-20px_rgba(118,193,57,0.35)] animate-in fade-in slide-in-from-bottom-2 duration-[220ms]">
+              <div className="rounded-[24px] bg-white p-5 ring-1 ring-[#76C139]/25 shadow-[0_10px_24px_-18px_rgba(118,193,57,0.22)] animate-in fade-in slide-in-from-bottom-2 duration-[220ms]">
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-[11px] font-semibold uppercase tracking-wider text-[#707070]">Total pago</div>
@@ -2909,7 +2909,7 @@ function PassageiroApp() {
               {/* Primary DONE button */}
               <button
                 onClick={resetRide}
-                className="flex h-14 w-full items-center justify-center rounded-[18px] bg-[#76C139] text-[15px] font-bold uppercase tracking-wider text-white shadow-[0_16px_32px_-16px_rgba(118,193,57,0.55)] transition duration-[220ms] active:scale-[0.98] hover:brightness-[1.04]"
+                className="flex h-12 w-full items-center justify-center rounded-[16px] bg-[#76C139] text-[15px] font-bold uppercase tracking-wider text-white shadow-[0_10px_22px_-14px_rgba(118,193,57,0.35)] transition duration-[220ms] active:scale-[0.98] hover:brightness-[1.04]"
               >
                 Concluir
               </button>
@@ -3487,7 +3487,7 @@ function StepFlow({
               setUiStage("selecting_category");
               onExpandSheet(88);
             }}
-            className="flex h-14 w-full items-center justify-center rounded-[18px] bg-[#76C139] text-[15px] font-bold text-[#071008] shadow-[0_16px_32px_-16px_rgba(118,193,57,0.55)] transition active:scale-[0.98]"
+            className="flex h-12 w-full items-center justify-center rounded-[16px] bg-[#76C139] text-[15px] font-bold text-[#071008] shadow-[0_10px_22px_-14px_rgba(118,193,57,0.35)] transition active:scale-[0.98]"
           >
             Continuar
           </button>
@@ -3589,7 +3589,7 @@ function StepFlow({
 
           {/* Fare card — compact hero */}
           <div
-            className="flex items-center justify-between gap-3 rounded-[16px] bg-white px-3 py-2 ring-1 ring-[#76C139]/25 shadow-[0_16px_36px_-20px_rgba(118,193,57,0.35)] animate-in fade-in duration-[220ms]"
+            className="flex items-center justify-between gap-3 rounded-[16px] bg-white px-3 py-2 ring-1 ring-[#76C139]/25 shadow-[0_10px_24px_-18px_rgba(118,193,57,0.22)] animate-in fade-in duration-[220ms]"
             style={{ animationDelay: "80ms", animationFillMode: "backwards" }}
           >
             <div className="flex items-baseline gap-2 min-w-0">
@@ -3789,7 +3789,7 @@ function RequestRideButton({
       type="button"
       disabled={busy}
       onClick={onSubmit}
-      className="flex h-12 w-full items-center justify-center gap-2 rounded-[16px] bg-[#76C139] text-[15px] font-bold text-[#071008] shadow-[0_16px_32px_-16px_rgba(118,193,57,0.55)] transition-[transform,filter,box-shadow] duration-200 active:scale-[0.98] hover:brightness-[1.04] disabled:cursor-not-allowed disabled:opacity-60"
+      className="flex h-11 w-full items-center justify-center gap-2 rounded-[14px] bg-[#76C139] text-[15px] font-bold text-[#071008] shadow-[0_10px_22px_-14px_rgba(118,193,57,0.35)] transition-[transform,filter,box-shadow] duration-200 active:scale-[0.98] hover:brightness-[1.04] disabled:cursor-not-allowed disabled:opacity-60"
     >
       {busy ? (
         <>
