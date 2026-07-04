@@ -2616,85 +2616,261 @@ function PassageiroApp() {
         )}
 
 
-      {ride && phase === "finalizada" && !ride.passenger_rated_at && (
-        <MovviSheet snaps={[58]} initial={58}>
-          <div className="pt-2">
-            <div className="text-center">
-              <div className="mx-auto mb-3 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/15 text-primary text-2xl">
-                ✓
-              </div>
-              <h2 className="font-display text-lg font-bold">Viagem concluída</h2>
-              {ride.final_price && (
-                <p className="mt-1 text-xl font-bold text-primary">
-                  {formatBRL(Number(ride.final_price))}
-                </p>
-              )}
-              <p className="mt-4 text-sm font-semibold">
-                Avalie {ride.driver_name ?? "o motorista"}
-              </p>
-              <div className="mt-2 flex items-center justify-center gap-1">
-                {[1, 2, 3, 4, 5].map((n) => (
-                  <button
-                    key={n}
-                    type="button"
-                    onClick={() => setRatingStars(n)}
-                    className="px-1 text-3xl"
-                    aria-label={`${n} estrelas`}
-                  >
-                    <span className={n <= ratingStars ? "text-primary" : "text-muted-foreground/40"}>★</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-            <textarea
-              value={ratingComment}
-              onChange={(e) => setRatingComment(e.target.value)}
-              placeholder="Comentário (opcional)"
-              maxLength={500}
-              rows={3}
-              className="mt-4 w-full resize-none rounded-xl border border-border bg-card px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-            />
-            {ratingError && (
-              <div className="mt-3 rounded-xl bg-destructive/10 px-3 py-2 text-xs text-destructive ring-1 ring-destructive/30">
-                {ratingError} Toque em <strong>Tentar novamente</strong> ou pule esta avaliação.
-              </div>
-            )}
-            <button
-              onClick={submitDriverRating}
-              disabled={submittingRating}
-              className="mt-4 w-full rounded-2xl bg-primary py-4 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/30 disabled:opacity-60"
-            >
-              {submittingRating ? "Enviando…" : (ratingError ? "Tentar novamente" : "Enviar avaliação")}
-            </button>
-            <button
-              type="button"
-              onClick={skipDriverRating}
-              disabled={submittingRating}
-              className="mt-2 w-full rounded-2xl bg-transparent py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground disabled:opacity-60"
-            >
-              Pular avaliação
-            </button>
-          </div>
-        </MovviSheet>
-      )}
+      {ride && phase === "finalizada" && (() => {
+        const rated = !!ride.passenger_rated_at;
+        const pickupLabel =
+          (ride as any).pickup_address ??
+          (ride as any).origin_name ??
+          "Local de embarque";
+        const destinationLabel = ride.destination_name ?? "Destino";
+        const durationLabel =
+          ride.duration_min != null
+            ? `${Math.max(1, Math.round(Number(ride.duration_min)))} min`
+            : "—";
+        const distanceLabel =
+          ride.distance_km != null
+            ? `${Number(ride.distance_km).toFixed(1)} km`
+            : "—";
+        const paidValue = ride.final_price ?? (ride as any).estimated_price ?? null;
+        const driverName = ride.driver_name ?? "Motorista MOVVI";
+        const driverPhoto = (ride as any).driver_photo_url ?? null;
+        const driverVehicle = (ride as any).driver_vehicle ?? rideDriverInfo?.vehicle_label ?? "";
+        const driverPlate = rideDriverInfo?.plate ?? (ride as any).driver_plate ?? "";
+        const driverRating =
+          (ride as any).driver_rating ?? rideDriverInfo?.rating ?? null;
+        const receipt: ReceiptData = {
+          rideId: ride.id,
+          date: (ride as any).completed_at ?? (ride as any).created_at ?? new Date().toISOString(),
+          origin: pickupLabel,
+          destination: destinationLabel,
+          driverName: ride.driver_name ?? null,
+          vehicle: driverVehicle || null,
+          paymentMethod: (ride as any).payment_method ?? null,
+          value: paidValue,
+          status: ride.status,
+          distanceKm: ride.distance_km ?? null,
+          durationMin: ride.duration_min ?? null,
+        };
 
-      {ride && phase === "finalizada" && ride.passenger_rated_at && (
-        <MovviSheet snaps={[32]} initial={32}>
-          <div className="pt-2 text-center">
-            <div className="mx-auto mb-3 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/15 text-primary text-3xl">
-              ✓
+        return (
+          <MovviSheet snaps={[72, 92]} initial={72}>
+            <div className="pt-1 pb-[calc(env(safe-area-inset-bottom)+8px)] space-y-4">
+              {/* Success header */}
+              <div className="text-center animate-in fade-in slide-in-from-bottom-2 duration-[220ms]">
+                <div className="relative mx-auto flex h-[88px] w-[88px] items-center justify-center">
+                  <span className="absolute inset-0 rounded-full bg-[#76C139]/15 animate-ping [animation-duration:1.8s]" />
+                  <div className="relative flex h-[88px] w-[88px] items-center justify-center rounded-full bg-[#76C139] shadow-[0_18px_40px_-16px_rgba(118,193,57,0.55)] animate-success-pop">
+                    <svg viewBox="0 0 32 32" className="h-11 w-11" fill="none" aria-hidden>
+                      <path
+                        d="M8 16.5 L14 22 L24 11"
+                        stroke="white"
+                        strokeWidth="3.2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="animate-check-draw"
+                      />
+                    </svg>
+                  </div>
+                </div>
+                <h2 className="mt-3 text-[26px] font-bold leading-tight tracking-tight text-[#111418]">
+                  Viagem concluída
+                </h2>
+                <p className="mt-1 text-[13px] text-[#707070]">
+                  Obrigado por escolher a MOVVI.
+                </p>
+              </div>
+
+              {/* Trip summary card */}
+              <div className="rounded-[24px] bg-white p-4 ring-1 ring-black/5 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.22)] animate-in fade-in slide-in-from-bottom-2 duration-[220ms]">
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3">
+                    <div className="mt-1 flex h-2.5 w-2.5 shrink-0 items-center justify-center rounded-full bg-[#76C139] ring-4 ring-[#76C139]/15" />
+                    <div className="min-w-0">
+                      <div className="text-[11px] font-semibold uppercase tracking-wider text-[#707070]">Origem</div>
+                      <div className="mt-0.5 truncate text-[15px] font-medium text-[#111418]">{pickupLabel}</div>
+                    </div>
+                  </div>
+                  <div className="ml-[5px] h-4 w-px border-l border-dashed border-[#707070]/30" />
+                  <div className="flex items-start gap-3">
+                    <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#c53030]" strokeWidth={2.4} />
+                    <div className="min-w-0">
+                      <div className="text-[11px] font-semibold uppercase tracking-wider text-[#707070]">Destino</div>
+                      <div className="mt-0.5 truncate text-[15px] font-medium text-[#111418]">{destinationLabel}</div>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-4 grid grid-cols-2 gap-3 border-t border-black/5 pt-3">
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-[#707070]" strokeWidth={2} />
+                    <div>
+                      <div className="text-[11px] text-[#707070]">Duração</div>
+                      <div className="text-[15px] font-semibold text-[#111418]">{durationLabel}</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Navigation2 className="h-4 w-4 text-[#707070]" strokeWidth={2} />
+                    <div>
+                      <div className="text-[11px] text-[#707070]">Distância</div>
+                      <div className="text-[15px] font-semibold text-[#111418]">{distanceLabel}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Fare card */}
+              <div className="rounded-[24px] bg-white p-5 ring-1 ring-[#76C139]/25 shadow-[0_16px_36px_-20px_rgba(118,193,57,0.35)] animate-in fade-in slide-in-from-bottom-2 duration-[220ms]">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-[11px] font-semibold uppercase tracking-wider text-[#707070]">Total pago</div>
+                    <div className="mt-1.5 text-[34px] font-bold leading-none tracking-tight text-[#111418]">
+                      {paidValue != null ? formatBRL(Number(paidValue)) : "—"}
+                    </div>
+                    {(ride as any).payment_method && (
+                      <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-[#F7F9F7] px-2.5 py-1 text-[11px] font-medium text-[#707070]">
+                        <CreditCard className="h-3 w-3" />
+                        {String((ride as any).payment_method).replace("_", " ")}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#76C139]/12 text-[#76C139]">
+                    <Check className="h-6 w-6" strokeWidth={2.6} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Driver card */}
+              <div className="rounded-[24px] bg-white p-4 ring-1 ring-black/5 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.22)] animate-in fade-in slide-in-from-bottom-2 duration-[220ms]">
+                <div className="flex items-center gap-3">
+                  <Avatar name={driverName} url={driverPhoto} size={52} />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-[16px] font-semibold text-[#111418]">{driverName}</div>
+                    {driverVehicle && (
+                      <div className="mt-0.5 truncate text-[13px] text-[#707070]">{driverVehicle}</div>
+                    )}
+                  </div>
+                  <div className="flex flex-col items-end gap-1.5">
+                    {driverPlate && (
+                      <div className="rounded-md bg-[#111418] px-2 py-0.5 font-mono text-[12px] font-bold tracking-wider text-white">
+                        {driverPlate}
+                      </div>
+                    )}
+                    {driverRating != null && (
+                      <div className="flex items-center gap-1 text-[12px] font-semibold text-[#111418]">
+                        <Star className="h-3.5 w-3.5 fill-[#76C139] text-[#76C139]" />
+                        {Number(driverRating).toFixed(1)}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Rating card */}
+              <div className="rounded-[24px] bg-white p-5 ring-1 ring-black/5 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.22)] animate-in fade-in slide-in-from-bottom-2 duration-[220ms]">
+                {!rated ? (
+                  <>
+                    <div className="text-center">
+                      <div className="text-[18px] font-semibold text-[#111418]">
+                        Como foi sua viagem?
+                      </div>
+                      <div className="mt-1 text-[13px] text-[#707070]">
+                        Avalie {ride.driver_name ?? "o motorista"}
+                      </div>
+                    </div>
+                    <div className="mt-4 flex items-center justify-center gap-2">
+                      {[1, 2, 3, 4, 5].map((n) => {
+                        const active = n <= ratingStars;
+                        return (
+                          <button
+                            key={n}
+                            type="button"
+                            onClick={() => setRatingStars(n)}
+                            className={`flex h-11 w-11 items-center justify-center rounded-full transition duration-[220ms] active:scale-90 ${
+                              active ? "bg-[#76C139]/12" : "bg-transparent"
+                            }`}
+                            aria-label={`${n} estrelas`}
+                          >
+                            <Star
+                              className={`h-7 w-7 transition ${
+                                active
+                                  ? "fill-[#76C139] text-[#76C139] animate-star-pop"
+                                  : "text-[#707070]/50"
+                              }`}
+                              strokeWidth={1.75}
+                            />
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <textarea
+                      value={ratingComment}
+                      onChange={(e) => setRatingComment(e.target.value)}
+                      placeholder="Deixe um comentário (opcional)"
+                      maxLength={500}
+                      rows={2}
+                      className="mt-4 w-full resize-none rounded-[16px] border border-black/10 bg-[#F7F9F7] px-3.5 py-2.5 text-[14px] text-[#111418] placeholder:text-[#707070] focus:outline-none focus:ring-2 focus:ring-[#76C139]/40"
+                    />
+                    {ratingError && (
+                      <div className="mt-3 rounded-xl bg-destructive/10 px-3 py-2 text-[12px] text-destructive ring-1 ring-destructive/30">
+                        {ratingError}
+                      </div>
+                    )}
+                    <button
+                      onClick={submitDriverRating}
+                      disabled={submittingRating}
+                      className="mt-4 h-12 w-full rounded-[16px] bg-[#111418] text-[14px] font-semibold text-white transition duration-[220ms] active:scale-[0.98] disabled:opacity-60"
+                    >
+                      {submittingRating ? "Enviando…" : ratingError ? "Tentar novamente" : "Enviar avaliação"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={skipDriverRating}
+                      disabled={submittingRating}
+                      className="mt-2 w-full py-2 text-[12px] font-semibold uppercase tracking-wider text-[#707070] hover:text-[#111418] disabled:opacity-60"
+                    >
+                      Pular avaliação
+                    </button>
+                  </>
+                ) : (
+                  <div className="flex items-center justify-center gap-2 py-1">
+                    <CheckCircle2 className="h-5 w-5 text-[#76C139]" strokeWidth={2.4} />
+                    <span className="text-[14px] font-semibold text-[#111418]">
+                      Avaliação enviada
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Receipt (secondary outlined) */}
+              <button
+                type="button"
+                onClick={() => setReceiptOpen(true)}
+                className="flex h-12 w-full items-center justify-center gap-2 rounded-[16px] border border-[#111418]/20 bg-white text-[14px] font-semibold text-[#111418] transition duration-[220ms] hover:bg-[#F7F9F7] hover:border-[#111418]/40 active:scale-[0.98]"
+              >
+                <ReceiptIcon className="h-4 w-4" strokeWidth={2} />
+                Recibo da viagem
+              </button>
+
+              {/* Primary DONE button */}
+              <button
+                onClick={resetRide}
+                className="flex h-14 w-full items-center justify-center rounded-[18px] bg-[#76C139] text-[15px] font-bold uppercase tracking-wider text-white shadow-[0_16px_32px_-16px_rgba(118,193,57,0.55)] transition duration-[220ms] active:scale-[0.98] hover:brightness-[1.04]"
+              >
+                Concluir
+              </button>
+
+              <p className="text-center text-[13px] text-[#707070]">
+                Esperamos vê-lo novamente em breve.
+              </p>
             </div>
-            <h2 className="font-display text-xl font-bold">Avaliação enviada</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Obrigado por usar a MOVVI!</p>
-            <button
-              onClick={resetRide}
-              className="mt-6 w-full rounded-2xl bg-primary py-4 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/30"
-            >
-              Pedir outra corrida
-            </button>
-          </div>
-        </MovviSheet>
-      )}
+
+            <RideReceiptDialog
+              open={receiptOpen}
+              onOpenChange={setReceiptOpen}
+              receipt={receipt}
+            />
+          </MovviSheet>
+        );
+      })()}
 
       <DriverProfessionalProfileDialog
         open={driverProfileOpen}
@@ -2704,6 +2880,7 @@ function PassageiroApp() {
     </div>
   );
 }
+
 
 /* ============================================================ */
 /*                         SHEET CONTENT                        */
