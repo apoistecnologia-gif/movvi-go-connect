@@ -228,12 +228,15 @@ export const MovviSheet = forwardRef<MovviSheetHandle, Props>(function MovviShee
         animateTo(maxSnap);
         onSnapChange?.(maxSnap);
       }
-      // Ensure the focused input is scrolled into view within the sheet.
+      // Ensure the focused input is scrolled into view within the sheet,
+      // but softly — avoid a jarring jump.
       requestAnimationFrame(() => {
-        (e.target as HTMLElement).scrollIntoView({
-          block: "center",
-          behavior: "smooth",
-        });
+        try {
+          (e.target as HTMLElement).scrollIntoView({
+            block: "nearest",
+            behavior: "smooth",
+          });
+        } catch { /* noop */ }
       });
     };
 
@@ -289,10 +292,6 @@ export const MovviSheet = forwardRef<MovviSheetHandle, Props>(function MovviShee
         height: `${height}dvh`,
         // Cap the height so the sheet never covers the top status/safe area.
         maxHeight: "calc(100dvh - env(safe-area-inset-top) - 12px)",
-        // Lift the whole sheet by the keyboard height on mobile so inputs and
-        // sticky CTAs stay visible when the keyboard is open.
-        transform: keyboardOffset > 0 ? `translateY(-${keyboardOffset}px)` : undefined,
-        transition: keyboardOffset > 0 ? "transform 180ms ease-out" : undefined,
         boxShadow:
           "0 -32px 72px -36px rgba(0,0,0,0.6), 0 -1px 0 0 rgba(255,255,255,0.04) inset",
         borderTop: "1px solid color-mix(in oklab, var(--color-border) 45%, transparent)",
@@ -326,7 +325,11 @@ export const MovviSheet = forwardRef<MovviSheetHandle, Props>(function MovviShee
         style={{
           // When there's a pinned footer, leave less bottom padding — the footer
           // handles the safe-area itself so the CTA sits above the gesture bar.
-          paddingBottom: footer ? 12 : "calc(env(safe-area-inset-bottom) + 20px)",
+          // When the on-screen keyboard is open and there is NO pinned footer,
+          // add extra bottom padding so the focused input isn't hidden.
+          paddingBottom: footer
+            ? 12
+            : `calc(env(safe-area-inset-bottom) + 20px + ${keyboardOffset}px)`,
           overflowY: "auto",
           overscrollBehavior: "contain",
           WebkitOverflowScrolling: "touch",
@@ -340,7 +343,9 @@ export const MovviSheet = forwardRef<MovviSheetHandle, Props>(function MovviShee
         <div
           className="shrink-0 border-t border-border/40 bg-card/95 px-5 pt-2.5 backdrop-blur-xl"
           style={{
-            paddingBottom: "calc(env(safe-area-inset-bottom) + 12px)",
+            // Keep footer visible above the on-screen keyboard by adding the
+            // measured keyboard height to the safe-area bottom padding.
+            paddingBottom: `calc(env(safe-area-inset-bottom) + 12px + ${keyboardOffset}px)`,
             boxShadow: "0 -12px 24px -18px rgba(0,0,0,0.5)",
           }}
         >

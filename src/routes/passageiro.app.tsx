@@ -2259,7 +2259,7 @@ function PassageiroApp() {
 
       {/* BOTTOM SHEET — novo, próprio do MOVVI */}
       {!ride && (
-        <MovviSheet ref={sheetRef} snaps={[24, 50, 88]} initial={24}>
+        <MovviSheet ref={sheetRef} snaps={[36, 58, 86]} initial={36}>
           <SheetContent
             geo={geo}
             addressStatus={addressStatus}
@@ -2604,8 +2604,8 @@ function PassageiroApp() {
           phase === "motorista_chegou" ||
           phase === "em_viagem") && (
           <MovviSheet
-            snaps={[42, 68, 92]}
-            initial={42}
+            snaps={[32, 56, 86]}
+            initial={32}
           >
             <DriverEnRoute
               ride={ride}
