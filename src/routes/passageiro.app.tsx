@@ -2413,12 +2413,35 @@ function PassageiroApp() {
 
       {ride &&
         rideDriverInfo &&
+        phase === "motorista_a_caminho" && (
+          <div
+            className="pointer-events-none absolute inset-x-0 z-40 flex justify-center px-3"
+            style={{ top: "calc(env(safe-area-inset-top) + 16px)" }}
+          >
+            <div className="pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-[22px] bg-white/95 px-4 py-3 shadow-[0_18px_44px_-22px_rgba(15,23,42,0.45)] ring-1 ring-black/5 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#76C139]/15 text-[#76C139]">
+                <CheckCircle2 className="h-5 w-5" strokeWidth={2.25} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-[15px] font-bold leading-tight text-[#111418]">
+                  Motorista encontrado!
+                </div>
+                <div className="mt-0.5 text-[12px] font-medium text-[#707070]">
+                  Seu motorista está a caminho.
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+      {ride &&
+        rideDriverInfo &&
         (phase === "motorista_a_caminho" ||
           phase === "motorista_chegou" ||
           phase === "em_viagem") && (
           <MovviSheet
-            snaps={[26, 55, 92]}
-            initial={26}
+            snaps={[42, 68, 92]}
+            initial={42}
           >
             <DriverEnRoute
               ride={ride}
