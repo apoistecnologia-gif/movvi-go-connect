@@ -132,7 +132,13 @@ FIND_LOW_CONTRAST_JS = r"""
   const seen = new Set();
   const failures = [];
   const AA_NORMAL = 4.5, AA_LARGE = 3.0;
+  // Third-party DOM we don't own — skip. Google Maps injects a light-theme
+  // error dialog when the API key is missing, which would otherwise
+  // pollute the report with false positives.
+  const IGNORE_SELECTOR = '.gm-err-container, .gm-style, [data-contrast-ignore]';
   const walk = (node) => {
+    if (node.closest && node.closest(IGNORE_SELECTOR)) return;
+
     if (!(node instanceof Element)) return;
     if (seen.has(node)) return;
     seen.add(node);
