@@ -4029,7 +4029,7 @@ function SearchingPanel({
         type="button"
         onClick={onCancel}
         aria-label="Cancelar solicitação"
-        className="flex h-12 w-full items-center justify-center gap-2 rounded-[16px] border border-[#111418]/25 bg-white text-[14px] font-semibold text-[#111418] transition duration-[220ms] hover:bg-[#F7F9F7] hover:border-[#111418]/40 active:scale-[0.98]"
+        className="sticky bottom-0 z-50 flex h-12 w-full items-center justify-center gap-2 rounded-[16px] border border-[#111418]/25 bg-white text-[14px] font-semibold text-[#111418] transition duration-[220ms] hover:bg-[#F7F9F7] hover:border-[#111418]/40 active:scale-[0.98]"
       >
         <X className="h-4 w-4" strokeWidth={2} />
         Cancelar solicitação
