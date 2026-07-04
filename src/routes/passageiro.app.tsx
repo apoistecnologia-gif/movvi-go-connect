@@ -2261,10 +2261,11 @@ function PassageiroApp() {
       {/* BOTTOM SHEET — novo, próprio do MOVVI */}
       {!ride && (() => {
         const bigStage =
+          passengerUiStage === "route_preview" ||
           passengerUiStage === "selecting_category" ||
           passengerUiStage === "confirming_request";
         const snaps = bigStage ? [72, 88, 96] : [38, 62, 88];
-        const initial = bigStage ? 72 : 38;
+        const initial = bigStage ? 88 : 38;
         return (
         <MovviSheet ref={sheetRef} key={bigStage ? "big" : "small"} snaps={snaps} initial={initial}>
           <SheetContent
