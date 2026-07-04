@@ -292,10 +292,6 @@ export const MovviSheet = forwardRef<MovviSheetHandle, Props>(function MovviShee
         height: `${height}dvh`,
         // Cap the height so the sheet never covers the top status/safe area.
         maxHeight: "calc(100dvh - env(safe-area-inset-top) - 12px)",
-        // Lift the whole sheet by the keyboard height on mobile so inputs and
-        // sticky CTAs stay visible when the keyboard is open.
-        transform: keyboardOffset > 0 ? `translateY(-${keyboardOffset}px)` : undefined,
-        transition: keyboardOffset > 0 ? "transform 180ms ease-out" : undefined,
         boxShadow:
           "0 -32px 72px -36px rgba(0,0,0,0.6), 0 -1px 0 0 rgba(255,255,255,0.04) inset",
         borderTop: "1px solid color-mix(in oklab, var(--color-border) 45%, transparent)",
