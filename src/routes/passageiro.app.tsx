@@ -3540,13 +3540,14 @@ function StepFlow({
                 </div>
                 <div className="my-2 h-px bg-border/50" />
                 <div>
-                  <div className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-[#707070] leading-none">
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#707070] leading-none">
                     Destino
                   </div>
-                  <div className="mt-1 line-clamp-1 text-[14px] font-semibold text-[#111418] leading-snug">
+                  <div className="mt-1 truncate text-[14px] font-semibold text-[#111418] leading-snug" title={destination.label}>
                     {destination.label}
                   </div>
                 </div>
+
               </div>
             </div>
           </div>
