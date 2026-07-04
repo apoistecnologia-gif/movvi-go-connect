@@ -3217,31 +3217,42 @@ function SheetContent({
 
 
 
-      {/* Sugestões ao vivo */}
+      {/* Sugestões ao vivo — área rolável limitada acima do teclado */}
       {showDestinationInput && suggestions.length > 0 && !destination && (
-        <ul className="-mx-1 mb-2 space-y-1 animate-in fade-in duration-200">
-          {suggestions.map((s) => (
-            <li key={s.placeId}>
-              <button
-                type="button"
-                onClick={() => onPick(s)}
-                className="flex w-full items-start gap-3 rounded-2xl px-3 py-3 text-left transition hover:bg-[#F7F9F7] active:scale-[0.99]"
-              >
-                <span className="mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#76C139]/10 text-[#76C139]">
-                  <MapPin className="h-[16px] w-[16px]" strokeWidth={2} />
-                </span>
-                <span className="flex min-w-0 flex-col">
-                  <span className="line-clamp-2 text-[15px] font-semibold text-foreground">{s.primary}</span>
-                  {s.secondary && (
-                    <span className="line-clamp-2 text-[12.5px] text-muted-foreground">
-                      {s.secondary}
-                    </span>
-                  )}
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
+        <div
+          className="mb-2 -mx-1 animate-in fade-in duration-200"
+          style={{
+            maxHeight: "calc(100dvh - 360px)",
+            overflowY: "auto",
+            overscrollBehavior: "contain",
+            WebkitOverflowScrolling: "touch",
+            paddingBottom: 24,
+          }}
+        >
+          <ul className="space-y-1">
+            {suggestions.map((s) => (
+              <li key={s.placeId}>
+                <button
+                  type="button"
+                  onClick={() => onPick(s)}
+                  className="flex w-full items-start gap-3 rounded-2xl px-3 py-3 text-left transition hover:bg-[#F7F9F7] active:scale-[0.99]"
+                >
+                  <span className="mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#76C139]/10 text-[#76C139]">
+                    <MapPin className="h-[16px] w-[16px]" strokeWidth={2} />
+                  </span>
+                  <span className="flex min-w-0 flex-col">
+                    <span className="line-clamp-2 text-[15px] font-semibold text-foreground">{s.primary}</span>
+                    {s.secondary && (
+                      <span className="line-clamp-2 text-[12.5px] text-muted-foreground">
+                        {s.secondary}
+                      </span>
+                    )}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
       {/* Dica sem destino */}
