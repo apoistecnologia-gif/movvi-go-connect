@@ -52,17 +52,24 @@ AA_LARGE = 3.0
 # (own text nodes with non-empty content) to avoid double-counting parents.
 FIND_LOW_CONTRAST_JS = r"""
 () => {
+  // Canvas-based color normalizer: converts any valid CSS color
+  // (rgb, hsl, oklch, oklab, lab, lch, color-mix, named colors) into
+  // {r,g,b,a}. Returns null for 'transparent' / invalid input.
+  const _cvs = document.createElement('canvas');
+  _cvs.width = _cvs.height = 1;
+  const _ctx = _cvs.getContext('2d', { willReadFrequently: true });
   const parseColor = (str) => {
-    // Handles rgb(a) and 'transparent'
-    if (!str || str === 'transparent') return null;
-    const m = str.match(/rgba?\(([^)]+)\)/);
-    if (!m) return null;
-    const parts = m[1].split(',').map(s => parseFloat(s.trim()));
-    const [r, g, b, a] = [parts[0], parts[1], parts[2], parts[3] ?? 1];
-    return { r, g, b, a };
+    if (!str || str === 'transparent' || str === 'none') return null;
+    try {
+      _ctx.clearRect(0, 0, 1, 1);
+      _ctx.fillStyle = '#000';
+      _ctx.fillStyle = str;              // Browser rejects invalid → stays #000
+      _ctx.fillRect(0, 0, 1, 1);
+      const [r, g, b, aByte] = _ctx.getImageData(0, 0, 1, 1).data;
+      return { r, g, b, a: aByte / 255 };
+    } catch { return null; }
   };
   const overOpaque = (fg, bg) => {
-    // Composite fg over bg using fg.a (bg assumed opaque here)
     const a = fg.a;
     return {
       r: Math.round(fg.r * a + bg.r * (1 - a)),
@@ -71,6 +78,7 @@ FIND_LOW_CONTRAST_JS = r"""
       a: 1,
     };
   };
+
   const relLum = ({ r, g, b }) => {
     const chan = (c) => {
       const s = c / 255;
