@@ -3096,7 +3096,7 @@ function SheetContent({
             type="button"
             onClick={onRetryGps}
             disabled={gpsRequesting}
-            className="shrink-0 self-center rounded-full bg-primary px-3 py-1.5 text-[11px] font-bold text-primary-foreground shadow-md shadow-primary/20 transition active:scale-95 disabled:opacity-60"
+            className="press-scale shrink-0 self-center rounded-full bg-primary px-3 py-1.5 text-[11px] font-bold text-primary-foreground shadow-md shadow-primary/20 disabled:opacity-60"
           >
             {gpsRequesting ? "..." : "Tentar novamente"}
           </button>
