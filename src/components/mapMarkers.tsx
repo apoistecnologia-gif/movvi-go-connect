@@ -28,18 +28,18 @@ export function PassengerLocationMarker({
 }) {
   return (
     <>
-      {/* glow externo — pulsa via zIndex baixo, respiração implícita da UI */}
+      {/* glow externo — reduzido ~40% para acabamento premium */}
       <Marker
         position={position}
         clickable={false}
         zIndex={9996}
         icon={{
           path: safeSymbol("CIRCLE"),
-          scale: 28,
+          scale: 17,
           fillColor: color,
-          fillOpacity: 0.1,
+          fillOpacity: 0.06,
           strokeColor: color,
-          strokeOpacity: 0.25,
+          strokeOpacity: 0.15,
           strokeWeight: 1,
         }}
       />
@@ -49,11 +49,11 @@ export function PassengerLocationMarker({
         zIndex={9997}
         icon={{
           path: safeSymbol("CIRCLE"),
-          scale: 18,
+          scale: 12,
           fillColor: color,
-          fillOpacity: 0.22,
+          fillOpacity: 0.14,
           strokeColor: color,
-          strokeOpacity: 0.5,
+          strokeOpacity: 0.3,
           strokeWeight: 1,
         }}
       />
@@ -64,23 +64,23 @@ export function PassengerLocationMarker({
         zIndex={9998}
         icon={{
           path: safeSymbol("CIRCLE"),
-          scale: 11,
+          scale: 9,
           fillColor: "#000000",
-          fillOpacity: 0.2,
+          fillOpacity: 0.16,
           strokeWeight: 0,
         }}
       />
-      {/* núcleo */}
+      {/* núcleo — 32px total (scale 8 = ~16px raio) */}
       <Marker
         position={position}
         zIndex={9999}
         icon={{
           path: safeSymbol("CIRCLE"),
-          scale: 9,
+          scale: 8,
           fillColor: color,
           fillOpacity: 1,
           strokeColor: "#ffffff",
-          strokeWeight: 3.5,
+          strokeWeight: 3,
         }}
       />
     </>
