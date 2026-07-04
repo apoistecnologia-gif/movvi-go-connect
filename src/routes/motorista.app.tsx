@@ -1399,7 +1399,7 @@ function IncomingOffer({
       <div
         className="relative w-full max-w-md rounded-t-[28px] px-5 pb-[calc(env(safe-area-inset-bottom)+16px)] pt-4 shadow-[0_-20px_60px_-24px_rgba(0,0,0,0.55)] animate-in fade-in slide-in-from-bottom-6 zoom-in-95 duration-[260ms] ease-out"
         style={{
-          maxHeight: "45vh",
+          maxHeight: "min(72dvh, 560px)",
           background: "#111418",
           border: "1px solid rgba(255,255,255,0.06)",
           overflow: "auto",
