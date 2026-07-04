@@ -177,36 +177,37 @@ function PremiumTopBar({
 
 
   return (
-    <div className="absolute inset-x-0 top-0 z-40 px-4 pt-[calc(env(safe-area-inset-top)+12px)]">
-      <div className="mx-auto flex max-w-5xl items-center gap-3 rounded-[24px] border border-border/60 bg-card/85 px-3.5 py-2.5 shadow-[0_10px_28px_-16px_rgba(15,23,42,0.28)] backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
+    <div className="absolute inset-x-0 top-0 z-40 px-3 pt-[calc(env(safe-area-inset-top)+8px)]">
+      <div className="mx-auto flex max-w-5xl items-center gap-2 rounded-[20px] border border-border/60 bg-card/85 px-2.5 py-1.5 shadow-[0_10px_28px_-16px_rgba(15,23,42,0.28)] backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
         <button
           onClick={onOpenMenu}
           aria-label="Abrir menu"
-          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-foreground/80 transition hover:bg-[#76C139]/10 hover:text-[#76C139] active:scale-[0.95]"
+          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-foreground/80 transition hover:bg-[#76C139]/10 hover:text-[#76C139] active:scale-[0.95]"
         >
-          <Menu className="h-[18px] w-[18px]" strokeWidth={1.75} />
+          <Menu className="h-[16px] w-[16px]" strokeWidth={1.75} />
         </button>
         <div className="min-w-0 flex-1">
           <div className={`${greetingClass} flex items-center gap-1.5 font-normal leading-tight tracking-tight text-muted-foreground`}>
-            <GIcon className="h-[13px] w-[13px] text-[#76C139]" strokeWidth={2} />
+            <GIcon className="h-[12px] w-[12px] text-[#76C139]" strokeWidth={2} />
             <span>{greet},</span>
             <span className="truncate font-semibold text-foreground">{fname}</span>
           </div>
-          <div className="mt-1 flex items-center gap-1.5 truncate text-[12px] text-muted-foreground">
-            <MapPin className="h-[12px] w-[12px] shrink-0 text-[#76C139]" strokeWidth={2} />
+          <div className="mt-0.5 flex items-center gap-1.5 truncate text-[11.5px] text-muted-foreground">
+            <MapPin className="h-[11px] w-[11px] shrink-0 text-[#76C139]" strokeWidth={2} />
             <span className="truncate">{statusText}</span>
           </div>
         </div>
         <button
           onClick={onLogout}
           aria-label="Sair"
-          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive active:scale-[0.95]"
+          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive active:scale-[0.95]"
         >
-          <LogOut className="h-[16px] w-[16px]" strokeWidth={1.75} />
+          <LogOut className="h-[14px] w-[14px]" strokeWidth={1.75} />
         </button>
 
       </div>
     </div>
+
   );
 }
 
@@ -3120,44 +3121,44 @@ function SheetContent({
               onOpenAddressDetails();
             }
           }}
-          className="mb-3 flex w-full cursor-pointer items-center gap-3 rounded-[24px] border border-border/60 bg-card px-4 py-3 text-left shadow-[0_8px_24px_-16px_rgba(15,23,42,0.18)] transition active:scale-[0.99] hover:border-[#76C139]/40 animate-in fade-in slide-in-from-bottom-1 duration-300"
+          className="mb-2.5 flex w-full cursor-pointer items-center gap-2.5 rounded-[18px] border border-border/60 bg-card px-3 py-2 text-left shadow-[0_8px_24px_-16px_rgba(15,23,42,0.18)] transition active:scale-[0.99] hover:border-[#76C139]/40 animate-in fade-in slide-in-from-bottom-1 duration-300"
         >
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#76C139]/10 text-[#76C139]">
-            <MapPin className="h-[18px] w-[18px]" strokeWidth={2} />
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#76C139]/10 text-[#76C139]">
+            <MapPin className="h-[15px] w-[15px]" strokeWidth={2} />
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between gap-2">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#76C139] leading-none">
+              <div className="text-[9.5px] font-semibold uppercase tracking-[0.14em] text-[#76C139] leading-none">
                 Local de embarque
               </div>
               {hasPosition && (
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                <span className="text-[9.5px] font-semibold uppercase tracking-wider text-muted-foreground">
                   Ajustar
                 </span>
               )}
             </div>
             {addressStatus === "loading" && !pickupAddressLine ? (
-              <div className="mt-1 truncate text-[14px] font-semibold leading-tight text-foreground">
+              <div className="mt-0.5 truncate text-[13px] font-semibold leading-tight text-foreground">
                 Localização atual
               </div>
             ) : pickupAddressLine ? (
               <>
-                <div className="mt-1 truncate text-[15px] font-semibold leading-tight text-foreground">
+                <div className="mt-0.5 truncate text-[14px] font-semibold leading-tight text-foreground">
                   {pickupAddressLine}
                 </div>
                 {pickupSubLine && pickupSubLine !== pickupAddressLine ? (
-                  <div className="truncate text-[12.5px] leading-tight text-muted-foreground">
+                  <div className="truncate text-[11.5px] leading-tight text-muted-foreground">
                     {pickupSubLine}
                   </div>
                 ) : (
                   <>
                     {bairro && bairro !== pickupAddressLine && (
-                      <div className="truncate text-[12.5px] leading-tight text-muted-foreground">
+                      <div className="truncate text-[11.5px] leading-tight text-muted-foreground">
                         {bairro}
                       </div>
                     )}
                     {region && region !== pickupAddressLine && (
-                      <div className="truncate text-[12px] leading-tight text-muted-foreground">
+                      <div className="truncate text-[11px] leading-tight text-muted-foreground">
                         {region}
                       </div>
                     )}
@@ -3165,11 +3166,11 @@ function SheetContent({
                 )}
               </>
             ) : hasPosition ? (
-              <div className="mt-1 truncate text-[14px] font-semibold leading-tight text-foreground">
+              <div className="mt-0.5 truncate text-[13px] font-semibold leading-tight text-foreground">
                 Localização atual
               </div>
             ) : (
-              <div className="mt-1 truncate text-[13px] leading-tight text-muted-foreground">
+              <div className="mt-0.5 truncate text-[12.5px] leading-tight text-muted-foreground">
                 Endereço não identificado
               </div>
             )}
@@ -3184,12 +3185,13 @@ function SheetContent({
             disabled={gpsRequesting}
             aria-label="Atualizar GPS"
             title="Atualizar GPS"
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#76C139]/10 text-[#76C139] transition hover:bg-[#76C139]/20 active:scale-[0.92] disabled:opacity-60"
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#76C139]/10 text-[#76C139] transition hover:bg-[#76C139]/20 active:scale-[0.92] disabled:opacity-60"
           >
-            <Crosshair className={`h-[16px] w-[16px] ${gpsRequesting ? "animate-spin" : ""}`} strokeWidth={2} />
+            <Crosshair className={`h-[14px] w-[14px] ${gpsRequesting ? "animate-spin" : ""}`} strokeWidth={2} />
           </button>
-          <ChevronRight className="h-4 w-4 shrink-0 text-[#707070]" />
+          <ChevronRight className="h-3.5 w-3.5 shrink-0 text-[#707070]" />
         </div>
+
       )}
 
 
@@ -3529,22 +3531,24 @@ function StepFlow({
               </div>
               <div className="min-w-0 flex-1">
                 <div>
-                  <div className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-[#707070] leading-none">
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#707070] leading-none">
                     Embarque
                   </div>
-                  <div className="mt-1 line-clamp-1 text-[14px] font-semibold text-[#111418] leading-snug">
+                  <div className="mt-1 truncate text-[14px] font-semibold text-[#111418] leading-snug" title={pickupLabel || "Localização atual"}>
                     {pickupLabel || "Localização atual"}
                   </div>
                 </div>
+
                 <div className="my-2 h-px bg-border/50" />
                 <div>
-                  <div className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-[#707070] leading-none">
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#707070] leading-none">
                     Destino
                   </div>
-                  <div className="mt-1 line-clamp-1 text-[14px] font-semibold text-[#111418] leading-snug">
+                  <div className="mt-1 truncate text-[14px] font-semibold text-[#111418] leading-snug" title={destination.label}>
                     {destination.label}
                   </div>
                 </div>
+
               </div>
             </div>
           </div>
@@ -3570,22 +3574,23 @@ function StepFlow({
 
           {/* Fare card — compact hero */}
           <div
-            className="flex items-center justify-between gap-3 rounded-[16px] bg-white px-3 py-2.5 ring-1 ring-[#76C139]/25 shadow-[0_16px_36px_-20px_rgba(118,193,57,0.35)] animate-in fade-in duration-[220ms]"
+            className="flex items-center justify-between gap-3 rounded-[16px] bg-white px-3 py-2 ring-1 ring-[#76C139]/25 shadow-[0_16px_36px_-20px_rgba(118,193,57,0.35)] animate-in fade-in duration-[220ms]"
             style={{ animationDelay: "80ms", animationFillMode: "backwards" }}
           >
-            <div className="min-w-0">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#707070] leading-none">
-                Valor estimado
-              </div>
-              <div className="mt-1 text-[22px] font-bold leading-none tracking-tight text-[#111418]">
+            <div className="flex items-baseline gap-2 min-w-0">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#707070] leading-none">
+                Valor
+              </span>
+              <span className="text-[22px] font-bold leading-none tracking-tight text-[#111418] tabular-nums">
                 {formatBRL(selectedFare)}
-              </div>
+              </span>
             </div>
             <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#76C139]/12 px-2 py-0.5 text-[10.5px] font-semibold text-[#5A9A2A]">
               <Zap className="h-3 w-3" strokeWidth={2.25} />
               MOVVI Preço
             </span>
           </div>
+
 
           {/* Payment card */}
           <button
@@ -3957,47 +3962,48 @@ function SearchingPanel({
   return (
     <div className="pt-0.5 animate-in fade-in duration-[220ms]">
       {/* Top status card — floating glass */}
-      <div className="mb-4 rounded-[22px] bg-white/95 px-4 py-3.5 ring-1 ring-border/60 shadow-[0_12px_32px_-20px_rgba(15,23,42,0.25)] backdrop-blur-xl animate-in fade-in slide-in-from-top-1 duration-[220ms]">
-        <div className="flex items-center gap-3">
-          <span className="relative grid h-9 w-9 shrink-0 place-items-center">
+      <div className="mb-3 rounded-[20px] bg-white/95 px-3 py-2.5 ring-1 ring-border/60 shadow-[0_12px_32px_-20px_rgba(15,23,42,0.25)] backdrop-blur-xl animate-in fade-in slide-in-from-top-1 duration-[220ms]">
+        <div className="flex items-center gap-2.5">
+          <span className="relative grid h-8 w-8 shrink-0 place-items-center">
             <span className="absolute inset-0 rounded-full bg-[#76C139]/25 animate-ping [animation-duration:1.8s]" />
-            <span className="relative grid h-3 w-3 place-items-center rounded-full bg-[#76C139] shadow-[0_0_0_4px_rgba(118,193,57,0.18)]" />
+            <span className="relative grid h-2.5 w-2.5 place-items-center rounded-full bg-[#76C139] shadow-[0_0_0_4px_rgba(118,193,57,0.18)]" />
           </span>
           <div className="min-w-0 flex-1">
-            <div className="text-[15px] font-bold leading-tight text-[#111418]">
+            <div className="text-[14px] font-bold leading-tight text-[#111418]">
               {noDriversAvailable ? "Ampliando busca" : "Buscando motorista"}
             </div>
-            <div className="mt-0.5 text-[12px] leading-tight text-[#707070]">
+            <div className="mt-0.5 text-[11.5px] leading-tight text-[#707070]">
               Motoristas próximos
             </div>
           </div>
-          <span className="shrink-0 rounded-full bg-[#76C139]/12 px-2 py-0.5 text-[11px] font-semibold text-[#5A9A2A] tabular-nums">
+          <span className="shrink-0 rounded-full bg-[#76C139]/12 px-2 py-0.5 text-[10.5px] font-semibold text-[#5A9A2A] tabular-nums">
             {driversCount} {driversCount === 1 ? "perto" : "perto"}
           </span>
         </div>
       </div>
 
       {/* Radar / searching animation — primary visual focus */}
-      <div className="relative mx-auto mb-2 grid h-[120px] w-[120px] place-items-center">
+      <div className="relative mx-auto mb-2 grid h-[96px] w-[96px] place-items-center">
         {/* concentric rings */}
         <span className="absolute inset-0 rounded-full bg-[#76C139]/8 animate-ping [animation-duration:2.4s]" />
         <span
-          className="absolute inset-3 rounded-full bg-[#76C139]/10 animate-ping [animation-duration:2.4s]"
+          className="absolute inset-2 rounded-full bg-[#76C139]/10 animate-ping [animation-duration:2.4s]"
           style={{ animationDelay: "0.4s" }}
         />
         <span
-          className="absolute inset-6 rounded-full bg-[#76C139]/14 animate-ping [animation-duration:2.4s]"
+          className="absolute inset-5 rounded-full bg-[#76C139]/14 animate-ping [animation-duration:2.4s]"
           style={{ animationDelay: "0.8s" }}
         />
-        <span className="absolute inset-[38px] rounded-full bg-white ring-1 ring-[#76C139]/25 shadow-[0_10px_28px_-14px_rgba(118,193,57,0.5)]" />
-        <span className="relative grid h-12 w-12 place-items-center rounded-full bg-gradient-to-br from-[#8FD24A] to-[#5A9A2A] text-white shadow-[0_12px_28px_-12px_rgba(118,193,57,0.65)]">
+        <span className="absolute inset-[30px] rounded-full bg-white ring-1 ring-[#76C139]/25 shadow-[0_10px_28px_-14px_rgba(118,193,57,0.5)]" />
+        <span className="relative grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-[#8FD24A] to-[#5A9A2A] text-white shadow-[0_12px_28px_-12px_rgba(118,193,57,0.65)]">
           {CatIcon ? (
-            <CatIcon className="h-6 w-6" strokeWidth={1.75} />
+            <CatIcon className="h-5 w-5" strokeWidth={1.75} />
           ) : (
-            <Navigation2 className="h-6 w-6" strokeWidth={1.75} />
+            <Navigation2 className="h-5 w-5" strokeWidth={1.75} />
           )}
         </span>
       </div>
+
 
       {/* Rotating status message */}
       <div className="mb-1 flex min-h-[22px] items-center justify-center">
