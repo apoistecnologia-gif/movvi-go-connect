@@ -2875,6 +2875,7 @@ function SheetContent({
       {destination && (
         <StepFlow
           destination={destination}
+          pickupLabel={pickupAddressLine}
           route={route}
           uiStage={uiStage}
           setUiStage={setUiStage}
@@ -2893,6 +2894,7 @@ function SheetContent({
           paymentMethod={paymentMethod}
           setPaymentMethod={setPaymentMethod}
         />
+
       )}
     </div>
   );
@@ -2904,6 +2906,7 @@ function SheetContent({
 
 type StepFlowProps = {
   destination: { point: LatLng; label: string };
+  pickupLabel: string;
   route: RouteResult | null;
   uiStage: PassengerUiStage;
   setUiStage: (stage: PassengerUiStage) => void;
@@ -2923,8 +2926,10 @@ type StepFlowProps = {
   setPaymentMethod: (m: "dinheiro" | "pix" | "cartao_credito") => void;
 };
 
+
 function StepFlow({
   destination,
+  pickupLabel,
   route,
   uiStage,
   setUiStage,
@@ -2943,6 +2948,7 @@ function StepFlow({
   paymentMethod,
   setPaymentMethod,
 }: StepFlowProps) {
+
   const uiCategories = useUiCategories();
   useEffect(() => {
     if (route && uiStage === "selecting_destination") setUiStage("route_preview");
