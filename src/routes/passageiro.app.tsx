@@ -10,6 +10,7 @@ import {
   Bike,
   Box,
   Car,
+  Check,
   ChevronRight,
   Clock,
   CreditCard,
