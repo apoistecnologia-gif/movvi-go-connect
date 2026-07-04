@@ -3962,47 +3962,48 @@ function SearchingPanel({
   return (
     <div className="pt-0.5 animate-in fade-in duration-[220ms]">
       {/* Top status card — floating glass */}
-      <div className="mb-4 rounded-[22px] bg-white/95 px-4 py-3.5 ring-1 ring-border/60 shadow-[0_12px_32px_-20px_rgba(15,23,42,0.25)] backdrop-blur-xl animate-in fade-in slide-in-from-top-1 duration-[220ms]">
-        <div className="flex items-center gap-3">
-          <span className="relative grid h-9 w-9 shrink-0 place-items-center">
+      <div className="mb-3 rounded-[20px] bg-white/95 px-3 py-2.5 ring-1 ring-border/60 shadow-[0_12px_32px_-20px_rgba(15,23,42,0.25)] backdrop-blur-xl animate-in fade-in slide-in-from-top-1 duration-[220ms]">
+        <div className="flex items-center gap-2.5">
+          <span className="relative grid h-8 w-8 shrink-0 place-items-center">
             <span className="absolute inset-0 rounded-full bg-[#76C139]/25 animate-ping [animation-duration:1.8s]" />
-            <span className="relative grid h-3 w-3 place-items-center rounded-full bg-[#76C139] shadow-[0_0_0_4px_rgba(118,193,57,0.18)]" />
+            <span className="relative grid h-2.5 w-2.5 place-items-center rounded-full bg-[#76C139] shadow-[0_0_0_4px_rgba(118,193,57,0.18)]" />
           </span>
           <div className="min-w-0 flex-1">
-            <div className="text-[15px] font-bold leading-tight text-[#111418]">
+            <div className="text-[14px] font-bold leading-tight text-[#111418]">
               {noDriversAvailable ? "Ampliando busca" : "Buscando motorista"}
             </div>
-            <div className="mt-0.5 text-[12px] leading-tight text-[#707070]">
+            <div className="mt-0.5 text-[11.5px] leading-tight text-[#707070]">
               Motoristas próximos
             </div>
           </div>
-          <span className="shrink-0 rounded-full bg-[#76C139]/12 px-2 py-0.5 text-[11px] font-semibold text-[#5A9A2A] tabular-nums">
+          <span className="shrink-0 rounded-full bg-[#76C139]/12 px-2 py-0.5 text-[10.5px] font-semibold text-[#5A9A2A] tabular-nums">
             {driversCount} {driversCount === 1 ? "perto" : "perto"}
           </span>
         </div>
       </div>
 
       {/* Radar / searching animation — primary visual focus */}
-      <div className="relative mx-auto mb-2 grid h-[120px] w-[120px] place-items-center">
+      <div className="relative mx-auto mb-2 grid h-[96px] w-[96px] place-items-center">
         {/* concentric rings */}
         <span className="absolute inset-0 rounded-full bg-[#76C139]/8 animate-ping [animation-duration:2.4s]" />
         <span
-          className="absolute inset-3 rounded-full bg-[#76C139]/10 animate-ping [animation-duration:2.4s]"
+          className="absolute inset-2 rounded-full bg-[#76C139]/10 animate-ping [animation-duration:2.4s]"
           style={{ animationDelay: "0.4s" }}
         />
         <span
-          className="absolute inset-6 rounded-full bg-[#76C139]/14 animate-ping [animation-duration:2.4s]"
+          className="absolute inset-5 rounded-full bg-[#76C139]/14 animate-ping [animation-duration:2.4s]"
           style={{ animationDelay: "0.8s" }}
         />
-        <span className="absolute inset-[38px] rounded-full bg-white ring-1 ring-[#76C139]/25 shadow-[0_10px_28px_-14px_rgba(118,193,57,0.5)]" />
-        <span className="relative grid h-12 w-12 place-items-center rounded-full bg-gradient-to-br from-[#8FD24A] to-[#5A9A2A] text-white shadow-[0_12px_28px_-12px_rgba(118,193,57,0.65)]">
+        <span className="absolute inset-[30px] rounded-full bg-white ring-1 ring-[#76C139]/25 shadow-[0_10px_28px_-14px_rgba(118,193,57,0.5)]" />
+        <span className="relative grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-[#8FD24A] to-[#5A9A2A] text-white shadow-[0_12px_28px_-12px_rgba(118,193,57,0.65)]">
           {CatIcon ? (
-            <CatIcon className="h-6 w-6" strokeWidth={1.75} />
+            <CatIcon className="h-5 w-5" strokeWidth={1.75} />
           ) : (
-            <Navigation2 className="h-6 w-6" strokeWidth={1.75} />
+            <Navigation2 className="h-5 w-5" strokeWidth={1.75} />
           )}
         </span>
       </div>
+
 
       {/* Rotating status message */}
       <div className="mb-1 flex min-h-[22px] items-center justify-center">
