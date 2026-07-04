@@ -3477,7 +3477,7 @@ function StepFlow({
                   <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#707070] leading-none">
                     Embarque
                   </div>
-                  <div className="mt-1.5 truncate text-[15px] font-semibold text-[#111418] leading-snug">
+                  <div className="mt-1.5 line-clamp-2 text-[15px] font-semibold text-[#111418] leading-snug">
                     {pickupLabel || "Localização atual"}
                   </div>
                 </div>
