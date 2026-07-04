@@ -1518,6 +1518,12 @@ function PassageiroApp() {
         bounds.extend(position);
         bounds.extend(dest);
         mapRef.current.fitBounds(bounds, { top: 90, bottom: Math.round(window.innerHeight * 0.5) + 16, left: 48, right: 48 });
+        // Nunca zoom < 13: enquadra apenas o par de pontos, jamais o estado inteiro.
+        const listener = google.maps.event.addListenerOnce(mapRef.current, "idle", () => {
+          const z = mapRef.current?.getZoom();
+          if (typeof z === "number" && z < 13) mapRef.current?.setZoom(13);
+        });
+        void listener;
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Falha ao calcular rota.");
