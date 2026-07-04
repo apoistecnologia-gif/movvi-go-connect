@@ -187,12 +187,12 @@ function PremiumTopBar({
           <Menu className="h-[18px] w-[18px]" strokeWidth={1.75} />
         </button>
         <div className="min-w-0 flex-1">
-          <div className={`${greetingClass} flex items-center gap-1.5 font-normal leading-tight tracking-tight text-[#707070]`}>
+          <div className={`${greetingClass} flex items-center gap-1.5 font-normal leading-tight tracking-tight text-muted-foreground`}>
             <GIcon className="h-[13px] w-[13px] text-[#76C139]" strokeWidth={2} />
             <span>{greet},</span>
-            <span className="truncate font-semibold text-[#1B1B1B]">{fname}</span>
+            <span className="truncate font-semibold text-foreground">{fname}</span>
           </div>
-          <div className="mt-1 flex items-center gap-1.5 truncate text-[12px] text-[#707070]">
+          <div className="mt-1 flex items-center gap-1.5 truncate text-[12px] text-muted-foreground">
             <MapPin className="h-[12px] w-[12px] shrink-0 text-[#76C139]" strokeWidth={2} />
             <span className="truncate">{statusText}</span>
           </div>
@@ -200,10 +200,11 @@ function PremiumTopBar({
         <button
           onClick={onLogout}
           aria-label="Sair"
-          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#707070] transition hover:bg-destructive/10 hover:text-destructive active:scale-[0.95]"
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive active:scale-[0.95]"
         >
           <LogOut className="h-[16px] w-[16px]" strokeWidth={1.75} />
         </button>
+
       </div>
     </div>
   );
@@ -2922,7 +2923,7 @@ function FavoritesStrip({ onPick }: { onPick: (point: LatLng, label: string) => 
             key={f.id}
             type="button"
             onClick={() => onPick({ lat: f.lat, lng: f.lng }, f.address)}
-            className="flex shrink-0 items-center gap-2 rounded-full border border-border/60 bg-card px-3.5 py-2 text-[13px] font-semibold text-[#1B1B1B] shadow-[0_4px_14px_-10px_rgba(15,23,42,0.2)] transition hover:border-[#76C139]/50 hover:bg-[#76C139]/5 active:scale-[0.97]"
+            className="flex shrink-0 items-center gap-2 rounded-full border border-border/60 bg-card px-3.5 py-2 text-[13px] font-semibold text-foreground shadow-[0_4px_14px_-10px_rgba(15,23,42,0.2)] transition hover:border-[#76C139]/50 hover:bg-[#76C139]/5 active:scale-[0.97]"
           >
             <Icon className="h-4 w-4 text-[#76C139]" strokeWidth={2} />
             <span className="max-w-[140px] truncate">{f.label}</span>
@@ -2932,7 +2933,8 @@ function FavoritesStrip({ onPick }: { onPick: (point: LatLng, label: string) => 
       <button
         type="button"
         onClick={() => navigate({ to: "/passageiro/favoritos" })}
-        className="flex shrink-0 items-center gap-2 rounded-full border border-dashed border-border/70 px-3.5 py-2 text-[13px] font-semibold text-[#707070] transition hover:border-[#76C139]/50 hover:text-[#1B1B1B] active:scale-[0.97]"
+        className="flex shrink-0 items-center gap-2 rounded-full border border-dashed border-border/70 px-3.5 py-2 text-[13px] font-semibold text-muted-foreground transition hover:border-[#76C139]/50 hover:text-foreground active:scale-[0.97]"
+
       >
         <Heart className="h-4 w-4" strokeWidth={2} />
         <span>{items.length === 0 ? "Adicionar favoritos" : "Gerenciar"}</span>
@@ -3101,33 +3103,33 @@ function SheetContent({
                 Local de embarque
               </div>
               {hasPosition && (
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-[#707070]">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                   Ajustar
                 </span>
               )}
             </div>
             {addressStatus === "loading" && !pickupAddressLine ? (
-              <div className="mt-1 truncate text-[14px] font-semibold leading-tight text-[#1B1B1B]">
+              <div className="mt-1 truncate text-[14px] font-semibold leading-tight text-foreground">
                 Localização atual
               </div>
             ) : pickupAddressLine ? (
               <>
-                <div className="mt-1 truncate text-[15px] font-semibold leading-tight text-[#1B1B1B]">
+                <div className="mt-1 truncate text-[15px] font-semibold leading-tight text-foreground">
                   {pickupAddressLine}
                 </div>
                 {pickupSubLine && pickupSubLine !== pickupAddressLine ? (
-                  <div className="truncate text-[12.5px] leading-tight text-[#707070]">
+                  <div className="truncate text-[12.5px] leading-tight text-muted-foreground">
                     {pickupSubLine}
                   </div>
                 ) : (
                   <>
                     {bairro && bairro !== pickupAddressLine && (
-                      <div className="truncate text-[12.5px] leading-tight text-[#707070]">
+                      <div className="truncate text-[12.5px] leading-tight text-muted-foreground">
                         {bairro}
                       </div>
                     )}
                     {region && region !== pickupAddressLine && (
-                      <div className="truncate text-[12px] leading-tight text-[#707070]">
+                      <div className="truncate text-[12px] leading-tight text-muted-foreground">
                         {region}
                       </div>
                     )}
@@ -3135,14 +3137,15 @@ function SheetContent({
                 )}
               </>
             ) : hasPosition ? (
-              <div className="mt-1 truncate text-[14px] font-semibold leading-tight text-[#1B1B1B]">
+              <div className="mt-1 truncate text-[14px] font-semibold leading-tight text-foreground">
                 Localização atual
               </div>
             ) : (
-              <div className="mt-1 truncate text-[13px] leading-tight text-[#707070]">
+              <div className="mt-1 truncate text-[13px] leading-tight text-muted-foreground">
                 Endereço não identificado
               </div>
             )}
+
           </div>
           <button
             type="button"
@@ -3242,15 +3245,16 @@ function SheetContent({
 
       {/* Dica sem destino */}
       {showDestinationInput && !destination && suggestions.length === 0 && (
-        <div className="mt-2 rounded-[20px] border border-dashed border-border/70 bg-[#F7F9F7]/60 px-4 py-3.5 text-center animate-in fade-in duration-300">
-          <p className="text-[12.5px] leading-snug text-[#707070]">
+        <div className="mt-2 rounded-[20px] border border-dashed border-border/70 bg-muted/40 px-4 py-3.5 text-center animate-in fade-in duration-300">
+          <p className="text-[12.5px] leading-snug text-muted-foreground">
             Informe o destino para ver{" "}
-            <span className="font-semibold text-[#1B1B1B]">Corridas</span>,{" "}
-            <span className="font-semibold text-[#1B1B1B]">Envios</span> e{" "}
-            <span className="font-semibold text-[#1B1B1B]">Serviços</span>{" "}
+            <span className="font-semibold text-foreground">Corridas</span>,{" "}
+            <span className="font-semibold text-foreground">Envios</span> e{" "}
+            <span className="font-semibold text-foreground">Serviços</span>{" "}
             disponíveis no trajeto.
           </p>
         </div>
+
       )}
 
       {/* COM destino: fluxo em 4 etapas (estilo Uber/99/InDrive) */}
