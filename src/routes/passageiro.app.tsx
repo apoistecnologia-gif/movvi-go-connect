@@ -2491,8 +2491,7 @@ function PassageiroApp() {
                     <Car className="h-2.5 w-2.5" strokeWidth={2.5} />
                   </span>
                   <div className="relative h-[3px] flex-1 overflow-hidden rounded-full bg-[#F7F9F7]">
-                    <div className="absolute inset-y-0 left-0 w-1/2 rounded-full bg-[#76C139]" />
-                    <div className="absolute inset-y-0 left-0 h-full w-1/3 animate-[shimmer_2.2s_ease-in-out_infinite] rounded-full bg-gradient-to-r from-transparent via-white/70 to-transparent" />
+                    <div className="absolute inset-y-0 left-0 w-1/2 rounded-full bg-[#76C139] animate-pulse" />
                   </div>
                   <span className="grid h-4 w-4 place-items-center rounded-full bg-[#76C139] text-white">
                     <MapPin className="h-2.5 w-2.5" strokeWidth={2.5} />
