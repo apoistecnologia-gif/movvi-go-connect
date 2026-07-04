@@ -2386,7 +2386,7 @@ function PassageiroApp() {
         (phase === "motorista_a_caminho" || phase === "motorista_chegou") && (
           <div
             className="pointer-events-none absolute inset-x-0 z-40 flex justify-center px-3"
-            style={{ top: "calc(env(safe-area-inset-top) + 96px)" }}
+            style={{ top: "calc(env(safe-area-inset-top) + 200px)" }}
           >
             <div className="pointer-events-auto w-full max-w-sm rounded-2xl bg-card/92 px-4 py-2.5 ring-1 ring-border/50 shadow-[0_10px_28px_-14px_rgba(0,0,0,0.55)] backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-400">
               <div className="flex items-center justify-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground/90">
