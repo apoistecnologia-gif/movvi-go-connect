@@ -2259,7 +2259,7 @@ function PassageiroApp() {
 
       {/* BOTTOM SHEET — novo, próprio do MOVVI */}
       {!ride && (
-        <MovviSheet ref={sheetRef} snaps={[36, 58, 86]} initial={36}>
+        <MovviSheet ref={sheetRef} snaps={[38, 62, 88]} initial={38}>
           <SheetContent
             geo={geo}
             addressStatus={addressStatus}
@@ -2356,7 +2356,7 @@ function PassageiroApp() {
 
 
       {ride && ride.status === "procurar_motorista" && (
-        <MovviSheet snaps={[42, 68, 92]} initial={68}>
+        <MovviSheet snaps={[44, 68, 88]} initial={44}>
           <SearchingPanel
             category={category}
             driversCount={nearbyCount}
@@ -3220,9 +3220,9 @@ function SheetContent({
                   <MapPin className="h-[16px] w-[16px]" strokeWidth={2} />
                 </span>
                 <span className="flex min-w-0 flex-col">
-                  <span className="truncate text-[15px] font-semibold text-[#1B1B1B]">{s.primary}</span>
+                  <span className="line-clamp-2 text-[15px] font-semibold text-foreground">{s.primary}</span>
                   {s.secondary && (
-                    <span className="truncate text-[12.5px] text-[#707070]">
+                    <span className="line-clamp-2 text-[12.5px] text-muted-foreground">
                       {s.secondary}
                     </span>
                   )}
@@ -3358,10 +3358,10 @@ function StepFlow({
             <ArrowLeft className="h-[18px] w-[18px]" strokeWidth={2} />
           </button>
           <div className="min-w-0 flex-1">
-            <h2 className="truncate text-[24px] font-bold leading-tight tracking-tight text-[#111418]">
+            <h2 className="text-[24px] font-bold leading-tight tracking-tight text-[#111418]">
               Escolha sua corrida
             </h2>
-            <p className="mt-0.5 truncate text-[13px] text-[#707070]">
+            <p className="mt-0.5 text-[13px] text-[#707070]">
               Selecione a melhor opção para sua viagem.
             </p>
           </div>
@@ -3375,7 +3375,7 @@ function StepFlow({
           <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#76C139]/10 text-[#76C139]">
             <MapPin className="h-[16px] w-[16px]" strokeWidth={2} />
           </span>
-          <span className="line-clamp-1 flex-1 text-[13px] font-semibold text-[#111418]">
+          <span className="line-clamp-2 flex-1 text-[13px] font-semibold text-[#111418]">
             {destination.label}
           </span>
           <button
@@ -3414,9 +3414,9 @@ function StepFlow({
             onClick={() => {
               if (import.meta.env.DEV) console.log("[MOVVI UI] botão continuar clicado");
               setUiStage("selecting_category");
-              onExpandSheet(50);
+              onExpandSheet(62);
             }}
-            className="w-full rounded-2xl bg-primary py-3.5 text-[14px] font-bold text-primary-foreground shadow-xl shadow-primary/25 transition active:scale-[0.98]"
+            className="sticky bottom-0 z-50 flex h-14 w-full items-center justify-center rounded-[18px] bg-[#76C139] text-[15px] font-bold text-[#071008] shadow-[0_16px_32px_-16px_rgba(118,193,57,0.55)] transition active:scale-[0.98]"
           >
             Continuar
           </button>
@@ -3453,10 +3453,10 @@ function StepFlow({
               <ArrowLeft className="h-[18px] w-[18px]" strokeWidth={2} />
             </button>
             <div className="min-w-0 flex-1">
-              <h2 className="truncate text-[24px] font-bold leading-tight tracking-tight text-[#111418]">
+              <h2 className="text-[24px] font-bold leading-tight tracking-tight text-[#111418]">
                 Confirme sua corrida
               </h2>
-              <p className="mt-0.5 truncate text-[13px] text-[#707070]">
+              <p className="mt-0.5 text-[13px] text-[#707070]">
                 Revise sua viagem antes de solicitar.
               </p>
             </div>
@@ -3477,7 +3477,7 @@ function StepFlow({
                   <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#707070] leading-none">
                     Embarque
                   </div>
-                  <div className="mt-1.5 truncate text-[15px] font-semibold text-[#111418] leading-snug">
+                  <div className="mt-1.5 line-clamp-2 text-[15px] font-semibold text-[#111418] leading-snug">
                     {pickupLabel || "Localização atual"}
                   </div>
                 </div>
@@ -3486,7 +3486,7 @@ function StepFlow({
                   <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#707070] leading-none">
                     Destino
                   </div>
-                  <div className="mt-1.5 truncate text-[15px] font-semibold text-[#111418] leading-snug">
+                  <div className="mt-1.5 line-clamp-2 text-[15px] font-semibold text-[#111418] leading-snug">
                     {destination.label}
                   </div>
                 </div>
@@ -3503,7 +3503,7 @@ function StepFlow({
               <selectedCategory.icon className="h-[22px] w-[22px]" strokeWidth={1.75} />
             </span>
             <div className="min-w-0 flex-1">
-              <div className="truncate text-[18px] font-semibold text-[#111418] leading-tight">
+              <div className="line-clamp-2 text-[18px] font-semibold text-[#111418] leading-tight">
                 {selectedCategory.label}
               </div>
               <div className="mt-1 flex items-center gap-1.5 text-[13px] text-[#707070]">
@@ -3643,25 +3643,25 @@ function RideCategorySelector({
                 type="button"
                 onClick={() => onSelect(c)}
                 aria-pressed={active}
-                className={`group flex w-full items-center gap-3 rounded-[24px] bg-white px-4 py-3.5 text-left transition-[transform,box-shadow,border-color] duration-200 active:scale-[0.99] ${
+                className={`group flex w-full items-center gap-3 rounded-[18px] bg-white px-3 py-3 text-left transition-[transform,box-shadow,border-color] duration-200 active:scale-[0.99] ${
                   active
                     ? "scale-[1.01] border-2 border-[#76C139] shadow-[0_16px_36px_-18px_rgba(118,193,57,0.4)]"
                     : "border border-border/60 shadow-[0_6px_18px_-14px_rgba(15,23,42,0.18)] hover:border-[#76C139]/40"
                 }`}
               >
                 <span
-                  className={`grid h-14 w-14 shrink-0 place-items-center rounded-[18px] transition ${
+                  className={`grid h-12 w-12 shrink-0 place-items-center rounded-[14px] transition ${
                     active
                       ? "bg-[#76C139] text-white shadow-[0_10px_22px_-12px_rgba(118,193,57,0.55)]"
                       : "bg-[#76C139]/10 text-[#5A9A2A] group-hover:bg-[#76C139]/15"
                   }`}
                 >
-                  <Icon className="h-[26px] w-[26px]" strokeWidth={1.75} />
+                  <Icon className="h-[22px] w-[22px]" strokeWidth={1.75} />
                 </span>
 
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="truncate text-[17px] font-bold text-[#111418] leading-tight">
+                  <div className="flex items-start gap-2">
+                    <span className="line-clamp-2 break-words text-[16px] font-bold text-[#111418] leading-tight">
                       {c.label}
                     </span>
                     <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#76C139]/12 px-2 py-0.5 text-[11px] font-semibold text-[#5A9A2A]">
@@ -3716,7 +3716,7 @@ function RequestRideButton({
       type="button"
       disabled={busy}
       onClick={onSubmit}
-      className="mt-1 flex h-14 w-full items-center justify-center gap-2 rounded-[18px] bg-[#76C139] text-[15px] font-bold text-white shadow-[0_16px_32px_-16px_rgba(118,193,57,0.55)] transition-[transform,filter,box-shadow] duration-200 active:scale-[0.98] hover:brightness-[1.04] disabled:cursor-not-allowed disabled:opacity-60"
+      className="sticky bottom-0 z-50 mt-1 flex h-14 w-full items-center justify-center gap-2 rounded-[18px] bg-[#76C139] text-[15px] font-bold text-[#071008] shadow-[0_16px_32px_-16px_rgba(118,193,57,0.55)] transition-[transform,filter,box-shadow] duration-200 active:scale-[0.98] hover:brightness-[1.04] disabled:cursor-not-allowed disabled:opacity-60"
     >
       {busy ? (
         <>
@@ -3925,23 +3925,23 @@ function SearchingPanel({
       </div>
 
       {/* Radar / searching animation — primary visual focus */}
-      <div className="relative mx-auto mb-2 grid h-[168px] w-[168px] place-items-center">
+      <div className="relative mx-auto mb-2 grid h-[120px] w-[120px] place-items-center">
         {/* concentric rings */}
         <span className="absolute inset-0 rounded-full bg-[#76C139]/8 animate-ping [animation-duration:2.4s]" />
         <span
-          className="absolute inset-4 rounded-full bg-[#76C139]/10 animate-ping [animation-duration:2.4s]"
+          className="absolute inset-3 rounded-full bg-[#76C139]/10 animate-ping [animation-duration:2.4s]"
           style={{ animationDelay: "0.4s" }}
         />
         <span
-          className="absolute inset-9 rounded-full bg-[#76C139]/14 animate-ping [animation-duration:2.4s]"
+          className="absolute inset-6 rounded-full bg-[#76C139]/14 animate-ping [animation-duration:2.4s]"
           style={{ animationDelay: "0.8s" }}
         />
-        <span className="absolute inset-[52px] rounded-full bg-white ring-1 ring-[#76C139]/25 shadow-[0_10px_28px_-14px_rgba(118,193,57,0.5)]" />
-        <span className="relative grid h-16 w-16 place-items-center rounded-full bg-gradient-to-br from-[#8FD24A] to-[#5A9A2A] text-white shadow-[0_12px_28px_-12px_rgba(118,193,57,0.65)]">
+        <span className="absolute inset-[38px] rounded-full bg-white ring-1 ring-[#76C139]/25 shadow-[0_10px_28px_-14px_rgba(118,193,57,0.5)]" />
+        <span className="relative grid h-12 w-12 place-items-center rounded-full bg-gradient-to-br from-[#8FD24A] to-[#5A9A2A] text-white shadow-[0_12px_28px_-12px_rgba(118,193,57,0.65)]">
           {CatIcon ? (
-            <CatIcon className="h-7 w-7" strokeWidth={1.75} />
+            <CatIcon className="h-6 w-6" strokeWidth={1.75} />
           ) : (
-            <Navigation2 className="h-7 w-7" strokeWidth={1.75} />
+            <Navigation2 className="h-6 w-6" strokeWidth={1.75} />
           )}
         </span>
       </div>
@@ -3961,7 +3961,7 @@ function SearchingPanel({
 
       {/* Trip summary card */}
       {(pickupLabel || destinationLabel || fare != null || paymentLabel) && (
-        <div className="mb-3.5 rounded-[24px] bg-white p-4 ring-1 ring-border/60 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.22)] animate-in fade-in slide-in-from-bottom-1 duration-[220ms]">
+        <div className="mb-2 rounded-[18px] bg-white p-3 ring-1 ring-border/60 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.22)] animate-in fade-in slide-in-from-bottom-1 duration-[220ms]">
           {(pickupLabel || destinationLabel) && (
             <div className="flex items-stretch gap-3.5">
               <div className="flex flex-col items-center pt-1">
@@ -3976,7 +3976,7 @@ function SearchingPanel({
                   <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#707070] leading-none">
                     Embarque
                   </div>
-                  <div className="mt-1 truncate text-[14.5px] font-semibold text-[#111418] leading-snug">
+                  <div className="mt-1 line-clamp-2 text-[14.5px] font-semibold text-[#111418] leading-snug">
                     {pickupLabel || "Localização atual"}
                   </div>
                 </div>
@@ -3985,7 +3985,7 @@ function SearchingPanel({
                   <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#707070] leading-none">
                     Destino
                   </div>
-                  <div className="mt-1 truncate text-[14.5px] font-semibold text-[#111418] leading-snug">
+                  <div className="mt-1 line-clamp-2 text-[14.5px] font-semibold text-[#111418] leading-snug">
                     {destinationLabel || "—"}
                   </div>
                 </div>
@@ -4029,7 +4029,7 @@ function SearchingPanel({
         type="button"
         onClick={onCancel}
         aria-label="Cancelar solicitação"
-        className="flex h-12 w-full items-center justify-center gap-2 rounded-[16px] border border-[#111418]/25 bg-white text-[14px] font-semibold text-[#111418] transition duration-[220ms] hover:bg-[#F7F9F7] hover:border-[#111418]/40 active:scale-[0.98]"
+        className="sticky bottom-0 z-50 flex h-12 w-full items-center justify-center gap-2 rounded-[16px] border border-[#111418]/25 bg-white text-[14px] font-semibold text-[#111418] transition duration-[220ms] hover:bg-[#F7F9F7] hover:border-[#111418]/40 active:scale-[0.98]"
       >
         <X className="h-4 w-4" strokeWidth={2} />
         Cancelar solicitação

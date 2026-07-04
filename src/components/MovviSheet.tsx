@@ -323,12 +323,9 @@ export const MovviSheet = forwardRef<MovviSheetHandle, Props>(function MovviShee
         data-scroll
         className="movvi-scroll flex-1 px-5"
         style={{
-          // When there's a pinned footer, leave less bottom padding — the footer
-          // handles the safe-area itself so the CTA sits above the gesture bar.
-          // When the on-screen keyboard is open and there is NO pinned footer,
-          // add extra bottom padding so the focused input isn't hidden.
+          // Reserve enough room for the pinned footer so the last content isn't hidden behind it.
           paddingBottom: footer
-            ? 12
+            ? "96px"
             : `calc(env(safe-area-inset-bottom) + 20px + ${keyboardOffset}px)`,
           overflowY: "auto",
           overscrollBehavior: "contain",
@@ -341,11 +338,13 @@ export const MovviSheet = forwardRef<MovviSheetHandle, Props>(function MovviShee
 
       {footer && (
         <div
-          className="shrink-0 border-t border-border/40 bg-card/95 px-5 pt-2.5 backdrop-blur-xl"
+          className="shrink-0 border-t border-border/40 px-5 pt-2.5 backdrop-blur-xl"
           style={{
-            // Keep footer visible above the on-screen keyboard by adding the
-            // measured keyboard height to the safe-area bottom padding.
-            paddingBottom: `calc(env(safe-area-inset-bottom) + 12px + ${keyboardOffset}px)`,
+            position: "sticky",
+            bottom: 0,
+            zIndex: 50,
+            background: "var(--color-card)",
+            paddingBottom: "calc(env(safe-area-inset-bottom) + 20px)",
             boxShadow: "0 -12px 24px -18px rgba(0,0,0,0.5)",
           }}
         >
