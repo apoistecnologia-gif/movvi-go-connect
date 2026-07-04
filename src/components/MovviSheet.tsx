@@ -285,7 +285,7 @@ export const MovviSheet = forwardRef<MovviSheetHandle, Props>(function MovviShee
   return (
     <div
       ref={sheetRef}
-      className="absolute inset-x-0 z-30 flex flex-col rounded-t-[36px] bg-card text-foreground will-change-[height] animate-sheet-in"
+      className="absolute inset-x-0 z-30 flex flex-col rounded-t-[26px] bg-card text-foreground will-change-[height] animate-sheet-in"
       style={{
         // Use `dvh` (dynamic viewport height) so the sheet adapts to Android
         // URL-bar changes and safe-area insets — never a fixed pixel height.
