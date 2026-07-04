@@ -2380,6 +2380,28 @@ function PassageiroApp() {
 
       {/* PIN de segurança exibido no bottom sheet (DriverEnRoute). */}
 
+      {ride && rideDriverInfo && phase === "motorista_chegou" && (
+        <div
+          className="pointer-events-none absolute inset-x-0 z-40 flex justify-center px-3"
+          style={{ top: "calc(env(safe-area-inset-top) + 16px)" }}
+        >
+          <div className="pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-[22px] bg-white/95 px-4 py-3.5 shadow-[0_18px_44px_-22px_rgba(118,193,57,0.55)] ring-1 ring-[#76C139]/25 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[#76C139] text-white shadow-[0_8px_20px_-8px_rgba(118,193,57,0.8)]">
+              <CheckCircle2 className="h-6 w-6" strokeWidth={2.25} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-[16px] font-bold leading-tight text-[#111418]">
+                Seu motorista chegou
+              </div>
+              <div className="mt-0.5 text-[12px] font-medium text-[#707070]">
+                Encontre seu motorista com segurança.
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+
       {ride &&
         rideDriverInfo &&
         phase === "motorista_a_caminho" &&
