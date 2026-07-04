@@ -4308,35 +4308,35 @@ function DriverEnRoute({
       {/* PIN security card — HERO when driver arrived, compact otherwise */}
       {ride.safety_code && ride.status === "motorista_chegou" && (
         <div
-          className="mt-4 relative overflow-hidden rounded-[24px] bg-[#76C139]/10 p-6 ring-1 ring-[#76C139]/40 shadow-[0_20px_50px_-20px_rgba(118,193,57,0.55)] animate-in fade-in slide-in-from-bottom-1 animate-pulse-soft"
+          className="mt-3 relative overflow-hidden rounded-[20px] bg-[#76C139]/10 p-4 ring-1 ring-[#76C139]/40 shadow-[0_12px_28px_-20px_rgba(118,193,57,0.32)] animate-in fade-in slide-in-from-bottom-1 animate-pulse-soft"
           style={{ animationDelay: "220ms", animationFillMode: "backwards" }}
         >
-          <div className="absolute -top-16 -right-16 h-40 w-40 rounded-full bg-[#76C139]/25 blur-3xl" />
-          <div className="relative flex items-center gap-3">
-            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[#76C139] text-white shadow-[0_10px_24px_-8px_rgba(118,193,57,0.85)]">
-              <Shield className="h-5 w-5" strokeWidth={2.25} />
+          <div className="absolute -top-14 -right-14 h-32 w-32 rounded-full bg-[#76C139]/20 blur-3xl" />
+          <div className="relative flex items-center gap-2.5">
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#76C139] text-white shadow-[0_6px_16px_-6px_rgba(118,193,57,0.55)]">
+              <Shield className="h-[18px] w-[18px]" strokeWidth={2.25} />
             </div>
             <div className="min-w-0">
-              <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#4a8a1e]">
+              <div className="text-[10.5px] font-bold uppercase tracking-[0.18em] text-[#4a8a1e]">
                 Seu código de segurança
               </div>
-              <div className="mt-0.5 text-[13px] font-medium text-[#707070]">
+              <div className="text-[11.5px] font-medium text-[#707070]">
                 MOVVI PIN
               </div>
             </div>
           </div>
-          <div className="relative mt-4 flex items-center justify-center gap-2">
+          <div className="relative mt-3 flex items-center justify-center gap-1.5">
             {ride.safety_code.split("").map((d, i) => (
               <span
                 key={i}
-                className="grid h-16 w-14 place-items-center rounded-2xl bg-white text-[40px] font-extrabold leading-none tabular-nums text-[#111418] shadow-[0_10px_24px_-14px_rgba(15,23,42,0.35)] ring-1 ring-[#76C139]/20"
+                className="grid h-12 w-10 place-items-center rounded-xl bg-white text-[28px] font-extrabold leading-none tabular-nums text-[#111418] shadow-[0_6px_16px_-12px_rgba(15,23,42,0.28)] ring-1 ring-[#76C139]/20"
               >
                 {d}
               </span>
             ))}
           </div>
-          <p className="relative mt-4 text-center text-[13px] font-medium leading-snug text-[#111418]">
-            Mostre este código ao seu motorista antes de entrar no veículo.
+          <p className="relative mt-2.5 text-center text-[11.5px] font-medium leading-snug text-[#111418]">
+            Mostre este código ao motorista antes de entrar no veículo.
           </p>
         </div>
       )}
