@@ -235,11 +235,11 @@ export const MovviSheet = forwardRef<MovviSheetHandle, Props>(function MovviShee
       <div
         ref={scrollRef}
         data-scroll
-        className="movvi-scroll flex-1 px-6"
+        className="movvi-scroll flex-1 px-5"
         style={{
           // When there's a pinned footer, leave less bottom padding — the footer
           // handles the safe-area itself so the CTA sits above the gesture bar.
-          paddingBottom: footer ? 16 : "calc(env(safe-area-inset-bottom) + 32px)",
+          paddingBottom: footer ? 12 : "calc(env(safe-area-inset-bottom) + 20px)",
           overflowY: "auto",
           overscrollBehavior: "contain",
           WebkitOverflowScrolling: "touch",
