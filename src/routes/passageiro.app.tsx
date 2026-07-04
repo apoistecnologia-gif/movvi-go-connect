@@ -2258,8 +2258,14 @@ function PassageiroApp() {
       </div>
 
       {/* BOTTOM SHEET — novo, próprio do MOVVI */}
-      {!ride && (
-        <MovviSheet ref={sheetRef} snaps={[38, 62, 88]} initial={38}>
+      {!ride && (() => {
+        const bigStage =
+          passengerUiStage === "selecting_category" ||
+          passengerUiStage === "confirming_request";
+        const snaps = bigStage ? [72, 88, 96] : [38, 62, 88];
+        const initial = bigStage ? 72 : 38;
+        return (
+        <MovviSheet ref={sheetRef} key={bigStage ? "big" : "small"} snaps={snaps} initial={initial}>
           <SheetContent
             geo={geo}
             addressStatus={addressStatus}
@@ -2302,7 +2308,8 @@ function PassageiroApp() {
             setPaymentMethod={setPaymentMethod}
           />
         </MovviSheet>
-      )}
+        );
+      })()}
 
       {/* Sheet de ações para o Local de partida */}
       {addressDetailsOpen && (
@@ -3330,7 +3337,8 @@ function StepFlow({
   }, [route, uiStage, setUiStage]);
 
   useEffect(() => {
-    if (uiStage === "selecting_category" || uiStage === "confirming_request") onExpandSheet(50);
+    if (uiStage === "selecting_category") onExpandSheet(88);
+    else if (uiStage === "confirming_request") onExpandSheet(88);
   }, [uiStage, onExpandSheet]);
 
   useEffect(() => {
@@ -3409,14 +3417,15 @@ function StepFlow({
       {uiStage === "route_preview" && route && !busy && (
         <div className="animate-in fade-in slide-in-from-bottom-2 duration-200">
           <FareEstimateCard route={route} fare={previewFare} />
+          <div className="h-3" />
           <button
             type="button"
             onClick={() => {
               if (import.meta.env.DEV) console.log("[MOVVI UI] botão continuar clicado");
               setUiStage("selecting_category");
-              onExpandSheet(62);
+              onExpandSheet(88);
             }}
-            className="sticky bottom-0 z-50 flex h-14 w-full items-center justify-center rounded-[18px] bg-[#76C139] text-[15px] font-bold text-[#071008] shadow-[0_16px_32px_-16px_rgba(118,193,57,0.55)] transition active:scale-[0.98]"
+            className="flex h-14 w-full items-center justify-center rounded-[18px] bg-[#76C139] text-[15px] font-bold text-[#071008] shadow-[0_16px_32px_-16px_rgba(118,193,57,0.55)] transition active:scale-[0.98]"
           >
             Continuar
           </button>
@@ -3716,7 +3725,7 @@ function RequestRideButton({
       type="button"
       disabled={busy}
       onClick={onSubmit}
-      className="sticky bottom-0 z-50 mt-1 flex h-14 w-full items-center justify-center gap-2 rounded-[18px] bg-[#76C139] text-[15px] font-bold text-[#071008] shadow-[0_16px_32px_-16px_rgba(118,193,57,0.55)] transition-[transform,filter,box-shadow] duration-200 active:scale-[0.98] hover:brightness-[1.04] disabled:cursor-not-allowed disabled:opacity-60"
+      className="mt-2 flex h-14 w-full items-center justify-center gap-2 rounded-[18px] bg-[#76C139] text-[15px] font-bold text-[#071008] shadow-[0_16px_32px_-16px_rgba(118,193,57,0.55)] transition-[transform,filter,box-shadow] duration-200 active:scale-[0.98] hover:brightness-[1.04] disabled:cursor-not-allowed disabled:opacity-60"
     >
       {busy ? (
         <>

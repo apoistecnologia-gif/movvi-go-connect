@@ -325,8 +325,8 @@ export const MovviSheet = forwardRef<MovviSheetHandle, Props>(function MovviShee
         style={{
           // Reserve enough room for the pinned footer so the last content isn't hidden behind it.
           paddingBottom: footer
-            ? "96px"
-            : `calc(env(safe-area-inset-bottom) + 20px + ${keyboardOffset}px)`,
+            ? `calc(150px + ${keyboardOffset}px)`
+            : `calc(env(safe-area-inset-bottom) + 24px + ${keyboardOffset}px)`,
           overflowY: "auto",
           overscrollBehavior: "contain",
           WebkitOverflowScrolling: "touch",
@@ -338,14 +338,14 @@ export const MovviSheet = forwardRef<MovviSheetHandle, Props>(function MovviShee
 
       {footer && (
         <div
-          className="shrink-0 border-t border-border/40 px-5 pt-2.5 backdrop-blur-xl"
+          className="shrink-0"
           style={{
             position: "sticky",
             bottom: 0,
             zIndex: 50,
-            background: "var(--color-card)",
-            paddingBottom: "calc(env(safe-area-inset-bottom) + 20px)",
-            boxShadow: "0 -12px 24px -18px rgba(0,0,0,0.5)",
+            padding: "12px 24px calc(env(safe-area-inset-bottom) + 20px)",
+            background:
+              "linear-gradient(to top, var(--color-card) 80%, transparent)",
           }}
         >
           {footer}
