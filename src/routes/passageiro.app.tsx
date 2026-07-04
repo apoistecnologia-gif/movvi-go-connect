@@ -3680,7 +3680,7 @@ function RideCategorySelector({
   const etaLabel = fmtMin(route.durationSeconds);
   return (
     <div className="animate-in fade-in slide-in-from-bottom-2 duration-200">
-      <ul className="space-y-2.5">
+      <ul className="space-y-2">
         {uiCategories.map((c, idx) => {
           const active = c.key === selectedCategoryKey;
           const fare = estimateFare(c.backend, km, min, tariffs);
@@ -3699,40 +3699,40 @@ function RideCategorySelector({
                 type="button"
                 onClick={() => onSelect(c)}
                 aria-pressed={active}
-                className={`group grid w-full items-center rounded-[18px] bg-white p-3 text-left transition-[transform,box-shadow,border-color] duration-200 active:scale-[0.99] ${
+                className={`group grid w-full items-center rounded-[16px] bg-white px-3 py-2 text-left transition-[transform,box-shadow,border-color] duration-200 active:scale-[0.99] ${
                   active
                     ? "border-2 border-[#76C139] shadow-[0_16px_36px_-18px_rgba(118,193,57,0.4)]"
                     : "border border-border/60 shadow-[0_6px_18px_-14px_rgba(15,23,42,0.18)] hover:border-[#76C139]/40"
                 }`}
-                style={{ gridTemplateColumns: "44px minmax(0,1fr) auto 28px", columnGap: "12px" }}
+                style={{ gridTemplateColumns: "36px minmax(72px,1fr) auto 22px", columnGap: "10px" }}
               >
                 <span
-                  className={`grid h-11 w-11 shrink-0 place-items-center rounded-[12px] transition ${
+                  className={`grid h-9 w-9 shrink-0 place-items-center rounded-[10px] transition ${
                     active
                       ? "bg-[#76C139] text-white shadow-[0_10px_22px_-12px_rgba(118,193,57,0.55)]"
                       : "bg-[#76C139]/10 text-[#5A9A2A] group-hover:bg-[#76C139]/15"
                   }`}
                 >
-                  <Icon className="h-[20px] w-[20px]" strokeWidth={1.75} />
+                  <Icon className="h-[18px] w-[18px]" strokeWidth={1.75} />
                 </span>
 
                 <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                    <span className="whitespace-nowrap text-[17px] font-bold text-[#111418] leading-tight">
+                  <div className="flex items-center gap-2">
+                    <span className="whitespace-nowrap text-[14px] font-bold text-[#111418] leading-tight">
                       {c.label}
                     </span>
-                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#76C139]/12 px-2 py-0.5 text-[11px] font-semibold text-[#5A9A2A]">
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#76C139]/12 px-1.5 py-0.5 text-[10px] font-semibold text-[#5A9A2A]">
                       <Clock className="h-3 w-3" strokeWidth={2.25} />
                       {etaLabel}
                     </span>
                   </div>
-                  <p className="mt-0.5 line-clamp-1 text-[13px] text-[#707070] leading-snug">
+                  <p className="mt-0.5 line-clamp-1 text-[11px] text-[#707070] leading-snug">
                     {c.tagline}
                   </p>
                 </div>
 
                 <span
-                  className={`shrink-0 whitespace-nowrap text-[20px] font-bold leading-none tracking-tight ${
+                  className={`shrink-0 whitespace-nowrap text-[16px] font-bold leading-none tracking-tight ${
                     active ? "text-[#5A9A2A]" : "text-[#111418]"
                   }`}
                 >
@@ -3740,20 +3740,21 @@ function RideCategorySelector({
                 </span>
 
                 <span
-                  className={`grid h-7 w-7 shrink-0 place-items-center rounded-full transition ${
+                  className={`grid h-[22px] w-[22px] shrink-0 place-items-center rounded-full transition ${
                     active
                       ? "bg-[#76C139] text-white shadow-[0_4px_10px_-4px_rgba(118,193,57,0.55)]"
                       : "bg-transparent text-transparent ring-1 ring-border/70"
                   }`}
                   aria-hidden
                 >
-                  <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                  <Check className="h-3 w-3" strokeWidth={3} />
                 </span>
               </button>
             </li>
           );
         })}
       </ul>
+
     </div>
   );
 }
