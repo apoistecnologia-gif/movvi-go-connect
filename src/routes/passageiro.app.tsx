@@ -4135,21 +4135,68 @@ function DriverEnRoute({
         />
       </div>
 
-      {/* Destination + fare summary */}
-      <div className="mt-4 rounded-[20px] bg-white p-4 ring-1 ring-black/5">
-        <div className="flex items-center gap-2 text-[13px] text-[#111418]">
-          <MapPin className="h-4 w-4 shrink-0 text-[#76C139]" strokeWidth={2} />
-          <span className="truncate font-medium">{ride.destination_name}</span>
-        </div>
-        {ride.estimated_price && (
-          <div className="mt-2 flex items-center justify-between text-[12px]">
-            <span className="text-[#707070]">Estimativa</span>
-            <span className="text-[14px] font-bold text-[#111418] tabular-nums">
-              {formatBRL(Number(ride.estimated_price))}
-            </span>
+      {/* Destination — premium card for em_viagem, compact otherwise */}
+      {ride.status === "em_viagem" ? (
+        <div
+          className="mt-4 flex items-center gap-4 rounded-[24px] bg-white p-5 ring-1 ring-black/5 shadow-[0_14px_36px_-22px_rgba(15,23,42,0.3)] animate-in fade-in slide-in-from-bottom-1"
+          style={{ animationDelay: "80ms", animationFillMode: "backwards" }}
+        >
+          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[#76C139]/12 text-[#76C139]">
+            <MapPin className="h-6 w-6" strokeWidth={2} />
           </div>
-        )}
-      </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#707070]">
+              Destino
+            </div>
+            <div className="mt-1 truncate text-[16px] font-semibold text-[#111418]">
+              {ride.destination_name ?? "—"}
+            </div>
+            {eta != null && (
+              <div className="mt-1.5 inline-flex items-center gap-1.5 rounded-full bg-[#76C139]/12 px-2.5 py-0.5 text-[12px] font-bold text-[#4a8a1e]">
+                <Clock className="h-3 w-3" strokeWidth={2.5} />
+                Chegando em {eta} min
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="mt-4 rounded-[20px] bg-white p-4 ring-1 ring-black/5">
+          <div className="flex items-center gap-2 text-[13px] text-[#111418]">
+            <MapPin className="h-4 w-4 shrink-0 text-[#76C139]" strokeWidth={2} />
+            <span className="truncate font-medium">{ride.destination_name}</span>
+          </div>
+          {ride.estimated_price && (
+            <div className="mt-2 flex items-center justify-between text-[12px]">
+              <span className="text-[#707070]">Estimativa</span>
+              <span className="text-[14px] font-bold text-[#111418] tabular-nums">
+                {formatBRL(Number(ride.estimated_price))}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Trip in Progress — primary message + live tracking pill */}
+      {ride.status === "em_viagem" && (
+        <div
+          className="mt-4 text-center animate-in fade-in"
+          style={{ animationDelay: "160ms", animationFillMode: "backwards" }}
+        >
+          <p className="text-[15px] font-semibold text-[#111418]">
+            Relaxe e aproveite sua viagem.
+          </p>
+          <p className="mt-1 text-[12px] font-medium text-[#707070]">
+            Vamos avisar quando você estiver perto do destino.
+          </p>
+          <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[#76C139]/12 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#4a8a1e]">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="absolute inset-0 animate-ping rounded-full bg-[#76C139]/60" />
+              <span className="relative h-1.5 w-1.5 rounded-full bg-[#76C139]" />
+            </span>
+            Rastreamento ao vivo
+          </div>
+        </div>
+      )}
 
       {/* Cancel — outlined secondary */}
       {ride.status !== "em_viagem" && (
