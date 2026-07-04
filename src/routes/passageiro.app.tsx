@@ -2380,6 +2380,28 @@ function PassageiroApp() {
 
       {/* PIN de segurança exibido no bottom sheet (DriverEnRoute). */}
 
+      {ride && rideDriverInfo && phase === "motorista_chegou" && (
+        <div
+          className="pointer-events-none absolute inset-x-0 z-40 flex justify-center px-3"
+          style={{ top: "calc(env(safe-area-inset-top) + 16px)" }}
+        >
+          <div className="pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-[22px] bg-white/95 px-4 py-3.5 shadow-[0_18px_44px_-22px_rgba(118,193,57,0.55)] ring-1 ring-[#76C139]/25 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[#76C139] text-white shadow-[0_8px_20px_-8px_rgba(118,193,57,0.8)]">
+              <CheckCircle2 className="h-6 w-6" strokeWidth={2.25} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-[16px] font-bold leading-tight text-[#111418]">
+                Seu motorista chegou
+              </div>
+              <div className="mt-0.5 text-[12px] font-medium text-[#707070]">
+                Encontre seu motorista com segurança.
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+
       {ride &&
         rideDriverInfo &&
         phase === "motorista_a_caminho" &&
@@ -3843,19 +3865,7 @@ function DriverEnRoute({
         </div>
       )}
 
-      {ride.status === "motorista_chegou" && (
-        <div
-          className="mt-3 rounded-[24px] bg-[#76C139] p-5 text-white shadow-[0_18px_44px_-20px_rgba(118,193,57,0.75)] animate-in fade-in slide-in-from-bottom-1"
-          style={{ animationDelay: "80ms", animationFillMode: "backwards" }}
-        >
-          <div className="text-[13px] font-semibold uppercase tracking-[0.14em] text-white/85">
-            Chegou
-          </div>
-          <div className="mt-1 text-[22px] font-bold leading-tight">
-            Seu motorista está no ponto de embarque.
-          </div>
-        </div>
-      )}
+      {/* "Chegou" agora é comunicado pelo cartão flutuante superior. */}
 
       {/* Vehicle card */}
       <div
@@ -3923,9 +3933,56 @@ function DriverEnRoute({
           Aguarde no local de embarque.
         </p>
       )}
+      {ride.status === "motorista_chegou" && (
+        <div
+          className="mt-4 flex items-center justify-center gap-2 text-[13px] font-semibold text-[#111418] animate-in fade-in"
+          style={{ animationDelay: "200ms", animationFillMode: "backwards" }}
+        >
+          <span className="relative flex h-2 w-2">
+            <span className="absolute inset-0 animate-ping rounded-full bg-[#76C139]/60" />
+            <span className="relative h-2 w-2 rounded-full bg-[#76C139]" />
+          </span>
+          Motorista aguardando você
+        </div>
+      )}
 
-      {/* PIN security card */}
-      {ride.safety_code && ride.status !== "em_viagem" && (
+      {/* PIN security card — HERO when driver arrived, compact otherwise */}
+      {ride.safety_code && ride.status === "motorista_chegou" && (
+        <div
+          className="mt-4 relative overflow-hidden rounded-[24px] bg-[#76C139]/10 p-6 ring-1 ring-[#76C139]/40 shadow-[0_20px_50px_-20px_rgba(118,193,57,0.55)] animate-in fade-in slide-in-from-bottom-1 animate-pulse-soft"
+          style={{ animationDelay: "220ms", animationFillMode: "backwards" }}
+        >
+          <div className="absolute -top-16 -right-16 h-40 w-40 rounded-full bg-[#76C139]/25 blur-3xl" />
+          <div className="relative flex items-center gap-3">
+            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[#76C139] text-white shadow-[0_10px_24px_-8px_rgba(118,193,57,0.85)]">
+              <Shield className="h-5 w-5" strokeWidth={2.25} />
+            </div>
+            <div className="min-w-0">
+              <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#4a8a1e]">
+                Seu código de segurança
+              </div>
+              <div className="mt-0.5 text-[13px] font-medium text-[#707070]">
+                MOVVI PIN
+              </div>
+            </div>
+          </div>
+          <div className="relative mt-4 flex items-center justify-center gap-2">
+            {ride.safety_code.split("").map((d, i) => (
+              <span
+                key={i}
+                className="grid h-16 w-14 place-items-center rounded-2xl bg-white text-[40px] font-extrabold leading-none tabular-nums text-[#111418] shadow-[0_10px_24px_-14px_rgba(15,23,42,0.35)] ring-1 ring-[#76C139]/20"
+              >
+                {d}
+              </span>
+            ))}
+          </div>
+          <p className="relative mt-4 text-center text-[13px] font-medium leading-snug text-[#111418]">
+            Mostre este código ao seu motorista antes de entrar no veículo.
+          </p>
+        </div>
+      )}
+
+      {ride.safety_code && ride.status === "motorista_a_caminho" && (
         <div
           className="mt-4 flex items-center gap-3 rounded-[24px] bg-white p-4 ring-1 ring-[#76C139]/25 shadow-[0_12px_32px_-22px_rgba(118,193,57,0.5)] animate-in fade-in slide-in-from-bottom-1"
           style={{ animationDelay: "220ms", animationFillMode: "backwards" }}
@@ -3950,6 +4007,21 @@ function DriverEnRoute({
             <p className="mt-1.5 text-[11px] font-medium text-[#707070] leading-snug">
               Mostre este código ao seu motorista antes de iniciar a viagem.
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* Safety plate reminder */}
+      {ride.status === "motorista_chegou" && (
+        <div
+          className="mt-3 flex items-center gap-3 rounded-[20px] bg-white p-3.5 ring-1 ring-black/5 animate-in fade-in"
+          style={{ animationDelay: "260ms", animationFillMode: "backwards" }}
+        >
+          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#F7F9F7] text-[#111418]">
+            <Shield className="h-4 w-4" strokeWidth={2} />
+          </div>
+          <div className="text-[13px] font-medium leading-snug text-[#111418]">
+            Sempre confirme a placa do veículo antes de embarcar.
           </div>
         </div>
       )}
