@@ -45,7 +45,7 @@ const SPRING_DAMPING = 0.78;
 const VELOCITY_THRESHOLD = 0.32; // vh/ms
 
 export const MovviSheet = forwardRef<MovviSheetHandle, Props>(function MovviSheet(
-  { snaps, initial, onSnapChange, children },
+  { snaps, initial, onSnapChange, children, footer },
   ref,
 ) {
   const sortedSnaps = [...snaps].sort((a, b) => a - b);
