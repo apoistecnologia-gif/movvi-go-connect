@@ -3453,10 +3453,10 @@ function StepFlow({
               <ArrowLeft className="h-[18px] w-[18px]" strokeWidth={2} />
             </button>
             <div className="min-w-0 flex-1">
-              <h2 className="truncate text-[24px] font-bold leading-tight tracking-tight text-[#111418]">
+              <h2 className="text-[24px] font-bold leading-tight tracking-tight text-[#111418]">
                 Confirme sua corrida
               </h2>
-              <p className="mt-0.5 truncate text-[13px] text-[#707070]">
+              <p className="mt-0.5 text-[13px] text-[#707070]">
                 Revise sua viagem antes de solicitar.
               </p>
             </div>
