@@ -177,36 +177,37 @@ function PremiumTopBar({
 
 
   return (
-    <div className="absolute inset-x-0 top-0 z-40 px-4 pt-[calc(env(safe-area-inset-top)+12px)]">
-      <div className="mx-auto flex max-w-5xl items-center gap-3 rounded-[24px] border border-border/60 bg-card/85 px-3.5 py-2.5 shadow-[0_10px_28px_-16px_rgba(15,23,42,0.28)] backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
+    <div className="absolute inset-x-0 top-0 z-40 px-3 pt-[calc(env(safe-area-inset-top)+8px)]">
+      <div className="mx-auto flex max-w-5xl items-center gap-2 rounded-[20px] border border-border/60 bg-card/85 px-2.5 py-1.5 shadow-[0_10px_28px_-16px_rgba(15,23,42,0.28)] backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
         <button
           onClick={onOpenMenu}
           aria-label="Abrir menu"
-          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-foreground/80 transition hover:bg-[#76C139]/10 hover:text-[#76C139] active:scale-[0.95]"
+          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-foreground/80 transition hover:bg-[#76C139]/10 hover:text-[#76C139] active:scale-[0.95]"
         >
-          <Menu className="h-[18px] w-[18px]" strokeWidth={1.75} />
+          <Menu className="h-[16px] w-[16px]" strokeWidth={1.75} />
         </button>
         <div className="min-w-0 flex-1">
           <div className={`${greetingClass} flex items-center gap-1.5 font-normal leading-tight tracking-tight text-muted-foreground`}>
-            <GIcon className="h-[13px] w-[13px] text-[#76C139]" strokeWidth={2} />
+            <GIcon className="h-[12px] w-[12px] text-[#76C139]" strokeWidth={2} />
             <span>{greet},</span>
             <span className="truncate font-semibold text-foreground">{fname}</span>
           </div>
-          <div className="mt-1 flex items-center gap-1.5 truncate text-[12px] text-muted-foreground">
-            <MapPin className="h-[12px] w-[12px] shrink-0 text-[#76C139]" strokeWidth={2} />
+          <div className="mt-0.5 flex items-center gap-1.5 truncate text-[11.5px] text-muted-foreground">
+            <MapPin className="h-[11px] w-[11px] shrink-0 text-[#76C139]" strokeWidth={2} />
             <span className="truncate">{statusText}</span>
           </div>
         </div>
         <button
           onClick={onLogout}
           aria-label="Sair"
-          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive active:scale-[0.95]"
+          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive active:scale-[0.95]"
         >
-          <LogOut className="h-[16px] w-[16px]" strokeWidth={1.75} />
+          <LogOut className="h-[14px] w-[14px]" strokeWidth={1.75} />
         </button>
 
       </div>
     </div>
+
   );
 }
 
