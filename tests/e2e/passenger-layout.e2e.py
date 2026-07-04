@@ -185,10 +185,16 @@ async def run_viewport(browser, width: int, height: int, label: str) -> list[str
         await page.wait_for_timeout(1500)  # let sheet settle to initial snap
         await snapshot_state(page, label, "1_initial")
 
-        try:
-            await check_destination_visible_initially(page, label)
-        except LayoutError as e:
-            errors.append(str(e))
+        # Only assert initial visibility on natural viewports. The "_kb"
+        # variants simulate the keyboard already open on first paint — a
+        # state the real app never boots into (keyboard opens only after
+        # focusing an input, which triggers the auto-expand snap).
+        if not label.endswith("_kb"):
+            try:
+                await check_destination_visible_initially(page, label)
+            except LayoutError as e:
+                errors.append(str(e))
+
 
         # Focus destination to trigger expanded snap + keyboard-aware behavior
         try:
