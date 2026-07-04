@@ -2728,7 +2728,7 @@ function PassageiroApp() {
                     </svg>
                   </div>
                 </div>
-                <h2 className="mt-3 text-[26px] font-bold leading-tight tracking-tight text-[#111418]">
+                <h2 className="mt-3 text-[19px] font-bold leading-tight tracking-tight text-[#111418]">
                   Viagem concluída
                 </h2>
                 <p className="mt-1 text-[13px] text-[#707070]">
@@ -2737,7 +2737,7 @@ function PassageiroApp() {
               </div>
 
               {/* Trip summary card */}
-              <div className="rounded-[24px] bg-white p-4 ring-1 ring-black/5 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.22)] animate-in fade-in slide-in-from-bottom-2 duration-[220ms]">
+              <div className="rounded-[20px] bg-white p-3 ring-1 ring-black/5 shadow-[0_6px_16px_-14px_rgba(15,23,42,0.16)] animate-in fade-in slide-in-from-bottom-2 duration-[220ms]">
                 <div className="space-y-3">
                   <div className="flex items-start gap-3">
                     <div className="mt-1 flex h-2.5 w-2.5 shrink-0 items-center justify-center rounded-full bg-[#76C139] ring-4 ring-[#76C139]/15" />
@@ -2774,11 +2774,11 @@ function PassageiroApp() {
               </div>
 
               {/* Fare card */}
-              <div className="rounded-[24px] bg-white p-5 ring-1 ring-[#76C139]/25 shadow-[0_10px_24px_-18px_rgba(118,193,57,0.22)] animate-in fade-in slide-in-from-bottom-2 duration-[220ms]">
+              <div className="rounded-[20px] bg-white p-3.5 ring-1 ring-[#76C139]/25 shadow-[0_6px_16px_-14px_rgba(118,193,57,0.18)] animate-in fade-in slide-in-from-bottom-2 duration-[220ms]">
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-[11px] font-semibold uppercase tracking-wider text-[#707070]">Total pago</div>
-                    <div className="mt-1.5 text-[34px] font-bold leading-none tracking-tight text-[#111418]">
+                    <div className="mt-1.5 text-[28px] font-bold leading-none tracking-tight text-[#111418]">
                       {paidValue != null ? formatBRL(Number(paidValue)) : "—"}
                     </div>
                     {(ride as any).payment_method && (
@@ -2795,7 +2795,7 @@ function PassageiroApp() {
               </div>
 
               {/* Driver card */}
-              <div className="rounded-[24px] bg-white p-4 ring-1 ring-black/5 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.22)] animate-in fade-in slide-in-from-bottom-2 duration-[220ms]">
+              <div className="rounded-[20px] bg-white p-3 ring-1 ring-black/5 shadow-[0_6px_16px_-14px_rgba(15,23,42,0.16)] animate-in fade-in slide-in-from-bottom-2 duration-[220ms]">
                 <div className="flex items-center gap-3">
                   <Avatar name={driverName} src={driverPhoto} size={52} />
                   <div className="min-w-0 flex-1">
@@ -2821,7 +2821,7 @@ function PassageiroApp() {
               </div>
 
               {/* Rating card */}
-              <div className="rounded-[24px] bg-white p-5 ring-1 ring-black/5 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.22)] animate-in fade-in slide-in-from-bottom-2 duration-[220ms]">
+              <div className="rounded-[20px] bg-white p-3.5 ring-1 ring-black/5 shadow-[0_6px_16px_-14px_rgba(15,23,42,0.16)] animate-in fade-in slide-in-from-bottom-2 duration-[220ms]">
                 {!rated ? (
                   <>
                     <div className="text-center">
@@ -4178,14 +4178,14 @@ function DriverEnRoute({
         type="button"
         onClick={onOpenProfile}
         aria-label="Ver perfil do motorista"
-        className="flex w-full items-center gap-4 rounded-[24px] bg-white p-5 text-left ring-1 ring-black/5 shadow-[0_14px_36px_-22px_rgba(15,23,42,0.35)] transition duration-[220ms] active:scale-[0.99] animate-in fade-in slide-in-from-bottom-1"
+        className="flex w-full items-center gap-4 rounded-[20px] bg-white p-3.5 text-left ring-1 ring-black/5 shadow-[0_8px_22px_-18px_rgba(15,23,42,0.25)] transition duration-[220ms] active:scale-[0.99] animate-in fade-in slide-in-from-bottom-1"
         style={{ animationDelay: "40ms", animationFillMode: "backwards" }}
       >
         <div className="shrink-0 rounded-full ring-2 ring-white shadow-[0_8px_20px_-8px_rgba(0,0,0,0.35)]">
           <Avatar src={driver.photo_url ?? null} name={driver.name} size={68} />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="truncate text-[22px] font-bold leading-tight tracking-tight text-[#111418]">
+          <div className="truncate text-[19px] font-bold leading-tight tracking-tight text-[#111418]">
             {driver.name}
           </div>
           <div className="mt-1 flex items-center gap-2">
@@ -4202,7 +4202,7 @@ function DriverEnRoute({
       {/* ETA — hero */}
       {(eta != null || distKm != null) && ride.status === "motorista_a_caminho" && (
         <div
-          className="mt-3 flex items-center justify-between gap-3 rounded-[24px] bg-white p-5 ring-1 ring-black/5 shadow-[0_14px_36px_-22px_rgba(118,193,57,0.45)] animate-in fade-in slide-in-from-bottom-1"
+          className="mt-3 flex items-center justify-between gap-3 rounded-[20px] bg-white p-3.5 ring-1 ring-black/5 shadow-[0_8px_22px_-18px_rgba(118,193,57,0.28)] animate-in fade-in slide-in-from-bottom-1"
           style={{ animationDelay: "80ms", animationFillMode: "backwards" }}
         >
           <div>
@@ -4211,7 +4211,7 @@ function DriverEnRoute({
             </div>
             <div
               key={eta ?? "eta-empty"}
-              className="mt-1 text-[22px] font-bold leading-none tracking-tight text-[#111418] tabular-nums animate-count-pop"
+              className="mt-1 text-[18px] font-bold leading-none tracking-tight text-[#111418] tabular-nums animate-count-pop"
             >
               {eta ?? "—"}
               <span className="ml-1.5 text-[15px] font-semibold text-[#707070]">min</span>
@@ -4228,7 +4228,7 @@ function DriverEnRoute({
 
       {/* Vehicle card */}
       <div
-        className="mt-3 flex items-center gap-4 rounded-[24px] bg-white p-4 ring-1 ring-black/5 shadow-[0_10px_28px_-20px_rgba(15,23,42,0.3)] animate-in fade-in slide-in-from-bottom-1"
+        className="mt-3 flex items-center gap-4 rounded-[20px] bg-white p-3 ring-1 ring-black/5 shadow-[0_6px_18px_-16px_rgba(15,23,42,0.22)] animate-in fade-in slide-in-from-bottom-1"
         style={{ animationDelay: "120ms", animationFillMode: "backwards" }}
       >
         <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-[#F7F9F7] text-[#111418]">
@@ -4343,7 +4343,7 @@ function DriverEnRoute({
 
       {ride.safety_code && ride.status === "motorista_a_caminho" && (
         <div
-          className="mt-4 flex items-center gap-3 rounded-[24px] bg-white p-4 ring-1 ring-[#76C139]/25 shadow-[0_12px_32px_-22px_rgba(118,193,57,0.5)] animate-in fade-in slide-in-from-bottom-1"
+          className="mt-4 flex items-center gap-3 rounded-[20px] bg-white p-3 ring-1 ring-[#76C139]/25 shadow-[0_8px_22px_-20px_rgba(118,193,57,0.3)] animate-in fade-in slide-in-from-bottom-1"
           style={{ animationDelay: "220ms", animationFillMode: "backwards" }}
         >
           <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[#76C139]/15 text-[#76C139]">
@@ -4407,7 +4407,7 @@ function DriverEnRoute({
       {/* Destination — premium card for em_viagem, compact otherwise */}
       {ride.status === "em_viagem" ? (
         <div
-          className="mt-4 flex items-center gap-4 rounded-[24px] bg-white p-5 ring-1 ring-black/5 shadow-[0_14px_36px_-22px_rgba(15,23,42,0.3)] animate-in fade-in slide-in-from-bottom-1"
+          className="mt-4 flex items-center gap-4 rounded-[20px] bg-white p-3.5 ring-1 ring-black/5 shadow-[0_8px_22px_-18px_rgba(15,23,42,0.22)] animate-in fade-in slide-in-from-bottom-1"
           style={{ animationDelay: "80ms", animationFillMode: "backwards" }}
         >
           <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[#76C139]/12 text-[#76C139]">
@@ -5183,7 +5183,7 @@ function OriginManualSearchOverlay({
             <ArrowLeft className="h-[18px] w-[18px]" strokeWidth={2} />
           </button>
           <div className="min-w-0">
-            <h1 className="truncate text-[22px] font-bold leading-tight tracking-tight text-[#111418]">
+            <h1 className="truncate text-[19px] font-bold leading-tight tracking-tight text-[#111418]">
               Onde você está?
             </h1>
             <p className="mt-0.5 truncate text-[13px] text-[#707070]">
