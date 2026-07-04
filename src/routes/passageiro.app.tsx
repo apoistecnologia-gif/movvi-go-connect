@@ -3230,7 +3230,7 @@ function SheetContent({
                     searchInputRef.current?.focus();
                   }}
                   aria-label="Limpar"
-                  className="grid h-8 w-8 place-items-center rounded-full text-[#707070] transition hover:bg-[#F7F9F7] active:scale-[0.92]"
+                  className="active-press grid h-8 w-8 place-items-center rounded-full text-muted-foreground hover:bg-muted"
                 >
                   <X className="h-4 w-4" strokeWidth={2} />
                 </button>
