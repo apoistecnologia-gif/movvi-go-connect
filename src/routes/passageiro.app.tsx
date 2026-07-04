@@ -3961,7 +3961,7 @@ function SearchingPanel({
 
       {/* Trip summary card */}
       {(pickupLabel || destinationLabel || fare != null || paymentLabel) && (
-        <div className="mb-3.5 rounded-[24px] bg-white p-4 ring-1 ring-border/60 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.22)] animate-in fade-in slide-in-from-bottom-1 duration-[220ms]">
+        <div className="mb-2 rounded-[18px] bg-white p-3 ring-1 ring-border/60 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.22)] animate-in fade-in slide-in-from-bottom-1 duration-[220ms]">
           {(pickupLabel || destinationLabel) && (
             <div className="flex items-stretch gap-3.5">
               <div className="flex flex-col items-center pt-1">
