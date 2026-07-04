@@ -2308,7 +2308,8 @@ function PassageiroApp() {
             setPaymentMethod={setPaymentMethod}
           />
         </MovviSheet>
-      )}
+        );
+      })()}
 
       {/* Sheet de ações para o Local de partida */}
       {addressDetailsOpen && (
