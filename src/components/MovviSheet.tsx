@@ -32,6 +32,12 @@ interface Props {
   initial?: SheetSnap;              // default = snaps[0]
   onSnapChange?: (s: SheetSnap) => void;
   children: ReactNode;
+  /**
+   * Optional pinned footer — stays visible at the bottom of the sheet regardless
+   * of internal scroll, so primary CTAs (Confirm, Accept, Continue, Finish) are
+   * never hidden behind the fold on small viewports.
+   */
+  footer?: ReactNode;
 }
 
 const SPRING_STIFFNESS = 0.18;
