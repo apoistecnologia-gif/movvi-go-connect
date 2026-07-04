@@ -3551,45 +3551,40 @@ function StepFlow({
 
           {/* Category card */}
           <div
-            className="flex items-center gap-3 rounded-[18px] bg-white p-3 ring-1 ring-border/60 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.22)] animate-in fade-in slide-in-from-bottom-1 duration-[220ms]"
+            className="flex items-center gap-2.5 rounded-[16px] bg-white p-2.5 ring-1 ring-border/60 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.22)] animate-in fade-in slide-in-from-bottom-1 duration-[220ms]"
             style={{ animationDelay: "40ms", animationFillMode: "backwards" }}
           >
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[14px] bg-[#76C139]/12 text-[#5A9A2A]">
-              <selectedCategory.icon className="h-[20px] w-[20px]" strokeWidth={1.75} />
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[12px] bg-[#76C139]/12 text-[#5A9A2A]">
+              <selectedCategory.icon className="h-[18px] w-[18px]" strokeWidth={1.75} />
             </span>
             <div className="min-w-0 flex-1">
-              <div className="whitespace-nowrap text-[16px] font-semibold text-[#111418] leading-tight">
+              <div className="whitespace-nowrap text-[14px] font-semibold text-[#111418] leading-tight">
                 {selectedCategory.label}
               </div>
-              <div className="mt-0.5 flex items-center gap-1.5 text-[12px] text-[#707070]">
-                <Clock className="h-3.5 w-3.5 text-[#76C139]" strokeWidth={2} />
-                Trajeto ~{fmtMin(route.durationSeconds)} · {fmtKm(route.distanceMeters)}
+              <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-[#707070]">
+                <Clock className="h-3 w-3 text-[#76C139]" strokeWidth={2} />
+                ~{fmtMin(route.durationSeconds)} · {fmtKm(route.distanceMeters)}
               </div>
             </div>
           </div>
 
-          {/* Fare card — hero */}
+          {/* Fare card — compact hero */}
           <div
-            className="rounded-[18px] bg-white p-3 ring-1 ring-[#76C139]/25 shadow-[0_16px_36px_-20px_rgba(118,193,57,0.35)] animate-in fade-in duration-[220ms]"
+            className="flex items-center justify-between gap-3 rounded-[16px] bg-white px-3 py-2.5 ring-1 ring-[#76C139]/25 shadow-[0_16px_36px_-20px_rgba(118,193,57,0.35)] animate-in fade-in duration-[220ms]"
             style={{ animationDelay: "80ms", animationFillMode: "backwards" }}
           >
-            <div className="flex items-end justify-between gap-3">
-              <div className="min-w-0">
-                <div className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-[#707070] leading-none">
-                  Valor estimado
-                </div>
-                <div className="mt-1.5 text-[28px] font-bold leading-none tracking-tight text-[#111418] animate-in fade-in duration-[300ms]">
-                  {formatBRL(selectedFare)}
-                </div>
+            <div className="min-w-0">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#707070] leading-none">
+                Valor estimado
               </div>
-              <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[#76C139]/12 px-2.5 py-1 text-[11.5px] font-semibold text-[#5A9A2A]">
-                <Zap className="h-3.5 w-3.5" strokeWidth={2.25} />
-                MOVVI Preço
-              </span>
+              <div className="mt-1 text-[22px] font-bold leading-none tracking-tight text-[#111418]">
+                {formatBRL(selectedFare)}
+              </div>
             </div>
-            <p className="mt-1.5 text-[11.5px] leading-snug text-[#707070]">
-              Pode variar conforme rota, trânsito e disponibilidade.
-            </p>
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#76C139]/12 px-2 py-0.5 text-[10.5px] font-semibold text-[#5A9A2A]">
+              <Zap className="h-3 w-3" strokeWidth={2.25} />
+              MOVVI Preço
+            </span>
           </div>
 
           {/* Payment card */}
@@ -3604,17 +3599,17 @@ function StepFlow({
                   : "dinheiro";
               setPaymentMethod(next);
             }}
-            className="flex w-full items-center gap-3 rounded-[18px] bg-white p-3 text-left ring-1 ring-border/60 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.22)] transition hover:bg-[#F7F9F7] active:scale-[0.99] animate-in fade-in slide-in-from-bottom-1 duration-[220ms]"
+            className="flex w-full items-center gap-2.5 rounded-[16px] bg-white p-2.5 text-left ring-1 ring-border/60 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.22)] transition hover:bg-[#F7F9F7] active:scale-[0.99] animate-in fade-in slide-in-from-bottom-1 duration-[220ms]"
             style={{ animationDelay: "120ms", animationFillMode: "backwards" }}
           >
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px] bg-[#76C139]/12 text-[#5A9A2A]">
-              <CreditCard className="h-[17px] w-[17px]" strokeWidth={1.75} />
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-[#76C139]/12 text-[#5A9A2A]">
+              <CreditCard className="h-[16px] w-[16px]" strokeWidth={1.75} />
             </span>
             <div className="min-w-0 flex-1">
-              <div className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-[#707070] leading-none">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#707070] leading-none">
                 Pagamento
               </div>
-              <div className="mt-0.5 truncate text-[14px] font-semibold text-[#111418] leading-tight">
+              <div className="mt-0.5 truncate text-[13px] font-semibold text-[#111418] leading-tight">
                 {paymentMethod === "dinheiro"
                   ? "Dinheiro"
                   : paymentMethod === "pix"
@@ -3631,7 +3626,8 @@ function StepFlow({
           >
             <RequestRideButton busy={busy} categoryLabel={selectedCategory.label} onSubmit={onSubmit} />
           </div>
-          <div style={{ height: "calc(env(safe-area-inset-bottom) + 24px)" }} />
+          <div style={{ height: "env(safe-area-inset-bottom)" }} />
+
         </div>
       )}
 
