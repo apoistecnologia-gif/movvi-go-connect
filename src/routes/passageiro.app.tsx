@@ -3657,20 +3657,20 @@ function StepFlow({
 
 function FareEstimateCard({ route, fare }: { route: RouteResult; fare: number | null }) {
   return (
-    <div className="mb-3 rounded-[24px] bg-white px-5 py-4 ring-1 ring-border/60 shadow-[0_8px_24px_-16px_rgba(15,23,42,0.18)]">
-      <div className="flex items-baseline justify-between gap-3">
-        <div className="flex items-baseline gap-2">
-          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#76C139]/10 text-[#76C139]">
-            <Clock className="h-[15px] w-[15px]" strokeWidth={2} />
+    <div className="mb-2.5 rounded-[18px] bg-white px-3.5 py-2.5 ring-1 ring-border/60 shadow-[0_6px_18px_-14px_rgba(15,23,42,0.15)]">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[#76C139]/10 text-[#76C139]">
+            <Clock className="h-[13px] w-[13px]" strokeWidth={2} />
           </span>
-          <span className="text-[15px] font-bold text-[#111418]">{fmtMin(route.durationSeconds)}</span>
-          <span className="text-[13px] text-[#707070]">· {fmtKm(route.distanceMeters)}</span>
+          <span className="text-[13.5px] font-bold text-[#111418] leading-none">{fmtMin(route.durationSeconds)}</span>
+          <span className="text-[12px] text-[#707070] leading-none">· {fmtKm(route.distanceMeters)}</span>
         </div>
-        <span className="text-[20px] font-bold text-[#111418] tracking-tight">
+        <span className="text-[17px] font-bold text-[#111418] tracking-tight leading-none">
           {fare != null ? formatBRL(fare) : "—"}
         </span>
       </div>
-      <p className="mt-2 text-[11.5px] text-[#707070]">
+      <p className="mt-1.5 text-[10.5px] text-[#707070] leading-tight">
         Valor estimado. Pode variar conforme rota e disponibilidade.
       </p>
     </div>
