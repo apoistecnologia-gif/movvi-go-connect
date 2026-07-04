@@ -3287,7 +3287,7 @@ function SheetContent({
 
       {/* Dica sem destino */}
       {showDestinationInput && !destination && suggestions.length === 0 && (
-        <div className="mt-2 rounded-[20px] border border-dashed border-border/70 bg-muted/40 px-4 py-3.5 text-center animate-in fade-in duration-300">
+        <div className="animate-fade-slide mt-2 rounded-2xl border border-dashed border-border/70 bg-muted/40 px-4 py-3.5 text-center">
           <p className="text-[12.5px] leading-snug text-muted-foreground">
             Informe o destino para ver{" "}
             <span className="font-semibold text-foreground">Corridas</span>,{" "}
