@@ -65,7 +65,16 @@ export function MovviHeader({
       className={
         isFloating
           ? "absolute inset-x-0 top-0 z-30 px-3 pt-[calc(env(safe-area-inset-top)+12px)]"
-          : "sticky top-0 z-30 border-b border-border/50 bg-background/80 backdrop-blur-xl"
+          : "sticky top-0 z-30 border-b border-border/50 bg-background/85 backdrop-blur-xl"
+      }
+      style={
+        isFloating
+          ? undefined
+          : {
+              // Subtle MOVVI green accent under the solid header.
+              boxShadow:
+                "inset 0 -1px 0 0 color-mix(in oklab, var(--color-primary) 22%, transparent)",
+            }
       }
     >
       <div

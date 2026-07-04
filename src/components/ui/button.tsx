@@ -11,7 +11,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground shadow-[0_10px_24px_-14px_color-mix(in_oklab,var(--color-primary)_60%,transparent)] hover:brightness-[1.04] hover:shadow-[0_14px_30px_-16px_color-mix(in_oklab,var(--color-primary)_70%,transparent)]",
+          "bg-primary text-primary-foreground shadow-[0_1px_0_0_color-mix(in_oklab,#fff_18%,transparent)_inset,0_14px_30px_-16px_color-mix(in_oklab,var(--color-primary)_75%,transparent),0_6px_14px_-10px_rgba(0,0,0,0.45)] hover:brightness-[1.05] hover:shadow-[0_1px_0_0_color-mix(in_oklab,#fff_22%,transparent)_inset,0_18px_36px_-16px_color-mix(in_oklab,var(--color-primary)_85%,transparent),0_8px_16px_-10px_rgba(0,0,0,0.5)]",
         destructive:
           "bg-destructive text-destructive-foreground shadow-[0_8px_20px_-12px_color-mix(in_oklab,var(--color-destructive)_55%,transparent)] hover:brightness-[1.05]",
         outline:
