@@ -3096,17 +3096,17 @@ function SheetContent({
             type="button"
             onClick={onRetryGps}
             disabled={gpsRequesting}
-            className="shrink-0 self-center rounded-full bg-primary px-3 py-1.5 text-[11px] font-bold text-primary-foreground shadow-md shadow-primary/20 transition active:scale-95 disabled:opacity-60"
+            className="press-scale shrink-0 self-center rounded-full bg-primary px-3 py-1.5 text-[11px] font-bold text-primary-foreground shadow-md shadow-primary/20 disabled:opacity-60"
           >
             {gpsRequesting ? "..." : "Tentar novamente"}
           </button>
         </div>
       ) : addressStatus === "failed" && reverseGeocodeFailureReason ? (
-        <div className="mb-2.5 w-full rounded-2xl bg-red-950/90 px-3 py-2.5 text-left ring-1 ring-red-500/70">
-          <div className="text-[11px] font-black uppercase tracking-widest text-red-200">
+        <div className="mb-2.5 w-full rounded-2xl bg-destructive/10 px-3 py-2.5 text-left ring-1 ring-destructive/40">
+          <div className="text-[11px] font-black uppercase tracking-widest text-destructive">
             Reverse Geocoding failed
           </div>
-          <div className="mt-1 break-words font-mono text-[11px] leading-snug text-red-100">
+          <div className="mt-1 break-words font-mono text-[11px] leading-snug text-destructive/90">
             {reverseGeocodeFailureReason}
           </div>
         </div>
@@ -3121,14 +3121,14 @@ function SheetContent({
               onOpenAddressDetails();
             }
           }}
-          className="mb-2.5 flex w-full cursor-pointer items-center gap-2.5 rounded-[18px] border border-border/60 bg-card px-3 py-2 text-left shadow-[0_8px_24px_-16px_rgba(15,23,42,0.18)] transition active:scale-[0.99] hover:border-[#76C139]/40 animate-in fade-in slide-in-from-bottom-1 duration-300"
+          className="press-scale surface-card animate-card-in mb-2.5 flex w-full cursor-pointer items-center gap-2.5 rounded-2xl px-3 py-2 text-left shadow-[var(--ds-shadow-card)] hover:border-primary/40"
         >
-          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#76C139]/10 text-[#76C139]">
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
             <MapPin className="h-[15px] w-[15px]" strokeWidth={2} />
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between gap-2">
-              <div className="text-[9.5px] font-semibold uppercase tracking-[0.14em] text-[#76C139] leading-none">
+              <div className="text-[9.5px] font-semibold uppercase tracking-[0.14em] text-primary leading-none">
                 Local de embarque
               </div>
               {hasPosition && (
@@ -3185,11 +3185,11 @@ function SheetContent({
             disabled={gpsRequesting}
             aria-label="Atualizar GPS"
             title="Atualizar GPS"
-            className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#76C139]/10 text-[#76C139] transition hover:bg-[#76C139]/20 active:scale-[0.92] disabled:opacity-60"
+            className="active-press grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-60"
           >
             <Crosshair className={`h-[14px] w-[14px] ${gpsRequesting ? "animate-spin" : ""}`} strokeWidth={2} />
           </button>
-          <ChevronRight className="h-3.5 w-3.5 shrink-0 text-[#707070]" />
+          <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
         </div>
 
       )}
@@ -3200,13 +3200,13 @@ function SheetContent({
 
       {/* Hero search — "Para onde você vai?" */}
       {showDestinationInput && (
-        <div className="mb-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
-          <div className="rounded-[24px] border border-border/60 bg-card px-4 py-4 shadow-[0_8px_24px_-16px_rgba(15,23,42,0.18)] transition focus-within:border-[#76C139]/60 focus-within:shadow-[0_12px_28px_-14px_rgba(118,193,57,0.28)]">
-            <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#76C139]">
+        <div className="mb-3 animate-fade-slide">
+          <div className="surface-card rounded-3xl px-4 py-4 shadow-[var(--ds-shadow-card)] transition focus-within:border-primary/60 focus-within:shadow-[var(--ds-shadow-floating)]">
+            <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">
               Destino
             </div>
             <div className="flex items-center gap-3">
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#76C139]/10 text-[#76C139]">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
                 <Search className="h-[18px] w-[18px]" strokeWidth={2} />
               </span>
               <input
@@ -3230,7 +3230,7 @@ function SheetContent({
                     searchInputRef.current?.focus();
                   }}
                   aria-label="Limpar"
-                  className="grid h-8 w-8 place-items-center rounded-full text-[#707070] transition hover:bg-[#F7F9F7] active:scale-[0.92]"
+                  className="active-press grid h-8 w-8 place-items-center rounded-full text-muted-foreground hover:bg-muted"
                 >
                   <X className="h-4 w-4" strokeWidth={2} />
                 </button>
@@ -3250,7 +3250,7 @@ function SheetContent({
       {/* Sugestões ao vivo — área rolável limitada acima do teclado */}
       {showDestinationInput && suggestions.length > 0 && !destination && (
         <div
-          className="mb-2 -mx-1 animate-in fade-in duration-200"
+          className="mb-2 -mx-1 animate-fade-slide"
           style={{
             maxHeight: "calc(100dvh - 360px)",
             overflowY: "auto",
@@ -3265,9 +3265,9 @@ function SheetContent({
                 <button
                   type="button"
                   onClick={() => onPick(s)}
-                  className="flex w-full items-start gap-3 rounded-2xl px-3 py-3 text-left transition hover:bg-[#F7F9F7] active:scale-[0.99]"
+                  className="press-scale flex w-full items-start gap-3 rounded-2xl px-3 py-3 text-left hover:bg-muted"
                 >
-                  <span className="mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#76C139]/10 text-[#76C139]">
+                  <span className="mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
                     <MapPin className="h-[16px] w-[16px]" strokeWidth={2} />
                   </span>
                   <span className="flex min-w-0 flex-col">
@@ -3287,7 +3287,7 @@ function SheetContent({
 
       {/* Dica sem destino */}
       {showDestinationInput && !destination && suggestions.length === 0 && (
-        <div className="mt-2 rounded-[20px] border border-dashed border-border/70 bg-muted/40 px-4 py-3.5 text-center animate-in fade-in duration-300">
+        <div className="animate-fade-slide mt-2 rounded-2xl border border-dashed border-border/70 bg-muted/40 px-4 py-3.5 text-center">
           <p className="text-[12.5px] leading-snug text-muted-foreground">
             Informe o destino para ver{" "}
             <span className="font-semibold text-foreground">Corridas</span>,{" "}
