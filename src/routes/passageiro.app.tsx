@@ -3200,13 +3200,13 @@ function SheetContent({
 
       {/* Hero search — "Para onde você vai?" */}
       {showDestinationInput && (
-        <div className="mb-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
-          <div className="rounded-[24px] border border-border/60 bg-card px-4 py-4 shadow-[0_8px_24px_-16px_rgba(15,23,42,0.18)] transition focus-within:border-[#76C139]/60 focus-within:shadow-[0_12px_28px_-14px_rgba(118,193,57,0.28)]">
-            <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#76C139]">
+        <div className="mb-3 animate-fade-slide">
+          <div className="surface-card rounded-3xl px-4 py-4 shadow-[var(--ds-shadow-card)] transition focus-within:border-primary/60 focus-within:shadow-[var(--ds-shadow-floating)]">
+            <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">
               Destino
             </div>
             <div className="flex items-center gap-3">
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#76C139]/10 text-[#76C139]">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
                 <Search className="h-[18px] w-[18px]" strokeWidth={2} />
               </span>
               <input
