@@ -2952,9 +2952,9 @@ function FavoritesStrip({ onPick }: { onPick: (point: LatLng, label: string) => 
             key={f.id}
             type="button"
             onClick={() => onPick({ lat: f.lat, lng: f.lng }, f.address)}
-            className="flex shrink-0 items-center gap-2 rounded-full border border-border/60 bg-card px-3.5 py-2 text-[13px] font-semibold text-foreground shadow-[0_4px_14px_-10px_rgba(15,23,42,0.2)] transition hover:border-[#76C139]/50 hover:bg-[#76C139]/5 active:scale-[0.97]"
+            className="flex shrink-0 items-center gap-2 rounded-full border border-border/60 bg-card px-3 py-1.5 text-[12.5px] font-semibold text-foreground shadow-[0_4px_14px_-10px_rgba(15,23,42,0.2)] transition hover:border-[#76C139]/50 hover:bg-[#76C139]/5 active:scale-[0.97]"
           >
-            <Icon className="h-4 w-4 text-[#76C139]" strokeWidth={2} />
+            <Icon className="h-3.5 w-3.5 text-[#76C139]" strokeWidth={2} />
             <span className="max-w-[140px] truncate">{f.label}</span>
           </button>
         );
@@ -2962,10 +2962,10 @@ function FavoritesStrip({ onPick }: { onPick: (point: LatLng, label: string) => 
       <button
         type="button"
         onClick={() => navigate({ to: "/passageiro/favoritos" })}
-        className="flex shrink-0 items-center gap-2 rounded-full border border-dashed border-border/70 px-3.5 py-2 text-[13px] font-semibold text-muted-foreground transition hover:border-[#76C139]/50 hover:text-foreground active:scale-[0.97]"
+        className="flex shrink-0 items-center gap-2 rounded-full border border-dashed border-border/70 px-3 py-1.5 text-[12.5px] font-semibold text-muted-foreground transition hover:border-[#76C139]/50 hover:text-foreground active:scale-[0.97]"
 
       >
-        <Heart className="h-4 w-4" strokeWidth={2} />
+        <Heart className="h-3.5 w-3.5" strokeWidth={2} />
         <span>{items.length === 0 ? "Adicionar favoritos" : "Gerenciar"}</span>
       </button>
     </div>
