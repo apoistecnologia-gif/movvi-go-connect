@@ -2713,10 +2713,10 @@ function PassageiroApp() {
             <div className="pt-1 pb-[calc(env(safe-area-inset-bottom)+8px)] space-y-4">
               {/* Success header */}
               <div className="text-center animate-in fade-in slide-in-from-bottom-2 duration-[220ms]">
-                <div className="relative mx-auto flex h-[88px] w-[88px] items-center justify-center">
+                <div className="relative mx-auto flex h-[72px] w-[72px] items-center justify-center">
                   <span className="absolute inset-0 rounded-full bg-[#76C139]/15 animate-ping [animation-duration:1.8s]" />
-                  <div className="relative flex h-[88px] w-[88px] items-center justify-center rounded-full bg-[#76C139] shadow-[0_18px_40px_-16px_rgba(118,193,57,0.55)] animate-success-pop">
-                    <svg viewBox="0 0 32 32" className="h-11 w-11" fill="none" aria-hidden>
+                  <div className="relative flex h-[72px] w-[72px] items-center justify-center rounded-full bg-[#76C139] shadow-[0_12px_28px_-16px_rgba(118,193,57,0.35)] animate-success-pop">
+                    <svg viewBox="0 0 32 32" className="h-9 w-9" fill="none" aria-hidden>
                       <path
                         d="M8 16.5 L14 22 L24 11"
                         stroke="white"
@@ -2840,13 +2840,13 @@ function PassageiroApp() {
                             key={n}
                             type="button"
                             onClick={() => setRatingStars(n)}
-                            className={`flex h-11 w-11 items-center justify-center rounded-full transition duration-[220ms] active:scale-90 ${
+                            className={`flex h-10 w-10 items-center justify-center rounded-full transition duration-[220ms] active:scale-90 ${
                               active ? "bg-[#76C139]/12" : "bg-transparent"
                             }`}
                             aria-label={`${n} estrelas`}
                           >
                             <Star
-                              className={`h-7 w-7 transition ${
+                              className={`h-6 w-6 transition ${
                                 active
                                   ? "fill-[#76C139] text-[#76C139] animate-star-pop"
                                   : "text-[#707070]/50"
@@ -4182,7 +4182,7 @@ function DriverEnRoute({
         style={{ animationDelay: "40ms", animationFillMode: "backwards" }}
       >
         <div className="shrink-0 rounded-full ring-2 ring-white shadow-[0_8px_20px_-8px_rgba(0,0,0,0.35)]">
-          <Avatar src={driver.photo_url ?? null} name={driver.name} size={68} />
+          <Avatar src={driver.photo_url ?? null} name={driver.name} size={52} />
         </div>
         <div className="min-w-0 flex-1">
           <div className="truncate text-[19px] font-bold leading-tight tracking-tight text-[#111418]">
