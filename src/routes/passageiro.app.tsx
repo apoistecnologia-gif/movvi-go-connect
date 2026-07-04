@@ -3739,6 +3739,11 @@ function DriverEnRoute({
     ? (ride.distance_km != null ? Number(ride.distance_km) : null)
     : approachKm;
 
+  const driverPhoneDigits = (driver.phone ?? "").replace(/\D/g, "");
+  const telHref = driverPhoneDigits
+    ? `tel:+${driverPhoneDigits.startsWith("55") ? driverPhoneDigits : "55" + driverPhoneDigits}`
+    : undefined;
+
   return (
     <div className="pt-1 pb-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
       {/* Phase label */}
