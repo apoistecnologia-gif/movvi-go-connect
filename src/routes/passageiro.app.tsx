@@ -3911,15 +3911,15 @@ function SearchingPanel({
             <span className="relative grid h-3 w-3 place-items-center rounded-full bg-[#76C139] shadow-[0_0_0_4px_rgba(118,193,57,0.18)]" />
           </span>
           <div className="min-w-0 flex-1">
-            <div className="truncate text-[16px] font-bold leading-tight text-[#111418]">
-              {noDriversAvailable ? "Ampliando busca..." : "Encontrando seu motorista"}
+            <div className="text-[15px] font-bold leading-tight text-[#111418]">
+              {noDriversAvailable ? "Ampliando busca" : "Buscando motorista"}
             </div>
-            <div className="mt-0.5 truncate text-[12.5px] text-[#707070]">
-              Buscando motoristas próximos.
+            <div className="mt-0.5 text-[12px] leading-tight text-[#707070]">
+              Motoristas próximos
             </div>
           </div>
-          <span className="shrink-0 rounded-full bg-[#76C139]/12 px-2.5 py-1 text-[11px] font-semibold text-[#5A9A2A] tabular-nums">
-            {driversCount} {driversCount === 1 ? "próximo" : "próximos"}
+          <span className="shrink-0 rounded-full bg-[#76C139]/12 px-2 py-0.5 text-[11px] font-semibold text-[#5A9A2A] tabular-nums">
+            {driversCount} {driversCount === 1 ? "perto" : "perto"}
           </span>
         </div>
       </div>
