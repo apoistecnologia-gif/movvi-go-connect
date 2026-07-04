@@ -3920,7 +3920,7 @@ function DriverEnRoute({
           className="mt-4 text-center text-[13px] font-medium leading-relaxed text-[#707070] animate-in fade-in"
           style={{ animationDelay: "200ms", animationFillMode: "backwards" }}
         >
-          Seu motorista está indo até o local de embarque.
+          Aguarde no local de embarque.
         </p>
       )}
 
