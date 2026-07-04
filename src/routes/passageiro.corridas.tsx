@@ -80,7 +80,14 @@ function rideToReceipt(r: RideRow): ReceiptData {
   };
 }
 
-type FilterKey = "todas" | "finalizada" | "cancelada";
+type FilterKey = "hoje" | "semana" | "mes" | "todas";
+
+const FILTERS: { key: FilterKey; label: string }[] = [
+  { key: "hoje", label: "Hoje" },
+  { key: "semana", label: "Semana" },
+  { key: "mes", label: "Mês" },
+  { key: "todas", label: "Todas" },
+];
 
 function StarRow({ value, size = "sm" }: { value: number; size?: "sm" | "md" }) {
   const cls = size === "md" ? "h-5 w-5" : "h-3.5 w-3.5";
@@ -89,73 +96,186 @@ function StarRow({ value, size = "sm" }: { value: number; size?: "sm" | "md" }) 
       {[1, 2, 3, 4, 5].map((n) => (
         <Star
           key={n}
-          className={`${cls} ${n <= value ? "fill-primary text-primary" : "text-muted-foreground/40"}`}
+          className={`${cls} ${n <= value ? "fill-[#76C139] text-[#76C139]" : "text-[#707070]/40"}`}
         />
       ))}
     </div>
   );
 }
 
-function statusBadge(s: string) {
-  if (s === "finalizada")
-    return <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold text-primary">Finalizada</span>;
-  if (s.startsWith("cancelada"))
-    return <span className="rounded-full bg-destructive/15 px-2 py-0.5 text-[10px] font-semibold text-destructive">Cancelada</span>;
-  return <span className="rounded-full bg-secondary/40 px-2 py-0.5 text-[10px] font-semibold">{s}</span>;
+function StatusPill({ status }: { status: string }) {
+  if (status === "finalizada") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-[#76C139]/12 px-2.5 py-0.5 text-[11px] font-semibold text-[#4d8823]">
+        <span className="h-1.5 w-1.5 rounded-full bg-[#76C139]" />
+        Concluída
+      </span>
+    );
+  }
+  if (status.startsWith("cancelada")) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-[#707070]/10 px-2.5 py-0.5 text-[11px] font-semibold text-[#707070]">
+        <span className="h-1.5 w-1.5 rounded-full bg-[#707070]" />
+        Cancelada
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex rounded-full bg-black/5 px-2.5 py-0.5 text-[11px] font-semibold text-[#111418]">
+      {status}
+    </span>
+  );
 }
 
-function RideCard({ ride, onOpen }: { ride: RideRow; onOpen: () => void }) {
-  const price = ride.final_price ?? ride.estimated_price;
-  const date = ride.completed_at ?? ride.created_at;
-  return (
-    <button
-      type="button"
-      onClick={onOpen}
-      data-testid="ride-card"
-      className="w-full rounded-2xl border border-border bg-card p-4 text-left text-sm transition hover:border-primary/40 hover:bg-card/70"
-    >
-      <header className="mb-3 flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-xs text-muted-foreground">
-            {new Date(date).toLocaleString("pt-BR")}
-          </p>
-          {ride.driver_name && (
-            <p className="truncate font-medium">{ride.driver_name}</p>
-          )}
-        </div>
-        <div className="flex shrink-0 flex-col items-end gap-1">
-          {statusBadge(ride.status)}
-          {price !== null && (
-            <p className="text-base font-bold text-primary">R$ {Number(price).toFixed(2)}</p>
-          )}
-        </div>
-      </header>
+// Legacy alias kept for RideDetailSheet compatibility.
+function statusBadge(s: string) {
+  return <StatusPill status={s} />;
+}
 
-      <div className="space-y-1.5 text-xs">
-        <p className="flex items-start gap-2">
-          <MapPin className="mt-0.5 h-3.5 w-3.5 text-primary" />
-          <span className="truncate">{ride.origin_name}</span>
-        </p>
-        <p className="flex items-start gap-2">
-          <Navigation2 className="mt-0.5 h-3.5 w-3.5 text-primary" />
-          <span className="truncate">{ride.destination_name}</span>
-        </p>
-      </div>
+function formatDatePart(iso: string) {
+  const d = new Date(iso);
+  const date = d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
+  const time = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  return { date, time };
+}
+
+function categoryLabel(c?: string | null) {
+  if (!c) return null;
+  const map: Record<string, string> = {
+    carros: "Carro",
+    moto: "Moto",
+    pet: "Pet",
+    entrega: "Entrega",
+    executivo: "Executivo",
+  };
+  return map[c.toLowerCase()] ?? c;
+}
+
+function RideCard({
+  ride,
+  onOpen,
+  onReceipt,
+}: {
+  ride: RideRow;
+  onOpen: () => void;
+  onReceipt: () => void;
+}) {
+  const price = ride.final_price ?? ride.estimated_price;
+  const iso = ride.completed_at ?? ride.created_at;
+  const { date, time } = formatDatePart(iso);
+  const cat = categoryLabel(ride.category);
+
+  return (
+    <article
+      data-testid="ride-card"
+      className="group rounded-[24px] bg-white p-4 ring-1 ring-black/5 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.22)] transition duration-200 hover:ring-[#76C139]/25 hover:shadow-[0_16px_36px_-20px_rgba(118,193,57,0.28)] animate-in fade-in slide-in-from-bottom-1"
+    >
+      <button
+        type="button"
+        onClick={onOpen}
+        className="block w-full text-left"
+      >
+        <header className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 text-[13px] text-[#707070]">
+              <span className="font-medium text-[#111418]">{date}</span>
+              <span className="text-[#707070]/40">•</span>
+              <span>{time}</span>
+            </div>
+            {ride.driver_name && (
+              <p className="mt-1 truncate text-[18px] font-bold text-[#111418]">
+                {ride.driver_name}
+              </p>
+            )}
+            <div className="mt-1 flex items-center gap-2">
+              <StatusPill status={ride.status} />
+              {cat && (
+                <span className="rounded-full bg-[#F7F9F7] px-2 py-0.5 text-[11px] font-medium text-[#707070]">
+                  {cat}
+                </span>
+              )}
+            </div>
+          </div>
+          <div className="shrink-0 text-right">
+            <p className="text-[22px] font-bold leading-none tracking-tight text-[#111418]">
+              {price !== null ? `R$ ${Number(price).toFixed(2)}` : "—"}
+            </p>
+          </div>
+        </header>
+
+        <div className="mt-3.5 space-y-2 rounded-[16px] bg-[#F7F9F7] px-3 py-2.5 text-[13px]">
+          <div className="flex items-start gap-2.5">
+            <div className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#76C139] ring-4 ring-[#76C139]/15" />
+            <span className="truncate text-[#111418]">{ride.origin_name}</span>
+          </div>
+          <div className="ml-[3px] h-3 w-px border-l border-dashed border-[#707070]/30" />
+          <div className="flex items-start gap-2.5">
+            <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#c53030]" strokeWidth={2.4} />
+            <span className="truncate text-[#111418]">{ride.destination_name}</span>
+          </div>
+        </div>
+      </button>
 
       {ride.status === "finalizada" && ride.passenger_rated_at && ride.driver_rating && (
-        <div className="mt-3 flex items-center gap-2 border-t border-border/60 pt-2">
-          <StarRow value={ride.driver_rating} />
-          <span className="text-xs text-muted-foreground">Sua avaliação</span>
+        <div className="mt-3 flex items-center justify-between border-t border-black/5 pt-2.5">
+          <div className="flex items-center gap-1.5">
+            <StarRow value={ride.driver_rating} />
+            <span className="text-[11px] text-[#707070]">Sua avaliação</span>
+          </div>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onReceipt();
+            }}
+            className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[12px] font-semibold text-[#111418] transition hover:bg-[#F7F9F7]"
+          >
+            <ReceiptIcon className="h-3.5 w-3.5" />
+            Recibo
+          </button>
         </div>
       )}
       {ride.status === "finalizada" && !ride.passenger_rated_at && (
-        <p className="mt-3 border-t border-border/60 pt-2 text-xs font-medium text-primary">
-          Avaliar motorista →
-        </p>
+        <div className="mt-3 flex items-center justify-between border-t border-black/5 pt-2.5">
+          <button
+            type="button"
+            onClick={onOpen}
+            className="text-[12px] font-semibold text-[#76C139]"
+          >
+            Avaliar motorista →
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onReceipt();
+            }}
+            className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[12px] font-semibold text-[#111418] transition hover:bg-[#F7F9F7]"
+          >
+            <ReceiptIcon className="h-3.5 w-3.5" />
+            Recibo
+          </button>
+        </div>
       )}
-    </button>
+      {ride.status.startsWith("cancelada") && (
+        <div className="mt-3 flex justify-end border-t border-black/5 pt-2.5">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onReceipt();
+            }}
+            className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[12px] font-semibold text-[#111418] transition hover:bg-[#F7F9F7]"
+          >
+            <ReceiptIcon className="h-3.5 w-3.5" />
+            Recibo
+          </button>
+        </div>
+      )}
+    </article>
   );
 }
+
 
 function RideDetailSheet({
   ride,
@@ -547,72 +667,139 @@ function PassengerRidesPage() {
     void load();
   }, []);
 
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const startOfWeek = startOfToday - 6 * 24 * 60 * 60 * 1000; // últimos 7 dias
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+
   const filtered = useMemo(() => {
     if (!rides) return null;
     if (filter === "todas") return rides;
-    if (filter === "finalizada") return rides.filter((r) => r.status === "finalizada");
-    return rides.filter((r) => r.status.startsWith("cancelada"));
-  }, [rides, filter]);
+    const threshold =
+      filter === "hoje" ? startOfToday : filter === "semana" ? startOfWeek : startOfMonth;
+    return rides.filter((r) => {
+      const iso = r.completed_at ?? r.created_at;
+      return new Date(iso).getTime() >= threshold;
+    });
+  }, [rides, filter, startOfToday, startOfWeek, startOfMonth]);
+
+  const stats = useMemo(() => {
+    if (!rides) return { today: 0, month: 0, total: 0 };
+    let today = 0;
+    let month = 0;
+    for (const r of rides) {
+      if (r.status !== "finalizada") continue;
+      const t = new Date(r.completed_at ?? r.created_at).getTime();
+      if (t >= startOfToday) today++;
+      if (t >= startOfMonth) month++;
+    }
+    const total = rides.filter((r) => r.status === "finalizada").length;
+    return { today, month, total };
+  }, [rides, startOfToday, startOfMonth]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="flex min-h-screen flex-col bg-[#F7F9F7]">
       <MovviHeader logoutRedirect="/" />
-      <main className="flex-1 px-4 py-6 pb-24">
+      <main className="flex-1 px-4 py-6 pb-28">
         <div className="container mx-auto max-w-xl">
-          <header className="mb-5 flex items-center gap-3">
-            <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/15 text-primary">
-              <ClipboardList className="h-5 w-5" />
-            </div>
-            <div>
-              <h1 className="font-display text-xl font-bold">Minhas corridas</h1>
-              <p className="text-xs text-muted-foreground">
-                Histórico das suas viagens com a MOVVI.
-              </p>
-            </div>
+          {/* Header */}
+          <header className="mb-5 animate-in fade-in slide-in-from-top-1 duration-300">
+            <h1 className="text-[28px] font-bold tracking-tight text-[#111418]">
+              Histórico de viagens
+            </h1>
+            <p className="mt-1 text-[13px] text-[#707070]">
+              Revise todas as suas corridas concluídas.
+            </p>
           </header>
 
-          <div className="mb-4 flex items-center gap-2 overflow-x-auto">
-            <Filter className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-            {(["todas", "finalizada", "cancelada"] as FilterKey[]).map((k) => (
-              <button
-                key={k}
-                onClick={() => setFilter(k)}
-                className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition ${
-                  filter === k
-                    ? "bg-primary text-primary-foreground"
-                    : "border border-border bg-card text-muted-foreground hover:text-foreground"
-                }`}
+          {/* Summary cards */}
+          <section
+            aria-label="Resumo"
+            className="mb-5 grid grid-cols-3 gap-2.5 animate-in fade-in slide-in-from-bottom-1 duration-300"
+          >
+            {[
+              { label: "Hoje", value: stats.today },
+              { label: "Este mês", value: stats.month },
+              { label: "Total", value: stats.total },
+            ].map((s) => (
+              <div
+                key={s.label}
+                className="rounded-[20px] bg-white p-3.5 ring-1 ring-black/5 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.22)]"
               >
-                {k === "todas" ? "Todas" : k === "finalizada" ? "Finalizadas" : "Canceladas"}
-              </button>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-[#707070]">
+                  {s.label}
+                </p>
+                <p className="mt-1 text-[26px] font-bold leading-none tracking-tight text-[#111418]">
+                  {rides === null ? "—" : s.value}
+                </p>
+              </div>
             ))}
+          </section>
+
+          {/* Filter pills */}
+          <div className="mb-4 -mx-1 flex items-center gap-2 overflow-x-auto px-1 pb-1 animate-in fade-in slide-in-from-left-2 duration-300">
+            {FILTERS.map((f) => {
+              const active = filter === f.key;
+              return (
+                <button
+                  key={f.key}
+                  onClick={() => setFilter(f.key)}
+                  className={`shrink-0 rounded-full px-4 py-2 text-[13px] font-semibold transition duration-200 active:scale-95 ${
+                    active
+                      ? "bg-[#111418] text-white shadow-[0_10px_24px_-14px_rgba(17,20,24,0.5)]"
+                      : "bg-white text-[#707070] ring-1 ring-black/5 hover:text-[#111418]"
+                  }`}
+                >
+                  {f.label}
+                </button>
+              );
+            })}
           </div>
 
           {error && (
-            <p className="rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
+            <p className="rounded-2xl bg-destructive/10 p-3 text-[13px] text-destructive ring-1 ring-destructive/30">
               {error}
             </p>
           )}
 
           {filtered === null && (
-            <p className="text-sm text-muted-foreground">Carregando…</p>
+            <div className="space-y-3">
+              {[0, 1, 2].map((i) => (
+                <div
+                  key={i}
+                  className="h-[140px] animate-pulse rounded-[24px] bg-white ring-1 ring-black/5"
+                />
+              ))}
+            </div>
           )}
 
           {filtered && filtered.length === 0 && (
-            <p className="rounded-2xl border border-dashed border-border bg-card/40 p-5 text-sm text-muted-foreground">
-              Nenhuma corrida encontrada neste filtro.
-            </p>
+            <div className="rounded-[24px] bg-white p-8 text-center ring-1 ring-black/5 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.22)] animate-in fade-in duration-300">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#76C139]/12">
+                <ClipboardList className="h-7 w-7 text-[#76C139]" strokeWidth={1.75} />
+              </div>
+              <h2 className="text-[18px] font-bold text-[#111418]">Nenhuma viagem ainda</h2>
+              <p className="mt-1 text-[13px] text-[#707070]">
+                Suas corridas concluídas aparecerão aqui.
+              </p>
+            </div>
           )}
 
           {filtered && filtered.length > 0 && (
             <div className="space-y-3">
               {filtered.map((r) => (
-                <RideCard key={r.id} ride={r} onOpen={() => setSelected(r)} />
+                <RideCard
+                  key={r.id}
+                  ride={r}
+                  onOpen={() => setSelected(r)}
+                  onReceipt={() => setReceiptRide(r)}
+                />
               ))}
             </div>
           )}
         </div>
       </main>
+
       <BottomNav items={PASSENGER_NAV} />
       <RideDetailSheet
         ride={selected}
