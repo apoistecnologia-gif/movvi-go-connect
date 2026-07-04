@@ -223,7 +223,7 @@ export const MovviSheet = forwardRef<MovviSheetHandle, Props>(function MovviShee
 
       {/* drag handle area — MOVVI green tint on active */}
       <div
-        className="group flex shrink-0 cursor-grab touch-none flex-col items-center pb-2.5 pt-3.5 active:cursor-grabbing"
+        className="group flex shrink-0 cursor-grab touch-none flex-col items-center pb-1.5 pt-2.5 active:cursor-grabbing"
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
@@ -235,11 +235,11 @@ export const MovviSheet = forwardRef<MovviSheetHandle, Props>(function MovviShee
       <div
         ref={scrollRef}
         data-scroll
-        className="movvi-scroll flex-1 px-6"
+        className="movvi-scroll flex-1 px-5"
         style={{
           // When there's a pinned footer, leave less bottom padding — the footer
           // handles the safe-area itself so the CTA sits above the gesture bar.
-          paddingBottom: footer ? 16 : "calc(env(safe-area-inset-bottom) + 32px)",
+          paddingBottom: footer ? 12 : "calc(env(safe-area-inset-bottom) + 20px)",
           overflowY: "auto",
           overscrollBehavior: "contain",
           WebkitOverflowScrolling: "touch",
@@ -251,9 +251,9 @@ export const MovviSheet = forwardRef<MovviSheetHandle, Props>(function MovviShee
 
       {footer && (
         <div
-          className="shrink-0 border-t border-border/40 bg-card/95 px-6 pt-3 backdrop-blur-xl"
+          className="shrink-0 border-t border-border/40 bg-card/95 px-5 pt-2.5 backdrop-blur-xl"
           style={{
-            paddingBottom: "calc(env(safe-area-inset-bottom) + 16px)",
+            paddingBottom: "calc(env(safe-area-inset-bottom) + 12px)",
             boxShadow: "0 -12px 24px -18px rgba(0,0,0,0.5)",
           }}
         >
