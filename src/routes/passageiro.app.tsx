@@ -4226,57 +4226,120 @@ function OriginManualSearchOverlay({
   }
 
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col bg-background text-foreground">
-      <div className="flex items-center gap-2 border-b border-border bg-card px-4 py-3 pt-[calc(env(safe-area-inset-top)+12px)]">
-        <button
-          type="button"
-          onClick={onCancel}
-          aria-label="Voltar"
-          className="grid h-9 w-9 place-items-center rounded-full bg-background/60 ring-1 ring-border active:scale-90"
+    <div className="fixed inset-0 z-[60] flex flex-col bg-[#F7F9F7] text-[#111418]">
+      {/* Floating header */}
+      <div
+        className="px-4 pb-3 pt-[calc(env(safe-area-inset-top)+12px)] animate-in fade-in slide-in-from-top-2 duration-200"
+      >
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={onCancel}
+            aria-label="Voltar"
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-card text-[#1B1B1B] ring-1 ring-border/60 shadow-[0_6px_18px_-14px_rgba(15,23,42,0.25)] transition active:scale-[0.92]"
+          >
+            <ArrowLeft className="h-[18px] w-[18px]" strokeWidth={2} />
+          </button>
+          <div className="min-w-0">
+            <h1 className="truncate text-[22px] font-bold leading-tight tracking-tight text-[#111418]">
+              Onde você está?
+            </h1>
+            <p className="mt-0.5 truncate text-[13px] text-[#707070]">
+              Confirme sua localização de partida.
+            </p>
+          </div>
+        </div>
+
+        {/* Premium search card */}
+        <div
+          className={`mt-4 rounded-[24px] border bg-card px-4 py-3.5 transition-[border-color,box-shadow] duration-200 ${
+            query
+              ? "border-[#76C139]/60 shadow-[0_12px_28px_-14px_rgba(118,193,57,0.28)]"
+              : "border-border/60 shadow-[0_8px_24px_-16px_rgba(15,23,42,0.18)]"
+          } focus-within:border-[#76C139]/60 focus-within:shadow-[0_12px_28px_-14px_rgba(118,193,57,0.28)]`}
         >
-          <X className="h-4 w-4" />
-        </button>
-        <div className="flex flex-1 items-center gap-2 rounded-xl bg-background/70 px-3 py-2 ring-1 ring-border focus-within:ring-primary/60">
-          <Search className="h-4 w-4 text-primary" />
-          <input
-            autoFocus
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Digite rua, bairro, cidade ou CEP"
-            className="min-w-0 flex-1 bg-transparent text-[14px] outline-none placeholder:text-muted-foreground"
-          />
-          {busy && <span className="text-[11px] text-muted-foreground">...</span>}
+          <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#707070]">
+            Origem
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#76C139]/10 text-[#76C139]">
+              <MapPin className="h-[18px] w-[18px]" strokeWidth={2} />
+            </span>
+            <input
+              autoFocus
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Rua, bairro, cidade ou CEP"
+              className="min-w-0 flex-1 bg-transparent text-[17px] font-semibold text-[#111418] outline-none placeholder:font-medium placeholder:text-[#707070]/80"
+            />
+            {query && (
+              <button
+                type="button"
+                onClick={() => setQuery("")}
+                aria-label="Limpar"
+                className="grid h-8 w-8 place-items-center rounded-full text-[#707070] transition hover:bg-[#F7F9F7] active:scale-[0.92]"
+              >
+                <X className="h-4 w-4" strokeWidth={2} />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-2 py-2">
+      {/* Results */}
+      <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-[calc(env(safe-area-inset-bottom)+16px)] pt-1">
         {err && (
-          <p className="mx-2 my-2 rounded-xl bg-destructive/10 px-3 py-2 text-[12px] text-destructive-foreground ring-1 ring-destructive/40">
+          <p className="mb-3 rounded-2xl bg-destructive/10 px-4 py-3 text-[12.5px] text-destructive ring-1 ring-destructive/30 animate-in fade-in duration-200">
             {err}
           </p>
         )}
+
+        {busy && items.length === 0 && (
+          <div className="flex items-center justify-center gap-2 py-8 text-[13px] text-[#707070] animate-in fade-in duration-200">
+            <span className="h-4 w-4 rounded-full border-2 border-[#76C139] border-t-transparent animate-spin" />
+            Buscando endereços...
+          </div>
+        )}
+
+        {items.length === 0 && !busy && query.trim().length < 2 && (
+          <div className="mt-6 rounded-[20px] border border-dashed border-border/70 bg-card/60 px-4 py-6 text-center animate-in fade-in duration-200">
+            <p className="text-[13px] leading-snug text-[#707070]">
+              Digite ao menos <span className="font-semibold text-[#111418]">2 letras</span> para buscar
+              seu endereço no Brasil.
+            </p>
+          </div>
+        )}
+
         {items.length === 0 && query.trim().length >= 2 && !busy && (
-          <p className="px-3 py-6 text-center text-[12.5px] text-muted-foreground">
+          <p className="px-3 py-8 text-center text-[13px] text-[#707070] animate-in fade-in duration-200">
             Nenhum resultado. Tente outro termo.
           </p>
         )}
-        <ul>
-          {items.map((it) => (
-            <li key={it.placeId}>
+
+        <ul className="space-y-1">
+          {items.map((it, idx) => (
+            <li
+              key={it.placeId}
+              className="animate-in fade-in slide-in-from-bottom-1 duration-200"
+              style={{ animationDelay: `${Math.min(idx, 5) * 30}ms`, animationFillMode: "backwards" }}
+            >
               <button
                 type="button"
                 onClick={() => void choose(it.placeId)}
-                className="flex w-full items-start gap-3 rounded-xl px-3 py-3 text-left transition hover:bg-accent/30 active:scale-[0.99]"
+                className="flex w-full items-center gap-3 rounded-2xl px-3 py-3.5 text-left transition active:scale-[0.99] hover:bg-white"
               >
-                <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/15 text-primary">
-                  <MapPin className="h-4 w-4" />
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[#76C139]/10 text-[#76C139]">
+                  <MapPin className="h-[18px] w-[18px]" strokeWidth={1.75} />
                 </span>
-                <span className="flex min-w-0 flex-col">
-                  <span className="truncate text-[13.5px] font-semibold">{it.primary}</span>
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <span className="truncate text-[16px] font-semibold text-[#111418]">
+                    {it.primary}
+                  </span>
                   {it.secondary && (
-                    <span className="truncate text-[11.5px] text-muted-foreground">{it.secondary}</span>
+                    <span className="truncate text-[13px] text-[#707070]">{it.secondary}</span>
                   )}
                 </span>
+                <ChevronRight className="h-4 w-4 shrink-0 text-[#94A3B8]" strokeWidth={2} />
               </button>
             </li>
           ))}
