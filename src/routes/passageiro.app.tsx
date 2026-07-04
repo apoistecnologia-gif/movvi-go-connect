@@ -2003,14 +2003,23 @@ function PassageiroApp() {
     // por isso o bottom padding precisa ser generoso (>= 360px) e o zoom
     // NÃO deve estourar em cima do pickup.
     const bottomPad = ride.status === "procurar_motorista"
-      ? Math.max(360, Math.round(window.innerHeight * 0.48))
-      : Math.round(window.innerHeight * 0.28) + 16;
+      ? Math.max(280, Math.round(window.innerHeight * 0.42))
+      : Math.round(window.innerHeight * 0.24) + 12;
     mapRef.current.fitBounds(bounds, {
-      top: 150,
+      top: 130,
       bottom: bottomPad,
-      left: 48,
-      right: 48,
+      left: 56,
+      right: 56,
     });
+    // Enquadra APENAS os pontos (passageiro + motorista/destino).
+    // Bloqueia zoom-out excessivo que mostraria estados inteiros.
+    const m = mapRef.current;
+    const listener = google.maps.event.addListenerOnce(m, "idle", () => {
+      const z = m.getZoom();
+      if (typeof z === "number" && z < 13) m.setZoom(13);
+      if (typeof z === "number" && z > 17) m.setZoom(17);
+    });
+    void listener;
   }, [ride?.id, ride?.status, rideDriverInfo?.current_lat, rideDriverInfo?.current_lng, position]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ---------------------- GPS initial loading ---------------------- */
