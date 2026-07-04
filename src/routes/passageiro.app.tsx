@@ -2356,7 +2356,7 @@ function PassageiroApp() {
 
 
       {ride && ride.status === "procurar_motorista" && (
-        <MovviSheet snaps={[42, 68, 92]} initial={68}>
+        <MovviSheet snaps={[44, 68, 88]} initial={44}>
           <SearchingPanel
             category={category}
             driversCount={nearbyCount}
