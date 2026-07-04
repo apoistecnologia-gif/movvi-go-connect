@@ -33,6 +33,7 @@ import {
   Share2,
   Shield,
   Star,
+  Receipt as ReceiptIcon,
   Sun,
   Sunrise,
   Sunset,
