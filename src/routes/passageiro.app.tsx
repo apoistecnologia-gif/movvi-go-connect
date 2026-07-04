@@ -3265,9 +3265,9 @@ function SheetContent({
                 <button
                   type="button"
                   onClick={() => onPick(s)}
-                  className="flex w-full items-start gap-3 rounded-2xl px-3 py-3 text-left transition hover:bg-[#F7F9F7] active:scale-[0.99]"
+                  className="press-scale flex w-full items-start gap-3 rounded-2xl px-3 py-3 text-left hover:bg-muted"
                 >
-                  <span className="mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#76C139]/10 text-[#76C139]">
+                  <span className="mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
                     <MapPin className="h-[16px] w-[16px]" strokeWidth={2} />
                   </span>
                   <span className="flex min-w-0 flex-col">
