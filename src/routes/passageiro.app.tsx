@@ -1877,20 +1877,30 @@ function PassageiroApp() {
 
   // Auto-follow do passageiro com throttle + zona morta (anti-shake).
   const autoFollowRef = useRef(true);
+  const userMovedMapRef = useRef(false);
   const lastFollowAtRef = useRef(0);
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    const onDragStart = () => { autoFollowRef.current = false; };
-    const listener = google.maps.event.addListener(map, "dragstart", onDragStart);
-    return () => { google.maps.event.removeListener(listener); };
+    const markMoved = () => {
+      autoFollowRef.current = false;
+      userMovedMapRef.current = true;
+    };
+    const l1 = google.maps.event.addListener(map, "dragstart", markMoved);
+    // `zoom_changed` também dispara em zoom programático; usamos-o em conjunto
+    // com um gesto/clique do usuário para não bloquear o auto-fit inicial.
+    const l2 = google.maps.event.addListener(map, "click", markMoved);
+    return () => {
+      google.maps.event.removeListener(l1);
+      google.maps.event.removeListener(l2);
+    };
   }, [stableInitialCenter]);
   useEffect(() => {
     if (!position || !mapRef.current || !autoFollowRef.current) return;
     // Durante uma corrida ativa o passageiro normalmente está parado;
     // não faz sentido ficar reposicionando o mapa em cima dele e brigar
-    // com a visualização do motorista chegando.
-    if (ride && (ride.status === "motorista_a_caminho" || ride.status === "motorista_chegou" || ride.status === "em_viagem")) return;
+    // com a visualização do motorista chegando OU da busca de motorista.
+    if (ride && (ride.status === "procurar_motorista" || ride.status === "motorista_a_caminho" || ride.status === "motorista_chegou" || ride.status === "em_viagem")) return;
     const now = Date.now();
     if (now - lastFollowAtRef.current < 1500) return;
     const c = mapRef.current.getCenter();
