@@ -9,9 +9,8 @@ import {
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { downloadCsv } from "@/lib/csvExport";
-import { DSBadge, DSButton, DSCard, DSCardContent } from "@/design-system";
+import { DSBadge, DSButton, DSCard, DSCardContent, DSSelect, DSSelectContent, DSSelectItem, DSSelectTrigger, DSSelectValue } from "@/design-system";
 
 export const Route = createFileRoute("/admin/analytics")({
   head: () => ({ meta: [{ title: "Analytics & BI — Admin MOVVI" }] }),
@@ -199,18 +198,18 @@ function AnalyticsPage() {
       description="Painel executivo e relatórios agregados"
       actions={
         <div className="flex items-center gap-2">
-          <Select value={preset} onValueChange={(v) => setPreset(v as Preset)}>
-            <SelectTrigger className="h-9 w-40 text-xs"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="today">Hoje</SelectItem>
-              <SelectItem value="yesterday">Ontem</SelectItem>
-              <SelectItem value="7d">Últimos 7 dias</SelectItem>
-              <SelectItem value="30d">Últimos 30 dias</SelectItem>
-              <SelectItem value="this_month">Este mês</SelectItem>
-              <SelectItem value="last_month">Mês passado</SelectItem>
-              <SelectItem value="custom">Personalizado</SelectItem>
-            </SelectContent>
-          </Select>
+          <DSSelect value={preset} onValueChange={(v) => setPreset(v as Preset)}>
+            <DSSelectTrigger className="h-9 w-40 text-xs"><DSSelectValue /></DSSelectTrigger>
+            <DSSelectContent>
+              <DSSelectItem value="today">Hoje</DSSelectItem>
+              <DSSelectItem value="yesterday">Ontem</DSSelectItem>
+              <DSSelectItem value="7d">Últimos 7 dias</DSSelectItem>
+              <DSSelectItem value="30d">Últimos 30 dias</DSSelectItem>
+              <DSSelectItem value="this_month">Este mês</DSSelectItem>
+              <DSSelectItem value="last_month">Mês passado</DSSelectItem>
+              <DSSelectItem value="custom">Personalizado</DSSelectItem>
+            </DSSelectContent>
+          </DSSelect>
           {preset === "custom" && (
             <>
               <input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)}

@@ -20,7 +20,6 @@ import {
   PauseCircle,
   PlayCircle,
 } from "lucide-react";
-import { Label } from "@/components/ui/label";
 import { logAdminAction } from "@/lib/adminAudit";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
@@ -32,7 +31,7 @@ import {
   updateDriverApprovalStatus,
 } from "@/lib/adminDrivers.functions";
 import { AdminLayout } from "@/components/admin/AdminLayout";
-import { Caption, DSBadge, DSButton as Button, DSCard, DSCardContent, DSInput, EmptyState, Loading, StatusPill } from "@/design-system";
+import { Caption, DSBadge, DSButton as Button, DSCard, DSCardContent, DSInput, DSLabel, DSTextarea, EmptyState, Loading, StatusPill } from "@/design-system";
 import {
   Dialog,
   DialogContent,
@@ -51,7 +50,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -436,7 +434,7 @@ function AdminMotoristas() {
               Informe o motivo da reprovação. Será exibido ao motorista.
             </DialogDescription>
           </DialogHeader>
-          <Textarea
+          <DSTextarea
             value={rejectReason}
             onChange={(e) => setRejectReason(e.target.value)}
             placeholder="Ex.: CNH ilegível, documento do veículo vencido..."
@@ -896,7 +894,7 @@ function DetailsDialog({
 
           <Section title="Notas internas">
             <div className="flex gap-2">
-              <Textarea
+              <DSTextarea
                 rows={2}
                 value={noteDraft}
                 onChange={(e) => setNoteDraft(e.target.value)}
@@ -1176,7 +1174,7 @@ function SubscriptionDialog({
 
         <div className="grid gap-3 pt-2">
           <div className="grid gap-1.5">
-            <Label>Status da assinatura</Label>
+            <DSLabel>Status da assinatura</DSLabel>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               {SUB_STATUSES.map((s) => (
                 <button
@@ -1197,7 +1195,7 @@ function SubscriptionDialog({
 
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-1.5">
-              <Label htmlFor="payment_status">Status de pagamento</Label>
+              <DSLabel htmlFor="payment_status">Status de pagamento</DSLabel>
               <select
                 id="payment_status"
                 value={paymentStatus}
@@ -1211,7 +1209,7 @@ function SubscriptionDialog({
               </select>
             </div>
             <div className="grid gap-1.5">
-              <Label htmlFor="grace">Carência (dias)</Label>
+              <DSLabel htmlFor="grace">Carência (dias)</DSLabel>
               <DSInput
                 id="grace"
                 type="number"
@@ -1223,7 +1221,7 @@ function SubscriptionDialog({
           </div>
 
           <div className="grid gap-1.5">
-            <Label htmlFor="expires">Validade da assinatura</Label>
+            <DSLabel htmlFor="expires">Validade da assinatura</DSLabel>
             <DSInput
               id="expires"
               type="date"
@@ -1233,8 +1231,8 @@ function SubscriptionDialog({
           </div>
 
           <div className="grid gap-1.5">
-            <Label htmlFor="note">Observação do administrador</Label>
-            <Textarea
+            <DSLabel htmlFor="note">Observação do administrador</DSLabel>
+            <DSTextarea
               id="note"
               value={note}
               onChange={(e) => setNote(e.target.value)}

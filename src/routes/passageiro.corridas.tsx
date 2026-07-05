@@ -19,7 +19,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { MovviHeader } from "@/components/MovviHeader";
 import { BottomNav, PASSENGER_NAV } from "@/components/BottomNav";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Sheet,
   SheetContent,
@@ -32,7 +31,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { avaliarMotorista } from "@/lib/rideLifecycle";
 import { RideReceiptDialog } from "@/components/rides/RideReceiptDialog";
 import type { ReceiptData } from "@/lib/rideReceipt";
-import { DSButton } from "@/design-system";
+import { DSButton, DSTextarea } from "@/design-system";
 
 type RideRow = {
   id: string;
@@ -503,7 +502,7 @@ function RideDetailSheet({
                   </button>
                 ))}
               </div>
-              <Textarea
+              <DSTextarea
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 placeholder="Conte como foi (opcional)"
@@ -618,7 +617,7 @@ function RideDetailSheet({
                 maxLength={120}
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
               />
-              <Textarea
+              <DSTextarea
                 value={reportDetails}
                 onChange={(e) => setReportDetails(e.target.value)}
                 placeholder="Detalhes (opcional)"

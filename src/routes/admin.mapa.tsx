@@ -5,10 +5,8 @@ import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { MovviMap } from "@/components/MovviMap";
 import { Marker, Polyline } from "@react-google-maps/api";
-import { DSCard, DSCardContent, DSButton } from "@/design-system";
+import { DSButton, DSCard, DSCardContent, DSSelect, DSSelectContent, DSSelectItem, DSSelectTrigger, DSSelectValue } from "@/design-system";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
 export const Route = createFileRoute("/admin/mapa")({
   head: () => ({ meta: [{ title: "Mapa ao Vivo — Admin MOVVI" }] }),
   component: AdminMapaPage,
@@ -216,35 +214,35 @@ function AdminMapaPage() {
           <div className="flex flex-wrap items-center gap-3 text-xs">
             <div className="flex items-center gap-2">
               <span className="text-muted-foreground">Categoria</span>
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="h-8 w-44 text-xs">
-                  <SelectValue placeholder="Todas" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={ALL}>Todas as categorias</SelectItem>
+              <DSSelect value={categoryFilter} onValueChange={setCategoryFilter}>
+                <DSSelectTrigger className="h-8 w-44 text-xs">
+                  <DSSelectValue placeholder="Todas" />
+                </DSSelectTrigger>
+                <DSSelectContent>
+                  <DSSelectItem value={ALL}>Todas as categorias</DSSelectItem>
                   {categories.map((c) => (
-                    <SelectItem key={c.key} value={c.key}>
+                    <DSSelectItem key={c.key} value={c.key}>
                       {c.label}
-                    </SelectItem>
+                    </DSSelectItem>
                   ))}
-                </SelectContent>
-              </Select>
+                </DSSelectContent>
+              </DSSelect>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-muted-foreground">Cidade</span>
-              <Select value={cityFilter} onValueChange={setCityFilter}>
-                <SelectTrigger className="h-8 w-56 text-xs">
-                  <SelectValue placeholder="Todas" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={ALL}>Todas as cidades</SelectItem>
+              <DSSelect value={cityFilter} onValueChange={setCityFilter}>
+                <DSSelectTrigger className="h-8 w-56 text-xs">
+                  <DSSelectValue placeholder="Todas" />
+                </DSSelectTrigger>
+                <DSSelectContent>
+                  <DSSelectItem value={ALL}>Todas as cidades</DSSelectItem>
                   {availableCities.map((c) => (
-                    <SelectItem key={c} value={c}>
+                    <DSSelectItem key={c} value={c}>
                       {c}
-                    </SelectItem>
+                    </DSSelectItem>
                   ))}
-                </SelectContent>
-              </Select>
+                </DSSelectContent>
+              </DSSelect>
             </div>
             {(categoryFilter !== ALL || cityFilter !== ALL) && (
               <DSButton

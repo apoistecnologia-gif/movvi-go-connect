@@ -3,14 +3,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState, type FormEvent } from "react";
 import { z } from "zod";
 import { supabase } from "@/lib/supabaseClient";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { MovviLogo } from "@/components/MovviLogo";
 import { ArrowLeft, Loader2, ShieldCheck } from "lucide-react";
@@ -18,7 +10,7 @@ import { translateAuthError } from "@/lib/authErrors";
 import { cadastrarMotorista } from "@/lib/driverAuth.functions";
 import { DriverDocumentField } from "@/components/DriverDocumentField";
 import { compressDocumentImage } from "@/lib/imageCompress";
-import { DSButton, DSCard, DSCardContent, DSCardDescription, DSCardHeader, DSCardTitle, DSInput } from "@/design-system";
+import { DSButton, DSCard, DSCardContent, DSCardDescription, DSCardHeader, DSCardTitle, DSInput, DSLabel, DSSelect, DSSelectContent, DSSelectItem, DSSelectTrigger, DSSelectValue } from "@/design-system";
 
 export const Route = createFileRoute("/motorista/cadastro")({
   head: () => ({ meta: [{ title: "Cadastro do Motorista — MOVVI DRIVE" }] }),
@@ -192,35 +184,35 @@ function DriverSignUpPage() {
                 <h3 className="text-sm font-semibold uppercase text-primary">Dados pessoais</h3>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Nome completo</Label>
+                    <DSLabel htmlFor="name">Nome completo</DSLabel>
                     <DSInput id="name" name="name" required />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="cpf">CPF</Label>
+                    <DSLabel htmlFor="cpf">CPF</DSLabel>
                     <DSInput id="cpf" name="cpf" required />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="email">E-mail</Label>
+                    <DSLabel htmlFor="email">E-mail</DSLabel>
                     <DSInput id="email" name="email" type="email" required />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Telefone</Label>
+                    <DSLabel htmlFor="phone">Telefone</DSLabel>
                     <DSInput id="phone" name="phone" required />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="password">Senha</Label>
+                    <DSLabel htmlFor="password">Senha</DSLabel>
                     <DSInput id="password" name="password" type="password" required minLength={4} />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="birth_date">Data de nascimento</Label>
+                    <DSLabel htmlFor="birth_date">Data de nascimento</DSLabel>
                     <DSInput id="birth_date" name="birth_date" type="date" />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="city">Cidade</Label>
+                    <DSLabel htmlFor="city">Cidade</DSLabel>
                     <DSInput id="city" name="city" required />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="state">UF</Label>
+                    <DSLabel htmlFor="state">UF</DSLabel>
                     <DSInput id="state" name="state" maxLength={2} required />
                   </div>
                 </div>
@@ -230,34 +222,34 @@ function DriverSignUpPage() {
                 <h3 className="text-sm font-semibold uppercase text-primary">Veículo</h3>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="category">Categoria</Label>
-                    <Select name="category" defaultValue="carros">
-                      <SelectTrigger id="category">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
+                    <DSLabel htmlFor="category">Categoria</DSLabel>
+                    <DSSelect name="category" defaultValue="carros">
+                      <DSSelectTrigger id="category">
+                        <DSSelectValue />
+                      </DSSelectTrigger>
+                      <DSSelectContent>
                         {CATEGORIES.map((c) => (
-                          <SelectItem key={c} value={c}>
+                          <DSSelectItem key={c} value={c}>
                             {c.charAt(0).toUpperCase() + c.slice(1)}
-                          </SelectItem>
+                          </DSSelectItem>
                         ))}
-                      </SelectContent>
-                    </Select>
+                      </DSSelectContent>
+                    </DSSelect>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="vehicle_model">Modelo</Label>
+                    <DSLabel htmlFor="vehicle_model">Modelo</DSLabel>
                     <DSInput id="vehicle_model" name="vehicle_model" required />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="vehicle_plate">Placa</Label>
+                    <DSLabel htmlFor="vehicle_plate">Placa</DSLabel>
                     <DSInput id="vehicle_plate" name="vehicle_plate" required />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="vehicle_color">Cor</Label>
+                    <DSLabel htmlFor="vehicle_color">Cor</DSLabel>
                     <DSInput id="vehicle_color" name="vehicle_color" required />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="vehicle_year">Ano</Label>
+                    <DSLabel htmlFor="vehicle_year">Ano</DSLabel>
                     <DSInput id="vehicle_year" name="vehicle_year" type="number" required />
                   </div>
                 </div>

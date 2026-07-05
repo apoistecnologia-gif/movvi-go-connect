@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
-import { Avatar, DSBadge, DSButton, DSCard, DSCardContent, DSInput, EmptyState, Loading } from "@/design-system";
+import { Avatar, DSBadge, DSButton, DSCard, DSCardContent, DSInput, DSTextarea, EmptyState, Loading } from "@/design-system";
 import {
   Dialog,
   DialogContent,
@@ -26,7 +26,6 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/formatters";
 import { logAdminAction } from "@/lib/adminAudit";
@@ -746,7 +745,7 @@ function TicketDetailDialog({
         {/* Notes */}
         <Section title="Notas internas">
           <div className="flex gap-2">
-            <Textarea
+            <DSTextarea
               value={noteText}
               onChange={(e) => setNoteText(e.target.value)}
               placeholder="Adicionar nota interna (somente admins)"

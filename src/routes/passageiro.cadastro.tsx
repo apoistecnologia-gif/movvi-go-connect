@@ -2,10 +2,9 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabase } from "@/lib/supabaseClient";
 import { AuthShell, useAuthForm } from "@/components/AuthShell";
-import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
-import { DSButton, DSInput } from "@/design-system";
+import { DSButton, DSInput, DSLabel } from "@/design-system";
 
 export const Route = createFileRoute("/passageiro/cadastro")({
   head: () => ({ meta: [{ title: "Cadastro — Passageiro MOVVI DRIVE" }] }),
@@ -59,19 +58,19 @@ function PassengerSignUpPage() {
     >
       <form onSubmit={onSubmit} className="space-y-3">
         <div className="space-y-1.5">
-          <Label htmlFor="name" className="text-[13px]">Nome completo</Label>
+          <DSLabel htmlFor="name" className="text-[13px]">Nome completo</DSLabel>
           <DSInput id="name" name="name" required className="h-9 text-[14px]" />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="email" className="text-[13px]">E-mail</Label>
+          <DSLabel htmlFor="email" className="text-[13px]">E-mail</DSLabel>
           <DSInput id="email" name="email" type="email" required autoComplete="email" className="h-9 text-[14px]" />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="phone" className="text-[13px]">Telefone</Label>
+          <DSLabel htmlFor="phone" className="text-[13px]">Telefone</DSLabel>
           <DSInput id="phone" name="phone" required autoComplete="tel" className="h-9 text-[14px]" />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="password" className="text-[13px]">Senha</Label>
+          <DSLabel htmlFor="password" className="text-[13px]">Senha</DSLabel>
           <DSInput
             id="password"
             name="password"

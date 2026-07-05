@@ -6,9 +6,8 @@ import { diagnosticarAuthMotorista } from "@/lib/driverAuth.functions";
 import { isDevelopmentEnvironment } from "@/lib/environment";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { DSInput } from "@/design-system";
+import { DSInput, DSLabel } from "@/design-system";
 
 import { DevOrAdminGuard } from "@/components/DevOrAdminGuard";
 
@@ -83,7 +82,7 @@ function DriverAuthDebugPage() {
           <CardContent className="space-y-4">
             <form onSubmit={onSubmit} className="flex flex-col gap-3 sm:flex-row sm:items-end">
               <div className="flex-1 space-y-2">
-                <Label htmlFor="email">E-mail do motorista</Label>
+                <DSLabel htmlFor="email">E-mail do motorista</DSLabel>
                 <DSInput id="email" name="email" type="email" required placeholder="motorista@email.com" />
               </div>
               <Button type="submit" disabled={loading}>

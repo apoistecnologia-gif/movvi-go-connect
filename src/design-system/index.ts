@@ -66,3 +66,21 @@ export { Badge as DSBadge, badgeVariants } from "./Badge";
 
 /* Input */
 export { Input as DSInput } from "./Input";
+
+/* Textarea */
+export { Textarea as DSTextarea } from "./Textarea";
+
+/* Label */
+export { Label as DSLabel } from "./Label";
+
+/* Select */
+export {
+  Select as DSSelect,
+  SelectValue as DSSelectValue,
+  SelectTrigger as DSSelectTrigger,
+  SelectContent as DSSelectContent,
+  SelectItem as DSSelectItem,
+  SelectGroup,
+  SelectLabel,
+  SelectSeparator,
+} from "./Select";

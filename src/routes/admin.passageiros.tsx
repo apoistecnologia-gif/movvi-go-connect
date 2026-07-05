@@ -19,7 +19,7 @@ import {
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Avatar } from "@/components/Avatar";
 import { supabase } from "@/integrations/supabase/client";
-import { DSBadge, DSButton as Button, DSCard as Card, DSCardContent as CardContent, DSInput, EmptyState, Loading, StatusPill } from "@/design-system";
+import { DSBadge, DSButton as Button, DSCard as Card, DSCardContent as CardContent, DSInput, DSTextarea, EmptyState, Loading, StatusPill } from "@/design-system";
 import {
   Dialog,
   DialogContent,
@@ -38,7 +38,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Textarea } from "@/components/ui/textarea";
 // Badge legacy substituído por StatusPill/TagPill do design system.
 import { toast } from "sonner";
 import { formatBRL, formatDate } from "@/lib/formatters";
@@ -491,7 +490,7 @@ function AdminPassageirosPage() {
               A suspensão bloqueia novas solicitações. Pode ser removida a qualquer momento.
             </DialogDescription>
           </DialogHeader>
-          <Textarea
+          <DSTextarea
             value={suspendReason}
             onChange={(e) => setSuspendReason(e.target.value)}
             placeholder="Motivo (opcional)"
@@ -518,7 +517,7 @@ function AdminPassageirosPage() {
               O bloqueio impede o passageiro de usar o app. Informe o motivo (obrigatório).
             </DialogDescription>
           </DialogHeader>
-          <Textarea
+          <DSTextarea
             value={blockReason}
             onChange={(e) => setBlockReason(e.target.value)}
             placeholder="Motivo do bloqueio"
@@ -913,7 +912,7 @@ function PassengerDetail({
 
           <Section title="Notas internas">
             <div className="flex gap-2">
-              <Textarea
+              <DSTextarea
                 rows={2}
                 value={noteDraft}
                 onChange={(e) => setNoteDraft(e.target.value)}
