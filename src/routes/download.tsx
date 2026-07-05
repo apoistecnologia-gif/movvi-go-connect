@@ -3,8 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { Download, Loader2, Package, ShieldCheck } from "lucide-react";
 import { AdminGuard } from "@/components/AdminGuard";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { DSButton, DSCard, DSCardContent } from "@/design-system";
 import { getMovviSourceSignedUrl } from "@/lib/adminDownloads.functions";
 import { toast } from "sonner";
 
