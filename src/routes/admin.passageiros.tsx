@@ -122,6 +122,21 @@ function statusOf(p: Passenger) {
   return { label: "Ativo", tone: "bg-primary/15 text-primary border-primary/30" };
 }
 
+type PillStatus = "online" | "searching" | "cancelled" | "offline" | "finished";
+function statusPillOf(p: Passenger): { status: PillStatus; label: string } {
+  if (p.blocked_at) return { status: "cancelled", label: "Bloqueado" };
+  if (p.suspended_at) return { status: "searching", label: "Suspenso" };
+  return { status: "online", label: "Ativo" };
+}
+
+function TagPill({ tone, children }: { tone: string; children: React.ReactNode }) {
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${tone}`}>
+      {children}
+    </span>
+  );
+}
+
 function badgeForRating(r: number): string {
   if (r >= 4.8) return "Premium";
   if (r >= 4.5) return "Muito Educado";
