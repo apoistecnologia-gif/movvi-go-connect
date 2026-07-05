@@ -159,7 +159,7 @@ function AdminPaymentsPage() {
                       onChange={(e) => patch(g.id, { webhook_url: e.target.value })}
                     />
                     {g.webhook_url && (
-                      <DSButton variant="outline" size="icon" onClick={() => copyWebhook(g.webhook_url!)}>
+                      <DSButton variant="outline" size="icon" aria-label="Copiar URL do webhook" onClick={() => copyWebhook(g.webhook_url!)}>
                         <Copy className="h-3.5 w-3.5" />
                       </DSButton>
                     )}

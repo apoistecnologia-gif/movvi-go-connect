@@ -276,7 +276,7 @@ function AdminPrecosPage() {
                               value={r.value}
                               onChange={(e) => setLocalValue(c.key, r.field_key, Number(e.target.value) || 0)}
                             />
-                            <Button size="icon" variant="ghost" onClick={() => deleteRule(r)} className="text-destructive">
+                            <Button size="icon" variant="ghost" onClick={() => deleteRule(r)} aria-label="Remover regra" className="text-destructive">
                               <Trash2 className="h-3 w-3" />
                             </Button>
                           </div>

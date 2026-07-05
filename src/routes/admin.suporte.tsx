@@ -770,7 +770,7 @@ function TicketDetailDialog({
                       {formatDate(n.created_at)}
                     </p>
                   </div>
-                  <DSButton variant="ghost" size="icon" onClick={() => setNoteToDelete(n)}>
+                  <DSButton variant="ghost" size="icon" aria-label="Remover nota" onClick={() => setNoteToDelete(n)}>
                     <Trash2 className="h-4 w-4 text-muted-foreground" />
                   </DSButton>
                 </div>
