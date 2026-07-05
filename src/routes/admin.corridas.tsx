@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
-  Loader2,
   Search,
   Eye,
   Download,
@@ -18,8 +17,6 @@ import {
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
@@ -29,9 +26,20 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
+import {
+  DSButton,
+  DSCard,
+  DSCardContent,
+  StatusPill,
+  Loading,
+  EmptyState,
+  Avatar,
+  Label,
+  BodySmall,
+  Caption,
+  dsStatus,
+} from "@/design-system";
 import { toast } from "sonner";
 import { formatBRL, formatDate } from "@/lib/formatters";
 import { downloadCsv } from "@/lib/csvExport";
