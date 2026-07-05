@@ -855,19 +855,10 @@ function PartyBlock({
   rides?: number | null;
   extra?: React.ReactNode;
 }) {
-  const initials = (name || "?")
-    .split(" ")
-    .map((s) => s[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-3">
-        <Avatar className="h-14 w-14 border border-border">
-          {photo && <AvatarImage src={photo} alt={name} />}
-          <AvatarFallback>{initials}</AvatarFallback>
-        </Avatar>
+        <Avatar src={photo} name={name} size={56} />
         <div className="min-w-0 flex-1">
           <p className="truncate font-semibold">{name}</p>
           <p className="text-xs text-muted-foreground">{phone ?? "Não informado"}</p>
