@@ -56,12 +56,15 @@ function pillFor(status: UiStatus) {
       return <StatusPill status="finished" label={label} pulse={false} />;
     case "pending_payment":
       return <StatusPill status="searching" label={label} />;
-    case "overdue":
+    case "expired":
+    case "blocked":
+    case "cancelled":
       return <StatusPill status="cancelled" label={label} pulse={false} />;
     default:
       return <StatusPill status="offline" label={label} pulse={false} />;
   }
 }
+
 
 const BENEFITS = [
   "Corridas ilimitadas na plataforma",
@@ -206,8 +209,11 @@ function DriverSubscriptionPage() {
         <DSCard className="p-5 space-y-3">
           <div className="space-y-1">
             <HeadingS>
-              {ui === "overdue" ? "Regularizar mensalidade" : "Pagar mensalidade"}
+              {ui === "expired" || ui === "blocked" || ui === "cancelled"
+                ? "Regularizar mensalidade"
+                : "Pagar mensalidade"}
             </HeadingS>
+
             <BodySmall className="text-muted-foreground">
               Escolha a forma de pagamento para gerar sua cobrança.
             </BodySmall>
