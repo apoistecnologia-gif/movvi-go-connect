@@ -44,6 +44,7 @@ import {
 } from "lucide-react";
 import { PassengerSideMenu } from "@/components/PassengerSideMenu";
 import { MovviMap } from "@/components/MovviMap";
+import { useDriverProximityAlerts } from "@/hooks/useDriverProximityAlerts";
 import { MovviSheet, type MovviSheetHandle } from "@/components/MovviSheet";
 import {
   PassengerLocationMarker,
