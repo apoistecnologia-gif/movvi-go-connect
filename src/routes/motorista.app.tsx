@@ -1995,58 +1995,122 @@ function ActiveRidePanel({
         )}
       </div>
 
-      {/* Modal de validação do PIN de segurança */}
+      {/* Modal de validação do PIN de segurança — PIN é o herói da tela */}
       {pinOpen && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-md rounded-t-[28px] sm:rounded-[28px] bg-card p-5 pb-6 shadow-premium ring-1 ring-border animate-sheet-in">
-            <div className="mx-auto -mt-1 mb-4 h-1.5 w-11 rounded-full bg-muted-foreground/30 sm:hidden" />
-            <div className="text-center">
-              <div className="mx-auto mb-3 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/15 text-primary ring-1 ring-primary/30">
-                <CheckCircle2 className="h-6 w-6" />
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/75 backdrop-blur-sm animate-in fade-in"
+          onClick={() => { if (!pinBusy) { setPinOpen(false); setPinCode(""); setPinError(null); } }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md rounded-t-[28px] sm:rounded-[28px] bg-card ring-1 ring-border animate-sheet-in flex flex-col"
+            style={{
+              maxHeight: "calc(100dvh - env(safe-area-inset-top) - 16px)",
+              boxShadow: "0 -32px 72px -20px rgba(0,0,0,0.6)",
+            }}
+          >
+            {/* Header */}
+            <div className="shrink-0 px-5 pt-3 pb-2">
+              <div className="mx-auto mb-3 h-1.5 w-11 rounded-full bg-muted-foreground/30 sm:hidden" />
+              <div className="flex items-center justify-between">
+                <div className="text-[10.5px] font-bold uppercase tracking-[0.18em] text-primary">
+                  Código de segurança
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { if (!pinBusy) { setPinOpen(false); setPinCode(""); setPinError(null); } }}
+                  disabled={pinBusy}
+                  aria-label="Fechar"
+                  className="-mr-2 flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-muted/40 disabled:opacity-40"
+                >
+                  <X className="h-4 w-4" />
+                </button>
               </div>
-              <h3 className="text-base font-bold">Código de segurança</h3>
-              <p className="mt-1 text-[12.5px] text-muted-foreground">
-                Digite o código de 4 dígitos informado pelo passageiro para iniciar a viagem.
+            </div>
+
+            {/* Scroll area (protege telas 320) */}
+            <div className="flex-1 overflow-y-auto px-5">
+              <div className="text-center">
+                <h3 className="text-[22px] font-extrabold leading-tight tracking-tight text-foreground">
+                  Peça o PIN ao passageiro
+                </h3>
+                <p className="mx-auto mt-1.5 max-w-[260px] text-[13px] leading-snug text-muted-foreground">
+                  Ele precisa informar o código de 4 dígitos para iniciar a viagem.
+                </p>
+              </div>
+
+              {/* PIN input — herói visual */}
+              <div className="relative mt-5">
+                <input
+                  autoFocus
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={4}
+                  value={pinCode}
+                  onChange={(e) => {
+                    const v = e.target.value.replace(/\D/g, "").slice(0, 4);
+                    setPinCode(v);
+                    setPinError(null);
+                  }}
+                  onKeyDown={(e) => { if (e.key === "Enter") submitPin(); }}
+                  aria-label="PIN de 4 dígitos"
+                  className={`w-full rounded-[22px] bg-background/70 px-4 py-5 text-center text-[40px] font-black tracking-[0.55em] tabular-nums text-foreground caret-primary outline-none ring-2 transition ${
+                    pinError
+                      ? "ring-destructive/60 focus:ring-destructive"
+                      : "ring-border/70 focus:ring-primary"
+                  }`}
+                  placeholder="————"
+                />
+                {/* Underlines dos 4 dígitos como affordance visual */}
+                <div className="pointer-events-none absolute inset-x-0 bottom-3 flex items-center justify-center gap-[14%] px-8">
+                  {[0, 1, 2, 3].map((i) => (
+                    <span
+                      key={i}
+                      className={`h-[3px] w-[14%] rounded-full transition ${
+                        pinCode.length > i ? "bg-primary" : "bg-border"
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {pinError && (
+                <div
+                  role="alert"
+                  className="mt-3 flex items-start gap-2 rounded-xl bg-destructive/10 px-3 py-2.5 text-[12.5px] font-medium text-destructive ring-1 ring-destructive/30"
+                >
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                  <span>{pinError}</span>
+                </div>
+              )}
+
+              <p className="mt-4 text-center text-[11.5px] text-muted-foreground">
+                Não inicie sem o código. O passageiro vê o PIN no app dele.
               </p>
             </div>
 
-            <input
-              autoFocus
-              inputMode="numeric"
-              pattern="[0-9]*"
-              maxLength={4}
-              value={pinCode}
-              onChange={(e) => {
-                const v = e.target.value.replace(/\D/g, "").slice(0, 4);
-                setPinCode(v);
-                setPinError(null);
-              }}
-              onKeyDown={(e) => { if (e.key === "Enter") submitPin(); }}
-              placeholder="••••"
-              className="mt-5 w-full rounded-2xl bg-background/70 px-4 py-4 text-center text-3xl font-extrabold tracking-[0.7em] tabular-nums ring-1 ring-border outline-none focus:ring-2 focus:ring-primary"
-            />
-
-            {pinError && (
-              <div className="mt-3 rounded-xl bg-destructive/10 px-3 py-2 text-[12.5px] font-medium text-destructive-foreground ring-1 ring-destructive/30">
-                {pinError}
+            {/* Footer sticky — CTA sempre visível */}
+            <div
+              className="shrink-0 border-t border-border/60 bg-card/95 backdrop-blur"
+              style={{ padding: "12px 20px calc(env(safe-area-inset-bottom) + 16px)" }}
+            >
+              <div className="grid grid-cols-[auto_1fr] gap-2">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={() => { if (!pinBusy) { setPinOpen(false); setPinCode(""); setPinError(null); } }}
+                  disabled={pinBusy}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  size="lg"
+                  onClick={submitPin}
+                  disabled={pinBusy || pinCode.length !== 4}
+                >
+                  {pinBusy ? "Validando…" : "Iniciar viagem"}
+                </Button>
               </div>
-            )}
-
-            <div className="mt-5 grid grid-cols-2 gap-2">
-              <button
-                onClick={() => { if (!pinBusy) { setPinOpen(false); setPinCode(""); setPinError(null); } }}
-                disabled={pinBusy}
-                className="rounded-2xl bg-muted/40 py-3 text-[13px] font-semibold text-foreground ring-1 ring-border transition active:scale-[0.98] disabled:opacity-60"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={submitPin}
-                disabled={pinBusy || pinCode.length !== 4}
-                className="rounded-2xl bg-primary py-3 text-[13px] font-bold uppercase tracking-wider text-primary-foreground shadow-lg shadow-primary/30 transition active:scale-[0.98] hover:brightness-110 disabled:opacity-60"
-              >
-                {pinBusy ? "Validando…" : "Iniciar viagem"}
-              </button>
             </div>
           </div>
         </div>
