@@ -389,13 +389,13 @@ function AdminPassageirosPage() {
       </div>
 
       {loading ? (
-        <div className="grid place-items-center py-12 text-muted-foreground">
-          <Loader2 className="h-6 w-6 animate-spin" />
-        </div>
+        <Loading label="Carregando passageiros..." />
       ) : rows.length === 0 ? (
-        <div className="grid place-items-center py-12 text-sm text-muted-foreground">
-          Nenhum passageiro encontrado.
-        </div>
+        <EmptyState
+          icon={Users}
+          title="Nenhum passageiro encontrado"
+          description="Ajuste a busca ou os filtros para ver resultados."
+        />
       ) : (
         <div className="grid gap-2">
           {rows.map((p) => {
