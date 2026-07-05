@@ -16,9 +16,11 @@ import {
   LogOut,
   MapPin,
   ShieldCheck,
+  Sparkles,
   Star,
   User,
 } from "lucide-react";
+
 import { supabase } from "@/integrations/supabase/client";
 import { ProfileForm } from "@/components/profile/ProfileForm";
 import { DriverProfessionalProfileDialog } from "@/components/profile/DriverProfessionalProfileDialog";
@@ -356,7 +358,15 @@ function DriverProfilePage() {
                 sub="Formas de pagamento e recibos"
                 to="/motorista/assinatura"
               />
+              <Divider />
+              <MenuRow
+                icon={Sparkles}
+                label="Regalias a bordo"
+                sub="Escolha o que você oferece aos passageiros"
+                to="/motorista/regalias"
+              />
             </DSCard>
+
           </section>
 
           <section className="flex flex-col gap-2 animate-fade-in">
