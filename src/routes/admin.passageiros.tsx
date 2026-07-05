@@ -47,7 +47,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
+// Badge legacy substituído por StatusPill/TagPill do design system.
 import { toast } from "sonner";
 import { formatBRL, formatDate } from "@/lib/formatters";
 import { logAdminAction } from "@/lib/adminAudit";
