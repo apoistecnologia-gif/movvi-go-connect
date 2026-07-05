@@ -194,7 +194,9 @@ function DriverDocumentsPage() {
     );
   }
 
-  const overall = driver.documents_status;
+  // Se o admin aprovou a conta, tratamos os documentos como aprovados —
+  // caso contrário o motorista vê "em análise" mesmo com a conta liberada.
+  const overall = driver.approval_status === "aprovado" ? "approved" : driver.documents_status;
 
   return (
     <SettingsPageShell>
