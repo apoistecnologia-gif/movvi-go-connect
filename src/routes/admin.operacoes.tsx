@@ -735,7 +735,7 @@ function RideDetail({
   return (
     <div className="mt-4 space-y-4">
       <div className="flex items-center gap-2">
-        <Badge>{STATUS_LABEL[ride.status] ?? ride.status}</Badge>
+        <StatusPill status={STATUS_PILL[ride.status] ?? "searching"} label={STATUS_LABEL[ride.status] ?? ride.status} />
         <span className="text-xs text-muted-foreground">há {elapsed}</span>
       </div>
 
