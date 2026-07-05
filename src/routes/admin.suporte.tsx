@@ -367,10 +367,10 @@ function AdminSuportePage() {
       title="Suporte / Tickets"
       description="Gestão profissional de solicitações de passageiros e motoristas"
       actions={
-        <Button variant="secondary" size="sm" onClick={load} disabled={loading}>
+        <DSButton variant="secondary" size="sm" onClick={load} disabled={loading}>
           <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           Atualizar
-        </Button>
+        </DSButton>
       }
     >
       <div className="grid gap-3 md:grid-cols-5">
@@ -381,8 +381,8 @@ function AdminSuportePage() {
         <Kpi label="Resolvidos" value={counts.resolved} tone="ok" icon={CheckCircle2} />
       </div>
 
-      <Card className="mt-4 border-border bg-card">
-        <CardContent className="p-4">
+      <DSCard className="mt-4 border-border bg-card">
+        <DSCardContent className="p-4">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div className="relative w-full md:max-w-md">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -412,8 +412,8 @@ function AdminSuportePage() {
               </button>
             ))}
           </div>
-        </CardContent>
-      </Card>
+        </DSCardContent>
+      </DSCard>
 
       <div className="mt-4 space-y-2">
         {loading ? (
@@ -421,11 +421,11 @@ function AdminSuportePage() {
             <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Carregando tickets…
           </div>
         ) : filtered.length === 0 ? (
-          <Card className="border-border bg-card">
-            <CardContent className="py-16 text-center text-sm text-muted-foreground">
+          <DSCard className="border-border bg-card">
+            <DSCardContent className="py-16 text-center text-sm text-muted-foreground">
               Nenhum ticket encontrado com os filtros atuais.
-            </CardContent>
-          </Card>
+            </DSCardContent>
+          </DSCard>
         ) : (
           filtered.map((t) => (
             <TicketRow key={t.id} t={t} onOpen={() => setOpenId(t.id)} />
@@ -462,22 +462,22 @@ function Kpi({
     ok: "text-emerald-300",
   } as const;
   return (
-    <Card className="border-border bg-card">
-      <CardContent className="p-4">
+    <DSCard className="border-border bg-card">
+      <DSCardContent className="p-4">
         <div className="flex items-center justify-between">
           <p className="text-xs text-muted-foreground">{label}</p>
           {Icon && <Icon className={`h-4 w-4 ${map[tone]}`} />}
         </div>
         <p className={`mt-1 font-display text-2xl font-bold ${map[tone]}`}>{value}</p>
-      </CardContent>
-    </Card>
+      </DSCardContent>
+    </DSCard>
   );
 }
 
 function TicketRow({ t, onOpen }: { t: Enriched; onOpen: () => void }) {
   return (
-    <Card className="border-border bg-card transition hover:border-primary/40">
-      <CardContent className="p-4">
+    <DSCard className="border-border bg-card transition hover:border-primary/40">
+      <DSCardContent className="p-4">
         <div className="flex items-start gap-4">
           <Avatar src={t._user.photo ?? undefined} name={t._user.name ?? "?"} size={48} />
           <div className="min-w-0 flex-1">
@@ -503,12 +503,12 @@ function TicketRow({ t, onOpen }: { t: Enriched; onOpen: () => void }) {
               {t._user.email ?? t._user.phone ?? "sem contato"} • criado {formatDate(t.created_at)}
             </p>
           </div>
-          <Button variant="secondary" size="sm" onClick={onOpen} className="shrink-0">
+          <DSButton variant="secondary" size="sm" onClick={onOpen} className="shrink-0">
             <Eye className="mr-2 h-4 w-4" /> Abrir
-          </Button>
+          </DSButton>
         </div>
-      </CardContent>
-    </Card>
+      </DSCardContent>
+    </DSCard>
   );
 }
 
@@ -715,13 +715,13 @@ function TicketDetailDialog({
                   <span className="font-mono text-[11px] text-muted-foreground">
                     #{shortId(ride.id)}
                   </span>
-                  <Button
+                  <DSButton
                     variant="ghost"
                     size="sm"
                     onClick={() => copy(ride.id, "ID da corrida copiado")}
                   >
                     <Copy className="mr-1 h-3.5 w-3.5" /> Copiar ID
-                  </Button>
+                  </DSButton>
                 </div>
                 <p className="mt-2 text-xs text-muted-foreground">
                   Origem: <span className="text-foreground">{ride.origin_name ?? "—"}</span>
@@ -761,9 +761,9 @@ function TicketDetailDialog({
               placeholder="Adicionar nota interna (somente admins)"
               className="min-h-[70px]"
             />
-            <Button onClick={addNote} disabled={saving || !noteText.trim()}>
+            <DSButton onClick={addNote} disabled={saving || !noteText.trim()}>
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <StickyNote className="h-4 w-4" />}
-            </Button>
+            </DSButton>
           </div>
           <div className="mt-3 space-y-2">
             {notes.length === 0 ? (
@@ -780,9 +780,9 @@ function TicketDetailDialog({
                       {formatDate(n.created_at)}
                     </p>
                   </div>
-                  <Button variant="ghost" size="icon" onClick={() => setNoteToDelete(n)}>
+                  <DSButton variant="ghost" size="icon" onClick={() => setNoteToDelete(n)}>
                     <Trash2 className="h-4 w-4 text-muted-foreground" />
-                  </Button>
+                  </DSButton>
                 </div>
               ))
             )}
@@ -792,7 +792,7 @@ function TicketDetailDialog({
         {/* Actions */}
         <Section title="Ações">
           <div className="flex flex-wrap gap-2">
-            <Button
+            <DSButton
               variant="secondary"
               size="sm"
               disabled={busy !== null}
@@ -807,8 +807,8 @@ function TicketDetailDialog({
               }
             >
               <Clock className="mr-2 h-4 w-4" /> Marcar em análise
-            </Button>
-            <Button
+            </DSButton>
+            <DSButton
               variant="secondary"
               size="sm"
               disabled={busy !== null}
@@ -823,8 +823,8 @@ function TicketDetailDialog({
               }
             >
               <CheckCircle2 className="mr-2 h-4 w-4" /> Marcar resolvido
-            </Button>
-            <Button
+            </DSButton>
+            <DSButton
               variant="secondary"
               size="sm"
               disabled={busy !== null}
@@ -840,15 +840,15 @@ function TicketDetailDialog({
               }
             >
               <Flame className="mr-2 h-4 w-4" /> Marcar urgente
-            </Button>
-            <Button
+            </DSButton>
+            <DSButton
               variant="ghost"
               size="sm"
               onClick={() => copy(t.id, "ID do ticket copiado")}
             >
               <Copy className="mr-2 h-4 w-4" /> Copiar ID
-            </Button>
-            <Button
+            </DSButton>
+            <DSButton
               variant="ghost"
               size="sm"
               onClick={() =>
@@ -861,7 +861,7 @@ function TicketDetailDialog({
               }
             >
               <Copy className="mr-2 h-4 w-4" /> Copiar resumo
-            </Button>
+            </DSButton>
           </div>
         </Section>
       </DialogContent>
