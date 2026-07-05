@@ -4,7 +4,12 @@ import { useEffect, useState } from "react";
 import { Plus, Save, Trash2, GripVertical, Loader2 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
+import {
+  DSButton as Button,
+  DSCard as Card,
+  DSCardContent as CardContent,
+  Loading,
+} from "@/design-system";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
