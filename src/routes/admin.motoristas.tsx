@@ -580,42 +580,25 @@ function DriverCard({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="font-semibold">{driver.name}</h3>
-            <Badge variant="outline" className={meta.tone}>
-              {meta.label}
-            </Badge>
-            <Badge variant="outline" className={sm.tone}>
-              <CreditCard className="mr-1 h-3 w-3" />
-              {sm.label}
-            </Badge>
-            <Badge
-              variant="outline"
-              className={
-                online
-                  ? "border-primary/30 bg-primary/10 text-primary"
-                  : "border-border text-muted-foreground"
-              }
-            >
-              {online ? <Wifi className="mr-1 h-3 w-3" /> : <WifiOff className="mr-1 h-3 w-3" />}
-              {online ? "Online" : "Offline"}
-            </Badge>
+            <StatusPill status={STATUS_PILL[driver.approval_status].status} label={STATUS_PILL[driver.approval_status].label} pulse={false} />
+            <StatusPill
+              status={SUB_PILL[(driver.subscription_status as SubStatus) ?? "inactive"]?.status ?? "offline"}
+              label={SUB_PILL[(driver.subscription_status as SubStatus) ?? "inactive"]?.label ?? sm.label}
+              pulse={false}
+            />
+            <StatusPill status={online ? "online" : "offline"} label={online ? "Online" : "Offline"} pulse={online} />
             {activeRideStatus && (
-              <Badge variant="outline" className="border-orange-500/30 bg-orange-500/10 text-orange-400">
-                <Car className="mr-1 h-3 w-3" /> Em corrida ({activeRideStatus})
-              </Badge>
+              <TagPill tone="border-orange-500/30 bg-orange-500/10 text-orange-400">
+                <Car className="h-3 w-3" /> Em corrida ({activeRideStatus})
+              </TagPill>
             )}
             {suspended && (
-              <Badge variant="outline" className="border-destructive/30 bg-destructive/10 text-destructive">
-                Suspenso
-              </Badge>
+              <TagPill tone="border-destructive/30 bg-destructive/10 text-destructive">Suspenso</TagPill>
             )}
             {docsPending(driver) && (
-              <Badge variant="outline" className="border-yellow-500/30 bg-yellow-500/10 text-yellow-400">
-                Docs pendentes
-              </Badge>
+              <TagPill tone="border-yellow-500/30 bg-yellow-500/10 text-yellow-400">Docs pendentes</TagPill>
             )}
-            <Badge variant="secondary" className="capitalize">
-              {driver.category}
-            </Badge>
+            <TagPill tone="border-border bg-muted/40 text-muted-foreground capitalize">{driver.category}</TagPill>
           </div>
           <div className="mt-2 grid gap-1 text-xs text-muted-foreground sm:grid-cols-2">
             <span>📞 {driver.phone ?? "—"}</span>
