@@ -293,6 +293,65 @@ export type Database = {
         }
         Relationships: []
       }
+      cancellation_fees: {
+        Row: {
+          cancelled_by: string
+          created_at: string
+          driver_credit: number
+          driver_id: string | null
+          fee_amount: number
+          id: string
+          is_paid: boolean
+          paid_at: string | null
+          passenger_id: string
+          platform_fee: number
+          ride_id: string
+          ride_status_at_cancel: string
+          seconds_since_accept: number | null
+          updated_at: string
+        }
+        Insert: {
+          cancelled_by: string
+          created_at?: string
+          driver_credit?: number
+          driver_id?: string | null
+          fee_amount?: number
+          id?: string
+          is_paid?: boolean
+          paid_at?: string | null
+          passenger_id: string
+          platform_fee?: number
+          ride_id: string
+          ride_status_at_cancel: string
+          seconds_since_accept?: number | null
+          updated_at?: string
+        }
+        Update: {
+          cancelled_by?: string
+          created_at?: string
+          driver_credit?: number
+          driver_id?: string | null
+          fee_amount?: number
+          id?: string
+          is_paid?: boolean
+          paid_at?: string | null
+          passenger_id?: string
+          platform_fee?: number
+          ride_id?: string
+          ride_status_at_cancel?: string
+          seconds_since_accept?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cancellation_fees_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "rides"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coupon_redemptions: {
         Row: {
           amount: number
@@ -680,6 +739,59 @@ export type Database = {
           ride_id?: string | null
         }
         Relationships: []
+      }
+      driver_wallet_transactions: {
+        Row: {
+          amount: number
+          available_at: string | null
+          created_at: string
+          description: string | null
+          driver_id: string
+          id: string
+          metadata: Json
+          source: Database["public"]["Enums"]["driver_wallet_tx_source"]
+          source_ride_id: string | null
+          status: Database["public"]["Enums"]["driver_wallet_tx_status"]
+          updated_at: string
+          withdrawn_at: string | null
+        }
+        Insert: {
+          amount: number
+          available_at?: string | null
+          created_at?: string
+          description?: string | null
+          driver_id: string
+          id?: string
+          metadata?: Json
+          source: Database["public"]["Enums"]["driver_wallet_tx_source"]
+          source_ride_id?: string | null
+          status?: Database["public"]["Enums"]["driver_wallet_tx_status"]
+          updated_at?: string
+          withdrawn_at?: string | null
+        }
+        Update: {
+          amount?: number
+          available_at?: string | null
+          created_at?: string
+          description?: string | null
+          driver_id?: string
+          id?: string
+          metadata?: Json
+          source?: Database["public"]["Enums"]["driver_wallet_tx_source"]
+          source_ride_id?: string | null
+          status?: Database["public"]["Enums"]["driver_wallet_tx_status"]
+          updated_at?: string
+          withdrawn_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_wallet_transactions_source_ride_id_fkey"
+            columns: ["source_ride_id"]
+            isOneToOne: false
+            referencedRelation: "rides"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       driver_wallets: {
         Row: {
@@ -1258,6 +1370,39 @@ export type Database = {
           passenger_user_id?: string
           phone?: string
           relation?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      passenger_wallets: {
+        Row: {
+          balance: number
+          blocked_reason: string | null
+          created_at: string
+          currency: string
+          id: string
+          is_blocked: boolean
+          passenger_id: string
+          updated_at: string
+        }
+        Insert: {
+          balance?: number
+          blocked_reason?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          is_blocked?: boolean
+          passenger_id: string
+          updated_at?: string
+        }
+        Update: {
+          balance?: number
+          blocked_reason?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          is_blocked?: boolean
+          passenger_id?: string
           updated_at?: string
         }
         Relationships: []
@@ -2149,6 +2294,7 @@ export type Database = {
           birth_date: string | null
           block_reason: string | null
           blocked_at: string | null
+          cancel_score_30d: number
           city: string | null
           completed_rides: number
           cpf: string | null
@@ -2166,6 +2312,7 @@ export type Database = {
           phone_verified_at: string | null
           preferences: Json
           suspended_at: string | null
+          suspended_until: string | null
           total_ratings: number
           updated_at: string
         }
@@ -2176,6 +2323,7 @@ export type Database = {
           birth_date?: string | null
           block_reason?: string | null
           blocked_at?: string | null
+          cancel_score_30d?: number
           city?: string | null
           completed_rides?: number
           cpf?: string | null
@@ -2193,6 +2341,7 @@ export type Database = {
           phone_verified_at?: string | null
           preferences?: Json
           suspended_at?: string | null
+          suspended_until?: string | null
           total_ratings?: number
           updated_at?: string
         }
@@ -2203,6 +2352,7 @@ export type Database = {
           birth_date?: string | null
           block_reason?: string | null
           blocked_at?: string | null
+          cancel_score_30d?: number
           city?: string | null
           completed_rides?: number
           cpf?: string | null
@@ -2220,6 +2370,7 @@ export type Database = {
           phone_verified_at?: string | null
           preferences?: Json
           suspended_at?: string | null
+          suspended_until?: string | null
           total_ratings?: number
           updated_at?: string
         }
@@ -2395,6 +2546,7 @@ export type Database = {
         Args: { _passenger_id: string }
         Returns: undefined
       }
+      settle_cancellation_fee: { Args: { _fee_id: string }; Returns: undefined }
     }
     Enums: {
       app_role:
@@ -2419,6 +2571,16 @@ export type Database = {
         | "suspended"
         | "expired"
         | "blocked"
+        | "cancelled"
+      driver_wallet_tx_source:
+        | "cancellation_fee"
+        | "manual_credit"
+        | "withdrawal"
+        | "adjustment"
+      driver_wallet_tx_status:
+        | "pending"
+        | "available"
+        | "withdrawn"
         | "cancelled"
       financial_txn_status:
         | "pending"
@@ -2606,6 +2768,18 @@ export const Constants = {
         "suspended",
         "expired",
         "blocked",
+        "cancelled",
+      ],
+      driver_wallet_tx_source: [
+        "cancellation_fee",
+        "manual_credit",
+        "withdrawal",
+        "adjustment",
+      ],
+      driver_wallet_tx_status: [
+        "pending",
+        "available",
+        "withdrawn",
         "cancelled",
       ],
       financial_txn_status: [
