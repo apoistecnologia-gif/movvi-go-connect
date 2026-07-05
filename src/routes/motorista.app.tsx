@@ -1617,14 +1617,7 @@ function ActiveRidePanel({
           className="fixed left-1/2 z-40 -translate-x-1/2 px-4 w-full max-w-md pointer-events-none"
           style={{ top: "calc(env(safe-area-inset-top) + 12px)" }}
         >
-          <div
-            className="pointer-events-auto flex items-center justify-between gap-2 rounded-[22px] px-4 py-3 shadow-[0_12px_36px_-16px_rgba(0,0,0,0.35)] animate-in fade-in slide-in-from-top-3 duration-300"
-            style={{
-              background: "color-mix(in oklab, #ffffff 82%, transparent)",
-              border: "1px solid rgba(255,255,255,0.65)",
-              backdropFilter: "blur(14px) saturate(160%)",
-            }}
-          >
+          <div className="pointer-events-auto flex items-center justify-between gap-2 rounded-[22px] border border-white/70 bg-white/85 px-4 py-3 shadow-[0_12px_36px_-16px_rgba(0,0,0,0.35)] backdrop-blur-md backdrop-saturate-150 animate-in fade-in slide-in-from-top-3 duration-300">
             <TopStat icon={<Clock className="h-[15px] w-[15px]" strokeWidth={1.75} />} value={minutes != null ? String(minutes) : "—"} unit="min" label="ETA" highlight />
             <div className="h-9 w-px bg-black/10" />
             <TopStat icon={<RouteIcon className="h-[15px] w-[15px]" strokeWidth={1.75} />} value={legKm != null ? legKm.toFixed(1) : "—"} unit="km" label="Distância" />
@@ -1645,13 +1638,15 @@ function ActiveRidePanel({
                 </span>
                 <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">A caminho do passageiro</span>
               </div>
-              <button
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={onCancel}
                 aria-label="Cancelar corrida"
-                className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted/30 hover:text-destructive"
+                className="h-9 w-9 text-muted-foreground hover:text-destructive"
               >
                 <X className="h-4 w-4" />
-              </button>
+              </Button>
             </div>
             <div className="mt-2 h-[3px] w-full overflow-hidden rounded-full bg-muted/50">
               <div className="animate-movvi-indeterminate h-full w-1/3 rounded-full bg-primary" />
@@ -1690,26 +1685,34 @@ function ActiveRidePanel({
             <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/70" />
           </button>
 
-          {/* Pickup address */}
-          <div className="flex items-start gap-3 rounded-[20px] bg-background/70 p-3 ring-1 ring-border">
-            <span className="mt-1.5 h-3 w-3 shrink-0 rounded-full bg-primary ring-2 ring-card animate-pulse" />
-            <div className="min-w-0 flex-1">
-              <div className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-primary">Embarque</div>
-              <div className="mt-0.5 line-clamp-2 text-[15px] text-foreground">
-                {ride.pickup_label || ride.origin_name || "Endereço não identificado"}
+          {/* Pickup + destination */}
+          <div className="rounded-[20px] bg-background/70 p-3 ring-1 ring-border">
+            <div className="flex items-start gap-3">
+              <span className="mt-1.5 h-3 w-3 shrink-0 rounded-full bg-primary ring-2 ring-card animate-pulse" />
+              <div className="min-w-0 flex-1">
+                <div className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-primary">Embarque</div>
+                <div className="mt-0.5 line-clamp-2 text-[15px] text-foreground">
+                  {ride.pickup_label || ride.origin_name || "Endereço não identificado"}
+                </div>
+              </div>
+            </div>
+            <div className="my-2.5 ml-[5px] h-px w-full bg-border/60" />
+            <div className="flex items-start gap-3">
+              <span className="mt-1.5 h-3 w-3 shrink-0 rounded-full bg-destructive ring-2 ring-card" />
+              <div className="min-w-0 flex-1">
+                <div className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Destino</div>
+                <div className="mt-0.5 line-clamp-1 text-[13px] text-muted-foreground">
+                  {ride.destination_name || "—"}
+                </div>
               </div>
             </div>
           </div>
 
           {/* Primary CTA — Cheguei ao local */}
-          <button
-            onClick={() => onArrive()}
-            className="press-scale flex h-14 w-full items-center justify-center gap-2 rounded-[18px] text-[15px] font-bold uppercase tracking-[0.06em] text-primary-foreground shadow-[0_16px_36px_-16px_color-mix(in_oklab,var(--color-primary)_70%,transparent)] transition"
-            style={{ background: "#76C139" }}
-          >
+          <Button size="lg" onClick={() => onArrive()} className="h-14 w-full text-[15px] font-bold uppercase tracking-[0.06em]">
             <CheckCircle2 className="h-5 w-5" strokeWidth={2} />
             Cheguei ao local
-          </button>
+          </Button>
 
           {/* Secondary circular actions — Call · Chat · Navigate */}
           <div className="mt-1 flex items-center justify-center gap-6">
