@@ -1,6 +1,7 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Loader2, ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
+import { DSLoading } from "@/design-system";
 import { supabase } from "@/integrations/supabase/client";
 import { SettingsPageShell, SettingsHero } from "@/components/settings";
 

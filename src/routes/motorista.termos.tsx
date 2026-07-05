@@ -1,6 +1,7 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { FileText, Loader2 } from "lucide-react";
+import { FileText } from "lucide-react";
+import { DSLoading } from "@/design-system";
 import { supabase } from "@/integrations/supabase/client";
 import { SettingsPageShell, SettingsHero } from "@/components/settings";
 
