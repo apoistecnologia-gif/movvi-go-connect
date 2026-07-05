@@ -45,6 +45,7 @@ type DriverRow = {
   cnh_back_url: string | null;
   vehicle_document_url: string | null;
   documents_status: string;
+  approval_status: string;
 };
 
 type SlotDef = {
@@ -107,7 +108,7 @@ function DriverDocumentsPage() {
         }
         const { data, error: dbErr } = await supabase
           .from("drivers")
-          .select("user_id, selfie_url, cnh_url, cnh_back_url, vehicle_document_url, documents_status")
+          .select("user_id, selfie_url, cnh_url, cnh_back_url, vehicle_document_url, documents_status, approval_status")
           .eq("user_id", userId)
           .maybeSingle();
         if (dbErr) throw dbErr;
@@ -193,7 +194,9 @@ function DriverDocumentsPage() {
     );
   }
 
-  const overall = driver.documents_status;
+  // Se o admin aprovou a conta, tratamos os documentos como aprovados —
+  // caso contrário o motorista vê "em análise" mesmo com a conta liberada.
+  const overall = driver.approval_status === "aprovado" ? "approved" : driver.documents_status;
 
   return (
     <SettingsPageShell>

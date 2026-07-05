@@ -78,10 +78,13 @@ function DriverStatusPage() {
             (docFields.cnh_url ? 1 : 0) +
             (docFields.cnh_back_url ? 1 : 0) +
             (docFields.vehicle_document_url ? 1 : 0);
-          setDocsSummary({
-            status: (docFields.documents_status as DocsSummary["status"]) ?? "pending_upload",
-            uploaded,
-          });
+          // Quando o motorista já está aprovado, os documentos são
+          // considerados aprovados — o admin liberou a conta.
+          const effectiveStatus: DocsSummary["status"] =
+            result.profile.approval_status === "aprovado"
+              ? "approved"
+              : ((docFields.documents_status as DocsSummary["status"]) ?? "pending_upload");
+          setDocsSummary({ status: effectiveStatus, uploaded });
         }
       } else {
         setStatus("nao_encontrado");
