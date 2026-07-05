@@ -107,6 +107,14 @@ const STATUS_LABEL: Record<string, string> = {
   finalizada: "Finalizada",
 };
 
+const STATUS_PILL: Record<string, keyof typeof dsStatus> = {
+  procurar_motorista: "searching",
+  motorista_a_caminho: "driverComing",
+  motorista_chegou: "arrived",
+  em_viagem: "trip",
+  finalizada: "finished",
+};
+
 /* ─── Component ────────────────────────────────────── */
 function OpsCenterPage() {
   const [drivers, setDrivers] = useState<Driver[]>([]);
