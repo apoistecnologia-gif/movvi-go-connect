@@ -10,7 +10,6 @@ import {
   DSCardContent,
   Loading,
   EmptyState,
-  StatusPill,
   Caption,
   Label as DSLabel,
 } from "@/design-system";
