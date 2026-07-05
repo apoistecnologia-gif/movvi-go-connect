@@ -3,8 +3,15 @@ import { useEffect, useMemo, useState } from "react";
 import { Loader2, Save, Building2, LifeBuoy, Globe, Sliders, Bell, Shield, CreditCard } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import {
+  DSButton as Button,
+  DSCard as Card,
+  DSCardContent as CardContent,
+  DSCardDescription as CardDescription,
+  DSCardHeader as CardHeader,
+  DSCardTitle as CardTitle,
+  Loading,
+} from "@/design-system";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
