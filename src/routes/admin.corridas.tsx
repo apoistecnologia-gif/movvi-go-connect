@@ -35,9 +35,6 @@ import {
   Loading,
   EmptyState,
   Avatar,
-  Label,
-  BodySmall,
-  Caption,
   dsStatus,
 } from "@/design-system";
 import { toast } from "sonner";
