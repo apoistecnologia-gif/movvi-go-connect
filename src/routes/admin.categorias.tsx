@@ -4,10 +4,15 @@ import { useEffect, useState } from "react";
 import { Plus, Save, Trash2, GripVertical, Loader2 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
+import {
+  DSButton as Button,
+  DSCard as Card,
+  DSCardContent as CardContent,
+  Loading,
+} from "@/design-system";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Card, CardContent } from "@/components/ui/card";
+
 import { toast } from "sonner";
 import { logAdminAction } from "@/lib/adminAudit";
 import { ICON_REGISTRY } from "@/lib/uiCategories";
@@ -192,9 +197,7 @@ function AdminCategoriasPage() {
       }
     >
       {loading ? (
-        <div className="grid place-items-center py-12 text-muted-foreground">
-          <Loader2 className="h-6 w-6 animate-spin" />
-        </div>
+        <Loading label="Carregando categorias..." />
       ) : (
         <div className="grid gap-3">
           {rows.map((row, idx) => (

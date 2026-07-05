@@ -4,9 +4,15 @@ import { useEffect, useMemo, useState } from "react";
 import { Plus, Save, Trash2, Loader2 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
+import {
+  DSButton as Button,
+  DSCard as Card,
+  DSCardContent as CardContent,
+  DSCardHeader as CardHeader,
+  DSCardTitle as CardTitle,
+  Loading,
+} from "@/design-system";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { logAdminAction } from "@/lib/adminAudit";
@@ -209,9 +215,7 @@ function AdminPrecosPage() {
       description="Defina todas as regras de precificação por categoria. Alterações refletem no app do passageiro instantaneamente."
     >
       {loading ? (
-        <div className="grid place-items-center py-12 text-muted-foreground">
-          <Loader2 className="h-6 w-6 animate-spin" />
-        </div>
+        <Loading label="Carregando preços..." />
       ) : (
         <Tabs value={activeCat} onValueChange={setActiveCat} className="space-y-4">
           <TabsList className="flex flex-wrap gap-1">

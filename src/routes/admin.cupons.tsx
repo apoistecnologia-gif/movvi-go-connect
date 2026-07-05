@@ -4,11 +4,16 @@ import { useEffect, useState } from "react";
 import { Plus, Loader2, Trash2, Save } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
+import {
+  DSButton as Button,
+  DSCard as Card,
+  DSCardContent as CardContent,
+  Loading,
+  EmptyState,
+} from "@/design-system";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+// Badge legacy substituído por tag inline abaixo.
 import { toast } from "sonner";
 import { logAdminAction } from "@/lib/adminAudit";
 import { formatDate } from "@/lib/formatters";
@@ -166,11 +171,13 @@ function AdminCuponsPage() {
       }
     >
       {loading ? (
-        <div className="grid place-items-center py-12 text-muted-foreground">
-          <Loader2 className="h-6 w-6 animate-spin" />
-        </div>
+        <Loading label="Carregando cupons..." />
       ) : rows.length === 0 ? (
-        <p className="py-12 text-center text-sm text-muted-foreground">Nenhum cupom cadastrado.</p>
+        <EmptyState
+          icon={Plus}
+          title="Nenhum cupom cadastrado"
+          description="Crie um novo cupom para começar."
+        />
       ) : (
         <div className="grid gap-3">
           {rows.map((c) => (
@@ -238,7 +245,7 @@ function AdminCuponsPage() {
                 </Field>
                 <div className="md:col-span-4 flex items-end justify-between">
                   <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                    <Badge variant="outline">Usos: {c.used_count}/{c.usage_limit ?? "∞"}</Badge>
+                    <span className="inline-flex items-center rounded-full border border-border bg-muted/30 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">Usos: {c.used_count}/{c.usage_limit ?? "∞"}</span>
                     <span>Criado {formatDate(c.created_at)}</span>
                     <label className="flex items-center gap-2">
                       <Switch checked={c.enabled} onCheckedChange={(v) => toggle(c, v)} />
