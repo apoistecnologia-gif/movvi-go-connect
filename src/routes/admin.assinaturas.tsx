@@ -404,9 +404,9 @@ function AdminAssinaturasPage() {
                             </p>
                             <SubPill status={s.status} />
                             {mismatch && (
-                              <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-0.5 text-[11px] font-medium text-amber-300">
+                              <DSBadge variant="warning">
                                 <AlertTriangle className="h-3 w-3" /> Status divergente
-                              </span>
+                              </DSBadge>
                             )}
                           </div>
                           <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
@@ -788,9 +788,9 @@ function SubscriptionDetailSheet({
                   Verificar status
                 </Button>
                 {providerStatus && (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/30 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+                  <DSBadge variant="muted">
                     Asaas: {providerStatus}
-                  </span>
+                  </DSBadge>
                 )}
                 {sub.invoice_url && (
                   <>

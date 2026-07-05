@@ -281,15 +281,13 @@ export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
                       {new Date(t.created_at).toLocaleString("pt-BR")} • {labelFor(t.category, categories)}
                     </div>
                   </div>
-                  <span
-                    className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${t.status === "open"
-                        ? "border-primary/40 bg-primary/10 text-primary"
-                        : t.status === "resolved"
-                        ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-400"
-                        : "border-border text-muted-foreground"}`}
+                  <DSBadge
+                    variant={
+                      t.status === "open" ? "primary" : t.status === "resolved" ? "success" : "muted"
+                    }
                   >
                     {t.status === "open" ? "Aberto" : t.status === "resolved" ? "Resolvido" : t.status}
-                  </span>
+                  </DSBadge>
                 </li>
               ))}
             </ul>

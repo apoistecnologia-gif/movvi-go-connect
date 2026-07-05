@@ -132,13 +132,7 @@ const SUB_PILL: Record<SubStatus, { status: PillStatus; label: string }> = {
 
 // Lightweight inline pill for non-semantic tags (docs pending, in-ride, category, suspended)
 function TagPill({ tone, children }: { tone: string; children: React.ReactNode }) {
-  return (
-    <span
-      className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${tone}`}
-    >
-      {children}
-    </span>
-  );
+  return <DSBadge className={tone}>{children}</DSBadge>;
 }
 
 const FILTERS: { key: FilterKey; label: string }[] = [

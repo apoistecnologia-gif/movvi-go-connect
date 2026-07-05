@@ -122,11 +122,7 @@ function statusPillOf(p: Passenger): { status: PillStatus; label: string } {
 }
 
 function TagPill({ tone, children }: { tone: string; children: React.ReactNode }) {
-  return (
-    <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${tone}`}>
-      {children}
-    </span>
-  );
+  return <DSBadge className={tone}>{children}</DSBadge>;
 }
 
 function badgeForRating(r: number): string {

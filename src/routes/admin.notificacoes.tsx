@@ -147,9 +147,9 @@ function AdminNotificacoesPage() {
               <DSCardContent className="p-3">
                 <div className="flex items-center justify-between gap-2">
                   <p className="font-medium">{h.title}</p>
-                  <span className="rounded-full border border-border bg-muted/30 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+                  <DSBadge variant="muted">
                     {h.audience_type} · {h.delivery_count}
-                  </span>
+                  </DSBadge>
                 </div>
                 <p className="text-xs text-muted-foreground">{h.body}</p>
                 <p className="text-[10px] text-muted-foreground/70">{formatDate(h.sent_at)}</p>
