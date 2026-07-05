@@ -400,7 +400,7 @@ function OpsCenterPage() {
             Mostrar offline
           </label>
           {(search || cityFilter !== ALL || categoryFilter !== ALL || statusFilter !== ALL) && (
-            <Button
+            <DSButton
               variant="ghost"
               size="sm"
               onClick={() => {
@@ -608,7 +608,7 @@ function OpsCenterPage() {
                           </p>
                         )}
                         {ride && (
-                          <Button
+                          <DSButton
                             size="sm"
                             variant="outline"
                             className="mt-2 h-7 text-xs"
