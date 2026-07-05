@@ -505,7 +505,7 @@ function OpsCenterPage() {
                       >
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-xs font-mono text-muted-foreground">#{r.id.slice(0, 6)}</span>
-                          <Badge variant="outline" className="text-[10px] h-5">{STATUS_LABEL[r.status] ?? r.status}</Badge>
+                          <StatusPill status={STATUS_PILL[r.status] ?? "searching"} label={STATUS_LABEL[r.status] ?? r.status} pulse={false} />
                         </div>
                         <p className="text-xs mt-1 truncate">
                           <span className="text-muted-foreground">Pax:</span> {passenger?.name ?? "—"}
