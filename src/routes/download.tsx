@@ -48,8 +48,8 @@ function DownloadInner() {
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-background p-6">
-      <Card className="w-full max-w-lg border-border/60 bg-card/60 backdrop-blur">
-        <CardContent className="space-y-6 p-8">
+      <DSCard className="w-full max-w-lg border-border/60 bg-card/60 backdrop-blur">
+        <DSCardContent className="space-y-6 p-8">
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/15 text-primary">
               <Package className="h-6 w-6" />
@@ -70,16 +70,16 @@ function DownloadInner() {
             </p>
           </div>
 
-          <Button className="w-full" size="lg" onClick={handleDownload} disabled={loading}>
+          <DSButton className="w-full" size="lg" onClick={handleDownload} disabled={loading}>
             {loading ? (
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
             ) : (
               <Download className="mr-2 h-5 w-5" />
             )}
             Gerar link e baixar
-          </Button>
-        </CardContent>
-      </Card>
+          </DSButton>
+        </DSCardContent>
+      </DSCard>
     </main>
   );
 }
