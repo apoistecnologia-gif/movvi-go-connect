@@ -2171,6 +2171,11 @@ function RatingScreen({
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 animate-in fade-in duration-300"
       style={{ backdropFilter: "blur(10px) saturate(140%)" }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !submitting) {
+          (submitted ? onDismiss : onSkip)();
+        }
+      }}
     >
       <div className="w-full max-w-md rounded-t-[28px] bg-card p-5 pb-6 shadow-[0_-24px_80px_-24px_rgba(0,0,0,0.55)] ring-1 ring-border animate-sheet-in">
         <div className="mx-auto -mt-1 mb-5 h-1.5 w-11 rounded-full bg-muted-foreground/25" />
@@ -2179,14 +2184,11 @@ function RatingScreen({
         <div className="flex flex-col items-center text-center">
           <div className="relative">
             <span
-              className="absolute inset-0 rounded-full animate-ping"
-              style={{ background: "color-mix(in oklab, #76C139 30%, transparent)", animationDuration: "1600ms" }}
+              className="absolute inset-0 rounded-full animate-ping bg-primary/30"
+              style={{ animationDuration: "1600ms" }}
             />
-            <div
-              className="relative flex h-16 w-16 items-center justify-center rounded-full shadow-[0_14px_36px_-14px_color-mix(in_oklab,#76C139_60%,transparent)] animate-in zoom-in-50 duration-500"
-              style={{ background: "#76C139" }}
-            >
-              <CheckCircle2 className="h-8 w-8 text-white animate-in fade-in zoom-in-75 duration-700" strokeWidth={2.2} />
+            <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-primary shadow-[0_14px_36px_-14px_color-mix(in_oklab,var(--color-primary)_60%,transparent)] animate-in zoom-in-50 duration-500">
+              <CheckCircle2 className="h-8 w-8 text-primary-foreground animate-in fade-in zoom-in-75 duration-700" strokeWidth={2.2} />
             </div>
           </div>
           <h2 className="mt-4 text-[26px] font-bold tracking-tight text-foreground">Corrida concluída</h2>
