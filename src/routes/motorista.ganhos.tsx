@@ -283,7 +283,6 @@ function DriverEarningsPage() {
 
           {/* SUBSCRIPTION */}
           <DSCard
-            as-button
             role="button"
             tabIndex={0}
             onClick={() => navigate({ to: "/motorista/assinatura" })}
