@@ -80,8 +80,8 @@ export function useMapTheme(): Ctx {
   const ctx = useContext(MapThemeContext);
   if (!ctx) {
     return {
-      mode: "light",
-      resolved: "light",
+      mode: "auto",
+      resolved: resolveByClock(),
       setMode: () => {
         /* noop */
       },
