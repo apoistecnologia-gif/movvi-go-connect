@@ -44,12 +44,18 @@ async function assertAdmin(ctx: AuthedCtx) {
 }
 
 function buildApprovalPatch(status: ApprovalStatus, reason: string | null | undefined) {
-  return {
+  const patch: Record<string, unknown> = {
     approval_status: status,
     motivo_reprovacao: status === "reprovado" ? (reason ? reason.trim() : null) : null,
     approved_at: status === "aprovado" ? new Date().toISOString() : null,
     blocked_at: status === "bloqueado" ? new Date().toISOString() : null,
   };
+  // Ao aprovar/reprovar, sincronizamos documents_status — caso contrário a UI
+  // do motorista segue mostrando "em análise / faltam documentos" mesmo depois
+  // que o admin já liberou (ou recusou) a conta.
+  if (status === "aprovado") patch.documents_status = "approved";
+  if (status === "reprovado") patch.documents_status = "rejected";
+  return patch;
 }
 
 /**
