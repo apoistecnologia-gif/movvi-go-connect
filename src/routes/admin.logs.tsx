@@ -3,13 +3,11 @@ import { useEffect, useState } from "react";
 import { Loader2, Download, Search } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { formatDate } from "@/lib/formatters";
 import { downloadCsv } from "@/lib/csvExport";
+import { DSButton, DSCard, DSCardContent } from "@/design-system";
 
 export const Route = createFileRoute("/admin/logs")({
   head: () => ({ meta: [{ title: "Logs — Admin MOVVI" }] }),
@@ -72,14 +70,14 @@ function AdminLogsPage() {
       title="Logs e Auditoria"
       description={`${audits.length} eventos · ${logins.length} logins`}
       actions={
-        <Button
+        <DSButton
           size="sm"
           variant="outline"
           className="gap-1"
           onClick={() => downloadCsv(`audit-${new Date().toISOString().slice(0, 10)}`, audits as unknown as Record<string, unknown>[])}
         >
           <Download className="h-4 w-4" /> CSV
-        </Button>
+        </DSButton>
       }
     >
       <Tabs defaultValue="audit">
@@ -104,14 +102,14 @@ function AdminLogsPage() {
             <p className="py-8 text-center text-sm text-muted-foreground">Sem registros.</p>
           ) : (
             audits.map((a) => (
-              <Card key={a.id} className="border-border bg-card/60">
-                <CardContent className="flex flex-col gap-1 p-3 text-xs sm:flex-row sm:items-center">
-                  <Badge variant="outline" className="font-mono">{a.action}</Badge>
+              <DSCard key={a.id} className="border-border bg-card/60">
+                <DSCardContent className="flex flex-col gap-1 p-3 text-xs sm:flex-row sm:items-center">
+                  <span className="inline-flex items-center rounded-full border border-border bg-muted/20 px-2.5 py-0.5 text-[11px] font-medium font-mono">{a.action}</span>
                   <span className="text-muted-foreground">{a.entity}</span>
                   {a.entity_id && <span className="font-mono text-[10px] text-muted-foreground">{a.entity_id.slice(0, 8)}</span>}
                   <span className="ml-auto text-[10px] text-muted-foreground">{formatDate(a.created_at)}</span>
-                </CardContent>
-              </Card>
+                </DSCardContent>
+              </DSCard>
             ))
           )}
         </TabsContent>
@@ -123,14 +121,14 @@ function AdminLogsPage() {
             <p className="py-8 text-center text-sm text-muted-foreground">Nenhum login registrado.</p>
           ) : (
             logins.map((l) => (
-              <Card key={l.id} className="border-border bg-card/60">
-                <CardContent className="flex items-center gap-2 p-3 text-xs">
-                  <Badge variant={l.success ? "default" : "destructive"}>{l.success ? "OK" : "Falha"}</Badge>
+              <DSCard key={l.id} className="border-border bg-card/60">
+                <DSCardContent className="flex items-center gap-2 p-3 text-xs">
+                  <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${l.success ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300" : "border-red-500/30 bg-red-500/10 text-red-300"}`}>{l.success ? "OK" : "Falha"}</span>
                   <span className="font-mono">{l.user_id?.slice(0, 8)}</span>
                   <span className="truncate text-muted-foreground">{l.user_agent ?? "—"}</span>
                   <span className="ml-auto text-[10px] text-muted-foreground">{formatDate(l.created_at)}</span>
-                </CardContent>
-              </Card>
+                </DSCardContent>
+              </DSCard>
             ))
           )}
         </TabsContent>

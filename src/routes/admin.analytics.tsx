@@ -8,12 +8,10 @@ import {
 
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { downloadCsv } from "@/lib/csvExport";
+import { DSButton, DSCard, DSCardContent } from "@/design-system";
 
 export const Route = createFileRoute("/admin/analytics")({
   head: () => ({ meta: [{ title: "Analytics & BI — Admin MOVVI" }] }),
@@ -256,9 +254,9 @@ function AnalyticsPage() {
             </div>
           )}
           <div className="flex justify-end">
-            <Button size="sm" variant="outline" onClick={exportOverviewCsv}>
+            <DSButton size="sm" variant="outline" onClick={exportOverviewCsv}>
               <Download className="h-3.5 w-3.5 mr-1.5" /> Exportar KPIs
-            </Button>
+            </DSButton>
           </div>
 
           <ChartCard title="Corridas no período" onExport={exportRidesCsv}>
@@ -311,9 +309,9 @@ function AnalyticsPage() {
             </div>
           )}
           <div className="flex justify-end">
-            <Button size="sm" variant="outline" onClick={exportFinancialCsv}>
+            <DSButton size="sm" variant="outline" onClick={exportFinancialCsv}>
               <Download className="h-3.5 w-3.5 mr-1.5" /> Exportar financeiro
-            </Button>
+            </DSButton>
           </div>
 
           <ChartCard title="Crescimento de assinaturas (pagamentos)">
@@ -377,38 +375,38 @@ function Kpi({ label, value, tone = "neutral" }: { label: string; value: string;
     blue: "text-blue-500", amber: "text-amber-500", red: "text-destructive",
   };
   return (
-    <Card className="border-border bg-card/60">
-      <CardContent className="p-3">
+    <DSCard className="border-border bg-card/60">
+      <DSCardContent className="p-3">
         <p className="text-[10px] uppercase tracking-wider text-muted-foreground truncate">{label}</p>
         <p className={`mt-1 text-lg font-bold truncate ${toneMap[tone]}`}>{value}</p>
-      </CardContent>
-    </Card>
+      </DSCardContent>
+    </DSCard>
   );
 }
 
 function ChartCard({ title, children, onExport }: { title: string; children: React.ReactNode; onExport?: () => void }) {
   return (
-    <Card className="border-border bg-card/60">
-      <CardContent className="p-4">
+    <DSCard className="border-border bg-card/60">
+      <DSCardContent className="p-4">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-semibold">{title}</h3>
           {onExport && (
-            <Button size="sm" variant="ghost" onClick={onExport} className="h-7 text-xs">
+            <DSButton size="sm" variant="ghost" onClick={onExport} className="h-7 text-xs">
               <Download className="h-3 w-3 mr-1" /> CSV
-            </Button>
+            </DSButton>
           )}
         </div>
         {children}
-      </CardContent>
-    </Card>
+      </DSCardContent>
+    </DSCard>
   );
 }
 
 function RankingCard({ title, rows }: { title: string; rows: NamedCount[] }) {
   const max = Math.max(1, ...rows.map(r => r.value));
   return (
-    <Card className="border-border bg-card/60">
-      <CardContent className="p-4">
+    <DSCard className="border-border bg-card/60">
+      <DSCardContent className="p-4">
         <h3 className="text-sm font-semibold mb-3">{title}</h3>
         {rows.length === 0 && <p className="text-xs text-muted-foreground">Sem dados.</p>}
         <ul className="space-y-2">
@@ -424,8 +422,8 @@ function RankingCard({ title, rows }: { title: string; rows: NamedCount[] }) {
             </li>
           ))}
         </ul>
-      </CardContent>
-    </Card>
+      </DSCardContent>
+    </DSCard>
   );
 }
 
@@ -434,14 +432,14 @@ function DriverTable({ title, rows, valueLabel, onExport, formatValue }: {
   onExport?: () => void; formatValue?: (v: number) => string;
 }) {
   return (
-    <Card className="border-border bg-card/60">
-      <CardContent className="p-4">
+    <DSCard className="border-border bg-card/60">
+      <DSCardContent className="p-4">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-sm font-semibold">{title}</h3>
           {onExport && (
-            <Button size="sm" variant="ghost" onClick={onExport} className="h-7 text-xs">
+            <DSButton size="sm" variant="ghost" onClick={onExport} className="h-7 text-xs">
               <Download className="h-3 w-3 mr-1" /> CSV
-            </Button>
+            </DSButton>
           )}
         </div>
         {rows.length === 0 && <p className="text-xs text-muted-foreground">Sem dados.</p>}
@@ -454,14 +452,14 @@ function DriverTable({ title, rows, valueLabel, onExport, formatValue }: {
                   {r.city ?? "—"} · {fmtInt(r.rides_total)} corridas · ★ {fmtDec(Number(r.rating ?? 0), 2)}
                 </p>
               </div>
-              <Badge variant="outline" className="shrink-0 font-mono text-[10px]">
+              <span className="inline-flex items-center rounded-full border border-border bg-muted/20 px-2.5 py-0.5 text-[11px] font-medium shrink-0 font-mono text-[10px]">
                 {formatValue ? formatValue(Number(r.value)) : fmtInt(Number(r.value))} {!formatValue && valueLabel}
-              </Badge>
+              </span>
             </li>
           ))}
         </ul>
-      </CardContent>
-    </Card>
+      </DSCardContent>
+    </DSCard>
   );
 }
 
@@ -469,8 +467,8 @@ function PaxTable({ title, rows, valueLabel, formatValue }: {
   title: string; rows: TopPaxRow[]; valueLabel: string; formatValue?: (v: number) => string;
 }) {
   return (
-    <Card className="border-border bg-card/60">
-      <CardContent className="p-4">
+    <DSCard className="border-border bg-card/60">
+      <DSCardContent className="p-4">
         <h3 className="text-sm font-semibold mb-2">{title}</h3>
         {rows.length === 0 && <p className="text-xs text-muted-foreground">Sem dados.</p>}
         <ul className="divide-y divide-border">
@@ -482,14 +480,14 @@ function PaxTable({ title, rows, valueLabel, formatValue }: {
                   {r.city ?? "—"} · {fmtInt(r.rides_total)} corridas · ★ {fmtDec(Number(r.rating ?? 0), 2)}
                 </p>
               </div>
-              <Badge variant="outline" className="shrink-0 font-mono text-[10px]">
+              <span className="inline-flex items-center rounded-full border border-border bg-muted/20 px-2.5 py-0.5 text-[11px] font-medium shrink-0 font-mono text-[10px]">
                 {formatValue ? formatValue(Number(r.value)) : fmtInt(Number(r.value))} {!formatValue && valueLabel}
-              </Badge>
+              </span>
             </li>
           ))}
         </ul>
-      </CardContent>
-    </Card>
+      </DSCardContent>
+    </DSCard>
   );
 }
 

@@ -3,11 +3,10 @@ import { useState } from "react";
 import { Download, Loader2, FileBarChart } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { downloadCsv } from "@/lib/csvExport";
 import { logAdminAction } from "@/lib/adminAudit";
+import { DSButton, DSCard, DSCardContent, DSCardHeader, DSCardTitle } from "@/design-system";
 
 export const Route = createFileRoute("/admin/relatorios")({
   head: () => ({ meta: [{ title: "Relatórios — Admin MOVVI" }] }),
@@ -45,20 +44,20 @@ function AdminRelatoriosPage() {
     <AdminLayout title="Relatórios" description="Exporte dados em CSV (abre direto no Excel)">
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
         {REPORTS.map((r) => (
-          <Card key={r.key} className="border-border bg-card/60">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
+          <DSCard key={r.key} className="border-border bg-card/60">
+            <DSCardHeader>
+              <DSCardTitle className="flex items-center gap-2 text-base">
                 <FileBarChart className="h-4 w-4 text-primary" /> {r.label}
-              </CardTitle>
+              </DSCardTitle>
               <p className="text-xs text-muted-foreground">{r.description}</p>
-            </CardHeader>
-            <CardContent>
-              <Button onClick={() => generate(r)} disabled={busy === r.key} className="w-full gap-2">
+            </DSCardHeader>
+            <DSCardContent>
+              <DSButton onClick={() => generate(r)} disabled={busy === r.key} className="w-full gap-2">
                 {busy === r.key ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                 Gerar CSV
-              </Button>
-            </CardContent>
-          </Card>
+              </DSButton>
+            </DSCardContent>
+          </DSCard>
         ))}
       </div>
     </AdminLayout>
