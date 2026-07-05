@@ -3,12 +3,11 @@ import { useEffect, useState } from "react";
 import { Loader2, Save, Shield, Lock, KeyRound, Clock } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { logAdminAction } from "@/lib/adminAudit";
+import { DSButton, DSCard, DSCardContent, DSCardDescription, DSCardHeader, DSCardTitle } from "@/design-system";
 
 export const Route = createFileRoute("/admin/seguranca")({
   head: () => ({ meta: [{ title: "Segurança — Admin MOVVI" }] }),
@@ -103,22 +102,22 @@ function AdminSecurityPage() {
       title="Segurança"
       description="Política global de autenticação, sessão e auditoria."
       actions={
-        <Button onClick={save} disabled={saving} size="sm" className="gap-1">
+        <DSButton onClick={save} disabled={saving} size="sm" className="gap-1">
           {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
           Salvar tudo
-        </Button>
+        </DSButton>
       }
     >
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card className="border-border bg-card/60">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
+        <DSCard className="border-border bg-card/60">
+          <DSCardHeader>
+            <DSCardTitle className="flex items-center gap-2 text-base">
               <Lock className="h-4 w-4 text-primary" />
               Autenticação
-            </CardTitle>
-            <CardDescription className="text-xs">Controle de acesso e proteções contra ataque de força bruta.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
+            </DSCardTitle>
+            <DSCardDescription className="text-xs">Controle de acesso e proteções contra ataque de força bruta.</DSCardDescription>
+          </DSCardHeader>
+          <DSCardContent className="space-y-3">
             <label className="flex flex-col gap-1">
               <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Tentativas máximas de login</span>
               <Input
@@ -142,18 +141,18 @@ function AdminSecurityPage() {
               </div>
               <Switch checked={row.audit_logs_enabled} onCheckedChange={(v) => setRow({ ...row, audit_logs_enabled: v })} />
             </label>
-          </CardContent>
-        </Card>
+          </DSCardContent>
+        </DSCard>
 
-        <Card className="border-border bg-card/60">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
+        <DSCard className="border-border bg-card/60">
+          <DSCardHeader>
+            <DSCardTitle className="flex items-center gap-2 text-base">
               <Clock className="h-4 w-4 text-primary" />
               Sessão
-            </CardTitle>
-            <CardDescription className="text-xs">Tempo até expirar uma sessão inativa.</CardDescription>
-          </CardHeader>
-          <CardContent>
+            </DSCardTitle>
+            <DSCardDescription className="text-xs">Tempo até expirar uma sessão inativa.</DSCardDescription>
+          </DSCardHeader>
+          <DSCardContent>
             <label className="flex flex-col gap-1">
               <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Timeout de sessão (minutos)</span>
               <Input
@@ -163,18 +162,18 @@ function AdminSecurityPage() {
                 onChange={(e) => setRow({ ...row, session_timeout_minutes: Number(e.target.value) || 5 })}
               />
             </label>
-          </CardContent>
-        </Card>
+          </DSCardContent>
+        </DSCard>
 
-        <Card className="border-border bg-card/60 lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
+        <DSCard className="border-border bg-card/60 lg:col-span-2">
+          <DSCardHeader>
+            <DSCardTitle className="flex items-center gap-2 text-base">
               <KeyRound className="h-4 w-4 text-primary" />
               Política de senha
-            </CardTitle>
-            <CardDescription className="text-xs">Aplicada a novos cadastros e trocas de senha.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-3 md:grid-cols-4">
+            </DSCardTitle>
+            <DSCardDescription className="text-xs">Aplicada a novos cadastros e trocas de senha.</DSCardDescription>
+          </DSCardHeader>
+          <DSCardContent className="grid gap-3 md:grid-cols-4">
             <label className="flex flex-col gap-1">
               <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Tamanho mínimo</span>
               <Input
@@ -207,20 +206,20 @@ function AdminSecurityPage() {
                 onCheckedChange={(v) => setRow({ ...row, password_policy: { ...row.password_policy, require_symbol: v } })}
               />
             </label>
-          </CardContent>
-        </Card>
+          </DSCardContent>
+        </DSCard>
 
-        <Card className="border-border bg-card/60 lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
+        <DSCard className="border-border bg-card/60 lg:col-span-2">
+          <DSCardHeader>
+            <DSCardTitle className="flex items-center gap-2 text-base">
               <Shield className="h-4 w-4 text-primary" />
               Auditoria
-            </CardTitle>
-            <CardDescription className="text-xs">
+            </DSCardTitle>
+            <DSCardDescription className="text-xs">
               Veja todas as ações administrativas em <a href="/admin/logs" className="text-primary underline">/admin/logs</a>.
-            </CardDescription>
-          </CardHeader>
-        </Card>
+            </DSCardDescription>
+          </DSCardHeader>
+        </DSCard>
       </div>
     </AdminLayout>
   );

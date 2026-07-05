@@ -3,13 +3,11 @@ import { useEffect, useState } from "react";
 import { Loader2, Database, Download, Plus, CheckCircle2, XCircle, Clock } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { logAdminAction } from "@/lib/adminAudit";
 import { downloadCsv } from "@/lib/csvExport";
 import { formatDate } from "@/lib/formatters";
+import { DSButton, DSCard, DSCardContent, DSCardDescription, DSCardHeader, DSCardTitle } from "@/design-system";
 
 export const Route = createFileRoute("/admin/backups")({
   head: () => ({ meta: [{ title: "Backups — Admin MOVVI" }] }),
@@ -109,10 +107,10 @@ function AdminBackupsPage() {
   }
 
   function statusBadge(s: Backup["status"]) {
-    if (s === "success") return <Badge className="gap-1 bg-primary/15 text-primary"><CheckCircle2 className="h-3 w-3" />Sucesso</Badge>;
-    if (s === "failed") return <Badge variant="destructive" className="gap-1"><XCircle className="h-3 w-3" />Falhou</Badge>;
-    if (s === "running") return <Badge variant="outline" className="gap-1"><Loader2 className="h-3 w-3 animate-spin" />Em execução</Badge>;
-    return <Badge variant="outline" className="gap-1"><Clock className="h-3 w-3" />Pendente</Badge>;
+    if (s === "success") return <span className="inline-flex items-center rounded-full border border-border bg-muted/20 px-2.5 py-0.5 text-[11px] font-medium gap-1 bg-primary/15 text-primary"><CheckCircle2 className="h-3 w-3" />Sucesso</span>;
+    if (s === "failed") return <span className="inline-flex items-center rounded-full border border-border bg-muted/20 px-2.5 py-0.5 text-[11px] font-medium gap-1"><XCircle className="h-3 w-3" />Falhou</span>;
+    if (s === "running") return <span className="inline-flex items-center rounded-full border border-border bg-muted/20 px-2.5 py-0.5 text-[11px] font-medium gap-1"><Loader2 className="h-3 w-3 animate-spin" />Em execução</span>;
+    return <span className="inline-flex items-center rounded-full border border-border bg-muted/20 px-2.5 py-0.5 text-[11px] font-medium gap-1"><Clock className="h-3 w-3" />Pendente</span>;
   }
 
   return (
@@ -120,21 +118,21 @@ function AdminBackupsPage() {
       title="Backups"
       description="Snapshots manuais das tabelas críticas. Cada backup gera um CSV por tabela e registra no histórico."
       actions={
-        <Button onClick={createManualBackup} disabled={busy} size="sm" className="gap-1">
+        <DSButton onClick={createManualBackup} disabled={busy} size="sm" className="gap-1">
           {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
           Backup agora
-        </Button>
+        </DSButton>
       }
     >
-      <Card className="border-border bg-card/60">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
+      <DSCard className="border-border bg-card/60">
+        <DSCardHeader>
+          <DSCardTitle className="flex items-center gap-2 text-base">
             <Database className="h-4 w-4 text-primary" />
             Histórico
-          </CardTitle>
-          <CardDescription className="text-xs">Últimos 50 backups. Tabelas incluídas: {BACKUP_TABLES.join(", ")}.</CardDescription>
-        </CardHeader>
-        <CardContent>
+          </DSCardTitle>
+          <DSCardDescription className="text-xs">Últimos 50 backups. Tabelas incluídas: {BACKUP_TABLES.join(", ")}.</DSCardDescription>
+        </DSCardHeader>
+        <DSCardContent>
           {loading ? (
             <div className="grid place-items-center py-12 text-muted-foreground">
               <Loader2 className="h-6 w-6 animate-spin" />
@@ -161,7 +159,7 @@ function AdminBackupsPage() {
                     <tr key={b.id} className="border-t border-border/60">
                       <td className="px-3 py-2">{formatDate(b.created_at)}</td>
                       <td className="px-3 py-2">
-                        <Badge variant="outline" className="text-[10px]">{b.type}</Badge>
+                        <span className="inline-flex items-center rounded-full border border-border bg-muted/20 px-2.5 py-0.5 text-[11px] font-medium text-[10px]">{b.type}</span>
                       </td>
                       <td className="px-3 py-2">{statusBadge(b.status)}</td>
                       <td className="px-3 py-2 text-muted-foreground">
@@ -174,8 +172,8 @@ function AdminBackupsPage() {
               </table>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </DSCardContent>
+      </DSCard>
 
       <p className="mt-4 text-xs text-muted-foreground">
         <Download className="mr-1 inline h-3 w-3" />
