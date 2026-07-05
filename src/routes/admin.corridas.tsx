@@ -578,9 +578,11 @@ function RideDetail({
             <span className="font-mono text-xs text-muted-foreground">
               {ride.id.slice(0, 8)}
             </span>
-            <Badge variant="outline" className={`text-[10px] ${STATUS_TONE[ride.status] ?? ""}`}>
-              {STATUS_LABEL[ride.status] ?? ride.status}
-            </Badge>
+            <StatusPill
+              status={STATUS_PILL[ride.status] ?? "searching"}
+              label={STATUS_LABEL[ride.status] ?? ride.status}
+              pulse={false}
+            />
           </SheetTitle>
         </SheetHeader>
 
