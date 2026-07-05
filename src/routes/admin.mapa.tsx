@@ -211,8 +211,8 @@ function AdminMapaPage() {
       title="Mapa Operacional ao Vivo"
       description={`${stats.online} online · ${stats.offline} offline · ${stats.searching} solicitações · ${stats.accepted} aceitas · ${stats.inTrip} em viagem`}
     >
-      <Card className="mb-3 border-border bg-card/60">
-        <CardContent className="flex flex-col gap-3 p-3">
+      <DSCard className="mb-3 border-border bg-card/60">
+        <DSCardContent className="flex flex-col gap-3 p-3">
           <div className="flex flex-wrap items-center gap-3 text-xs">
             <div className="flex items-center gap-2">
               <span className="text-muted-foreground">Categoria</span>
@@ -270,8 +270,8 @@ function AdminMapaPage() {
             <span className="mx-1 h-4 w-px bg-border" />
             <Toggle label="Heatmap de densidade" checked={showHeatmap} onChange={setShowHeatmap} color="#ef4444" />
           </div>
-        </CardContent>
-      </Card>
+        </DSCardContent>
+      </DSCard>
 
       <div className="overflow-hidden rounded-xl border border-border" style={{ height: "calc(100vh - 280px)" }}>
         <MovviMap onLoad={(m) => { mapRef.current = m; }}>
