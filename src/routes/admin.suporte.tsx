@@ -485,14 +485,14 @@ function TicketRow({ t, onOpen }: { t: Enriched; onOpen: () => void }) {
               <span className="font-mono text-[11px] text-muted-foreground">#{shortId(t.id)}</span>
               <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ${priorityTone(t.priority)}`}>{priorityLabel(t.priority)}</span>
               <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ${statusTone(t.status)}`}>{statusLabel(t.status)}</span>
-              <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium border-border text-muted-foreground">
+              <span className="inline-flex items-center rounded-full border border-border bg-muted/20 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
                 {t.user_type === "driver" ? "Motorista" : "Passageiro"}
               </span>
-              <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium border-border text-muted-foreground">
+              <span className="inline-flex items-center rounded-full border border-border bg-muted/20 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
                 {categoryLabel(t.category)}
               </span>
               {t.ride_id && (
-                <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium border-primary/30 text-primary">
+                <span className="inline-flex items-center rounded-full border border-primary/30 px-2.5 py-0.5 text-[11px] font-medium text-primary">
                   <Car className="mr-1 h-3 w-3" /> Corrida
                 </span>
               )}
@@ -664,12 +664,12 @@ function TicketDetailDialog({
               </p>
               <div className="mt-1 flex flex-wrap gap-2 text-[11px]">
                 {t._user.rating != null && (
-                  <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium border-border text-muted-foreground">
+                  <span className="inline-flex items-center rounded-full border border-border bg-muted/20 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
                     ⭐ {Number(t._user.rating).toFixed(2)}
                   </span>
                 )}
                 {t._user.status && (
-                  <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium border-border text-muted-foreground">
+                  <span className="inline-flex items-center rounded-full border border-border bg-muted/20 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
                     {t._user.status}
                   </span>
                 )}
