@@ -14,7 +14,6 @@ import {
   Search,
   Star,
   MapPin,
-  MapPin,
   Car,
   Trash2,
   StickyNote,
