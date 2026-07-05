@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Car,
   Users,
@@ -12,6 +12,7 @@ import {
   UserCheck,
   UserX,
   Radio,
+  Inbox,
 } from "lucide-react";
 import { Marker } from "@react-google-maps/api";
 import { AdminLayout } from "@/components/admin/AdminLayout";
@@ -19,8 +20,22 @@ import { MovviMap } from "@/components/MovviMap";
 import { supabase } from "@/integrations/supabase/client";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { formatBRL, formatNumber, formatDate } from "@/lib/formatters";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import {
+  DSCard,
+  DSCardContent,
+  DSCardHeader,
+  DSCardTitle,
+  Typography,
+  Label,
+  Metric,
+  BodySmall,
+  Caption,
+  Icon,
+  StatusPill,
+  EmptyState,
+  Loading,
+  ds,
+} from "@/design-system";
 
 export const Route = createFileRoute("/admin/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — Admin MOVVI" }] }),
@@ -67,6 +82,25 @@ const EMPTY: Metrics = {
 
 const ACTIVE_STATUSES = ["procurar_motorista", "motorista_a_caminho", "motorista_chegou", "em_viagem"] as const;
 
+type StatusKey =
+  | "searching"
+  | "driverComing"
+  | "arrived"
+  | "trip"
+  | "finished"
+  | "cancelled"
+  | "offline";
+
+function mapRideStatus(status: string): { key: StatusKey; label: string } {
+  if (status === "procurar_motorista") return { key: "searching", label: "Buscando" };
+  if (status === "motorista_a_caminho") return { key: "driverComing", label: "A caminho" };
+  if (status === "motorista_chegou") return { key: "arrived", label: "Chegou" };
+  if (status === "em_viagem") return { key: "trip", label: "Em viagem" };
+  if (status === "finalizada") return { key: "finished", label: "Finalizada" };
+  if (status.startsWith("cancelada")) return { key: "cancelled", label: "Cancelada" };
+  return { key: "offline", label: status.replace(/_/g, " ") };
+}
+
 function AdminDashboardPage() {
   const [m, setM] = useState<Metrics>(EMPTY);
   const [online, setOnline] = useState<OnlineDriver[]>([]);
@@ -74,7 +108,15 @@ function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [tick, setTick] = useState(0);
 
-  const reload = () => setTick((t) => t + 1);
+  // Debounced reload to avoid render storms from realtime bursts.
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reload = () => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => setTick((t) => t + 1), 400);
+  };
+  useEffect(() => () => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -152,10 +194,10 @@ function AdminDashboardPage() {
 
   return (
     <AdminLayout title="Dashboard" description="Visão geral da operação MOVVI DRIVE em tempo real">
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         <Kpi icon={Radio} label="Motoristas online" value={formatNumber(m.driversOnline)} tone="primary" loading={loading} />
         <Kpi icon={UserX} label="Motoristas offline" value={formatNumber(m.driversOffline)} loading={loading} />
-        <Kpi icon={Clock} label="Aprovações pendentes" value={formatNumber(m.driversPending)} tone="warn" loading={loading} link="/admin/motoristas" />
+        <Kpi icon={Clock} label="Aprovações pendentes" value={formatNumber(m.driversPending)} tone="warn" loading={loading} to="/admin/motoristas" />
         <Kpi icon={Activity} label="Corridas ativas" value={formatNumber(m.ridesActive)} tone="primary" loading={loading} />
         <Kpi icon={CheckCircle2} label="Concluídas hoje" value={formatNumber(m.ridesCompletedToday)} loading={loading} />
         <Kpi icon={XCircle} label="Canceladas hoje" value={formatNumber(m.ridesCancelledToday)} loading={loading} />
@@ -168,15 +210,13 @@ function AdminDashboardPage() {
       </div>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-3">
-        <Card className="lg:col-span-2 overflow-hidden">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-base">Motoristas online no mapa</CardTitle>
-            <Badge variant="outline" className="border-primary/30 text-primary">
-              {online.length} online
-            </Badge>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="h-[420px] w-full">
+        <DSCard className="lg:col-span-2 overflow-hidden">
+          <DSCardHeader className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+            <DSCardTitle className="min-w-0 truncate text-base">Motoristas online no mapa</DSCardTitle>
+            <StatusPill status="online" label={`${online.length} online`} pulse={online.length > 0} />
+          </DSCardHeader>
+          <DSCardContent className="p-0">
+            <div className="w-full h-[320px] md:h-[380px] lg:h-[420px]">
               <MovviMap center={mapCenter}>
                 {online.map((d) => {
                   if (!d.current_lat || !d.current_lng) return null;
@@ -189,9 +229,9 @@ function AdminDashboardPage() {
                       icon={{
                         path: g.maps.SymbolPath.CIRCLE,
                         scale: 7,
-                        fillColor: "#8DD92B",
+                        fillColor: ds.brand.greenPrimary,
                         fillOpacity: 1,
-                        strokeColor: "#05070D",
+                        strokeColor: ds.brand.black,
                         strokeWeight: 2,
                       }}
                     />
@@ -199,76 +239,100 @@ function AdminDashboardPage() {
                 })}
               </MovviMap>
             </div>
-          </CardContent>
-        </Card>
+          </DSCardContent>
+        </DSCard>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-base">Últimas solicitações</CardTitle>
-            <span className="text-xs text-muted-foreground">tempo real</span>
-          </CardHeader>
-          <CardContent className="space-y-2 p-3">
-            {recent.length === 0 && !loading && (
-              <p className="px-3 py-6 text-center text-xs text-muted-foreground">Sem corridas recentes.</p>
+        <DSCard>
+          <DSCardHeader className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+            <DSCardTitle className="min-w-0 truncate text-base">Últimas solicitações</DSCardTitle>
+            <Caption>tempo real</Caption>
+          </DSCardHeader>
+          <DSCardContent className="space-y-2 p-3">
+            {loading && recent.length === 0 && <Loading label="Carregando…" />}
+            {!loading && recent.length === 0 && (
+              <EmptyState
+                icon={Inbox}
+                title="Sem corridas recentes"
+                description="Novas solicitações aparecerão aqui em tempo real."
+              />
             )}
-            {recent.map((r) => (
-              <div key={r.id} className="rounded-lg border border-border/60 p-3 text-xs">
-                <div className="flex items-center justify-between gap-2">
-                  <Badge variant="outline" className="text-[10px] capitalize">{r.category}</Badge>
-                  <span className="text-[10px] text-muted-foreground">{formatDate(r.created_at)}</span>
+            {recent.map((r) => {
+              const s = mapRideStatus(r.status);
+              return (
+                <div key={r.id} className="rounded-lg border border-border/60 p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <Typography variant="caption" className="capitalize truncate">
+                      {r.category}
+                    </Typography>
+                    <Caption className="shrink-0">{formatDate(r.created_at)}</Caption>
+                  </div>
+                  <BodySmall className="mt-2 truncate font-medium text-foreground">
+                    {r.origin_name ?? "—"}
+                  </BodySmall>
+                  <BodySmall className="truncate text-muted-foreground">
+                    → {r.destination_name ?? "—"}
+                  </BodySmall>
+                  <div className="mt-2 flex items-center justify-between gap-2">
+                    <StatusPill status={s.key} label={s.label} pulse={false} />
+                    <BodySmall className="font-semibold shrink-0">
+                      {formatBRL(Number(r.estimated_price) || 0)}
+                    </BodySmall>
+                  </div>
                 </div>
-                <p className="mt-2 truncate font-medium text-foreground">{r.origin_name ?? "—"}</p>
-                <p className="truncate text-muted-foreground">→ {r.destination_name ?? "—"}</p>
-                <div className="mt-2 flex items-center justify-between">
-                  <Badge className="bg-primary/15 text-primary border border-primary/30 text-[10px]">
-                    {r.status.replace(/_/g, " ")}
-                  </Badge>
-                  <span className="font-semibold">{formatBRL(Number(r.estimated_price) || 0)}</span>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+              );
+            })}
+          </DSCardContent>
+        </DSCard>
       </div>
     </AdminLayout>
   );
 }
 
 function Kpi({
-  icon: Icon,
+  icon: IconCmp,
   label,
   value,
   tone,
   loading,
-  link,
+  to,
 }: {
   icon: typeof Car;
   label: string;
   value: string;
   tone?: "primary" | "warn";
   loading?: boolean;
-  link?: string;
+  to?: string;
 }) {
   const accent =
     tone === "primary"
       ? "border-primary/30 bg-primary/5"
       : tone === "warn"
-      ? "border-yellow-500/30 bg-yellow-500/5"
+      ? "border-warning/30 bg-warning/5"
       : "border-border bg-card";
-  const inner = (
-    <Card className={`transition hover:border-primary/50 ${accent}`}>
-      <CardContent className="flex items-center gap-3 p-4">
-        <div className="rounded-lg bg-background p-2">
-          <Icon className="h-4 w-4 text-primary" />
+
+  const card = (
+    <DSCard
+      className={`h-full min-h-[96px] transition hover:border-primary/50 ${accent}`}
+    >
+      <DSCardContent className="flex h-full items-center gap-3 p-4">
+        <div className="shrink-0 rounded-lg bg-background p-2">
+          <Icon as={IconCmp} size="md" className="text-primary" />
         </div>
-        <div className="min-w-0">
-          <p className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</p>
-          <p className="font-display text-xl font-bold leading-tight truncate">
+        <div className="min-w-0 flex-1">
+          <Label className="block truncate">{label}</Label>
+          <Metric className="block truncate leading-tight">
             {loading ? "…" : value}
-          </p>
+          </Metric>
         </div>
-      </CardContent>
-    </Card>
+      </DSCardContent>
+    </DSCard>
   );
-  return link ? <a href={link} className="block">{inner}</a> : inner;
+
+  return to ? (
+    <Link to={to} className="block h-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-[inherit]">
+      {card}
+    </Link>
+  ) : (
+    card
+  );
 }
