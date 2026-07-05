@@ -860,9 +860,9 @@ function PassengerDetail({
                           <MapPin className="mr-1 inline h-3 w-3" />
                           {r.origin_name ?? "?"} → {r.destination_name ?? "?"}
                         </p>
-                        <Badge variant="outline" className="mt-1 text-[10px]">
+                        <TagPill tone="mt-1 border-border text-muted-foreground bg-muted/30">
                           {r.status}
-                        </Badge>
+                        </TagPill>
                       </li>
                     ))}
                   </ul>
