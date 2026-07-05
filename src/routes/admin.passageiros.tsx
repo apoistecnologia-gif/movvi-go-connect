@@ -14,13 +14,20 @@ import {
   StickyNote,
   MapPin,
   PlayCircle,
+  Users,
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Avatar } from "@/components/Avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+  DSButton as Button,
+  DSCard as Card,
+  DSCardContent as CardContent,
+  StatusPill,
+  Loading,
+  EmptyState,
+} from "@/design-system";
 import {
   Dialog,
   DialogContent,
@@ -40,7 +47,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
+// Badge legacy substituído por StatusPill/TagPill do design system.
 import { toast } from "sonner";
 import { formatBRL, formatDate } from "@/lib/formatters";
 import { logAdminAction } from "@/lib/adminAudit";
@@ -113,6 +120,21 @@ function statusOf(p: Passenger) {
   if (p.blocked_at) return { label: "Bloqueado", tone: "bg-destructive/15 text-destructive border-destructive/30" };
   if (p.suspended_at) return { label: "Suspenso", tone: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30" };
   return { label: "Ativo", tone: "bg-primary/15 text-primary border-primary/30" };
+}
+
+type PillStatus = "online" | "searching" | "cancelled" | "offline" | "finished";
+function statusPillOf(p: Passenger): { status: PillStatus; label: string } {
+  if (p.blocked_at) return { status: "cancelled", label: "Bloqueado" };
+  if (p.suspended_at) return { status: "searching", label: "Suspenso" };
+  return { status: "online", label: "Ativo" };
+}
+
+function TagPill({ tone, children }: { tone: string; children: React.ReactNode }) {
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${tone}`}>
+      {children}
+    </span>
+  );
 }
 
 function badgeForRating(r: number): string {
@@ -367,22 +389,22 @@ function AdminPassageirosPage() {
       </div>
 
       {loading ? (
-        <div className="grid place-items-center py-12 text-muted-foreground">
-          <Loader2 className="h-6 w-6 animate-spin" />
-        </div>
+        <Loading label="Carregando passageiros..." />
       ) : rows.length === 0 ? (
-        <div className="grid place-items-center py-12 text-sm text-muted-foreground">
-          Nenhum passageiro encontrado.
-        </div>
+        <EmptyState
+          icon={Users}
+          title="Nenhum passageiro encontrado"
+          description="Ajuste a busca ou os filtros para ver resultados."
+        />
       ) : (
         <div className="grid gap-2">
           {rows.map((p) => {
-            const st = statusOf(p);
+            const sp = statusPillOf(p);
             const rating = Number(p.average_rating ?? 0);
             return (
               <Card
                 key={p.id}
-                className="cursor-pointer border-border bg-card/60 transition hover:border-primary/50"
+                className="cursor-pointer transition hover:border-primary/50"
                 onClick={() => setSelected(p)}
               >
                 <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
@@ -390,13 +412,11 @@ function AdminPassageirosPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="truncate font-medium">{p.name ?? "Sem nome"}</p>
-                      <Badge variant="outline" className={st.tone}>
-                        {st.label}
-                      </Badge>
-                      <Badge variant="outline" className="border-border text-muted-foreground">
-                        <Star className="mr-1 h-3 w-3 fill-yellow-400 text-yellow-400" />
+                      <StatusPill status={sp.status} label={sp.label} pulse={sp.status === "online"} />
+                      <TagPill tone="border-border text-muted-foreground bg-muted/30">
+                        <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
                         {rating > 0 ? rating.toFixed(2) : "—"} ({p.total_ratings ?? 0})
-                      </Badge>
+                      </TagPill>
                     </div>
                     <p className="mt-1 truncate text-xs text-muted-foreground">
                       {p.email ?? "—"} · {p.phone ?? "—"} · {p.city ?? "—"}
@@ -767,7 +787,7 @@ function PassengerDetail({
   }
 
   if (!passenger) return null;
-  const st = statusOf(passenger);
+  const sp = statusPillOf(passenger);
   const rating = Number(passenger.average_rating ?? 0);
   const suspended = !!passenger.suspended_at;
   const blocked = !!passenger.blocked_at;
@@ -781,12 +801,10 @@ function PassengerDetail({
             <div className="min-w-0 flex-1">
               <DialogTitle className="flex flex-wrap items-center gap-2">
                 {passenger.name ?? "Sem nome"}
-                <Badge variant="outline" className={st.tone}>
-                  {st.label}
-                </Badge>
-                <Badge variant="outline" className="border-primary/30 bg-primary/10 text-primary">
+                <StatusPill status={sp.status} label={sp.label} pulse={sp.status === "online"} />
+                <TagPill tone="border-primary/30 bg-primary/10 text-primary">
                   {badgeForRating(rating)}
-                </Badge>
+                </TagPill>
               </DialogTitle>
               <DialogDescription>
                 {passenger.city ?? "—"} • Cadastro {formatDate(passenger.created_at)}
@@ -842,9 +860,9 @@ function PassengerDetail({
                           <MapPin className="mr-1 inline h-3 w-3" />
                           {r.origin_name ?? "?"} → {r.destination_name ?? "?"}
                         </p>
-                        <Badge variant="outline" className="mt-1 text-[10px]">
+                        <TagPill tone="mt-1 border-border text-muted-foreground bg-muted/30">
                           {r.status}
-                        </Badge>
+                        </TagPill>
                       </li>
                     ))}
                   </ul>

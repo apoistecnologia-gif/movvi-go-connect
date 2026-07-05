@@ -16,9 +16,17 @@ import {
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import {
+  DSButton as Button,
+  DSCard as Card,
+  DSCardContent as CardContent,
+  DSCardHeader as CardHeader,
+  DSCardTitle as CardTitle,
+  StatusPill,
+  Loading,
+  EmptyState,
+} from "@/design-system";
+// Badge legacy substituído por StatusPill do design system.
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -107,18 +115,21 @@ function rangeFor(preset: Preset, fromCustom?: string, toCustom?: string) {
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, { label: string; cls: string }> = {
-    ativa: { label: "Ativa", cls: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" },
-    pending: { label: "Pendente", cls: "bg-amber-500/15 text-amber-400 border-amber-500/30" },
-    pendente: { label: "Pendente", cls: "bg-amber-500/15 text-amber-400 border-amber-500/30" },
-    vencida: { label: "Vencida", cls: "bg-red-500/15 text-red-400 border-red-500/30" },
-    expirada: { label: "Expirada", cls: "bg-red-500/15 text-red-400 border-red-500/30" },
-    cancelada: { label: "Cancelada", cls: "bg-muted text-muted-foreground border-border" },
-    suspensa: { label: "Suspensa", cls: "bg-orange-500/15 text-orange-400 border-orange-500/30" },
-    bloqueada: { label: "Bloqueada", cls: "bg-red-500/15 text-red-400 border-red-500/30" },
+  type PillStatus = "online" | "searching" | "cancelled" | "offline" | "finished";
+  const map: Record<string, { label: string; status: PillStatus }> = {
+    ativa: { label: "Ativa", status: "online" },
+    active: { label: "Ativa", status: "online" },
+    pending: { label: "Pendente", status: "searching" },
+    pendente: { label: "Pendente", status: "searching" },
+    vencida: { label: "Vencida", status: "cancelled" },
+    overdue: { label: "Vencida", status: "cancelled" },
+    expirada: { label: "Expirada", status: "cancelled" },
+    cancelada: { label: "Cancelada", status: "offline" },
+    suspensa: { label: "Suspensa", status: "cancelled" },
+    bloqueada: { label: "Bloqueada", status: "cancelled" },
   };
-  const it = map[status] ?? { label: status, cls: "bg-muted text-muted-foreground border-border" };
-  return <Badge variant="outline" className={it.cls}>{it.label}</Badge>;
+  const it = map[status] ?? { label: status, status: "offline" as PillStatus };
+  return <StatusPill status={it.status} label={it.label} pulse={false} />;
 }
 
 function fmtDate(iso: string | null | undefined) {
@@ -333,9 +344,7 @@ function AdminFinanceiroPage() {
   if (loading) {
     return (
       <AdminLayout title="Financeiro">
-        <div className="grid place-items-center py-12 text-muted-foreground">
-          <Loader2 className="h-6 w-6 animate-spin" />
-        </div>
+        <Loading label="Carregando dados financeiros..." />
       </AdminLayout>
     );
   }
