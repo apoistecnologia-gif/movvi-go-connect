@@ -399,12 +399,12 @@ function AdminPassageirosPage() {
       ) : (
         <div className="grid gap-2">
           {rows.map((p) => {
-            const st = statusOf(p);
+            const sp = statusPillOf(p);
             const rating = Number(p.average_rating ?? 0);
             return (
               <Card
                 key={p.id}
-                className="cursor-pointer border-border bg-card/60 transition hover:border-primary/50"
+                className="cursor-pointer transition hover:border-primary/50"
                 onClick={() => setSelected(p)}
               >
                 <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
@@ -412,13 +412,11 @@ function AdminPassageirosPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="truncate font-medium">{p.name ?? "Sem nome"}</p>
-                      <Badge variant="outline" className={st.tone}>
-                        {st.label}
-                      </Badge>
-                      <Badge variant="outline" className="border-border text-muted-foreground">
-                        <Star className="mr-1 h-3 w-3 fill-yellow-400 text-yellow-400" />
+                      <StatusPill status={sp.status} label={sp.label} pulse={sp.status === "online"} />
+                      <TagPill tone="border-border text-muted-foreground bg-muted/30">
+                        <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
                         {rating > 0 ? rating.toFixed(2) : "—"} ({p.total_ratings ?? 0})
-                      </Badge>
+                      </TagPill>
                     </div>
                     <p className="mt-1 truncate text-xs text-muted-foreground">
                       {p.email ?? "—"} · {p.phone ?? "—"} · {p.city ?? "—"}
