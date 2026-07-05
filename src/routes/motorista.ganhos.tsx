@@ -6,11 +6,12 @@ import {
   CalendarDays,
   CheckCircle2,
   Clock,
+  CreditCard,
   Download,
   FileText,
-  Loader2,
   MapPin,
   ShieldAlert,
+  Tag,
   TrendingUp,
   Wallet,
 } from "lucide-react";
@@ -22,6 +23,22 @@ import { downloadCsv } from "@/lib/csvExport";
 import { getDriverWallet } from "@/lib/finance/wallet";
 import { getDriverSubscriptionInfo } from "@/lib/payments/subscription.functions";
 import { SUBSCRIPTION_STATUS_UI_LABELS, toUiStatus } from "@/lib/payments/types";
+import {
+  Body,
+  BodySmall,
+  Caption,
+  DSButton,
+  DSCard,
+  EmptyState,
+  HeadingM,
+  HeadingXL,
+  Icon,
+  Label,
+  Loading,
+  Metric,
+  StatusPill,
+} from "@/design-system";
+import { cn } from "@/lib/utils";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -73,6 +90,16 @@ function range(filter: Filter, customFrom: string, customTo: string): [Date, Dat
     customFrom ? new Date(customFrom + "T00:00:00") : startOf("day"),
     customTo ? new Date(customTo + "T23:59:59") : end,
   ];
+}
+
+function formatPayment(method: string | null): string {
+  if (!method) return "—";
+  const m = method.toLowerCase();
+  if (m.includes("pix")) return "Pix";
+  if (m.includes("credit") || m.includes("credito")) return "Crédito";
+  if (m.includes("debit") || m.includes("debito")) return "Débito";
+  if (m.includes("cash") || m.includes("dinheiro")) return "Dinheiro";
+  return method;
 }
 
 function DriverEarningsPage() {
@@ -204,130 +231,120 @@ function DriverEarningsPage() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col" style={{ backgroundColor: "#F7F9F7" }}>
+    <div className="flex min-h-dvh flex-col bg-background">
       <MovviHeader logoutRedirect="/" />
-      <main className="flex-1 px-5 py-6 pb-28">
-        <div className="container mx-auto max-w-2xl space-y-6">
-          {/* ===== HEADER ===== */}
+      <main className="flex-1 px-4 pt-4 pb-28 sm:px-5">
+        <div className="mx-auto flex w-full max-w-2xl flex-col gap-5">
+          {/* HEADER */}
           <header className="animate-in fade-in slide-in-from-top-2 duration-500">
-            <h1 className="text-[26px] font-bold leading-tight tracking-tight" style={{ color: "#1B1B1B" }}>
-              Financeiro
-            </h1>
-            <p className="mt-1 text-[13px]" style={{ color: "#707070" }}>
-              Gerencie seus ganhos
-            </p>
+            <HeadingXL>Financeiro</HeadingXL>
+            <Body className="mt-1 text-muted-foreground">Gerencie seus ganhos</Body>
           </header>
 
-          {/* ===== MAIN BALANCE CARD ===== */}
-          <section
-            className="relative overflow-hidden rounded-[28px] bg-white p-7 shadow-[0_20px_50px_-28px_rgba(15,23,42,0.22)] animate-in fade-in zoom-in-[0.98] duration-500"
-          >
+          {/* MAIN BALANCE */}
+          <DSCard className="relative overflow-hidden p-5 sm:p-6 animate-in fade-in zoom-in-[0.98] duration-500">
             <div
               aria-hidden
-              className="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full opacity-[0.10]"
-              style={{ background: "radial-gradient(circle, #76C139 0%, transparent 70%)" }}
+              className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-primary/10 blur-2xl"
             />
-            <div className="relative">
+            <div className="relative flex flex-col gap-4">
               <div className="flex items-center gap-2">
-                <div
-                  className="grid h-9 w-9 place-items-center rounded-full"
-                  style={{ backgroundColor: "rgba(118,193,57,0.12)", color: "#76C139" }}
-                >
-                  <Wallet className="h-4 w-4" strokeWidth={1.75} />
-                </div>
-                <span className="text-[13px] font-medium" style={{ color: "#707070" }}>
-                  Saldo disponível
+                <span className="grid h-9 w-9 place-items-center rounded-full bg-primary/12 text-primary">
+                  <Icon as={Wallet} size="md" />
                 </span>
+                <Caption>Saldo disponível</Caption>
               </div>
-              <div
-                className="mt-4 text-[36px] font-bold tabular-nums leading-none tracking-tight"
-                style={{ color: "#1B1B1B" }}
-              >
+
+              <Metric className="text-[clamp(28px,9vw,36px)] leading-none">
                 {brl(displayedBalance)}
-              </div>
-              <div
-                className="mt-3 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold"
-                style={{ backgroundColor: "rgba(118,193,57,0.12)", color: "#5A9A2A" }}
-              >
-                <span className="relative flex h-1.5 w-1.5">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-70" style={{ backgroundColor: "#76C139" }} />
-                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full" style={{ backgroundColor: "#76C139" }} />
-                </span>
-                Disponível para saque
+              </Metric>
+
+              <div>
+                <StatusPill status="online" label="Disponível para saque" />
               </div>
 
-              <button
+              <DSButton
+                size="lg"
+                className="w-full"
                 onClick={() => toast.info("Saque em breve — em desenvolvimento")}
-                className="press-scale mt-6 flex h-14 w-full items-center justify-center gap-2 rounded-[18px] text-[15px] font-bold tracking-[0.02em] text-white shadow-[0_18px_36px_-16px_rgba(118,193,57,0.6)] transition active:scale-[0.985]"
-                style={{ background: "#76C139" }}
               >
-                <ArrowUpRight className="h-5 w-5" strokeWidth={2} />
+                <Icon as={ArrowUpRight} size="md" />
                 Solicitar saque
-              </button>
+              </DSButton>
             </div>
+          </DSCard>
+
+          {/* KPI ROW */}
+          <section className="grid grid-cols-3 gap-2 sm:gap-3 animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <KpiCard icon={CalendarDays} label="Hoje"   value={brl(totals.today)} />
+            <KpiCard icon={TrendingUp}   label="Semana" value={brl(totals.week)} />
+            <KpiCard icon={TrendingUp}   label="Mês"    value={brl(totals.month)} />
           </section>
 
-          {/* ===== SECONDARY KPI CARDS ===== */}
-          <section className="grid grid-cols-3 gap-3 animate-in fade-in slide-in-from-bottom-2 duration-500">
-            <MiniCard icon={<CalendarDays className="h-4 w-4" strokeWidth={1.75} />} label="Hoje"   value={brl(totals.today)} />
-            <MiniCard icon={<TrendingUp   className="h-4 w-4" strokeWidth={1.75} />} label="Semana" value={brl(totals.week)} />
-            <MiniCard icon={<TrendingUp   className="h-4 w-4" strokeWidth={1.75} />} label="Mês"    value={brl(totals.month)} />
-          </section>
-
-          {/* ===== SUBSCRIPTION STATUS ===== */}
-          <button
-            type="button"
+          {/* SUBSCRIPTION */}
+          <DSCard
+            role="button"
+            tabIndex={0}
             onClick={() => navigate({ to: "/motorista/assinatura" })}
-            className="press-scale flex w-full items-center gap-3 rounded-[22px] bg-white p-4 text-left shadow-[0_12px_30px_-24px_rgba(15,23,42,0.28)] transition hover:bg-[#FAFBF8] animate-in fade-in slide-in-from-bottom-2 duration-500"
-          >
-            <div
-              className="grid h-11 w-11 place-items-center rounded-full"
-              style={
-                subActive
-                  ? { backgroundColor: "rgba(118,193,57,0.12)", color: "#5A9A2A" }
-                  : { backgroundColor: "rgba(220,38,38,0.10)", color: "#DC2626" }
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                navigate({ to: "/motorista/assinatura" });
               }
+            }}
+            className="press-scale flex cursor-pointer items-center gap-3 p-4 outline-none focus-visible:ring-2 focus-visible:ring-ring animate-in fade-in slide-in-from-bottom-2 duration-500"
+          >
+            <span
+              className={cn(
+                "grid h-11 w-11 shrink-0 place-items-center rounded-full",
+                subActive ? "bg-primary/12 text-primary" : "bg-destructive/10 text-destructive",
+              )}
             >
-              {subActive ? <CheckCircle2 className="h-5 w-5" strokeWidth={1.75} /> : <ShieldAlert className="h-5 w-5" strokeWidth={1.75} />}
-            </div>
+              <Icon as={subActive ? CheckCircle2 : ShieldAlert} size="lg" />
+            </span>
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <span className="text-[15px] font-semibold" style={{ color: "#1B1B1B" }}>MOVVI Premium</span>
-                <span
-                  className="rounded-full px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wider"
-                  style={
-                    subActive
-                      ? { backgroundColor: "rgba(118,193,57,0.14)", color: "#5A9A2A" }
-                      : { backgroundColor: "rgba(220,38,38,0.10)", color: "#DC2626" }
-                  }
-                >
-                  {subLabel}
-                </span>
+              <div className="flex flex-wrap items-center gap-2">
+                <Body className="font-semibold">MOVVI Premium</Body>
+                <StatusPill
+                  status={subActive ? "accepted" : "cancelled"}
+                  label={subLabel}
+                  pulse={subActive}
+                />
               </div>
-              <div className="mt-0.5 text-[12px]" style={{ color: "#707070" }}>
+              <Caption className="mt-0.5 block">
                 {subExpires ? `Expira em ${subExpires}` : "Toque para ver detalhes"}
-              </div>
+              </Caption>
             </div>
-            <ArrowUpRight className="h-4 w-4 shrink-0 rotate-45" style={{ color: "#B8BEC5" }} />
-          </button>
+            <Icon as={ArrowUpRight} size="md" className="rotate-45 text-muted-foreground" />
+          </DSCard>
 
-          {/* ===== FILTERS ===== */}
-          <section className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-[18px] font-semibold tracking-tight" style={{ color: "#1B1B1B" }}>
-                Histórico
-              </h2>
+          {/* HISTORY */}
+          <section className="flex flex-col gap-3">
+            <div className="flex items-center justify-between gap-2">
+              <HeadingM>Histórico</HeadingM>
               <div className="flex gap-1.5">
-                <button onClick={exportCsv} className="press-scale flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#707070] shadow-[0_6px_18px_-14px_rgba(15,23,42,0.28)] hover:text-[#1B1B1B]" aria-label="Exportar CSV">
-                  <Download className="h-4 w-4" strokeWidth={1.75} />
-                </button>
-                <button onClick={exportPdf} className="press-scale flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#707070] shadow-[0_6px_18px_-14px_rgba(15,23,42,0.28)] hover:text-[#1B1B1B]" aria-label="Exportar PDF">
-                  <FileText className="h-4 w-4" strokeWidth={1.75} />
-                </button>
+                <DSButton
+                  variant="ghost"
+                  size="icon"
+                  onClick={exportCsv}
+                  aria-label="Exportar CSV"
+                  disabled={rides.length === 0}
+                >
+                  <Icon as={Download} size="md" />
+                </DSButton>
+                <DSButton
+                  variant="ghost"
+                  size="icon"
+                  onClick={exportPdf}
+                  aria-label="Exportar PDF"
+                  disabled={rides.length === 0}
+                >
+                  <Icon as={FileText} size="md" />
+                </DSButton>
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5">
               <FilterPill active={filter === "today"}  onClick={() => setFilter("today")}>Hoje</FilterPill>
               <FilterPill active={filter === "week"}   onClick={() => setFilter("week")}>Semana</FilterPill>
               <FilterPill active={filter === "month"}  onClick={() => setFilter("month")}>Mês</FilterPill>
@@ -336,68 +353,44 @@ function DriverEarningsPage() {
 
             {filter === "custom" && (
               <div className="grid grid-cols-2 gap-2">
-                <input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)}
-                  className="h-11 rounded-[14px] bg-white px-3 text-[13px] shadow-[0_6px_18px_-14px_rgba(15,23,42,0.2)] focus:outline-none focus:ring-2 focus:ring-[#76C139]/40" />
-                <input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)}
-                  className="h-11 rounded-[14px] bg-white px-3 text-[13px] shadow-[0_6px_18px_-14px_rgba(15,23,42,0.2)] focus:outline-none focus:ring-2 focus:ring-[#76C139]/40" />
+                <input
+                  type="date"
+                  value={customFrom}
+                  onChange={(e) => setCustomFrom(e.target.value)}
+                  className="h-11 rounded-[14px] border border-border/60 bg-card px-3 text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+                <input
+                  type="date"
+                  value={customTo}
+                  onChange={(e) => setCustomTo(e.target.value)}
+                  className="h-11 rounded-[14px] border border-border/60 bg-card px-3 text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                />
               </div>
             )}
           </section>
 
-          {/* ===== TRANSACTION LIST ===== */}
+          {/* LIST */}
           {loading ? (
-            <div className="flex items-center justify-center gap-2 py-12" style={{ color: "#707070" }}>
-              <Loader2 className="h-4 w-4 animate-spin" /> <span className="text-[13px]">Carregando…</span>
-            </div>
+            <Loading label="Carregando ganhos…" />
           ) : rides.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-[24px] bg-white p-10 text-center shadow-[0_14px_36px_-24px_rgba(15,23,42,0.22)] animate-in fade-in duration-500">
-              <div
-                className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl"
-                style={{ backgroundColor: "rgba(118,193,57,0.10)", color: "#76C139" }}
-              >
-                <Wallet className="h-7 w-7" strokeWidth={1.5} />
-              </div>
-              <p className="text-[15px] font-semibold" style={{ color: "#1B1B1B" }}>
-                Nenhum ganho ainda
-              </p>
-              <p className="mt-1 max-w-[260px] text-[12.5px]" style={{ color: "#707070" }}>
-                Suas corridas finalizadas aparecerão aqui.
-              </p>
-            </div>
+            <EmptyState
+              icon={Wallet}
+              title="Nenhum ganho ainda"
+              description="Suas corridas finalizadas aparecerão aqui assim que forem concluídas."
+            />
           ) : (
-            <ul className="space-y-2.5">
+            <ul className="flex flex-col gap-2">
               {rides.map((r, i) => (
                 <li
                   key={r.id}
                   className="animate-in fade-in slide-in-from-bottom-1"
-                  style={{ animationDelay: `${Math.min(i, 8) * 40}ms`, animationDuration: "300ms", animationFillMode: "backwards" }}
+                  style={{
+                    animationDelay: `${Math.min(i, 8) * 40}ms`,
+                    animationDuration: "300ms",
+                    animationFillMode: "backwards",
+                  }}
                 >
-                  <div className="flex items-center gap-3 rounded-[20px] bg-white p-4 shadow-[0_8px_22px_-18px_rgba(15,23,42,0.25)]">
-                    <div
-                      className="grid h-10 w-10 shrink-0 place-items-center rounded-full"
-                      style={{ backgroundColor: "rgba(118,193,57,0.10)", color: "#5A9A2A" }}
-                    >
-                      <MapPin className="h-4 w-4" strokeWidth={1.75} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-[13.5px] font-semibold" style={{ color: "#1B1B1B" }}>
-                        {r.destination_name || r.origin_name}
-                      </div>
-                      <div className="mt-0.5 flex items-center gap-1.5 text-[11.5px]" style={{ color: "#707070" }}>
-                        <Clock className="h-3 w-3" strokeWidth={1.75} />
-                        {new Date(r.completed_at ?? r.created_at).toLocaleString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
-                        {r.distance_km != null && <span>· {Number(r.distance_km).toFixed(1)} km</span>}
-                      </div>
-                    </div>
-                    <div className="shrink-0 text-right">
-                      <div className="text-[15px] font-bold tabular-nums" style={{ color: "#5A9A2A" }}>
-                        {brl(Number(r.final_price ?? r.estimated_price ?? 0))}
-                      </div>
-                      <div className="text-[10.5px] font-medium uppercase tracking-wider" style={{ color: "#707070" }}>
-                        Concluída
-                      </div>
-                    </div>
-                  </div>
+                  <RideCard ride={r} />
                 </li>
               ))}
             </ul>
@@ -409,35 +402,105 @@ function DriverEarningsPage() {
   );
 }
 
-function MiniCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+/* ---------------- Sub-components (thin wrappers over DS) ---------------- */
+
+function KpiCard({
+  icon: IconCmp,
+  label,
+  value,
+}: {
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  label: string;
+  value: string;
+}) {
   return (
-    <div className="rounded-[22px] bg-white p-4 shadow-[0_10px_26px_-20px_rgba(15,23,42,0.25)]">
-      <div
-        className="inline-flex h-8 w-8 items-center justify-center rounded-full"
-        style={{ backgroundColor: "rgba(118,193,57,0.12)", color: "#5A9A2A" }}
-      >
-        {icon}
-      </div>
-      <div className="mt-3 text-[18px] font-bold tabular-nums leading-none tracking-tight" style={{ color: "#1B1B1B" }}>
-        {value}
-      </div>
-      <div className="mt-1 text-[11px] font-medium uppercase tracking-[0.12em]" style={{ color: "#707070" }}>
-        {label}
-      </div>
-    </div>
+    <DSCard className="flex flex-col gap-2 p-3 sm:p-4">
+      <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary/12 text-primary">
+        <Icon as={IconCmp} size="md" />
+      </span>
+      <Metric className="text-[clamp(15px,4.6vw,18px)] leading-none">{value}</Metric>
+      <Label>{label}</Label>
+    </DSCard>
   );
 }
 
-function FilterPill({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+function FilterPill({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
   return (
-    <button
+    <DSButton
+      variant={active ? "default" : "outline"}
+      size="sm"
       onClick={onClick}
-      className={`press-scale h-9 rounded-full px-4 text-[13px] font-semibold transition ${
-        active ? "text-white shadow-[0_10px_24px_-14px_rgba(118,193,57,0.7)]" : "bg-white text-[#707070] hover:text-[#1B1B1B]"
-      }`}
-      style={active ? { backgroundColor: "#76C139" } : undefined}
+      className={cn(
+        "rounded-full px-4",
+        !active && "bg-card text-muted-foreground hover:text-foreground",
+      )}
     >
       {children}
-    </button>
+    </DSButton>
+  );
+}
+
+function RideCard({ ride: r }: { ride: Ride }) {
+  const when = new Date(r.completed_at ?? r.created_at);
+  const dateStr = when.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
+  const timeStr = when.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  const value = Number(r.final_price ?? r.estimated_price ?? 0);
+
+  return (
+    <DSCard className="flex flex-col gap-3 p-3 sm:p-4">
+      <div className="flex items-start gap-3">
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
+          <Icon as={MapPin} size="md" />
+        </span>
+
+        <div className="min-w-0 flex-1">
+          <Body className="truncate font-semibold text-foreground">
+            {r.destination_name || r.origin_name}
+          </Body>
+          {r.origin_name && r.destination_name && (
+            <BodySmall className="truncate text-muted-foreground">
+              de {r.origin_name}
+            </BodySmall>
+          )}
+        </div>
+
+        <div className="shrink-0 text-right">
+          <Metric className="text-[clamp(14px,4.4vw,16px)] leading-none text-primary">
+            {brl(value)}
+          </Metric>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-muted-foreground">
+        <span className="inline-flex items-center gap-1">
+          <Icon as={Clock} size="sm" />
+          <Caption>{dateStr} · {timeStr}</Caption>
+        </span>
+        {r.distance_km != null && (
+          <Caption>{Number(r.distance_km).toFixed(1)} km</Caption>
+        )}
+        {r.category && (
+          <span className="inline-flex items-center gap-1">
+            <Icon as={Tag} size="sm" />
+            <Caption className="capitalize">{r.category}</Caption>
+          </span>
+        )}
+        <span className="inline-flex items-center gap-1">
+          <Icon as={CreditCard} size="sm" />
+          <Caption>{formatPayment(r.payment_method)}</Caption>
+        </span>
+        <span className="ml-auto">
+          <StatusPill status="finished" label="Concluída" pulse={false} />
+        </span>
+      </div>
+    </DSCard>
   );
 }
