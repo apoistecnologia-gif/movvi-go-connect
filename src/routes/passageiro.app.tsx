@@ -436,6 +436,7 @@ export const Route = createFileRoute("/passageiro/app")({
   head: () => ({ meta: [{ title: "MOVVI Drive — Passageiro" }] }),
   component: () => (
     <UiCategoriesProvider>
+      <BrandSplash storageKey="movvi:splash:passageiro" />
       <PassageiroApp />
     </UiCategoriesProvider>
   ),
