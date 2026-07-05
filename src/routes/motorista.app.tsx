@@ -1841,14 +1841,11 @@ function ActiveRidePanel({
           </div>
 
           {/* Primary CTA — Finalizar corrida */}
-          <button
-            onClick={onComplete}
-            className="press-scale flex h-14 w-full items-center justify-center gap-2 rounded-[18px] text-[16px] font-bold uppercase tracking-[0.06em] text-primary-foreground shadow-[0_16px_36px_-16px_color-mix(in_oklab,var(--color-primary)_70%,transparent)] transition"
-            style={{ background: "#76C139" }}
-          >
+          <Button onClick={onComplete} size="lg" className="w-full">
             <CheckCircle2 className="h-5 w-5" strokeWidth={2} />
             Finalizar corrida
-          </button>
+          </Button>
+
 
           {/* Secondary circular actions — Call · Chat · Navigate */}
           <div className="mt-1 flex items-center justify-center gap-6">
