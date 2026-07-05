@@ -4,10 +4,17 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Search, ShieldAlert } from "lucide-react";
 import { diagnosticarAuthMotorista } from "@/lib/driverAuth.functions";
 import { isDevelopmentEnvironment } from "@/lib/environment";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { DSInput, DSLabel } from "@/design-system";
+import {
+  DSButton,
+  DSCard,
+  DSCardContent,
+  DSCardDescription,
+  DSCardHeader,
+  DSCardTitle,
+  DSInput,
+  DSLabel,
+} from "@/design-system";
 
 import { DevOrAdminGuard } from "@/components/DevOrAdminGuard";
 
