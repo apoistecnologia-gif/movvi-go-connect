@@ -26,6 +26,7 @@ import { Route as PassageiroLoginRouteImport } from './routes/passageiro.login'
 import { Route as PassageiroFavoritosRouteImport } from './routes/passageiro.favoritos'
 import { Route as PassageiroCorridasRouteImport } from './routes/passageiro.corridas'
 import { Route as PassageiroConfiguracoesRouteImport } from './routes/passageiro.configuracoes'
+import { Route as PassageiroCarteiraRouteImport } from './routes/passageiro.carteira'
 import { Route as PassageiroCadastroRouteImport } from './routes/passageiro.cadastro'
 import { Route as PassageiroAppRouteImport } from './routes/passageiro.app'
 import { Route as MotoristaTermosRouteImport } from './routes/motorista.termos'
@@ -42,6 +43,7 @@ import { Route as MotoristaGanhosRouteImport } from './routes/motorista.ganhos'
 import { Route as MotoristaDocumentosRouteImport } from './routes/motorista.documentos'
 import { Route as MotoristaCorridasRouteImport } from './routes/motorista.corridas'
 import { Route as MotoristaConfiguracoesRouteImport } from './routes/motorista.configuracoes'
+import { Route as MotoristaCarteiraRouteImport } from './routes/motorista.carteira'
 import { Route as MotoristaCadastroRouteImport } from './routes/motorista.cadastro'
 import { Route as MotoristaAssinaturaRouteImport } from './routes/motorista.assinatura'
 import { Route as MotoristaAppRouteImport } from './routes/motorista.app'
@@ -158,6 +160,11 @@ const PassageiroConfiguracoesRoute = PassageiroConfiguracoesRouteImport.update({
   path: '/passageiro/configuracoes',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PassageiroCarteiraRoute = PassageiroCarteiraRouteImport.update({
+  id: '/passageiro/carteira',
+  path: '/passageiro/carteira',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PassageiroCadastroRoute = PassageiroCadastroRouteImport.update({
   id: '/passageiro/cadastro',
   path: '/passageiro/cadastro',
@@ -237,6 +244,11 @@ const MotoristaCorridasRoute = MotoristaCorridasRouteImport.update({
 const MotoristaConfiguracoesRoute = MotoristaConfiguracoesRouteImport.update({
   id: '/motorista/configuracoes',
   path: '/motorista/configuracoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MotoristaCarteiraRoute = MotoristaCarteiraRouteImport.update({
+  id: '/motorista/carteira',
+  path: '/motorista/carteira',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MotoristaCadastroRoute = MotoristaCadastroRouteImport.update({
@@ -417,6 +429,7 @@ export interface FileRoutesByFullPath {
   '/motorista/app': typeof MotoristaAppRoute
   '/motorista/assinatura': typeof MotoristaAssinaturaRoute
   '/motorista/cadastro': typeof MotoristaCadastroRoute
+  '/motorista/carteira': typeof MotoristaCarteiraRoute
   '/motorista/configuracoes': typeof MotoristaConfiguracoesRoute
   '/motorista/corridas': typeof MotoristaCorridasRouteWithChildren
   '/motorista/documentos': typeof MotoristaDocumentosRoute
@@ -433,6 +446,7 @@ export interface FileRoutesByFullPath {
   '/motorista/termos': typeof MotoristaTermosRoute
   '/passageiro/app': typeof PassageiroAppRoute
   '/passageiro/cadastro': typeof PassageiroCadastroRoute
+  '/passageiro/carteira': typeof PassageiroCarteiraRoute
   '/passageiro/configuracoes': typeof PassageiroConfiguracoesRoute
   '/passageiro/corridas': typeof PassageiroCorridasRoute
   '/passageiro/favoritos': typeof PassageiroFavoritosRoute
@@ -481,6 +495,7 @@ export interface FileRoutesByTo {
   '/motorista/app': typeof MotoristaAppRoute
   '/motorista/assinatura': typeof MotoristaAssinaturaRoute
   '/motorista/cadastro': typeof MotoristaCadastroRoute
+  '/motorista/carteira': typeof MotoristaCarteiraRoute
   '/motorista/configuracoes': typeof MotoristaConfiguracoesRoute
   '/motorista/corridas': typeof MotoristaCorridasRouteWithChildren
   '/motorista/documentos': typeof MotoristaDocumentosRoute
@@ -497,6 +512,7 @@ export interface FileRoutesByTo {
   '/motorista/termos': typeof MotoristaTermosRoute
   '/passageiro/app': typeof PassageiroAppRoute
   '/passageiro/cadastro': typeof PassageiroCadastroRoute
+  '/passageiro/carteira': typeof PassageiroCarteiraRoute
   '/passageiro/configuracoes': typeof PassageiroConfiguracoesRoute
   '/passageiro/corridas': typeof PassageiroCorridasRoute
   '/passageiro/favoritos': typeof PassageiroFavoritosRoute
@@ -546,6 +562,7 @@ export interface FileRoutesById {
   '/motorista/app': typeof MotoristaAppRoute
   '/motorista/assinatura': typeof MotoristaAssinaturaRoute
   '/motorista/cadastro': typeof MotoristaCadastroRoute
+  '/motorista/carteira': typeof MotoristaCarteiraRoute
   '/motorista/configuracoes': typeof MotoristaConfiguracoesRoute
   '/motorista/corridas': typeof MotoristaCorridasRouteWithChildren
   '/motorista/documentos': typeof MotoristaDocumentosRoute
@@ -562,6 +579,7 @@ export interface FileRoutesById {
   '/motorista/termos': typeof MotoristaTermosRoute
   '/passageiro/app': typeof PassageiroAppRoute
   '/passageiro/cadastro': typeof PassageiroCadastroRoute
+  '/passageiro/carteira': typeof PassageiroCarteiraRoute
   '/passageiro/configuracoes': typeof PassageiroConfiguracoesRoute
   '/passageiro/corridas': typeof PassageiroCorridasRoute
   '/passageiro/favoritos': typeof PassageiroFavoritosRoute
@@ -612,6 +630,7 @@ export interface FileRouteTypes {
     | '/motorista/app'
     | '/motorista/assinatura'
     | '/motorista/cadastro'
+    | '/motorista/carteira'
     | '/motorista/configuracoes'
     | '/motorista/corridas'
     | '/motorista/documentos'
@@ -628,6 +647,7 @@ export interface FileRouteTypes {
     | '/motorista/termos'
     | '/passageiro/app'
     | '/passageiro/cadastro'
+    | '/passageiro/carteira'
     | '/passageiro/configuracoes'
     | '/passageiro/corridas'
     | '/passageiro/favoritos'
@@ -676,6 +696,7 @@ export interface FileRouteTypes {
     | '/motorista/app'
     | '/motorista/assinatura'
     | '/motorista/cadastro'
+    | '/motorista/carteira'
     | '/motorista/configuracoes'
     | '/motorista/corridas'
     | '/motorista/documentos'
@@ -692,6 +713,7 @@ export interface FileRouteTypes {
     | '/motorista/termos'
     | '/passageiro/app'
     | '/passageiro/cadastro'
+    | '/passageiro/carteira'
     | '/passageiro/configuracoes'
     | '/passageiro/corridas'
     | '/passageiro/favoritos'
@@ -740,6 +762,7 @@ export interface FileRouteTypes {
     | '/motorista/app'
     | '/motorista/assinatura'
     | '/motorista/cadastro'
+    | '/motorista/carteira'
     | '/motorista/configuracoes'
     | '/motorista/corridas'
     | '/motorista/documentos'
@@ -756,6 +779,7 @@ export interface FileRouteTypes {
     | '/motorista/termos'
     | '/passageiro/app'
     | '/passageiro/cadastro'
+    | '/passageiro/carteira'
     | '/passageiro/configuracoes'
     | '/passageiro/corridas'
     | '/passageiro/favoritos'
@@ -805,6 +829,7 @@ export interface RootRouteChildren {
   MotoristaAppRoute: typeof MotoristaAppRoute
   MotoristaAssinaturaRoute: typeof MotoristaAssinaturaRoute
   MotoristaCadastroRoute: typeof MotoristaCadastroRoute
+  MotoristaCarteiraRoute: typeof MotoristaCarteiraRoute
   MotoristaConfiguracoesRoute: typeof MotoristaConfiguracoesRoute
   MotoristaCorridasRoute: typeof MotoristaCorridasRouteWithChildren
   MotoristaDocumentosRoute: typeof MotoristaDocumentosRoute
@@ -821,6 +846,7 @@ export interface RootRouteChildren {
   MotoristaTermosRoute: typeof MotoristaTermosRoute
   PassageiroAppRoute: typeof PassageiroAppRoute
   PassageiroCadastroRoute: typeof PassageiroCadastroRoute
+  PassageiroCarteiraRoute: typeof PassageiroCarteiraRoute
   PassageiroConfiguracoesRoute: typeof PassageiroConfiguracoesRoute
   PassageiroCorridasRoute: typeof PassageiroCorridasRoute
   PassageiroFavoritosRoute: typeof PassageiroFavoritosRoute
@@ -958,6 +984,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PassageiroConfiguracoesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/passageiro/carteira': {
+      id: '/passageiro/carteira'
+      path: '/passageiro/carteira'
+      fullPath: '/passageiro/carteira'
+      preLoaderRoute: typeof PassageiroCarteiraRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/passageiro/cadastro': {
       id: '/passageiro/cadastro'
       path: '/passageiro/cadastro'
@@ -1068,6 +1101,13 @@ declare module '@tanstack/react-router' {
       path: '/motorista/configuracoes'
       fullPath: '/motorista/configuracoes'
       preLoaderRoute: typeof MotoristaConfiguracoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/motorista/carteira': {
+      id: '/motorista/carteira'
+      path: '/motorista/carteira'
+      fullPath: '/motorista/carteira'
+      preLoaderRoute: typeof MotoristaCarteiraRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/motorista/cadastro': {
@@ -1319,6 +1359,7 @@ const rootRouteChildren: RootRouteChildren = {
   MotoristaAppRoute: MotoristaAppRoute,
   MotoristaAssinaturaRoute: MotoristaAssinaturaRoute,
   MotoristaCadastroRoute: MotoristaCadastroRoute,
+  MotoristaCarteiraRoute: MotoristaCarteiraRoute,
   MotoristaConfiguracoesRoute: MotoristaConfiguracoesRoute,
   MotoristaCorridasRoute: MotoristaCorridasRouteWithChildren,
   MotoristaDocumentosRoute: MotoristaDocumentosRoute,
@@ -1336,6 +1377,7 @@ const rootRouteChildren: RootRouteChildren = {
   MotoristaTermosRoute: MotoristaTermosRoute,
   PassageiroAppRoute: PassageiroAppRoute,
   PassageiroCadastroRoute: PassageiroCadastroRoute,
+  PassageiroCarteiraRoute: PassageiroCarteiraRoute,
   PassageiroConfiguracoesRoute: PassageiroConfiguracoesRoute,
   PassageiroCorridasRoute: PassageiroCorridasRoute,
   PassageiroFavoritosRoute: PassageiroFavoritosRoute,
@@ -1355,13 +1397,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
