@@ -206,9 +206,7 @@ function AdminConfigPage() {
   if (loading) {
     return (
       <AdminLayout title="Configurações">
-        <div className="grid place-items-center py-24 text-muted-foreground">
-          <Loader2 className="h-6 w-6 animate-spin" />
-        </div>
+        <Loading label="Carregando configurações..." />
       </AdminLayout>
     );
   }
