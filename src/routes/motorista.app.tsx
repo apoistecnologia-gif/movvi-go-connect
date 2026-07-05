@@ -73,8 +73,17 @@ const RIDE_OFFER_TIMEOUT_SECONDS = 60;
 
 export const Route = createFileRoute("/motorista/app")({
   head: () => ({ meta: [{ title: "App do Motorista — MOVVI DRIVE" }] }),
-  component: MotoristaApp,
+  component: MotoristaAppRoute,
 });
+
+function MotoristaAppRoute() {
+  return (
+    <>
+      <BrandSplash storageKey="movvi:splash:motorista" />
+      <MotoristaApp />
+    </>
+  );
+}
 
 type LatLng = { lat: number; lng: number };
 type RideRow = Database["public"]["Tables"]["rides"]["Row"];
