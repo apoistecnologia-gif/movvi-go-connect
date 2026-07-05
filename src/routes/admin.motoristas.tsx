@@ -14,8 +14,6 @@ import {
   Search,
   Star,
   MapPin,
-  Wifi,
-  WifiOff,
   Car,
   Trash2,
   StickyNote,
@@ -35,8 +33,15 @@ import {
   updateDriverApprovalStatus,
 } from "@/lib/adminDrivers.functions";
 import { AdminLayout } from "@/components/admin/AdminLayout";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import {
+  DSButton as Button,
+  DSCard,
+  DSCardContent,
+  StatusPill,
+  Loading,
+  EmptyState,
+  Caption,
+} from "@/design-system";
 import {
   Dialog,
   DialogContent,
@@ -118,6 +123,32 @@ const STATUS_META: Record<Status, { label: string; tone: string }> = {
   reprovado: { label: "Reprovado", tone: "bg-destructive/15 text-destructive border-destructive/30" },
   bloqueado: { label: "Bloqueado", tone: "bg-destructive/15 text-destructive border-destructive/30" },
 };
+
+type PillStatus = "searching" | "finished" | "cancelled" | "online" | "offline";
+const STATUS_PILL: Record<Status, { status: PillStatus; label: string }> = {
+  em_analise: { status: "searching", label: "Em análise" },
+  aprovado: { status: "finished", label: "Aprovado" },
+  reprovado: { status: "cancelled", label: "Reprovado" },
+  bloqueado: { status: "cancelled", label: "Bloqueado" },
+};
+const SUB_PILL: Record<SubStatus, { status: PillStatus; label: string }> = {
+  active: { status: "online", label: "Assinatura ativa" },
+  pending: { status: "searching", label: "Pendente" },
+  overdue: { status: "cancelled", label: "Em atraso" },
+  inactive: { status: "offline", label: "Inativa" },
+  suspended: { status: "cancelled", label: "Suspensa" },
+};
+
+// Lightweight inline pill for non-semantic tags (docs pending, in-ride, category, suspended)
+function TagPill({ tone, children }: { tone: string; children: React.ReactNode }) {
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${tone}`}
+    >
+      {children}
+    </span>
+  );
+}
 
 const FILTERS: { key: FilterKey; label: string }[] = [
   { key: "all", label: "Todos" },
@@ -355,13 +386,13 @@ function AdminMotoristas() {
       </div>
 
       {loading && !drivers ? (
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" /> Carregando...
-        </div>
+        <Loading label="Carregando motoristas..." />
       ) : filtered.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border bg-card/40 p-10 text-center text-sm text-muted-foreground">
-          Nenhum motorista encontrado com os filtros atuais.
-        </div>
+        <EmptyState
+          icon={Search}
+          title="Nenhum motorista encontrado"
+          description="Ajuste a busca ou os filtros para ver resultados."
+        />
       ) : (
         <div className="grid gap-3">
           {filtered.map((d) => (
@@ -547,42 +578,25 @@ function DriverCard({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="font-semibold">{driver.name}</h3>
-            <Badge variant="outline" className={meta.tone}>
-              {meta.label}
-            </Badge>
-            <Badge variant="outline" className={sm.tone}>
-              <CreditCard className="mr-1 h-3 w-3" />
-              {sm.label}
-            </Badge>
-            <Badge
-              variant="outline"
-              className={
-                online
-                  ? "border-primary/30 bg-primary/10 text-primary"
-                  : "border-border text-muted-foreground"
-              }
-            >
-              {online ? <Wifi className="mr-1 h-3 w-3" /> : <WifiOff className="mr-1 h-3 w-3" />}
-              {online ? "Online" : "Offline"}
-            </Badge>
+            <StatusPill status={STATUS_PILL[driver.approval_status].status} label={STATUS_PILL[driver.approval_status].label} pulse={false} />
+            <StatusPill
+              status={SUB_PILL[(driver.subscription_status as SubStatus) ?? "inactive"]?.status ?? "offline"}
+              label={SUB_PILL[(driver.subscription_status as SubStatus) ?? "inactive"]?.label ?? sm.label}
+              pulse={false}
+            />
+            <StatusPill status={online ? "online" : "offline"} label={online ? "Online" : "Offline"} pulse={online} />
             {activeRideStatus && (
-              <Badge variant="outline" className="border-orange-500/30 bg-orange-500/10 text-orange-400">
-                <Car className="mr-1 h-3 w-3" /> Em corrida ({activeRideStatus})
-              </Badge>
+              <TagPill tone="border-orange-500/30 bg-orange-500/10 text-orange-400">
+                <Car className="h-3 w-3" /> Em corrida ({activeRideStatus})
+              </TagPill>
             )}
             {suspended && (
-              <Badge variant="outline" className="border-destructive/30 bg-destructive/10 text-destructive">
-                Suspenso
-              </Badge>
+              <TagPill tone="border-destructive/30 bg-destructive/10 text-destructive">Suspenso</TagPill>
             )}
             {docsPending(driver) && (
-              <Badge variant="outline" className="border-yellow-500/30 bg-yellow-500/10 text-yellow-400">
-                Docs pendentes
-              </Badge>
+              <TagPill tone="border-yellow-500/30 bg-yellow-500/10 text-yellow-400">Docs pendentes</TagPill>
             )}
-            <Badge variant="secondary" className="capitalize">
-              {driver.category}
-            </Badge>
+            <TagPill tone="border-border bg-muted/40 text-muted-foreground capitalize">{driver.category}</TagPill>
           </div>
           <div className="mt-2 grid gap-1 text-xs text-muted-foreground sm:grid-cols-2">
             <span>📞 {driver.phone ?? "—"}</span>
@@ -751,7 +765,7 @@ function DetailsDialog({
   }, [driver?.id]);
 
   if (!driver) return null;
-  const meta = STATUS_META[driver.approval_status];
+  
   const suspended = !!driver.suspended_at;
 
   async function addNote() {
@@ -793,13 +807,9 @@ function DetailsDialog({
             <div className="min-w-0 flex-1">
               <DialogTitle className="flex flex-wrap items-center gap-2">
                 {driver.name}
-                <Badge variant="outline" className={meta.tone}>
-                  {meta.label}
-                </Badge>
+                <StatusPill status={STATUS_PILL[driver.approval_status].status} label={STATUS_PILL[driver.approval_status].label} pulse={false} />
                 {suspended && (
-                  <Badge variant="outline" className="border-destructive/30 bg-destructive/10 text-destructive">
-                    Suspenso
-                  </Badge>
+                  <TagPill tone="border-destructive/30 bg-destructive/10 text-destructive">Suspenso</TagPill>
                 )}
               </DialogTitle>
               <DialogDescription>

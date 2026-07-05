@@ -1,12 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { Loader2, Plus, Trash2, Save, ShieldCheck } from "lucide-react";
+import { Plus, Trash2, Save, ShieldCheck } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import {
+  DSButton,
+  DSCard,
+  DSCardContent,
+  Loading,
+  EmptyState,
+  Caption,
+  Label as DSLabel,
+} from "@/design-system";
 import { toast } from "sonner";
 import { logAdminAction } from "@/lib/adminAudit";
 import { grantAdminRole, revokeAdminRole } from "@/lib/adminRoles.functions";
@@ -130,34 +136,36 @@ function AdminUsersPage() {
       title="Administradores"
       description={`${rows.length} contas com acesso administrativo`}
       actions={
-        <Button onClick={inviteByUserId} size="sm" className="gap-1">
+        <DSButton onClick={inviteByUserId} size="sm" className="gap-1">
           <Plus className="h-4 w-4" /> Conceder admin
-        </Button>
+        </DSButton>
       }
     >
       {loading ? (
-        <div className="grid place-items-center py-12 text-muted-foreground">
-          <Loader2 className="h-6 w-6 animate-spin" />
-        </div>
+        <Loading label="Carregando administradores..." />
       ) : rows.length === 0 ? (
-        <p className="py-12 text-center text-sm text-muted-foreground">Nenhum administrador cadastrado.</p>
+        <EmptyState
+          icon={ShieldCheck}
+          title="Nenhum administrador cadastrado"
+          description="Conceda permissão a um usuário para começar."
+        />
       ) : (
         <div className="grid gap-3">
           {rows.map((r) => (
-            <Card key={r.user_id} className="border-border bg-card/60">
-              <CardContent className="space-y-3 p-4">
+            <DSCard key={r.user_id}>
+              <DSCardContent className="space-y-3 p-4">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="h-4 w-4 text-primary" />
                   <span className="font-mono text-xs">{r.user_id}</span>
                   {r.last_login_at && (
-                    <Badge variant="outline" className="ml-auto text-[10px]">
-                      último login {formatDate(r.last_login_at)}
-                    </Badge>
+                    <span className="ml-auto">
+                      <Caption>último login {formatDate(r.last_login_at)}</Caption>
+                    </span>
                   )}
                 </div>
                 <div className="grid gap-2 md:grid-cols-3">
                   <label className="flex flex-col gap-1 text-xs">
-                    <span className="font-semibold uppercase text-muted-foreground">Nome</span>
+                    <DSLabel>Nome</DSLabel>
                     <input
                       className="h-9 rounded-md border border-input bg-background px-3 text-sm"
                       value={r.display_name ?? ""}
@@ -165,7 +173,7 @@ function AdminUsersPage() {
                     />
                   </label>
                   <label className="flex flex-col gap-1 text-xs">
-                    <span className="font-semibold uppercase text-muted-foreground">Telefone</span>
+                    <DSLabel>Telefone</DSLabel>
                     <input
                       className="h-9 rounded-md border border-input bg-background px-3 text-sm"
                       value={r.phone ?? ""}
@@ -173,12 +181,12 @@ function AdminUsersPage() {
                     />
                   </label>
                   <div className="flex items-end gap-2">
-                    <Button size="sm" onClick={() => saveMeta(r)} className="gap-1">
+                    <DSButton size="sm" onClick={() => saveMeta(r)} className="gap-1">
                       <Save className="h-3 w-3" /> Salvar
-                    </Button>
-                    <Button size="sm" variant="ghost" className="text-destructive" onClick={() => removeAll(r)}>
+                    </DSButton>
+                    <DSButton size="sm" variant="ghost" className="text-destructive" onClick={() => removeAll(r)}>
                       <Trash2 className="h-3 w-3" />
-                    </Button>
+                    </DSButton>
                   </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -200,8 +208,8 @@ function AdminUsersPage() {
                     );
                   })}
                 </div>
-              </CardContent>
-            </Card>
+              </DSCardContent>
+            </DSCard>
           ))}
         </div>
       )}
