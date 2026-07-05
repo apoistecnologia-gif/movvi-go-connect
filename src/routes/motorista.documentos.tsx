@@ -108,7 +108,7 @@ function DriverDocumentsPage() {
         }
         const { data, error: dbErr } = await supabase
           .from("drivers")
-          .select("user_id, selfie_url, cnh_url, cnh_back_url, vehicle_document_url, documents_status")
+          .select("user_id, selfie_url, cnh_url, cnh_back_url, vehicle_document_url, documents_status, approval_status")
           .eq("user_id", userId)
           .maybeSingle();
         if (dbErr) throw dbErr;
