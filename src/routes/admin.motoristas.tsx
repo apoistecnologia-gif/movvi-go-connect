@@ -126,6 +126,32 @@ const STATUS_META: Record<Status, { label: string; tone: string }> = {
   bloqueado: { label: "Bloqueado", tone: "bg-destructive/15 text-destructive border-destructive/30" },
 };
 
+type PillStatus = "searching" | "finished" | "cancelled" | "online" | "offline";
+const STATUS_PILL: Record<Status, { status: PillStatus; label: string }> = {
+  em_analise: { status: "searching", label: "Em análise" },
+  aprovado: { status: "finished", label: "Aprovado" },
+  reprovado: { status: "cancelled", label: "Reprovado" },
+  bloqueado: { status: "cancelled", label: "Bloqueado" },
+};
+const SUB_PILL: Record<SubStatus, { status: PillStatus; label: string }> = {
+  active: { status: "online", label: "Assinatura ativa" },
+  pending: { status: "searching", label: "Pendente" },
+  overdue: { status: "cancelled", label: "Em atraso" },
+  inactive: { status: "offline", label: "Inativa" },
+  suspended: { status: "cancelled", label: "Suspensa" },
+};
+
+// Lightweight inline pill for non-semantic tags (docs pending, in-ride, category, suspended)
+function TagPill({ tone, children }: { tone: string; children: React.ReactNode }) {
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${tone}`}
+    >
+      {children}
+    </span>
+  );
+}
+
 const FILTERS: { key: FilterKey; label: string }[] = [
   { key: "all", label: "Todos" },
   { key: "em_analise", label: "Em análise" },
