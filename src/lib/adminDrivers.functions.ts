@@ -43,8 +43,16 @@ async function assertAdmin(ctx: AuthedCtx) {
   if (!data) throw new Error("forbidden");
 }
 
-function buildApprovalPatch(status: ApprovalStatus, reason: string | null | undefined) {
-  const patch: Record<string, unknown> = {
+type ApprovalPatch = {
+  approval_status: ApprovalStatus;
+  motivo_reprovacao: string | null;
+  approved_at: string | null;
+  blocked_at: string | null;
+  documents_status?: "approved" | "rejected";
+};
+
+function buildApprovalPatch(status: ApprovalStatus, reason: string | null | undefined): ApprovalPatch {
+  const patch: ApprovalPatch = {
     approval_status: status,
     motivo_reprovacao: status === "reprovado" ? (reason ? reason.trim() : null) : null,
     approved_at: status === "aprovado" ? new Date().toISOString() : null,
