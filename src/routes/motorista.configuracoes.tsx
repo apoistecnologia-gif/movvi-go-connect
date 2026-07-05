@@ -16,10 +16,10 @@ import {
 } from "@/lib/driverPrefs";
 import { useTheme } from "@/lib/theme";
 import {
-import { DSButton } from "@/design-system";
   SettingsSection, SettingsToggleRow, SettingsLinkRow, SettingsRow, AppAboutCard,
   SettingsPageShell, SettingsHero,
 } from "@/components/settings";
+import { DSButton } from "@/design-system";
 
 export const Route = createFileRoute("/motorista/configuracoes")({
   head: () => ({ meta: [{ title: "Configurações — MOVVI DRIVE" }] }),

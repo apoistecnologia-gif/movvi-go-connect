@@ -16,12 +16,12 @@ import {
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import {
-import { DSButton, DSCard, DSCardContent, DSCardHeader, DSCardTitle, DSCardDescription } from "@/design-system";
   HELP_SECTIONS,
   PASSENGER_FAQ, DRIVER_FAQ,
   PASSENGER_CATEGORIES, DRIVER_CATEGORIES,
   type Faq, type SupportCategory,
 } from "@/lib/support/helpCenter";
+import { DSButton, DSCard, DSCardContent, DSCardHeader, DSCardTitle, DSCardDescription } from "@/design-system";
 
 type Role = "passenger" | "driver";
 

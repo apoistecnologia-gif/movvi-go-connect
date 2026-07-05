@@ -9,13 +9,13 @@ import {
 } from "@/components/ui/dialog";
 import { MovviLogo } from "@/components/MovviLogo";
 import {
-import { DSButton } from "@/design-system";
   copyReceipt,
   formatBRL,
   shareReceipt,
   MOVVI_RECEIPT_DISCLAIMER,
   type ReceiptData,
 } from "@/lib/rideReceipt";
+import { DSButton } from "@/design-system";
 
 export function RideReceiptDialog({
   open,

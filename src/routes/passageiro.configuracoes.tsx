@@ -12,10 +12,10 @@ import { toast } from "sonner";
 import { requestPushPermission } from "@/lib/pushNotifications";
 import { useTheme } from "@/lib/theme";
 import {
-import { DSButton } from "@/design-system";
   SettingsSection, SettingsToggleRow, SettingsLinkRow, SettingsRow, AppAboutCard,
   SettingsPageShell, SettingsHero,
 } from "@/components/settings";
+import { DSButton } from "@/design-system";
 
 export const Route = createFileRoute("/passageiro/configuracoes")({
   head: () => ({ meta: [{ title: "Configurações — MOVVI" }] }),
