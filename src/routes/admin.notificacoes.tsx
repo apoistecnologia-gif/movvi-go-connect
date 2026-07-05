@@ -4,15 +4,21 @@ import { useEffect, useState } from "react";
 import { Loader2, Send } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import {
+  DSButton,
+  DSCard,
+  DSCardContent,
+  DSCardHeader,
+  DSCardTitle,
+  EmptyState,
+} from "@/design-system";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { logAdminAction } from "@/lib/adminAudit";
 import { formatDate } from "@/lib/formatters";
 import { sendAdminBroadcast } from "@/lib/adminNotifications.functions";
+import { Bell } from "lucide-react";
 
 function mapAdminError(msg: string): string {
   if (msg === "forbidden") return "Ação restrita a administradores.";
@@ -95,11 +101,11 @@ function AdminNotificacoesPage() {
 
   return (
     <AdminLayout title="Notificações" description="Envie comunicados a passageiros e motoristas">
-      <Card className="border-border bg-card/60">
-        <CardHeader>
-          <CardTitle className="text-base">Novo broadcast</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
+      <DSCard className="border-border bg-card/60">
+        <DSCardHeader>
+          <DSCardTitle className="text-base">Novo broadcast</DSCardTitle>
+        </DSCardHeader>
+        <DSCardContent className="space-y-3">
           <Input placeholder="Título" value={title} onChange={(e) => setTitle(e.target.value)} />
           <Textarea placeholder="Mensagem" rows={4} value={body} onChange={(e) => setBody(e.target.value)} />
           <div className="grid gap-3 sm:grid-cols-2">
@@ -128,29 +134,35 @@ function AdminNotificacoesPage() {
               </label>
             )}
           </div>
-          <Button onClick={send} disabled={sending} className="gap-2">
+          <DSButton onClick={send} disabled={sending} className="gap-2">
             {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             Enviar
-          </Button>
-        </CardContent>
-      </Card>
+          </DSButton>
+        </DSCardContent>
+      </DSCard>
 
       <h3 className="mt-6 mb-2 text-sm font-semibold">Histórico</h3>
       <div className="space-y-2">
         {hist.length === 0 ? (
-          <p className="text-xs text-muted-foreground">Nenhuma notificação enviada ainda.</p>
+          <EmptyState
+            icon={Bell}
+            title="Nenhuma notificação enviada"
+            description="Envie o primeiro broadcast usando o formulário acima."
+          />
         ) : (
           hist.map((h) => (
-            <Card key={h.id} className="border-border bg-card/60">
-              <CardContent className="p-3">
+            <DSCard key={h.id} className="border-border bg-card/60">
+              <DSCardContent className="p-3">
                 <div className="flex items-center justify-between gap-2">
                   <p className="font-medium">{h.title}</p>
-                  <Badge variant="outline">{h.audience_type} · {h.delivery_count}</Badge>
+                  <span className="rounded-full border border-border bg-muted/30 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+                    {h.audience_type} · {h.delivery_count}
+                  </span>
                 </div>
                 <p className="text-xs text-muted-foreground">{h.body}</p>
                 <p className="text-[10px] text-muted-foreground/70">{formatDate(h.sent_at)}</p>
-              </CardContent>
-            </Card>
+              </DSCardContent>
+            </DSCard>
           ))
         )}
       </div>

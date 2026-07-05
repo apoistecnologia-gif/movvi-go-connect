@@ -14,14 +14,19 @@ import {
   Trash2,
   Car,
   User as UserIcon,
+  Inbox,
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
-import { Avatar } from "@/components/Avatar";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  DSButton,
+  DSCard,
+  DSCardContent,
+  Avatar,
+  Loading,
+  EmptyState,
+} from "@/design-system";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -34,6 +39,7 @@ import { toast } from "sonner";
 import { formatDate } from "@/lib/formatters";
 import { logAdminAction } from "@/lib/adminAudit";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
+
 
 export const Route = createFileRoute("/admin/suporte")({
   head: () => ({ meta: [{ title: "Suporte — Admin MOVVI" }] }),
@@ -361,10 +367,10 @@ function AdminSuportePage() {
       title="Suporte / Tickets"
       description="Gestão profissional de solicitações de passageiros e motoristas"
       actions={
-        <Button variant="secondary" size="sm" onClick={load} disabled={loading}>
+        <DSButton variant="secondary" size="sm" onClick={load} disabled={loading}>
           <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           Atualizar
-        </Button>
+        </DSButton>
       }
     >
       <div className="grid gap-3 md:grid-cols-5">
@@ -375,8 +381,8 @@ function AdminSuportePage() {
         <Kpi label="Resolvidos" value={counts.resolved} tone="ok" icon={CheckCircle2} />
       </div>
 
-      <Card className="mt-4 border-border bg-card">
-        <CardContent className="p-4">
+      <DSCard className="mt-4 border-border bg-card">
+        <DSCardContent className="p-4">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div className="relative w-full md:max-w-md">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -406,20 +412,19 @@ function AdminSuportePage() {
               </button>
             ))}
           </div>
-        </CardContent>
-      </Card>
+        </DSCardContent>
+      </DSCard>
 
       <div className="mt-4 space-y-2">
         {loading ? (
-          <div className="flex items-center justify-center py-16 text-muted-foreground">
-            <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Carregando tickets…
-          </div>
+          <Loading label="Carregando tickets..." />
         ) : filtered.length === 0 ? (
-          <Card className="border-border bg-card">
-            <CardContent className="py-16 text-center text-sm text-muted-foreground">
-              Nenhum ticket encontrado com os filtros atuais.
-            </CardContent>
-          </Card>
+          <EmptyState
+            icon={Inbox}
+            title="Nenhum ticket encontrado"
+            description="Ajuste os filtros ou aguarde novas solicitações."
+          />
+
         ) : (
           filtered.map((t) => (
             <TicketRow key={t.id} t={t} onOpen={() => setOpenId(t.id)} />
@@ -456,39 +461,39 @@ function Kpi({
     ok: "text-emerald-300",
   } as const;
   return (
-    <Card className="border-border bg-card">
-      <CardContent className="p-4">
+    <DSCard className="border-border bg-card">
+      <DSCardContent className="p-4">
         <div className="flex items-center justify-between">
           <p className="text-xs text-muted-foreground">{label}</p>
           {Icon && <Icon className={`h-4 w-4 ${map[tone]}`} />}
         </div>
         <p className={`mt-1 font-display text-2xl font-bold ${map[tone]}`}>{value}</p>
-      </CardContent>
-    </Card>
+      </DSCardContent>
+    </DSCard>
   );
 }
 
 function TicketRow({ t, onOpen }: { t: Enriched; onOpen: () => void }) {
   return (
-    <Card className="border-border bg-card transition hover:border-primary/40">
-      <CardContent className="p-4">
+    <DSCard className="border-border bg-card transition hover:border-primary/40">
+      <DSCardContent className="p-4">
         <div className="flex items-start gap-4">
           <Avatar src={t._user.photo ?? undefined} name={t._user.name ?? "?"} size={48} />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <span className="font-mono text-[11px] text-muted-foreground">#{shortId(t.id)}</span>
-              <Badge className={priorityTone(t.priority)}>{priorityLabel(t.priority)}</Badge>
-              <Badge className={statusTone(t.status)}>{statusLabel(t.status)}</Badge>
-              <Badge variant="outline" className="border-border text-muted-foreground">
+              <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ${priorityTone(t.priority)}`}>{priorityLabel(t.priority)}</span>
+              <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ${statusTone(t.status)}`}>{statusLabel(t.status)}</span>
+              <span className="inline-flex items-center rounded-full border border-border bg-muted/20 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
                 {t.user_type === "driver" ? "Motorista" : "Passageiro"}
-              </Badge>
-              <Badge variant="outline" className="border-border text-muted-foreground">
+              </span>
+              <span className="inline-flex items-center rounded-full border border-border bg-muted/20 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
                 {categoryLabel(t.category)}
-              </Badge>
+              </span>
               {t.ride_id && (
-                <Badge variant="outline" className="border-primary/30 text-primary">
+                <span className="inline-flex items-center rounded-full border border-primary/30 px-2.5 py-0.5 text-[11px] font-medium text-primary">
                   <Car className="mr-1 h-3 w-3" /> Corrida
-                </Badge>
+                </span>
               )}
             </div>
             <p className="mt-1 truncate font-semibold text-foreground">{t.subject}</p>
@@ -497,12 +502,12 @@ function TicketRow({ t, onOpen }: { t: Enriched; onOpen: () => void }) {
               {t._user.email ?? t._user.phone ?? "sem contato"} • criado {formatDate(t.created_at)}
             </p>
           </div>
-          <Button variant="secondary" size="sm" onClick={onOpen} className="shrink-0">
+          <DSButton variant="secondary" size="sm" onClick={onOpen} className="shrink-0">
             <Eye className="mr-2 h-4 w-4" /> Abrir
-          </Button>
+          </DSButton>
         </div>
-      </CardContent>
-    </Card>
+      </DSCardContent>
+    </DSCard>
   );
 }
 
@@ -658,14 +663,14 @@ function TicketDetailDialog({
               </p>
               <div className="mt-1 flex flex-wrap gap-2 text-[11px]">
                 {t._user.rating != null && (
-                  <Badge variant="outline" className="border-border text-muted-foreground">
+                  <span className="inline-flex items-center rounded-full border border-border bg-muted/20 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
                     ⭐ {Number(t._user.rating).toFixed(2)}
-                  </Badge>
+                  </span>
                 )}
                 {t._user.status && (
-                  <Badge variant="outline" className="border-border text-muted-foreground">
+                  <span className="inline-flex items-center rounded-full border border-border bg-muted/20 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
                     {t._user.status}
-                  </Badge>
+                  </span>
                 )}
               </div>
             </div>
@@ -703,19 +708,19 @@ function TicketDetailDialog({
             {ride ? (
               <div className="rounded-md border border-border bg-background/50 p-3 text-sm">
                 <div className="flex flex-wrap items-center gap-2">
-                  <Badge className="bg-primary/15 text-primary border border-primary/30">
+                  <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium bg-primary/15 text-primary border border-primary/30">
                     {ride.status}
-                  </Badge>
+                  </span>
                   <span className="font-mono text-[11px] text-muted-foreground">
                     #{shortId(ride.id)}
                   </span>
-                  <Button
+                  <DSButton
                     variant="ghost"
                     size="sm"
                     onClick={() => copy(ride.id, "ID da corrida copiado")}
                   >
                     <Copy className="mr-1 h-3.5 w-3.5" /> Copiar ID
-                  </Button>
+                  </DSButton>
                 </div>
                 <p className="mt-2 text-xs text-muted-foreground">
                   Origem: <span className="text-foreground">{ride.origin_name ?? "—"}</span>
@@ -755,9 +760,9 @@ function TicketDetailDialog({
               placeholder="Adicionar nota interna (somente admins)"
               className="min-h-[70px]"
             />
-            <Button onClick={addNote} disabled={saving || !noteText.trim()}>
+            <DSButton onClick={addNote} disabled={saving || !noteText.trim()}>
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <StickyNote className="h-4 w-4" />}
-            </Button>
+            </DSButton>
           </div>
           <div className="mt-3 space-y-2">
             {notes.length === 0 ? (
@@ -774,9 +779,9 @@ function TicketDetailDialog({
                       {formatDate(n.created_at)}
                     </p>
                   </div>
-                  <Button variant="ghost" size="icon" onClick={() => setNoteToDelete(n)}>
+                  <DSButton variant="ghost" size="icon" onClick={() => setNoteToDelete(n)}>
                     <Trash2 className="h-4 w-4 text-muted-foreground" />
-                  </Button>
+                  </DSButton>
                 </div>
               ))
             )}
@@ -786,7 +791,7 @@ function TicketDetailDialog({
         {/* Actions */}
         <Section title="Ações">
           <div className="flex flex-wrap gap-2">
-            <Button
+            <DSButton
               variant="secondary"
               size="sm"
               disabled={busy !== null}
@@ -801,8 +806,8 @@ function TicketDetailDialog({
               }
             >
               <Clock className="mr-2 h-4 w-4" /> Marcar em análise
-            </Button>
-            <Button
+            </DSButton>
+            <DSButton
               variant="secondary"
               size="sm"
               disabled={busy !== null}
@@ -817,8 +822,8 @@ function TicketDetailDialog({
               }
             >
               <CheckCircle2 className="mr-2 h-4 w-4" /> Marcar resolvido
-            </Button>
-            <Button
+            </DSButton>
+            <DSButton
               variant="secondary"
               size="sm"
               disabled={busy !== null}
@@ -834,15 +839,15 @@ function TicketDetailDialog({
               }
             >
               <Flame className="mr-2 h-4 w-4" /> Marcar urgente
-            </Button>
-            <Button
+            </DSButton>
+            <DSButton
               variant="ghost"
               size="sm"
               onClick={() => copy(t.id, "ID do ticket copiado")}
             >
               <Copy className="mr-2 h-4 w-4" /> Copiar ID
-            </Button>
-            <Button
+            </DSButton>
+            <DSButton
               variant="ghost"
               size="sm"
               onClick={() =>
@@ -855,7 +860,7 @@ function TicketDetailDialog({
               }
             >
               <Copy className="mr-2 h-4 w-4" /> Copiar resumo
-            </Button>
+            </DSButton>
           </div>
         </Section>
       </DialogContent>

@@ -1,13 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Loader2, Save, Copy, CheckCircle2, XCircle, CreditCard, KeyRound } from "lucide-react";
+import { Save, Copy, CheckCircle2, XCircle, CreditCard, KeyRound, Loader2 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import {
+  DSButton,
+  DSCard,
+  DSCardContent,
+  DSCardDescription,
+  DSCardHeader,
+  DSCardTitle,
+  Loading,
+} from "@/design-system";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -93,9 +99,7 @@ function AdminPaymentsPage() {
   if (loading) {
     return (
       <AdminLayout title="Pagamentos">
-        <div className="grid place-items-center py-24 text-muted-foreground">
-          <Loader2 className="h-6 w-6 animate-spin" />
-        </div>
+        <Loading label="Carregando gateways de pagamento..." />
       </AdminLayout>
     );
   }
@@ -109,14 +113,14 @@ function AdminPaymentsPage() {
         {gateways.map((g) => {
           const isActive = g.enabled && !!g.api_key_secret_name;
           return (
-            <Card key={g.id} className="border-border bg-card/60">
-              <CardHeader className="flex flex-row items-start justify-between gap-3">
+            <DSCard key={g.id} className="border-border bg-card/60">
+              <DSCardHeader className="flex flex-row items-start justify-between gap-3">
                 <div className="space-y-1">
-                  <CardTitle className="flex items-center gap-2 text-base">
+                  <DSCardTitle className="flex items-center gap-2 text-base">
                     <CreditCard className="h-4 w-4 text-primary" />
                     {g.display_name}
-                  </CardTitle>
-                  <CardDescription className="text-xs">
+                  </DSCardTitle>
+                  <DSCardDescription className="text-xs">
                     {isActive ? (
                       <span className="inline-flex items-center gap-1 text-primary">
                         <CheckCircle2 className="h-3 w-3" /> Conectado em modo {g.mode}
@@ -126,17 +130,17 @@ function AdminPaymentsPage() {
                         <XCircle className="h-3 w-3" /> Não configurado
                       </span>
                     )}
-                  </CardDescription>
+                  </DSCardDescription>
                 </div>
                 <div className="flex items-center gap-2">
                   <Switch checked={g.enabled} onCheckedChange={(v) => patch(g.id, { enabled: v })} />
-                  <Button size="sm" onClick={() => save(g)} disabled={savingId === g.id} className="gap-1">
+                  <DSButton size="sm" onClick={() => save(g)} disabled={savingId === g.id} className="gap-1">
                     {savingId === g.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
                     Salvar
-                  </Button>
+                  </DSButton>
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
+              </DSCardHeader>
+              <DSCardContent className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <label className="flex flex-col gap-1">
                     <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Modo</span>
@@ -171,9 +175,9 @@ function AdminPaymentsPage() {
                       onChange={(e) => patch(g.id, { webhook_url: e.target.value })}
                     />
                     {g.webhook_url && (
-                      <Button variant="outline" size="icon" onClick={() => copyWebhook(g.webhook_url!)}>
+                      <DSButton variant="outline" size="icon" onClick={() => copyWebhook(g.webhook_url!)}>
                         <Copy className="h-3.5 w-3.5" />
-                      </Button>
+                      </DSButton>
                     )}
                   </div>
                 </label>
@@ -206,11 +210,11 @@ function AdminPaymentsPage() {
                   </div>
                 ) : null}
 
-                <Badge variant="outline" className="text-[10px]">
-                  Provider: <span className="ml-1 font-mono">{g.provider}</span>
-                </Badge>
-              </CardContent>
-            </Card>
+                <span className="inline-flex items-center gap-1 self-start rounded-full border border-border bg-muted/30 px-2.5 py-0.5 text-[10px] text-muted-foreground">
+                  Provider: <span className="font-mono">{g.provider}</span>
+                </span>
+              </DSCardContent>
+            </DSCard>
           );
         })}
       </div>
