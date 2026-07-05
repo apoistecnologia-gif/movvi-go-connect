@@ -384,19 +384,21 @@ function RideRow({ r, onOpen }: { r: Ride; onOpen: () => void }) {
         <div className="min-w-0 flex-1 space-y-1">
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="font-mono text-[10px] text-muted-foreground">{r.id.slice(0, 8)}</span>
-            <Badge variant="outline" className={`text-[10px] ${STATUS_TONE[r.status] ?? ""}`}>
-              {STATUS_LABEL[r.status] ?? r.status}
-            </Badge>
+            <StatusPill
+              status={STATUS_PILL[r.status] ?? "searching"}
+              label={STATUS_LABEL[r.status] ?? r.status}
+              pulse={false}
+            />
             {r.category && (
-              <Badge variant="secondary" className="text-[10px]">
+              <span className="inline-flex items-center rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
                 {r.category}
-              </Badge>
+              </span>
             )}
             {r.payment_method && (
-              <Badge variant="outline" className="text-[10px]">
-                <CreditCard className="mr-1 h-3 w-3" />
+              <span className="inline-flex items-center gap-1 rounded-full border border-border bg-background/40 px-2 py-0.5 text-[10px] text-muted-foreground">
+                <CreditCard className="h-3 w-3" />
                 {paymentLabel(r.payment_method)}
-              </Badge>
+              </span>
             )}
           </div>
           <p className="truncate text-xs">
