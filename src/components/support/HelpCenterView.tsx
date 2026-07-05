@@ -1,11 +1,8 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import {
   Accordion, AccordionItem, AccordionTrigger, AccordionContent,
 } from "@/components/ui/accordion";
@@ -24,6 +21,7 @@ import {
   PASSENGER_CATEGORIES, DRIVER_CATEGORIES,
   type Faq, type SupportCategory,
 } from "@/lib/support/helpCenter";
+import { DSButton, DSCard, DSCardContent, DSCardHeader, DSCardTitle, DSCardDescription } from "@/design-system";
 
 type Role = "passenger" | "driver";
 
@@ -149,14 +147,14 @@ export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
       </div>
 
       {/* Help center sections */}
-      <Card className="border-border/60 bg-card/60">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
+      <DSCard className="border-border/60 bg-card/60">
+        <DSCardHeader>
+          <DSCardTitle className="flex items-center gap-2 text-base">
             <HelpCircle className="h-4 w-4 text-primary" /> Categorias de ajuda
-          </CardTitle>
-          <CardDescription>Escolha um tema para ver informações.</CardDescription>
-        </CardHeader>
-        <CardContent>
+          </DSCardTitle>
+          <DSCardDescription>Escolha um tema para ver informações.</DSCardDescription>
+        </DSCardHeader>
+        <DSCardContent>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {HELP_SECTIONS.map((s) => {
               const active = activeSection === s.id;
@@ -183,18 +181,18 @@ export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
               {HELP_SECTIONS.find((s) => s.id === activeSection)?.description}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </DSCardContent>
+      </DSCard>
 
       {/* FAQ */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
+      <DSCard>
+        <DSCardHeader>
+          <DSCardTitle className="flex items-center gap-2 text-base">
             <LifeBuoy className="h-4 w-4 text-primary" /> Perguntas frequentes
-          </CardTitle>
-          <CardDescription>Respostas para as dúvidas mais comuns.</CardDescription>
-        </CardHeader>
-        <CardContent>
+          </DSCardTitle>
+          <DSCardDescription>Respostas para as dúvidas mais comuns.</DSCardDescription>
+        </DSCardHeader>
+        <DSCardContent>
           <Accordion type="single" collapsible className="w-full">
             {faq.map((item, i) => (
               <AccordionItem key={i} value={`q-${i}`}>
@@ -203,16 +201,16 @@ export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
               </AccordionItem>
             ))}
           </Accordion>
-        </CardContent>
-      </Card>
+        </DSCardContent>
+      </DSCard>
 
       {/* New ticket */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Falar com o suporte</CardTitle>
-          <CardDescription>Preencha o formulário. Respondemos em até 24h.</CardDescription>
-        </CardHeader>
-        <CardContent>
+      <DSCard>
+        <DSCardHeader>
+          <DSCardTitle className="text-base">Falar com o suporte</DSCardTitle>
+          <DSCardDescription>Preencha o formulário. Respondemos em até 24h.</DSCardDescription>
+        </DSCardHeader>
+        <DSCardContent>
           <form onSubmit={handleSubmit} className="space-y-3">
             <div className="space-y-1.5">
               <Label htmlFor="cat">Categoria</Label>
@@ -254,20 +252,20 @@ export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
               Anexos estarão disponíveis em breve.
             </div>
 
-            <Button type="submit" disabled={sending} className="w-full">
+            <DSButton type="submit" disabled={sending} className="w-full">
               {sending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
               Enviar
-            </Button>
+            </DSButton>
           </form>
-        </CardContent>
-      </Card>
+        </DSCardContent>
+      </DSCard>
 
       {/* Previous tickets */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Meus tickets</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <DSCard>
+        <DSCardHeader>
+          <DSCardTitle className="text-base">Meus tickets</DSCardTitle>
+        </DSCardHeader>
+        <DSCardContent>
           {loading ? (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" /> Carregando...
@@ -284,42 +282,39 @@ export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
                       {new Date(t.created_at).toLocaleString("pt-BR")} • {labelFor(t.category, categories)}
                     </div>
                   </div>
-                  <Badge
-                    variant="outline"
-                    className={
-                      t.status === "open"
+                  <span
+                    className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${t.status === "open"
                         ? "border-primary/40 bg-primary/10 text-primary"
                         : t.status === "resolved"
                         ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-400"
-                        : "border-border text-muted-foreground"
-                    }
+                        : "border-border text-muted-foreground"}`}
                   >
                     {t.status === "open" ? "Aberto" : t.status === "resolved" ? "Resolvido" : t.status}
-                  </Badge>
+                  </span>
                 </li>
               ))}
             </ul>
           )}
-        </CardContent>
-      </Card>
+        </DSCardContent>
+      </DSCard>
 
       {/* Legal */}
-      <Card className="border-border/60 bg-card/40">
-        <CardContent className="flex flex-col gap-2 pt-6 sm:flex-row sm:items-center sm:justify-between">
+      <DSCard className="border-border/60 bg-card/40">
+        <DSCardContent className="flex flex-col gap-2 pt-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <ShieldCheck className="h-4 w-4 text-primary" />
             Documentos legais da MOVVI
           </div>
           <div className="flex gap-2">
-            <Button asChild variant="outline" size="sm">
+            <DSButton asChild variant="outline" size="sm">
               <Link to={termsHref}><FileText className="mr-1.5 h-3.5 w-3.5" /> Termos</Link>
-            </Button>
-            <Button asChild variant="outline" size="sm">
+            </DSButton>
+            <DSButton asChild variant="outline" size="sm">
               <Link to={privacyHref}><ShieldCheck className="mr-1.5 h-3.5 w-3.5" /> Privacidade</Link>
-            </Button>
+            </DSButton>
           </div>
-        </CardContent>
-      </Card>
+        </DSCardContent>
+      </DSCard>
     </div>
   );
 }

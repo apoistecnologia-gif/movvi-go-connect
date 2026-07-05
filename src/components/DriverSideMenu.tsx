@@ -24,11 +24,11 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ProfilePhotoUploader } from "@/components/ProfilePhotoUploader";
 import { supabase } from "@/integrations/supabase/client";
+import { DSButton } from "@/design-system";
 
 type Props = {
   open: boolean;
@@ -259,14 +259,14 @@ export function DriverSideMenu({ open, onOpenChange, onLogout }: Props) {
                   </div>
                 )}
 
-                <Button type="submit" disabled={saving} className="w-full">
+                <DSButton type="submit" disabled={saving} className="w-full">
                   {saving ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : (
                     <Save className="mr-2 h-4 w-4" />
                   )}
                   Salvar alterações
-                </Button>
+                </DSButton>
               </form>
 
               <nav className="space-y-1.5 border-t border-border pt-4">

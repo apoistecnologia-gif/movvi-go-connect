@@ -2,11 +2,9 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { loadDriverProfile } from "@/lib/driverProfile";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { MovviHeader } from "@/components/MovviHeader";
 import { Clock, CheckCircle2, XCircle, ShieldAlert, Loader2, LogIn, UserX, FileCheck2, AlertTriangle } from "lucide-react";
+import { DSButton, DSCard, DSCardContent, DSCardHeader, DSCardTitle, DSCardDescription } from "@/design-system";
 
 export const Route = createFileRoute("/motorista/status")({
   head: () => ({ meta: [{ title: "Status do Cadastro — MOVVI DRIVE" }] }),
@@ -109,12 +107,12 @@ function DriverStatusPage() {
       <MovviHeader logoutRedirect="/" />
       <main className="flex-1 px-4 py-8">
         <div className="container mx-auto max-w-xl space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-2xl">Status do cadastro</CardTitle>
-              <CardDescription>Acompanhe a análise do seu cadastro.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
+          <DSCard>
+            <DSCardHeader>
+              <DSCardTitle className="text-2xl">Status do cadastro</DSCardTitle>
+              <DSCardDescription>Acompanhe a análise do seu cadastro.</DSCardDescription>
+            </DSCardHeader>
+            <DSCardContent className="space-y-6">
               {loading || !meta ? (
                 <div className="flex items-center gap-3 text-muted-foreground">
                   <Loader2 className="h-5 w-5 animate-spin" /> Carregando...
@@ -125,7 +123,7 @@ function DriverStatusPage() {
                     <div className={`rounded-full border p-4 ${meta.tone}`}>
                       <Icon className="h-10 w-10" />
                     </div>
-                    <Badge variant="outline" className={meta.tone}>{meta.label}</Badge>
+                    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${meta.tone}`}>{meta.label}</span>
                     <p className="max-w-md text-sm text-muted-foreground">{meta.desc}</p>
                     {status === "reprovado" && rejectionReason && (
                       <div className="w-full rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-left text-sm text-destructive">
@@ -137,21 +135,21 @@ function DriverStatusPage() {
 
                   <div className="flex flex-col gap-2">
                     {status === "aprovado" && (
-                      <Button asChild className="w-full"><Link to="/motorista/app">Abrir app do motorista</Link></Button>
+                      <DSButton asChild className="w-full"><Link to="/motorista/app">Abrir app do motorista</Link></DSButton>
                     )}
-                    <Button asChild variant="secondary" className="w-full"><Link to="/">Voltar ao início</Link></Button>
-                    <Button onClick={switchAccount} variant="outline" className="w-full">
+                    <DSButton asChild variant="secondary" className="w-full"><Link to="/">Voltar ao início</Link></DSButton>
+                    <DSButton onClick={switchAccount} variant="outline" className="w-full">
                       <LogIn className="mr-2 h-4 w-4" /> Entrar com outra conta
-                    </Button>
+                    </DSButton>
                   </div>
                 </>
               )}
-            </CardContent>
-          </Card>
+            </DSCardContent>
+          </DSCard>
 
           {!loading && docsSummary && docsSummary.status !== "approved" && (
-            <Card className={docsSummary.uploaded < 4 ? "border-yellow-500/40 bg-yellow-500/5" : "border-primary/40 bg-primary/5"}>
-              <CardContent className="flex items-start gap-3 py-4">
+            <DSCard className={docsSummary.uploaded < 4 ? "border-yellow-500/40 bg-yellow-500/5" : "border-primary/40 bg-primary/5"}>
+              <DSCardContent className="flex items-start gap-3 py-4">
                 <div className={`rounded-full p-2 ${docsSummary.uploaded < 4 ? "bg-yellow-500/15 text-yellow-400" : "bg-primary/15 text-primary"}`}>
                   {docsSummary.uploaded < 4 ? <AlertTriangle className="h-5 w-5" /> : <FileCheck2 className="h-5 w-5" />}
                 </div>
@@ -169,26 +167,26 @@ function DriverStatusPage() {
                       : "Assim que forem revisados, você será notificado."}
                   </p>
                   <div className="mt-3">
-                    <Button asChild size="sm" variant={docsSummary.uploaded < 4 ? "default" : "secondary"}>
+                    <DSButton asChild size="sm" variant={docsSummary.uploaded < 4 ? "default" : "secondary"}>
                       <Link to="/motorista/documentos">
                         {docsSummary.uploaded < 4 ? "Completar envio" : "Ver meus documentos"}
                       </Link>
-                    </Button>
+                    </DSButton>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </DSCardContent>
+            </DSCard>
           )}
 
           {!loading && status && status !== "nao_encontrado" && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
+            <DSCard>
+              <DSCardHeader>
+                <DSCardTitle className="flex items-center gap-2 text-base">
                   <FileCheck2 className="h-4 w-4 text-primary" /> Meus documentos
-                </CardTitle>
-                <CardDescription>Validade e situação dos documentos cadastrados.</CardDescription>
-              </CardHeader>
-              <CardContent>
+                </DSCardTitle>
+                <DSCardDescription>Validade e situação dos documentos cadastrados.</DSCardDescription>
+              </DSCardHeader>
+              <DSCardContent>
                 {docs.length === 0 ? (
                   <p className="text-xs text-muted-foreground">Nenhum documento adicional registrado. A análise inicial usa os documentos enviados no cadastro.</p>
                 ) : (
@@ -201,9 +199,9 @@ function DriverStatusPage() {
                         <li key={d.id} className="rounded-lg border border-border bg-card/60 p-3">
                           <div className="flex items-center justify-between gap-2">
                             <p className="text-sm font-semibold">{DOC_LABELS[d.type] ?? d.type}</p>
-                            <Badge variant="outline" className={DOC_STATUS_TONE[d.status] ?? ""}>
+                            <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${DOC_STATUS_TONE[d.status] ?? ""}`}>
                               {d.status}
-                            </Badge>
+                            </span>
                           </div>
                           {exp && (
                             <p className="mt-1 text-xs text-muted-foreground">
@@ -224,8 +222,8 @@ function DriverStatusPage() {
                     })}
                   </ul>
                 )}
-              </CardContent>
-            </Card>
+              </DSCardContent>
+            </DSCard>
           )}
         </div>
       </main>

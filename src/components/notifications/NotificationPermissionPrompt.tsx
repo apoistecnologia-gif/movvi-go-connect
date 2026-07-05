@@ -1,6 +1,6 @@
 import { Bell, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { useNotificationPermission } from "@/hooks/useNotificationPermission";
+import { DSButton } from "@/design-system";
 
 /**
  * Polite in-app banner asking for push permission. Never appears immediately on
@@ -24,12 +24,12 @@ export function NotificationPermissionPrompt() {
             Receba alertas de corridas, pagamentos e atualizações importantes mesmo com o app em segundo plano.
           </p>
           <div className="mt-3 flex items-center gap-2">
-            <Button size="sm" onClick={() => void request()}>
+            <DSButton size="sm" onClick={() => void request()}>
               Ativar
-            </Button>
-            <Button size="sm" variant="ghost" onClick={dismiss}>
+            </DSButton>
+            <DSButton size="sm" variant="ghost" onClick={dismiss}>
               Agora não
-            </Button>
+            </DSButton>
           </div>
         </div>
         <button

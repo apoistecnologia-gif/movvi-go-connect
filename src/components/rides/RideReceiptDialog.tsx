@@ -7,7 +7,6 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { MovviLogo } from "@/components/MovviLogo";
 import {
   copyReceipt,
@@ -16,6 +15,7 @@ import {
   MOVVI_RECEIPT_DISCLAIMER,
   type ReceiptData,
 } from "@/lib/rideReceipt";
+import { DSButton } from "@/design-system";
 
 export function RideReceiptDialog({
   open,
@@ -144,12 +144,12 @@ export function RideReceiptDialog({
 
         {/* Actions */}
         <div className="mt-4 grid grid-cols-2 gap-2">
-          <Button variant="outline" onClick={handleCopy}>
+          <DSButton variant="outline" onClick={handleCopy}>
             <Copy className="mr-2 h-4 w-4" /> Copiar
-          </Button>
-          <Button onClick={handleShare}>
+          </DSButton>
+          <DSButton onClick={handleShare}>
             <Share2 className="mr-2 h-4 w-4" /> Compartilhar
-          </Button>
+          </DSButton>
         </div>
       </DialogContent>
     </Dialog>

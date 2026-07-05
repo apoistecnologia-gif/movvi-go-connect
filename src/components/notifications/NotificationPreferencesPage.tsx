@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Bell, BellOff, Loader2, Save } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import {
   DEFAULT_PREFERENCES,
@@ -10,6 +9,7 @@ import {
 } from "@/lib/notifications/notificationPreferences";
 import { invalidatePreferencesCache } from "@/lib/notifications/notificationService";
 import { useNotificationPermission } from "@/hooks/useNotificationPermission";
+import { DSButton } from "@/design-system";
 
 type Row = {
   key: keyof NotificationPreferences;
@@ -100,7 +100,7 @@ export function NotificationPreferencesPage({ audience }: { audience: "passenger
             </p>
           </div>
           {perm.permission === "default" && (
-            <Button size="sm" onClick={() => void perm.request()}>Ativar</Button>
+            <DSButton size="sm" onClick={() => void perm.request()}>Ativar</DSButton>
           )}
         </div>
       </div>
@@ -127,10 +127,10 @@ export function NotificationPreferencesPage({ audience }: { audience: "passenger
 
           <div className="mt-6 flex items-center justify-end gap-2">
             {saved && <span className="text-xs text-primary">Preferências salvas</span>}
-            <Button onClick={onSave} disabled={saving}>
+            <DSButton onClick={onSave} disabled={saving}>
               {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
               Salvar
-            </Button>
+            </DSButton>
           </div>
         </>
       )}

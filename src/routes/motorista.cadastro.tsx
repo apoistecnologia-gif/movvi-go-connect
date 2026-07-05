@@ -3,10 +3,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState, type FormEvent } from "react";
 import { z } from "zod";
 import { supabase } from "@/lib/supabaseClient";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -21,6 +19,7 @@ import { translateAuthError } from "@/lib/authErrors";
 import { cadastrarMotorista } from "@/lib/driverAuth.functions";
 import { DriverDocumentField } from "@/components/DriverDocumentField";
 import { compressDocumentImage } from "@/lib/imageCompress";
+import { DSButton, DSCard, DSCardContent, DSCardHeader, DSCardTitle, DSCardDescription } from "@/design-system";
 
 export const Route = createFileRoute("/motorista/cadastro")({
   head: () => ({ meta: [{ title: "Cadastro do Motorista — MOVVI DRIVE" }] }),
@@ -169,7 +168,7 @@ function DriverSignUpPage() {
           <Link to="/" className="inline-flex items-center gap-2">
             <MovviLogo className="h-8 w-auto" />
           </Link>
-          <Button
+          <DSButton
             type="button"
             variant="ghost"
             size="sm"
@@ -178,17 +177,17 @@ function DriverSignUpPage() {
           >
             <ArrowLeft className="mr-1 h-4 w-4" />
             Sair do cadastro
-          </Button>
+          </DSButton>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl">Cadastro do Motorista</CardTitle>
-            <CardDescription>
+        <DSCard>
+          <DSCardHeader>
+            <DSCardTitle className="text-2xl">Cadastro do Motorista</DSCardTitle>
+            <DSCardDescription>
               Após enviar, seu cadastro entrará em análise pela equipe MOVVI.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+            </DSCardDescription>
+          </DSCardHeader>
+          <DSCardContent>
             <form onSubmit={onSubmit} className="space-y-8">
               <section className="space-y-4">
                 <h3 className="text-sm font-semibold uppercase text-primary">Dados pessoais</h3>
@@ -344,7 +343,7 @@ function DriverSignUpPage() {
                     Entrar
                   </Link>
                 </p>
-                <Button type="submit" size="lg" disabled={loading || !allDocsReady} className="sm:min-w-48">
+                <DSButton type="submit" size="lg" disabled={loading || !allDocsReady} className="sm:min-w-48">
                   {loading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Enviando...
@@ -354,11 +353,11 @@ function DriverSignUpPage() {
                   ) : (
                     `Faltam ${4 - docsUploaded} documento(s)`
                   )}
-                </Button>
+                </DSButton>
               </div>
             </form>
-          </CardContent>
-        </Card>
+          </DSCardContent>
+        </DSCard>
       </div>
     </div>
   );

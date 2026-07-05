@@ -3,9 +3,9 @@ import { useEffect, useState, useCallback } from "react";
 import { Bell, Check, Trash2 } from "lucide-react";
 import { SettingsPageShell, SettingsHero } from "@/components/settings";
 import { PASSENGER_NAV } from "@/components/BottomNav";
-import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { DSButton } from "@/design-system";
 
 type Notif = {
   id: string;
@@ -72,9 +72,9 @@ function PassengerInboxPage() {
         subtitle={`${unread} não ${unread === 1 ? "lida" : "lidas"}`}
         action={
           items.length > 0 ? (
-            <Button variant="outline" size="sm" onClick={markAll}>
+            <DSButton variant="outline" size="sm" onClick={markAll}>
               <Check className="mr-1 h-3.5 w-3.5" /> Marcar todas
-            </Button>
+            </DSButton>
           ) : undefined
         }
       />

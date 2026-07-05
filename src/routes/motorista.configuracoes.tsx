@@ -6,7 +6,6 @@ import {
   QrCode, Save, Settings as SettingsIcon, Shield, ShieldCheck, Smartphone,
   Sun, Trash2, User, Vibrate, Volume2, FileText, Fingerprint,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
@@ -20,6 +19,7 @@ import {
   SettingsSection, SettingsToggleRow, SettingsLinkRow, SettingsRow, AppAboutCard,
   SettingsPageShell, SettingsHero,
 } from "@/components/settings";
+import { DSButton } from "@/design-system";
 
 export const Route = createFileRoute("/motorista/configuracoes")({
   head: () => ({ meta: [{ title: "Configurações — MOVVI DRIVE" }] }),
@@ -226,13 +226,13 @@ function DriverSettingsPage() {
                   icon={MapPin}
                   title="Permissão de localização"
                   hint={locState === "granted" ? "Permitida" : locState === "denied" ? "Bloqueada — ajuste no navegador" : locState === "unsupported" ? "Indisponível" : "Pendente"}
-                  right={<Button size="sm" variant="outline" onClick={handleTestLocation}>Testar</Button>}
+                  right={<DSButton size="sm" variant="outline" onClick={handleTestLocation}>Testar</DSButton>}
                 />
                 <SettingsRow
                   icon={Bell}
                   title="Permissão de notificações"
                   hint={notifState === "granted" ? "Permitida" : notifState === "denied" ? "Bloqueada" : notifState === "unsupported" ? "Indisponível" : "Pendente"}
-                  right={<Button size="sm" variant="outline" onClick={handleEnablePush}>Solicitar</Button>}
+                  right={<DSButton size="sm" variant="outline" onClick={handleEnablePush}>Solicitar</DSButton>}
                 />
                 <SettingsLinkRow icon={FileText} title="Termos de Uso" to="/passageiro/termos" />
                 <SettingsLinkRow icon={ShieldCheck} title="Política de Privacidade" to="/passageiro/privacidade" />
@@ -245,10 +245,10 @@ function DriverSettingsPage() {
                 <SettingsLinkRow icon={LifeBuoy} title="Falar com o suporte" to="/passageiro/suporte" />
               </SettingsSection>
 
-              <Button onClick={handleSave} disabled={saving} className="w-full">
+              <DSButton onClick={handleSave} disabled={saving} className="w-full">
                 {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                 Salvar configurações
-              </Button>
+              </DSButton>
 
               {/* Sobre */}
               <SettingsSection icon={Info} title="Sobre">

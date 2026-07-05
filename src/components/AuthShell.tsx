@@ -1,9 +1,9 @@
 import { useState, type FormEvent, type ReactNode } from "react";
 import { Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { ArrowLeft, Home } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MovviLogo } from "@/components/MovviLogo";
 import { translateAuthError } from "@/lib/authErrors";
+import { DSCard, DSCardContent, DSCardDescription, DSCardHeader, DSCardTitle } from "@/design-system";
 
 interface AuthShellProps {
   title: ReactNode;
@@ -38,13 +38,13 @@ export function AuthShell({ title, description, children, footer }: AuthShellPro
         <Link to="/" className="flex justify-center">
           <MovviLogo size={56} />
         </Link>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl">{title}</CardTitle>
-            <CardDescription>{description}</CardDescription>
-          </CardHeader>
-          <CardContent>{children}</CardContent>
-        </Card>
+        <DSCard>
+          <DSCardHeader>
+            <DSCardTitle className="text-2xl">{title}</DSCardTitle>
+            <DSCardDescription>{description}</DSCardDescription>
+          </DSCardHeader>
+          <DSCardContent>{children}</DSCardContent>
+        </DSCard>
         {footer && <div className="text-center text-sm text-muted-foreground">{footer}</div>}
       </div>
     </div>
