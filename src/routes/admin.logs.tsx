@@ -123,7 +123,7 @@ function AdminLogsPage() {
             logins.map((l) => (
               <DSCard key={l.id} className="border-border bg-card/60">
                 <DSCardContent className="flex items-center gap-2 p-3 text-xs">
-                  <DSBadge variant="danger" className="${l.success ? "" : ""}">{l.success ? "OK" : "Falha"}</DSBadge>
+                  <DSBadge variant={l.success ? "success" : "danger"}>{l.success ? "OK" : "Falha"}</DSBadge>
                   <span className="font-mono">{l.user_id?.slice(0, 8)}</span>
                   <span className="truncate text-muted-foreground">{l.user_agent ?? "—"}</span>
                   <span className="ml-auto text-[10px] text-muted-foreground">{formatDate(l.created_at)}</span>
