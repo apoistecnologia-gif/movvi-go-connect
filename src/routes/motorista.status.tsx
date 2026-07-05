@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { loadDriverProfile } from "@/lib/driverProfile";
 import { MovviHeader } from "@/components/MovviHeader";
 import { Clock, CheckCircle2, XCircle, ShieldAlert, Loader2, LogIn, UserX, FileCheck2, AlertTriangle } from "lucide-react";
-import { DSButton, DSCard, DSCardContent, DSCardHeader, DSCardTitle, DSCardDescription } from "@/design-system";
+import { DSBadge, DSButton, DSCard, DSCardContent, DSCardDescription, DSCardHeader, DSCardTitle } from "@/design-system";
 
 export const Route = createFileRoute("/motorista/status")({
   head: () => ({ meta: [{ title: "Status do Cadastro — MOVVI DRIVE" }] }),
@@ -123,7 +123,7 @@ function DriverStatusPage() {
                     <div className={`rounded-full border p-4 ${meta.tone}`}>
                       <Icon className="h-10 w-10" />
                     </div>
-                    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${meta.tone}`}>{meta.label}</span>
+                    <DSBadge className={meta.tone}>{meta.label}</DSBadge>
                     <p className="max-w-md text-sm text-muted-foreground">{meta.desc}</p>
                     {status === "reprovado" && rejectionReason && (
                       <div className="w-full rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-left text-sm text-destructive">
@@ -199,9 +199,9 @@ function DriverStatusPage() {
                         <li key={d.id} className="rounded-lg border border-border bg-card/60 p-3">
                           <div className="flex items-center justify-between gap-2">
                             <p className="text-sm font-semibold">{DOC_LABELS[d.type] ?? d.type}</p>
-                            <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${DOC_STATUS_TONE[d.status] ?? ""}`}>
+                            <DSBadge className={DOC_STATUS_TONE[d.status] ?? ""}>
                               {d.status}
-                            </span>
+                            </DSBadge>
                           </div>
                           {exp && (
                             <p className="mt-1 text-xs text-muted-foreground">

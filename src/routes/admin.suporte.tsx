@@ -483,9 +483,9 @@ function TicketRow({ t, onOpen }: { t: Enriched; onOpen: () => void }) {
                 {categoryLabel(t.category)}
               </DSBadge>
               {t.ride_id && (
-                <span className="inline-flex items-center rounded-full border border-primary/30 px-2.5 py-0.5 text-[11px] font-medium text-primary">
+                <DSBadge variant="primary">
                   <Car className="mr-1 h-3 w-3" /> Corrida
-                </span>
+                </DSBadge>
               )}
             </div>
             <p className="mt-1 truncate font-semibold text-foreground">{t.subject}</p>
