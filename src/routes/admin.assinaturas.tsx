@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
-import { DSButton as Button, DSCard as Card, DSCardContent as CardContent, DSInput, Loading, StatusPill } from "@/design-system";
+import { DSBadge, DSButton as Button, DSCard as Card, DSCardContent as CardContent, DSInput, Loading, StatusPill } from "@/design-system";
 import { Switch } from "@/components/ui/switch";
 // Badge legacy substituído por SubPill (StatusPill do design system).
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Plus, Loader2, Trash2, Save } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
-import { DSButton as Button, DSCard as Card, DSCardContent as CardContent, DSInput, EmptyState, Loading } from "@/design-system";
+import { DSBadge, DSButton as Button, DSCard as Card, DSCardContent as CardContent, DSInput, EmptyState, Loading } from "@/design-system";
 import { Switch } from "@/components/ui/switch";
 // Badge legacy substituído por tag inline abaixo.
 import { toast } from "sonner";

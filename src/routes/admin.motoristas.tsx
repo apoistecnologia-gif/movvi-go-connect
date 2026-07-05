@@ -32,7 +32,7 @@ import {
   updateDriverApprovalStatus,
 } from "@/lib/adminDrivers.functions";
 import { AdminLayout } from "@/components/admin/AdminLayout";
-import { Caption, DSButton as Button, DSCard, DSCardContent, DSInput, EmptyState, Loading, StatusPill } from "@/design-system";
+import { Caption, DSBadge, DSButton as Button, DSCard, DSCardContent, DSInput, EmptyState, Loading, StatusPill } from "@/design-system";
 import {
   Dialog,
   DialogContent,

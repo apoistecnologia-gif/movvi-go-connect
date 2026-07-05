@@ -19,7 +19,7 @@ import {
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Avatar } from "@/components/Avatar";
 import { supabase } from "@/integrations/supabase/client";
-import { DSButton as Button, DSCard as Card, DSCardContent as CardContent, DSInput, EmptyState, Loading, StatusPill } from "@/design-system";
+import { DSBadge, DSButton as Button, DSCard as Card, DSCardContent as CardContent, DSInput, EmptyState, Loading, StatusPill } from "@/design-system";
 import {
   Dialog,
   DialogContent,

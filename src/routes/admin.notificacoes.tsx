@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Loader2, Send } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
-import { DSButton, DSCard, DSCardContent, DSCardHeader, DSCardTitle, DSInput, EmptyState } from "@/design-system";
+import { DSBadge, DSButton, DSCard, DSCardContent, DSCardHeader, DSCardTitle, DSInput, EmptyState } from "@/design-system";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { logAdminAction } from "@/lib/adminAudit";

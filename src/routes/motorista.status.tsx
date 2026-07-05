@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { loadDriverProfile } from "@/lib/driverProfile";
 import { MovviHeader } from "@/components/MovviHeader";
 import { Clock, CheckCircle2, XCircle, ShieldAlert, Loader2, LogIn, UserX, FileCheck2, AlertTriangle } from "lucide-react";
-import { DSButton, DSCard, DSCardContent, DSCardHeader, DSCardTitle, DSCardDescription } from "@/design-system";
+import { DSBadge, DSButton, DSCard, DSCardContent, DSCardDescription, DSCardHeader, DSCardTitle } from "@/design-system";
 
 export const Route = createFileRoute("/motorista/status")({
   head: () => ({ meta: [{ title: "Status do Cadastro — MOVVI DRIVE" }] }),

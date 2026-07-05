@@ -20,7 +20,7 @@ import {
   PASSENGER_CATEGORIES, DRIVER_CATEGORIES,
   type Faq, type SupportCategory,
 } from "@/lib/support/helpCenter";
-import { DSButton, DSCard, DSCardContent, DSCardDescription, DSCardHeader, DSCardTitle, DSInput } from "@/design-system";
+import { DSBadge, DSButton, DSCard, DSCardContent, DSCardDescription, DSCardHeader, DSCardTitle, DSInput } from "@/design-system";
 
 type Role = "passenger" | "driver";
 
