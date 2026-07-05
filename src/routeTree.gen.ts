@@ -13,6 +13,7 @@ import { Route as MapTestRouteImport } from './routes/map-test'
 import { Route as DownloadRouteImport } from './routes/download'
 import { Route as DevDiagnosticsRouteImport } from './routes/dev-diagnostics'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as TTokenRouteImport } from './routes/t.$token'
 import { Route as PassageiroTermosRouteImport } from './routes/passageiro.termos'
 import { Route as PassageiroSuporteRouteImport } from './routes/passageiro.suporte'
 import { Route as PassageiroSobreRouteImport } from './routes/passageiro.sobre'
@@ -89,6 +90,11 @@ const DevDiagnosticsRoute = DevDiagnosticsRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TTokenRoute = TTokenRouteImport.update({
+  id: '/t/$token',
+  path: '/t/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PassageiroTermosRoute = PassageiroTermosRouteImport.update({
@@ -439,6 +445,7 @@ export interface FileRoutesByFullPath {
   '/passageiro/sobre': typeof PassageiroSobreRoute
   '/passageiro/suporte': typeof PassageiroSuporteRoute
   '/passageiro/termos': typeof PassageiroTermosRoute
+  '/t/$token': typeof TTokenRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
   '/motorista/corridas/$id': typeof MotoristaCorridasIdRoute
 }
@@ -502,6 +509,7 @@ export interface FileRoutesByTo {
   '/passageiro/sobre': typeof PassageiroSobreRoute
   '/passageiro/suporte': typeof PassageiroSuporteRoute
   '/passageiro/termos': typeof PassageiroTermosRoute
+  '/t/$token': typeof TTokenRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
   '/motorista/corridas/$id': typeof MotoristaCorridasIdRoute
 }
@@ -566,6 +574,7 @@ export interface FileRoutesById {
   '/passageiro/sobre': typeof PassageiroSobreRoute
   '/passageiro/suporte': typeof PassageiroSuporteRoute
   '/passageiro/termos': typeof PassageiroTermosRoute
+  '/t/$token': typeof TTokenRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
   '/motorista/corridas/$id': typeof MotoristaCorridasIdRoute
 }
@@ -631,6 +640,7 @@ export interface FileRouteTypes {
     | '/passageiro/sobre'
     | '/passageiro/suporte'
     | '/passageiro/termos'
+    | '/t/$token'
     | '/api/public/asaas-webhook'
     | '/motorista/corridas/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -694,6 +704,7 @@ export interface FileRouteTypes {
     | '/passageiro/sobre'
     | '/passageiro/suporte'
     | '/passageiro/termos'
+    | '/t/$token'
     | '/api/public/asaas-webhook'
     | '/motorista/corridas/$id'
   id:
@@ -757,6 +768,7 @@ export interface FileRouteTypes {
     | '/passageiro/sobre'
     | '/passageiro/suporte'
     | '/passageiro/termos'
+    | '/t/$token'
     | '/api/public/asaas-webhook'
     | '/motorista/corridas/$id'
   fileRoutesById: FileRoutesById
@@ -821,6 +833,7 @@ export interface RootRouteChildren {
   PassageiroSobreRoute: typeof PassageiroSobreRoute
   PassageiroSuporteRoute: typeof PassageiroSuporteRoute
   PassageiroTermosRoute: typeof PassageiroTermosRoute
+  TTokenRoute: typeof TTokenRoute
   ApiPublicAsaasWebhookRoute: typeof ApiPublicAsaasWebhookRoute
 }
 
@@ -852,6 +865,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/t/$token': {
+      id: '/t/$token'
+      path: '/t/$token'
+      fullPath: '/t/$token'
+      preLoaderRoute: typeof TTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/passageiro/termos': {
@@ -1329,6 +1349,7 @@ const rootRouteChildren: RootRouteChildren = {
   PassageiroSobreRoute: PassageiroSobreRoute,
   PassageiroSuporteRoute: PassageiroSuporteRoute,
   PassageiroTermosRoute: PassageiroTermosRoute,
+  TTokenRoute: TTokenRoute,
   ApiPublicAsaasWebhookRoute: ApiPublicAsaasWebhookRoute,
 }
 export const routeTree = rootRouteImport

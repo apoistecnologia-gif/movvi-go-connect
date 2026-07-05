@@ -35,10 +35,12 @@ export interface ShareRideInput {
   destinationName?: string | null;
   currentLat?: number | null;
   currentLng?: number | null;
+  /** Live tracking link (movvi.app/t/{token}). When present, replaces the static coords. */
+  trackingUrl?: string | null;
 }
 
 export function buildShareText(input: ShareRideInput): string {
-  const lines: string[] = ["🚗 MOVVI Drive — Compartilhamento de corrida", ""];
+  const lines: string[] = ["🚗 MOVVI — Acompanhe minha viagem em tempo real", ""];
   lines.push(`Status: ${statusLabel(input.status)}`);
   if (input.role === "passenger") {
     if (input.driverName) lines.push(`Motorista: ${input.driverName}`);
@@ -51,7 +53,9 @@ export function buildShareText(input: ShareRideInput): string {
   }
   if (input.originName) lines.push(`Origem: ${input.originName}`);
   if (input.destinationName) lines.push(`Destino: ${input.destinationName}`);
-  if (input.currentLat != null && input.currentLng != null) {
+  if (input.trackingUrl) {
+    lines.push("", `Acompanhar ao vivo: ${input.trackingUrl}`);
+  } else if (input.currentLat != null && input.currentLng != null) {
     lines.push(
       `Localização aproximada: https://www.google.com/maps?q=${input.currentLat},${input.currentLng}`,
     );
@@ -59,6 +63,7 @@ export function buildShareText(input: ShareRideInput): string {
   lines.push("", "Enviado pela MOVVI para sua segurança.");
   return lines.join("\n");
 }
+
 
 export async function shareRide(input: ShareRideInput): Promise<void> {
   const text = buildShareText(input);

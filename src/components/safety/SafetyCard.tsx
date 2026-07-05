@@ -4,6 +4,7 @@ import { Shield, Share2, AlertTriangle, ChevronRight } from "lucide-react";
 import { SosSheet } from "./SosSheet";
 import { IncidentReportSheet } from "./IncidentReportSheet";
 import { shareRide, type ShareRideInput } from "@/lib/safety/shareRide";
+import { buildTrackingUrl, ensureShareToken } from "@/lib/safety/trackingLink";
 import type { SafetyRole } from "@/lib/safety/emergencyContacts";
 
 interface Props {
@@ -16,7 +17,21 @@ interface Props {
 export function SafetyCard({ role, rideId, shareInput, counterpartLabel }: Props) {
   const [sosOpen, setSosOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const contactsHref = role === "driver" ? "/motorista/seguranca" : "/passageiro/seguranca";
+
+  async function handleShare() {
+    if (sharing) return;
+    setSharing(true);
+    try {
+      const token = await ensureShareToken(rideId);
+      const trackingUrl = token ? buildTrackingUrl(token) : null;
+      await shareRide({ ...shareInput, trackingUrl });
+    } finally {
+      setSharing(false);
+    }
+  }
+
 
   return (
     <div className="rounded-2xl bg-background/60 p-3 ring-1 ring-border">
@@ -39,12 +54,14 @@ export function SafetyCard({ role, rideId, shareInput, counterpartLabel }: Props
           <span className="text-[11px] font-bold">SOS</span>
         </button>
         <button
-          onClick={() => shareRide(shareInput)}
-          className="flex flex-col items-center gap-1 rounded-xl bg-background/80 py-2.5 ring-1 ring-border active:scale-[0.98]"
+          onClick={handleShare}
+          disabled={sharing}
+          className="flex flex-col items-center gap-1 rounded-xl bg-background/80 py-2.5 ring-1 ring-border active:scale-[0.98] disabled:opacity-60"
         >
           <Share2 className="h-4 w-4" />
-          <span className="text-[11px] font-semibold">Compartilhar</span>
+          <span className="text-[11px] font-semibold">{sharing ? "..." : "Compartilhar"}</span>
         </button>
+
         <button
           onClick={() => setReportOpen(true)}
           className="flex flex-col items-center gap-1 rounded-xl bg-background/80 py-2.5 ring-1 ring-border active:scale-[0.98]"
