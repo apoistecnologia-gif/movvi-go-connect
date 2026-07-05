@@ -26,6 +26,7 @@ import { Route as PassageiroLoginRouteImport } from './routes/passageiro.login'
 import { Route as PassageiroFavoritosRouteImport } from './routes/passageiro.favoritos'
 import { Route as PassageiroCorridasRouteImport } from './routes/passageiro.corridas'
 import { Route as PassageiroConfiguracoesRouteImport } from './routes/passageiro.configuracoes'
+import { Route as PassageiroCarteiraRouteImport } from './routes/passageiro.carteira'
 import { Route as PassageiroCadastroRouteImport } from './routes/passageiro.cadastro'
 import { Route as PassageiroAppRouteImport } from './routes/passageiro.app'
 import { Route as MotoristaTermosRouteImport } from './routes/motorista.termos'
@@ -156,6 +157,11 @@ const PassageiroCorridasRoute = PassageiroCorridasRouteImport.update({
 const PassageiroConfiguracoesRoute = PassageiroConfiguracoesRouteImport.update({
   id: '/passageiro/configuracoes',
   path: '/passageiro/configuracoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PassageiroCarteiraRoute = PassageiroCarteiraRouteImport.update({
+  id: '/passageiro/carteira',
+  path: '/passageiro/carteira',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PassageiroCadastroRoute = PassageiroCadastroRouteImport.update({
@@ -433,6 +439,7 @@ export interface FileRoutesByFullPath {
   '/motorista/termos': typeof MotoristaTermosRoute
   '/passageiro/app': typeof PassageiroAppRoute
   '/passageiro/cadastro': typeof PassageiroCadastroRoute
+  '/passageiro/carteira': typeof PassageiroCarteiraRoute
   '/passageiro/configuracoes': typeof PassageiroConfiguracoesRoute
   '/passageiro/corridas': typeof PassageiroCorridasRoute
   '/passageiro/favoritos': typeof PassageiroFavoritosRoute
@@ -497,6 +504,7 @@ export interface FileRoutesByTo {
   '/motorista/termos': typeof MotoristaTermosRoute
   '/passageiro/app': typeof PassageiroAppRoute
   '/passageiro/cadastro': typeof PassageiroCadastroRoute
+  '/passageiro/carteira': typeof PassageiroCarteiraRoute
   '/passageiro/configuracoes': typeof PassageiroConfiguracoesRoute
   '/passageiro/corridas': typeof PassageiroCorridasRoute
   '/passageiro/favoritos': typeof PassageiroFavoritosRoute
@@ -562,6 +570,7 @@ export interface FileRoutesById {
   '/motorista/termos': typeof MotoristaTermosRoute
   '/passageiro/app': typeof PassageiroAppRoute
   '/passageiro/cadastro': typeof PassageiroCadastroRoute
+  '/passageiro/carteira': typeof PassageiroCarteiraRoute
   '/passageiro/configuracoes': typeof PassageiroConfiguracoesRoute
   '/passageiro/corridas': typeof PassageiroCorridasRoute
   '/passageiro/favoritos': typeof PassageiroFavoritosRoute
@@ -628,6 +637,7 @@ export interface FileRouteTypes {
     | '/motorista/termos'
     | '/passageiro/app'
     | '/passageiro/cadastro'
+    | '/passageiro/carteira'
     | '/passageiro/configuracoes'
     | '/passageiro/corridas'
     | '/passageiro/favoritos'
@@ -692,6 +702,7 @@ export interface FileRouteTypes {
     | '/motorista/termos'
     | '/passageiro/app'
     | '/passageiro/cadastro'
+    | '/passageiro/carteira'
     | '/passageiro/configuracoes'
     | '/passageiro/corridas'
     | '/passageiro/favoritos'
@@ -756,6 +767,7 @@ export interface FileRouteTypes {
     | '/motorista/termos'
     | '/passageiro/app'
     | '/passageiro/cadastro'
+    | '/passageiro/carteira'
     | '/passageiro/configuracoes'
     | '/passageiro/corridas'
     | '/passageiro/favoritos'
@@ -821,6 +833,7 @@ export interface RootRouteChildren {
   MotoristaTermosRoute: typeof MotoristaTermosRoute
   PassageiroAppRoute: typeof PassageiroAppRoute
   PassageiroCadastroRoute: typeof PassageiroCadastroRoute
+  PassageiroCarteiraRoute: typeof PassageiroCarteiraRoute
   PassageiroConfiguracoesRoute: typeof PassageiroConfiguracoesRoute
   PassageiroCorridasRoute: typeof PassageiroCorridasRoute
   PassageiroFavoritosRoute: typeof PassageiroFavoritosRoute
@@ -956,6 +969,13 @@ declare module '@tanstack/react-router' {
       path: '/passageiro/configuracoes'
       fullPath: '/passageiro/configuracoes'
       preLoaderRoute: typeof PassageiroConfiguracoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/passageiro/carteira': {
+      id: '/passageiro/carteira'
+      path: '/passageiro/carteira'
+      fullPath: '/passageiro/carteira'
+      preLoaderRoute: typeof PassageiroCarteiraRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/passageiro/cadastro': {
@@ -1336,6 +1356,7 @@ const rootRouteChildren: RootRouteChildren = {
   MotoristaTermosRoute: MotoristaTermosRoute,
   PassageiroAppRoute: PassageiroAppRoute,
   PassageiroCadastroRoute: PassageiroCadastroRoute,
+  PassageiroCarteiraRoute: PassageiroCarteiraRoute,
   PassageiroConfiguracoesRoute: PassageiroConfiguracoesRoute,
   PassageiroCorridasRoute: PassageiroCorridasRoute,
   PassageiroFavoritosRoute: PassageiroFavoritosRoute,
