@@ -34,8 +34,8 @@ export function AdminGuard({ children }: { children: ReactNode }) {
 
   if (state === "loading") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">
-        <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Verificando permissões...
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loading label="Verificando permissões..." />
       </div>
     );
   }
@@ -45,7 +45,7 @@ export function AdminGuard({ children }: { children: ReactNode }) {
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background p-6 text-center">
         <ShieldAlert className="h-10 w-10 text-destructive" />
         <p className="text-sm text-muted-foreground">Você precisa entrar como administrador.</p>
-        <Button onClick={() => navigate({ to: "/admin/login" })}>Ir para login admin</Button>
+        <DSButton onClick={() => navigate({ to: "/admin/login" })}>Ir para login admin</DSButton>
       </div>
     );
   }
@@ -58,7 +58,7 @@ export function AdminGuard({ children }: { children: ReactNode }) {
         <p className="max-w-sm text-sm text-muted-foreground">
           Você não tem permissão para acessar o painel administrativo.
         </p>
-        <Button
+        <DSButton
           variant="secondary"
           onClick={async () => {
             await supabase.auth.signOut();
@@ -66,7 +66,7 @@ export function AdminGuard({ children }: { children: ReactNode }) {
           }}
         >
           Sair e entrar como admin
-        </Button>
+        </DSButton>
       </div>
     );
   }
