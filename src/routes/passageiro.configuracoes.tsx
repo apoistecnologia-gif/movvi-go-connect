@@ -2,7 +2,6 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PASSENGER_NAV } from "@/components/BottomNav";
-import { Button } from "@/components/ui/button";
 import {
   Bell, Volume2, Vibrate, Languages, Moon, Sun, MonitorSmartphone, MapPin,
   FileText, ShieldCheck, LifeBuoy, Info, LogOut, Loader2, User, Smartphone,
@@ -13,6 +12,7 @@ import { toast } from "sonner";
 import { requestPushPermission } from "@/lib/pushNotifications";
 import { useTheme } from "@/lib/theme";
 import {
+import { DSButton } from "@/design-system";
   SettingsSection, SettingsToggleRow, SettingsLinkRow, SettingsRow, AppAboutCard,
   SettingsPageShell, SettingsHero,
 } from "@/components/settings";
@@ -231,7 +231,7 @@ function ConfiguracoesPassageiro() {
               icon={MapPin}
               title="Permissão de localização"
               hint={gpsState === "granted" ? "Permitida" : gpsState === "denied" ? "Bloqueada — ajuste no navegador" : gpsState === "unsupported" ? "Indisponível" : "Pendente"}
-              right={<Button size="sm" variant="outline" onClick={handleTestLocation}>Testar</Button>}
+              right={<DSButton size="sm" variant="outline" onClick={handleTestLocation}>Testar</DSButton>}
             />
             <SettingsLinkRow icon={FileText} title="Termos de Uso" to="/passageiro/termos" />
             <SettingsLinkRow icon={ShieldCheck} title="Política de Privacidade" to="/passageiro/privacidade" />

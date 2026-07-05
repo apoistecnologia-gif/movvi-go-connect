@@ -19,7 +19,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { MovviHeader } from "@/components/MovviHeader";
 import { BottomNav, PASSENGER_NAV } from "@/components/BottomNav";
-import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Sheet,
@@ -33,6 +32,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { avaliarMotorista } from "@/lib/rideLifecycle";
 import { RideReceiptDialog } from "@/components/rides/RideReceiptDialog";
 import type { ReceiptData } from "@/lib/rideReceipt";
+import { DSButton } from "@/design-system";
 
 type RideRow = {
   id: string;
@@ -510,10 +510,10 @@ function RideDetailSheet({
                 rows={3}
                 maxLength={500}
               />
-              <Button type="submit" className="w-full" disabled={saving}>
+              <DSButton type="submit" className="w-full" disabled={saving}>
                 {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Enviar avaliação
-              </Button>
+              </DSButton>
             </form>
           )}
 
@@ -570,14 +570,14 @@ function RideDetailSheet({
 
           {/* Actions */}
           <div className="grid grid-cols-2 gap-2">
-            <Button variant="outline" size="sm" onClick={repeatRide}>
+            <DSButton variant="outline" size="sm" onClick={repeatRide}>
               <Repeat className="mr-1 h-3.5 w-3.5" /> Repetir
-            </Button>
-            <Button size="sm" onClick={() => onViewReceipt(ride)}>
+            </DSButton>
+            <DSButton size="sm" onClick={() => onViewReceipt(ride)}>
               <ReceiptIcon className="mr-1 h-3.5 w-3.5" /> Recibo
-            </Button>
+            </DSButton>
             {ride.driver_id && (
-              <Button
+              <DSButton
                 variant={isFavorite ? "default" : "outline"}
                 size="sm"
                 onClick={toggleFavorite}
@@ -585,12 +585,12 @@ function RideDetailSheet({
               >
                 <Heart className={`mr-1 h-3.5 w-3.5 ${isFavorite ? "fill-current" : ""}`} />
                 {isFavorite ? "Favorito" : "Favoritar"}
-              </Button>
+              </DSButton>
             )}
             {ride.driver_id && (
-              <Button variant="outline" size="sm" onClick={() => setReportOpen((v) => !v)}>
+              <DSButton variant="outline" size="sm" onClick={() => setReportOpen((v) => !v)}>
                 <Flag className="mr-1 h-3.5 w-3.5" /> Reportar
-              </Button>
+              </DSButton>
             )}
           </div>
 
@@ -625,10 +625,10 @@ function RideDetailSheet({
                 rows={3}
                 maxLength={1000}
               />
-              <Button type="submit" variant="destructive" className="w-full" disabled={reportBusy}>
+              <DSButton type="submit" variant="destructive" className="w-full" disabled={reportBusy}>
                 {reportBusy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Enviar relato
-              </Button>
+              </DSButton>
             </form>
           )}
         </div>

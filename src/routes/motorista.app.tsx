@@ -1,6 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Avatar } from "@/components/Avatar";
-import { Button } from "@/components/ui/button";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Marker, Polyline } from "@react-google-maps/api";
@@ -61,6 +60,7 @@ import { toast } from "sonner";
 import { requestPushPermission, showPush } from "@/lib/pushNotifications";
 import { formatBRL } from "@/lib/rideCategories";
 import type { Database } from "@/integrations/supabase/types";
+import { DSButton } from "@/design-system";
 
 const TEST_DRIVER_LOCATION = {
   lat: -7.446,
@@ -1470,12 +1470,12 @@ function IncomingOffer({
           style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 12px)" }}
         >
           <div className="grid grid-cols-2 gap-3">
-            <Button type="button" variant="outline" size="lg" onClick={onReject}>
+            <DSButton type="button" variant="outline" size="lg" onClick={onReject}>
               Recusar
-            </Button>
-            <Button type="button" size="lg" onClick={onAccept}>
+            </DSButton>
+            <DSButton type="button" size="lg" onClick={onAccept}>
               Aceitar corrida
-            </Button>
+            </DSButton>
           </div>
         </div>
       </div>
@@ -1638,7 +1638,7 @@ function ActiveRidePanel({
                 </span>
                 <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">A caminho do passageiro</span>
               </div>
-              <Button
+              <DSButton
                 variant="ghost"
                 size="icon"
                 onClick={onCancel}
@@ -1646,7 +1646,7 @@ function ActiveRidePanel({
                 className="h-9 w-9 text-muted-foreground hover:text-destructive"
               >
                 <X className="h-4 w-4" />
-              </Button>
+              </DSButton>
             </div>
             <div className="mt-2 h-[3px] w-full overflow-hidden rounded-full bg-muted/50">
               <div className="animate-movvi-indeterminate h-full w-1/3 rounded-full bg-primary" />
@@ -1709,10 +1709,10 @@ function ActiveRidePanel({
           </div>
 
           {/* Primary CTA — Cheguei ao local */}
-          <Button size="lg" onClick={() => onArrive()} className="h-14 w-full text-[15px] font-bold uppercase tracking-[0.06em]">
+          <DSButton size="lg" onClick={() => onArrive()} className="h-14 w-full text-[15px] font-bold uppercase tracking-[0.06em]">
             <CheckCircle2 className="h-5 w-5" strokeWidth={2} />
             Cheguei ao local
-          </Button>
+          </DSButton>
 
           {/* Secondary circular actions — Call · Chat · Navigate */}
           <div className="mt-1 flex items-center justify-center gap-6">
@@ -1841,10 +1841,10 @@ function ActiveRidePanel({
           </div>
 
           {/* Primary CTA — Finalizar corrida */}
-          <Button onClick={onComplete} size="lg" className="w-full">
+          <DSButton onClick={onComplete} size="lg" className="w-full">
             <CheckCircle2 className="h-5 w-5" strokeWidth={2} />
             Finalizar corrida
-          </Button>
+          </DSButton>
 
 
           {/* Secondary circular actions — Call · Chat · Navigate */}
@@ -2092,21 +2092,21 @@ function ActiveRidePanel({
               style={{ padding: "12px 20px calc(env(safe-area-inset-bottom) + 16px)" }}
             >
               <div className="grid grid-cols-[auto_1fr] gap-2">
-                <Button
+                <DSButton
                   variant="outline"
                   size="lg"
                   onClick={() => { if (!pinBusy) { setPinOpen(false); setPinCode(""); setPinError(null); } }}
                   disabled={pinBusy}
                 >
                   Cancelar
-                </Button>
-                <Button
+                </DSButton>
+                <DSButton
                   size="lg"
                   onClick={submitPin}
                   disabled={pinBusy || pinCode.length !== 4}
                 >
                   {pinBusy ? "Validando…" : "Iniciar viagem"}
-                </Button>
+                </DSButton>
               </div>
             </div>
           </div>
@@ -2219,9 +2219,9 @@ function RatingScreen({
               </div>
             </div>
 
-            <Button onClick={onDismiss} size="lg" className="mt-5 w-full">
+            <DSButton onClick={onDismiss} size="lg" className="mt-5 w-full">
               Concluir
-            </Button>
+            </DSButton>
           </>
         ) : (
           <>
@@ -2306,10 +2306,10 @@ function RatingScreen({
               </div>
             )}
 
-            <Button disabled={submitting} onClick={onSubmit} size="lg" className="mt-4 w-full">
+            <DSButton disabled={submitting} onClick={onSubmit} size="lg" className="mt-4 w-full">
               {submitting ? "Enviando…" : errorMessage ? "Tentar novamente" : "Concluir"}
-            </Button>
-            <Button
+            </DSButton>
+            <DSButton
               type="button"
               variant="ghost"
               onClick={onSkip}
@@ -2317,7 +2317,7 @@ function RatingScreen({
               className="mt-1 w-full text-[12px] font-semibold uppercase tracking-wider text-muted-foreground"
             >
               Pular avaliação
-            </Button>
+            </DSButton>
           </>
         )}
       </div>

@@ -2,12 +2,11 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ArrowLeft, Clock, FileText, Loader2, MapPin, Navigation2, Receipt as ReceiptIcon, Star } from "lucide-react";
 import { MovviHeader } from "@/components/MovviHeader";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Avatar } from "@/components/Avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { downloadRideReceipt } from "@/lib/driverReceipt";
 import { RideReceiptDialog } from "@/components/rides/RideReceiptDialog";
+import { DSButton, DSCard, DSCardContent } from "@/design-system";
 
 export const Route = createFileRoute("/motorista/corridas/$id")({
   head: () => ({ meta: [{ title: "Detalhes da corrida — MOVVI DRIVE" }] }),
@@ -72,7 +71,7 @@ function RideDetailsPage() {
         <MovviHeader logoutRedirect="/" />
         <main className="flex-1 p-6 text-center text-sm text-muted-foreground">
           Corrida não encontrada.
-          <div className="mt-4"><Button asChild><Link to="/motorista/corridas">Voltar</Link></Button></div>
+          <div className="mt-4"><DSButton asChild><Link to="/motorista/corridas">Voltar</Link></DSButton></div>
         </main>
       </div>
     );
@@ -95,8 +94,8 @@ function RideDetailsPage() {
             <ArrowLeft className="h-4 w-4" /> Voltar
           </Link>
 
-          <Card>
-            <CardContent className="space-y-4 p-4">
+          <DSCard>
+            <DSCardContent className="space-y-4 p-4">
               <div className="flex items-center gap-3">
                 <Avatar src={ride.passenger_photo_url} name={passengerName ?? "Passageiro"} size={56} />
                 <div className="min-w-0 flex-1">
@@ -153,11 +152,11 @@ function RideDetailsPage() {
               )}
 
               <div className="grid gap-2 sm:grid-cols-2">
-                <Button variant="outline" className="w-full" onClick={() => setReceiptOpen(true)}>
+                <DSButton variant="outline" className="w-full" onClick={() => setReceiptOpen(true)}>
                   <ReceiptIcon className="mr-2 h-4 w-4" /> Ver recibo
-                </Button>
+                </DSButton>
                 {ride.status === "finalizada" && (
-                  <Button
+                  <DSButton
                     variant="outline"
                     className="w-full"
                     onClick={() =>
@@ -170,11 +169,11 @@ function RideDetailsPage() {
                     }
                   >
                     <FileText className="mr-2 h-4 w-4" /> Baixar PDF
-                  </Button>
+                  </DSButton>
                 )}
               </div>
-            </CardContent>
-          </Card>
+            </DSCardContent>
+          </DSCard>
         </div>
       </main>
 

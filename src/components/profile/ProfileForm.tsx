@@ -9,8 +9,6 @@ import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { MovviHeader } from "@/components/MovviHeader";
 import { BottomNav, PASSENGER_NAV, DRIVER_NAV } from "@/components/BottomNav";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ProfilePhotoUploader } from "@/components/ProfilePhotoUploader";
@@ -18,6 +16,7 @@ import {
   Loader2, Save, Lock, MailCheck, PhoneCall, ShieldAlert, Trash2, BadgeCheck, X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { DSButton, DSCard, DSCardContent, DSCardHeader, DSCardTitle, DSCardDescription } from "@/design-system";
 
 /* ---------- Validation helpers ---------- */
 const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -267,12 +266,12 @@ export function ProfileForm({
             <>
               {headerSlot}
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-2xl">{title}</CardTitle>
-                  <CardDescription>{description}</CardDescription>
-                </CardHeader>
-                <CardContent>
+              <DSCard>
+                <DSCardHeader>
+                  <DSCardTitle className="text-2xl">{title}</DSCardTitle>
+                  <DSCardDescription>{description}</DSCardDescription>
+                </DSCardHeader>
+                <DSCardContent>
                   <form onSubmit={onSave} className="space-y-6">
                     {userId && (
                       <div className="flex flex-col items-center gap-2">
@@ -334,13 +333,13 @@ export function ProfileForm({
                       <Label>E-mail *</Label>
                       <div className="flex gap-2">
                         <Input value={email} disabled />
-                        <Button type="button" variant="outline" size="sm" onClick={handleVerifyEmail}>
+                        <DSButton type="button" variant="outline" size="sm" onClick={handleVerifyEmail}>
                           {emailVerifiedAt ? (
                             <><BadgeCheck className="mr-1 h-4 w-4 text-primary" /> Verificado</>
                           ) : (
                             <><MailCheck className="mr-1 h-4 w-4" /> Verificar</>
                           )}
-                        </Button>
+                        </DSButton>
                       </div>
                     </div>
                     <div className="space-y-1.5">
@@ -349,13 +348,13 @@ export function ProfileForm({
                         <Input id="phone" required inputMode="tel" value={phone}
                           onChange={(e) => { setPhone(e.target.value); markDirty(); }}
                           placeholder="(11) 99999-9999" />
-                        <Button type="button" variant="outline" size="sm" onClick={handleVerifyPhone}>
+                        <DSButton type="button" variant="outline" size="sm" onClick={handleVerifyPhone}>
                           {phoneVerifiedAt ? (
                             <><BadgeCheck className="mr-1 h-4 w-4 text-primary" /> Verificado</>
                           ) : (
                             <><PhoneCall className="mr-1 h-4 w-4" /> Verificar</>
                           )}
-                        </Button>
+                        </DSButton>
                       </div>
                     </div>
 
@@ -396,35 +395,35 @@ export function ProfileForm({
                     </div>
 
                     <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end">
-                      <Button type="button" variant="outline" onClick={cancelChanges} disabled={!dirty || saving}>
+                      <DSButton type="button" variant="outline" onClick={cancelChanges} disabled={!dirty || saving}>
                         <X className="mr-2 h-4 w-4" /> Cancelar
-                      </Button>
-                      <Button type="submit" disabled={saving || !dirty} className="sm:min-w-[180px]">
+                      </DSButton>
+                      <DSButton type="submit" disabled={saving || !dirty} className="sm:min-w-[180px]">
                         {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                         {saving ? "Salvando..." : "Salvar alterações"}
-                      </Button>
+                      </DSButton>
                     </div>
                   </form>
-                </CardContent>
-              </Card>
+                </DSCardContent>
+              </DSCard>
 
               {extraSlot}
 
-              <Card className="border-destructive/40">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base text-destructive">
+              <DSCard className="border-destructive/40">
+                <DSCardHeader>
+                  <DSCardTitle className="flex items-center gap-2 text-base text-destructive">
                     <ShieldAlert className="h-5 w-5" /> Zona perigosa
-                  </CardTitle>
-                  <CardDescription>
+                  </DSCardTitle>
+                  <DSCardDescription>
                     Sua conta será marcada como excluída e você perderá acesso imediato.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button type="button" variant="destructive" onClick={handleDeleteAccount}>
+                  </DSCardDescription>
+                </DSCardHeader>
+                <DSCardContent>
+                  <DSButton type="button" variant="destructive" onClick={handleDeleteAccount}>
                     <Trash2 className="mr-2 h-4 w-4" /> Excluir minha conta
-                  </Button>
-                </CardContent>
-              </Card>
+                  </DSButton>
+                </DSCardContent>
+              </DSCard>
             </>
           )}
         </div>

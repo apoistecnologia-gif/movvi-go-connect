@@ -2,11 +2,11 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AlertTriangle, Loader2, Phone, Plus, Share2, ShieldAlert, Trash2 } from "lucide-react";
 import { SettingsPageShell, SettingsHero, SettingsSection } from "@/components/settings";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { DSButton } from "@/design-system";
 
 export const Route = createFileRoute("/motorista/seguranca")({
   head: () => ({ meta: [{ title: "Segurança — MOVVI DRIVE" }] }),
@@ -112,16 +112,16 @@ function DriverSecurityPage() {
       />
 
       <section className="rounded-[24px] bg-white p-5 shadow-[0_6px_20px_-14px_rgba(15,23,42,0.12)] ring-1 ring-black/5 space-y-3">
-        <Button onClick={triggerSOS} variant="destructive" className="w-full" size="lg">
+        <DSButton onClick={triggerSOS} variant="destructive" className="w-full" size="lg">
           <AlertTriangle className="mr-2 h-5 w-5" /> Acionar SOS
-        </Button>
+        </DSButton>
         <div className="grid grid-cols-2 gap-2">
-          <Button asChild variant="outline">
+          <DSButton asChild variant="outline">
             <a href="tel:190"><Phone className="mr-2 h-4 w-4" /> Polícia 190</a>
-          </Button>
-          <Button onClick={shareLocation} variant="outline">
+          </DSButton>
+          <DSButton onClick={shareLocation} variant="outline">
             <Share2 className="mr-2 h-4 w-4" /> Compartilhar
-          </Button>
+          </DSButton>
         </div>
       </section>
 
@@ -191,10 +191,10 @@ function DriverSecurityPage() {
             <Label className="text-[12px] text-[#707070]">Parentesco (opcional)</Label>
             <Input value={relation} onChange={(e) => setRelation(e.target.value)} placeholder="Esposa, irmão..." />
           </div>
-          <Button onClick={addContact} disabled={!name || !phone || adding} className="w-full">
+          <DSButton onClick={addContact} disabled={!name || !phone || adding} className="w-full">
             {adding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
             Adicionar
-          </Button>
+          </DSButton>
         </div>
       </SettingsSection>
     </SettingsPageShell>
