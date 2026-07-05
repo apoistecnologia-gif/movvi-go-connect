@@ -4,11 +4,16 @@ import { useEffect, useState } from "react";
 import { Plus, Loader2, Trash2, Save } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
+import {
+  DSButton as Button,
+  DSCard as Card,
+  DSCardContent as CardContent,
+  Loading,
+  EmptyState,
+} from "@/design-system";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+// Badge legacy substituído por tag inline abaixo.
 import { toast } from "sonner";
 import { logAdminAction } from "@/lib/adminAudit";
 import { formatDate } from "@/lib/formatters";
