@@ -247,16 +247,17 @@ function AdminMapaPage() {
               </Select>
             </div>
             {(categoryFilter !== ALL || cityFilter !== ALL) && (
-              <button
-                type="button"
+              <DSButton
+                variant="ghost"
+                size="sm"
+                className="h-8 text-xs"
                 onClick={() => {
                   setCategoryFilter(ALL);
                   setCityFilter(ALL);
                 }}
-                className="text-primary hover:underline"
               >
                 Limpar filtros
-              </button>
+              </DSButton>
             )}
           </div>
 
