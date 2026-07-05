@@ -344,9 +344,7 @@ function AdminFinanceiroPage() {
   if (loading) {
     return (
       <AdminLayout title="Financeiro">
-        <div className="grid place-items-center py-12 text-muted-foreground">
-          <Loader2 className="h-6 w-6 animate-spin" />
-        </div>
+        <Loading label="Carregando dados financeiros..." />
       </AdminLayout>
     );
   }
