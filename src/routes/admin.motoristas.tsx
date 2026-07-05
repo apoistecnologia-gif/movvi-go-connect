@@ -44,7 +44,6 @@ import {
   EmptyState,
   Caption,
 } from "@/design-system";
-import type { StatusPillProps } from "@/design-system/StatusPill";
 import {
   Dialog,
   DialogContent,
