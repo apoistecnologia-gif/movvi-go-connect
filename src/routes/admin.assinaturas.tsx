@@ -18,11 +18,16 @@ import {
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
+import {
+  DSButton as Button,
+  DSCard as Card,
+  DSCardContent as CardContent,
+  StatusPill,
+  Loading,
+} from "@/design-system";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
+// Badge legacy substituído por SubPill (StatusPill do design system).
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -133,6 +138,26 @@ function statusLabel(s: string) {
     inactive: "Inativa",
   };
   return map[s] ?? s;
+}
+
+type PillStatus = "online" | "searching" | "cancelled" | "offline";
+const STATUS_PILL: Record<string, PillStatus> = {
+  ativa: "online",
+  active: "online",
+  pending: "searching",
+  vencida: "cancelled",
+  overdue: "cancelled",
+  expired: "cancelled",
+  blocked: "cancelled",
+  suspended: "cancelled",
+  cancelled: "offline",
+  inactive: "offline",
+};
+
+function SubPill({ status }: { status: string }) {
+  return (
+    <StatusPill status={STATUS_PILL[status] ?? "offline"} label={statusLabel(status)} pulse={false} />
+  );
 }
 
 function daysBetween(a: Date, b: Date) {
@@ -314,9 +339,7 @@ function AdminAssinaturasPage() {
       }
     >
       {loading ? (
-        <div className="grid place-items-center py-12 text-muted-foreground">
-          <Loader2 className="h-6 w-6 animate-spin" />
-        </div>
+        <Loading label="Carregando assinaturas..." />
       ) : (
         <Tabs defaultValue="subs">
           <TabsList>
@@ -386,19 +409,11 @@ function AdminAssinaturasPage() {
                             <p className="truncate text-sm font-semibold">
                               {d?.name ?? "Motorista"}
                             </p>
-                            <Badge
-                              variant="outline"
-                              className={STATUS_TONE[s.status] ?? "border-border"}
-                            >
-                              {statusLabel(s.status)}
-                            </Badge>
+                            <SubPill status={s.status} />
                             {mismatch && (
-                              <Badge
-                                variant="outline"
-                                className="border-amber-500/40 bg-amber-500/10 text-amber-300"
-                              >
-                                <AlertTriangle className="mr-1 h-3 w-3" /> Status divergente
-                              </Badge>
+                              <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-0.5 text-[11px] font-medium text-amber-300">
+                                <AlertTriangle className="h-3 w-3" /> Status divergente
+                              </span>
                             )}
                           </div>
                           <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
@@ -780,9 +795,9 @@ function SubscriptionDetailSheet({
                   Verificar status
                 </Button>
                 {providerStatus && (
-                  <Badge variant="outline" className="border-border">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/30 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
                     Asaas: {providerStatus}
-                  </Badge>
+                  </span>
                 )}
                 {sub.invoice_url && (
                   <>
@@ -834,9 +849,7 @@ function SubscriptionDetailSheet({
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline" className={STATUS_TONE[h.status] ?? "border-border"}>
-                        {statusLabel(h.status)}
-                      </Badge>
+                      <SubPill status={h.status} />
                       <span className="font-semibold">{formatBRL(h.amount)}</span>
                     </div>
                   </div>
