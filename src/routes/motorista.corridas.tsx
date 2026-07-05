@@ -1,13 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import {
-  ChevronRight,
-  ClipboardList,
-  MapPin,
-  Navigation2,
-  Search,
-  Star,
-} from "lucide-react";
+import { ChevronRight, ClipboardList, MapPin, Navigation2, Search, Star } from "lucide-react";
 import { MovviHeader } from "@/components/MovviHeader";
 import { BottomNav, DRIVER_NAV } from "@/components/BottomNav";
 import { supabase } from "@/integrations/supabase/client";
@@ -147,11 +140,7 @@ function RideCard({ ride, index }: { ride: RideRow; index: number }) {
                 {brl(Number(price))}
               </Metric>
             )}
-            <Icon
-              as={ChevronRight}
-              size="sm"
-              className="ml-auto mt-1 text-muted-foreground/60"
-            />
+            <Icon as={ChevronRight} size="sm" className="ml-auto mt-1 text-muted-foreground/60" />
           </div>
         </div>
 
@@ -159,9 +148,7 @@ function RideCard({ ride, index }: { ride: RideRow; index: number }) {
         <div className="flex flex-col gap-1.5 rounded-2xl bg-muted/40 p-2.5">
           <div className="flex items-start gap-2">
             <Icon as={MapPin} size="sm" className="mt-0.5 text-primary" />
-            <BodySmall className="min-w-0 truncate text-foreground">
-              {ride.origin_name}
-            </BodySmall>
+            <BodySmall className="min-w-0 truncate text-foreground">{ride.origin_name}</BodySmall>
           </div>
           <div className="flex items-start gap-2">
             <Icon as={Navigation2} size="sm" className="mt-0.5 text-primary" />
@@ -173,9 +160,7 @@ function RideCard({ ride, index }: { ride: RideRow; index: number }) {
 
         {/* meta row */}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground">
-          {ride.distance_km != null && (
-            <Caption>{Number(ride.distance_km).toFixed(1)} km</Caption>
-          )}
+          {ride.distance_km != null && <Caption>{Number(ride.distance_km).toFixed(1)} km</Caption>}
           {ride.duration_min != null && (
             <Caption>{Math.round(Number(ride.duration_min))} min</Caption>
           )}
@@ -235,10 +220,19 @@ function DriverRidesPage() {
     const now = new Date();
     let from: Date | null = null;
     let to: Date | null = null;
-    if (filter === "today") { from = startOfToday(); to = new Date(now); to.setHours(23, 59, 59, 999); }
-    else if (filter === "d7") { from = daysAgo(7); to = new Date(now); to.setHours(23, 59, 59, 999); }
-    else if (filter === "d30") { from = daysAgo(30); to = new Date(now); to.setHours(23, 59, 59, 999); }
-    else if (filter === "custom") {
+    if (filter === "today") {
+      from = startOfToday();
+      to = new Date(now);
+      to.setHours(23, 59, 59, 999);
+    } else if (filter === "d7") {
+      from = daysAgo(7);
+      to = new Date(now);
+      to.setHours(23, 59, 59, 999);
+    } else if (filter === "d30") {
+      from = daysAgo(30);
+      to = new Date(now);
+      to.setHours(23, 59, 59, 999);
+    } else if (filter === "custom") {
       from = customFrom ? new Date(customFrom + "T00:00:00") : null;
       to = customTo ? new Date(customTo + "T23:59:59") : null;
     }
@@ -248,7 +242,8 @@ function DriverRidesPage() {
       if (from && at < from) return false;
       if (to && at > to) return false;
       if (q) {
-        const hay = `${r.origin_name ?? ""} ${r.destination_name ?? ""} ${r.category ?? ""}`.toLowerCase();
+        const hay =
+          `${r.origin_name ?? ""} ${r.destination_name ?? ""} ${r.category ?? ""}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
@@ -275,9 +270,7 @@ function DriverRidesPage() {
           {/* HEADER */}
           <header className="animate-in fade-in slide-in-from-top-2 duration-500">
             <HeadingXL>Histórico</HeadingXL>
-            <Body className="mt-1 text-muted-foreground">
-              Revise suas viagens realizadas
-            </Body>
+            <Body className="mt-1 text-muted-foreground">Revise suas viagens realizadas</Body>
           </header>
 
           {/* SUMMARY */}
@@ -320,14 +313,24 @@ function DriverRidesPage() {
               aria-label="Filtro de período"
               className="flex flex-wrap gap-1.5 animate-in fade-in slide-in-from-left-2 duration-500"
             >
-              <FilterPill active={filter === "today"}  onClick={() => setFilter("today")}>Hoje</FilterPill>
-              <FilterPill active={filter === "d7"}     onClick={() => setFilter("d7")}>7 dias</FilterPill>
-              <FilterPill active={filter === "d30"}    onClick={() => setFilter("d30")}>30 dias</FilterPill>
-              <FilterPill active={filter === "custom"} onClick={() => setFilter("custom")}>Personalizado</FilterPill>
+              <FilterPill active={filter === "today"} onClick={() => setFilter("today")}>
+                Hoje
+              </FilterPill>
+              <FilterPill active={filter === "d7"} onClick={() => setFilter("d7")}>
+                7 dias
+              </FilterPill>
+              <FilterPill active={filter === "d30"} onClick={() => setFilter("d30")}>
+                30 dias
+              </FilterPill>
+              <FilterPill active={filter === "custom"} onClick={() => setFilter("custom")}>
+                Personalizado
+              </FilterPill>
             </div>
             {filter === "custom" && (
               <div className="grid grid-cols-2 gap-2">
-                <label className="sr-only" htmlFor="ride-from">Data inicial</label>
+                <label className="sr-only" htmlFor="ride-from">
+                  Data inicial
+                </label>
                 <input
                   id="ride-from"
                   type="date"
@@ -335,7 +338,9 @@ function DriverRidesPage() {
                   onChange={(e) => setCustomFrom(e.target.value)}
                   className="h-11 rounded-[14px] border border-border/60 bg-card px-3 text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 />
-                <label className="sr-only" htmlFor="ride-to">Data final</label>
+                <label className="sr-only" htmlFor="ride-to">
+                  Data final
+                </label>
                 <input
                   id="ride-to"
                   type="date"
@@ -364,7 +369,9 @@ function DriverRidesPage() {
               description="Ajuste o filtro ou complete sua primeira viagem para construir seu histórico."
               action={
                 <Link to="/motorista/app">
-                  <DSButton variant="outline" size="sm">Voltar ao mapa</DSButton>
+                  <DSButton variant="outline" size="sm">
+                    Voltar ao mapa
+                  </DSButton>
                 </Link>
               }
             />
