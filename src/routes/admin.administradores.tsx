@@ -191,13 +191,6 @@ function AdminUsersPage() {
                   </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  {r.roles.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5">
-                      {r.roles.map((role) => (
-                        <StatusPill key={`pill-${role}`} status="online" label={role} pulse={false} />
-                      ))}
-                    </div>
-                  )}
                   {ROLES.map((role) => {
                     const has = r.roles.includes(role);
                     return (
