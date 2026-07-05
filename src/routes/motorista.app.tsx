@@ -1638,13 +1638,15 @@ function ActiveRidePanel({
                 </span>
                 <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">A caminho do passageiro</span>
               </div>
-              <button
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={onCancel}
                 aria-label="Cancelar corrida"
-                className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted/30 hover:text-destructive"
+                className="h-9 w-9 text-muted-foreground hover:text-destructive"
               >
                 <X className="h-4 w-4" />
-              </button>
+              </Button>
             </div>
             <div className="mt-2 h-[3px] w-full overflow-hidden rounded-full bg-muted/50">
               <div className="animate-movvi-indeterminate h-full w-1/3 rounded-full bg-primary" />
