@@ -388,13 +388,13 @@ function AdminMotoristas() {
       </div>
 
       {loading && !drivers ? (
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" /> Carregando...
-        </div>
+        <Loading label="Carregando motoristas..." />
       ) : filtered.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border bg-card/40 p-10 text-center text-sm text-muted-foreground">
-          Nenhum motorista encontrado com os filtros atuais.
-        </div>
+        <EmptyState
+          icon={Search}
+          title="Nenhum motorista encontrado"
+          description="Ajuste a busca ou os filtros para ver resultados."
+        />
       ) : (
         <div className="grid gap-3">
           {filtered.map((d) => (
