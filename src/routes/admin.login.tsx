@@ -2,11 +2,10 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabase } from "@/lib/supabaseClient";
 import { AuthShell, useAuthForm } from "@/components/AuthShell";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, ShieldCheck } from "lucide-react";
-import { DSButton } from "@/design-system";
+import { DSButton, DSInput } from "@/design-system";
 
 export const Route = createFileRoute("/admin/login")({
   head: () => ({ meta: [{ title: "Admin — MOVVI DRIVE" }] }),
@@ -65,11 +64,11 @@ function AdminLoginPage() {
       <form onSubmit={onSubmit} className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="email">E-mail</Label>
-          <Input id="email" name="email" type="email" required autoComplete="email" />
+          <DSInput id="email" name="email" type="email" required autoComplete="email" />
         </div>
         <div className="space-y-2">
           <Label htmlFor="password">Senha</Label>
-          <Input
+          <DSInput
             id="password"
             name="password"
             type="password"

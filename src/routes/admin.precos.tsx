@@ -4,15 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Plus, Save, Trash2, Loader2 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  DSButton as Button,
-  DSCard as Card,
-  DSCardContent as CardContent,
-  DSCardHeader as CardHeader,
-  DSCardTitle as CardTitle,
-  Loading,
-} from "@/design-system";
-import { Input } from "@/components/ui/input";
+import { DSButton as Button, DSCard as Card, DSCardContent as CardContent, DSCardHeader as CardHeader, DSCardTitle as CardTitle, DSInput, Loading } from "@/design-system";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { logAdminAction } from "@/lib/adminAudit";
@@ -255,7 +247,7 @@ function AdminPrecosPage() {
                       return (
                         <label key={f.key} className="flex flex-col gap-1">
                           <span className="text-[11px] font-semibold text-muted-foreground">{f.label}</span>
-                          <Input
+                          <DSInput
                             type="number"
                             step="0.01"
                             value={value}
@@ -278,7 +270,7 @@ function AdminPrecosPage() {
                         <div key={r.field_key} className="flex flex-col gap-1">
                           <span className="text-[11px] font-semibold text-muted-foreground">{r.field_key}</span>
                           <div className="flex gap-1">
-                            <Input
+                            <DSInput
                               type="number"
                               step="0.01"
                               value={r.value}

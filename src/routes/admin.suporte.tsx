@@ -18,8 +18,7 @@ import {
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
-import { Avatar, DSBadge, DSButton, DSCard, DSCardContent, EmptyState, Loading } from "@/design-system";
-import { Input } from "@/components/ui/input";
+import { Avatar, DSBadge, DSButton, DSCard, DSCardContent, DSInput, EmptyState, Loading } from "@/design-system";
 import {
   Dialog,
   DialogContent,
@@ -379,7 +378,7 @@ function AdminSuportePage() {
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div className="relative w-full md:max-w-md">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
+              <DSInput
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="Buscar por nome, e-mail, telefone, ID do ticket, ID da corrida, assunto…"

@@ -20,7 +20,6 @@ import {
   PauseCircle,
   PlayCircle,
 } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { logAdminAction } from "@/lib/adminAudit";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,15 +32,7 @@ import {
   updateDriverApprovalStatus,
 } from "@/lib/adminDrivers.functions";
 import { AdminLayout } from "@/components/admin/AdminLayout";
-import {
-  DSButton as Button,
-  DSCard,
-  DSCardContent,
-  StatusPill,
-  Loading,
-  EmptyState,
-  Caption,
-} from "@/design-system";
+import { Caption, DSButton as Button, DSCard, DSCardContent, DSInput, EmptyState, Loading, StatusPill } from "@/design-system";
 import {
   Dialog,
   DialogContent,
@@ -354,7 +345,7 @@ function AdminMotoristas() {
       <div className="mb-4 space-y-3">
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
+          <DSInput
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar por nome, telefone, e-mail, placa ou cidade..."
@@ -1227,7 +1218,7 @@ function SubscriptionDialog({
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="grace">Carência (dias)</Label>
-              <Input
+              <DSInput
                 id="grace"
                 type="number"
                 min={0}
@@ -1239,7 +1230,7 @@ function SubscriptionDialog({
 
           <div className="grid gap-1.5">
             <Label htmlFor="expires">Validade da assinatura</Label>
-            <Input
+            <DSInput
               id="expires"
               type="date"
               value={expires}

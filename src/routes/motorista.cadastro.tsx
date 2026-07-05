@@ -3,7 +3,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState, type FormEvent } from "react";
 import { z } from "zod";
 import { supabase } from "@/lib/supabaseClient";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -19,7 +18,7 @@ import { translateAuthError } from "@/lib/authErrors";
 import { cadastrarMotorista } from "@/lib/driverAuth.functions";
 import { DriverDocumentField } from "@/components/DriverDocumentField";
 import { compressDocumentImage } from "@/lib/imageCompress";
-import { DSButton, DSCard, DSCardContent, DSCardHeader, DSCardTitle, DSCardDescription } from "@/design-system";
+import { DSButton, DSCard, DSCardContent, DSCardDescription, DSCardHeader, DSCardTitle, DSInput } from "@/design-system";
 
 export const Route = createFileRoute("/motorista/cadastro")({
   head: () => ({ meta: [{ title: "Cadastro do Motorista — MOVVI DRIVE" }] }),
@@ -194,35 +193,35 @@ function DriverSignUpPage() {
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="name">Nome completo</Label>
-                    <Input id="name" name="name" required />
+                    <DSInput id="name" name="name" required />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="cpf">CPF</Label>
-                    <Input id="cpf" name="cpf" required />
+                    <DSInput id="cpf" name="cpf" required />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email">E-mail</Label>
-                    <Input id="email" name="email" type="email" required />
+                    <DSInput id="email" name="email" type="email" required />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phone">Telefone</Label>
-                    <Input id="phone" name="phone" required />
+                    <DSInput id="phone" name="phone" required />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="password">Senha</Label>
-                    <Input id="password" name="password" type="password" required minLength={4} />
+                    <DSInput id="password" name="password" type="password" required minLength={4} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="birth_date">Data de nascimento</Label>
-                    <Input id="birth_date" name="birth_date" type="date" />
+                    <DSInput id="birth_date" name="birth_date" type="date" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="city">Cidade</Label>
-                    <Input id="city" name="city" required />
+                    <DSInput id="city" name="city" required />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="state">UF</Label>
-                    <Input id="state" name="state" maxLength={2} required />
+                    <DSInput id="state" name="state" maxLength={2} required />
                   </div>
                 </div>
               </section>
@@ -247,19 +246,19 @@ function DriverSignUpPage() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="vehicle_model">Modelo</Label>
-                    <Input id="vehicle_model" name="vehicle_model" required />
+                    <DSInput id="vehicle_model" name="vehicle_model" required />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="vehicle_plate">Placa</Label>
-                    <Input id="vehicle_plate" name="vehicle_plate" required />
+                    <DSInput id="vehicle_plate" name="vehicle_plate" required />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="vehicle_color">Cor</Label>
-                    <Input id="vehicle_color" name="vehicle_color" required />
+                    <DSInput id="vehicle_color" name="vehicle_color" required />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="vehicle_year">Ano</Label>
-                    <Input id="vehicle_year" name="vehicle_year" type="number" required />
+                    <DSInput id="vehicle_year" name="vehicle_year" type="number" required />
                   </div>
                 </div>
               </section>

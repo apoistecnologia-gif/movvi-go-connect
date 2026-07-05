@@ -4,15 +4,7 @@ import { useEffect, useState } from "react";
 import { Loader2, Send } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  DSButton,
-  DSCard,
-  DSCardContent,
-  DSCardHeader,
-  DSCardTitle,
-  EmptyState,
-} from "@/design-system";
-import { Input } from "@/components/ui/input";
+import { DSButton, DSCard, DSCardContent, DSCardHeader, DSCardTitle, DSInput, EmptyState } from "@/design-system";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { logAdminAction } from "@/lib/adminAudit";
@@ -106,7 +98,7 @@ function AdminNotificacoesPage() {
           <DSCardTitle className="text-base">Novo broadcast</DSCardTitle>
         </DSCardHeader>
         <DSCardContent className="space-y-3">
-          <Input placeholder="Título" value={title} onChange={(e) => setTitle(e.target.value)} />
+          <DSInput placeholder="Título" value={title} onChange={(e) => setTitle(e.target.value)} />
           <Textarea placeholder="Mensagem" rows={4} value={body} onChange={(e) => setBody(e.target.value)} />
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="flex flex-col gap-1 text-xs">
@@ -130,7 +122,7 @@ function AdminNotificacoesPage() {
                 <span className="font-semibold uppercase tracking-widest text-muted-foreground">
                   {audience === "city" ? "Cidade" : audience === "category" ? "Categoria" : "ID do usuário"}
                 </span>
-                <Input value={filter} onChange={(e) => setFilter(e.target.value)} />
+                <DSInput value={filter} onChange={(e) => setFilter(e.target.value)} />
               </label>
             )}
           </div>

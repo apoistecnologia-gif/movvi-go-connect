@@ -4,14 +4,7 @@ import { useEffect, useState } from "react";
 import { Plus, Loader2, Trash2, Save } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  DSButton as Button,
-  DSCard as Card,
-  DSCardContent as CardContent,
-  Loading,
-  EmptyState,
-} from "@/design-system";
-import { Input } from "@/components/ui/input";
+import { DSButton as Button, DSCard as Card, DSCardContent as CardContent, DSInput, EmptyState, Loading } from "@/design-system";
 import { Switch } from "@/components/ui/switch";
 // Badge legacy substituído por tag inline abaixo.
 import { toast } from "sonner";
@@ -184,7 +177,7 @@ function AdminCuponsPage() {
             <Card key={c.id} className="border-border bg-card/60">
               <CardContent className="grid gap-3 p-4 md:grid-cols-6">
                 <Field label="Código">
-                  <Input value={c.code} onChange={(e) => patch(c.id, { code: e.target.value.toUpperCase() })} />
+                  <DSInput value={c.code} onChange={(e) => patch(c.id, { code: e.target.value.toUpperCase() })} />
                 </Field>
                 <Field label="Tipo">
                   <select
@@ -200,7 +193,7 @@ function AdminCuponsPage() {
                   </select>
                 </Field>
                 <Field label="Valor">
-                  <Input
+                  <DSInput
                     type="number"
                     step="0.01"
                     value={c.value}
@@ -208,7 +201,7 @@ function AdminCuponsPage() {
                   />
                 </Field>
                 <Field label="Desc. máximo (R$)">
-                  <Input
+                  <DSInput
                     type="number"
                     step="0.01"
                     value={c.max_discount ?? ""}
@@ -216,20 +209,20 @@ function AdminCuponsPage() {
                   />
                 </Field>
                 <Field label="Limite de uso">
-                  <Input
+                  <DSInput
                     type="number"
                     value={c.usage_limit ?? ""}
                     onChange={(e) => patch(c.id, { usage_limit: e.target.value ? Number(e.target.value) : null })}
                   />
                 </Field>
                 <Field label="Categoria (opcional)">
-                  <Input
+                  <DSInput
                     value={c.scope_category ?? ""}
                     onChange={(e) => patch(c.id, { scope_category: e.target.value || null })}
                   />
                 </Field>
                 <Field label="Validade (até)">
-                  <Input
+                  <DSInput
                     type="datetime-local"
                     value={c.valid_to ? c.valid_to.slice(0, 16) : ""}
                     onChange={(e) =>
@@ -238,7 +231,7 @@ function AdminCuponsPage() {
                   />
                 </Field>
                 <Field label="Descrição">
-                  <Input
+                  <DSInput
                     value={c.description ?? ""}
                     onChange={(e) => patch(c.id, { description: e.target.value })}
                   />

@@ -1,6 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -21,7 +20,7 @@ import {
   PASSENGER_CATEGORIES, DRIVER_CATEGORIES,
   type Faq, type SupportCategory,
 } from "@/lib/support/helpCenter";
-import { DSButton, DSCard, DSCardContent, DSCardHeader, DSCardTitle, DSCardDescription } from "@/design-system";
+import { DSButton, DSCard, DSCardContent, DSCardDescription, DSCardHeader, DSCardTitle, DSInput } from "@/design-system";
 
 type Role = "passenger" | "driver";
 
@@ -226,7 +225,7 @@ export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
 
             <div className="space-y-1.5">
               <Label htmlFor="subj">Assunto</Label>
-              <Input id="subj" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Resumo do problema" maxLength={120} />
+              <DSInput id="subj" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Resumo do problema" maxLength={120} />
             </div>
 
             <div className="space-y-1.5">

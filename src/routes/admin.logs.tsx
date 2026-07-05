@@ -3,11 +3,10 @@ import { useEffect, useState } from "react";
 import { Loader2, Download, Search } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
-import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { formatDate } from "@/lib/formatters";
 import { downloadCsv } from "@/lib/csvExport";
-import { DSBadge, DSButton, DSCard, DSCardContent } from "@/design-system";
+import { DSBadge, DSButton, DSCard, DSCardContent, DSInput } from "@/design-system";
 
 export const Route = createFileRoute("/admin/logs")({
   head: () => ({ meta: [{ title: "Logs — Admin MOVVI" }] }),
@@ -89,7 +88,7 @@ function AdminLogsPage() {
         <TabsContent value="audit" className="mt-3 space-y-2">
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
+            <DSInput
               className="pl-9"
               placeholder="Buscar ação, entidade ou id"
               value={q}

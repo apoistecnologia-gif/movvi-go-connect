@@ -3,16 +3,7 @@ import { useEffect, useState } from "react";
 import { Save, Copy, CheckCircle2, XCircle, CreditCard, KeyRound, Loader2 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  DSButton,
-  DSCard,
-  DSCardContent,
-  DSCardDescription,
-  DSCardHeader,
-  DSCardTitle,
-  Loading,
-} from "@/design-system";
-import { Input } from "@/components/ui/input";
+import { DSButton, DSCard, DSCardContent, DSCardDescription, DSCardHeader, DSCardTitle, DSInput, Loading } from "@/design-system";
 import { Switch } from "@/components/ui/switch";
 import {
   Select,
@@ -158,7 +149,7 @@ function AdminPaymentsPage() {
                     <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                       <KeyRound className="mr-1 inline h-3 w-3" /> Nome da secret da API key
                     </span>
-                    <Input
+                    <DSInput
                       placeholder={`${g.provider.toUpperCase()}_API_KEY`}
                       value={g.api_key_secret_name ?? ""}
                       onChange={(e) => patch(g.id, { api_key_secret_name: e.target.value })}
@@ -169,7 +160,7 @@ function AdminPaymentsPage() {
                 <label className="flex flex-col gap-1">
                   <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">URL do webhook</span>
                   <div className="flex gap-1">
-                    <Input
+                    <DSInput
                       placeholder="https://seu-projeto.lovable.app/api/public/webhooks/..."
                       value={g.webhook_url ?? ""}
                       onChange={(e) => patch(g.id, { webhook_url: e.target.value })}
@@ -186,7 +177,7 @@ function AdminPaymentsPage() {
                   <div className="grid grid-cols-3 gap-3">
                     <label className="col-span-2 flex flex-col gap-1">
                       <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Chave PIX</span>
-                      <Input
+                      <DSInput
                         placeholder="email, CPF, telefone ou chave aleatória"
                         value={g.pix_key ?? ""}
                         onChange={(e) => patch(g.id, { pix_key: e.target.value })}

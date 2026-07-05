@@ -4,13 +4,7 @@ import { useEffect, useState } from "react";
 import { Plus, Save, Trash2, GripVertical, Loader2 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  DSButton as Button,
-  DSCard as Card,
-  DSCardContent as CardContent,
-  Loading,
-} from "@/design-system";
-import { Input } from "@/components/ui/input";
+import { DSButton as Button, DSCard as Card, DSCardContent as CardContent, DSInput, Loading } from "@/design-system";
 import { Switch } from "@/components/ui/switch";
 
 import { toast } from "sonner";
@@ -223,10 +217,10 @@ function AdminCategoriasPage() {
 
                 <div className="grid flex-1 grid-cols-1 gap-3 md:grid-cols-4">
                   <Field label="Chave">
-                    <Input value={row.key} disabled />
+                    <DSInput value={row.key} disabled />
                   </Field>
                   <Field label="Nome">
-                    <Input value={row.label} onChange={(e) => patch(row.id, { label: e.target.value })} />
+                    <DSInput value={row.label} onChange={(e) => patch(row.id, { label: e.target.value })} />
                   </Field>
                   <Field label="Ícone">
                     <select
@@ -247,7 +241,7 @@ function AdminCategoriasPage() {
                         onChange={(e) => patch(row.id, { color: e.target.value })}
                         className="h-9 w-12 cursor-pointer rounded border border-input bg-background"
                       />
-                      <Input
+                      <DSInput
                         value={row.color}
                         onChange={(e) => patch(row.id, { color: e.target.value })}
                         className="flex-1"
