@@ -334,8 +334,8 @@ function OpsCenterPage() {
 
       {/* SOS banner */}
       {activeSos.length > 0 && (
-        <Card className="mb-3 border-destructive/60 bg-destructive/10">
-          <CardContent className="flex items-center gap-3 p-3">
+        <DSCard className="mb-3 border-destructive/60 bg-destructive/10">
+          <DSCardContent className="flex items-center gap-3 p-3">
             <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-destructive">
@@ -345,13 +345,13 @@ function OpsCenterPage() {
                 Verifique o painel SOS abaixo. Este módulo é somente leitura.
               </p>
             </div>
-          </CardContent>
-        </Card>
+          </DSCardContent>
+        </DSCard>
       )}
 
       {/* Filters */}
-      <Card className="mb-3 border-border bg-card/60">
-        <CardContent className="flex flex-wrap items-center gap-2 p-3">
+      <DSCard className="mb-3 border-border bg-card/60">
+        <DSCardContent className="flex flex-wrap items-center gap-2 p-3">
           <div className="relative flex-1 min-w-[220px]">
             <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
@@ -404,10 +404,10 @@ function OpsCenterPage() {
               className="h-9 text-xs"
             >
               Limpar
-            </Button>
+            </DSButton>
           )}
-        </CardContent>
-      </Card>
+        </DSCardContent>
+      </DSCard>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-3">
         {/* Live Map */}
@@ -471,7 +471,7 @@ function OpsCenterPage() {
         </div>
 
         {/* Side panel */}
-        <Card className="border-border bg-card/60 h-[calc(100vh-360px)] min-h-[420px] flex flex-col">
+        <DSCard className="border-border bg-card/60 h-[calc(100vh-360px)] min-h-[420px] flex flex-col">
           <Tabs defaultValue="rides" className="flex flex-col h-full">
             <TabsList className="mx-3 mt-3 grid grid-cols-4">
               <TabsTrigger value="rides" className="text-xs"><RouteIcon className="h-3.5 w-3.5 mr-1" />Corridas</TabsTrigger>
@@ -607,7 +607,7 @@ function OpsCenterPage() {
                             onClick={() => setSelectedRide(ride)}
                           >
                             Abrir corrida
-                          </Button>
+                          </DSButton>
                         )}
                       </div>
                     );
@@ -616,7 +616,7 @@ function OpsCenterPage() {
               </ScrollArea>
             </TabsContent>
           </Tabs>
-        </Card>
+        </DSCard>
       </div>
 
       {/* Ride details */}
@@ -692,12 +692,12 @@ function Kpi({ label, value, tone }: { label: string; value: number | string; to
     neutral: "text-foreground",
   };
   return (
-    <Card className="border-border bg-card/60">
-      <CardContent className="p-3">
+    <DSCard className="border-border bg-card/60">
+      <DSCardContent className="p-3">
         <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
         <p className={`mt-1 text-xl font-bold ${toneMap[tone]}`}>{value}</p>
-      </CardContent>
-    </Card>
+      </DSCardContent>
+    </DSCard>
   );
 }
 
