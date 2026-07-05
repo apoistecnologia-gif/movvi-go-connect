@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Avatar } from "@/components/Avatar";
+import { Button } from "@/components/ui/button";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Marker, Polyline } from "@react-google-maps/api";
@@ -1397,95 +1398,85 @@ function IncomingOffer({
       role="dialog" aria-modal="true"
     >
       <div
-        className="relative w-full max-w-md rounded-t-[28px] px-5 pb-[calc(env(safe-area-inset-bottom)+16px)] pt-4 shadow-[0_-20px_60px_-24px_rgba(0,0,0,0.55)] animate-in fade-in slide-in-from-bottom-6 zoom-in-95 duration-[260ms] ease-out"
-        style={{
-          maxHeight: "min(72dvh, 560px)",
-          background: "#111418",
-          border: "1px solid rgba(255,255,255,0.06)",
-          overflow: "auto",
-        }}
+        className="relative flex w-full max-w-md flex-col rounded-t-[28px] border border-border bg-card shadow-[0_-20px_60px_-24px_rgba(0,0,0,0.55)] animate-in fade-in slide-in-from-bottom-6 zoom-in-95 duration-[260ms] ease-out"
+        style={{ maxHeight: "min(88dvh, 620px)" }}
       >
-        {/* Countdown top-right */}
-        <div className="absolute right-4 top-3">
-          <CountdownRing seconds={countdown} pct={pct} />
-        </div>
-
-        {/* Score badge top-left */}
-        <div className={`inline-flex items-center gap-1.5 rounded-full border ${score.border} ${score.bg} px-3 py-1 text-[11px] font-semibold ${score.tone}`}>
-          <span className={`h-1.5 w-1.5 rounded-full ${score.dot}`} />
-          {score.label}
-        </div>
-
-        {/* Preço hero */}
-        <div className="mt-3 flex flex-col items-center">
-          <div className="text-[32px] font-extrabold leading-none tracking-tight text-foreground tabular-nums">
-            {ride.estimated_price != null ? formatBRL(Number(ride.estimated_price)) : "—"}
-          </div>
-          <div className="mt-1 text-[12px] font-medium text-muted-foreground">
-            Ganho da corrida
-          </div>
-        </div>
-
-        {/* Quatro cards compactos */}
-        <div className="mt-4 grid grid-cols-4 gap-2">
-          <InfoCard icon={<Clock className="h-[14px] w-[14px]" strokeWidth={1.75} />} value={pickupMin != null ? `${pickupMin} min` : "—"} label="ETA" />
-          <InfoCard icon={<MapPin className="h-[14px] w-[14px]" strokeWidth={1.75} />} value={pickupKm != null ? `${pickupKm.toFixed(1)} km` : "—"} label="Embarque" />
-          <InfoCard icon={<CatIcon className="h-[14px] w-[14px]" strokeWidth={1.75} />} value={catLabel} label="Categoria" compactValue />
-          <InfoCard icon={<Star className="h-[14px] w-[14px] fill-amber-400 text-amber-400" strokeWidth={0} />} value={ratingText} label="Passageiro" />
-        </div>
-
-        {/* Passageiro — nome + rating */}
-        <button
-          type="button"
-          onClick={onOpenProfile}
-          className="press-scale mt-3 flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition hover:bg-white/[0.03]"
-          style={{ background: "#0e1114", border: "1px solid rgba(255,255,255,0.06)" }}
-          aria-label="Ver perfil do passageiro"
-        >
-          <Avatar
-            src={passenger?.avatar_url ?? (ride as { passenger_photo_url?: string | null }).passenger_photo_url ?? null}
-            name={passenger?.name ?? "Passageiro"}
-            size={36}
-          />
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-[15px] font-semibold text-foreground">
-              {passenger?.name ?? "Passageiro"}
+        {/* Área rolável */}
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 pt-4 sm:px-5">
+          {/* Header: score + countdown */}
+          <div className="flex items-start justify-between gap-3">
+            <div className={`inline-flex min-w-0 items-center gap-1.5 rounded-full border ${score.border} ${score.bg} px-3 py-1 text-[11px] font-semibold ${score.tone}`}>
+              <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${score.dot}`} />
+              <span className="truncate">{score.label}</span>
             </div>
-            <div className="mt-0.5 flex items-center gap-1 text-[13px] text-muted-foreground">
-              <Star className="h-3 w-3 fill-amber-400 text-amber-400" strokeWidth={0} />
-              <span className="tabular-nums">{ratingText}</span>
+            <div className="shrink-0">
+              <CountdownRing seconds={countdown} pct={pct} />
             </div>
           </div>
-          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" />
-        </button>
 
-        {/* Endereços */}
+          {/* Preço hero */}
+          <div className="mt-3 flex flex-col items-center">
+            <div className="text-[28px] font-extrabold leading-none tracking-tight text-foreground tabular-nums sm:text-[32px]">
+              {ride.estimated_price != null ? formatBRL(Number(ride.estimated_price)) : "—"}
+            </div>
+            <div className="mt-1 text-[12px] font-medium text-muted-foreground">
+              Ganho da corrida
+            </div>
+          </div>
+
+          {/* Quatro cards compactos */}
+          <div className="mt-4 grid grid-cols-4 gap-1.5 sm:gap-2">
+            <InfoCard icon={<Clock className="h-[14px] w-[14px]" strokeWidth={1.75} />} value={pickupMin != null ? `${pickupMin} min` : "—"} label="ETA" />
+            <InfoCard icon={<MapPin className="h-[14px] w-[14px]" strokeWidth={1.75} />} value={pickupKm != null ? `${pickupKm.toFixed(1)} km` : "—"} label="Embarque" />
+            <InfoCard icon={<CatIcon className="h-[14px] w-[14px]" strokeWidth={1.75} />} value={catLabel} label="Categoria" compactValue />
+            <InfoCard icon={<Star className="h-[14px] w-[14px] fill-amber-400 text-amber-400" strokeWidth={0} />} value={ratingText} label="Passageiro" />
+          </div>
+
+          {/* Passageiro — nome + rating */}
+          <button
+            type="button"
+            onClick={onOpenProfile}
+            className="press-scale mt-3 flex w-full items-center gap-3 rounded-2xl border border-border bg-background/40 px-3 py-2.5 text-left transition hover:bg-muted/30"
+            aria-label="Ver perfil do passageiro"
+          >
+            <Avatar
+              src={passenger?.avatar_url ?? (ride as { passenger_photo_url?: string | null }).passenger_photo_url ?? null}
+              name={passenger?.name ?? "Passageiro"}
+              size={36}
+            />
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-[15px] font-semibold text-foreground">
+                {passenger?.name ?? "Passageiro"}
+              </div>
+              <div className="mt-0.5 flex items-center gap-1 text-[13px] text-muted-foreground">
+                <Star className="h-3 w-3 fill-amber-400 text-amber-400" strokeWidth={0} />
+                <span className="tabular-nums">{ratingText}</span>
+              </div>
+            </div>
+            <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" />
+          </button>
+
+          {/* Endereços */}
+          <div className="mt-3 rounded-2xl border border-border bg-background/40 px-4 py-3.5">
+            <AddressRow dotColor="bg-primary" label="Embarque" name={ride.pickup_label || ride.origin_name} />
+            <div className="my-2.5 ml-[5px] h-px w-full bg-border/60" />
+            <AddressRow dotColor="bg-destructive" label="Destino" name={ride.destination_name} />
+          </div>
+        </div>
+
+        {/* Footer sticky — botões sempre visíveis */}
         <div
-          className="mt-3 rounded-2xl px-4 py-3.5"
-          style={{ background: "#0e1114", border: "1px solid rgba(255,255,255,0.06)" }}
+          className="shrink-0 border-t border-border/60 bg-card px-4 pt-3 sm:px-5"
+          style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 12px)" }}
         >
-          <AddressRow dotColor="bg-primary" label="Embarque" name={ride.pickup_label || ride.origin_name} />
-          <div className="my-2.5 ml-[5px] h-px w-full bg-white/[0.06]" />
-          <AddressRow dotColor="bg-destructive" label="Destino" name={ride.destination_name} />
-        </div>
-
-        {/* Botões */}
-        <div className="mt-4 grid grid-cols-2 gap-3">
-          <button
-            type="button"
-            onClick={onReject}
-            className="press-scale h-14 rounded-[18px] text-[15px] font-semibold text-muted-foreground transition duration-[250ms] hover:text-foreground"
-            style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }}
-          >
-            Recusar
-          </button>
-          <button
-            type="button"
-            onClick={onAccept}
-            className="press-scale h-14 rounded-[18px] bg-primary text-[15px] font-bold text-primary-foreground shadow-[0_14px_36px_-16px_color-mix(in_oklab,var(--color-primary)_70%,transparent)] transition duration-[250ms] hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2"
-          >
-            Aceitar corrida
-          </button>
+          <div className="grid grid-cols-2 gap-3">
+            <Button type="button" variant="outline" size="lg" onClick={onReject}>
+              Recusar
+            </Button>
+            <Button type="button" size="lg" onClick={onAccept}>
+              Aceitar corrida
+            </Button>
+          </div>
         </div>
       </div>
     </div>
@@ -1496,14 +1487,11 @@ function InfoCard({
   icon, value, label, compactValue,
 }: { icon: ReactNode; value: string; label: string; compactValue?: boolean }) {
   return (
-    <div
-      className="flex flex-col items-center gap-1 rounded-2xl px-1.5 py-2.5"
-      style={{ background: "#0e1114", border: "1px solid rgba(255,255,255,0.06)" }}
-    >
+    <div className="flex min-w-0 flex-col items-center gap-1 rounded-2xl border border-border bg-background/40 px-1.5 py-2.5">
       <div className="flex h-6 w-6 items-center justify-center rounded-full text-primary" style={{ background: "color-mix(in oklab, var(--color-primary) 12%, transparent)" }}>
         {icon}
       </div>
-      <div className={`font-bold tabular-nums text-foreground leading-none ${compactValue ? "text-[11px] tracking-wide" : "text-[14px]"}`}>
+      <div className={`w-full truncate text-center font-bold tabular-nums text-foreground leading-none ${compactValue ? "text-[11px] tracking-wide" : "text-[14px]"}`}>
         {value}
       </div>
       <div className="text-[10px] font-medium text-muted-foreground text-center leading-tight">
