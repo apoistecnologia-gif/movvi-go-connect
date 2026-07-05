@@ -2209,7 +2209,7 @@ function RatingScreen({
             </div>
 
             {/* Next status */}
-            <div className="mt-4 flex items-center gap-3 rounded-[18px] bg-primary/8 p-3.5 ring-1 ring-primary/25 animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <div className="mt-4 flex items-center gap-3 rounded-[18px] bg-primary/10 p-3.5 ring-1 ring-primary/25 animate-in fade-in slide-in-from-bottom-2 duration-500">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
                 <CheckCircle2 className="h-4 w-4" strokeWidth={2} />
               </div>
@@ -2219,13 +2219,9 @@ function RatingScreen({
               </div>
             </div>
 
-            <button
-              onClick={onDismiss}
-              className="press-scale mt-5 flex h-14 w-full items-center justify-center rounded-[18px] text-[16px] font-bold uppercase tracking-[0.06em] text-primary-foreground shadow-[0_16px_36px_-16px_color-mix(in_oklab,var(--color-primary)_70%,transparent)] transition"
-              style={{ background: "#76C139" }}
-            >
+            <Button onClick={onDismiss} size="lg" className="mt-5 w-full">
               Concluir
-            </button>
+            </Button>
           </>
         ) : (
           <>
