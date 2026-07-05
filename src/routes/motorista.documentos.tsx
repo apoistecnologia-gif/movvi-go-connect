@@ -45,6 +45,7 @@ type DriverRow = {
   cnh_back_url: string | null;
   vehicle_document_url: string | null;
   documents_status: string;
+  approval_status: string;
 };
 
 type SlotDef = {
