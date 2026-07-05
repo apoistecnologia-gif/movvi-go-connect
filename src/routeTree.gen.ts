@@ -43,6 +43,7 @@ import { Route as MotoristaGanhosRouteImport } from './routes/motorista.ganhos'
 import { Route as MotoristaDocumentosRouteImport } from './routes/motorista.documentos'
 import { Route as MotoristaCorridasRouteImport } from './routes/motorista.corridas'
 import { Route as MotoristaConfiguracoesRouteImport } from './routes/motorista.configuracoes'
+import { Route as MotoristaCarteiraRouteImport } from './routes/motorista.carteira'
 import { Route as MotoristaCadastroRouteImport } from './routes/motorista.cadastro'
 import { Route as MotoristaAssinaturaRouteImport } from './routes/motorista.assinatura'
 import { Route as MotoristaAppRouteImport } from './routes/motorista.app'
@@ -245,6 +246,11 @@ const MotoristaConfiguracoesRoute = MotoristaConfiguracoesRouteImport.update({
   path: '/motorista/configuracoes',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MotoristaCarteiraRoute = MotoristaCarteiraRouteImport.update({
+  id: '/motorista/carteira',
+  path: '/motorista/carteira',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MotoristaCadastroRoute = MotoristaCadastroRouteImport.update({
   id: '/motorista/cadastro',
   path: '/motorista/cadastro',
@@ -423,6 +429,7 @@ export interface FileRoutesByFullPath {
   '/motorista/app': typeof MotoristaAppRoute
   '/motorista/assinatura': typeof MotoristaAssinaturaRoute
   '/motorista/cadastro': typeof MotoristaCadastroRoute
+  '/motorista/carteira': typeof MotoristaCarteiraRoute
   '/motorista/configuracoes': typeof MotoristaConfiguracoesRoute
   '/motorista/corridas': typeof MotoristaCorridasRouteWithChildren
   '/motorista/documentos': typeof MotoristaDocumentosRoute
@@ -488,6 +495,7 @@ export interface FileRoutesByTo {
   '/motorista/app': typeof MotoristaAppRoute
   '/motorista/assinatura': typeof MotoristaAssinaturaRoute
   '/motorista/cadastro': typeof MotoristaCadastroRoute
+  '/motorista/carteira': typeof MotoristaCarteiraRoute
   '/motorista/configuracoes': typeof MotoristaConfiguracoesRoute
   '/motorista/corridas': typeof MotoristaCorridasRouteWithChildren
   '/motorista/documentos': typeof MotoristaDocumentosRoute
@@ -554,6 +562,7 @@ export interface FileRoutesById {
   '/motorista/app': typeof MotoristaAppRoute
   '/motorista/assinatura': typeof MotoristaAssinaturaRoute
   '/motorista/cadastro': typeof MotoristaCadastroRoute
+  '/motorista/carteira': typeof MotoristaCarteiraRoute
   '/motorista/configuracoes': typeof MotoristaConfiguracoesRoute
   '/motorista/corridas': typeof MotoristaCorridasRouteWithChildren
   '/motorista/documentos': typeof MotoristaDocumentosRoute
@@ -621,6 +630,7 @@ export interface FileRouteTypes {
     | '/motorista/app'
     | '/motorista/assinatura'
     | '/motorista/cadastro'
+    | '/motorista/carteira'
     | '/motorista/configuracoes'
     | '/motorista/corridas'
     | '/motorista/documentos'
@@ -686,6 +696,7 @@ export interface FileRouteTypes {
     | '/motorista/app'
     | '/motorista/assinatura'
     | '/motorista/cadastro'
+    | '/motorista/carteira'
     | '/motorista/configuracoes'
     | '/motorista/corridas'
     | '/motorista/documentos'
@@ -751,6 +762,7 @@ export interface FileRouteTypes {
     | '/motorista/app'
     | '/motorista/assinatura'
     | '/motorista/cadastro'
+    | '/motorista/carteira'
     | '/motorista/configuracoes'
     | '/motorista/corridas'
     | '/motorista/documentos'
@@ -817,6 +829,7 @@ export interface RootRouteChildren {
   MotoristaAppRoute: typeof MotoristaAppRoute
   MotoristaAssinaturaRoute: typeof MotoristaAssinaturaRoute
   MotoristaCadastroRoute: typeof MotoristaCadastroRoute
+  MotoristaCarteiraRoute: typeof MotoristaCarteiraRoute
   MotoristaConfiguracoesRoute: typeof MotoristaConfiguracoesRoute
   MotoristaCorridasRoute: typeof MotoristaCorridasRouteWithChildren
   MotoristaDocumentosRoute: typeof MotoristaDocumentosRoute
@@ -1090,6 +1103,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MotoristaConfiguracoesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/motorista/carteira': {
+      id: '/motorista/carteira'
+      path: '/motorista/carteira'
+      fullPath: '/motorista/carteira'
+      preLoaderRoute: typeof MotoristaCarteiraRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/motorista/cadastro': {
       id: '/motorista/cadastro'
       path: '/motorista/cadastro'
@@ -1339,6 +1359,7 @@ const rootRouteChildren: RootRouteChildren = {
   MotoristaAppRoute: MotoristaAppRoute,
   MotoristaAssinaturaRoute: MotoristaAssinaturaRoute,
   MotoristaCadastroRoute: MotoristaCadastroRoute,
+  MotoristaCarteiraRoute: MotoristaCarteiraRoute,
   MotoristaConfiguracoesRoute: MotoristaConfiguracoesRoute,
   MotoristaCorridasRoute: MotoristaCorridasRouteWithChildren,
   MotoristaDocumentosRoute: MotoristaDocumentosRoute,
