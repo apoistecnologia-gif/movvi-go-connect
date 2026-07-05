@@ -35,8 +35,16 @@ import {
   updateDriverApprovalStatus,
 } from "@/lib/adminDrivers.functions";
 import { AdminLayout } from "@/components/admin/AdminLayout";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import {
+  DSButton as Button,
+  DSCard,
+  DSCardContent,
+  StatusPill,
+  Loading,
+  EmptyState,
+  Caption,
+} from "@/design-system";
+import type { StatusPillProps } from "@/design-system/StatusPill";
 import {
   Dialog,
   DialogContent,
