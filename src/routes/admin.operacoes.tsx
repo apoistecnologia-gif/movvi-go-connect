@@ -491,7 +491,7 @@ function OpsCenterPage() {
             <TabsContent value="rides" className="flex-1 overflow-hidden mt-3">
               <ScrollArea className="h-full px-3 pb-3">
                 {filteredRides.length === 0 && (
-                  <p className="text-xs text-muted-foreground text-center py-6">Nenhuma corrida ativa.</p>
+                  <EmptyState icon={RouteIcon} title="Sem corridas ativas" description="Novas corridas aparecerão aqui em tempo real." />
                 )}
                 <div className="space-y-2">
                   {filteredRides.map((r) => {
