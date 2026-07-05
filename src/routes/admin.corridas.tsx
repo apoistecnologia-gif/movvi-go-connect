@@ -736,7 +736,7 @@ function RideDetail({
               <Copy className="mr-2 h-4 w-4" /> Copiar resumo
             </DSButton>
             {ride.passenger_id && (
-              <Button
+              <DSButton
                 size="sm"
                 variant="outline"
                 onClick={() => {
@@ -747,7 +747,7 @@ function RideDetail({
               </DSButton>
             )}
             {ride.driver_id && (
-              <Button
+              <DSButton
                 size="sm"
                 variant="outline"
                 onClick={() => {
@@ -758,7 +758,7 @@ function RideDetail({
               </DSButton>
             )}
             {tickets[0] && (
-              <Button
+              <DSButton
                 size="sm"
                 variant="outline"
                 onClick={() => {
