@@ -171,11 +171,13 @@ function AdminCuponsPage() {
       }
     >
       {loading ? (
-        <div className="grid place-items-center py-12 text-muted-foreground">
-          <Loader2 className="h-6 w-6 animate-spin" />
-        </div>
+        <Loading label="Carregando cupons..." />
       ) : rows.length === 0 ? (
-        <p className="py-12 text-center text-sm text-muted-foreground">Nenhum cupom cadastrado.</p>
+        <EmptyState
+          icon={Plus}
+          title="Nenhum cupom cadastrado"
+          description="Crie um novo cupom para começar."
+        />
       ) : (
         <div className="grid gap-3">
           {rows.map((c) => (
