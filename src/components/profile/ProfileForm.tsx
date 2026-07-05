@@ -9,13 +9,12 @@ import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { MovviHeader } from "@/components/MovviHeader";
 import { BottomNav, PASSENGER_NAV, DRIVER_NAV } from "@/components/BottomNav";
-import { Label } from "@/components/ui/label";
 import { ProfilePhotoUploader } from "@/components/ProfilePhotoUploader";
 import {
   Loader2, Save, Lock, MailCheck, PhoneCall, ShieldAlert, Trash2, BadgeCheck, X,
 } from "lucide-react";
 import { toast } from "sonner";
-import { DSButton, DSCard, DSCardContent, DSCardDescription, DSCardHeader, DSCardTitle, DSInput } from "@/design-system";
+import { DSButton, DSCard, DSCardContent, DSCardDescription, DSCardHeader, DSCardTitle, DSInput, DSLabel } from "@/design-system";
 
 /* ---------- Validation helpers ---------- */
 const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -288,27 +287,27 @@ export function ProfileForm({
                     <SectionTitle>Dados pessoais</SectionTitle>
 
                     <div className="space-y-1.5">
-                      <Label htmlFor="full_name">Nome completo *</Label>
+                      <DSLabel htmlFor="full_name">Nome completo *</DSLabel>
                       <DSInput id="full_name" required value={fullName}
                         onChange={(e) => { setFullName(e.target.value); markDirty(); }}
                         placeholder="Como devemos te chamar" />
                     </div>
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div className="space-y-1.5">
-                        <Label htmlFor="cpf">CPF</Label>
+                        <DSLabel htmlFor="cpf">CPF</DSLabel>
                         <DSInput id="cpf" value={cpf}
                           onChange={(e) => { setCpf(e.target.value); markDirty(); }}
                           placeholder="000.000.000-00" />
                       </div>
                       <div className="space-y-1.5">
-                        <Label htmlFor="birth_date">Data de nascimento</Label>
+                        <DSLabel htmlFor="birth_date">Data de nascimento</DSLabel>
                         <DSInput id="birth_date" type="date" value={birthDate}
                           onChange={(e) => { setBirthDate(e.target.value); markDirty(); }} />
                       </div>
                     </div>
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div className="space-y-1.5">
-                        <Label htmlFor="gender">Gênero (opcional)</Label>
+                        <DSLabel htmlFor="gender">Gênero (opcional)</DSLabel>
                         <select id="gender" value={gender}
                           onChange={(e) => { setGender(e.target.value); markDirty(); }}
                           className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm transition-colors focus-visible:outline-none focus-visible:border-primary/70 focus-visible:ring-2 focus-visible:ring-primary/25">
@@ -320,7 +319,7 @@ export function ProfileForm({
                         </select>
                       </div>
                       <div className="space-y-1.5">
-                        <Label htmlFor="city">Cidade</Label>
+                        <DSLabel htmlFor="city">Cidade</DSLabel>
                         <DSInput id="city" value={city}
                           onChange={(e) => { setCity(e.target.value); markDirty(); }}
                           placeholder="Sua cidade" />
@@ -329,7 +328,7 @@ export function ProfileForm({
 
                     <SectionTitle>Contato</SectionTitle>
                     <div className="space-y-1.5">
-                      <Label>E-mail *</Label>
+                      <DSLabel>E-mail *</DSLabel>
                       <div className="flex gap-2">
                         <DSInput value={email} disabled />
                         <DSButton type="button" variant="outline" size="sm" onClick={handleVerifyEmail}>
@@ -342,7 +341,7 @@ export function ProfileForm({
                       </div>
                     </div>
                     <div className="space-y-1.5">
-                      <Label htmlFor="phone">Telefone *</Label>
+                      <DSLabel htmlFor="phone">Telefone *</DSLabel>
                       <div className="flex gap-2">
                         <DSInput id="phone" required inputMode="tel" value={phone}
                           onChange={(e) => { setPhone(e.target.value); markDirty(); }}
@@ -360,13 +359,13 @@ export function ProfileForm({
                     <SectionTitle>Contato de emergência</SectionTitle>
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div className="space-y-1.5">
-                        <Label htmlFor="emerg_name">Nome</Label>
+                        <DSLabel htmlFor="emerg_name">Nome</DSLabel>
                         <DSInput id="emerg_name" value={emergencyName}
                           onChange={(e) => { setEmergencyName(e.target.value); markDirty(); }}
                           placeholder="Ex: Maria" />
                       </div>
                       <div className="space-y-1.5">
-                        <Label htmlFor="emerg_phone">Telefone</Label>
+                        <DSLabel htmlFor="emerg_phone">Telefone</DSLabel>
                         <DSInput id="emerg_phone" inputMode="tel" value={emergencyPhone}
                           onChange={(e) => { setEmergencyPhone(e.target.value); markDirty(); }}
                           placeholder="(11) 99999-9999" />
@@ -376,16 +375,16 @@ export function ProfileForm({
                     <SectionTitle>Segurança</SectionTitle>
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div className="space-y-1.5">
-                        <Label htmlFor="new_password" className="flex items-center gap-1.5 text-sm">
+                        <DSLabel htmlFor="new_password" className="flex items-center gap-1.5 text-sm">
                           <Lock className="h-3.5 w-3.5" /> Nova senha
-                        </Label>
+                        </DSLabel>
                         <DSInput id="new_password" type="password" autoComplete="new-password"
                           value={newPassword}
                           onChange={(e) => { setNewPassword(e.target.value); markDirty(); }}
                           placeholder="Mín. 6 caracteres" minLength={6} />
                       </div>
                       <div className="space-y-1.5">
-                        <Label htmlFor="confirm_password" className="text-sm">Confirmar senha</Label>
+                        <DSLabel htmlFor="confirm_password" className="text-sm">Confirmar senha</DSLabel>
                         <DSInput id="confirm_password" type="password" autoComplete="new-password"
                           value={confirmPassword}
                           onChange={(e) => { setConfirmPassword(e.target.value); markDirty(); }}

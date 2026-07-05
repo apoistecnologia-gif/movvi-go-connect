@@ -8,10 +8,9 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
-import { Label } from "@/components/ui/label";
 import { ProfilePhotoUploader } from "@/components/ProfilePhotoUploader";
 import { supabase } from "@/integrations/supabase/client";
-import { DSButton, DSInput } from "@/design-system";
+import { DSButton, DSInput, DSLabel } from "@/design-system";
 
 type Props = {
   open: boolean;
@@ -181,9 +180,9 @@ export function PassengerSideMenu({ open, onOpenChange, onLogout }: Props) {
 
               <form onSubmit={onSave} className="space-y-4">
                 <div className="space-y-1.5">
-                  <Label htmlFor="sm_name" className="flex items-center gap-1.5 text-xs">
+                  <DSLabel htmlFor="sm_name" className="flex items-center gap-1.5 text-xs">
                     <UserIcon className="h-3.5 w-3.5" /> Nome
-                  </Label>
+                  </DSLabel>
                   <DSInput
                     id="sm_name"
                     value={name}
@@ -193,9 +192,9 @@ export function PassengerSideMenu({ open, onOpenChange, onLogout }: Props) {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="sm_phone" className="flex items-center gap-1.5 text-xs">
+                  <DSLabel htmlFor="sm_phone" className="flex items-center gap-1.5 text-xs">
                     <Phone className="h-3.5 w-3.5" /> Telefone
-                  </Label>
+                  </DSLabel>
                   <DSInput
                     id="sm_phone"
                     value={phone}
@@ -206,9 +205,9 @@ export function PassengerSideMenu({ open, onOpenChange, onLogout }: Props) {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="sm_email" className="flex items-center gap-1.5 text-xs">
+                  <DSLabel htmlFor="sm_email" className="flex items-center gap-1.5 text-xs">
                     <Mail className="h-3.5 w-3.5" /> E-mail
-                  </Label>
+                  </DSLabel>
                   <DSInput
                     id="sm_email"
                     type="email"
@@ -224,9 +223,9 @@ export function PassengerSideMenu({ open, onOpenChange, onLogout }: Props) {
                 </div>
 
                 <div className="space-y-1.5 rounded-lg border border-border bg-card/50 p-3">
-                  <Label htmlFor="sm_pwd" className="flex items-center gap-1.5 text-xs">
+                  <DSLabel htmlFor="sm_pwd" className="flex items-center gap-1.5 text-xs">
                     <Lock className="h-3.5 w-3.5" /> Nova senha (opcional)
-                  </Label>
+                  </DSLabel>
                   <DSInput
                     id="sm_pwd"
                     type="password"

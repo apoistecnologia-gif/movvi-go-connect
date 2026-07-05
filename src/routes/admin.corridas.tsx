@@ -17,16 +17,9 @@ import {
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
-import { Avatar, DSButton, DSCard, DSCardContent, DSInput, EmptyState, Loading, StatusPill, dsStatus } from "@/design-system";
+import { Avatar, DSButton, DSCard, DSCardContent, DSInput, DSSelect, DSSelectContent, DSSelectItem, DSSelectTrigger, DSSelectValue, EmptyState, Loading, StatusPill, dsStatus } from "@/design-system";
 import { toast } from "sonner";
 import { formatBRL, formatDate } from "@/lib/formatters";
 import { downloadCsv } from "@/lib/csvExport";
@@ -312,32 +305,32 @@ function AdminCorridasPage() {
               <TabsTrigger value="cancelada_passageiro">Cancelada</TabsTrigger>
             </TabsList>
           </Tabs>
-          <Select value={payment} onValueChange={setPayment}>
-            <SelectTrigger className="h-9 w-[160px]">
-              <SelectValue placeholder="Pagamento" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos pagamentos</SelectItem>
+          <DSSelect value={payment} onValueChange={setPayment}>
+            <DSSelectTrigger className="h-9 w-[160px]">
+              <DSSelectValue placeholder="Pagamento" />
+            </DSSelectTrigger>
+            <DSSelectContent>
+              <DSSelectItem value="all">Todos pagamentos</DSSelectItem>
               {payments.map((p) => (
-                <SelectItem key={p} value={p}>
+                <DSSelectItem key={p} value={p}>
                   {paymentLabel(p)}
-                </SelectItem>
+                </DSSelectItem>
               ))}
-            </SelectContent>
-          </Select>
-          <Select value={category} onValueChange={setCategory}>
-            <SelectTrigger className="h-9 w-[160px]">
-              <SelectValue placeholder="Categoria" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas categorias</SelectItem>
+            </DSSelectContent>
+          </DSSelect>
+          <DSSelect value={category} onValueChange={setCategory}>
+            <DSSelectTrigger className="h-9 w-[160px]">
+              <DSSelectValue placeholder="Categoria" />
+            </DSSelectTrigger>
+            <DSSelectContent>
+              <DSSelectItem value="all">Todas categorias</DSSelectItem>
               {categories.map((c) => (
-                <SelectItem key={c} value={c}>
+                <DSSelectItem key={c} value={c}>
                   {c}
-                </SelectItem>
+                </DSSelectItem>
               ))}
-            </SelectContent>
-          </Select>
+            </DSSelectContent>
+          </DSSelect>
         </div>
       </div>
 

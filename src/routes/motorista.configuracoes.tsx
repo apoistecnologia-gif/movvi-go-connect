@@ -7,7 +7,6 @@ import {
   Sun, Trash2, User, Vibrate, Volume2, FileText, Fingerprint,
 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
-import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { requestPushPermission } from "@/lib/pushNotifications";
@@ -19,7 +18,7 @@ import {
   SettingsSection, SettingsToggleRow, SettingsLinkRow, SettingsRow, AppAboutCard,
   SettingsPageShell, SettingsHero,
 } from "@/components/settings";
-import { DSButton } from "@/design-system";
+import { DSButton, DSLabel } from "@/design-system";
 
 export const Route = createFileRoute("/motorista/configuracoes")({
   head: () => ({ meta: [{ title: "Configurações — MOVVI DRIVE" }] }),
@@ -156,7 +155,7 @@ function DriverSettingsPage() {
                 <SettingsToggleRow title="Aceitar corridas longas" checked={prefs.accept_long} onChange={(v) => update("accept_long", v)} />
                 <div className="space-y-2 py-3">
                   <div className="flex items-center justify-between">
-                    <Label className="text-sm">Raio máximo de busca</Label>
+                    <DSLabel className="text-sm">Raio máximo de busca</DSLabel>
                     <span className="rounded-md bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary ring-1 ring-primary/30">
                       {prefs.max_radius_km} km
                     </span>

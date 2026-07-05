@@ -10,8 +10,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Label } from "@/components/ui/label";
-import { DSInput } from "@/design-system";
+import { DSInput, DSLabel } from "@/design-system";
 
 export interface ConfirmDialogProps {
   open: boolean;
@@ -74,9 +73,9 @@ export function ConfirmDialog({
         </AlertDialogHeader>
         {confirmWord && (
           <div className="space-y-1.5">
-            <Label htmlFor="confirm-word" className="text-xs text-muted-foreground">
+            <DSLabel htmlFor="confirm-word" className="text-xs text-muted-foreground">
               Digite <span className="font-mono font-semibold text-foreground">{confirmWord}</span> para confirmar
-            </Label>
+            </DSLabel>
             <DSInput
               id="confirm-word"
               value={typed}

@@ -1,13 +1,8 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Accordion, AccordionItem, AccordionTrigger, AccordionContent,
 } from "@/components/ui/accordion";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
 import {
   LifeBuoy, MessageSquare, Phone, AlertTriangle, Loader2, Send, MessagesSquare,
   Paperclip, FileText, ShieldCheck, HelpCircle,
@@ -20,7 +15,7 @@ import {
   PASSENGER_CATEGORIES, DRIVER_CATEGORIES,
   type Faq, type SupportCategory,
 } from "@/lib/support/helpCenter";
-import { DSBadge, DSButton, DSCard, DSCardContent, DSCardDescription, DSCardHeader, DSCardTitle, DSInput } from "@/design-system";
+import { DSBadge, DSButton, DSCard, DSCardContent, DSCardDescription, DSCardHeader, DSCardTitle, DSInput, DSLabel, DSSelect, DSSelectContent, DSSelectItem, DSSelectTrigger, DSSelectValue, DSTextarea } from "@/design-system";
 
 type Role = "passenger" | "driver";
 
@@ -212,38 +207,38 @@ export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
         <DSCardContent>
           <form onSubmit={handleSubmit} className="space-y-3">
             <div className="space-y-1.5">
-              <Label htmlFor="cat">Categoria</Label>
-              <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger id="cat"><SelectValue /></SelectTrigger>
-                <SelectContent>
+              <DSLabel htmlFor="cat">Categoria</DSLabel>
+              <DSSelect value={category} onValueChange={setCategory}>
+                <DSSelectTrigger id="cat"><DSSelectValue /></DSSelectTrigger>
+                <DSSelectContent>
                   {categories.map((c) => (
-                    <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                    <DSSelectItem key={c.value} value={c.value}>{c.label}</DSSelectItem>
                   ))}
-                </SelectContent>
-              </Select>
+                </DSSelectContent>
+              </DSSelect>
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="subj">Assunto</Label>
+              <DSLabel htmlFor="subj">Assunto</DSLabel>
               <DSInput id="subj" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Resumo do problema" maxLength={120} />
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="ride">Corrida relacionada (opcional)</Label>
-              <Select value={rideId || "none"} onValueChange={(v) => setRideId(v === "none" ? "" : v)}>
-                <SelectTrigger id="ride"><SelectValue placeholder="Nenhuma" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Nenhuma</SelectItem>
+              <DSLabel htmlFor="ride">Corrida relacionada (opcional)</DSLabel>
+              <DSSelect value={rideId || "none"} onValueChange={(v) => setRideId(v === "none" ? "" : v)}>
+                <DSSelectTrigger id="ride"><DSSelectValue placeholder="Nenhuma" /></DSSelectTrigger>
+                <DSSelectContent>
+                  <DSSelectItem value="none">Nenhuma</DSSelectItem>
                   {rides.map((r) => (
-                    <SelectItem key={r.id} value={r.id}>{r.label}</SelectItem>
+                    <DSSelectItem key={r.id} value={r.id}>{r.label}</DSSelectItem>
                   ))}
-                </SelectContent>
-              </Select>
+                </DSSelectContent>
+              </DSSelect>
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="msg">Mensagem</Label>
-              <Textarea id="msg" value={message} onChange={(e) => setMessage(e.target.value)} rows={5} placeholder="Descreva o ocorrido com detalhes" maxLength={2000} />
+              <DSLabel htmlFor="msg">Mensagem</DSLabel>
+              <DSTextarea id="msg" value={message} onChange={(e) => setMessage(e.target.value)} rows={5} placeholder="Descreva o ocorrido com detalhes" maxLength={2000} />
             </div>
 
             <div className="flex items-center gap-2 rounded-lg border border-dashed border-border bg-muted/20 px-3 py-2 text-xs text-muted-foreground">

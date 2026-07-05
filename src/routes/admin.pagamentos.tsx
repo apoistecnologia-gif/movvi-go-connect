@@ -3,15 +3,8 @@ import { useEffect, useState } from "react";
 import { Save, Copy, CheckCircle2, XCircle, CreditCard, KeyRound, Loader2 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
-import { DSButton, DSCard, DSCardContent, DSCardDescription, DSCardHeader, DSCardTitle, DSInput, Loading } from "@/design-system";
+import { DSButton, DSCard, DSCardContent, DSCardDescription, DSCardHeader, DSCardTitle, DSInput, DSSelect, DSSelectContent, DSSelectItem, DSSelectTrigger, DSSelectValue, Loading } from "@/design-system";
 import { Switch } from "@/components/ui/switch";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { toast } from "sonner";
 import { logAdminAction } from "@/lib/adminAudit";
 
@@ -135,15 +128,15 @@ function AdminPaymentsPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <label className="flex flex-col gap-1">
                     <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Modo</span>
-                    <Select value={g.mode} onValueChange={(v) => patch(g.id, { mode: v as Gateway["mode"] })}>
-                      <SelectTrigger className="h-9">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="sandbox">Sandbox (teste)</SelectItem>
-                        <SelectItem value="live">Produção</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <DSSelect value={g.mode} onValueChange={(v) => patch(g.id, { mode: v as Gateway["mode"] })}>
+                      <DSSelectTrigger className="h-9">
+                        <DSSelectValue />
+                      </DSSelectTrigger>
+                      <DSSelectContent>
+                        <DSSelectItem value="sandbox">Sandbox (teste)</DSSelectItem>
+                        <DSSelectItem value="live">Produção</DSSelectItem>
+                      </DSSelectContent>
+                    </DSSelect>
                   </label>
                   <label className="flex flex-col gap-1">
                     <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -185,18 +178,18 @@ function AdminPaymentsPage() {
                     </label>
                     <label className="flex flex-col gap-1">
                       <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Tipo</span>
-                      <Select value={g.pix_key_type ?? "random"} onValueChange={(v) => patch(g.id, { pix_key_type: v })}>
-                        <SelectTrigger className="h-9">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="cpf">CPF</SelectItem>
-                          <SelectItem value="cnpj">CNPJ</SelectItem>
-                          <SelectItem value="email">E-mail</SelectItem>
-                          <SelectItem value="phone">Telefone</SelectItem>
-                          <SelectItem value="random">Aleatória</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <DSSelect value={g.pix_key_type ?? "random"} onValueChange={(v) => patch(g.id, { pix_key_type: v })}>
+                        <DSSelectTrigger className="h-9">
+                          <DSSelectValue />
+                        </DSSelectTrigger>
+                        <DSSelectContent>
+                          <DSSelectItem value="cpf">CPF</DSSelectItem>
+                          <DSSelectItem value="cnpj">CNPJ</DSSelectItem>
+                          <DSSelectItem value="email">E-mail</DSSelectItem>
+                          <DSSelectItem value="phone">Telefone</DSSelectItem>
+                          <DSSelectItem value="random">Aleatória</DSSelectItem>
+                        </DSSelectContent>
+                      </DSSelect>
                     </label>
                   </div>
                 ) : null}

@@ -18,13 +18,12 @@ import {
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
-import { DSBadge, DSButton as Button, DSCard as Card, DSCardContent as CardContent, DSInput, Loading, StatusPill } from "@/design-system";
+import { DSBadge, DSButton as Button, DSCard as Card, DSCardContent as CardContent, DSInput, DSTextarea, Loading, StatusPill } from "@/design-system";
 import { Switch } from "@/components/ui/switch";
 // Badge legacy substituído por SubPill (StatusPill do design system).
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { logAdminAction } from "@/lib/adminAudit";
@@ -858,7 +857,7 @@ function SubscriptionDetailSheet({
             <p className="mb-2 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
               <StickyNote className="h-3 w-3" /> Notas internas
             </p>
-            <Textarea
+            <DSTextarea
               value={noteDraft}
               onChange={(e) => setNoteDraft(e.target.value)}
               placeholder="Adicionar nota interna (visível apenas para administradores)"

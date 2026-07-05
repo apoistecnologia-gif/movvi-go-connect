@@ -4,8 +4,7 @@ import { useEffect, useState } from "react";
 import { Loader2, Send } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
-import { DSBadge, DSButton, DSCard, DSCardContent, DSCardHeader, DSCardTitle, DSInput, EmptyState } from "@/design-system";
-import { Textarea } from "@/components/ui/textarea";
+import { DSBadge, DSButton, DSCard, DSCardContent, DSCardHeader, DSCardTitle, DSInput, DSTextarea, EmptyState } from "@/design-system";
 import { toast } from "sonner";
 import { logAdminAction } from "@/lib/adminAudit";
 import { formatDate } from "@/lib/formatters";
@@ -99,7 +98,7 @@ function AdminNotificacoesPage() {
         </DSCardHeader>
         <DSCardContent className="space-y-3">
           <DSInput placeholder="Título" value={title} onChange={(e) => setTitle(e.target.value)} />
-          <Textarea placeholder="Mensagem" rows={4} value={body} onChange={(e) => setBody(e.target.value)} />
+          <DSTextarea placeholder="Mensagem" rows={4} value={body} onChange={(e) => setBody(e.target.value)} />
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="flex flex-col gap-1 text-xs">
               <span className="font-semibold uppercase tracking-widest text-muted-foreground">Público</span>

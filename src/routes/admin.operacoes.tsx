@@ -6,11 +6,10 @@ import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { MovviMap } from "@/components/MovviMap";
 import { Marker, Polyline } from "@react-google-maps/api";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Caption, DSButton, DSCard, DSCardContent, DSInput, EmptyState, Metric, StatusPill, dsStatus } from "@/design-system";
+import { Caption, DSButton, DSCard, DSCardContent, DSInput, DSSelect, DSSelectContent, DSSelectItem, DSSelectTrigger, DSSelectValue, EmptyState, Metric, StatusPill, dsStatus } from "@/design-system";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -359,27 +358,27 @@ function OpsCenterPage() {
               className="h-9 pl-8 text-xs"
             />
           </div>
-          <Select value={cityFilter} onValueChange={setCityFilter}>
-            <SelectTrigger className="h-9 w-44 text-xs"><SelectValue placeholder="Cidade" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL}>Todas as cidades</SelectItem>
-              {availableCities.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="h-9 w-40 text-xs"><SelectValue placeholder="Categoria" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL}>Todas categorias</SelectItem>
-              {availableCategories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="h-9 w-44 text-xs"><SelectValue placeholder="Status" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL}>Todos status</SelectItem>
-              {ACTIVE_STATUSES.map((s) => <SelectItem key={s} value={s}>{STATUS_LABEL[s] ?? s}</SelectItem>)}
-            </SelectContent>
-          </Select>
+          <DSSelect value={cityFilter} onValueChange={setCityFilter}>
+            <DSSelectTrigger className="h-9 w-44 text-xs"><DSSelectValue placeholder="Cidade" /></DSSelectTrigger>
+            <DSSelectContent>
+              <DSSelectItem value={ALL}>Todas as cidades</DSSelectItem>
+              {availableCities.map((c) => <DSSelectItem key={c} value={c}>{c}</DSSelectItem>)}
+            </DSSelectContent>
+          </DSSelect>
+          <DSSelect value={categoryFilter} onValueChange={setCategoryFilter}>
+            <DSSelectTrigger className="h-9 w-40 text-xs"><DSSelectValue placeholder="Categoria" /></DSSelectTrigger>
+            <DSSelectContent>
+              <DSSelectItem value={ALL}>Todas categorias</DSSelectItem>
+              {availableCategories.map((c) => <DSSelectItem key={c} value={c}>{c}</DSSelectItem>)}
+            </DSSelectContent>
+          </DSSelect>
+          <DSSelect value={statusFilter} onValueChange={setStatusFilter}>
+            <DSSelectTrigger className="h-9 w-44 text-xs"><DSSelectValue placeholder="Status" /></DSSelectTrigger>
+            <DSSelectContent>
+              <DSSelectItem value={ALL}>Todos status</DSSelectItem>
+              {ACTIVE_STATUSES.map((s) => <DSSelectItem key={s} value={s}>{STATUS_LABEL[s] ?? s}</DSSelectItem>)}
+            </DSSelectContent>
+          </DSSelect>
           <label className="flex items-center gap-2 text-xs text-muted-foreground">
             <input
               type="checkbox"
