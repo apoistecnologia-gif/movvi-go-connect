@@ -787,7 +787,7 @@ function PassengerDetail({
   }
 
   if (!passenger) return null;
-  const st = statusOf(passenger);
+  const sp = statusPillOf(passenger);
   const rating = Number(passenger.average_rating ?? 0);
   const suspended = !!passenger.suspended_at;
   const blocked = !!passenger.blocked_at;
@@ -801,12 +801,10 @@ function PassengerDetail({
             <div className="min-w-0 flex-1">
               <DialogTitle className="flex flex-wrap items-center gap-2">
                 {passenger.name ?? "Sem nome"}
-                <Badge variant="outline" className={st.tone}>
-                  {st.label}
-                </Badge>
-                <Badge variant="outline" className="border-primary/30 bg-primary/10 text-primary">
+                <StatusPill status={sp.status} label={sp.label} pulse={sp.status === "online"} />
+                <TagPill tone="border-primary/30 bg-primary/10 text-primary">
                   {badgeForRating(rating)}
-                </Badge>
+                </TagPill>
               </DialogTitle>
               <DialogDescription>
                 {passenger.city ?? "—"} • Cadastro {formatDate(passenger.created_at)}
