@@ -1899,14 +1899,20 @@ function ActiveRidePanel({
     <div className="flex flex-col gap-3 pt-1">
       {/* status pill */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className={`relative flex h-2 w-2`}>
+        <div className="min-w-0 flex items-center gap-2">
+          <span className={`relative flex h-2 w-2 shrink-0`}>
             <span className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-70 ${header.dot}`} />
             <span className={`relative inline-flex h-2 w-2 rounded-full ${header.dot}`} />
           </span>
-          <span className={`text-[11px] font-bold uppercase tracking-widest ${header.tone}`}>{header.title}</span>
+          <span className={`truncate text-[11px] font-bold uppercase tracking-widest ${header.tone}`}>{header.title}</span>
         </div>
+        {phase === "motorista_chegou" && (
+          <span className="shrink-0 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+            Peça o PIN
+          </span>
+        )}
       </div>
+
 
       {/* ETA / distância — sem informação financeira durante a corrida */}
       {(minutes != null || legKm != null) && (
