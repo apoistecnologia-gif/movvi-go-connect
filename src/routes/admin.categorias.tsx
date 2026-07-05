@@ -12,7 +12,7 @@ import {
 } from "@/design-system";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Card, CardContent } from "@/components/ui/card";
+
 import { toast } from "sonner";
 import { logAdminAction } from "@/lib/adminAudit";
 import { ICON_REGISTRY } from "@/lib/uiCategories";
