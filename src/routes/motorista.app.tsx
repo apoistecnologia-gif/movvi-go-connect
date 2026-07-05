@@ -1771,14 +1771,7 @@ function ActiveRidePanel({
           className="fixed left-1/2 z-40 -translate-x-1/2 px-4 w-full max-w-md pointer-events-none"
           style={{ top: "calc(env(safe-area-inset-top) + 12px)" }}
         >
-          <div
-            className="pointer-events-auto flex items-center justify-between gap-2 rounded-[22px] px-4 py-3 shadow-[0_12px_36px_-16px_rgba(0,0,0,0.35)] animate-in fade-in slide-in-from-top-3 duration-300"
-            style={{
-              background: "color-mix(in oklab, #ffffff 82%, transparent)",
-              border: "1px solid rgba(255,255,255,0.65)",
-              backdropFilter: "blur(14px) saturate(160%)",
-            }}
-          >
+          <div className="pointer-events-auto flex items-center justify-between gap-2 rounded-[22px] bg-white/85 border border-white/70 backdrop-blur-md backdrop-saturate-150 px-4 py-3 shadow-[0_12px_36px_-16px_rgba(0,0,0,0.35)] animate-in fade-in slide-in-from-top-3 duration-300">
             <TopStat icon={<Clock className="h-[15px] w-[15px]" strokeWidth={1.75} />} value={minutes != null ? String(minutes) : "—"} unit="min" label="ETA" highlight />
             <div className="h-9 w-px bg-black/10" />
             <TopStat icon={<RouteIcon className="h-[15px] w-[15px]" strokeWidth={1.75} />} value={legKm != null ? legKm.toFixed(1) : "—"} unit="km" label="Restante" />
@@ -1786,6 +1779,7 @@ function ActiveRidePanel({
             <TopStat icon={<MapPin className="h-[15px] w-[15px]" strokeWidth={1.75} />} value={arrivalTime ?? "—"} unit="" label="Chegada" />
           </div>
         </div>
+
 
         {/* ===== BOTTOM SHEET CONTENT ===== */}
         <div className="flex flex-col gap-4 pt-1 animate-sheet-in">
