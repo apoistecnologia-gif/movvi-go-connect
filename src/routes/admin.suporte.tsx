@@ -417,15 +417,14 @@ function AdminSuportePage() {
 
       <div className="mt-4 space-y-2">
         {loading ? (
-          <div className="flex items-center justify-center py-16 text-muted-foreground">
-            <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Carregando tickets…
-          </div>
+          <Loading label="Carregando tickets..." />
         ) : filtered.length === 0 ? (
-          <DSCard className="border-border bg-card">
-            <DSCardContent className="py-16 text-center text-sm text-muted-foreground">
-              Nenhum ticket encontrado com os filtros atuais.
-            </DSCardContent>
-          </DSCard>
+          <EmptyState
+            icon={Inbox}
+            title="Nenhum ticket encontrado"
+            description="Ajuste os filtros ou aguarde novas solicitações."
+          />
+
         ) : (
           filtered.map((t) => (
             <TicketRow key={t.id} t={t} onOpen={() => setOpenId(t.id)} />
