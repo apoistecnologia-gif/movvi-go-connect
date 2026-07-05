@@ -60,3 +60,9 @@ export { Loading, DSLoading } from "./Loading";
 
 /* Empty state */
 export { EmptyState, DSEmptyState } from "./EmptyState";
+
+/* Badge */
+export { Badge as DSBadge, badgeVariants } from "./Badge";
+
+/* Input */
+export { Input as DSInput } from "./Input";

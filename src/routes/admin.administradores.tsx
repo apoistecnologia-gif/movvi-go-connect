@@ -4,15 +4,7 @@ import { useEffect, useState } from "react";
 import { Plus, Trash2, Save, ShieldCheck } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  DSButton,
-  DSCard,
-  DSCardContent,
-  Loading,
-  EmptyState,
-  Caption,
-  Label as DSLabel,
-} from "@/design-system";
+import { Caption, DSButton, DSCard, DSCardContent, DSInput, EmptyState, Label as DSLabel, Loading } from "@/design-system";
 import { toast } from "sonner";
 import { logAdminAction } from "@/lib/adminAudit";
 import { grantAdminRole, revokeAdminRole } from "@/lib/adminRoles.functions";
@@ -166,16 +158,14 @@ function AdminUsersPage() {
                 <div className="grid gap-2 md:grid-cols-3">
                   <label className="flex flex-col gap-1 text-xs">
                     <DSLabel>Nome</DSLabel>
-                    <input
-                      className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+                    <DSInput
                       value={r.display_name ?? ""}
                       onChange={(e) => patch(r.user_id, { display_name: e.target.value })}
                     />
                   </label>
                   <label className="flex flex-col gap-1 text-xs">
                     <DSLabel>Telefone</DSLabel>
-                    <input
-                      className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+                    <DSInput
                       value={r.phone ?? ""}
                       onChange={(e) => patch(r.user_id, { phone: e.target.value })}
                     />

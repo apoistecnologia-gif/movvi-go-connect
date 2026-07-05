@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { formatDate } from "@/lib/formatters";
 import { downloadCsv } from "@/lib/csvExport";
-import { DSButton, DSCard, DSCardContent } from "@/design-system";
+import { DSBadge, DSButton, DSCard, DSCardContent } from "@/design-system";
 
 export const Route = createFileRoute("/admin/logs")({
   head: () => ({ meta: [{ title: "Logs — Admin MOVVI" }] }),
@@ -104,7 +104,7 @@ function AdminLogsPage() {
             audits.map((a) => (
               <DSCard key={a.id} className="border-border bg-card/60">
                 <DSCardContent className="flex flex-col gap-1 p-3 text-xs sm:flex-row sm:items-center">
-                  <span className="inline-flex items-center rounded-full border border-border bg-muted/20 px-2.5 py-0.5 text-[11px] font-medium font-mono">{a.action}</span>
+                  <DSBadge className="font-mono">{a.action}</DSBadge>
                   <span className="text-muted-foreground">{a.entity}</span>
                   {a.entity_id && <span className="font-mono text-[10px] text-muted-foreground">{a.entity_id.slice(0, 8)}</span>}
                   <span className="ml-auto text-[10px] text-muted-foreground">{formatDate(a.created_at)}</span>
@@ -123,7 +123,7 @@ function AdminLogsPage() {
             logins.map((l) => (
               <DSCard key={l.id} className="border-border bg-card/60">
                 <DSCardContent className="flex items-center gap-2 p-3 text-xs">
-                  <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${l.success ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300" : "border-red-500/30 bg-red-500/10 text-red-300"}`}>{l.success ? "OK" : "Falha"}</span>
+                  <DSBadge variant={l.success ? "success" : "danger"}>{l.success ? "OK" : "Falha"}</DSBadge>
                   <span className="font-mono">{l.user_id?.slice(0, 8)}</span>
                   <span className="truncate text-muted-foreground">{l.user_agent ?? "—"}</span>
                   <span className="ml-auto text-[10px] text-muted-foreground">{formatDate(l.created_at)}</span>

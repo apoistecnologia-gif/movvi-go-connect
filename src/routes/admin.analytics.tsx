@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { downloadCsv } from "@/lib/csvExport";
-import { DSButton, DSCard, DSCardContent } from "@/design-system";
+import { DSBadge, DSButton, DSCard, DSCardContent } from "@/design-system";
 
 export const Route = createFileRoute("/admin/analytics")({
   head: () => ({ meta: [{ title: "Analytics & BI — Admin MOVVI" }] }),
@@ -452,9 +452,9 @@ function DriverTable({ title, rows, valueLabel, onExport, formatValue }: {
                   {r.city ?? "—"} · {fmtInt(r.rides_total)} corridas · ★ {fmtDec(Number(r.rating ?? 0), 2)}
                 </p>
               </div>
-              <span className="inline-flex items-center rounded-full border border-border bg-muted/20 px-2.5 py-0.5 text-[11px] font-medium shrink-0 font-mono text-[10px]">
+              <DSBadge className="shrink-0 font-mono text-[10px]">
                 {formatValue ? formatValue(Number(r.value)) : fmtInt(Number(r.value))} {!formatValue && valueLabel}
-              </span>
+              </DSBadge>
             </li>
           ))}
         </ul>
@@ -480,9 +480,9 @@ function PaxTable({ title, rows, valueLabel, formatValue }: {
                   {r.city ?? "—"} · {fmtInt(r.rides_total)} corridas · ★ {fmtDec(Number(r.rating ?? 0), 2)}
                 </p>
               </div>
-              <span className="inline-flex items-center rounded-full border border-border bg-muted/20 px-2.5 py-0.5 text-[11px] font-medium shrink-0 font-mono text-[10px]">
+              <DSBadge className="shrink-0 font-mono text-[10px]">
                 {formatValue ? formatValue(Number(r.value)) : fmtInt(Number(r.value))} {!formatValue && valueLabel}
-              </span>
+              </DSBadge>
             </li>
           ))}
         </ul>
