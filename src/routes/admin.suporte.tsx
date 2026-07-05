@@ -483,18 +483,18 @@ function TicketRow({ t, onOpen }: { t: Enriched; onOpen: () => void }) {
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <span className="font-mono text-[11px] text-muted-foreground">#{shortId(t.id)}</span>
-              <Badge className={priorityTone(t.priority)}>{priorityLabel(t.priority)}</Badge>
-              <Badge className={statusTone(t.status)}>{statusLabel(t.status)}</Badge>
-              <Badge variant="outline" className="border-border text-muted-foreground">
+              <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ${priorityTone(t.priority)}`}>{priorityLabel(t.priority)}</span>
+              <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ${statusTone(t.status)}`}>{statusLabel(t.status)}</span>
+              <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium border-border text-muted-foreground">
                 {t.user_type === "driver" ? "Motorista" : "Passageiro"}
-              </Badge>
-              <Badge variant="outline" className="border-border text-muted-foreground">
+              </span>
+              <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium border-border text-muted-foreground">
                 {categoryLabel(t.category)}
-              </Badge>
+              </span>
               {t.ride_id && (
-                <Badge variant="outline" className="border-primary/30 text-primary">
+                <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium border-primary/30 text-primary">
                   <Car className="mr-1 h-3 w-3" /> Corrida
-                </Badge>
+                </span>
               )}
             </div>
             <p className="mt-1 truncate font-semibold text-foreground">{t.subject}</p>
@@ -664,14 +664,14 @@ function TicketDetailDialog({
               </p>
               <div className="mt-1 flex flex-wrap gap-2 text-[11px]">
                 {t._user.rating != null && (
-                  <Badge variant="outline" className="border-border text-muted-foreground">
+                  <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium border-border text-muted-foreground">
                     ⭐ {Number(t._user.rating).toFixed(2)}
-                  </Badge>
+                  </span>
                 )}
                 {t._user.status && (
-                  <Badge variant="outline" className="border-border text-muted-foreground">
+                  <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium border-border text-muted-foreground">
                     {t._user.status}
-                  </Badge>
+                  </span>
                 )}
               </div>
             </div>
@@ -709,9 +709,9 @@ function TicketDetailDialog({
             {ride ? (
               <div className="rounded-md border border-border bg-background/50 p-3 text-sm">
                 <div className="flex flex-wrap items-center gap-2">
-                  <Badge className="bg-primary/15 text-primary border border-primary/30">
+                  <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium bg-primary/15 text-primary border border-primary/30">
                     {ride.status}
-                  </Badge>
+                  </span>
                   <span className="font-mono text-[11px] text-muted-foreground">
                     #{shortId(ride.id)}
                   </span>
