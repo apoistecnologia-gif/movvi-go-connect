@@ -23,14 +23,14 @@ export type ResolvedMapTheme = "light" | "dark";
 const STORAGE_KEY = "movvi.map.theme";
 
 function readStored(): MapThemeMode {
-  if (typeof window === "undefined") return "light";
+  if (typeof window === "undefined") return "auto";
   try {
     const v = window.localStorage.getItem(STORAGE_KEY);
     if (v === "light" || v === "dark" || v === "auto") return v;
   } catch {
     /* noop */
   }
-  return "light";
+  return "auto";
 }
 
 function resolveByClock(): ResolvedMapTheme {
