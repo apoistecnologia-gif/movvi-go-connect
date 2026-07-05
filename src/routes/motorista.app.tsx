@@ -24,6 +24,7 @@ import {
 import { RIDE_CATEGORIES } from "@/lib/rideCategories";
 import { MovviMap } from "@/components/MovviMap";
 import { DriverSideMenu } from "@/components/DriverSideMenu";
+import { BrandSplash } from "@/components/BrandSplash";
 import { MovviSheet, type MovviSheetHandle } from "@/components/MovviSheet";
 import { PassengerProfessionalProfileDialog } from "@/components/profile/PassengerProfessionalProfileDialog";
 import { SafetyCard } from "@/components/safety/SafetyCard";
