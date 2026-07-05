@@ -49,10 +49,14 @@ export const Route = createFileRoute("/motorista/perfil")({
 
 type Driver = {
   id?: string;
-  name: string | null; email: string | null;
-  photo_url: string | null; category: string | null;
-  vehicle_model: string | null; vehicle_color: string | null;
-  vehicle_plate: string | null; vehicle_year: number | null;
+  name: string | null;
+  email: string | null;
+  photo_url: string | null;
+  category: string | null;
+  vehicle_model: string | null;
+  vehicle_color: string | null;
+  vehicle_plate: string | null;
+  vehicle_year: number | null;
   rating: number | null;
   average_rating?: number | null;
   total_ratings?: number | null;
@@ -88,18 +92,27 @@ function DriverProfilePage() {
       if (!alive) return;
       setUserId(u.user.id);
 
-      const { data: d } = await supabase.from("drivers")
-        .select("id,name,email,photo_url,category,vehicle_model,vehicle_color,vehicle_plate,vehicle_year,rating,average_rating,total_ratings,completed_rides,approval_status,subscription_status,subscription_expires_at,city,is_online,created_at")
-        .eq("user_id", u.user.id).maybeSingle();
+      const { data: d } = await supabase
+        .from("drivers")
+        .select(
+          "id,name,email,photo_url,category,vehicle_model,vehicle_color,vehicle_plate,vehicle_year,rating,average_rating,total_ratings,completed_rides,approval_status,subscription_status,subscription_expires_at,city,is_online,created_at",
+        )
+        .eq("user_id", u.user.id)
+        .maybeSingle();
       if (!alive) return;
       setDriver((d ?? null) as Driver | null);
 
-      const { count } = await supabase.from("rides").select("id", { count: "exact", head: true })
-        .eq("driver_id", u.user.id).eq("status", "finalizada");
+      const { count } = await supabase
+        .from("rides")
+        .select("id", { count: "exact", head: true })
+        .eq("driver_id", u.user.id)
+        .eq("status", "finalizada");
       if (!alive) return;
       setTotalRides(count ?? 0);
     })();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, []);
 
   if (mode === "edit") {
@@ -133,7 +146,8 @@ function DriverProfilePage() {
   const subStatus = (driver?.subscription_status ?? "").toLowerCase();
   const subActive = subStatus === "active" || subStatus === "ativa";
   const approval = (driver?.approval_status ?? "").toLowerCase();
-  const approvalApproved = approval === "approved" || approval === "aprovado" || approval === "active";
+  const approvalApproved =
+    approval === "approved" || approval === "aprovado" || approval === "active";
   const memberSince = driver?.created_at
     ? new Date(driver.created_at).toLocaleDateString("pt-BR", { month: "long", year: "numeric" })
     : "—";
@@ -149,9 +163,12 @@ function DriverProfilePage() {
 
   async function handlePhotoUploaded(result: { signedUrl: string; path: string }) {
     if (!userId) return;
-    setDriver((d) => d ? { ...d, photo_url: result.signedUrl } : d);
+    setDriver((d) => (d ? { ...d, photo_url: result.signedUrl } : d));
     try {
-      await supabase.from("users").update({ avatar_url: result.signedUrl }).eq("auth_user_id", userId);
+      await supabase
+        .from("users")
+        .update({ avatar_url: result.signedUrl })
+        .eq("auth_user_id", userId);
       await supabase.from("drivers").update({ photo_url: result.signedUrl }).eq("user_id", userId);
       await supabase.auth.updateUser({ data: { avatar_url: result.signedUrl } });
       toast.success("Foto atualizada!");
@@ -202,12 +219,8 @@ function DriverProfilePage() {
               <div className="flex items-center gap-3 text-muted-foreground">
                 <span className="inline-flex items-center gap-1 text-foreground">
                   <Star aria-hidden="true" className="h-4 w-4 fill-primary text-primary" />
-                  <Body className="font-semibold">
-                    {rating > 0 ? rating.toFixed(2) : "—"}
-                  </Body>
-                  {totalRatings > 0 && (
-                    <Caption>({totalRatings})</Caption>
-                  )}
+                  <Body className="font-semibold">{rating > 0 ? rating.toFixed(2) : "—"}</Body>
+                  {totalRatings > 0 && <Caption>({totalRatings})</Caption>}
                 </span>
                 <span aria-hidden="true" className="h-3 w-px bg-border" />
                 <Caption>{completed} viagens</Caption>
@@ -261,12 +274,7 @@ function DriverProfilePage() {
               <InfoRow icon={Car} label="Veículo" value={driver?.vehicle_model || "—"} />
               <InfoRow label="Placa" value={maskPlate(driver?.vehicle_plate)} mono />
               <InfoRow icon={MapPin} label="Cidade" value={driver?.city || "—"} />
-              <InfoRow
-                icon={Calendar}
-                label="Membro desde"
-                value={memberSince}
-                capitalize
-              />
+              <InfoRow icon={Calendar} label="Membro desde" value={memberSince} capitalize />
             </div>
           </DSCard>
 
@@ -296,7 +304,9 @@ function DriverProfilePage() {
                 </div>
                 <Caption className="mt-0.5 block">
                   {subActive
-                    ? (expiresAt ? `Renova em ${expiresAt}` : "Todos os benefícios liberados")
+                    ? expiresAt
+                      ? `Renova em ${expiresAt}`
+                      : "Todos os benefícios liberados"
                     : "Ative para receber corridas"}
                 </Caption>
               </div>
@@ -318,7 +328,11 @@ function DriverProfilePage() {
               <MenuRow
                 icon={Car}
                 label="Veículo"
-                sub={driver?.vehicle_model ? `${driver.vehicle_model} · ${maskPlate(driver?.vehicle_plate)}` : "Modelo, placa e categoria"}
+                sub={
+                  driver?.vehicle_model
+                    ? `${driver.vehicle_model} · ${maskPlate(driver?.vehicle_plate)}`
+                    : "Modelo, placa e categoria"
+                }
                 to="/motorista/documentos"
               />
               <Divider />
@@ -443,10 +457,7 @@ function StatCard({
       )}
     >
       <Metric
-        className={cn(
-          "text-[clamp(18px,6vw,24px)] leading-none",
-          highlight && "text-primary",
-        )}
+        className={cn("text-[clamp(18px,6vw,24px)] leading-none", highlight && "text-primary")}
       >
         {value}
       </Metric>
