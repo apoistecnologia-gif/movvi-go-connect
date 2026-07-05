@@ -809,13 +809,9 @@ function DetailsDialog({
             <div className="min-w-0 flex-1">
               <DialogTitle className="flex flex-wrap items-center gap-2">
                 {driver.name}
-                <Badge variant="outline" className={meta.tone}>
-                  {meta.label}
-                </Badge>
+                <StatusPill status={STATUS_PILL[driver.approval_status].status} label={STATUS_PILL[driver.approval_status].label} pulse={false} />
                 {suspended && (
-                  <Badge variant="outline" className="border-destructive/30 bg-destructive/10 text-destructive">
-                    Suspenso
-                  </Badge>
+                  <TagPill tone="border-destructive/30 bg-destructive/10 text-destructive">Suspenso</TagPill>
                 )}
               </DialogTitle>
               <DialogDescription>
