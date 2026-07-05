@@ -4,10 +4,17 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Search, ShieldAlert } from "lucide-react";
 import { diagnosticarAuthMotorista } from "@/lib/driverAuth.functions";
 import { isDevelopmentEnvironment } from "@/lib/environment";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { DSInput, DSLabel } from "@/design-system";
+import {
+  DSButton,
+  DSCard,
+  DSCardContent,
+  DSCardDescription,
+  DSCardHeader,
+  DSCardTitle,
+  DSInput,
+  DSLabel,
+} from "@/design-system";
 
 import { DevOrAdminGuard } from "@/components/DevOrAdminGuard";
 
@@ -72,23 +79,23 @@ function DriverAuthDebugPage() {
   return (
     <div className="min-h-screen bg-background px-4 py-8">
       <div className="mx-auto max-w-2xl space-y-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Diagnóstico temporário — Auth do motorista</CardTitle>
-            <CardDescription>
+        <DSCard>
+          <DSCardHeader>
+            <DSCardTitle>Diagnóstico temporário — Auth do motorista</DSCardTitle>
+            <DSCardDescription>
               Verifica se o e-mail existe na autenticação e na tabela oficial de motoristas.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
+            </DSCardDescription>
+          </DSCardHeader>
+          <DSCardContent className="space-y-4">
             <form onSubmit={onSubmit} className="flex flex-col gap-3 sm:flex-row sm:items-end">
               <div className="flex-1 space-y-2">
                 <DSLabel htmlFor="email">E-mail do motorista</DSLabel>
                 <DSInput id="email" name="email" type="email" required placeholder="motorista@email.com" />
               </div>
-              <Button type="submit" disabled={loading}>
+              <DSButton type="submit" disabled={loading}>
                 <Search className="mr-2 h-4 w-4" />
                 {loading ? "Verificando..." : "Verificar"}
-              </Button>
+              </DSButton>
             </form>
 
             {error && (
@@ -116,8 +123,8 @@ function DriverAuthDebugPage() {
                 <DiagnosticRow label="Tabela de perfil relacionada" value={result.related_profile_table} />
               </div>
             )}
-          </CardContent>
-        </Card>
+          </DSCardContent>
+        </DSCard>
       </div>
     </div>
   );
