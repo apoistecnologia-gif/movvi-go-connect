@@ -140,6 +140,26 @@ function statusLabel(s: string) {
   return map[s] ?? s;
 }
 
+type PillStatus = "online" | "searching" | "cancelled" | "offline";
+const STATUS_PILL: Record<string, PillStatus> = {
+  ativa: "online",
+  active: "online",
+  pending: "searching",
+  vencida: "cancelled",
+  overdue: "cancelled",
+  expired: "cancelled",
+  blocked: "cancelled",
+  suspended: "cancelled",
+  cancelled: "offline",
+  inactive: "offline",
+};
+
+function SubPill({ status }: { status: string }) {
+  return (
+    <StatusPill status={STATUS_PILL[status] ?? "offline"} label={statusLabel(status)} pulse={false} />
+  );
+}
+
 function daysBetween(a: Date, b: Date) {
   return Math.floor((a.getTime() - b.getTime()) / 86_400_000);
 }
