@@ -411,19 +411,11 @@ function AdminAssinaturasPage() {
                             <p className="truncate text-sm font-semibold">
                               {d?.name ?? "Motorista"}
                             </p>
-                            <Badge
-                              variant="outline"
-                              className={STATUS_TONE[s.status] ?? "border-border"}
-                            >
-                              {statusLabel(s.status)}
-                            </Badge>
+                            <SubPill status={s.status} />
                             {mismatch && (
-                              <Badge
-                                variant="outline"
-                                className="border-amber-500/40 bg-amber-500/10 text-amber-300"
-                              >
-                                <AlertTriangle className="mr-1 h-3 w-3" /> Status divergente
-                              </Badge>
+                              <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-0.5 text-[11px] font-medium text-amber-300">
+                                <AlertTriangle className="h-3 w-3" /> Status divergente
+                              </span>
                             )}
                           </div>
                           <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
