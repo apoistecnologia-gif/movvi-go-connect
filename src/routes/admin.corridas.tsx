@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
-  Loader2,
   Search,
   Eye,
   Download,
@@ -18,8 +17,6 @@ import {
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
@@ -29,9 +26,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
+import {
+  DSButton,
+  DSCard,
+  DSCardContent,
+  StatusPill,
+  Loading,
+  EmptyState,
+  Avatar,
+  dsStatus,
+} from "@/design-system";
 import { toast } from "sonner";
 import { formatBRL, formatDate } from "@/lib/formatters";
 import { downloadCsv } from "@/lib/csvExport";
@@ -103,14 +108,14 @@ const STATUS_LABEL: Record<string, string> = {
   cancelada_motorista: "Cancelada (motorista)",
 };
 
-const STATUS_TONE: Record<string, string> = {
-  procurar_motorista: "bg-amber-500/15 text-amber-400 border-amber-500/30",
-  motorista_a_caminho: "bg-blue-500/15 text-blue-400 border-blue-500/30",
-  motorista_chegou: "bg-cyan-500/15 text-cyan-400 border-cyan-500/30",
-  em_viagem: "bg-primary/15 text-primary border-primary/30",
-  finalizada: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
-  cancelada_passageiro: "bg-rose-500/15 text-rose-400 border-rose-500/30",
-  cancelada_motorista: "bg-rose-500/15 text-rose-400 border-rose-500/30",
+const STATUS_PILL: Record<string, keyof typeof dsStatus> = {
+  procurar_motorista: "searching",
+  motorista_a_caminho: "driverComing",
+  motorista_chegou: "arrived",
+  em_viagem: "trip",
+  finalizada: "finished",
+  cancelada_passageiro: "cancelled",
+  cancelada_motorista: "cancelled",
 };
 
 const PAYMENT_LABEL: Record<string, string> = {
@@ -282,9 +287,9 @@ function AdminCorridasPage() {
       title="Corridas"
       description={`${summary.total} no período · ${summary.finalized} concluídas · ${summary.cancelled} canceladas · ${formatBRL(summary.revenue)}`}
       actions={
-        <Button variant="outline" size="sm" onClick={exportCsv} className="gap-1">
+        <DSButton variant="outline" size="sm" onClick={exportCsv} className="gap-1">
           <Download className="h-4 w-4" /> CSV
-        </Button>
+        </DSButton>
       }
     >
       <div className="mb-4 grid gap-3">
@@ -347,13 +352,13 @@ function AdminCorridasPage() {
       </div>
 
       {loading ? (
-        <div className="grid place-items-center py-12 text-muted-foreground">
-          <Loader2 className="h-6 w-6 animate-spin" />
-        </div>
+        <Loading label="Carregando corridas..." />
       ) : filtered.length === 0 ? (
-        <p className="py-12 text-center text-sm text-muted-foreground">
-          Nenhuma corrida encontrada com os filtros atuais.
-        </p>
+        <EmptyState
+          icon={Search}
+          title="Nenhuma corrida encontrada"
+          description="Ajuste os filtros para ver corridas neste período."
+        />
       ) : (
         <div className="grid gap-2">
           {filtered.map((r) => (
@@ -371,24 +376,26 @@ function RideRow({ r, onOpen }: { r: Ride; onOpen: () => void }) {
   const origin = displayAddress(r.origin_name, r.origin_lat, r.origin_lng);
   const dest = displayAddress(r.destination_name, r.destination_lat, r.destination_lng);
   return (
-    <Card className="border-border bg-card/60 transition-colors hover:bg-card">
-      <CardContent className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center">
+    <DSCard className="border-border bg-card/60 transition-colors hover:bg-card">
+      <DSCardContent className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center">
         <div className="min-w-0 flex-1 space-y-1">
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="font-mono text-[10px] text-muted-foreground">{r.id.slice(0, 8)}</span>
-            <Badge variant="outline" className={`text-[10px] ${STATUS_TONE[r.status] ?? ""}`}>
-              {STATUS_LABEL[r.status] ?? r.status}
-            </Badge>
+            <StatusPill
+              status={STATUS_PILL[r.status] ?? "searching"}
+              label={STATUS_LABEL[r.status] ?? r.status}
+              pulse={false}
+            />
             {r.category && (
-              <Badge variant="secondary" className="text-[10px]">
+              <span className="inline-flex items-center rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
                 {r.category}
-              </Badge>
+              </span>
             )}
             {r.payment_method && (
-              <Badge variant="outline" className="text-[10px]">
-                <CreditCard className="mr-1 h-3 w-3" />
+              <span className="inline-flex items-center gap-1 rounded-full border border-border bg-background/40 px-2 py-0.5 text-[10px] text-muted-foreground">
+                <CreditCard className="h-3 w-3" />
                 {paymentLabel(r.payment_method)}
-              </Badge>
+              </span>
             )}
           </div>
           <p className="truncate text-xs">
@@ -408,12 +415,12 @@ function RideRow({ r, onOpen }: { r: Ride; onOpen: () => void }) {
           <span className="font-semibold">
             {formatBRL(r.final_price ?? r.estimated_price ?? 0)}
           </span>
-          <Button size="sm" variant="ghost" onClick={onOpen} aria-label="Ver detalhes">
+          <DSButton size="sm" variant="ghost" onClick={onOpen} aria-label="Ver detalhes">
             <Eye className="h-4 w-4" />
-          </Button>
+          </DSButton>
         </div>
-      </CardContent>
-    </Card>
+      </DSCardContent>
+    </DSCard>
   );
 }
 
@@ -568,9 +575,11 @@ function RideDetail({
             <span className="font-mono text-xs text-muted-foreground">
               {ride.id.slice(0, 8)}
             </span>
-            <Badge variant="outline" className={`text-[10px] ${STATUS_TONE[ride.status] ?? ""}`}>
-              {STATUS_LABEL[ride.status] ?? ride.status}
-            </Badge>
+            <StatusPill
+              status={STATUS_PILL[ride.status] ?? "searching"}
+              label={STATUS_LABEL[ride.status] ?? ride.status}
+              pulse={false}
+            />
           </SheetTitle>
         </SheetHeader>
 
@@ -721,14 +730,14 @@ function RideDetail({
 
           {/* Actions */}
           <div className="flex flex-wrap gap-2 pt-2">
-            <Button size="sm" variant="outline" onClick={() => copyText(ride.id, "ID copiado")}>
+            <DSButton size="sm" variant="outline" onClick={() => copyText(ride.id, "ID copiado")}>
               <Copy className="mr-2 h-4 w-4" /> Copiar ID
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => copyText(summary, "Resumo copiado")}>
+            </DSButton>
+            <DSButton size="sm" variant="outline" onClick={() => copyText(summary, "Resumo copiado")}>
               <Copy className="mr-2 h-4 w-4" /> Copiar resumo
-            </Button>
+            </DSButton>
             {ride.passenger_id && (
-              <Button
+              <DSButton
                 size="sm"
                 variant="outline"
                 onClick={() => {
@@ -736,10 +745,10 @@ function RideDetail({
                 }}
               >
                 <ExternalLink className="mr-2 h-4 w-4" /> Perfil passageiro
-              </Button>
+              </DSButton>
             )}
             {ride.driver_id && (
-              <Button
+              <DSButton
                 size="sm"
                 variant="outline"
                 onClick={() => {
@@ -747,10 +756,10 @@ function RideDetail({
                 }}
               >
                 <ExternalLink className="mr-2 h-4 w-4" /> Perfil motorista
-              </Button>
+              </DSButton>
             )}
             {tickets[0] && (
-              <Button
+              <DSButton
                 size="sm"
                 variant="outline"
                 onClick={() => {
@@ -758,7 +767,7 @@ function RideDetail({
                 }}
               >
                 <ExternalLink className="mr-2 h-4 w-4" /> Abrir chamado
-              </Button>
+              </DSButton>
             )}
           </div>
 
@@ -783,16 +792,16 @@ function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <Card className="border-border bg-card/60">
-      <CardContent className="space-y-3 p-4">
+    <DSCard className="border-border bg-card/60">
+      <DSCardContent className="space-y-3 p-4">
         <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
           {icon}
           {title}
         </div>
         <Separator className="opacity-40" />
         {children}
-      </CardContent>
-    </Card>
+      </DSCardContent>
+    </DSCard>
   );
 }
 
@@ -843,19 +852,10 @@ function PartyBlock({
   rides?: number | null;
   extra?: React.ReactNode;
 }) {
-  const initials = (name || "?")
-    .split(" ")
-    .map((s) => s[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-3">
-        <Avatar className="h-14 w-14 border border-border">
-          {photo && <AvatarImage src={photo} alt={name} />}
-          <AvatarFallback>{initials}</AvatarFallback>
-        </Avatar>
+        <Avatar src={photo} name={name} size={56} />
         <div className="min-w-0 flex-1">
           <p className="truncate font-semibold">{name}</p>
           <p className="text-xs text-muted-foreground">{phone ?? "Não informado"}</p>

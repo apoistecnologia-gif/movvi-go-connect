@@ -6,14 +6,21 @@ import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { MovviMap } from "@/components/MovviMap";
 import { Marker, Polyline } from "@react-google-maps/api";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  DSButton,
+  DSCard,
+  DSCardContent,
+  StatusPill,
+  EmptyState,
+  Metric,
+  Caption,
+  dsStatus,
+} from "@/design-system";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -98,6 +105,14 @@ const STATUS_LABEL: Record<string, string> = {
   motorista_chegou: "No local",
   em_viagem: "Em viagem",
   finalizada: "Finalizada",
+};
+
+const STATUS_PILL: Record<string, keyof typeof dsStatus> = {
+  procurar_motorista: "searching",
+  motorista_a_caminho: "driverComing",
+  motorista_chegou: "arrived",
+  em_viagem: "trip",
+  finalizada: "finished",
 };
 
 /* ─── Component ────────────────────────────────────── */
@@ -327,8 +342,8 @@ function OpsCenterPage() {
 
       {/* SOS banner */}
       {activeSos.length > 0 && (
-        <Card className="mb-3 border-destructive/60 bg-destructive/10">
-          <CardContent className="flex items-center gap-3 p-3">
+        <DSCard className="mb-3 border-destructive/60 bg-destructive/10">
+          <DSCardContent className="flex items-center gap-3 p-3">
             <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-destructive">
@@ -338,13 +353,13 @@ function OpsCenterPage() {
                 Verifique o painel SOS abaixo. Este módulo é somente leitura.
               </p>
             </div>
-          </CardContent>
-        </Card>
+          </DSCardContent>
+        </DSCard>
       )}
 
       {/* Filters */}
-      <Card className="mb-3 border-border bg-card/60">
-        <CardContent className="flex flex-wrap items-center gap-2 p-3">
+      <DSCard className="mb-3 border-border bg-card/60">
+        <DSCardContent className="flex flex-wrap items-center gap-2 p-3">
           <div className="relative flex-1 min-w-[220px]">
             <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
@@ -385,7 +400,7 @@ function OpsCenterPage() {
             Mostrar offline
           </label>
           {(search || cityFilter !== ALL || categoryFilter !== ALL || statusFilter !== ALL) && (
-            <Button
+            <DSButton
               variant="ghost"
               size="sm"
               onClick={() => {
@@ -397,10 +412,10 @@ function OpsCenterPage() {
               className="h-9 text-xs"
             >
               Limpar
-            </Button>
+            </DSButton>
           )}
-        </CardContent>
-      </Card>
+        </DSCardContent>
+      </DSCard>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-3">
         {/* Live Map */}
@@ -464,7 +479,7 @@ function OpsCenterPage() {
         </div>
 
         {/* Side panel */}
-        <Card className="border-border bg-card/60 h-[calc(100vh-360px)] min-h-[420px] flex flex-col">
+        <DSCard className="border-border bg-card/60 h-[calc(100vh-360px)] min-h-[420px] flex flex-col">
           <Tabs defaultValue="rides" className="flex flex-col h-full">
             <TabsList className="mx-3 mt-3 grid grid-cols-4">
               <TabsTrigger value="rides" className="text-xs"><RouteIcon className="h-3.5 w-3.5 mr-1" />Corridas</TabsTrigger>
@@ -476,7 +491,7 @@ function OpsCenterPage() {
             <TabsContent value="rides" className="flex-1 overflow-hidden mt-3">
               <ScrollArea className="h-full px-3 pb-3">
                 {filteredRides.length === 0 && (
-                  <p className="text-xs text-muted-foreground text-center py-6">Nenhuma corrida ativa.</p>
+                  <EmptyState icon={RouteIcon} title="Sem corridas ativas" description="Novas corridas aparecerão aqui em tempo real." />
                 )}
                 <div className="space-y-2">
                   {filteredRides.map((r) => {
@@ -490,7 +505,7 @@ function OpsCenterPage() {
                       >
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-xs font-mono text-muted-foreground">#{r.id.slice(0, 6)}</span>
-                          <Badge variant="outline" className="text-[10px] h-5">{STATUS_LABEL[r.status] ?? r.status}</Badge>
+                          <StatusPill status={STATUS_PILL[r.status] ?? "searching"} label={STATUS_LABEL[r.status] ?? r.status} pulse={false} />
                         </div>
                         <p className="text-xs mt-1 truncate">
                           <span className="text-muted-foreground">Pax:</span> {passenger?.name ?? "—"}
@@ -556,7 +571,7 @@ function OpsCenterPage() {
                       </button>
                     ))}
                   {passengers.size === 0 && (
-                    <p className="text-xs text-muted-foreground text-center py-6">Nenhum passageiro em corrida.</p>
+                    <EmptyState icon={Users} title="Sem passageiros" description="Passageiros em corrida aparecerão aqui." />
                   )}
                 </div>
               </ScrollArea>
@@ -565,7 +580,7 @@ function OpsCenterPage() {
             <TabsContent value="sos" className="flex-1 overflow-hidden mt-3">
               <ScrollArea className="h-full px-3 pb-3">
                 {activeSos.length === 0 && (
-                  <p className="text-xs text-muted-foreground text-center py-6">Nenhum alerta ativo.</p>
+                  <EmptyState icon={AlertTriangle} title="Nenhum alerta ativo" description="Alertas SOS pendentes aparecerão aqui." />
                 )}
                 <div className="space-y-2">
                   {activeSos.map((s) => {
@@ -593,14 +608,14 @@ function OpsCenterPage() {
                           </p>
                         )}
                         {ride && (
-                          <Button
+                          <DSButton
                             size="sm"
                             variant="outline"
                             className="mt-2 h-7 text-xs"
                             onClick={() => setSelectedRide(ride)}
                           >
                             Abrir corrida
-                          </Button>
+                          </DSButton>
                         )}
                       </div>
                     );
@@ -609,7 +624,7 @@ function OpsCenterPage() {
               </ScrollArea>
             </TabsContent>
           </Tabs>
-        </Card>
+        </DSCard>
       </div>
 
       {/* Ride details */}
@@ -676,21 +691,23 @@ function OpsCenterPage() {
 /* ─── Sub-components ───────────────────────────────── */
 
 function Kpi({ label, value, tone }: { label: string; value: number | string; tone: "green" | "blue" | "amber" | "violet" | "red" | "neutral" }) {
-  const toneMap: Record<string, string> = {
-    green: "text-emerald-500",
-    blue: "text-blue-500",
-    amber: "text-amber-500",
-    violet: "text-violet-500",
-    red: "text-destructive",
-    neutral: "text-foreground",
+  const toneColor: Record<string, string> = {
+    green: dsStatus.online.color,
+    blue: dsStatus.trip.color,
+    amber: dsStatus.searching.color,
+    violet: dsStatus.trip.color,
+    red: dsStatus.cancelled.color,
+    neutral: "var(--foreground)",
   };
   return (
-    <Card className="border-border bg-card/60">
-      <CardContent className="p-3">
-        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
-        <p className={`mt-1 text-xl font-bold ${toneMap[tone]}`}>{value}</p>
-      </CardContent>
-    </Card>
+    <DSCard className="border-border bg-card/60">
+      <DSCardContent className="p-3 min-h-[76px]">
+        <Caption className="uppercase tracking-wider text-muted-foreground">{label}</Caption>
+        <Metric className="mt-1 block text-xl leading-none" style={{ color: toneColor[tone] }}>
+          {value}
+        </Metric>
+      </DSCardContent>
+    </DSCard>
   );
 }
 
@@ -720,7 +737,7 @@ function RideDetail({
   return (
     <div className="mt-4 space-y-4">
       <div className="flex items-center gap-2">
-        <Badge>{STATUS_LABEL[ride.status] ?? ride.status}</Badge>
+        <StatusPill status={STATUS_PILL[ride.status] ?? "searching"} label={STATUS_LABEL[ride.status] ?? ride.status} />
         <span className="text-xs text-muted-foreground">há {elapsed}</span>
       </div>
 
@@ -805,11 +822,13 @@ function DriverDetail({
     : "—";
   return (
     <div className="mt-4 space-y-4">
-      <div className="flex items-center gap-2">
-        <Badge variant={driver.is_online ? "default" : "secondary"}>
-          {driver.is_online ? "Online" : "Offline"}
-        </Badge>
-        <Badge variant="outline">{driver.subscription_status ?? "—"}</Badge>
+      <div className="flex flex-wrap items-center gap-2">
+        <StatusPill status={driver.is_online ? "online" : "offline"} />
+        {driver.subscription_status && (
+          <span className="inline-flex items-center rounded-full border border-border bg-muted/40 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            {driver.subscription_status}
+          </span>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-3">
