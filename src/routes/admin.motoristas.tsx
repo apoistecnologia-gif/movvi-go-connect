@@ -767,7 +767,7 @@ function DetailsDialog({
   }, [driver?.id]);
 
   if (!driver) return null;
-  const meta = STATUS_META[driver.approval_status];
+  const suspended_ = false; // placeholder removed
   const suspended = !!driver.suspended_at;
 
   async function addNote() {
