@@ -14,6 +14,7 @@ import {
   StickyNote,
   MapPin,
   PlayCircle,
+  Users,
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Avatar } from "@/components/Avatar";
