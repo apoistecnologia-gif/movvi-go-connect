@@ -243,7 +243,7 @@ function AdminCuponsPage() {
                 </Field>
                 <div className="md:col-span-4 flex items-end justify-between">
                   <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                    <Badge variant="outline">Usos: {c.used_count}/{c.usage_limit ?? "∞"}</Badge>
+                    <span className="inline-flex items-center rounded-full border border-border bg-muted/30 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">Usos: {c.used_count}/{c.usage_limit ?? "∞"}</span>
                     <span>Criado {formatDate(c.created_at)}</span>
                     <label className="flex items-center gap-2">
                       <Switch checked={c.enabled} onCheckedChange={(v) => toggle(c, v)} />
