@@ -145,7 +145,7 @@ export function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
 
       {/* Footer */}
       <div className="border-t border-border/60 p-3">
-        <Button
+        <DSButton
           variant="ghost"
           size="sm"
           className="w-full justify-start h-10 px-3 text-[13px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60"
@@ -155,7 +155,7 @@ export function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
           }}
         >
           <LogOut className="mr-3 h-[18px] w-[18px]" /> Sair
-        </Button>
+        </DSButton>
       </div>
     </aside>
   );
