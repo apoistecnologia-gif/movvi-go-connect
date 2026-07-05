@@ -2377,6 +2377,8 @@ export type Database = {
           driver_lng: number
           driver_photo_url: string
           is_live: boolean
+          origin_lat: number
+          origin_lng: number
           origin_name: string
           status: string
           updated_at: string
