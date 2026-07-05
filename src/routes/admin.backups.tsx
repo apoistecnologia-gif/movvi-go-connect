@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { logAdminAction } from "@/lib/adminAudit";
 import { downloadCsv } from "@/lib/csvExport";
 import { formatDate } from "@/lib/formatters";
-import { DSButton, DSCard, DSCardContent, DSCardDescription, DSCardHeader, DSCardTitle } from "@/design-system";
+import { DSBadge, DSButton, DSCard, DSCardContent, DSCardDescription, DSCardHeader, DSCardTitle } from "@/design-system";
 
 export const Route = createFileRoute("/admin/backups")({
   head: () => ({ meta: [{ title: "Backups — Admin MOVVI" }] }),
@@ -107,10 +107,10 @@ function AdminBackupsPage() {
   }
 
   function statusBadge(s: Backup["status"]) {
-    if (s === "success") return <span className="inline-flex items-center rounded-full border border-border bg-muted/20 px-2.5 py-0.5 text-[11px] font-medium gap-1 bg-primary/15 text-primary"><CheckCircle2 className="h-3 w-3" />Sucesso</span>;
-    if (s === "failed") return <span className="inline-flex items-center rounded-full border border-border bg-muted/20 px-2.5 py-0.5 text-[11px] font-medium gap-1"><XCircle className="h-3 w-3" />Falhou</span>;
-    if (s === "running") return <span className="inline-flex items-center rounded-full border border-border bg-muted/20 px-2.5 py-0.5 text-[11px] font-medium gap-1"><Loader2 className="h-3 w-3 animate-spin" />Em execução</span>;
-    return <span className="inline-flex items-center rounded-full border border-border bg-muted/20 px-2.5 py-0.5 text-[11px] font-medium gap-1"><Clock className="h-3 w-3" />Pendente</span>;
+    if (s === "success") return <DSBadge variant="primary" className="gap-1"><CheckCircle2 className="h-3 w-3" />Sucesso</DSBadge>;
+    if (s === "failed") return <DSBadge className="gap-1"><XCircle className="h-3 w-3" />Falhou</DSBadge>;
+    if (s === "running") return <DSBadge className="gap-1"><Loader2 className="h-3 w-3 animate-spin" />Em execução</DSBadge>;
+    return <DSBadge className="gap-1"><Clock className="h-3 w-3" />Pendente</DSBadge>;
   }
 
   return (
@@ -159,7 +159,7 @@ function AdminBackupsPage() {
                     <tr key={b.id} className="border-t border-border/60">
                       <td className="px-3 py-2">{formatDate(b.created_at)}</td>
                       <td className="px-3 py-2">
-                        <span className="inline-flex items-center rounded-full border border-border bg-muted/20 px-2.5 py-0.5 text-[11px] font-medium text-[10px]">{b.type}</span>
+                        <DSBadge className="text-[10px]">{b.type}</DSBadge>
                       </td>
                       <td className="px-3 py-2">{statusBadge(b.status)}</td>
                       <td className="px-3 py-2 text-muted-foreground">

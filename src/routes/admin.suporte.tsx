@@ -18,14 +18,7 @@ import {
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  DSButton,
-  DSCard,
-  DSCardContent,
-  Avatar,
-  Loading,
-  EmptyState,
-} from "@/design-system";
+import { Avatar, DSBadge, DSButton, DSCard, DSCardContent, EmptyState, Loading } from "@/design-system";
 import { Input } from "@/components/ui/input";
 import {
   Dialog,
@@ -484,12 +477,12 @@ function TicketRow({ t, onOpen }: { t: Enriched; onOpen: () => void }) {
               <span className="font-mono text-[11px] text-muted-foreground">#{shortId(t.id)}</span>
               <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ${priorityTone(t.priority)}`}>{priorityLabel(t.priority)}</span>
               <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ${statusTone(t.status)}`}>{statusLabel(t.status)}</span>
-              <span className="inline-flex items-center rounded-full border border-border bg-muted/20 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+              <DSBadge className="text-muted-foreground">
                 {t.user_type === "driver" ? "Motorista" : "Passageiro"}
-              </span>
-              <span className="inline-flex items-center rounded-full border border-border bg-muted/20 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+              </DSBadge>
+              <DSBadge className="text-muted-foreground">
                 {categoryLabel(t.category)}
-              </span>
+              </DSBadge>
               {t.ride_id && (
                 <span className="inline-flex items-center rounded-full border border-primary/30 px-2.5 py-0.5 text-[11px] font-medium text-primary">
                   <Car className="mr-1 h-3 w-3" /> Corrida
@@ -663,14 +656,14 @@ function TicketDetailDialog({
               </p>
               <div className="mt-1 flex flex-wrap gap-2 text-[11px]">
                 {t._user.rating != null && (
-                  <span className="inline-flex items-center rounded-full border border-border bg-muted/20 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+                  <DSBadge className="text-muted-foreground">
                     ⭐ {Number(t._user.rating).toFixed(2)}
-                  </span>
+                  </DSBadge>
                 )}
                 {t._user.status && (
-                  <span className="inline-flex items-center rounded-full border border-border bg-muted/20 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+                  <DSBadge className="text-muted-foreground">
                     {t._user.status}
-                  </span>
+                  </DSBadge>
                 )}
               </div>
             </div>
