@@ -8,6 +8,9 @@ import {
   ds,
   DSCard, DSAvatar, DSButton, DSBottomSheet, DSStatusPill, DSIcon,
   DSSpinner, DSSkeleton, DSProgressIndeterminate,
+  DSBadge, DSInput, DSTextarea, DSLabel,
+  DSSelect, DSSelectTrigger, DSSelectValue, DSSelectContent, DSSelectItem,
+  DSLoading, DSEmptyState,
   HeadingXL, HeadingM, Body, Caption, Metric, Label,
 } from "@/design-system";
 ```
@@ -45,6 +48,11 @@ propagates through every consumer automatically.
   destructive, outline, secondary, ghost, link`; sizes: `sm, default, lg, icon`).
 - **DSBottomSheet** — re-export of `MovviSheet` (spring physics, `ds.sheet` defaults).
 - **DSSpinner / DSSkeleton / DSProgressIndeterminate / DSPlaceholder**.
+- **DSBadge** — small status pill (`default | muted | primary | success | danger | warning | outline`). Prefer over ad-hoc span classNames.
+- **DSInput / DSTextarea / DSLabel** — unified form primitives (h-10 input, focus scroll-into-view).
+- **DSSelect + DSSelectTrigger/Value/Content/Item** — unified select primitives.
+- **DSLoading** — centered spinner with optional label (`role="status"`, `aria-live="polite"`).
+- **DSEmptyState** — icon + title + description + optional action for empty lists.
 
 ## Animation presets
 
