@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { Menu } from "lucide-react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
+import { DSButton } from "@/design-system";
 import { AdminGuard } from "@/components/AdminGuard";
 import { AdminSidebar } from "./AdminSidebar";
 
@@ -30,14 +30,15 @@ export function AdminLayout({ title, description, actions, children }: AdminLayo
 
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-border bg-card/80 px-4 py-3 backdrop-blur">
-            <Button
+            <DSButton
               variant="ghost"
               size="icon"
               className="lg:hidden"
+              aria-label="Abrir menu"
               onClick={() => setOpen(true)}
             >
               <Menu className="h-5 w-5" />
-            </Button>
+            </DSButton>
             <div className="min-w-0">
               <h1 className="font-display text-lg font-bold leading-tight truncate">{title}</h1>
               {description && (
