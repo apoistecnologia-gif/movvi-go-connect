@@ -2171,6 +2171,11 @@ function RatingScreen({
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 animate-in fade-in duration-300"
       style={{ backdropFilter: "blur(10px) saturate(140%)" }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !submitting) {
+          (submitted ? onDismiss : onSkip)();
+        }
+      }}
     >
       <div className="w-full max-w-md rounded-t-[28px] bg-card p-5 pb-6 shadow-[0_-24px_80px_-24px_rgba(0,0,0,0.55)] ring-1 ring-border animate-sheet-in">
         <div className="mx-auto -mt-1 mb-5 h-1.5 w-11 rounded-full bg-muted-foreground/25" />
@@ -2179,14 +2184,11 @@ function RatingScreen({
         <div className="flex flex-col items-center text-center">
           <div className="relative">
             <span
-              className="absolute inset-0 rounded-full animate-ping"
-              style={{ background: "color-mix(in oklab, #76C139 30%, transparent)", animationDuration: "1600ms" }}
+              className="absolute inset-0 rounded-full animate-ping bg-primary/30"
+              style={{ animationDuration: "1600ms" }}
             />
-            <div
-              className="relative flex h-16 w-16 items-center justify-center rounded-full shadow-[0_14px_36px_-14px_color-mix(in_oklab,#76C139_60%,transparent)] animate-in zoom-in-50 duration-500"
-              style={{ background: "#76C139" }}
-            >
-              <CheckCircle2 className="h-8 w-8 text-white animate-in fade-in zoom-in-75 duration-700" strokeWidth={2.2} />
+            <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-primary shadow-[0_14px_36px_-14px_color-mix(in_oklab,var(--color-primary)_60%,transparent)] animate-in zoom-in-50 duration-500">
+              <CheckCircle2 className="h-8 w-8 text-primary-foreground animate-in fade-in zoom-in-75 duration-700" strokeWidth={2.2} />
             </div>
           </div>
           <h2 className="mt-4 text-[26px] font-bold tracking-tight text-foreground">Corrida concluída</h2>
@@ -2207,7 +2209,7 @@ function RatingScreen({
             </div>
 
             {/* Next status */}
-            <div className="mt-4 flex items-center gap-3 rounded-[18px] bg-primary/8 p-3.5 ring-1 ring-primary/25 animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <div className="mt-4 flex items-center gap-3 rounded-[18px] bg-primary/10 p-3.5 ring-1 ring-primary/25 animate-in fade-in slide-in-from-bottom-2 duration-500">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
                 <CheckCircle2 className="h-4 w-4" strokeWidth={2} />
               </div>
@@ -2217,13 +2219,9 @@ function RatingScreen({
               </div>
             </div>
 
-            <button
-              onClick={onDismiss}
-              className="press-scale mt-5 flex h-14 w-full items-center justify-center rounded-[18px] text-[16px] font-bold uppercase tracking-[0.06em] text-primary-foreground shadow-[0_16px_36px_-16px_color-mix(in_oklab,var(--color-primary)_70%,transparent)] transition"
-              style={{ background: "#76C139" }}
-            >
+            <Button onClick={onDismiss} size="lg" className="mt-5 w-full">
               Concluir
-            </button>
+            </Button>
           </>
         ) : (
           <>
@@ -2285,7 +2283,7 @@ function RatingScreen({
                     <button key={n} type="button" onClick={() => setStars(n)} className="p-1 transition active:scale-90">
                       <Star
                         className={`h-8 w-8 transition ${
-                          n <= stars ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/35"
+                          n <= stars ? "fill-amber-400 text-amber-400" : "text-muted-foreground/35"
                         }`}
                         strokeWidth={1.5}
                       />
@@ -2308,22 +2306,18 @@ function RatingScreen({
               </div>
             )}
 
-            <button
-              disabled={submitting}
-              onClick={onSubmit}
-              className="press-scale mt-4 flex h-14 w-full items-center justify-center rounded-[18px] text-[16px] font-bold uppercase tracking-[0.06em] text-primary-foreground shadow-[0_16px_36px_-16px_color-mix(in_oklab,var(--color-primary)_70%,transparent)] transition disabled:opacity-60"
-              style={{ background: "#76C139" }}
-            >
+            <Button disabled={submitting} onClick={onSubmit} size="lg" className="mt-4 w-full">
               {submitting ? "Enviando…" : errorMessage ? "Tentar novamente" : "Concluir"}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="ghost"
               onClick={onSkip}
               disabled={submitting}
-              className="mt-2 w-full rounded-[14px] bg-transparent py-3 text-[12px] font-semibold uppercase tracking-wider text-muted-foreground transition hover:text-foreground disabled:opacity-60"
+              className="mt-1 w-full text-[12px] font-semibold uppercase tracking-wider text-muted-foreground"
             >
               Pular avaliação
-            </button>
+            </Button>
           </>
         )}
       </div>
