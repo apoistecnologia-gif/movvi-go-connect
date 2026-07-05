@@ -5,7 +5,7 @@ import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { MovviMap } from "@/components/MovviMap";
 import { Marker, Polyline } from "@react-google-maps/api";
-import { Card, CardContent } from "@/components/ui/card";
+import { DSCard, DSCardContent, DSButton } from "@/design-system";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
