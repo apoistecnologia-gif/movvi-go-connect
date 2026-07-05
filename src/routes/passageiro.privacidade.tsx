@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Loader2, ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
+import { DSLoading } from "@/design-system";
 import { supabase } from "@/integrations/supabase/client";
 import { SettingsPageShell, SettingsHero } from "@/components/settings";
 import { PASSENGER_NAV } from "@/components/BottomNav";
@@ -38,9 +39,7 @@ function PrivacidadePage() {
 
   if (checking) {
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-[#F7F9F7] text-[#707070]">
-        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Carregando...
-      </div>
+      <DSLoading label="Carregando..." className="min-h-dvh" />
     );
   }
 

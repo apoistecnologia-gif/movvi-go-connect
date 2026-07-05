@@ -1,6 +1,7 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { FileText, Loader2 } from "lucide-react";
+import { FileText } from "lucide-react";
+import { DSLoading } from "@/design-system";
 import { supabase } from "@/integrations/supabase/client";
 import { SettingsPageShell, SettingsHero } from "@/components/settings";
 
@@ -38,9 +39,7 @@ function TermosMotoristaPage() {
 
   if (checking) {
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-[#F7F9F7] text-[#707070]">
-        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Carregando...
-      </div>
+      <DSLoading label="Carregando..." className="min-h-dvh" />
     );
   }
 
