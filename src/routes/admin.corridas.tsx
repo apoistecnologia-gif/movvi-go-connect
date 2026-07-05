@@ -355,13 +355,13 @@ function AdminCorridasPage() {
       </div>
 
       {loading ? (
-        <div className="grid place-items-center py-12 text-muted-foreground">
-          <Loader2 className="h-6 w-6 animate-spin" />
-        </div>
+        <Loading label="Carregando corridas..." />
       ) : filtered.length === 0 ? (
-        <p className="py-12 text-center text-sm text-muted-foreground">
-          Nenhuma corrida encontrada com os filtros atuais.
-        </p>
+        <EmptyState
+          icon={Search}
+          title="Nenhuma corrida encontrada"
+          description="Ajuste os filtros para ver corridas neste período."
+        />
       ) : (
         <div className="grid gap-2">
           {filtered.map((r) => (
