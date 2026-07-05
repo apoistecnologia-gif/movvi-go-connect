@@ -197,9 +197,7 @@ function AdminCategoriasPage() {
       }
     >
       {loading ? (
-        <div className="grid place-items-center py-12 text-muted-foreground">
-          <Loader2 className="h-6 w-6 animate-spin" />
-        </div>
+        <Loading label="Carregando categorias..." />
       ) : (
         <div className="grid gap-3">
           {rows.map((row, idx) => (
