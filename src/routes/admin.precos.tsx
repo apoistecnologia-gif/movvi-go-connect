@@ -215,9 +215,7 @@ function AdminPrecosPage() {
       description="Defina todas as regras de precificação por categoria. Alterações refletem no app do passageiro instantaneamente."
     >
       {loading ? (
-        <div className="grid place-items-center py-12 text-muted-foreground">
-          <Loader2 className="h-6 w-6 animate-spin" />
-        </div>
+        <Loading label="Carregando preços..." />
       ) : (
         <Tabs value={activeCat} onValueChange={setActiveCat} className="space-y-4">
           <TabsList className="flex flex-wrap gap-1">
