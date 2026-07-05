@@ -3,16 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Loader2, Save, Building2, LifeBuoy, Globe, Sliders, Bell, Shield, CreditCard } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  DSButton as Button,
-  DSCard as Card,
-  DSCardContent as CardContent,
-  DSCardDescription as CardDescription,
-  DSCardHeader as CardHeader,
-  DSCardTitle as CardTitle,
-  Loading,
-} from "@/design-system";
-import { Input } from "@/components/ui/input";
+import { DSButton as Button, DSCard as Card, DSCardContent as CardContent, DSCardDescription as CardDescription, DSCardHeader as CardHeader, DSCardTitle as CardTitle, DSInput, Loading } from "@/design-system";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -274,7 +265,7 @@ function AdminConfigPage() {
                           <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                             {f.label}
                           </span>
-                          <Input
+                          <DSInput
                             type={f.type === "number" ? "number" : "text"}
                             placeholder={f.placeholder}
                             value={display}

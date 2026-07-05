@@ -19,15 +19,7 @@ import {
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Avatar } from "@/components/Avatar";
 import { supabase } from "@/integrations/supabase/client";
-import { Input } from "@/components/ui/input";
-import {
-  DSButton as Button,
-  DSCard as Card,
-  DSCardContent as CardContent,
-  StatusPill,
-  Loading,
-  EmptyState,
-} from "@/design-system";
+import { DSButton as Button, DSCard as Card, DSCardContent as CardContent, DSInput, EmptyState, Loading, StatusPill } from "@/design-system";
 import {
   Dialog,
   DialogContent,
@@ -354,7 +346,7 @@ function AdminPassageirosPage() {
       <div className="mb-4 space-y-3">
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
+          <DSInput
             placeholder="Buscar por nome, e-mail, telefone ou cidade"
             value={q}
             onChange={(e) => {

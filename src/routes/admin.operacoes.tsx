@@ -6,21 +6,11 @@ import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { MovviMap } from "@/components/MovviMap";
 import { Marker, Polyline } from "@react-google-maps/api";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import {
-  DSButton,
-  DSCard,
-  DSCardContent,
-  StatusPill,
-  EmptyState,
-  Metric,
-  Caption,
-  dsStatus,
-} from "@/design-system";
+import { Caption, DSButton, DSCard, DSCardContent, DSInput, EmptyState, Metric, StatusPill, dsStatus } from "@/design-system";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -362,7 +352,7 @@ function OpsCenterPage() {
         <DSCardContent className="flex flex-wrap items-center gap-2 p-3">
           <div className="relative flex-1 min-w-[220px]">
             <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
+            <DSInput
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar motorista, passageiro, ID, placa, telefone…"

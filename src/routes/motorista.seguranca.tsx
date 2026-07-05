@@ -2,11 +2,10 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AlertTriangle, Loader2, Phone, Plus, Share2, ShieldAlert, Trash2 } from "lucide-react";
 import { SettingsPageShell, SettingsHero, SettingsSection } from "@/components/settings";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { DSButton } from "@/design-system";
+import { DSButton, DSInput } from "@/design-system";
 
 export const Route = createFileRoute("/motorista/seguranca")({
   head: () => ({ meta: [{ title: "Segurança — MOVVI DRIVE" }] }),
@@ -181,15 +180,15 @@ function DriverSecurityPage() {
         <div className="space-y-3 p-4">
           <div>
             <Label className="text-[12px] text-[#707070]">Nome</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Maria Silva" />
+            <DSInput value={name} onChange={(e) => setName(e.target.value)} placeholder="Maria Silva" />
           </div>
           <div>
             <Label className="text-[12px] text-[#707070]">Telefone</Label>
-            <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(11) 99999-9999" inputMode="tel" />
+            <DSInput value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(11) 99999-9999" inputMode="tel" />
           </div>
           <div>
             <Label className="text-[12px] text-[#707070]">Parentesco (opcional)</Label>
-            <Input value={relation} onChange={(e) => setRelation(e.target.value)} placeholder="Esposa, irmão..." />
+            <DSInput value={relation} onChange={(e) => setRelation(e.target.value)} placeholder="Esposa, irmão..." />
           </div>
           <DSButton onClick={addContact} disabled={!name || !phone || adding} className="w-full">
             {adding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}

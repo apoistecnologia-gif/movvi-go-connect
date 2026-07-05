@@ -24,11 +24,10 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ProfilePhotoUploader } from "@/components/ProfilePhotoUploader";
 import { supabase } from "@/integrations/supabase/client";
-import { DSButton } from "@/design-system";
+import { DSButton, DSInput } from "@/design-system";
 
 type Props = {
   open: boolean;
@@ -194,7 +193,7 @@ export function DriverSideMenu({ open, onOpenChange, onLogout }: Props) {
                   <Label htmlFor="dm_name" className="flex items-center gap-1.5 text-xs">
                     <UserIcon className="h-3.5 w-3.5" /> Nome
                   </Label>
-                  <Input
+                  <DSInput
                     id="dm_name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
@@ -206,7 +205,7 @@ export function DriverSideMenu({ open, onOpenChange, onLogout }: Props) {
                   <Label htmlFor="dm_phone" className="flex items-center gap-1.5 text-xs">
                     <Phone className="h-3.5 w-3.5" /> Telefone
                   </Label>
-                  <Input
+                  <DSInput
                     id="dm_phone"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
@@ -219,7 +218,7 @@ export function DriverSideMenu({ open, onOpenChange, onLogout }: Props) {
                   <Label htmlFor="dm_email" className="flex items-center gap-1.5 text-xs">
                     <Mail className="h-3.5 w-3.5" /> E-mail
                   </Label>
-                  <Input
+                  <DSInput
                     id="dm_email"
                     type="email"
                     value={email}
@@ -237,7 +236,7 @@ export function DriverSideMenu({ open, onOpenChange, onLogout }: Props) {
                   <Label htmlFor="dm_pwd" className="flex items-center gap-1.5 text-xs">
                     <Lock className="h-3.5 w-3.5" /> Nova senha (opcional)
                   </Label>
-                  <Input
+                  <DSInput
                     id="dm_pwd"
                     type="password"
                     value={newPassword}

@@ -9,14 +9,13 @@ import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { MovviHeader } from "@/components/MovviHeader";
 import { BottomNav, PASSENGER_NAV, DRIVER_NAV } from "@/components/BottomNav";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ProfilePhotoUploader } from "@/components/ProfilePhotoUploader";
 import {
   Loader2, Save, Lock, MailCheck, PhoneCall, ShieldAlert, Trash2, BadgeCheck, X,
 } from "lucide-react";
 import { toast } from "sonner";
-import { DSButton, DSCard, DSCardContent, DSCardHeader, DSCardTitle, DSCardDescription } from "@/design-system";
+import { DSButton, DSCard, DSCardContent, DSCardDescription, DSCardHeader, DSCardTitle, DSInput } from "@/design-system";
 
 /* ---------- Validation helpers ---------- */
 const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -290,20 +289,20 @@ export function ProfileForm({
 
                     <div className="space-y-1.5">
                       <Label htmlFor="full_name">Nome completo *</Label>
-                      <Input id="full_name" required value={fullName}
+                      <DSInput id="full_name" required value={fullName}
                         onChange={(e) => { setFullName(e.target.value); markDirty(); }}
                         placeholder="Como devemos te chamar" />
                     </div>
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div className="space-y-1.5">
                         <Label htmlFor="cpf">CPF</Label>
-                        <Input id="cpf" value={cpf}
+                        <DSInput id="cpf" value={cpf}
                           onChange={(e) => { setCpf(e.target.value); markDirty(); }}
                           placeholder="000.000.000-00" />
                       </div>
                       <div className="space-y-1.5">
                         <Label htmlFor="birth_date">Data de nascimento</Label>
-                        <Input id="birth_date" type="date" value={birthDate}
+                        <DSInput id="birth_date" type="date" value={birthDate}
                           onChange={(e) => { setBirthDate(e.target.value); markDirty(); }} />
                       </div>
                     </div>
@@ -322,7 +321,7 @@ export function ProfileForm({
                       </div>
                       <div className="space-y-1.5">
                         <Label htmlFor="city">Cidade</Label>
-                        <Input id="city" value={city}
+                        <DSInput id="city" value={city}
                           onChange={(e) => { setCity(e.target.value); markDirty(); }}
                           placeholder="Sua cidade" />
                       </div>
@@ -332,7 +331,7 @@ export function ProfileForm({
                     <div className="space-y-1.5">
                       <Label>E-mail *</Label>
                       <div className="flex gap-2">
-                        <Input value={email} disabled />
+                        <DSInput value={email} disabled />
                         <DSButton type="button" variant="outline" size="sm" onClick={handleVerifyEmail}>
                           {emailVerifiedAt ? (
                             <><BadgeCheck className="mr-1 h-4 w-4 text-primary" /> Verificado</>
@@ -345,7 +344,7 @@ export function ProfileForm({
                     <div className="space-y-1.5">
                       <Label htmlFor="phone">Telefone *</Label>
                       <div className="flex gap-2">
-                        <Input id="phone" required inputMode="tel" value={phone}
+                        <DSInput id="phone" required inputMode="tel" value={phone}
                           onChange={(e) => { setPhone(e.target.value); markDirty(); }}
                           placeholder="(11) 99999-9999" />
                         <DSButton type="button" variant="outline" size="sm" onClick={handleVerifyPhone}>
@@ -362,13 +361,13 @@ export function ProfileForm({
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div className="space-y-1.5">
                         <Label htmlFor="emerg_name">Nome</Label>
-                        <Input id="emerg_name" value={emergencyName}
+                        <DSInput id="emerg_name" value={emergencyName}
                           onChange={(e) => { setEmergencyName(e.target.value); markDirty(); }}
                           placeholder="Ex: Maria" />
                       </div>
                       <div className="space-y-1.5">
                         <Label htmlFor="emerg_phone">Telefone</Label>
-                        <Input id="emerg_phone" inputMode="tel" value={emergencyPhone}
+                        <DSInput id="emerg_phone" inputMode="tel" value={emergencyPhone}
                           onChange={(e) => { setEmergencyPhone(e.target.value); markDirty(); }}
                           placeholder="(11) 99999-9999" />
                       </div>
@@ -380,14 +379,14 @@ export function ProfileForm({
                         <Label htmlFor="new_password" className="flex items-center gap-1.5 text-sm">
                           <Lock className="h-3.5 w-3.5" /> Nova senha
                         </Label>
-                        <Input id="new_password" type="password" autoComplete="new-password"
+                        <DSInput id="new_password" type="password" autoComplete="new-password"
                           value={newPassword}
                           onChange={(e) => { setNewPassword(e.target.value); markDirty(); }}
                           placeholder="Mín. 6 caracteres" minLength={6} />
                       </div>
                       <div className="space-y-1.5">
                         <Label htmlFor="confirm_password" className="text-sm">Confirmar senha</Label>
-                        <Input id="confirm_password" type="password" autoComplete="new-password"
+                        <DSInput id="confirm_password" type="password" autoComplete="new-password"
                           value={confirmPassword}
                           onChange={(e) => { setConfirmPassword(e.target.value); markDirty(); }}
                           placeholder="Repita a nova senha" minLength={6} />

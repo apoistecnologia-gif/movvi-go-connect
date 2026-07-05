@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
-import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
@@ -27,16 +26,7 @@ import {
 } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
-import {
-  DSButton,
-  DSCard,
-  DSCardContent,
-  StatusPill,
-  Loading,
-  EmptyState,
-  Avatar,
-  dsStatus,
-} from "@/design-system";
+import { Avatar, DSButton, DSCard, DSCardContent, DSInput, EmptyState, Loading, StatusPill, dsStatus } from "@/design-system";
 import { toast } from "sonner";
 import { formatBRL, formatDate } from "@/lib/formatters";
 import { downloadCsv } from "@/lib/csvExport";
@@ -295,7 +285,7 @@ function AdminCorridasPage() {
       <div className="mb-4 grid gap-3">
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
+          <DSInput
             placeholder="Buscar por ID, motorista, origem, destino, categoria ou pagamento"
             value={q}
             onChange={(e) => setQ(e.target.value)}

@@ -2,11 +2,10 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabase } from "@/lib/supabaseClient";
 import { AuthShell, useAuthForm } from "@/components/AuthShell";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
-import { DSButton } from "@/design-system";
+import { DSButton, DSInput } from "@/design-system";
 
 export const Route = createFileRoute("/passageiro/login")({
   head: () => ({ meta: [{ title: "Entrar — Passageiro MOVVI DRIVE" }] }),
@@ -45,11 +44,11 @@ function PassengerLoginPage() {
       <form onSubmit={onSubmit} className="space-y-3">
         <div className="space-y-1.5">
           <Label htmlFor="email" className="text-[13px]">E-mail</Label>
-          <Input id="email" name="email" type="email" required autoComplete="email" className="h-9 text-[14px]" />
+          <DSInput id="email" name="email" type="email" required autoComplete="email" className="h-9 text-[14px]" />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="password" className="text-[13px]">Senha</Label>
-          <Input
+          <DSInput
             id="password"
             name="password"
             type="password"

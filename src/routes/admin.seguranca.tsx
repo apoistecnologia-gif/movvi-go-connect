@@ -3,11 +3,10 @@ import { useEffect, useState } from "react";
 import { Loader2, Save, Shield, Lock, KeyRound, Clock } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
-import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { logAdminAction } from "@/lib/adminAudit";
-import { DSButton, DSCard, DSCardContent, DSCardDescription, DSCardHeader, DSCardTitle } from "@/design-system";
+import { DSButton, DSCard, DSCardContent, DSCardDescription, DSCardHeader, DSCardTitle, DSInput } from "@/design-system";
 
 export const Route = createFileRoute("/admin/seguranca")({
   head: () => ({ meta: [{ title: "Segurança — Admin MOVVI" }] }),
@@ -120,7 +119,7 @@ function AdminSecurityPage() {
           <DSCardContent className="space-y-3">
             <label className="flex flex-col gap-1">
               <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Tentativas máximas de login</span>
-              <Input
+              <DSInput
                 type="number"
                 min={1}
                 value={row.max_login_attempts}
@@ -155,7 +154,7 @@ function AdminSecurityPage() {
           <DSCardContent>
             <label className="flex flex-col gap-1">
               <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Timeout de sessão (minutos)</span>
-              <Input
+              <DSInput
                 type="number"
                 min={5}
                 value={row.session_timeout_minutes}
@@ -176,7 +175,7 @@ function AdminSecurityPage() {
           <DSCardContent className="grid gap-3 md:grid-cols-4">
             <label className="flex flex-col gap-1">
               <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Tamanho mínimo</span>
-              <Input
+              <DSInput
                 type="number"
                 min={4}
                 value={row.password_policy.min_length}

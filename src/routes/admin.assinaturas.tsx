@@ -18,14 +18,7 @@ import {
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  DSButton as Button,
-  DSCard as Card,
-  DSCardContent as CardContent,
-  StatusPill,
-  Loading,
-} from "@/design-system";
-import { Input } from "@/components/ui/input";
+import { DSButton as Button, DSCard as Card, DSCardContent as CardContent, DSInput, Loading, StatusPill } from "@/design-system";
 import { Switch } from "@/components/ui/switch";
 // Badge legacy substituído por SubPill (StatusPill do design system).
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -351,7 +344,7 @@ function AdminAssinaturasPage() {
             <div className="flex flex-col gap-3 md:flex-row md:items-center">
               <div className="relative flex-1">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
+                <DSInput
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Buscar por nome, telefone, cidade, Asaas customer/payment ID"
@@ -446,10 +439,10 @@ function AdminAssinaturasPage() {
               <Card key={p.id} className="border-border bg-card/60">
                 <CardContent className="grid gap-3 p-4 md:grid-cols-6">
                   <Field label="Nome">
-                    <Input value={p.name} onChange={(e) => patchPlan(p.id, { name: e.target.value })} />
+                    <DSInput value={p.name} onChange={(e) => patchPlan(p.id, { name: e.target.value })} />
                   </Field>
                   <Field label="Preço (R$)">
-                    <Input
+                    <DSInput
                       type="number"
                       step="0.01"
                       value={p.price}
@@ -457,7 +450,7 @@ function AdminAssinaturasPage() {
                     />
                   </Field>
                   <Field label="Promocional (R$)">
-                    <Input
+                    <DSInput
                       type="number"
                       step="0.01"
                       value={p.promotional_price ?? ""}
@@ -469,7 +462,7 @@ function AdminAssinaturasPage() {
                     />
                   </Field>
                   <Field label="Ciclo (dias)">
-                    <Input
+                    <DSInput
                       type="number"
                       value={p.billing_cycle_days}
                       onChange={(e) =>
@@ -478,7 +471,7 @@ function AdminAssinaturasPage() {
                     />
                   </Field>
                   <Field label="Tolerância (dias)">
-                    <Input
+                    <DSInput
                       type="number"
                       value={p.grace_period_days}
                       onChange={(e) =>
