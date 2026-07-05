@@ -23,7 +23,7 @@ import {
   Lock,
   type LucideIcon,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { DSButton } from "@/design-system";
 import { supabase } from "@/integrations/supabase/client";
 
 type Item = { to: string; label: string; icon: LucideIcon };
