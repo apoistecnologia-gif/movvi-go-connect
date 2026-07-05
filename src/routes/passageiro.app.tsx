@@ -1955,6 +1955,18 @@ function PassageiroApp() {
     } as DriverRow;
   }, [driverInfo, ride]);
 
+  // Alerta automático "chegando em ~2 min" e "chegando agora" durante o
+  // deslocamento do motorista até o ponto de embarque.
+  useDriverProximityAlerts({
+    rideId: ride?.id ?? null,
+    status: ride?.status ?? null,
+    driverLat: rideDriverInfo?.current_lat ?? null,
+    driverLng: rideDriverInfo?.current_lng ?? null,
+    originLat: ride?.origin_lat ?? null,
+    originLng: ride?.origin_lng ?? null,
+    driverName: rideDriverInfo?.name ?? null,
+  });
+
   // FitBounds ÚNICO por transição de fase: quando o motorista aceita
   // e quando chega no ponto de embarque, enquadra passageiro + motorista
   // (ou origem + destino na viagem). Não roda novamente a cada GPS.
