@@ -571,7 +571,7 @@ function OpsCenterPage() {
                       </button>
                     ))}
                   {passengers.size === 0 && (
-                    <p className="text-xs text-muted-foreground text-center py-6">Nenhum passageiro em corrida.</p>
+                    <EmptyState icon={Users} title="Sem passageiros" description="Passageiros em corrida aparecerão aqui." />
                   )}
                 </div>
               </ScrollArea>
@@ -580,7 +580,7 @@ function OpsCenterPage() {
             <TabsContent value="sos" className="flex-1 overflow-hidden mt-3">
               <ScrollArea className="h-full px-3 pb-3">
                 {activeSos.length === 0 && (
-                  <p className="text-xs text-muted-foreground text-center py-6">Nenhum alerta ativo.</p>
+                  <EmptyState icon={AlertTriangle} title="Nenhum alerta ativo" description="Alertas SOS pendentes aparecerão aqui." />
                 )}
                 <div className="space-y-2">
                   {activeSos.map((s) => {
