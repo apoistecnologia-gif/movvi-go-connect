@@ -797,9 +797,9 @@ function SubscriptionDetailSheet({
                   Verificar status
                 </Button>
                 {providerStatus && (
-                  <Badge variant="outline" className="border-border">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/30 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
                     Asaas: {providerStatus}
-                  </Badge>
+                  </span>
                 )}
                 {sub.invoice_url && (
                   <>
