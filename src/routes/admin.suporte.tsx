@@ -14,14 +14,19 @@ import {
   Trash2,
   Car,
   User as UserIcon,
+  Inbox,
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
-import { Avatar } from "@/components/Avatar";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  DSButton,
+  DSCard,
+  DSCardContent,
+  Avatar,
+  Loading,
+  EmptyState,
+} from "@/design-system";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -34,6 +39,7 @@ import { toast } from "sonner";
 import { formatDate } from "@/lib/formatters";
 import { logAdminAction } from "@/lib/adminAudit";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
+
 
 export const Route = createFileRoute("/admin/suporte")({
   head: () => ({ meta: [{ title: "Suporte — Admin MOVVI" }] }),
