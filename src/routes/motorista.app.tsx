@@ -2283,7 +2283,7 @@ function RatingScreen({
                     <button key={n} type="button" onClick={() => setStars(n)} className="p-1 transition active:scale-90">
                       <Star
                         className={`h-8 w-8 transition ${
-                          n <= stars ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/35"
+                          n <= stars ? "fill-amber-400 text-amber-400" : "text-muted-foreground/35"
                         }`}
                         strokeWidth={1.5}
                       />
@@ -2306,22 +2306,18 @@ function RatingScreen({
               </div>
             )}
 
-            <button
-              disabled={submitting}
-              onClick={onSubmit}
-              className="press-scale mt-4 flex h-14 w-full items-center justify-center rounded-[18px] text-[16px] font-bold uppercase tracking-[0.06em] text-primary-foreground shadow-[0_16px_36px_-16px_color-mix(in_oklab,var(--color-primary)_70%,transparent)] transition disabled:opacity-60"
-              style={{ background: "#76C139" }}
-            >
+            <Button disabled={submitting} onClick={onSubmit} size="lg" className="mt-4 w-full">
               {submitting ? "Enviando…" : errorMessage ? "Tentar novamente" : "Concluir"}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="ghost"
               onClick={onSkip}
               disabled={submitting}
-              className="mt-2 w-full rounded-[14px] bg-transparent py-3 text-[12px] font-semibold uppercase tracking-wider text-muted-foreground transition hover:text-foreground disabled:opacity-60"
+              className="mt-1 w-full text-[12px] font-semibold uppercase tracking-wider text-muted-foreground"
             >
               Pular avaliação
-            </button>
+            </Button>
           </>
         )}
       </div>
