@@ -1568,6 +1568,7 @@ export type Database = {
           request_expires_at: string | null
           route_polyline: string | null
           safety_code: string | null
+          share_token: string | null
           started_at: string | null
           status: Database["public"]["Enums"]["ride_status"]
           surge_multiplier: number
@@ -1627,6 +1628,7 @@ export type Database = {
           request_expires_at?: string | null
           route_polyline?: string | null
           safety_code?: string | null
+          share_token?: string | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["ride_status"]
           surge_multiplier?: number
@@ -1686,6 +1688,7 @@ export type Database = {
           request_expires_at?: string | null
           route_polyline?: string | null
           safety_code?: string | null
+          share_token?: string | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["ride_status"]
           surge_multiplier?: number
@@ -2291,6 +2294,7 @@ export type Database = {
         }[]
       }
       auto_suspend_overdue_subscriptions: { Args: never; Returns: undefined }
+      generate_share_token: { Args: never; Returns: string }
       get_driver_home_kpis: {
         Args: { _user_id: string }
         Returns: {
@@ -2359,6 +2363,26 @@ export type Database = {
           completed_rides: number
           total_rides: number
           total_spent: number
+        }[]
+      }
+      get_ride_by_share_token: {
+        Args: { _token: string }
+        Returns: {
+          category: string
+          destination_lat: number
+          destination_lng: number
+          destination_name: string
+          driver_first_name: string
+          driver_lat: number
+          driver_lng: number
+          driver_photo_url: string
+          is_live: boolean
+          origin_name: string
+          status: string
+          updated_at: string
+          vehicle_color: string
+          vehicle_model: string
+          vehicle_plate_masked: string
         }[]
       }
       recompute_driver_rating: {
