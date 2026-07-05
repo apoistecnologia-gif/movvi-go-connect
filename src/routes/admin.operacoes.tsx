@@ -691,19 +691,21 @@ function OpsCenterPage() {
 /* ─── Sub-components ───────────────────────────────── */
 
 function Kpi({ label, value, tone }: { label: string; value: number | string; tone: "green" | "blue" | "amber" | "violet" | "red" | "neutral" }) {
-  const toneMap: Record<string, string> = {
-    green: "text-emerald-500",
-    blue: "text-blue-500",
-    amber: "text-amber-500",
-    violet: "text-violet-500",
-    red: "text-destructive",
-    neutral: "text-foreground",
+  const toneColor: Record<string, string> = {
+    green: dsStatus.online.color,
+    blue: dsStatus.trip.color,
+    amber: dsStatus.searching.color,
+    violet: dsStatus.trip.color,
+    red: dsStatus.cancelled.color,
+    neutral: "var(--foreground)",
   };
   return (
     <DSCard className="border-border bg-card/60">
-      <DSCardContent className="p-3">
-        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
-        <p className={`mt-1 text-xl font-bold ${toneMap[tone]}`}>{value}</p>
+      <DSCardContent className="p-3 min-h-[76px]">
+        <Caption className="uppercase tracking-wider text-muted-foreground">{label}</Caption>
+        <Metric className="mt-1 block text-xl leading-none" style={{ color: toneColor[tone] }}>
+          {value}
+        </Metric>
       </DSCardContent>
     </DSCard>
   );
