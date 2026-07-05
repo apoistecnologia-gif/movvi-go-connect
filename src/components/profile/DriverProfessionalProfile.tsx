@@ -17,6 +17,14 @@ import { Avatar } from "@/components/Avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { RatingBadge, RatingSummary } from "@/components/rating/RatingBadge";
 import { cn } from "@/lib/utils";
+import {
+  AMENITY_META,
+  DEFAULT_AMENITIES,
+  enabledAmenities,
+  fetchDriverAmenitiesPublic,
+  type DriverAmenities,
+} from "@/lib/driverAmenities";
+
 
 export type DriverPublicProfile = {
   user_id: string;
@@ -192,6 +200,8 @@ export function DriverProfessionalProfile({
         />
       </section>
 
+      <AmenitiesSection userId={profile.user_id} />
+
       <p className="text-center text-[10.5px] leading-relaxed text-muted-foreground/80">
         Dados públicos de confiança. A MOVVI não compartilha documentos ou informações
         pessoais sensíveis.
@@ -199,6 +209,49 @@ export function DriverProfessionalProfile({
     </div>
   );
 }
+
+function AmenitiesSection({ userId }: { userId: string }) {
+  const [prefs, setPrefs] = useState<DriverAmenities>(DEFAULT_AMENITIES);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    fetchDriverAmenitiesPublic(userId).then((p) => {
+      if (!alive) return;
+      setPrefs(p);
+      setLoaded(true);
+    });
+    return () => { alive = false; };
+  }, [userId]);
+
+  const enabled = enabledAmenities(prefs);
+  if (!loaded || enabled.length === 0) return null;
+
+  return (
+    <section className="rounded-2xl bg-background/50 p-4 ring-1 ring-border/60">
+      <div className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+        <Sparkles className="h-3.5 w-3.5" />
+        Regalias a bordo
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {enabled.map((k) => {
+          const meta = AMENITY_META[k];
+          const IconEl = meta.icon;
+          return (
+            <span
+              key={k}
+              className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-[11.5px] font-semibold text-primary ring-1 ring-primary/25"
+            >
+              <IconEl className="h-3.5 w-3.5" />
+              {meta.label}
+            </span>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 
 function Stat({
   icon,

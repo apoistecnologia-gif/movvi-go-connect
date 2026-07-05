@@ -31,6 +31,7 @@ import { Route as MotoristaTermosRouteImport } from './routes/motorista.termos'
 import { Route as MotoristaSuporteRouteImport } from './routes/motorista.suporte'
 import { Route as MotoristaStatusRouteImport } from './routes/motorista.status'
 import { Route as MotoristaSegurancaRouteImport } from './routes/motorista.seguranca'
+import { Route as MotoristaRegaliasRouteImport } from './routes/motorista.regalias'
 import { Route as MotoristaPrivacidadeRouteImport } from './routes/motorista.privacidade'
 import { Route as MotoristaPreferenciasNotificacoesRouteImport } from './routes/motorista.preferencias-notificacoes'
 import { Route as MotoristaPerfilRouteImport } from './routes/motorista.perfil'
@@ -179,6 +180,11 @@ const MotoristaStatusRoute = MotoristaStatusRouteImport.update({
 const MotoristaSegurancaRoute = MotoristaSegurancaRouteImport.update({
   id: '/motorista/seguranca',
   path: '/motorista/seguranca',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MotoristaRegaliasRoute = MotoristaRegaliasRouteImport.update({
+  id: '/motorista/regalias',
+  path: '/motorista/regalias',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MotoristaPrivacidadeRoute = MotoristaPrivacidadeRouteImport.update({
@@ -414,6 +420,7 @@ export interface FileRoutesByFullPath {
   '/motorista/perfil': typeof MotoristaPerfilRoute
   '/motorista/preferencias-notificacoes': typeof MotoristaPreferenciasNotificacoesRoute
   '/motorista/privacidade': typeof MotoristaPrivacidadeRoute
+  '/motorista/regalias': typeof MotoristaRegaliasRoute
   '/motorista/seguranca': typeof MotoristaSegurancaRoute
   '/motorista/status': typeof MotoristaStatusRoute
   '/motorista/suporte': typeof MotoristaSuporteRoute
@@ -476,6 +483,7 @@ export interface FileRoutesByTo {
   '/motorista/perfil': typeof MotoristaPerfilRoute
   '/motorista/preferencias-notificacoes': typeof MotoristaPreferenciasNotificacoesRoute
   '/motorista/privacidade': typeof MotoristaPrivacidadeRoute
+  '/motorista/regalias': typeof MotoristaRegaliasRoute
   '/motorista/seguranca': typeof MotoristaSegurancaRoute
   '/motorista/status': typeof MotoristaStatusRoute
   '/motorista/suporte': typeof MotoristaSuporteRoute
@@ -539,6 +547,7 @@ export interface FileRoutesById {
   '/motorista/perfil': typeof MotoristaPerfilRoute
   '/motorista/preferencias-notificacoes': typeof MotoristaPreferenciasNotificacoesRoute
   '/motorista/privacidade': typeof MotoristaPrivacidadeRoute
+  '/motorista/regalias': typeof MotoristaRegaliasRoute
   '/motorista/seguranca': typeof MotoristaSegurancaRoute
   '/motorista/status': typeof MotoristaStatusRoute
   '/motorista/suporte': typeof MotoristaSuporteRoute
@@ -603,6 +612,7 @@ export interface FileRouteTypes {
     | '/motorista/perfil'
     | '/motorista/preferencias-notificacoes'
     | '/motorista/privacidade'
+    | '/motorista/regalias'
     | '/motorista/seguranca'
     | '/motorista/status'
     | '/motorista/suporte'
@@ -665,6 +675,7 @@ export interface FileRouteTypes {
     | '/motorista/perfil'
     | '/motorista/preferencias-notificacoes'
     | '/motorista/privacidade'
+    | '/motorista/regalias'
     | '/motorista/seguranca'
     | '/motorista/status'
     | '/motorista/suporte'
@@ -727,6 +738,7 @@ export interface FileRouteTypes {
     | '/motorista/perfil'
     | '/motorista/preferencias-notificacoes'
     | '/motorista/privacidade'
+    | '/motorista/regalias'
     | '/motorista/seguranca'
     | '/motorista/status'
     | '/motorista/suporte'
@@ -790,6 +802,7 @@ export interface RootRouteChildren {
   MotoristaPerfilRoute: typeof MotoristaPerfilRoute
   MotoristaPreferenciasNotificacoesRoute: typeof MotoristaPreferenciasNotificacoesRoute
   MotoristaPrivacidadeRoute: typeof MotoristaPrivacidadeRoute
+  MotoristaRegaliasRoute: typeof MotoristaRegaliasRoute
   MotoristaSegurancaRoute: typeof MotoristaSegurancaRoute
   MotoristaStatusRoute: typeof MotoristaStatusRoute
   MotoristaSuporteRoute: typeof MotoristaSuporteRoute
@@ -965,6 +978,13 @@ declare module '@tanstack/react-router' {
       path: '/motorista/seguranca'
       fullPath: '/motorista/seguranca'
       preLoaderRoute: typeof MotoristaSegurancaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/motorista/regalias': {
+      id: '/motorista/regalias'
+      path: '/motorista/regalias'
+      fullPath: '/motorista/regalias'
+      preLoaderRoute: typeof MotoristaRegaliasRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/motorista/privacidade': {
@@ -1289,6 +1309,7 @@ const rootRouteChildren: RootRouteChildren = {
   MotoristaPreferenciasNotificacoesRoute:
     MotoristaPreferenciasNotificacoesRoute,
   MotoristaPrivacidadeRoute: MotoristaPrivacidadeRoute,
+  MotoristaRegaliasRoute: MotoristaRegaliasRoute,
   MotoristaSegurancaRoute: MotoristaSegurancaRoute,
   MotoristaStatusRoute: MotoristaStatusRoute,
   MotoristaSuporteRoute: MotoristaSuporteRoute,
@@ -1313,13 +1334,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
