@@ -24,6 +24,7 @@ import {
 import { RIDE_CATEGORIES } from "@/lib/rideCategories";
 import { MovviMap } from "@/components/MovviMap";
 import { DriverSideMenu } from "@/components/DriverSideMenu";
+import { BrandSplash } from "@/components/BrandSplash";
 import { MovviSheet, type MovviSheetHandle } from "@/components/MovviSheet";
 import { PassengerProfessionalProfileDialog } from "@/components/profile/PassengerProfessionalProfileDialog";
 import { SafetyCard } from "@/components/safety/SafetyCard";
@@ -73,8 +74,17 @@ const RIDE_OFFER_TIMEOUT_SECONDS = 60;
 
 export const Route = createFileRoute("/motorista/app")({
   head: () => ({ meta: [{ title: "App do Motorista — MOVVI DRIVE" }] }),
-  component: MotoristaApp,
+  component: MotoristaAppRoute,
 });
+
+function MotoristaAppRoute() {
+  return (
+    <>
+      <BrandSplash storageKey="movvi:splash:motorista" />
+      <MotoristaApp />
+    </>
+  );
+}
 
 type LatLng = { lat: number; lng: number };
 type RideRow = Database["public"]["Tables"]["rides"]["Row"];

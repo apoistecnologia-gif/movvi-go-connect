@@ -85,6 +85,7 @@ import { listFavorites, type FavoritePlace } from "@/lib/favoritePlaces";
 import { Briefcase, Heart, Home as HomeIcon } from "lucide-react";
 
 import type { Database } from "@/integrations/supabase/types";
+import { BrandSplash } from "@/components/BrandSplash";
 
 /** Saudação dinâmica com base no horário local (pt-BR). */
 function getGreeting(): { text: string; icon: LucideIcon } {
@@ -436,6 +437,7 @@ export const Route = createFileRoute("/passageiro/app")({
   head: () => ({ meta: [{ title: "MOVVI Drive — Passageiro" }] }),
   component: () => (
     <UiCategoriesProvider>
+      <BrandSplash storageKey="movvi:splash:passageiro" />
       <PassageiroApp />
     </UiCategoriesProvider>
   ),
