@@ -382,6 +382,54 @@ export type Database = {
         }
         Relationships: []
       }
+      driver_amenities: {
+        Row: {
+          air_conditioning: boolean
+          candy: boolean
+          charger: boolean
+          child_seat: boolean
+          created_at: string
+          large_luggage: boolean
+          music_on_demand: boolean
+          pet_friendly: boolean
+          quiet_ride: boolean
+          updated_at: string
+          user_id: string
+          water: boolean
+          wifi: boolean
+        }
+        Insert: {
+          air_conditioning?: boolean
+          candy?: boolean
+          charger?: boolean
+          child_seat?: boolean
+          created_at?: string
+          large_luggage?: boolean
+          music_on_demand?: boolean
+          pet_friendly?: boolean
+          quiet_ride?: boolean
+          updated_at?: string
+          user_id: string
+          water?: boolean
+          wifi?: boolean
+        }
+        Update: {
+          air_conditioning?: boolean
+          candy?: boolean
+          charger?: boolean
+          child_seat?: boolean
+          created_at?: string
+          large_luggage?: boolean
+          music_on_demand?: boolean
+          pet_friendly?: boolean
+          quiet_ride?: boolean
+          updated_at?: string
+          user_id?: string
+          water?: boolean
+          wifi?: boolean
+        }
+        Relationships: []
+      }
       driver_announcements: {
         Row: {
           active: boolean
