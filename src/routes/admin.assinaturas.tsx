@@ -851,9 +851,7 @@ function SubscriptionDetailSheet({
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline" className={STATUS_TONE[h.status] ?? "border-border"}>
-                        {statusLabel(h.status)}
-                      </Badge>
+                      <SubPill status={h.status} />
                       <span className="font-semibold">{formatBRL(h.amount)}</span>
                     </div>
                   </div>
