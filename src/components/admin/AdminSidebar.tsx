@@ -40,6 +40,7 @@ export const ADMIN_NAV: Item[] = [
   { to: "/admin/cupons", label: "Promoções", icon: Ticket },
   { to: "/admin/assinaturas", label: "Assinaturas", icon: CreditCard },
   { to: "/admin/pagamentos", label: "Pagamentos", icon: Wallet },
+  { to: "/admin/financeiro-motoristas", label: "Financeiro motoristas", icon: Wallet },
   { to: "/admin/financeiro", label: "Financeiro", icon: Wallet },
   { to: "/admin/relatorios", label: "Relatórios", icon: FileBarChart },
   { to: "/admin/analytics", label: "Analytics & BI", icon: TrendingUp },
