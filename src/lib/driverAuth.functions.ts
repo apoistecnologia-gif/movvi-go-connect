@@ -8,12 +8,19 @@ const DRIVER_AUTH_LINK_FIELD = "user_id" as const;
 const Categories = ["carros", "motos", "fretes", "guincho", "envios"] as const;
 const Buckets = ["driver-selfies", "driver-cnh", "vehicle-documents"] as const;
 
+const IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"] as const;
+const DOC_TYPES = [...IMAGE_TYPES, "application/pdf"] as const;
+const MAX_DOC_BYTES = 8 * 1024 * 1024; // 8 MB por documento (após decodificar)
+const MAX_BASE64_CHARS = Math.ceil((MAX_DOC_BYTES * 4) / 3) + 16; // limite grosseiro antes de decodificar
+
 const DriverDocumentSchema = z.object({
   bucket: z.enum(Buckets),
   label: z.enum(["selfie", "cnh", "cnh_back", "veiculo"]),
-  fileName: z.string().min(1),
+  fileName: z.string().min(1).max(160),
   contentType: z.string().min(1),
-  base64: z.string().min(1),
+  base64: z.string().min(1).max(MAX_BASE64_CHARS, {
+    message: "Arquivo muito grande. Envie até 8 MB.",
+  }),
 });
 
 const DriverSignupSchema = z.object({
