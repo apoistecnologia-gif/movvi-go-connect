@@ -602,6 +602,59 @@ export type Database = {
         }
         Relationships: []
       }
+      driver_payment_events: {
+        Row: {
+          asaas_event: string
+          asaas_payment_id: string | null
+          asaas_subscription_id: string | null
+          created_at: string
+          driver_id: string | null
+          due_date: string | null
+          id: string
+          invoice_url: string | null
+          paid_at: string | null
+          raw_payload: Json
+          status: string | null
+          value: number | null
+        }
+        Insert: {
+          asaas_event: string
+          asaas_payment_id?: string | null
+          asaas_subscription_id?: string | null
+          created_at?: string
+          driver_id?: string | null
+          due_date?: string | null
+          id?: string
+          invoice_url?: string | null
+          paid_at?: string | null
+          raw_payload: Json
+          status?: string | null
+          value?: number | null
+        }
+        Update: {
+          asaas_event?: string
+          asaas_payment_id?: string | null
+          asaas_subscription_id?: string | null
+          created_at?: string
+          driver_id?: string | null
+          due_date?: string | null
+          id?: string
+          invoice_url?: string | null
+          paid_at?: string | null
+          raw_payload?: Json
+          status?: string | null
+          value?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_payment_events_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       driver_preferences: {
         Row: {
           accept_card: boolean
@@ -837,6 +890,7 @@ export type Database = {
           approval_status: Database["public"]["Enums"]["driver_approval_status"]
           approved_at: string | null
           asaas_customer_id: string | null
+          asaas_subscription_id: string | null
           average_rating: number
           birth_date: string | null
           blocked_at: string | null
@@ -853,12 +907,17 @@ export type Database = {
           current_speed: number | null
           documents_status: string
           email: string
+          financial_status: Database["public"]["Enums"]["driver_financial_status"]
           id: string
           insurance_url: string | null
           is_online: boolean
+          last_invoice_url: string | null
           last_location_at: string | null
+          last_payment_id: string | null
+          last_payment_status: string | null
           motivo_reprovacao: string | null
           name: string
+          next_due_date: string | null
           payment_status: string
           phone: string
           photo_url: string | null
@@ -869,6 +928,7 @@ export type Database = {
           subscription_expires_at: string | null
           subscription_grace_days: number
           subscription_status: Database["public"]["Enums"]["driver_subscription_status"]
+          subscription_value: number | null
           suspended_at: string | null
           total_ratings: number
           updated_at: string
@@ -884,6 +944,7 @@ export type Database = {
           approval_status?: Database["public"]["Enums"]["driver_approval_status"]
           approved_at?: string | null
           asaas_customer_id?: string | null
+          asaas_subscription_id?: string | null
           average_rating?: number
           birth_date?: string | null
           blocked_at?: string | null
@@ -900,12 +961,17 @@ export type Database = {
           current_speed?: number | null
           documents_status?: string
           email: string
+          financial_status?: Database["public"]["Enums"]["driver_financial_status"]
           id?: string
           insurance_url?: string | null
           is_online?: boolean
+          last_invoice_url?: string | null
           last_location_at?: string | null
+          last_payment_id?: string | null
+          last_payment_status?: string | null
           motivo_reprovacao?: string | null
           name: string
+          next_due_date?: string | null
           payment_status?: string
           phone: string
           photo_url?: string | null
@@ -916,6 +982,7 @@ export type Database = {
           subscription_expires_at?: string | null
           subscription_grace_days?: number
           subscription_status?: Database["public"]["Enums"]["driver_subscription_status"]
+          subscription_value?: number | null
           suspended_at?: string | null
           total_ratings?: number
           updated_at?: string
@@ -931,6 +998,7 @@ export type Database = {
           approval_status?: Database["public"]["Enums"]["driver_approval_status"]
           approved_at?: string | null
           asaas_customer_id?: string | null
+          asaas_subscription_id?: string | null
           average_rating?: number
           birth_date?: string | null
           blocked_at?: string | null
@@ -947,12 +1015,17 @@ export type Database = {
           current_speed?: number | null
           documents_status?: string
           email?: string
+          financial_status?: Database["public"]["Enums"]["driver_financial_status"]
           id?: string
           insurance_url?: string | null
           is_online?: boolean
+          last_invoice_url?: string | null
           last_location_at?: string | null
+          last_payment_id?: string | null
+          last_payment_status?: string | null
           motivo_reprovacao?: string | null
           name?: string
+          next_due_date?: string | null
           payment_status?: string
           phone?: string
           photo_url?: string | null
@@ -963,6 +1036,7 @@ export type Database = {
           subscription_expires_at?: string | null
           subscription_grace_days?: number
           subscription_status?: Database["public"]["Enums"]["driver_subscription_status"]
+          subscription_value?: number | null
           suspended_at?: string | null
           total_ratings?: number
           updated_at?: string
@@ -2563,6 +2637,12 @@ export type Database = {
         | "aprovado"
         | "reprovado"
         | "bloqueado"
+      driver_financial_status:
+        | "inactive"
+        | "pending"
+        | "active"
+        | "overdue"
+        | "cancelled"
       driver_subscription_status:
         | "active"
         | "inactive"
@@ -2759,6 +2839,13 @@ export const Constants = {
         "aprovado",
         "reprovado",
         "bloqueado",
+      ],
+      driver_financial_status: [
+        "inactive",
+        "pending",
+        "active",
+        "overdue",
+        "cancelled",
       ],
       driver_subscription_status: [
         "active",

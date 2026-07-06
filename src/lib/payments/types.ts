@@ -55,9 +55,16 @@ export interface PaymentProvider {
   ensureCustomer(input: EnsureCustomerInput): Promise<EnsureCustomerResult>;
   createMonthlyCharge(input: CreateMonthlyChargeInput): Promise<SubscriptionChargeResult>;
   parseWebhook(payload: unknown): {
+    event?: string;
     providerReference: string | null;
-    status: "paid" | "failed" | "expired" | "refunded" | "unknown";
+    status: "paid" | "pending" | "failed" | "expired" | "refunded" | "unknown";
     paidAt?: string | null;
+    subscriptionId?: string | null;
+    customerId?: string | null;
+    value?: number | null;
+    dueDate?: string | null;
+    invoiceUrl?: string | null;
+    bankSlipUrl?: string | null;
   };
 }
 
