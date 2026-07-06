@@ -3432,7 +3432,7 @@ function StepFlow({
 
 
       {/* Cabeçalho do destino (oculto na etapa de confirmação — tem card de rota próprio) */}
-      {uiStage !== "confirming_request" && (
+      {uiStage !== "confirming_request" && uiStage !== "selecting_category" && (
         <div className="mb-3 flex items-center gap-2.5 rounded-[20px] bg-white px-3.5 py-2.5 ring-1 ring-border/60 shadow-[0_6px_18px_-14px_rgba(15,23,42,0.18)]">
           <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#76C139]/10 text-[#76C139]">
             <MapPin className="h-[16px] w-[16px]" strokeWidth={2} />
