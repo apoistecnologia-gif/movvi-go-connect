@@ -179,87 +179,74 @@ export function PassengerSideMenu({ open, onOpenChange, onLogout }: Props) {
                 </div>
               )}
 
-              <form onSubmit={onSave} className="space-y-4">
-                <div className="space-y-1.5">
-                  <DSLabel htmlFor="sm_name" className="flex items-center gap-1.5 text-xs">
-                    <UserIcon className="h-3.5 w-3.5" /> Nome
-                  </DSLabel>
-                  <DSInput
-                    id="sm_name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Seu nome"
+              <div className="space-y-2 border-t border-border pt-4">
+                <button
+                  type="button"
+                  onClick={() => setDadosOpen((v) => !v)}
+                  aria-expanded={dadosOpen}
+                  className="flex w-full items-center gap-3 rounded-lg border border-border bg-card/60 px-3 py-2.5 text-sm font-medium text-foreground transition hover:bg-accent/40"
+                >
+                  <IdCard className="h-4 w-4 text-primary" />
+                  <span className="flex-1 text-left">Meus dados</span>
+                  <ChevronDown
+                    className={`h-4 w-4 text-muted-foreground transition-transform ${dadosOpen ? "rotate-180" : ""}`}
                   />
-                </div>
+                </button>
 
-                <div className="space-y-1.5">
-                  <DSLabel htmlFor="sm_phone" className="flex items-center gap-1.5 text-xs">
-                    <Phone className="h-3.5 w-3.5" /> Telefone
-                  </DSLabel>
-                  <DSInput
-                    id="sm_phone"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="(11) 99999-9999"
-                    inputMode="tel"
-                  />
-                </div>
+                {dadosOpen && (
+                  <form onSubmit={onSave} className="space-y-4 rounded-lg border border-border bg-card/40 p-3">
+                    <div className="space-y-1.5">
+                      <DSLabel htmlFor="sm_name" className="flex items-center gap-1.5 text-xs">
+                        <UserIcon className="h-3.5 w-3.5" /> Nome
+                      </DSLabel>
+                      <DSInput id="sm_name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Seu nome" />
+                    </div>
 
-                <div className="space-y-1.5">
-                  <DSLabel htmlFor="sm_email" className="flex items-center gap-1.5 text-xs">
-                    <Mail className="h-3.5 w-3.5" /> E-mail
-                  </DSLabel>
-                  <DSInput
-                    id="sm_email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="voce@exemplo.com"
-                  />
-                  {email !== originalEmail && (
-                    <p className="text-[11px] text-muted-foreground">
-                      Será enviado um link de confirmação para o novo endereço.
-                    </p>
-                  )}
-                </div>
+                    <div className="space-y-1.5">
+                      <DSLabel htmlFor="sm_phone" className="flex items-center gap-1.5 text-xs">
+                        <Phone className="h-3.5 w-3.5" /> Telefone
+                      </DSLabel>
+                      <DSInput id="sm_phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(11) 99999-9999" inputMode="tel" />
+                    </div>
 
-                <div className="space-y-1.5 rounded-lg border border-border bg-card/50 p-3">
-                  <DSLabel htmlFor="sm_pwd" className="flex items-center gap-1.5 text-xs">
-                    <Lock className="h-3.5 w-3.5" /> Nova senha (opcional)
-                  </DSLabel>
-                  <DSInput
-                    id="sm_pwd"
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="Deixe em branco para não alterar"
-                    minLength={6}
-                  />
-                </div>
+                    <div className="space-y-1.5">
+                      <DSLabel htmlFor="sm_email" className="flex items-center gap-1.5 text-xs">
+                        <Mail className="h-3.5 w-3.5" /> E-mail
+                      </DSLabel>
+                      <DSInput id="sm_email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="voce@exemplo.com" />
+                      {email !== originalEmail && (
+                        <p className="text-[11px] text-muted-foreground">
+                          Será enviado um link de confirmação para o novo endereço.
+                        </p>
+                      )}
+                    </div>
 
-                {msg && (
-                  <div
-                    className={`rounded-lg px-3 py-2 text-xs ${
-                      msg.kind === "ok"
-                        ? "bg-primary/15 text-primary ring-1 ring-primary/30"
-                        : "bg-destructive/15 text-destructive ring-1 ring-destructive/30"
-                    }`}
-                  >
-                    {msg.text}
-                  </div>
+                    <div className="space-y-1.5 rounded-lg border border-border bg-card/50 p-3">
+                      <DSLabel htmlFor="sm_pwd" className="flex items-center gap-1.5 text-xs">
+                        <Lock className="h-3.5 w-3.5" /> Nova senha (opcional)
+                      </DSLabel>
+                      <DSInput id="sm_pwd" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Deixe em branco para não alterar" minLength={6} />
+                    </div>
+
+                    {msg && (
+                      <div
+                        className={`rounded-lg px-3 py-2 text-xs ${
+                          msg.kind === "ok"
+                            ? "bg-primary/15 text-primary ring-1 ring-primary/30"
+                            : "bg-destructive/15 text-destructive ring-1 ring-destructive/30"
+                        }`}
+                      >
+                        {msg.text}
+                      </div>
+                    )}
+
+                    <DSButton type="submit" disabled={saving} className="w-full">
+                      {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                      Salvar alterações
+                    </DSButton>
+                  </form>
                 )}
 
-                <DSButton type="submit" disabled={saving} className="w-full">
-                  {saving ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Save className="mr-2 h-4 w-4" />
-                  )}
-                  Salvar alterações
-                </DSButton>
-              </form>
-
-              <div className="space-y-2 border-t border-border pt-4">
                 <Link
                   to="/passageiro/corridas"
                   onClick={() => onOpenChange(false)}
