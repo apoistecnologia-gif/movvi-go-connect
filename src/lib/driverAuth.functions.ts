@@ -27,7 +27,7 @@ const DriverSignupSchema = z.object({
   name: z.string().trim().min(3).max(120),
   email: z.string().trim().email().max(255),
   phone: z.string().trim().min(10).max(20),
-  password: z.string().min(4).max(72),
+  password: z.string().min(8, { message: "Use uma senha com no mínimo 8 caracteres." }).max(72),
   cpf: z.string().trim().min(11).max(14),
   birth_date: z.string().optional().nullable(),
   city: z.string().trim().min(2).max(80),
