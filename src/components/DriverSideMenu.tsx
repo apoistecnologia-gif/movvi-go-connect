@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   User as UserIcon,
   Wallet,
+  Coins,
 } from "lucide-react";
 import {
   Sheet,
