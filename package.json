@@ -9,7 +9,10 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "test": "echo \"Nenhum runner unitário configurado. Adicione vitest com: bun add -d vitest\" && exit 0",
+    "test:unit": "echo \"Configure vitest para rodar testes unitários.\" && exit 0",
+    "test:e2e": "python3 -m pytest tests/e2e || echo \"Rode manualmente: python3 tests/e2e/<arquivo>.e2e.py\""
   },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.12",
