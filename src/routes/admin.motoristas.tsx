@@ -730,6 +730,7 @@ function DriverCard({
   onUnblock,
   onSuspendToggle,
   onSubscription,
+  onGenerateCharge,
 }: {
   driver: Driver;
   activeRideStatus: string | null;
@@ -741,6 +742,7 @@ function DriverCard({
   onUnblock: () => void;
   onSuspendToggle: () => void;
   onSubscription: () => void;
+  onGenerateCharge: () => void;
 }) {
   const meta = STATUS_META[driver.approval_status];
   const sm = subMeta(driver.subscription_status);
