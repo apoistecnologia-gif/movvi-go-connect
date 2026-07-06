@@ -31,6 +31,18 @@ export type CancellationFee = {
   } | null;
 };
 
+export type DriverWalletTx = {
+  id: string;
+  driver_id: string;
+  amount: number;
+  status: "pending" | "available" | "withdrawn" | "cancelled";
+  source: "cancellation_fee" | "manual_credit" | "withdrawal" | "adjustment";
+  source_ride_id: string | null;
+  description: string | null;
+  available_at: string | null;
+  created_at: string;
+};
+
 export function feeReasonLabel(f: Pick<CancellationFee, "ride_status_at_cancel" | "seconds_since_accept">): string {
   if (f.ride_status_at_cancel === "motorista_chegou") return "Motorista já havia chegado ao ponto de embarque";
   if ((f.seconds_since_accept ?? 0) > 180) return "Cancelamento mais de 3 min após o motorista aceitar";
