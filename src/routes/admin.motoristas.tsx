@@ -276,18 +276,17 @@ function AdminMotoristas() {
     setBusyId(d.id);
     try {
       if (status === "aprovado") {
-        // Aprovação → cria cliente + assinatura Asaas via Edge Function
+        // Aprovação → cria assinatura (preapproval) no Mercado Pago via Edge Function.
         const { data: result, error: fnError } = await supabase.functions.invoke<{
           ok: boolean;
           alreadyExists: boolean;
-          subscriptionId: string;
-          invoiceUrl: string | null;
+          preapprovalId: string;
+          initPoint: string | null;
           dueDate: string | null;
-        }>("approve-driver-and-create-subscription", {
+        }>("approve-driver-and-create-mercadopago-subscription", {
           body: { driverId: d.id },
         });
         if (fnError || !result?.ok) {
-          // supabase-js wraps non-2xx as FunctionsHttpError; body is on error.context
           let detail = "";
           const ctx = (fnError as unknown as { context?: Response })?.context;
           if (ctx && typeof ctx.json === "function") {
@@ -322,14 +321,31 @@ function AdminMotoristas() {
           before: { approval_status: d.approval_status },
           after: {
             approval_status: "aprovado",
-            asaas_subscription_id: result.subscriptionId,
-            invoice_url: result.invoiceUrl,
+            mercadopago_preapproval_id: result.preapprovalId,
+            mercadopago_init_point: result.initPoint,
           },
         });
+        if (result.initPoint && typeof window !== "undefined") {
+          try {
+            await navigator.clipboard.writeText(result.initPoint);
+          } catch {
+            /* ignore */
+          }
+        }
         toast.success(
           result.alreadyExists
-            ? "Motorista aprovado (assinatura já existia)"
-            : "Motorista aprovado — cobrança gerada no Asaas",
+            ? "Motorista aprovado (assinatura já existia). Link copiado."
+            : "Motorista aprovado — link de pagamento gerado (copiado).",
+          {
+            description: result.initPoint ?? undefined,
+            action: result.initPoint
+              ? {
+                  label: "Abrir",
+                  onClick: () => window.open(result.initPoint!, "_blank"),
+                }
+              : undefined,
+            duration: 10000,
+          },
         );
         setRejectFor(null);
         setBlockFor(null);
