@@ -2028,7 +2028,7 @@ function PassageiroApp() {
     // NÃO deve estourar em cima do pickup.
     const bottomPad = ride.status === "procurar_motorista"
       ? Math.max(280, Math.round(window.innerHeight * 0.42))
-      : Math.round(window.innerHeight * 0.5) + 16;
+      : Math.round(window.innerHeight * 0.34) + 16;
     mapRef.current.fitBounds(bounds, {
       top: 130,
       bottom: bottomPad,
@@ -2680,8 +2680,8 @@ function PassageiroApp() {
           phase === "motorista_chegou" ||
           phase === "em_viagem") && (
           <MovviSheet
-            snaps={[50, 74, 92]}
-            initial={50}
+            snaps={[32, 64, 92]}
+            initial={32}
           >
             <DriverEnRoute
               ride={ride}
@@ -4479,6 +4479,11 @@ function DriverEnRoute({
       </div>
 
       {/* ── EXPANDIDO (arrastar para ver) ─────────────────────────────── */}
+      <div className="flex items-center gap-2 pt-1 pb-0.5 text-[10.5px] font-bold uppercase tracking-[0.16em] text-[#a0a4a8]">
+        <span className="h-px flex-1 bg-[#e6e8eb]" />
+        Mais detalhes
+        <span className="h-px flex-1 bg-[#e6e8eb]" />
+      </div>
 
       {ride.status === "motorista_chegou" && (
         <div className="flex items-center justify-center gap-2 rounded-[14px] bg-[#76C139]/10 py-2 text-[12.5px] font-semibold text-[#111418]">
