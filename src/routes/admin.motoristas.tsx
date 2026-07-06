@@ -590,6 +590,7 @@ function AdminMotoristas() {
               onUnblock={() => setUnblockFor(d)}
               onSuspendToggle={() => setSuspendFor(d)}
               onSubscription={() => setSubFor(d)}
+              onGenerateCharge={() => generateCharge(d)}
             />
           ))}
         </div>
