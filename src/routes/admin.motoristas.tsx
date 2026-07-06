@@ -287,8 +287,32 @@ function AdminMotoristas() {
           body: { driverId: d.id },
         });
         if (fnError || !result?.ok) {
-          const msg = fnError?.message || "Falha ao aprovar/criar assinatura";
-          toast.error(msg);
+          // supabase-js wraps non-2xx as FunctionsHttpError; body is on error.context
+          let detail = "";
+          const ctx = (fnError as unknown as { context?: Response })?.context;
+          if (ctx && typeof ctx.json === "function") {
+            try {
+              const body = await ctx.clone().json();
+              detail =
+                body?.error ||
+                body?.message ||
+                (body?.missing ? `campos faltando: ${body.missing.join(", ")}` : "") ||
+                (body?.detail ? String(body.detail).slice(0, 200) : "");
+            } catch {
+              try {
+                detail = (await ctx.clone().text()).slice(0, 200);
+              } catch {
+                /* ignore */
+              }
+            }
+          }
+          const msg =
+            detail ||
+            (result as unknown as { error?: string })?.error ||
+            fnError?.message ||
+            "Falha ao aprovar/criar assinatura";
+          console.error("[approve] edge error", { fnError, result, detail });
+          toast.error("Erro ao aprovar: " + msg);
           throw new Error(msg);
         }
         await logAdminAction({
