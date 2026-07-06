@@ -3661,7 +3661,7 @@ function StepFlow({
             className="pt-1 animate-in fade-in slide-in-from-bottom-1 duration-[220ms]"
             style={{ animationDelay: "160ms", animationFillMode: "backwards" }}
           >
-            <RequestRideButton busy={busy} categoryLabel={selectedCategory.label} onSubmit={onSubmit} />
+            <RequestRideButton busy={busy} categoryLabel={selectedCategory.label} fare={selectedFare} onSubmit={onSubmit} />
           </div>
           <div style={{ height: "env(safe-area-inset-bottom)" }} />
 
@@ -3795,10 +3795,12 @@ function RideCategorySelector({
 function RequestRideButton({
   busy,
   categoryLabel,
+  fare,
   onSubmit,
 }: {
   busy: boolean;
   categoryLabel: string;
+  fare: number;
   onSubmit: () => void;
 }) {
   const navigate = useNavigate();
@@ -3840,6 +3842,14 @@ function RequestRideButton({
           </div>
         </div>
       )}
+      <div className="flex items-baseline justify-between px-1">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#707070]">
+          Você paga
+        </span>
+        <span className="text-[16px] font-bold tabular-nums text-[#111418]">
+          {formatBRL(fare)}
+        </span>
+      </div>
       <button
         type="button"
         disabled={busy || isBlocked}
