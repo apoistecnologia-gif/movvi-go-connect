@@ -309,11 +309,12 @@ function AdminFinanceiroMotoristasPage() {
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="font-medium truncate">{r.name}</span>
-                        <StatusPill tone={financialTone(r.financial_status)}>
+                        <DSBadge variant={financialTone(r.financial_status)}>
                           {r.financial_status ?? "—"}
-                        </StatusPill>
+                        </DSBadge>
                         {r.subscription_status && (
-                          <DSBadge variant="secondary">{r.subscription_status}</DSBadge>
+                          <DSBadge variant="muted">{r.subscription_status}</DSBadge>
+
                         )}
                       </div>
                       <div className="mt-1 text-xs text-muted-foreground truncate">
