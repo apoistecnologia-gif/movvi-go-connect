@@ -530,17 +530,17 @@ function AdminMotoristas() {
         </Button>
       }
     >
-      <div className="mb-4 space-y-3">
+      <div className="sticky top-0 z-10 -mx-4 mb-4 space-y-2 border-b border-border/60 bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/70">
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <DSInput
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar por nome, telefone, e-mail, placa ou cidade..."
-            className="pl-9"
+            className="h-9 pl-9"
           />
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {FILTERS.map((f) => {
             const active = filter === f.key;
             return (
@@ -548,7 +548,7 @@ function AdminMotoristas() {
                 key={f.key}
                 type="button"
                 onClick={() => setFilter(f.key)}
-                className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+                className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-medium transition ${
                   active
                     ? "border-primary bg-primary/15 text-primary"
                     : "border-border bg-card text-muted-foreground hover:border-primary/40"
