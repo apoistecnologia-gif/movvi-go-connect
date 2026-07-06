@@ -237,6 +237,39 @@ async function approveDriverWithMercadoPago(driverId: string): Promise<ApproveMe
   return payload;
 }
 
+async function regenerateDriverCharge(
+  driverId: string,
+): Promise<{ ok: true; preferenceId: string; initPoint: string | null; dueDate: string }> {
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+  const accessToken = sessionData.session?.access_token;
+  if (sessionError || !accessToken) throw new Error("admin_session_missing");
+
+  const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/regenerate-driver-mercadopago-charge`;
+  const response = await fetch(functionUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+      apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+    },
+    body: JSON.stringify({ driverId }),
+  });
+  const payload = (await response.json().catch(() => null)) as
+    | { ok?: boolean; preferenceId?: string; initPoint?: string | null; dueDate?: string; error?: string; detail?: string; missing?: string[] }
+    | null;
+  if (!response.ok || !payload?.ok) {
+    if (payload?.error === "driver_not_approved") throw new Error("driver_not_approved");
+    if (payload?.error === "missing_required_fields" && Array.isArray(payload.missing)) {
+      throw new Error(`missing_required_fields:${payload.missing.join(", ")}`);
+    }
+    if (payload?.error === "mercadopago_preference_failed" && payload.detail) {
+      throw new Error(`mercadopago_preference_failed:${payload.detail.slice(0, 200)}`);
+    }
+    throw new Error(payload?.error || `function_http_${response.status}`);
+  }
+  return payload as { ok: true; preferenceId: string; initPoint: string | null; dueDate: string };
+}
+
 function AdminMotoristas() {
   const updateApprovalFn = useServerFn(updateDriverApprovalStatus);
   const setSuspensionFn = useServerFn(setDriverSuspension);
@@ -450,6 +483,42 @@ function AdminMotoristas() {
     }
   }
 
+  async function generateCharge(d: Driver) {
+    setBusyId(d.id);
+    const toastId = toast.loading("Gerando nova cobrança no Mercado Pago...");
+    try {
+      const result = await regenerateDriverCharge(d.id);
+      await logAdminAction({
+        action: "driver.charge_regenerated",
+        entity: "drivers",
+        entity_id: d.id,
+        before: { mercadopago_preapproval_id: d.mercadopago_preapproval_id ?? null },
+        after: { mercadopago_preapproval_id: result.preferenceId, mercadopago_init_point: result.initPoint },
+      });
+      if (result.initPoint && typeof window !== "undefined") {
+        try { await navigator.clipboard.writeText(result.initPoint); } catch { /* ignore */ }
+      }
+      toast.success("Nova cobrança gerada — link copiado", {
+        id: toastId,
+        description: result.initPoint ?? undefined,
+        action: result.initPoint
+          ? { label: "Abrir", onClick: () => window.open(result.initPoint!, "_blank") }
+          : undefined,
+        duration: 10000,
+      });
+      load();
+    } catch (e) {
+      const raw = e instanceof Error ? e.message : "falha";
+      let msg = mapAdminError(raw);
+      if (raw === "driver_not_approved") msg = "Motorista precisa estar aprovado para gerar cobrança.";
+      else if (raw.startsWith("missing_required_fields:")) msg = `Cadastro incompleto: faltam ${raw.split(":")[1]}`;
+      else if (raw.startsWith("mercadopago_preference_failed:")) msg = "Erro no Mercado Pago: " + raw.split(":").slice(1).join(":");
+      toast.error("Erro ao gerar cobrança: " + msg, { id: toastId });
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   return (
     <AdminLayout
       title="Gestão de Motoristas"
@@ -521,6 +590,7 @@ function AdminMotoristas() {
               onUnblock={() => setUnblockFor(d)}
               onSuspendToggle={() => setSuspendFor(d)}
               onSubscription={() => setSubFor(d)}
+              onGenerateCharge={() => generateCharge(d)}
             />
           ))}
         </div>
@@ -660,6 +730,7 @@ function DriverCard({
   onUnblock,
   onSuspendToggle,
   onSubscription,
+  onGenerateCharge,
 }: {
   driver: Driver;
   activeRideStatus: string | null;
@@ -671,6 +742,7 @@ function DriverCard({
   onUnblock: () => void;
   onSuspendToggle: () => void;
   onSubscription: () => void;
+  onGenerateCharge: () => void;
 }) {
   const meta = STATUS_META[driver.approval_status];
   const sm = subMeta(driver.subscription_status);
@@ -740,6 +812,11 @@ function DriverCard({
           <Button size="sm" variant="outline" onClick={onSubscription}>
             <CreditCard className="mr-1 h-4 w-4" /> Assinatura
           </Button>
+          {driver.approval_status === "aprovado" && (
+            <Button size="sm" variant="outline" onClick={onGenerateCharge} disabled={busy}>
+              {busy ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <CreditCard className="mr-1 h-4 w-4" />} Gerar cobrança
+            </Button>
+          )}
           {driver.approval_status !== "aprovado" && (
             <Button size="sm" onClick={onApprove} disabled={busy}>
               {busy ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-1 h-4 w-4" />} Aprovar
