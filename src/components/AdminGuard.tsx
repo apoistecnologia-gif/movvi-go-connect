@@ -13,18 +13,26 @@ export function AdminGuard({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true;
     (async () => {
-      const { data: u } = await supabase.auth.getUser();
+      const { data: u, error: userError } = await supabase.auth.getUser();
+      if (userError) {
+        if (mounted) setState("no-session");
+        return;
+      }
       if (!u.user) {
         if (mounted) setState("no-session");
         return;
       }
-      const { data: role } = await supabase
+      const { data: role, error: roleError } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", u.user.id)
         .eq("role", "admin")
         .maybeSingle();
       if (!mounted) return;
+      if (roleError) {
+        setState("no-admin");
+        return;
+      }
       setState(role ? "ok" : "no-admin");
     })();
     return () => {
