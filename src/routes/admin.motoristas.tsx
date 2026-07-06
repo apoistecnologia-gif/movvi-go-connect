@@ -30,7 +30,7 @@ import {
   setDriverSuspension,
   updateDriverApprovalStatus,
 } from "@/lib/adminDrivers.functions";
-import { approveDriverAndCreateSubscription } from "@/lib/payments/approveDriver.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Caption, DSBadge, DSButton as Button, DSCard, DSCardContent, DSInput, DSLabel, DSTextarea, EmptyState, Loading, StatusPill } from "@/design-system";
 import {
