@@ -93,7 +93,7 @@ function isDuplicateAuthError(message: string) {
 function authErrorMessage(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error ?? "");
   if (isDuplicateAuthError(message)) return "Este e-mail já está cadastrado.";
-  if (/password/i.test(message)) return "Senha inválida. Use no mínimo 4 caracteres.";
+  if (/password/i.test(message)) return "Senha inválida. Use no mínimo 8 caracteres.";
   if (/email/i.test(message)) return "E-mail inválido.";
   return "Não foi possível criar a conta de autenticação.";
 }
