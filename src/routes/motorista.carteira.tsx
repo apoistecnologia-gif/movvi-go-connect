@@ -93,6 +93,68 @@ function DriverWalletPage() {
       </header>
 
       <main className="mx-auto max-w-md space-y-4 p-4">
+        {fin && fin.asaas_subscription_id && (
+          <section
+            className={
+              "rounded-2xl border p-4 " +
+              (fin.financial_status === "active"
+                ? "border-primary/30 bg-primary/5"
+                : fin.financial_status === "overdue"
+                ? "border-destructive/40 bg-destructive/10"
+                : "border-border bg-card")
+            }
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {fin.financial_status === "overdue" ? (
+                  <AlertTriangle className="h-4 w-4 text-destructive" />
+                ) : (
+                  <Crown className="h-4 w-4 text-primary" />
+                )}
+                <div className="text-sm font-semibold">Mensalidade MOVVI</div>
+              </div>
+              <span className="rounded-full border border-border bg-background px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
+                {fin.financial_status === "active"
+                  ? "Ativa"
+                  : fin.financial_status === "pending"
+                  ? "Pendente"
+                  : fin.financial_status === "overdue"
+                  ? "Inadimplente"
+                  : fin.financial_status === "cancelled"
+                  ? "Cancelada"
+                  : "Inativa"}
+              </span>
+            </div>
+            <div className="mt-2 flex items-baseline gap-2">
+              <div className="text-2xl font-bold">
+                {formatBRL(Number(fin.subscription_value ?? 49.9))}
+              </div>
+              <div className="text-xs text-muted-foreground">/ mês</div>
+            </div>
+            {fin.next_due_date && (
+              <div className="mt-1 text-xs text-muted-foreground">
+                Próximo vencimento:{" "}
+                {new Date(fin.next_due_date + "T00:00:00").toLocaleDateString("pt-BR")}
+              </div>
+            )}
+            {(fin.financial_status === "pending" || fin.financial_status === "overdue") && (
+              <a
+                href={fin.last_invoice_url ?? "#"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={
+                  "mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold " +
+                  (fin.last_invoice_url
+                    ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                    : "bg-muted text-muted-foreground pointer-events-none")
+                }
+              >
+                Pagar mensalidade <ExternalLink className="h-3.5 w-3.5" />
+              </a>
+            )}
+          </section>
+        )}
+
         <section className="grid grid-cols-2 gap-3">
           <div className="rounded-2xl border border-border bg-card p-4">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
