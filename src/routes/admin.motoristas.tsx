@@ -387,8 +387,8 @@ function AdminMotoristas() {
       let msg = mapAdminError(raw);
       if (raw.startsWith("missing_required_fields:")) {
         msg = `Cadastro incompleto: faltam ${raw.split(":")[1]}`;
-      } else if (raw.startsWith("asaas_subscription_failed:")) {
-        msg = "Erro na Asaas ao criar assinatura: " + raw.split(":").slice(1).join(":");
+      } else if (raw.startsWith("mercadopago_preapproval_failed:")) {
+        msg = "Erro no Mercado Pago ao criar assinatura: " + raw.split(":").slice(1).join(":");
       } else if (raw === "forbidden") {
         msg = "Você não tem permissão para aprovar motoristas";
       }
