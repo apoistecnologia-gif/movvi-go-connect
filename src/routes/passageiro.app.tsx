@@ -2680,8 +2680,8 @@ function PassageiroApp() {
           phase === "motorista_chegou" ||
           phase === "em_viagem") && (
           <MovviSheet
-            snaps={[32, 56, 86]}
-            initial={32}
+            snaps={[50, 74, 92]}
+            initial={50}
           >
             <DriverEnRoute
               ride={ride}
