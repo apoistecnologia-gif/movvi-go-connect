@@ -2028,7 +2028,7 @@ function PassageiroApp() {
     // NÃO deve estourar em cima do pickup.
     const bottomPad = ride.status === "procurar_motorista"
       ? Math.max(280, Math.round(window.innerHeight * 0.42))
-      : Math.round(window.innerHeight * 0.24) + 12;
+      : Math.round(window.innerHeight * 0.5) + 16;
     mapRef.current.fitBounds(bounds, {
       top: 130,
       bottom: bottomPad,
