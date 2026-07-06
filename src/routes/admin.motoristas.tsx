@@ -228,6 +228,9 @@ async function approveDriverWithMercadoPago(driverId: string): Promise<ApproveMe
     if (payload?.error === "mercadopago_preapproval_failed" && payload.detail) {
       throw new Error(`mercadopago_preapproval_failed:${payload.detail.slice(0, 200)}`);
     }
+    if (payload?.error === "mercadopago_environment_mismatch") {
+      throw new Error("mercadopago_environment_mismatch");
+    }
     throw new Error(payload?.error || payload?.message || payload?.detail || `function_http_${response.status}`);
   }
 
@@ -414,6 +417,8 @@ function AdminMotoristas() {
         msg = `Cadastro incompleto: faltam ${raw.split(":")[1]}`;
       } else if (raw.startsWith("mercadopago_preapproval_failed:")) {
         msg = "Erro no Mercado Pago ao criar assinatura: " + raw.split(":").slice(1).join(":");
+      } else if (raw === "mercadopago_environment_mismatch") {
+        msg = "Credencial do Mercado Pago em modo teste não aceita e-mail real. Atualize o token para produção ou use contas de teste do Mercado Pago.";
       } else if (raw === "forbidden") {
         msg = "Você não tem permissão para aprovar motoristas";
       }
