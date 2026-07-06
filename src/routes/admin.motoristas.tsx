@@ -276,8 +276,21 @@ function AdminMotoristas() {
     setBusyId(d.id);
     try {
       if (status === "aprovado") {
-        // Aprovação → cria assinatura Asaas automaticamente
-        const result = await approveWithSubscriptionFn({ data: { driverId: d.id } });
+        // Aprovação → cria cliente + assinatura Asaas via Edge Function
+        const { data: result, error: fnError } = await supabase.functions.invoke<{
+          ok: boolean;
+          alreadyExists: boolean;
+          subscriptionId: string;
+          invoiceUrl: string | null;
+          dueDate: string | null;
+        }>("approve-driver-and-create-subscription", {
+          body: { driverId: d.id },
+        });
+        if (fnError || !result?.ok) {
+          const msg = fnError?.message || "Falha ao aprovar/criar assinatura";
+          toast.error(msg);
+          throw new Error(msg);
+        }
         await logAdminAction({
           action: "driver.aprovado",
           entity: "drivers",
