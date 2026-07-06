@@ -2432,7 +2432,7 @@ function PassageiroApp() {
 
 
       {ride && ride.status === "procurar_motorista" && (
-        <MovviSheet snaps={[44, 68, 88]} initial={44}>
+        <MovviSheet snaps={[36, 68, 92]} initial={36}>
           <SearchingPanel
             category={category}
             driversCount={nearbyCount}
@@ -4199,41 +4199,49 @@ function SearchingPanel({
         </div>
       </div>
 
-      {/* Radar / searching animation — primary visual focus */}
-      <div className="relative mx-auto mb-2 grid h-[96px] w-[96px] place-items-center">
-        {/* concentric rings */}
+      {/* Radar / searching animation — primary visual focus (compact) */}
+      <div className="relative mx-auto mb-1.5 grid h-[76px] w-[76px] place-items-center">
         <span className="absolute inset-0 rounded-full bg-[#76C139]/8 animate-ping [animation-duration:2.4s]" />
         <span
           className="absolute inset-2 rounded-full bg-[#76C139]/10 animate-ping [animation-duration:2.4s]"
           style={{ animationDelay: "0.4s" }}
         />
         <span
-          className="absolute inset-5 rounded-full bg-[#76C139]/14 animate-ping [animation-duration:2.4s]"
+          className="absolute inset-4 rounded-full bg-[#76C139]/14 animate-ping [animation-duration:2.4s]"
           style={{ animationDelay: "0.8s" }}
         />
-        <span className="absolute inset-[30px] rounded-full bg-white ring-1 ring-[#76C139]/25 shadow-[0_10px_28px_-14px_rgba(118,193,57,0.5)]" />
-        <span className="relative grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-[#8FD24A] to-[#5A9A2A] text-white shadow-[0_12px_28px_-12px_rgba(118,193,57,0.65)]">
+        <span className="absolute inset-[24px] rounded-full bg-white ring-1 ring-[#76C139]/25 shadow-[0_10px_28px_-14px_rgba(118,193,57,0.5)]" />
+        <span className="relative grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-[#8FD24A] to-[#5A9A2A] text-white shadow-[0_12px_28px_-12px_rgba(118,193,57,0.65)]">
           {CatIcon ? (
-            <CatIcon className="h-5 w-5" strokeWidth={1.75} />
+            <CatIcon className="h-4.5 w-4.5" strokeWidth={1.75} />
           ) : (
-            <Navigation2 className="h-5 w-5" strokeWidth={1.75} />
+            <Navigation2 className="h-4.5 w-4.5" strokeWidth={1.75} />
           )}
         </span>
       </div>
 
 
       {/* Rotating status message */}
-      <div className="mb-1 flex min-h-[22px] items-center justify-center">
+      <div className="mb-0.5 flex min-h-[20px] items-center justify-center">
         <p
           key={msgIdx}
-          className="animate-in fade-in slide-in-from-bottom-1 duration-[300ms] text-[15px] font-medium text-[#111418]"
+          className="animate-in fade-in slide-in-from-bottom-1 duration-[300ms] text-[14px] font-medium text-[#111418]"
         >
           {messages[msgIdx]}
         </p>
       </div>
-      <p className="mb-4 text-center text-[12.5px] text-[#707070]">
+      <p className="mb-3 text-center text-[11.5px] text-[#707070]">
         Costuma levar menos de 30 segundos.
       </p>
+
+      {/* ── EXPANDIDO (arrastar para ver) ─────────────────────────────── */}
+      {(pickupLabel || destinationLabel || fare != null || paymentLabel) && (
+        <div className="mb-2 flex items-center gap-2 text-[10.5px] font-bold uppercase tracking-[0.16em] text-[#a0a4a8]">
+          <span className="h-px flex-1 bg-[#e6e8eb]" />
+          Detalhes da corrida
+          <span className="h-px flex-1 bg-[#e6e8eb]" />
+        </div>
+      )}
 
       {/* Trip summary card */}
       {(pickupLabel || destinationLabel || fare != null || paymentLabel) && (
