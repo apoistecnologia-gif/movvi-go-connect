@@ -167,19 +167,36 @@ export const cadastrarMotorista = createServerFn({ method: "POST" })
     try {
       const uploadedDocs = await Promise.all(
         data.documents.map(async (doc) => {
+          // selfie: apenas imagens; demais podem ser imagem ou PDF
+          const allowed: readonly string[] =
+            doc.label === "selfie" ? IMAGE_TYPES : DOC_TYPES;
+          const ct = (doc.contentType || "").toLowerCase();
+          if (!allowed.includes(ct)) {
+            throw new Error(
+              `Formato inválido em ${doc.label}. Envie ${
+                doc.label === "selfie" ? "JPG, PNG ou WEBP" : "JPG, PNG, WEBP ou PDF"
+              }.`,
+            );
+          }
           const path = `${finalAuthUserId}/${doc.label}-${Date.now()}.${cleanExt(doc.fileName)}`;
           const body = decodeBase64(doc.base64);
+          if (body.byteLength === 0) {
+            throw new Error(`Arquivo vazio em ${doc.label}.`);
+          }
+          if (body.byteLength > MAX_DOC_BYTES) {
+            throw new Error(`Arquivo de ${doc.label} excede 8 MB.`);
+          }
           if (import.meta.env.DEV) console.log("[MOVVI DOCS] upload iniciado:", { bucket: doc.bucket, path });
           const { error } = await supabaseAdmin.storage
             .from(doc.bucket)
-            .upload(path, body, { upsert: true, contentType: doc.contentType });
+            .upload(path, body, { upsert: true, contentType: ct });
           if (error) {
             console.error("[MOVVI DOCS] falha upload:", doc.label, error.message);
             throw new Error(`Falha no upload de ${doc.label}.`);
           }
           uploaded.push({ bucket: doc.bucket, path });
           if (import.meta.env.DEV) console.log("[MOVVI DOCS] upload concluído:", { bucket: doc.bucket, path });
-          return [doc.label, { path, body, contentType: doc.contentType, fileName: doc.fileName }] as const;
+          return [doc.label, { path, body, contentType: ct, fileName: doc.fileName }] as const;
         }),
       );
 
