@@ -162,7 +162,7 @@ Deno.serve(async (req) => {
   }
 
   const validSig = await verifySignature(dataId, xRequestId, xSignature).catch(() => false);
-  if (!validSig && MP_WEBHOOK_SECRET) {
+  if (!validSig && !ALLOW_UNSIGNED) {
     return json({ error: "invalid_signature" }, 401);
   }
 
