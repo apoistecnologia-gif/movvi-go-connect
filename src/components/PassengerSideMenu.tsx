@@ -30,6 +30,7 @@ export function PassengerSideMenu({ open, onOpenChange, onLogout }: Props) {
   const [phone, setPhone] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [dadosOpen, setDadosOpen] = useState(false);
 
   useEffect(() => {
     if (!open) return;
