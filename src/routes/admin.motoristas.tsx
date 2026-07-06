@@ -179,6 +179,7 @@ function mapAdminError(msg: string): string {
 function AdminMotoristas() {
   const updateApprovalFn = useServerFn(updateDriverApprovalStatus);
   const setSuspensionFn = useServerFn(setDriverSuspension);
+  const approveWithSubscriptionFn = useServerFn(approveDriverAndCreateSubscription);
   const [drivers, setDrivers] = useState<Driver[] | null>(null);
   const [activeRides, setActiveRides] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
