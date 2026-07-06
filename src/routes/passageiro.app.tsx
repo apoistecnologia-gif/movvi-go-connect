@@ -40,6 +40,7 @@ import {
   Truck,
   X,
   Zap,
+  ShieldAlert,
   type LucideIcon,
 } from "lucide-react";
 import { PassengerSideMenu } from "@/components/PassengerSideMenu";
