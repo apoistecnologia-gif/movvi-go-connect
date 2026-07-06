@@ -188,6 +188,41 @@ function mapAdminError(msg: string): string {
   return msg;
 }
 
+async function approveDriverWithMercadoPago(driverId: string): Promise<ApproveMercadoPagoResult> {
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+  const accessToken = sessionData.session?.access_token;
+  if (sessionError || !accessToken) throw new Error("admin_session_missing");
+
+  const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/approve-driver-and-create-mercadopago-subscription`;
+  const response = await fetch(functionUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+      apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+    },
+    body: JSON.stringify({ driverId }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as (ApproveMercadoPagoResult & {
+    message?: string;
+    detail?: string;
+    missing?: string[];
+  }) | null;
+
+  if (!response.ok || !payload?.ok) {
+    if (payload?.error === "missing_required_fields" && Array.isArray(payload.missing)) {
+      throw new Error(`missing_required_fields:${payload.missing.join(", ")}`);
+    }
+    if (payload?.error === "mercadopago_preapproval_failed" && payload.detail) {
+      throw new Error(`mercadopago_preapproval_failed:${payload.detail.slice(0, 200)}`);
+    }
+    throw new Error(payload?.error || payload?.message || payload?.detail || `function_http_${response.status}`);
+  }
+
+  return payload;
+}
+
 function AdminMotoristas() {
   const updateApprovalFn = useServerFn(updateDriverApprovalStatus);
   const setSuspensionFn = useServerFn(setDriverSuspension);
@@ -289,43 +324,7 @@ function AdminMotoristas() {
     try {
       if (status === "aprovado") {
         // Aprovação → cria assinatura (preapproval) no Mercado Pago via Edge Function.
-        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-        const accessToken = sessionData.session?.access_token;
-        if (sessionError || !accessToken) throw new Error("admin_session_missing");
-
-        const { data: result, error: fnError } = await supabase.functions.invoke<ApproveMercadoPagoResult>("approve-driver-and-create-mercadopago-subscription", {
-          body: { driverId: d.id },
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
-        if (fnError || !result?.ok) {
-          let detail = "";
-          const ctx = (fnError as unknown as { context?: Response })?.context;
-          if (ctx && typeof ctx.json === "function") {
-            try {
-              const body = await ctx.clone().json();
-              if (body?.error === "missing_required_fields" && Array.isArray(body?.missing)) {
-                detail = `missing_required_fields:${body.missing.join(", ")}`;
-              } else if (body?.error === "mercadopago_preapproval_failed" && body?.detail) {
-                detail = `mercadopago_preapproval_failed:${String(body.detail).slice(0, 200)}`;
-              } else {
-                detail = body?.error || body?.message || (body?.detail ? String(body.detail).slice(0, 200) : "");
-              }
-            } catch {
-              try {
-                detail = (await ctx.clone().text()).slice(0, 200);
-              } catch {
-                /* ignore */
-              }
-            }
-          }
-          const msg =
-            detail ||
-            (result as unknown as { error?: string })?.error ||
-            fnError?.message ||
-            "Falha ao aprovar/criar assinatura";
-          console.error("[approve] edge error", { fnError, result, detail });
-          throw new Error(msg);
-        }
+        const result = await approveDriverWithMercadoPago(d.id);
         await logAdminAction({
           action: "driver.aprovado",
           entity: "drivers",
