@@ -10,8 +10,17 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const MP_TOKEN = Deno.env.get("MERCADOPAGO_ACCESS_TOKEN")?.trim() ?? "";
-const MP_BASE_URL =
-  Deno.env.get("MERCADOPAGO_BASE_URL")?.trim() || "https://api.mercadopago.com";
+
+function resolveMercadoPagoBaseUrl(value: string | undefined): string {
+  const officialBaseUrl = "https://api.mercadopago.com";
+  const normalized = value?.trim().replace(/\/+$/, "");
+  if (!normalized) return officialBaseUrl;
+  if (normalized === officialBaseUrl) return officialBaseUrl;
+  console.warn("[approve-mp] ignoring invalid MERCADOPAGO_BASE_URL", normalized);
+  return officialBaseUrl;
+}
+
+const MP_BASE_URL = resolveMercadoPagoBaseUrl(Deno.env.get("MERCADOPAGO_BASE_URL"));
 
 const MONTHLY_FEE = 49.9;
 
@@ -162,6 +171,7 @@ Deno.serve(async (req) => {
       }),
     });
   } catch (e) {
+    console.error("[approve-mp] Mercado Pago preapproval failed", String(e));
     return json({ error: "mercadopago_preapproval_failed", detail: String(e) }, 502);
   }
 
