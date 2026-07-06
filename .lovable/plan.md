@@ -1,66 +1,82 @@
-# Design System Oficial MOVVI — Fase Final
 
-Este é um trabalho de **padronização visual em todo o app**, não uma correção pontual. Vou tratá-lo em ondas para garantir consistência sem quebrar telas em produção. Nenhuma lógica, backend, GPS, despacho, lifecycle, rota, estado ou regra de negócio será tocada.
+## Situação atual (já existe)
 
-## Escopo por ondas
+- `src/lib/payments/asaas.server.ts` — cliente HTTP server-only (sandbox/prod, `ASAAS_API_KEY`).
+- `src/lib/payments/subscription.functions.ts` — server fn `createDriverMonthlyCharge` (cobra sob demanda).
+- `src/routes/api/public/asaas-webhook.ts` — endpoint público com verificação de `ASAAS_WEBHOOK_SECRET`.
+- `drivers.asaas_customer_id`, `subscription_status`, `subscription_expires_at`, `payment_status`.
+- Tabela `subscriptions` + trigger `trg_sync_driver_subscription` que espelha status em `drivers`.
 
-### Onda 1 — Tokens oficiais (`src/styles.css`)
-Fonte única da verdade. Toda tela vai consumir estas variáveis.
+## O que falta (vou construir)
 
-- **Cores**: `--movvi-green` (#76C139), `--movvi-green-strong` (#5A9A2A), `--movvi-green-soft`, `--movvi-dark` (#111418), `--surface`, `--surface-2`, `--stroke`, `--divider`, `--muted-ink` (#707070). Eliminar `#76C139` cru, `#5A9A2A`, `#111418`, `#707070`, `#94A3B8` espalhados.
-- **Radius**: `--radius-xs 8`, `--sm 12`, `--md 16`, `--lg 20`, `--xl 26` (sheet).
-- **Espaçamento**: escala 4/8/12/16/20/24/28/32 exposta como `--space-1..8`.
-- **Sombras**: `--shadow-card`, `--shadow-floating`, `--shadow-sheet`, `--shadow-cta`.
-- **Tipografia**: `--text-title-xl/lg/md`, `--text-body-lg/md/sm`, `--text-caption`, `--text-price`, com `line-height` e `letter-spacing` fixos.
-- **Motion**: `--dur-fast 160ms`, `--dur-base 220ms`, `--dur-slow 320ms`, `--ease-out cubic-bezier(.2,.7,.2,1)`.
-- Mapear tokens no `@theme inline` para gerar utilitários (`bg-surface`, `text-ink`, `rounded-md`, `shadow-card`, `text-title-md`).
+### 1. Banco (1 migration)
+- Adicionar em `drivers`: `asaas_subscription_id`, `financial_status` (enum: `pending|active|overdue|cancelled|inactive`), `subscription_value`, `next_due_date`, `last_payment_status`, `last_payment_id`.
+- Criar tabela `driver_payment_events` (id, driver_id, asaas_event, asaas_payment_id, asaas_subscription_id, status, value, due_date, paid_at, raw_payload jsonb, created_at) + RLS (só admin lê; service_role escreve).
+- Trigger que, quando `subscriptions.status` muda, atualiza também `drivers.financial_status` e `next_due_date`.
 
-### Onda 2 — Primitivos unificados (`src/design-system/`)
-Um único componente por função. Screens migram para eles.
+### 2. Cliente Asaas (server-only)
+- Adicionar em `asaas.server.ts`: `createSubscription({customerId, value, nextDueDate, description})` chamando `POST /subscriptions` (ciclo MONTHLY, billingType BOLETO/PIX/UNDEFINED).
+- Retornar `{ subscriptionId, firstPaymentId, invoiceUrl, dueDate }`.
 
-- `DSButton` (variantes primary/secondary/ghost/destructive, estados busy/disabled, altura 48 padrão / 40 compact, radius `md`, mesma animação `active:scale-[0.98]`).
-- `DSCard` já existe — alinhar `variants` aos novos tokens (radius `lg`, padding `space-3`, `shadow-card`, `border-stroke`).
-- `DSIcon` wrapper `lucide` com tamanhos `sm 14 / md 16 / lg 18 / xl 22` e `strokeWidth` fixo 1.75.
-- `DSChip` (para "MOVVI Preço", ETA, tag "perto").
-- `DSSectionLabel` (uppercase `caption` cinza — usada em "Local de embarque", "Embarque", "Destino", "Valor", "Pagamento").
-- Confirmar `MovviSheet` já usando `--radius-xl` e `--shadow-sheet`.
+### 3. Server function `approveDriverAndCreateSubscription`
+- Arquivo novo: `src/lib/payments/approveDriver.functions.ts`.
+- Guarda: só usuário com role `admin` (via `has_role`).
+- Fluxo:
+  1. Valida motorista tem `name`, `email`, `cpf_cnpj`, `phone`, `city`, `state`. Se faltar, retorna erro claro (não aprova).
+  2. Idempotente: se já tem `asaas_subscription_id`, apenas retorna dados existentes.
+  3. `ensureCustomer` → salva `asaas_customer_id` se novo.
+  4. `createSubscription` no Asaas (R$ 49,90, mensal, vencimento hoje+3).
+  5. Update `drivers`: `approval_status='aprovado'`, `approved_at=now()`, `asaas_subscription_id`, `subscription_value=49.90`, `next_due_date`, `financial_status='pending'`.
+  6. Cria row em `subscriptions` (pending) e loga em `driver_payment_events`.
+  7. Retorna `{ ok, invoiceUrl, dueDate, subscriptionId }` ou erro estruturado.
 
-### Onda 3 — Migração das telas do passageiro
-Substituir hardcodes por tokens/primitivos, sem mexer em lógica ou estado.
+### 4. Webhook (ajuste em `asaas-webhook.ts`)
+- Aceitar header `asaas-access-token` **ou** `ASAAS_WEBHOOK_TOKEN` como nome de env alias (mantém compat).
+- Sempre gravar em `driver_payment_events` (raw_payload).
+- Tratar `PAYMENT_CREATED / RECEIVED / CONFIRMED / OVERDUE / DELETED / REFUNDED`.
+- Localizar motorista via `asaas_subscription_id` (payload traz `payment.subscription`) ou fallback por `asaas_payment_id`.
+- Atualizar `drivers.financial_status`, `last_payment_status`, `last_payment_id`, `next_due_date` (usa `payment.nextDueDate` quando vier).
 
-- `src/routes/passageiro.app.tsx` — header, card embarque, seletor de categoria, confirmação, buscando motorista, corrida ativa, envios.
-- `src/routes/passageiro.corridas.tsx`, `passageiro.perfil.tsx`, `passageiro.configuracoes.tsx`, `passageiro.favoritos.tsx` — cards, botões, tipografia.
-- Componentes compartilhados: `MovviHeader`, `PassengerSideMenu`, `BottomSheet`, `BottomNav`, `MovviMap` (só chrome), `ProfileHero`, `NotificationPermissionPrompt`.
+### 5. Admin UI (`src/routes/admin.motoristas.tsx`)
+- No botão "Aprovar": chamar `approveDriverAndCreateSubscription` via `useServerFn` (loading, toast de sucesso/erro).
+- Nunca marcar como aprovado localmente se a fn retornar erro.
+- Perfil do motorista (dialog/card já existente): mostrar `financial_status`, `subscription_value`, `next_due_date`, `asaas_subscription_id`, `last_payment_status` + link `invoiceUrl` da última cobrança.
 
-### Onda 4 — Migração das telas do motorista
-Mesmo tratamento, mesmos tokens.
+### 6. Carteira do motorista
+- Em `src/routes/motorista.carteira.tsx` (ou `motorista.assinatura.tsx` já existente): card "Mensalidade MOVVI" com status colorido, próximo vencimento, botão "Pagar mensalidade" abrindo `invoiceUrl` em nova aba quando `financial_status ∈ {pending, overdue}`.
 
-- `src/routes/motorista.app.tsx`, `motorista.perfil.tsx`, `motorista.ganhos.tsx`, `motorista.corridas.tsx`, `motorista.documentos.tsx`, `motorista.configuracoes.tsx`, `motorista.status.tsx`, `motorista.assinatura.tsx`, `motorista.suporte.tsx`, etc.
-- `DriverSideMenu`, `DriverInfoCard`, `DriverProfessionalProfile*`.
+### 7. Secrets (você precisa fornecer)
+- **`ASAAS_API_KEY`** — pegue em https://sandbox.asaas.com → Integrações → Chave de API.
+- **`ASAAS_WEBHOOK_TOKEN`** — string que você define; vai no header `asaas-access-token`.
+- **`ASAAS_ENVIRONMENT`** — `sandbox` (default) ou `production`. Já está codado assim (`ASAAS_BASE_URL` derivada, não precisa secret separado).
 
-### Onda 5 — Limpeza
-- Remover `BottomSheet.tsx` antigo se não referenciado (auditar); manter `MovviSheet` como único.
-- Podar imports não usados detectados pelo TS strict.
-- Excluir CSS/tokens legados em `src/styles.css` que ficarem órfãos.
-- Rodar typecheck no fim de cada onda.
+Vou pedir esses secrets em uma mensagem separada após o plano ser aprovado.
 
-## Fora de escopo (explicitamente)
-- Nada em `src/integrations/supabase/*`, `src/lib/*` de dados, hooks de GPS, dispatch, lifecycle, `routes/api/*`, migrations, edge functions.
-- Nenhuma tela `admin.*` — o admin tem outro padrão visual e não faz parte do produto passageiro/motorista referenciado (Uber/99/inDrive). Confirmar antes se você quer o admin incluído.
-- `src/routes/__root.tsx`, `router.tsx`, `start.ts` — só se um token global precisar ser exposto lá.
+## Fluxo end-to-end depois de pronto
 
-## Detalhes técnicos
+```
+Admin clica "Aprovar"
+  → approveDriverAndCreateSubscription
+    → Asaas /customers  (se novo)
+    → Asaas /subscriptions R$49,90 mensal
+    → drivers: approved_at, financial_status=pending, next_due_date, ids
+    → subscriptions: pending
+  → Toast "Motorista aprovado — cobrança gerada"
 
-- Tokens declarados em `@theme` (Tailwind v4) — utilitários `rounded-md`, `shadow-card`, `text-title-md` passam a existir no autocomplete.
-- Cores com alfa: usar `color-mix(in oklab, var(--movvi-green) 12%, transparent)` em vez de `bg-[#76C139]/12` cru para não fugir do token.
-- `DSButton` unifica os múltiplos "botões verdes" atuais (`RequestRideButton`, botão Continuar, CTAs de perfil) — mesma altura, mesmo radius `md`, mesma sombra `shadow-cta`, mesma animação.
-- Ícones migram para `DSIcon` progressivamente; qualquer `h-[Npx] w-[Npx]` fora da escala vira `size="md"`.
-- Nenhum arquivo `.gen.ts` é editado. Não crio nem removo rotas.
-- Testes visuais rápidos por onda: build (`tsgo`) + inspeção do preview em mobile e desktop.
+Asaas cobra → webhook PAYMENT_CONFIRMED
+  → driver_payment_events (raw)
+  → subscriptions.status=active
+  → drivers.financial_status=active
 
-## Entrega
-Sequencial, uma onda por turno para você validar antes de eu avançar. Começo pela Onda 1 (tokens) assim que aprovar — ela sozinha já não muda pixel algum, só cria a base para as ondas 2–5 refatorarem sem risco.
+Vence sem pagar → webhook PAYMENT_OVERDUE
+  → drivers.financial_status=overdue
+  → Motorista vê banner "Regularize" + botão "Pagar mensalidade"
+```
 
-## Pergunta antes de começar
-1. Incluir o painel **admin** (`src/routes/admin.*`) nesta padronização, ou deixar de fora?
-2. Posso remover o `src/components/BottomSheet.tsx` antigo se não houver imports (auditando primeiro)?
+## Fora do escopo desta fase (fica pra depois)
+- Retentativa automática (cron para recalcular status vencido).
+- Cancelamento de assinatura pelo admin.
+- Desconto de créditos de multa na próxima fatura (Fase 3 do plano original).
+- Split de repasse ao motorista pelo valor da corrida.
+
+Aprova esse plano? Se sim, ao começar a implementação vou pedir os 2 secrets do Asaas.
