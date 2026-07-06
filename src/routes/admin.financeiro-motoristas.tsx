@@ -235,23 +235,24 @@ function AdminFinanceiroMotoristasPage() {
     >
       <div className="grid grid-cols-2 gap-2 md:grid-cols-5 mb-4">
         {[
-          { label: "Aprovados", value: counts.total, tone: "neutral" as const },
-          { label: "Ativos", value: counts.active, tone: "success" as const },
-          { label: "Pendentes", value: counts.pending, tone: "warning" as const },
-          { label: "Em atraso", value: counts.overdue, tone: "danger" as const },
-          { label: "Sem cobrança", value: counts.no_charge, tone: "neutral" as const },
+          { label: "Aprovados", value: counts.total, variant: "default" as BadgeVariant },
+          { label: "Ativos", value: counts.active, variant: "success" as BadgeVariant },
+          { label: "Pendentes", value: counts.pending, variant: "warning" as BadgeVariant },
+          { label: "Em atraso", value: counts.overdue, variant: "danger" as BadgeVariant },
+          { label: "Sem cobrança", value: counts.no_charge, variant: "muted" as BadgeVariant },
         ].map((k) => (
           <Card key={k.label}>
             <CardContent className="p-3">
               <div className="text-[11px] text-muted-foreground">{k.label}</div>
               <div className="mt-1 flex items-center justify-between">
                 <span className="text-lg font-semibold">{k.value}</span>
-                <StatusPill tone={k.tone}>{k.label}</StatusPill>
+                <DSBadge variant={k.variant}>{k.label}</DSBadge>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
+
 
       <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-center">
         <div className="relative flex-1">
