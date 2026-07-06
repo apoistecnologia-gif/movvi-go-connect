@@ -56,7 +56,7 @@ const FILTERS: { key: FilterKey; label: string }[] = [
   { key: "no_charge", label: "Sem cobrança" },
 ];
 
-function financialTone(status: string | null): "success" | "warning" | "danger" | "neutral" {
+function financialTone(status: string | null): BadgeVariant {
   switch (status) {
     case "active":
       return "success";
@@ -65,9 +65,9 @@ function financialTone(status: string | null): "success" | "warning" | "danger" 
     case "overdue":
       return "danger";
     case "cancelled":
-      return "neutral";
+      return "muted";
     default:
-      return "neutral";
+      return "default";
   }
 }
 
