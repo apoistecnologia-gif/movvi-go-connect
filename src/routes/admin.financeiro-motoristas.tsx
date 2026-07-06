@@ -10,8 +10,9 @@ import {
   DSCardContent as CardContent,
   DSInput,
   Loading,
-  StatusPill,
 } from "@/design-system";
+
+type BadgeVariant = "default" | "muted" | "primary" | "success" | "danger" | "warning" | "outline";
 import { toast } from "sonner";
 import { formatBRL, formatDate } from "@/lib/formatters";
 
