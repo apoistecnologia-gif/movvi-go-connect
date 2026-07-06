@@ -3937,7 +3937,7 @@ function EnviosBlock({
       {fare != null && (
         <div className="flex items-center justify-between rounded-xl bg-background/60 px-3 py-2 ring-1 ring-border">
           <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
-            Valor estimado
+            Valor da corrida
           </span>
           <span className="text-base font-bold text-primary">{formatBRL(fare)}</span>
         </div>
