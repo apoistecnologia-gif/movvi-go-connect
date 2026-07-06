@@ -573,7 +573,7 @@ function AdminMotoristas() {
           description="Ajuste a busca ou os filtros para ver resultados."
         />
       ) : (
-        <div className="grid gap-3">
+        <div className="grid gap-2">
           {filtered.map((d) => (
             <DriverCard
               key={d.id}
