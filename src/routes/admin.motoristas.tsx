@@ -275,6 +275,40 @@ function AdminMotoristas() {
   async function updateStatus(d: Driver, status: Status, reason?: string | null) {
     setBusyId(d.id);
     try {
+      if (status === "aprovado") {
+        // Aprovação → cria assinatura Asaas automaticamente
+        const result = await approveWithSubscriptionFn({ data: { driverId: d.id } });
+        await logAdminAction({
+          action: "driver.aprovado",
+          entity: "drivers",
+          entity_id: d.id,
+          before: { approval_status: d.approval_status },
+          after: {
+            approval_status: "aprovado",
+            asaas_subscription_id: result.subscriptionId,
+            invoice_url: result.invoiceUrl,
+          },
+        });
+        toast.success(
+          result.alreadyExists
+            ? "Motorista aprovado (assinatura já existia)"
+            : "Motorista aprovado — cobrança gerada no Asaas",
+        );
+        setRejectFor(null);
+        setBlockFor(null);
+        setUnblockFor(null);
+        setRejectReason("");
+        if (detail?.id === d.id) {
+          setDetail({
+            ...d,
+            approval_status: "aprovado",
+            approved_at: new Date().toISOString(),
+          } as Driver);
+        }
+        load();
+        return;
+      }
+
       const { patch } = await updateApprovalFn({
         data: { id: d.id, status, reason: reason ?? null },
       });
@@ -285,7 +319,6 @@ function AdminMotoristas() {
         before: { approval_status: d.approval_status },
         after: patch,
       });
-      if (status === "aprovado") toast.success("Motorista aprovado com sucesso");
       if (status === "reprovado") toast.success("Motorista reprovado");
       if (status === "bloqueado") toast.success("Motorista bloqueado");
       if (status === "em_analise") toast.success("Cadastro reenviado para análise");
@@ -297,7 +330,16 @@ function AdminMotoristas() {
         setDetail({ ...d, ...(patch as Database["public"]["Tables"]["drivers"]["Update"]) } as Driver);
       load();
     } catch (e) {
-      toast.error("Erro ao atualizar status: " + (e instanceof Error ? mapAdminError(e.message) : "falha"));
+      const raw = e instanceof Error ? e.message : "falha";
+      let msg = mapAdminError(raw);
+      if (raw.startsWith("missing_required_fields:")) {
+        msg = `Cadastro incompleto: faltam ${raw.split(":")[1]}`;
+      } else if (raw.startsWith("asaas_subscription_failed:")) {
+        msg = "Erro na Asaas ao criar assinatura: " + raw.split(":").slice(1).join(":");
+      } else if (raw === "forbidden") {
+        msg = "Você não tem permissão para aprovar motoristas";
+      }
+      toast.error("Erro ao atualizar status: " + msg);
     } finally {
       setBusyId(null);
     }
