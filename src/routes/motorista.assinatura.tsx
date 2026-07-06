@@ -1,16 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import {
   Crown,
   CalendarDays,
   Wallet,
   CreditCard,
-  Copy,
   ExternalLink,
   LifeBuoy,
   Sparkles,
-  QrCode,
   Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -21,23 +18,14 @@ import {
   DSCard,
   StatusPill,
   Loading,
-  EmptyState,
   Icon,
   HeadingS,
   Body,
   BodySmall,
   Caption,
 } from "@/design-system";
-import {
-  createDriverMonthlyCharge,
-  getDriverSubscriptionInfo,
-} from "@/lib/payments/subscription.functions";
-import {
-  MOVVI_MONTHLY_FEE_BRL,
-  SUBSCRIPTION_STATUS_UI_LABELS,
-  toUiStatus,
-  type SubscriptionPaymentMethod,
-} from "@/lib/payments/types";
+import { supabase } from "@/integrations/supabase/client";
+import { MOVVI_MONTHLY_FEE_BRL } from "@/lib/payments/types";
 import { formatCurrency } from "@/lib/finance/financeSettings";
 
 export const Route = createFileRoute("/motorista/assinatura")({
@@ -45,26 +33,41 @@ export const Route = createFileRoute("/motorista/assinatura")({
   component: DriverSubscriptionPage,
 });
 
-type Info = Awaited<ReturnType<typeof getDriverSubscriptionInfo>>;
-type UiStatus = ReturnType<typeof toUiStatus>;
+type FinancialStatus = "inactive" | "pending" | "active" | "overdue" | "cancelled";
 
-/** UI status → StatusPill token. */
-function pillFor(status: UiStatus) {
-  const label = SUBSCRIPTION_STATUS_UI_LABELS[status];
+type DriverInfo = {
+  mercadopago_init_point: string | null;
+  mercadopago_preapproval_id: string | null;
+  financial_status: FinancialStatus | null;
+  subscription_status: string | null;
+  subscription_value: number | null;
+  next_due_date: string | null;
+  last_payment_status: string | null;
+  approval_status: string | null;
+};
+
+const FIN_LABEL: Record<FinancialStatus, string> = {
+  active: "Ativo",
+  pending: "Pendente",
+  overdue: "Inadimplente",
+  cancelled: "Cancelado",
+  inactive: "Inativo",
+};
+
+function pillFor(status: FinancialStatus) {
+  const label = FIN_LABEL[status];
   switch (status) {
     case "active":
       return <StatusPill status="finished" label={label} pulse={false} />;
-    case "pending_payment":
+    case "pending":
       return <StatusPill status="searching" label={label} />;
-    case "expired":
-    case "blocked":
+    case "overdue":
     case "cancelled":
       return <StatusPill status="cancelled" label={label} pulse={false} />;
     default:
       return <StatusPill status="offline" label={label} pulse={false} />;
   }
 }
-
 
 const BENEFITS = [
   "Corridas ilimitadas na plataforma",
@@ -74,17 +77,23 @@ const BENEFITS = [
 ];
 
 function DriverSubscriptionPage() {
-  const load = useServerFn(getDriverSubscriptionInfo);
-  const createCharge = useServerFn(createDriverMonthlyCharge);
-  const [info, setInfo] = useState<Info | null>(null);
+  const [driver, setDriver] = useState<DriverInfo | null>(null);
   const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState<SubscriptionPaymentMethod | null>(null);
 
   async function refresh() {
     setLoading(true);
     try {
-      const r = await load({});
-      setInfo(r);
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) throw new Error("not_authenticated");
+      const { data, error } = await supabase
+        .from("drivers")
+        .select(
+          "mercadopago_init_point,mercadopago_preapproval_id,financial_status,subscription_status,subscription_value,next_due_date,last_payment_status,approval_status",
+        )
+        .eq("user_id", u.user.id)
+        .maybeSingle();
+      if (error) throw error;
+      setDriver((data as DriverInfo) ?? null);
     } catch (e) {
       console.error(e);
       toast.error("Não foi possível carregar a assinatura.");
@@ -97,26 +106,7 @@ function DriverSubscriptionPage() {
     void refresh();
   }, []);
 
-  async function pay(method: SubscriptionPaymentMethod) {
-    setBusy(method);
-    try {
-      const res = await createCharge({ data: { method } });
-      if (!res.providerConfigured) {
-        toast.message("Modo desenvolvimento: cobrança simulada gerada.", {
-          description: "Configure ASAAS_API_KEY para cobranças reais.",
-        });
-      } else {
-        toast.success("Cobrança gerada!");
-      }
-      await refresh();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Falha ao gerar cobrança.");
-    } finally {
-      setBusy(null);
-    }
-  }
-
-  if (loading && !info) {
+  if (loading && !driver) {
     return (
       <SettingsPageShell>
         <Loading label="Carregando assinatura…" />
@@ -124,10 +114,11 @@ function DriverSubscriptionPage() {
     );
   }
 
-  const ui = toUiStatus(info?.subscriptionStatus);
-  const isActive = ui === "active";
-  const latest = info?.latest;
-  const dueDate = info?.nextDueAt ? new Date(info.nextDueAt) : null;
+  const financial = (driver?.financial_status ?? "inactive") as FinancialStatus;
+  const isActive = financial === "active";
+  const dueDate = driver?.next_due_date ? new Date(driver.next_due_date) : null;
+  const initPoint = driver?.mercadopago_init_point ?? null;
+  const notApprovedYet = driver?.approval_status !== "aprovado";
 
   return (
     <SettingsPageShell>
@@ -135,10 +126,9 @@ function DriverSubscriptionPage() {
         icon={Crown}
         title="Mensalidade"
         subtitle="Plano Motorista MOVVI Premium"
-        action={pillFor(ui)}
+        action={pillFor(financial)}
       />
 
-      {/* Plano atual */}
       <DSCard className="p-5 space-y-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 space-y-1">
@@ -157,7 +147,7 @@ function DriverSubscriptionPage() {
             variant="metric"
             className="text-[clamp(28px,9vw,36px)] text-foreground"
           >
-            {formatCurrency(MOVVI_MONTHLY_FEE_BRL)}
+            {formatCurrency(Number(driver?.subscription_value ?? MOVVI_MONTHLY_FEE_BRL))}
           </Typography>
           <Caption>por mês</Caption>
         </div>
@@ -175,20 +165,15 @@ function DriverSubscriptionPage() {
           <div className="flex items-center gap-2 rounded-xl bg-muted/40 px-3 py-2">
             <Icon as={Wallet} size="md" className="text-muted-foreground" />
             <div className="min-w-0">
-              <Caption className="block">Forma de pagamento</Caption>
+              <Caption className="block">Pagamento</Caption>
               <BodySmall className="truncate font-semibold text-foreground">
-                {latest?.payment_method === "credit_card"
-                  ? "Cartão de crédito"
-                  : latest?.payment_method === "pix"
-                    ? "PIX"
-                    : "PIX ou Cartão"}
+                Mercado Pago
               </BodySmall>
             </div>
           </div>
         </div>
       </DSCard>
 
-      {/* Benefícios */}
       <DSCard className="p-5 space-y-3">
         <HeadingS>Benefícios do plano</HeadingS>
         <ul className="space-y-2">
@@ -204,109 +189,68 @@ function DriverSubscriptionPage() {
         </ul>
       </DSCard>
 
-      {/* Pagamento (quando não ativa) */}
-      {!isActive ? (
+      {notApprovedYet ? (
+        <DSCard className="p-5 space-y-2">
+          <HeadingS>Aguardando aprovação</HeadingS>
+          <BodySmall className="text-muted-foreground">
+            Seu cadastro está em análise. Assim que for aprovado, o link para
+            pagar a primeira mensalidade aparecerá aqui.
+          </BodySmall>
+        </DSCard>
+      ) : !isActive && initPoint ? (
         <DSCard className="p-5 space-y-3">
           <div className="space-y-1">
             <HeadingS>
-              {ui === "expired" || ui === "blocked" || ui === "cancelled"
+              {financial === "overdue" || financial === "cancelled"
                 ? "Regularizar mensalidade"
                 : "Pagar mensalidade"}
             </HeadingS>
-
             <BodySmall className="text-muted-foreground">
-              Escolha a forma de pagamento para gerar sua cobrança.
+              Você será direcionado ao Mercado Pago para concluir o pagamento
+              com PIX, cartão ou saldo.
             </BodySmall>
           </div>
-          <div className="grid gap-2">
-            <DSButton
-              className="w-full"
-              size="lg"
-              disabled={busy !== null}
-              onClick={() => pay("pix")}
-              aria-label="Pagar mensalidade com PIX"
-            >
-              {busy === "pix" ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
-              ) : (
-                <Icon as={QrCode} size="sm" className="mr-2" />
-              )}
-              Pagar com PIX
-            </DSButton>
-            <DSButton
-              variant="secondary"
-              size="lg"
-              className="w-full"
-              disabled={busy !== null}
-              onClick={() => pay("credit_card")}
-              aria-label="Pagar mensalidade com cartão de crédito"
-            >
-              {busy === "credit_card" ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
-              ) : (
-                <Icon as={CreditCard} size="sm" className="mr-2" />
-              )}
-              Pagar com cartão de crédito
-            </DSButton>
-          </div>
+          <DSButton
+            className="w-full"
+            size="lg"
+            onClick={() => window.open(initPoint, "_blank", "noopener")}
+            aria-label="Pagar mensalidade no Mercado Pago"
+          >
+            <Icon as={CreditCard} size="sm" className="mr-2" />
+            Pagar mensalidade
+          </DSButton>
+          <BodySmall className="text-muted-foreground">
+            Após confirmar o pagamento, esta tela é atualizada automaticamente
+            em alguns instantes.
+          </BodySmall>
+        </DSCard>
+      ) : !isActive ? (
+        <DSCard className="p-5 space-y-2">
+          <HeadingS>Assinatura ainda não gerada</HeadingS>
+          <BodySmall className="text-muted-foreground">
+            Não foi possível encontrar o link de pagamento da sua mensalidade.
+            Entre em contato com o suporte.
+          </BodySmall>
         </DSCard>
       ) : null}
 
-      {/* Última cobrança */}
-      {latest ? (
-        <DSCard className="p-5 space-y-3">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <HeadingS>Última cobrança</HeadingS>
-              <Caption className="block">
-                {new Date(latest.created_at).toLocaleString("pt-BR")}
-              </Caption>
-            </div>
-            {pillFor(ui)}
-          </div>
-
-          <div className="grid gap-2">
-            <Row label="Valor" value={formatCurrency(Number(latest.amount ?? 0))} />
-            <Row
-              label="Método"
-              value={latest.payment_method === "credit_card" ? "Cartão" : "PIX"}
-            />
-            <Row label="Status" value={String(latest.status ?? "—")} />
-          </div>
-
-          <div className="flex flex-wrap gap-2 pt-1">
-            {latest.pix_copy_paste ? (
-              <DSButton
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  void navigator.clipboard.writeText(latest.pix_copy_paste!);
-                  toast.success("Código PIX copiado.");
-                }}
-              >
-                <Icon as={Copy} size="sm" className="mr-1.5" />
-                Copiar PIX
-              </DSButton>
-            ) : null}
-            {latest.invoice_url ? (
-              <DSButton variant="outline" size="sm" asChild>
-                <a href={latest.invoice_url} target="_blank" rel="noreferrer">
-                  <Icon as={ExternalLink} size="sm" className="mr-1.5" />
-                  Abrir fatura
-                </a>
-              </DSButton>
-            ) : null}
-          </div>
+      {driver?.last_payment_status ? (
+        <DSCard className="p-5 space-y-2">
+          <HeadingS>Último pagamento</HeadingS>
+          <BodySmall className="text-muted-foreground">
+            Status: <span className="font-semibold text-foreground">{driver.last_payment_status}</span>
+          </BodySmall>
+          {initPoint ? (
+            <DSButton variant="outline" size="sm" asChild>
+              <a href={initPoint} target="_blank" rel="noreferrer">
+                <Icon as={ExternalLink} size="sm" className="mr-1.5" />
+                Abrir Mercado Pago
+              </a>
+            </DSButton>
+          ) : null}
         </DSCard>
-      ) : (
-        <EmptyState
-          icon={Wallet}
-          title="Nenhuma cobrança encontrada"
-          description="Suas cobranças da mensalidade aparecerão aqui após a primeira geração."
-        />
-      )}
+      ) : null}
 
-      {/* Suporte */}
       <DSCard className="flex flex-wrap items-center justify-between gap-3 p-5">
         <div className="flex min-w-0 items-center gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
@@ -321,15 +265,13 @@ function DriverSubscriptionPage() {
           <Link to="/motorista/suporte">Falar com suporte</Link>
         </DSButton>
       </DSCard>
+
+      {loading ? (
+        <div className="flex justify-center py-2">
+          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+        </div>
+      ) : null}
     </SettingsPageShell>
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between gap-3">
-      <BodySmall className="text-muted-foreground">{label}</BodySmall>
-      <BodySmall className="truncate font-semibold text-foreground">{value}</BodySmall>
-    </div>
-  );
-}
