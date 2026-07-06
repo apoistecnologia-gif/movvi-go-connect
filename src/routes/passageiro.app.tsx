@@ -3619,7 +3619,7 @@ function StepFlow({
           >
             <div className="flex items-baseline gap-2 min-w-0">
               <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#707070] leading-none">
-                Valor
+                Você paga
               </span>
               <span className="text-[22px] font-bold leading-none tracking-tight text-[#111418] tabular-nums">
                 {formatBRL(selectedFare)}
