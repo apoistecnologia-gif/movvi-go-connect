@@ -165,14 +165,15 @@ function DriverProfilePage() {
 
   async function handlePhotoUploaded(result: { signedUrl: string; path: string }) {
     if (!userId) return;
+    // Exibimos a signed URL curta imediatamente; no banco persistimos apenas o path.
     setDriver((d) => (d ? { ...d, photo_url: result.signedUrl } : d));
     try {
       await supabase
         .from("users")
-        .update({ avatar_url: result.signedUrl })
+        .update({ avatar_url: result.path })
         .eq("auth_user_id", userId);
-      await supabase.from("drivers").update({ photo_url: result.signedUrl }).eq("user_id", userId);
-      await supabase.auth.updateUser({ data: { avatar_url: result.signedUrl } });
+      await supabase.from("drivers").update({ photo_url: result.path }).eq("user_id", userId);
+      await supabase.auth.updateUser({ data: { avatar_path: result.path } });
       toast.success("Foto atualizada!");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Falha ao salvar a foto.");
