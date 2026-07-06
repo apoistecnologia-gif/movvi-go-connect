@@ -180,16 +180,24 @@ Deno.serve(async (req) => {
         null;
 
       let driverId: string | null = null;
+      let driverUserId: string | null = null;
       if (preapprovalId) {
         const { data: d } = await admin
           .from("drivers")
-          .select("id")
+          .select("id,user_id")
           .eq("mercadopago_preapproval_id", preapprovalId)
           .maybeSingle();
         driverId = d?.id ?? null;
+        driverUserId = d?.user_id ?? null;
       }
       if (!driverId && pay.external_reference) {
-        driverId = pay.external_reference;
+        const { data: d } = await admin
+          .from("drivers")
+          .select("id,user_id")
+          .eq("id", pay.external_reference)
+          .maybeSingle();
+        driverId = d?.id ?? pay.external_reference;
+        driverUserId = d?.user_id ?? null;
       }
 
       const mapped = mapPaymentToFinancial(pay.status);
@@ -209,19 +217,31 @@ Deno.serve(async (req) => {
         }
         await admin.from("drivers").update(patch).eq("id", driverId);
 
-        await admin.from("subscriptions").insert({
-          driver_id: driverId,
-          status: pay.status === "approved" ? "active" : mapped.subscription,
-          amount: pay.transaction_amount ?? null,
-          period_start: new Date().toISOString(),
-          period_end:
-            pay.status === "approved"
-              ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-              : null,
-          provider_reference: preapprovalId,
-          payment_method: "credit_card",
-          paid_at: pay.date_approved ?? null,
-        });
+        if (driverUserId) {
+          await admin.from("subscriptions").insert({
+            driver_id: driverUserId,
+            status: pay.status === "approved" ? "active" : mapped.subscription,
+            amount: pay.transaction_amount ?? null,
+            period_start: new Date().toISOString(),
+            period_end:
+              pay.status === "approved"
+                ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+                : null,
+            provider_reference: preapprovalId,
+            payment_method: "credit_card",
+            paid_at: pay.date_approved ?? null,
+          });
+
+          if (pay.status === "approved") {
+            await admin.from("notification_inbox").insert({
+              user_id: driverUserId,
+              title: "Mensalidade paga com sucesso",
+              body: "Sua mensalidade MOVVI foi confirmada. Bons rolês!",
+              category: "billing",
+              data: { payment_id: String(pay.id), amount: pay.transaction_amount ?? null },
+            });
+          }
+        }
       }
 
       await admin.from("driver_payment_events").insert({
