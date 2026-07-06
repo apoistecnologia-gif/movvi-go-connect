@@ -2,7 +2,9 @@
 // - Motoristas com next_due_date <= hoje+3 e financial_status='active' recebem
 //   uma nova preference do Mercado Pago e voltam para 'pending' até o pagamento.
 // - Motoristas com next_due_date < hoje-3 (tolerância) e ainda pendentes viram 'overdue'.
-// Chamado via pg_cron diariamente. Autentica pela apikey (anon) do Supabase.
+// Chamado via pg_cron diariamente.
+// Autentica por header: Authorization: Bearer ${CRON_SECRET}.
+// Requer secret dedicado CRON_SECRET. Sem ele, responde 503.
 
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
@@ -57,9 +59,18 @@ export const Route = createFileRoute("/api/public/hooks/renew-driver-subscriptio
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const apikey = request.headers.get("apikey") ?? "";
-        const expected = process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.SUPABASE_ANON_KEY ?? "";
-        if (!apikey || apikey !== expected) {
+        const cronSecret = process.env.CRON_SECRET?.trim() ?? "";
+        if (!cronSecret) {
+          return new Response(
+            JSON.stringify({ error: "cron_secret_not_configured" }),
+            { status: 503, headers: { "content-type": "application/json" } },
+          );
+        }
+        const auth = request.headers.get("authorization") ?? "";
+        const provided = auth.toLowerCase().startsWith("bearer ")
+          ? auth.slice(7).trim()
+          : "";
+        if (!provided || provided !== cronSecret) {
           return new Response(JSON.stringify({ error: "unauthorized" }), {
             status: 401,
             headers: { "content-type": "application/json" },

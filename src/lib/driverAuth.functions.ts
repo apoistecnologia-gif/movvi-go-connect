@@ -8,19 +8,26 @@ const DRIVER_AUTH_LINK_FIELD = "user_id" as const;
 const Categories = ["carros", "motos", "fretes", "guincho", "envios"] as const;
 const Buckets = ["driver-selfies", "driver-cnh", "vehicle-documents"] as const;
 
+const IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"] as const;
+const DOC_TYPES = [...IMAGE_TYPES, "application/pdf"] as const;
+const MAX_DOC_BYTES = 8 * 1024 * 1024; // 8 MB por documento (após decodificar)
+const MAX_BASE64_CHARS = Math.ceil((MAX_DOC_BYTES * 4) / 3) + 16; // limite grosseiro antes de decodificar
+
 const DriverDocumentSchema = z.object({
   bucket: z.enum(Buckets),
   label: z.enum(["selfie", "cnh", "cnh_back", "veiculo"]),
-  fileName: z.string().min(1),
+  fileName: z.string().min(1).max(160),
   contentType: z.string().min(1),
-  base64: z.string().min(1),
+  base64: z.string().min(1).max(MAX_BASE64_CHARS, {
+    message: "Arquivo muito grande. Envie até 8 MB.",
+  }),
 });
 
 const DriverSignupSchema = z.object({
   name: z.string().trim().min(3).max(120),
   email: z.string().trim().email().max(255),
   phone: z.string().trim().min(10).max(20),
-  password: z.string().min(4).max(72),
+  password: z.string().min(8, { message: "Use uma senha com no mínimo 8 caracteres." }).max(72),
   cpf: z.string().trim().min(11).max(14),
   birth_date: z.string().optional().nullable(),
   city: z.string().trim().min(2).max(80),
@@ -86,7 +93,7 @@ function isDuplicateAuthError(message: string) {
 function authErrorMessage(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error ?? "");
   if (isDuplicateAuthError(message)) return "Este e-mail já está cadastrado.";
-  if (/password/i.test(message)) return "Senha inválida. Use no mínimo 4 caracteres.";
+  if (/password/i.test(message)) return "Senha inválida. Use no mínimo 8 caracteres.";
   if (/email/i.test(message)) return "E-mail inválido.";
   return "Não foi possível criar a conta de autenticação.";
 }
@@ -160,19 +167,36 @@ export const cadastrarMotorista = createServerFn({ method: "POST" })
     try {
       const uploadedDocs = await Promise.all(
         data.documents.map(async (doc) => {
+          // selfie: apenas imagens; demais podem ser imagem ou PDF
+          const allowed: readonly string[] =
+            doc.label === "selfie" ? IMAGE_TYPES : DOC_TYPES;
+          const ct = (doc.contentType || "").toLowerCase();
+          if (!allowed.includes(ct)) {
+            throw new Error(
+              `Formato inválido em ${doc.label}. Envie ${
+                doc.label === "selfie" ? "JPG, PNG ou WEBP" : "JPG, PNG, WEBP ou PDF"
+              }.`,
+            );
+          }
           const path = `${finalAuthUserId}/${doc.label}-${Date.now()}.${cleanExt(doc.fileName)}`;
           const body = decodeBase64(doc.base64);
+          if (body.byteLength === 0) {
+            throw new Error(`Arquivo vazio em ${doc.label}.`);
+          }
+          if (body.byteLength > MAX_DOC_BYTES) {
+            throw new Error(`Arquivo de ${doc.label} excede 8 MB.`);
+          }
           if (import.meta.env.DEV) console.log("[MOVVI DOCS] upload iniciado:", { bucket: doc.bucket, path });
           const { error } = await supabaseAdmin.storage
             .from(doc.bucket)
-            .upload(path, body, { upsert: true, contentType: doc.contentType });
+            .upload(path, body, { upsert: true, contentType: ct });
           if (error) {
             console.error("[MOVVI DOCS] falha upload:", doc.label, error.message);
             throw new Error(`Falha no upload de ${doc.label}.`);
           }
           uploaded.push({ bucket: doc.bucket, path });
           if (import.meta.env.DEV) console.log("[MOVVI DOCS] upload concluído:", { bucket: doc.bucket, path });
-          return [doc.label, { path, body, contentType: doc.contentType, fileName: doc.fileName }] as const;
+          return [doc.label, { path, body, contentType: ct, fileName: doc.fileName }] as const;
         }),
       );
 
@@ -187,24 +211,22 @@ export const cadastrarMotorista = createServerFn({ method: "POST" })
         veiculo: docMap.veiculo.path,
       });
 
-      // Profile photo: copy selfie to public-readable bucket so passengers can view it.
-      let photoUrl: string | null = null;
+      // Profile photo: copy selfie to profile-photos bucket. Salvamos apenas o
+      // path — a UI gera signed URL curta sob demanda.
+      let photoPath: string | null = null;
       try {
         const selfie = docMap.selfie;
-        const photoPath = `${finalAuthUserId}/avatar-${Date.now()}.${cleanExt(selfie.fileName)}`;
+        const p = `${finalAuthUserId}/avatar-${Date.now()}.${cleanExt(selfie.fileName)}`;
         const photoUpload = await supabaseAdmin.storage
           .from("profile-photos")
-          .upload(photoPath, selfie.body, { upsert: true, contentType: selfie.contentType });
+          .upload(p, selfie.body, { upsert: true, contentType: selfie.contentType });
         if (photoUpload.error) throw photoUpload.error;
-        uploaded.push({ bucket: "profile-photos", path: photoPath });
-        const signed = await supabaseAdmin.storage
-          .from("profile-photos")
-          .createSignedUrl(photoPath, 60 * 60 * 24 * 365);
-        if (signed.error) throw signed.error;
-        photoUrl = signed.data?.signedUrl ?? null;
+        uploaded.push({ bucket: "profile-photos", path: p });
+        photoPath = p;
       } catch (photoErr) {
-        console.error("[MOVVI PHOTO] falha ao gerar foto pública do motorista:", photoErr);
+        console.error("[MOVVI PHOTO] falha ao copiar foto do motorista:", photoErr);
       }
+      const photoUrl: string | null = photoPath;
 
       const profile = await supabaseAdmin.from("users").upsert(
         {

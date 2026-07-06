@@ -44,8 +44,7 @@ async function verifySignature(
   xRequestId: string,
   xSignature: string,
 ): Promise<boolean> {
-  if (!MP_WEBHOOK_SECRET) return true; // sem secret configurado, aceita (dev)
-  if (!xSignature) return false;
+  if (!xSignature || !xRequestId) return false;
   const parts = Object.fromEntries(
     xSignature.split(",").map((p) => {
       const [k, ...rest] = p.trim().split("=");
@@ -114,9 +113,15 @@ function mapPreapprovalStatus(status: string): {
   }
 }
 
+const ALLOW_UNSIGNED = (Deno.env.get("ALLOW_UNSIGNED_MP_WEBHOOKS") ?? "").toLowerCase() === "true";
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
+
+  if (!MP_WEBHOOK_SECRET && !ALLOW_UNSIGNED) {
+    return json({ error: "webhook_secret_not_configured" }, 503);
+  }
 
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -157,7 +162,7 @@ Deno.serve(async (req) => {
   }
 
   const validSig = await verifySignature(dataId, xRequestId, xSignature).catch(() => false);
-  if (!validSig && MP_WEBHOOK_SECRET) {
+  if (!validSig && !ALLOW_UNSIGNED) {
     return json({ error: "invalid_signature" }, 401);
   }
 
