@@ -1474,7 +1474,7 @@ function PassageiroApp() {
       setSuggestions([]);
       sessionTokenRef.current = null;
       pushRecent({ placeId: s.placeId, label: s.primary, secondary: s.secondary });
-      sheetRef.current?.snapTo(88);
+      sheetRef.current?.snapTo(55);
       searchInputRef.current?.blur();
       await calcRoute(point);
     } catch (e) {
@@ -1516,12 +1516,20 @@ function PassageiroApp() {
       if (import.meta.env.DEV) console.log("[MOVVI UI] rota calculada:", result);
       setRoute(result);
       setPassengerUiStage("route_preview");
-      sheetRef.current?.snapTo(88);
+      sheetRef.current?.snapTo(55);
       if (mapRef.current) {
         const bounds = new google.maps.LatLngBounds();
         bounds.extend(position);
         bounds.extend(dest);
-        mapRef.current.fitBounds(bounds, { top: 90, bottom: Math.round(window.innerHeight * 0.5) + 16, left: 48, right: 48 });
+        // Padding inferior = altura do sheet (~55vh) + folga, para a rota
+        // nunca ficar escondida atrás da interface. Laterais generosas.
+        mapRef.current.setOptions({ heading: 0, tilt: 0 });
+        mapRef.current.fitBounds(bounds, {
+          top: 96,
+          bottom: Math.round(window.innerHeight * 0.55) + 24,
+          left: 64,
+          right: 64,
+        });
         // Nunca zoom < 13: enquadra apenas o par de pontos, jamais o estado inteiro.
         const listener = google.maps.event.addListenerOnce(mapRef.current, "idle", () => {
           const z = mapRef.current?.getZoom();
@@ -2319,11 +2327,11 @@ function PassageiroApp() {
           passengerUiStage === "route_preview" ||
           passengerUiStage === "selecting_category" ||
           passengerUiStage === "confirming_request";
-        const snaps = bigStage ? [58, 74, 92] : [52, 74, 92];
+        const snaps = bigStage ? [45, 62, 90] : [52, 74, 92];
         const initial =
-          passengerUiStage === "selecting_category" ? 68 :
-          passengerUiStage === "confirming_request" ? 82 :
-          bigStage ? 74 : 62;
+          passengerUiStage === "selecting_category" ? 62 :
+          passengerUiStage === "confirming_request" ? 78 :
+          bigStage ? 55 : 62;
 
         return (
         <MovviSheet ref={sheetRef} key={bigStage ? "big" : "small"} snaps={snaps} initial={initial}>
@@ -3611,7 +3619,7 @@ function StepFlow({
           >
             <div className="flex items-baseline gap-2 min-w-0">
               <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#707070] leading-none">
-                Valor
+                Você paga
               </span>
               <span className="text-[22px] font-bold leading-none tracking-tight text-[#111418] tabular-nums">
                 {formatBRL(selectedFare)}
