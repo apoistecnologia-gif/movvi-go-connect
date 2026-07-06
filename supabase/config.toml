@@ -5,3 +5,9 @@ verify_jwt = false
 
 [functions.approve-driver-and-create-subscription]
 verify_jwt = true
+
+[functions.mercadopago-webhook]
+verify_jwt = false
+
+[functions.approve-driver-and-create-mercadopago-subscription]
+verify_jwt = true
