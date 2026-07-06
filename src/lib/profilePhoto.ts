@@ -3,10 +3,13 @@ import { supabase } from "@/integrations/supabase/client";
 export const PROFILE_PHOTO_BUCKET = "profile-photos";
 const ALLOWED = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 const MAX_BYTES = 5 * 1024 * 1024; // 5MB
-const SIGNED_URL_TTL_SECONDS = 60 * 60 * 24 * 365; // 1 year
+// Signed URL curta — a UI pode revalidar sob demanda quando expirar.
+const SIGNED_URL_TTL_SECONDS = 60 * 60; // 1 hora
 
 export type ProfilePhotoUploadResult = {
+  /** Path do arquivo no bucket privado. Persistir apenas isto no banco. */
   path: string;
+  /** URL assinada curta para exibir imediatamente após o upload. Não persistir. */
   signedUrl: string;
 };
 
@@ -33,7 +36,8 @@ function extFromFile(file: File) {
 
 /**
  * Upload a profile photo for the currently authenticated user.
- * Stores file at `{userId}/avatar-{timestamp}.{ext}` and returns a long-lived signed URL.
+ * Persistir apenas `path` no banco. `signedUrl` é curto (1 h) e serve só para
+ * exibir a foto recém-enviada; para revalidar, use `refreshProfilePhotoUrl`.
  */
 export async function uploadProfilePhoto(
   userId: string,
@@ -75,3 +79,4 @@ export async function refreshProfilePhotoUrl(path: string): Promise<string | nul
     .createSignedUrl(path, SIGNED_URL_TTL_SECONDS);
   return signed.data?.signedUrl ?? null;
 }
+
