@@ -89,6 +89,15 @@ type AdminNote = {
   created_at: string;
 };
 
+type ApproveMercadoPagoResult = {
+  ok: boolean;
+  alreadyExists: boolean;
+  preapprovalId: string;
+  initPoint: string | null;
+  dueDate: string | null;
+  error?: string;
+};
+
 const SUB_STATUSES: { value: SubStatus; label: string; tone: string }[] = [
   { value: "active", label: "Ativa", tone: "bg-primary/15 text-primary border-primary/30" },
   { value: "pending", label: "Pendente", tone: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30" },
@@ -171,6 +180,9 @@ function docsPending(d: Driver) {
 }
 
 function mapAdminError(msg: string): string {
+  if (msg === "admin_session_missing" || msg === "unauthorized" || /unauthorized|authorization header/i.test(msg)) {
+    return "Sessão do admin expirada. Entre novamente no painel.";
+  }
   if (msg === "forbidden") return "Ação restrita a administradores.";
   if (/^invalid_|^Required$|uuid/i.test(msg)) return "Dados inválidos.";
   return msg;
@@ -277,14 +289,13 @@ function AdminMotoristas() {
     try {
       if (status === "aprovado") {
         // Aprovação → cria assinatura (preapproval) no Mercado Pago via Edge Function.
-        const { data: result, error: fnError } = await supabase.functions.invoke<{
-          ok: boolean;
-          alreadyExists: boolean;
-          preapprovalId: string;
-          initPoint: string | null;
-          dueDate: string | null;
-        }>("approve-driver-and-create-mercadopago-subscription", {
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        const accessToken = sessionData.session?.access_token;
+        if (sessionError || !accessToken) throw new Error("admin_session_missing");
+
+        const { data: result, error: fnError } = await supabase.functions.invoke<ApproveMercadoPagoResult>("approve-driver-and-create-mercadopago-subscription", {
           body: { driverId: d.id },
+          headers: { Authorization: `Bearer ${accessToken}` },
         });
         if (fnError || !result?.ok) {
           let detail = "";
@@ -292,11 +303,13 @@ function AdminMotoristas() {
           if (ctx && typeof ctx.json === "function") {
             try {
               const body = await ctx.clone().json();
-              detail =
-                body?.error ||
-                body?.message ||
-                (body?.missing ? `campos faltando: ${body.missing.join(", ")}` : "") ||
-                (body?.detail ? String(body.detail).slice(0, 200) : "");
+              if (body?.error === "missing_required_fields" && Array.isArray(body?.missing)) {
+                detail = `missing_required_fields:${body.missing.join(", ")}`;
+              } else if (body?.error === "mercadopago_preapproval_failed" && body?.detail) {
+                detail = `mercadopago_preapproval_failed:${String(body.detail).slice(0, 200)}`;
+              } else {
+                detail = body?.error || body?.message || (body?.detail ? String(body.detail).slice(0, 200) : "");
+              }
             } catch {
               try {
                 detail = (await ctx.clone().text()).slice(0, 200);
@@ -311,7 +324,6 @@ function AdminMotoristas() {
             fnError?.message ||
             "Falha ao aprovar/criar assinatura";
           console.error("[approve] edge error", { fnError, result, detail });
-          toast.error("Erro ao aprovar: " + msg);
           throw new Error(msg);
         }
         await logAdminAction({
@@ -712,7 +724,7 @@ function DriverCard({
           </Button>
           {driver.approval_status !== "aprovado" && (
             <Button size="sm" onClick={onApprove} disabled={busy}>
-              <CheckCircle2 className="mr-1 h-4 w-4" /> Aprovar
+              {busy ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-1 h-4 w-4" />} Aprovar
             </Button>
           )}
           {driver.approval_status !== "reprovado" && (
@@ -1030,7 +1042,7 @@ function DetailsDialog({
         <DialogFooter className="flex-wrap gap-2">
           {driver.approval_status !== "aprovado" && (
             <Button onClick={() => onApprove(driver)} disabled={busy}>
-              <CheckCircle2 className="mr-1 h-4 w-4" /> Aprovar
+              {busy ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-1 h-4 w-4" />} Aprovar
             </Button>
           )}
           {driver.approval_status !== "reprovado" && (

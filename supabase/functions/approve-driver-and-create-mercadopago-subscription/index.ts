@@ -51,30 +51,36 @@ async function mpFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
-  if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
+  try {
+    if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+    if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
 
-  const authHeader = req.headers.get("Authorization") ?? "";
-  if (!authHeader.startsWith("Bearer ")) return json({ error: "unauthorized" }, 401);
+    const authHeader = req.headers.get("Authorization") ?? "";
+    if (!authHeader.startsWith("Bearer ")) return json({ error: "unauthorized" }, 401);
 
-  const userClient = createClient(SUPABASE_URL, ANON_KEY, {
-    global: { headers: { Authorization: authHeader } },
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-  const { data: userRes } = await userClient.auth.getUser();
-  const userId = userRes?.user?.id;
-  if (!userId) return json({ error: "unauthorized" }, 401);
+    const userClient = createClient(SUPABASE_URL, ANON_KEY, {
+      global: { headers: { Authorization: authHeader } },
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const { data: userRes, error: userErr } = await userClient.auth.getUser();
+    const userId = userRes?.user?.id;
+    if (userErr || !userId) return json({ error: "unauthorized" }, 401);
 
-  const admin = createClient(SUPABASE_URL, SERVICE_ROLE, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
+    const admin = createClient(SUPABASE_URL, SERVICE_ROLE, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
 
-  const { data: isAdmin, error: roleErr } = await admin.rpc("has_role", {
-    _user_id: userId,
-    _role: "admin",
-  });
-  if (roleErr) return json({ error: "role_check_failed" }, 500);
-  if (!isAdmin) return json({ error: "forbidden" }, 403);
+    const { data: roleRow, error: roleErr } = await admin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("role", "admin")
+      .maybeSingle();
+    if (roleErr) {
+      console.error("[approve-mp] role check failed", roleErr);
+      return json({ error: "role_check_failed", detail: roleErr.message }, 500);
+    }
+    if (!roleRow) return json({ error: "forbidden" }, 403);
 
   let body: { driverId?: string };
   try {
@@ -181,7 +187,7 @@ Deno.serve(async (req) => {
     .eq("id", driver.id);
 
   await admin.from("subscriptions").insert({
-    driver_id: driver.id,
+    driver_id: driver.user_id,
     status: "pending",
     amount: MONTHLY_FEE,
     period_start: nowIso,
@@ -207,11 +213,15 @@ Deno.serve(async (req) => {
     },
   });
 
-  return json({
-    ok: true,
-    alreadyExists: false,
-    preapprovalId: preapproval.id,
-    initPoint,
-    dueDate: nextDueDate,
-  });
+    return json({
+      ok: true,
+      alreadyExists: false,
+      preapprovalId: preapproval.id,
+      initPoint,
+      dueDate: nextDueDate,
+    });
+  } catch (e) {
+    console.error("[approve-mp] unexpected error", e);
+    return json({ error: "unexpected_error", detail: String(e).slice(0, 300) }, 500);
+  }
 });
