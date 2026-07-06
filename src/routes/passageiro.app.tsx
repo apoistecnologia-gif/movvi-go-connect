@@ -2329,9 +2329,9 @@ function PassageiroApp() {
           passengerUiStage === "confirming_request";
         const snaps = bigStage ? [45, 62, 90] : [52, 74, 92];
         const initial =
-          passengerUiStage === "selecting_category" ? 62 :
+          passengerUiStage === "selecting_category" ? 58 :
           passengerUiStage === "confirming_request" ? 78 :
-          bigStage ? 55 : 62;
+          bigStage ? 50 : 55;
 
         return (
         <MovviSheet ref={sheetRef} key={bigStage ? "big" : "small"} snaps={snaps} initial={initial}>
