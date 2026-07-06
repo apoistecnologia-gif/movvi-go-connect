@@ -2028,7 +2028,7 @@ function PassageiroApp() {
     // NÃO deve estourar em cima do pickup.
     const bottomPad = ride.status === "procurar_motorista"
       ? Math.max(280, Math.round(window.innerHeight * 0.42))
-      : Math.round(window.innerHeight * 0.24) + 12;
+      : Math.round(window.innerHeight * 0.5) + 16;
     mapRef.current.fitBounds(bounds, {
       top: 130,
       bottom: bottomPad,
@@ -2680,8 +2680,8 @@ function PassageiroApp() {
           phase === "motorista_chegou" ||
           phase === "em_viagem") && (
           <MovviSheet
-            snaps={[32, 56, 86]}
-            initial={32}
+            snaps={[50, 74, 92]}
+            initial={50}
           >
             <DriverEnRoute
               ride={ride}
@@ -4238,110 +4238,103 @@ function DriverEnRoute({
     : undefined;
 
   return (
-    <div className="pt-1 pb-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
-      {/* Phase label */}
-      <div className="mb-3 flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-[#707070]">
-        <span className="relative flex h-2 w-2">
-          <span className="absolute inset-0 animate-ping rounded-full bg-[#76C139]/60" />
-          <span className="relative h-2 w-2 rounded-full bg-[#76C139]" />
-        </span>
-        <span className="text-[#111418]">{phaseLabel}</span>
-      </div>
+    <div className="pt-1 pb-2 animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-3">
+      {/* ── COMPACT (visível sem scroll) ─────────────────────────────── */}
 
-      {/* Driver card */}
-      <button
-        type="button"
-        onClick={onOpenProfile}
-        aria-label="Ver perfil do motorista"
-        className="flex w-full items-center gap-4 rounded-[20px] bg-white p-3.5 text-left ring-1 ring-black/5 shadow-[0_8px_22px_-18px_rgba(15,23,42,0.25)] transition duration-[220ms] active:scale-[0.99] animate-in fade-in slide-in-from-bottom-1"
-        style={{ animationDelay: "40ms", animationFillMode: "backwards" }}
-      >
-        <div className="shrink-0 rounded-full ring-2 ring-white shadow-[0_8px_20px_-8px_rgba(0,0,0,0.35)]">
-          <Avatar src={driver.photo_url ?? null} name={driver.name} size={52} />
+      {/* Phase + ETA em uma linha */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[#707070]">
+          <span className="relative flex h-2 w-2">
+            <span className="absolute inset-0 animate-ping rounded-full bg-[#76C139]/60" />
+            <span className="relative h-2 w-2 rounded-full bg-[#76C139]" />
+          </span>
+          <span className="text-[#111418]">{phaseLabel}</span>
         </div>
-        <div className="min-w-0 flex-1">
-          <div className="truncate text-[19px] font-bold leading-tight tracking-tight text-[#111418]">
-            {driver.name}
-          </div>
-          <div className="mt-1 flex items-center gap-2">
-            <span className="inline-flex items-center gap-1 rounded-full bg-[#F7F9F7] px-2 py-0.5 text-[12px] font-semibold text-[#111418] ring-1 ring-black/5">
-              <Star className="h-3 w-3 fill-[#F5B301] text-[#F5B301]" strokeWidth={0} />
-              {driver.rating?.toFixed(1) ?? "5.0"}
-            </span>
-            <span className="text-[12px] font-medium text-[#707070]">MOVVI Driver</span>
-          </div>
-        </div>
-        <ChevronRight className="h-5 w-5 shrink-0 text-[#707070]" strokeWidth={2} />
-      </button>
-
-      {/* ETA — hero */}
-      {(eta != null || distKm != null) && ride.status === "motorista_a_caminho" && (
-        <div
-          className="mt-3 flex items-center justify-between gap-3 rounded-[20px] bg-white p-3.5 ring-1 ring-black/5 shadow-[0_8px_22px_-18px_rgba(118,193,57,0.28)] animate-in fade-in slide-in-from-bottom-1"
-          style={{ animationDelay: "80ms", animationFillMode: "backwards" }}
-        >
-          <div>
-            <div className="text-[13px] font-medium text-[#707070]">
-              {isInTrip ? "Tempo restante" : "Motorista chega em"}
-            </div>
-            <div
-              key={eta ?? "eta-empty"}
-              className="mt-1 text-[18px] font-bold leading-none tracking-tight text-[#111418] tabular-nums animate-count-pop"
-            >
-              {eta ?? "—"}
-              <span className="ml-1.5 text-[15px] font-semibold text-[#707070]">min</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 rounded-full bg-[#76C139]/15 px-3.5 py-2 text-[12px] font-bold uppercase tracking-[0.14em] text-[#4a8a1e]">
-            <Clock className="h-3.5 w-3.5" strokeWidth={2.25} />
-            {distKm != null ? `${distKm.toFixed(1)} km` : "no caminho"}
-          </div>
-        </div>
-      )}
-
-      {/* "Chegou" agora é comunicado pelo cartão flutuante superior. */}
-
-      {/* Vehicle card */}
-      <div
-        className="mt-3 flex items-center gap-4 rounded-[20px] bg-white p-3 ring-1 ring-black/5 shadow-[0_6px_18px_-16px_rgba(15,23,42,0.22)] animate-in fade-in slide-in-from-bottom-1"
-        style={{ animationDelay: "120ms", animationFillMode: "backwards" }}
-      >
-        <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-[#F7F9F7] text-[#111418]">
-          <Car className="h-7 w-7" strokeWidth={1.75} />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="truncate text-[16px] font-semibold text-[#111418]">
-            {driver.vehicle_model || "Veículo"}
-          </div>
-          <div className="mt-0.5 truncate text-[13px] font-medium text-[#707070]">
-            {driver.vehicle_color || "—"}
-          </div>
-        </div>
-        {driver.vehicle_plate && (
-          <div className="inline-flex items-center rounded-lg bg-[#111418] px-2.5 py-1.5 text-[12px] font-extrabold tracking-[0.2em] text-white shadow-[0_4px_10px_-4px_rgba(0,0,0,0.4)]">
-            {driver.vehicle_plate}
+        {eta != null && ride.status !== "em_viagem" && (
+          <div className="flex items-baseline gap-1 rounded-full bg-[#76C139]/12 px-2.5 py-1 text-[#4a8a1e]">
+            <span className="text-[14px] font-extrabold tabular-nums">{eta}</span>
+            <span className="text-[10.5px] font-bold uppercase tracking-wider">min</span>
           </div>
         )}
       </div>
 
-      {/* Quick actions — circular */}
-      <div
-        className="mt-4 grid grid-cols-3 gap-3 animate-in fade-in slide-in-from-bottom-1"
-        style={{ animationDelay: "160ms", animationFillMode: "backwards" }}
+      {/* Driver + vehicle consolidados */}
+      <button
+        type="button"
+        onClick={onOpenProfile}
+        aria-label="Ver perfil do motorista"
+        className="flex w-full items-center gap-3 rounded-[18px] bg-white p-3 text-left ring-1 ring-black/5 shadow-[0_6px_18px_-16px_rgba(15,23,42,0.22)] transition duration-[220ms] active:scale-[0.99]"
       >
+        <Avatar src={driver.photo_url ?? null} name={driver.name} size={44} />
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-[15px] font-bold leading-tight text-[#111418]">
+            {driver.name}
+          </div>
+          <div className="mt-0.5 flex items-center gap-1.5 text-[11.5px] text-[#707070]">
+            <Star className="h-3 w-3 fill-[#F5B301] text-[#F5B301]" strokeWidth={0} />
+            <span className="font-semibold text-[#111418]">{driver.rating?.toFixed(1) ?? "5.0"}</span>
+            <span>·</span>
+            <span className="truncate">
+              {[driver.vehicle_color, driver.vehicle_model].filter(Boolean).join(" ") || "MOVVI Driver"}
+            </span>
+          </div>
+        </div>
+        {driver.vehicle_plate && (
+          <div className="inline-flex shrink-0 items-center rounded-md bg-[#111418] px-2 py-1 font-mono text-[11.5px] font-extrabold tracking-[0.15em] text-white">
+            {driver.vehicle_plate}
+          </div>
+        )}
+        <ChevronRight className="h-4 w-4 shrink-0 text-[#707070]" strokeWidth={2} />
+      </button>
+
+      {/* Código de segurança — compacto e sempre visível antes da viagem */}
+      {ride.safety_code && ride.status !== "em_viagem" && (
+        <div
+          className={`flex items-center gap-3 rounded-[18px] p-3 ring-1 ${
+            ride.status === "motorista_chegou"
+              ? "bg-[#76C139]/10 ring-[#76C139]/40 animate-pulse-soft"
+              : "bg-white ring-[#76C139]/25"
+          }`}
+        >
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#76C139] text-white">
+            <Shield className="h-4 w-4" strokeWidth={2.4} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[#4a8a1e]">
+              Código de segurança
+            </div>
+            <div className="mt-0.5 text-[11px] font-medium text-[#707070] leading-snug">
+              Mostre ao motorista antes de iniciar.
+            </div>
+          </div>
+          <div className="flex items-center gap-1">
+            {ride.safety_code.split("").map((d, i) => (
+              <span
+                key={i}
+                className="grid h-9 w-7 place-items-center rounded-md bg-white text-[18px] font-extrabold tabular-nums text-[#111418] ring-1 ring-[#76C139]/25 shadow-[0_2px_6px_-4px_rgba(0,0,0,0.15)]"
+              >
+                {d}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Ações rápidas — labels legíveis (fundo branco, ícone verde) */}
+      <div className="grid grid-cols-3 gap-2">
         <QuickCircleAction
-          icon={<Phone className="h-5 w-5" strokeWidth={2} />}
+          icon={<Phone className="h-5 w-5" strokeWidth={2.2} />}
           label="Ligar"
           href={telHref}
           onClick={telHref ? undefined : () => toast.info("Telefone do motorista indisponível")}
         />
         <QuickCircleAction
-          icon={<MessageCircle className="h-5 w-5" strokeWidth={2} />}
+          icon={<MessageCircle className="h-5 w-5" strokeWidth={2.2} />}
           label="Mensagem"
           onClick={() => toast.info("Chat em breve")}
         />
         <QuickCircleAction
-          icon={<Share2 className="h-5 w-5" strokeWidth={2} />}
+          icon={<Share2 className="h-5 w-5" strokeWidth={2.2} />}
           label="Compartilhar"
           onClick={() => {
             const text =
@@ -4358,145 +4351,28 @@ function DriverEnRoute({
         />
       </div>
 
-      {/* Primary message */}
-      {ride.status === "motorista_a_caminho" && (
-        <p
-          className="mt-4 text-center text-[13px] font-medium leading-relaxed text-[#707070] animate-in fade-in"
-          style={{ animationDelay: "200ms", animationFillMode: "backwards" }}
-        >
-          Aguarde no local de embarque.
-        </p>
-      )}
+      {/* ── EXPANDIDO (arrastar para ver) ─────────────────────────────── */}
+
       {ride.status === "motorista_chegou" && (
-        <div
-          className="mt-4 flex items-center justify-center gap-2 text-[13px] font-semibold text-[#111418] animate-in fade-in"
-          style={{ animationDelay: "200ms", animationFillMode: "backwards" }}
-        >
-          <span className="relative flex h-2 w-2">
-            <span className="absolute inset-0 animate-ping rounded-full bg-[#76C139]/60" />
-            <span className="relative h-2 w-2 rounded-full bg-[#76C139]" />
-          </span>
-          Motorista aguardando você
+        <div className="flex items-center justify-center gap-2 rounded-[14px] bg-[#76C139]/10 py-2 text-[12.5px] font-semibold text-[#111418]">
+          <Shield className="h-3.5 w-3.5 text-[#4a8a1e]" strokeWidth={2.4} />
+          Confirme a placa antes de embarcar.
         </div>
       )}
 
-      {/* PIN security card — HERO when driver arrived, compact otherwise */}
-      {ride.safety_code && ride.status === "motorista_chegou" && (
-        <div
-          className="mt-3 relative overflow-hidden rounded-[20px] bg-[#76C139]/10 p-4 ring-1 ring-[#76C139]/40 shadow-[0_12px_28px_-20px_rgba(118,193,57,0.32)] animate-in fade-in slide-in-from-bottom-1 animate-pulse-soft"
-          style={{ animationDelay: "220ms", animationFillMode: "backwards" }}
-        >
-          <div className="absolute -top-14 -right-14 h-32 w-32 rounded-full bg-[#76C139]/20 blur-3xl" />
-          <div className="relative flex items-center gap-2.5">
-            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#76C139] text-white shadow-[0_6px_16px_-6px_rgba(118,193,57,0.55)]">
-              <Shield className="h-[18px] w-[18px]" strokeWidth={2.25} />
-            </div>
-            <div className="min-w-0">
-              <div className="text-[10.5px] font-bold uppercase tracking-[0.18em] text-[#4a8a1e]">
-                Seu código de segurança
-              </div>
-              <div className="text-[11.5px] font-medium text-[#707070]">
-                MOVVI PIN
-              </div>
-            </div>
-          </div>
-          <div className="relative mt-3 flex items-center justify-center gap-1.5">
-            {ride.safety_code.split("").map((d, i) => (
-              <span
-                key={i}
-                className="grid h-12 w-10 place-items-center rounded-xl bg-white text-[28px] font-extrabold leading-none tabular-nums text-[#111418] shadow-[0_6px_16px_-12px_rgba(15,23,42,0.28)] ring-1 ring-[#76C139]/20"
-              >
-                {d}
-              </span>
-            ))}
-          </div>
-          <p className="relative mt-2.5 text-center text-[11.5px] font-medium leading-snug text-[#111418]">
-            Mostre este código ao motorista antes de entrar no veículo.
-          </p>
-        </div>
-      )}
-
-      {ride.safety_code && ride.status === "motorista_a_caminho" && (
-        <div
-          className="mt-4 flex items-center gap-3 rounded-[20px] bg-white p-3 ring-1 ring-[#76C139]/25 shadow-[0_8px_22px_-20px_rgba(118,193,57,0.3)] animate-in fade-in slide-in-from-bottom-1"
-          style={{ animationDelay: "220ms", animationFillMode: "backwards" }}
-        >
-          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[#76C139]/15 text-[#76C139]">
-            <Shield className="h-5 w-5" strokeWidth={2} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#707070]">
-              Código de segurança
-            </div>
-            <div className="mt-1 flex items-center gap-1.5">
-              {ride.safety_code.split("").map((d, i) => (
-                <span
-                  key={i}
-                  className="grid h-8 w-7 place-items-center rounded-md bg-[#F7F9F7] text-[16px] font-extrabold tabular-nums text-[#111418] ring-1 ring-black/5"
-                >
-                  {d}
-                </span>
-              ))}
-            </div>
-            <p className="mt-1.5 text-[11px] font-medium text-[#707070] leading-snug">
-              Mostre este código ao seu motorista antes de iniciar a viagem.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Safety plate reminder */}
-      {ride.status === "motorista_chegou" && (
-        <div
-          className="mt-3 flex items-center gap-3 rounded-[20px] bg-white p-3.5 ring-1 ring-black/5 animate-in fade-in"
-          style={{ animationDelay: "260ms", animationFillMode: "backwards" }}
-        >
-          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#F7F9F7] text-[#111418]">
-            <Shield className="h-4 w-4" strokeWidth={2} />
-          </div>
-          <div className="text-[13px] font-medium leading-snug text-[#111418]">
-            Sempre confirme a placa do veículo antes de embarcar.
-          </div>
-        </div>
-      )}
-
-      {/* Safety extras (SOS/incident) */}
-      <div className="mt-4">
-        <SafetyCard
-          role="passenger"
-          rideId={ride.id}
-          counterpartLabel={`Motorista ${driver.name}${driver.vehicle_plate ? ` · ${driver.vehicle_plate}` : ""}`}
-          shareInput={{
-            role: "passenger",
-            status: ride.status,
-            driverName: driver.name,
-            vehicleModel: driver.vehicle_model,
-            vehicleColor: driver.vehicle_color,
-            vehiclePlate: driver.vehicle_plate,
-            originName: ride.origin_name ?? ride.pickup_label ?? null,
-            destinationName: ride.destination_name,
-          }}
-        />
-      </div>
-
-      {/* Destination — premium card for em_viagem, compact otherwise */}
+      {/* Destino + valor */}
       {ride.status === "em_viagem" ? (
-        <div
-          className="mt-4 flex items-center gap-4 rounded-[20px] bg-white p-3.5 ring-1 ring-black/5 shadow-[0_8px_22px_-18px_rgba(15,23,42,0.22)] animate-in fade-in slide-in-from-bottom-1"
-          style={{ animationDelay: "80ms", animationFillMode: "backwards" }}
-        >
-          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[#76C139]/12 text-[#76C139]">
-            <MapPin className="h-6 w-6" strokeWidth={2} />
+        <div className="flex items-center gap-3 rounded-[18px] bg-white p-3 ring-1 ring-black/5">
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#76C139]/12 text-[#76C139]">
+            <MapPin className="h-5 w-5" strokeWidth={2} />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#707070]">
-              Destino
-            </div>
-            <div className="mt-1 truncate text-[16px] font-semibold text-[#111418]">
+            <div className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[#707070]">Destino</div>
+            <div className="mt-0.5 truncate text-[14.5px] font-semibold text-[#111418]">
               {ride.destination_name ?? "—"}
             </div>
             {eta != null && (
-              <div className="mt-1.5 inline-flex items-center gap-1.5 rounded-full bg-[#76C139]/12 px-2.5 py-0.5 text-[12px] font-bold text-[#4a8a1e]">
+              <div className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-[#76C139]/12 px-2 py-0.5 text-[11px] font-bold text-[#4a8a1e]">
                 <Clock className="h-3 w-3" strokeWidth={2.5} />
                 Chegando em {eta} min
               </div>
@@ -4504,14 +4380,14 @@ function DriverEnRoute({
           </div>
         </div>
       ) : (
-        <div className="mt-4 rounded-[20px] bg-white p-4 ring-1 ring-black/5">
+        <div className="rounded-[18px] bg-white p-3 ring-1 ring-black/5">
           <div className="flex items-center gap-2 text-[13px] text-[#111418]">
             <MapPin className="h-4 w-4 shrink-0 text-[#76C139]" strokeWidth={2} />
             <span className="truncate font-medium">{ride.destination_name}</span>
           </div>
           {ride.estimated_price && (
             <div className="mt-2 flex items-center justify-between text-[12px]">
-              <span className="text-[#707070]">Estimativa</span>
+              <span className="text-[#707070]">Você paga</span>
               <span className="text-[14px] font-bold text-[#111418] tabular-nums">
                 {formatBRL(Number(ride.estimated_price))}
               </span>
@@ -4520,19 +4396,30 @@ function DriverEnRoute({
         </div>
       )}
 
-      {/* Trip in Progress — primary message + live tracking pill */}
+      {/* Segurança MOVVI (SOS/incident) */}
+      <SafetyCard
+        role="passenger"
+        rideId={ride.id}
+        counterpartLabel={`Motorista ${driver.name}${driver.vehicle_plate ? ` · ${driver.vehicle_plate}` : ""}`}
+        shareInput={{
+          role: "passenger",
+          status: ride.status,
+          driverName: driver.name,
+          vehicleModel: driver.vehicle_model,
+          vehicleColor: driver.vehicle_color,
+          vehiclePlate: driver.vehicle_plate,
+          originName: ride.origin_name ?? ride.pickup_label ?? null,
+          destinationName: ride.destination_name,
+        }}
+      />
+
+      {/* Em viagem — mensagem calma + tracking */}
       {ride.status === "em_viagem" && (
-        <div
-          className="mt-4 text-center animate-in fade-in"
-          style={{ animationDelay: "160ms", animationFillMode: "backwards" }}
-        >
-          <p className="text-[15px] font-semibold text-[#111418]">
+        <div className="text-center">
+          <p className="text-[14px] font-semibold text-[#111418]">
             Relaxe e aproveite sua viagem.
           </p>
-          <p className="mt-1 text-[12px] font-medium text-[#707070]">
-            Vamos avisar quando você estiver perto do destino.
-          </p>
-          <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[#76C139]/12 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#4a8a1e]">
+          <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-[#76C139]/12 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#4a8a1e]">
             <span className="relative flex h-1.5 w-1.5">
               <span className="absolute inset-0 animate-ping rounded-full bg-[#76C139]/60" />
               <span className="relative h-1.5 w-1.5 rounded-full bg-[#76C139]" />
@@ -4542,12 +4429,12 @@ function DriverEnRoute({
         </div>
       )}
 
-      {/* Cancel — outlined secondary */}
+      {/* Cancelar corrida — discreto, no fim */}
       {ride.status !== "em_viagem" && (
         <button
           type="button"
           onClick={onCancel}
-          className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-[16px] border border-[#111418]/20 bg-white text-[14px] font-semibold text-[#111418] transition duration-[220ms] hover:border-[#111418]/40 hover:bg-[#F7F9F7] active:scale-[0.98]"
+          className="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-[14px] border border-[#111418]/15 bg-white text-[13px] font-semibold text-[#707070] transition duration-[220ms] hover:border-[#111418]/30 hover:text-[#111418] active:scale-[0.98]"
         >
           <X className="h-4 w-4" strokeWidth={2} />
           Cancelar corrida
@@ -4556,6 +4443,7 @@ function DriverEnRoute({
     </div>
   );
 }
+
 
 function QuickCircleAction({
   icon,
@@ -4570,10 +4458,10 @@ function QuickCircleAction({
 }) {
   const inner = (
     <>
-      <span className="grid h-14 w-14 place-items-center rounded-full bg-white text-[#111418] ring-1 ring-black/5 shadow-[0_8px_20px_-12px_rgba(15,23,42,0.4)] transition duration-[220ms] group-active:scale-90 group-hover:ring-[#76C139]/40">
+      <span className="grid h-12 w-12 place-items-center rounded-full bg-[#76C139]/12 text-[#4a8a1e] ring-1 ring-[#76C139]/30 transition duration-[220ms] group-active:scale-90 group-hover:bg-[#76C139]/18">
         {icon}
       </span>
-      <span className="text-[12px] font-semibold text-[#111418]">{label}</span>
+      <span className="text-[11.5px] font-semibold text-[#111418]">{label}</span>
     </>
   );
   const cls = "group flex flex-col items-center gap-2";
