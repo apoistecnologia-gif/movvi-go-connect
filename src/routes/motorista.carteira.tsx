@@ -28,11 +28,6 @@ function DriverWalletPage() {
   const navigate = useNavigate();
   const [tx, setTx] = useState<DriverWalletTx[]>([]);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let alive = true;
-    let channel: ReturnType<typeof supabase.channel> | null = null;
-    (async () => {
   const [fin, setFin] = useState<DriverFinancial | null>(null);
 
   useEffect(() => {
@@ -48,7 +43,7 @@ function DriverWalletPage() {
         .eq("user_id", user.id)
         .maybeSingle();
       if (!alive) return;
-      setFin((drv as DriverFinancial | null) ?? null);
+      setFin((drv as unknown as DriverFinancial | null) ?? null);
       if (!alive) return;
       setTx(rows);
       setLoading(false);
