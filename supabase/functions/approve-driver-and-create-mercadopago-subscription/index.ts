@@ -142,6 +142,9 @@ Deno.serve(async (req) => {
 
   // Cria preapproval sem cartão vinculado — status "pending" gera init_point para
   // o motorista aceitar/pagar a assinatura no checkout do Mercado Pago.
+  // Não enviamos payer_email aqui: em credenciais de teste, o Mercado Pago recusa
+  // e-mails reais com "Both payer and collector must be real or test users".
+  // O motorista informa/usa a conta dele ao abrir o init_point.
   const nowIso = new Date().toISOString();
   const nextDue = new Date();
   nextDue.setDate(nextDue.getDate() + 3);
@@ -159,7 +162,6 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         reason: "Mensalidade Motorista MOVVI",
         external_reference: driver.id,
-        payer_email: driver.email,
         back_url: "https://movvi-go-connect.lovable.app/motorista/assinatura",
         status: "pending",
         auto_recurring: {
@@ -171,8 +173,12 @@ Deno.serve(async (req) => {
       }),
     });
   } catch (e) {
-    console.error("[approve-mp] Mercado Pago preapproval failed", String(e));
-    return json({ error: "mercadopago_preapproval_failed", detail: String(e) }, 502);
+    const detail = String(e);
+    console.error("[approve-mp] Mercado Pago preapproval failed", detail);
+    if (detail.includes("Both payer and collector must be real or test users")) {
+      return json({ error: "mercadopago_environment_mismatch", detail }, 422);
+    }
+    return json({ error: "mercadopago_preapproval_failed", detail }, 502);
   }
 
   const initPoint = preapproval.init_point ?? null;
