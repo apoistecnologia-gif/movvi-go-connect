@@ -752,14 +752,14 @@ function DriverCard({
 
   return (
     <div
-      className="group cursor-pointer rounded-2xl border border-border bg-card p-4 transition hover:border-primary/50"
+      className="group cursor-pointer rounded-xl border border-border bg-card p-3 transition hover:border-primary/50 hover:shadow-sm"
       onClick={onDetails}
     >
-      <div className="flex flex-wrap items-start gap-4">
-        <Avatar src={driver.photo_url ?? driver.selfie_url ?? null} name={driver.name} size={56} />
+      <div className="flex flex-wrap items-start gap-3">
+        <Avatar src={driver.photo_url ?? driver.selfie_url ?? null} name={driver.name} size={44} />
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="font-semibold">{driver.name}</h3>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <h3 className="text-sm font-semibold leading-tight">{driver.name}</h3>
             <StatusPill status={STATUS_PILL[driver.approval_status].status} label={STATUS_PILL[driver.approval_status].label} pulse={false} />
             <StatusPill
               status={SUB_PILL[(driver.subscription_status as SubStatus) ?? "inactive"]?.status ?? "offline"}
@@ -769,7 +769,7 @@ function DriverCard({
             <StatusPill status={online ? "online" : "offline"} label={online ? "Online" : "Offline"} pulse={online} />
             {activeRideStatus && (
               <TagPill tone="border-orange-500/30 bg-orange-500/10 text-orange-400">
-                <Car className="h-3 w-3" /> Em corrida ({activeRideStatus})
+                <Car className="h-3 w-3" /> Em corrida
               </TagPill>
             )}
             {suspended && (
@@ -780,12 +780,12 @@ function DriverCard({
             )}
             <TagPill tone="border-border bg-muted/40 text-muted-foreground capitalize">{driver.category}</TagPill>
           </div>
-          <div className="mt-2 grid gap-1 text-xs text-muted-foreground sm:grid-cols-2">
-            <span>📞 {driver.phone ?? "—"}</span>
-            <span>✉️ {driver.email ?? "—"}</span>
-            <span>📍 {driver.city}/{driver.state}</span>
-            <span>
-              🚗 {driver.vehicle_model} • {driver.vehicle_color} • {driver.vehicle_year} • {driver.vehicle_plate}
+          <div className="mt-1.5 grid gap-x-4 gap-y-0.5 text-xs text-muted-foreground sm:grid-cols-2">
+            <span className="truncate">📞 {driver.phone ?? "—"}</span>
+            <span className="truncate">✉️ {driver.email ?? "—"}</span>
+            <span className="truncate">📍 {driver.city}/{driver.state}</span>
+            <span className="truncate">
+              🚗 {driver.vehicle_model} • {driver.vehicle_plate}
             </span>
             <span className="flex items-center gap-1">
               <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
@@ -794,58 +794,51 @@ function DriverCard({
             <span className="flex items-center gap-1">
               <MapPin className="h-3 w-3" /> GPS: {fmtRelative(driver.last_location_at)}
             </span>
-            <span>Cadastro: {fmtDate(driver.created_at)}</span>
           </div>
           {driver.approval_status === "reprovado" && driver.motivo_reprovacao && (
-            <p className="mt-2 rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">
+            <p className="mt-2 rounded-md bg-destructive/10 px-2.5 py-1.5 text-xs text-destructive">
               Motivo: {driver.motivo_reprovacao}
             </p>
           )}
         </div>
         <div
-          className="flex flex-wrap gap-2"
+          className="flex flex-wrap justify-end gap-1.5"
           onClick={(e) => e.stopPropagation()}
         >
-          <Button size="sm" variant="outline" onClick={onDetails}>
-            <Eye className="mr-1 h-4 w-4" /> Detalhes
-          </Button>
-          <Button size="sm" variant="outline" onClick={onSubscription}>
-            <CreditCard className="mr-1 h-4 w-4" /> Assinatura
-          </Button>
-          {driver.approval_status === "aprovado" && (
-            <Button size="sm" variant="outline" onClick={onGenerateCharge} disabled={busy}>
-              {busy ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <CreditCard className="mr-1 h-4 w-4" />} Gerar cobrança
-            </Button>
-          )}
+          {/* Primary actions */}
           {driver.approval_status !== "aprovado" && (
             <Button size="sm" onClick={onApprove} disabled={busy}>
               {busy ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-1 h-4 w-4" />} Aprovar
             </Button>
           )}
+          {driver.approval_status === "aprovado" && (
+            <Button size="sm" variant="outline" onClick={onGenerateCharge} disabled={busy}>
+              {busy ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <CreditCard className="mr-1 h-4 w-4" />} Cobrança
+            </Button>
+          )}
+          <Button size="sm" variant="outline" onClick={onDetails}>
+            <Eye className="mr-1 h-4 w-4" /> Detalhes
+          </Button>
+          {/* Secondary actions */}
+          <Button size="sm" variant="ghost" onClick={onSubscription} title="Assinatura">
+            <CreditCard className="h-4 w-4" />
+          </Button>
           {driver.approval_status !== "reprovado" && (
-            <Button size="sm" variant="destructive" onClick={onReject} disabled={busy}>
-              <XCircle className="mr-1 h-4 w-4" /> Reprovar
+            <Button size="sm" variant="ghost" onClick={onReject} disabled={busy} title="Reprovar">
+              <XCircle className="h-4 w-4 text-destructive" />
             </Button>
           )}
           {driver.approval_status !== "bloqueado" ? (
-            <Button size="sm" variant="outline" onClick={onBlock} disabled={busy}>
-              <ShieldAlert className="mr-1 h-4 w-4" /> Bloquear
+            <Button size="sm" variant="ghost" onClick={onBlock} disabled={busy} title="Bloquear">
+              <ShieldAlert className="h-4 w-4" />
             </Button>
           ) : (
-            <Button size="sm" variant="outline" onClick={onUnblock} disabled={busy}>
-              Desbloquear
+            <Button size="sm" variant="ghost" onClick={onUnblock} disabled={busy} title="Desbloquear">
+              <ShieldAlert className="h-4 w-4 text-primary" />
             </Button>
           )}
-          <Button size="sm" variant="outline" onClick={onSuspendToggle} disabled={busy}>
-            {suspended ? (
-              <>
-                <PlayCircle className="mr-1 h-4 w-4" /> Reativar
-              </>
-            ) : (
-              <>
-                <PauseCircle className="mr-1 h-4 w-4" /> Suspender
-              </>
-            )}
+          <Button size="sm" variant="ghost" onClick={onSuspendToggle} disabled={busy} title={suspended ? "Reativar" : "Suspender"}>
+            {suspended ? <PlayCircle className="h-4 w-4" /> : <PauseCircle className="h-4 w-4" />}
           </Button>
         </div>
       </div>
