@@ -197,9 +197,8 @@ Deno.serve(async (req) => {
       approval_status: "aprovado",
       approved_at: nowIso,
       documents_status: "approved",
-      mercadopago_preapproval_id: preapproval.id,
+      mercadopago_preapproval_id: preference.id,
       mercadopago_init_point: initPoint,
-      mercadopago_payer_id: preapproval.payer_id ? String(preapproval.payer_id) : null,
       subscription_value: MONTHLY_FEE,
       subscription_status: "pending",
       financial_status: "pending",
@@ -215,31 +214,31 @@ Deno.serve(async (req) => {
     amount: MONTHLY_FEE,
     period_start: nowIso,
     period_end: periodEnd,
-    provider_reference: preapproval.id,
-    payment_method: "credit_card",
+    provider_reference: preference.id,
+    payment_method: "checkout_pro",
     invoice_url: initPoint,
   });
 
   await admin.from("driver_payment_events").insert({
     driver_id: driver.id,
     provider: "mercadopago",
-    event_type: "preapproval.created",
-    asaas_event: "PREAPPROVAL_CREATED",
-    mp_preapproval_id: preapproval.id,
-    status: preapproval.status ?? "pending",
+    event_type: "preference.created",
+    asaas_event: "PREFERENCE_CREATED",
+    mp_preapproval_id: preference.id,
+    status: "pending",
     value: MONTHLY_FEE,
     due_date: nextDueDate,
     invoice_url: initPoint,
     raw_payload: {
       source: "edge:approve-driver-and-create-mercadopago-subscription",
-      preapproval,
+      preference,
     },
   });
 
     return json({
       ok: true,
       alreadyExists: false,
-      preapprovalId: preapproval.id,
+      preapprovalId: preference.id,
       initPoint,
       dueDate: nextDueDate,
     });
