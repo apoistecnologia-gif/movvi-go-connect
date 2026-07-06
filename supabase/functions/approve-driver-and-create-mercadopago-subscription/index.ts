@@ -140,48 +140,55 @@ Deno.serve(async (req) => {
     });
   }
 
-  // Cria preapproval sem cartão vinculado — status "pending" gera init_point para
-  // o motorista aceitar/pagar a assinatura no checkout do Mercado Pago.
-  // Não enviamos payer_email aqui: em credenciais de teste, o Mercado Pago recusa
-  // e-mails reais com "Both payer and collector must be real or test users".
-  // O motorista informa/usa a conta dele ao abrir o init_point.
+  // Cria uma preferência de checkout (Checkout Pro) para a primeira mensalidade.
+  // Diferente de /preapproval, /checkout/preferences aceita credenciais de teste
+  // sem exigir que payer/collector sejam ambos test users, e gera init_point
+  // que o motorista abre para pagar (Pix/cartão/boleto).
   const nowIso = new Date().toISOString();
   const nextDue = new Date();
   nextDue.setDate(nextDue.getDate() + 3);
   const nextDueDate = nextDue.toISOString().slice(0, 10);
 
-  let preapproval: {
+  let preference: {
     id: string;
     init_point?: string;
-    status?: string;
-    payer_id?: number | string;
+    sandbox_init_point?: string;
   };
   try {
-    preapproval = await mpFetch("/preapproval", {
+    preference = await mpFetch("/checkout/preferences", {
       method: "POST",
       body: JSON.stringify({
-        reason: "Mensalidade Motorista MOVVI",
+        items: [
+          {
+            id: `mensalidade-${driver.id}`,
+            title: "Mensalidade Motorista MOVVI",
+            description: "Mensalidade mensal do motorista MOVVI",
+            quantity: 1,
+            currency_id: "BRL",
+            unit_price: MONTHLY_FEE,
+          },
+        ],
         external_reference: driver.id,
-        back_url: "https://movvi-go-connect.lovable.app/motorista/assinatura",
-        status: "pending",
-        auto_recurring: {
-          frequency: 1,
-          frequency_type: "months",
-          transaction_amount: MONTHLY_FEE,
-          currency_id: "BRL",
+        metadata: { driver_id: driver.id, kind: "monthly_fee" },
+        back_urls: {
+          success: "https://movvi-go-connect.lovable.app/motorista/assinatura",
+          failure: "https://movvi-go-connect.lovable.app/motorista/assinatura",
+          pending: "https://movvi-go-connect.lovable.app/motorista/assinatura",
         },
+        auto_return: "approved",
+        notification_url: `${SUPABASE_URL}/functions/v1/mercadopago-webhook`,
       }),
     });
   } catch (e) {
     const detail = String(e);
-    console.error("[approve-mp] Mercado Pago preapproval failed", detail);
+    console.error("[approve-mp] Mercado Pago preference failed", detail);
     if (detail.includes("Both payer and collector must be real or test users")) {
       return json({ error: "mercadopago_environment_mismatch", detail }, 422);
     }
     return json({ error: "mercadopago_preapproval_failed", detail }, 502);
   }
 
-  const initPoint = preapproval.init_point ?? null;
+  const initPoint = preference.init_point ?? preference.sandbox_init_point ?? null;
   const periodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
   await admin
