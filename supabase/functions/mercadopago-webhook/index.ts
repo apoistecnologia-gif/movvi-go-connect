@@ -44,8 +44,7 @@ async function verifySignature(
   xRequestId: string,
   xSignature: string,
 ): Promise<boolean> {
-  if (!MP_WEBHOOK_SECRET) return true; // sem secret configurado, aceita (dev)
-  if (!xSignature) return false;
+  if (!xSignature || !xRequestId) return false;
   const parts = Object.fromEntries(
     xSignature.split(",").map((p) => {
       const [k, ...rest] = p.trim().split("=");
@@ -57,6 +56,22 @@ async function verifySignature(
   if (!ts || !v1) return false;
   const manifest = `id:${dataId};request-id:${xRequestId};ts:${ts};`;
   const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(MP_WEBHOOK_SECRET),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const sig = await crypto.subtle.sign(
+    "HMAC",
+    key,
+    new TextEncoder().encode(manifest),
+  );
+  const hex = Array.from(new Uint8Array(sig))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+  return hex === v1;
+}
     "raw",
     new TextEncoder().encode(MP_WEBHOOK_SECRET),
     { name: "HMAC", hash: "SHA-256" },
