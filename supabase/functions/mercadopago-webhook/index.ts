@@ -72,22 +72,6 @@ async function verifySignature(
     .join("");
   return hex === v1;
 }
-    "raw",
-    new TextEncoder().encode(MP_WEBHOOK_SECRET),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  const sig = await crypto.subtle.sign(
-    "HMAC",
-    key,
-    new TextEncoder().encode(manifest),
-  );
-  const hex = Array.from(new Uint8Array(sig))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-  return hex === v1;
-}
 
 function mapPaymentToFinancial(status: string): {
   financial: "active" | "pending" | "overdue" | "cancelled";
