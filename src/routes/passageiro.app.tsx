@@ -4479,6 +4479,11 @@ function DriverEnRoute({
       </div>
 
       {/* ── EXPANDIDO (arrastar para ver) ─────────────────────────────── */}
+      <div className="flex items-center gap-2 pt-1 pb-0.5 text-[10.5px] font-bold uppercase tracking-[0.16em] text-[#a0a4a8]">
+        <span className="h-px flex-1 bg-[#e6e8eb]" />
+        Mais detalhes
+        <span className="h-px flex-1 bg-[#e6e8eb]" />
+      </div>
 
       {ride.status === "motorista_chegou" && (
         <div className="flex items-center justify-center gap-2 rounded-[14px] bg-[#76C139]/10 py-2 text-[12.5px] font-semibold text-[#111418]">
