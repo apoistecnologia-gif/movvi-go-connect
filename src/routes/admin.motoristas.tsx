@@ -30,7 +30,7 @@ import {
   setDriverSuspension,
   updateDriverApprovalStatus,
 } from "@/lib/adminDrivers.functions";
-import { supabase } from "@/integrations/supabase/client";
+// Aprovação chama a Edge Function approve-driver-and-create-subscription via supabase.functions.invoke
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Caption, DSBadge, DSButton as Button, DSCard, DSCardContent, DSInput, DSLabel, DSTextarea, EmptyState, Loading, StatusPill } from "@/design-system";
 import {
