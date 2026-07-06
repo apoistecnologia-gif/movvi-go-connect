@@ -61,6 +61,7 @@ import { Route as AdminMotoristasRouteImport } from './routes/admin.motoristas'
 import { Route as AdminMapaRouteImport } from './routes/admin.mapa'
 import { Route as AdminLogsRouteImport } from './routes/admin.logs'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
+import { Route as AdminFinanceiroMotoristasRouteImport } from './routes/admin.financeiro-motoristas'
 import { Route as AdminFinanceiroRouteImport } from './routes/admin.financeiro'
 import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
 import { Route as AdminCuponsRouteImport } from './routes/admin.cupons'
@@ -337,6 +338,12 @@ const AdminLoginRoute = AdminLoginRouteImport.update({
   path: '/admin/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminFinanceiroMotoristasRoute =
+  AdminFinanceiroMotoristasRouteImport.update({
+    id: '/admin/financeiro-motoristas',
+    path: '/admin/financeiro-motoristas',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AdminFinanceiroRoute = AdminFinanceiroRouteImport.update({
   id: '/admin/financeiro',
   path: '/admin/financeiro',
@@ -419,6 +426,7 @@ export interface FileRoutesByFullPath {
   '/admin/cupons': typeof AdminCuponsRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/financeiro': typeof AdminFinanceiroRoute
+  '/admin/financeiro-motoristas': typeof AdminFinanceiroMotoristasRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/logs': typeof AdminLogsRoute
   '/admin/mapa': typeof AdminMapaRoute
@@ -486,6 +494,7 @@ export interface FileRoutesByTo {
   '/admin/cupons': typeof AdminCuponsRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/financeiro': typeof AdminFinanceiroRoute
+  '/admin/financeiro-motoristas': typeof AdminFinanceiroMotoristasRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/logs': typeof AdminLogsRoute
   '/admin/mapa': typeof AdminMapaRoute
@@ -554,6 +563,7 @@ export interface FileRoutesById {
   '/admin/cupons': typeof AdminCuponsRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/financeiro': typeof AdminFinanceiroRoute
+  '/admin/financeiro-motoristas': typeof AdminFinanceiroMotoristasRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/logs': typeof AdminLogsRoute
   '/admin/mapa': typeof AdminMapaRoute
@@ -623,6 +633,7 @@ export interface FileRouteTypes {
     | '/admin/cupons'
     | '/admin/dashboard'
     | '/admin/financeiro'
+    | '/admin/financeiro-motoristas'
     | '/admin/login'
     | '/admin/logs'
     | '/admin/mapa'
@@ -690,6 +701,7 @@ export interface FileRouteTypes {
     | '/admin/cupons'
     | '/admin/dashboard'
     | '/admin/financeiro'
+    | '/admin/financeiro-motoristas'
     | '/admin/login'
     | '/admin/logs'
     | '/admin/mapa'
@@ -757,6 +769,7 @@ export interface FileRouteTypes {
     | '/admin/cupons'
     | '/admin/dashboard'
     | '/admin/financeiro'
+    | '/admin/financeiro-motoristas'
     | '/admin/login'
     | '/admin/logs'
     | '/admin/mapa'
@@ -825,6 +838,7 @@ export interface RootRouteChildren {
   AdminCuponsRoute: typeof AdminCuponsRoute
   AdminDashboardRoute: typeof AdminDashboardRoute
   AdminFinanceiroRoute: typeof AdminFinanceiroRoute
+  AdminFinanceiroMotoristasRoute: typeof AdminFinanceiroMotoristasRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AdminLogsRoute: typeof AdminLogsRoute
   AdminMapaRoute: typeof AdminMapaRoute
@@ -1243,6 +1257,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/financeiro-motoristas': {
+      id: '/admin/financeiro-motoristas'
+      path: '/admin/financeiro-motoristas'
+      fullPath: '/admin/financeiro-motoristas'
+      preLoaderRoute: typeof AdminFinanceiroMotoristasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/financeiro': {
       id: '/admin/financeiro'
       path: '/admin/financeiro'
@@ -1363,6 +1384,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminCuponsRoute: AdminCuponsRoute,
   AdminDashboardRoute: AdminDashboardRoute,
   AdminFinanceiroRoute: AdminFinanceiroRoute,
+  AdminFinanceiroMotoristasRoute: AdminFinanceiroMotoristasRoute,
   AdminLoginRoute: AdminLoginRoute,
   AdminLogsRoute: AdminLogsRoute,
   AdminMapaRoute: AdminMapaRoute,
@@ -1420,13 +1442,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
