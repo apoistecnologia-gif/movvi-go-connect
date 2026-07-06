@@ -3688,7 +3688,7 @@ function FareEstimateCard({ route, fare }: { route: RouteResult; fare: number | 
         </span>
       </div>
       <p className="mt-1.5 text-[10.5px] text-[#707070] leading-tight">
-        Valor estimado. Pode variar conforme rota e disponibilidade.
+        O valor pode mudar apenas se houver alteração no trajeto, parada extra ou cobrança adicional.
       </p>
     </div>
   );
