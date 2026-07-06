@@ -3118,7 +3118,7 @@ function SheetContent({
 
   return (
     <div className="pt-1">
-      {/* Endereço atual — toque abre sheet de ações. Em caso de falha de GPS, mostra erro inline com retry. */}
+      {/* Pickup pill — compacto, no topo, apenas rua e status */}
       {gpsFailed ? (
         <div className="mb-2.5 flex w-full items-start gap-2.5 rounded-2xl bg-destructive/10 px-3 py-2.5 ring-1 ring-destructive/40">
           <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-destructive/80 text-destructive-foreground">
@@ -3161,60 +3161,15 @@ function SheetContent({
               onOpenAddressDetails();
             }
           }}
-          className="press-scale surface-card animate-card-in mb-2.5 flex w-full cursor-pointer items-center gap-2.5 rounded-2xl px-3 py-2 text-left shadow-[var(--ds-shadow-card)] hover:border-primary/40"
+          className="press-scale mb-3 flex w-full cursor-pointer items-center gap-2 rounded-full bg-muted/60 px-3 py-1.5 text-left ring-1 ring-border/50 hover:ring-primary/40"
         >
-          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
-            <MapPin className="h-[15px] w-[15px]" strokeWidth={2} />
+          <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-primary/12 text-primary">
+            <MapPin className="h-3 w-3" strokeWidth={2.2} />
           </span>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center justify-between gap-2">
-              <div className="text-[9.5px] font-semibold uppercase tracking-[0.14em] text-primary leading-none">
-                Local de embarque
-              </div>
-              {hasPosition && (
-                <span className="text-[9.5px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  Ajustar
-                </span>
-              )}
-            </div>
-            {addressStatus === "loading" && !pickupAddressLine ? (
-              <div className="mt-0.5 truncate text-[13px] font-semibold leading-tight text-foreground">
-                Localização atual
-              </div>
-            ) : pickupAddressLine ? (
-              <>
-                <div className="mt-0.5 truncate text-[14px] font-semibold leading-tight text-foreground">
-                  {pickupAddressLine}
-                </div>
-                {pickupSubLine && pickupSubLine !== pickupAddressLine ? (
-                  <div className="truncate text-[11.5px] leading-tight text-muted-foreground">
-                    {pickupSubLine}
-                  </div>
-                ) : (
-                  <>
-                    {bairro && bairro !== pickupAddressLine && (
-                      <div className="truncate text-[11.5px] leading-tight text-muted-foreground">
-                        {bairro}
-                      </div>
-                    )}
-                    {region && region !== pickupAddressLine && (
-                      <div className="truncate text-[11px] leading-tight text-muted-foreground">
-                        {region}
-                      </div>
-                    )}
-                  </>
-                )}
-              </>
-            ) : hasPosition ? (
-              <div className="mt-0.5 truncate text-[13px] font-semibold leading-tight text-foreground">
-                Localização atual
-              </div>
-            ) : (
-              <div className="mt-0.5 truncate text-[12.5px] leading-tight text-muted-foreground">
-                Endereço não identificado
-              </div>
-            )}
-
+          <div className="min-w-0 flex-1 truncate text-[12.5px] font-medium text-foreground">
+            {addressStatus === "loading" && !pickupAddressLine
+              ? "Localizando…"
+              : pickupAddressLine || (hasPosition ? "Localização atual" : "Endereço não identificado")}
           </div>
           <button
             type="button"
@@ -3225,29 +3180,20 @@ function SheetContent({
             disabled={gpsRequesting}
             aria-label="Atualizar GPS"
             title="Atualizar GPS"
-            className="active-press grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-60"
+            className="active-press grid h-6 w-6 shrink-0 place-items-center rounded-full text-primary hover:bg-primary/10 disabled:opacity-60"
           >
-            <Crosshair className={`h-[14px] w-[14px] ${gpsRequesting ? "animate-spin" : ""}`} strokeWidth={2} />
+            <Crosshair className={`h-3 w-3 ${gpsRequesting ? "animate-spin" : ""}`} strokeWidth={2.2} />
           </button>
-          <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
         </div>
-
       )}
 
-
-
-
-
-      {/* Hero search — "Para onde você vai?" */}
+      {/* Hero search — "Para onde você vai?" — protagonista da home */}
       {showDestinationInput && (
         <div className="mb-3 animate-fade-slide">
-          <div className="surface-card rounded-2xl px-3.5 py-3 shadow-[var(--ds-shadow-card)] transition focus-within:border-primary/60 focus-within:shadow-[var(--ds-shadow-floating)]">
-            <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">
-              Destino
-            </div>
-            <div className="flex items-center gap-2.5">
-              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
-                <Search className="h-4 w-4" strokeWidth={2} />
+          <div className="surface-card rounded-2xl px-4 py-3.5 shadow-[var(--ds-shadow-card)] transition focus-within:border-primary/60 focus-within:shadow-[var(--ds-shadow-floating)]">
+            <div className="flex items-center gap-3">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/12 text-primary">
+                <Search className="h-[18px] w-[18px]" strokeWidth={2.2} />
               </span>
               <input
                 ref={searchInputRef}
@@ -3257,10 +3203,9 @@ function SheetContent({
                   setDestinationText(e.target.value);
                 }}
                 onFocus={onFocusSearch}
-                placeholder="Para onde você vai?"
-                className="min-w-0 flex-1 bg-transparent text-[15px] sm:text-base font-semibold text-foreground outline-none placeholder:text-muted-foreground"
+                placeholder="Para onde?"
+                className="min-w-0 flex-1 bg-transparent text-[17px] font-bold text-foreground outline-none placeholder:text-muted-foreground placeholder:font-semibold"
               />
-
               {destinationText && (
                 <button
                   type="button"
@@ -3284,8 +3229,6 @@ function SheetContent({
       {showDestinationInput && !destination && suggestions.length === 0 && (
         <FavoritesStrip onPick={onPickFavorite} />
       )}
-
-
 
       {/* Sugestões ao vivo — área rolável limitada acima do teclado */}
       {showDestinationInput && suggestions.length > 0 && !destination && (
@@ -3325,19 +3268,43 @@ function SheetContent({
         </div>
       )}
 
-      {/* Dica sem destino */}
+      {/* Categorias — preview compacto de serviços disponíveis */}
       {showDestinationInput && !destination && suggestions.length === 0 && (
-        <div className="animate-fade-slide mt-2 rounded-2xl border border-dashed border-border/70 bg-muted/40 px-4 py-3.5 text-center">
-          <p className="text-[12.5px] leading-snug text-muted-foreground">
-            Informe o destino para ver{" "}
-            <span className="font-semibold text-foreground">Corridas</span>,{" "}
-            <span className="font-semibold text-foreground">Envios</span> e{" "}
-            <span className="font-semibold text-foreground">Serviços</span>{" "}
-            disponíveis no trajeto.
-          </p>
+        <div className="animate-fade-slide mt-1">
+          <div className="mb-2 flex items-center justify-between">
+            <div className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+              Serviços MOVVI
+            </div>
+            <div className="text-[10.5px] font-medium text-muted-foreground/70">
+              Informe o destino
+            </div>
+          </div>
+          <div className="grid grid-cols-5 gap-1.5">
+            {uiCategories.slice(0, 5).map((c) => {
+              const Icon = c.icon;
+              return (
+                <button
+                  key={c.key}
+                  type="button"
+                  onClick={() => searchInputRef.current?.focus()}
+                  className="flex flex-col items-center gap-1.5 rounded-2xl bg-card px-1 py-2.5 ring-1 ring-border/60 transition hover:ring-primary/40 active:scale-[0.97]"
+                >
+                  <span
+                    className="grid h-9 w-9 place-items-center rounded-full"
+                    style={{ backgroundColor: `${c.color}22`, color: c.color }}
+                  >
+                    <Icon className="h-4 w-4" strokeWidth={2.2} />
+                  </span>
+                  <span className="truncate text-[10.5px] font-semibold text-foreground">
+                    {c.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
-
       )}
+
 
       {/* COM destino: fluxo em 4 etapas (estilo Uber/99/InDrive) */}
       {destination && (
