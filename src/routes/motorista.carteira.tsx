@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Wallet as WalletIcon, ArrowLeft, Clock, CheckCircle2 } from "lucide-react";
+import { Wallet as WalletIcon, ArrowLeft, Clock, CheckCircle2, Crown, AlertTriangle, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -8,6 +8,14 @@ import {
   formatBRL,
   type DriverWalletTx,
 } from "@/lib/wallet/wallet";
+
+type DriverFinancial = {
+  financial_status: "inactive" | "pending" | "active" | "overdue" | "cancelled";
+  subscription_value: number | null;
+  next_due_date: string | null;
+  last_invoice_url: string | null;
+  asaas_subscription_id: string | null;
+};
 
 export const Route = createFileRoute("/motorista/carteira")({
   component: DriverWalletPage,
@@ -25,9 +33,22 @@ function DriverWalletPage() {
     let alive = true;
     let channel: ReturnType<typeof supabase.channel> | null = null;
     (async () => {
+  const [fin, setFin] = useState<DriverFinancial | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { navigate({ to: "/motorista/login" }); return; }
       const rows = await listDriverWalletTx(user.id);
+      const { data: drv } = await supabase
+        .from("drivers")
+        .select("financial_status, subscription_value, next_due_date, last_invoice_url, asaas_subscription_id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (!alive) return;
+      setFin((drv as DriverFinancial | null) ?? null);
       if (!alive) return;
       setTx(rows);
       setLoading(false);
