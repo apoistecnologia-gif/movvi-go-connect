@@ -237,6 +237,39 @@ async function approveDriverWithMercadoPago(driverId: string): Promise<ApproveMe
   return payload;
 }
 
+async function regenerateDriverCharge(
+  driverId: string,
+): Promise<{ ok: true; preferenceId: string; initPoint: string | null; dueDate: string }> {
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+  const accessToken = sessionData.session?.access_token;
+  if (sessionError || !accessToken) throw new Error("admin_session_missing");
+
+  const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/regenerate-driver-mercadopago-charge`;
+  const response = await fetch(functionUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+      apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+    },
+    body: JSON.stringify({ driverId }),
+  });
+  const payload = (await response.json().catch(() => null)) as
+    | { ok?: boolean; preferenceId?: string; initPoint?: string | null; dueDate?: string; error?: string; detail?: string; missing?: string[] }
+    | null;
+  if (!response.ok || !payload?.ok) {
+    if (payload?.error === "driver_not_approved") throw new Error("driver_not_approved");
+    if (payload?.error === "missing_required_fields" && Array.isArray(payload.missing)) {
+      throw new Error(`missing_required_fields:${payload.missing.join(", ")}`);
+    }
+    if (payload?.error === "mercadopago_preference_failed" && payload.detail) {
+      throw new Error(`mercadopago_preference_failed:${payload.detail.slice(0, 200)}`);
+    }
+    throw new Error(payload?.error || `function_http_${response.status}`);
+  }
+  return payload as { ok: true; preferenceId: string; initPoint: string | null; dueDate: string };
+}
+
 function AdminMotoristas() {
   const updateApprovalFn = useServerFn(updateDriverApprovalStatus);
   const setSuspensionFn = useServerFn(setDriverSuspension);
