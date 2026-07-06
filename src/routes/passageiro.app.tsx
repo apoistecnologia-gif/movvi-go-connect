@@ -1516,12 +1516,20 @@ function PassageiroApp() {
       if (import.meta.env.DEV) console.log("[MOVVI UI] rota calculada:", result);
       setRoute(result);
       setPassengerUiStage("route_preview");
-      sheetRef.current?.snapTo(88);
+      sheetRef.current?.snapTo(55);
       if (mapRef.current) {
         const bounds = new google.maps.LatLngBounds();
         bounds.extend(position);
         bounds.extend(dest);
-        mapRef.current.fitBounds(bounds, { top: 90, bottom: Math.round(window.innerHeight * 0.5) + 16, left: 48, right: 48 });
+        // Padding inferior = altura do sheet (~55vh) + folga, para a rota
+        // nunca ficar escondida atrás da interface. Laterais generosas.
+        mapRef.current.setOptions({ heading: 0, tilt: 0 });
+        mapRef.current.fitBounds(bounds, {
+          top: 96,
+          bottom: Math.round(window.innerHeight * 0.55) + 24,
+          left: 64,
+          right: 64,
+        });
         // Nunca zoom < 13: enquadra apenas o par de pontos, jamais o estado inteiro.
         const listener = google.maps.event.addListenerOnce(mapRef.current, "idle", () => {
           const z = mapRef.current?.getZoom();
