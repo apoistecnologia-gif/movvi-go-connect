@@ -3795,10 +3795,12 @@ function RideCategorySelector({
 function RequestRideButton({
   busy,
   categoryLabel,
+  fare,
   onSubmit,
 }: {
   busy: boolean;
   categoryLabel: string;
+  fare: number;
   onSubmit: () => void;
 }) {
   const navigate = useNavigate();
