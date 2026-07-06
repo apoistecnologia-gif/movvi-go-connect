@@ -3487,19 +3487,23 @@ function StepFlow({
         </div>
       )}
 
-      {/* ETAPA 3 — carrossel horizontal de categorias */}
+      {/* ETAPA 3 — CONFIRMAÇÃO ONE-SHOT: origem/destino + categorias horizontais + pagamento + CTA */}
       {uiStage === "selecting_category" && route && (
-        <RideCategorySelector
+        <ConfirmRideCompact
           route={route}
           km={km}
           min={min}
           tariffs={tariffs}
+          pickupLabel={pickupLabel}
+          destinationLabel={destination.label}
           selectedCategoryKey={selectedCategoryKey}
-          onSelect={(c) => {
-            if (import.meta.env.DEV) console.log("[MOVVI UI] categoria selecionada:", c.label);
-            setSelectedCategoryKey(c.key);
-            setUiStage("confirming_request");
-          }}
+          setSelectedCategoryKey={setSelectedCategoryKey}
+          selectedCategory={selectedCategory}
+          selectedFare={selectedFare}
+          paymentMethod={paymentMethod}
+          setPaymentMethod={setPaymentMethod}
+          busy={busy}
+          onSubmit={onSubmit}
         />
       )}
 
