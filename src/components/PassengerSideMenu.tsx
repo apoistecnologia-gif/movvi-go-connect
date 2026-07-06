@@ -268,6 +268,14 @@ export function PassengerSideMenu({ open, onOpenChange, onLogout }: Props) {
                   Minhas corridas
                 </Link>
                 <Link
+                  to="/passageiro/carteira"
+                  onClick={() => onOpenChange(false)}
+                  className="flex items-center gap-3 rounded-lg border border-border bg-card/60 px-3 py-2.5 text-sm font-medium text-foreground transition hover:bg-accent/40"
+                >
+                  <Wallet className="h-4 w-4 text-primary" />
+                  Minha carteira
+                </Link>
+                <Link
                   to="/passageiro/notificacoes"
                   onClick={() => onOpenChange(false)}
                   className="flex items-center gap-3 rounded-lg border border-border bg-card/60 px-3 py-2.5 text-sm font-medium text-foreground transition hover:bg-accent/40"
