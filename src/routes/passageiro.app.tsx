@@ -2327,11 +2327,11 @@ function PassageiroApp() {
           passengerUiStage === "route_preview" ||
           passengerUiStage === "selecting_category" ||
           passengerUiStage === "confirming_request";
-        const snaps = bigStage ? [58, 74, 92] : [52, 74, 92];
+        const snaps = bigStage ? [45, 62, 90] : [52, 74, 92];
         const initial =
-          passengerUiStage === "selecting_category" ? 68 :
-          passengerUiStage === "confirming_request" ? 82 :
-          bigStage ? 74 : 62;
+          passengerUiStage === "selecting_category" ? 62 :
+          passengerUiStage === "confirming_request" ? 78 :
+          bigStage ? 55 : 62;
 
         return (
         <MovviSheet ref={sheetRef} key={bigStage ? "big" : "small"} snaps={snaps} initial={initial}>
