@@ -30,7 +30,7 @@ import {
   setDriverSuspension,
   updateDriverApprovalStatus,
 } from "@/lib/adminDrivers.functions";
-// Aprovação chama a Edge Function approve-driver-and-create-subscription via supabase.functions.invoke
+// Aprovação chama a Edge Function Mercado Pago via fetch autenticado.
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Caption, DSBadge, DSButton as Button, DSCard, DSCardContent, DSInput, DSLabel, DSTextarea, EmptyState, Loading, StatusPill } from "@/design-system";
 import {
@@ -97,6 +97,13 @@ type ApproveMercadoPagoResult = {
   dueDate: string | null;
   error?: string;
 };
+
+const ACTIVE_RIDE_STATUSES = [
+  "procurar_motorista",
+  "motorista_a_caminho",
+  "motorista_chegou",
+  "em_viagem",
+] as const;
 
 const SUB_STATUSES: { value: SubStatus; label: string; tone: string }[] = [
   { value: "active", label: "Ativa", tone: "bg-primary/15 text-primary border-primary/30" },
@@ -211,6 +218,10 @@ async function approveDriverWithMercadoPago(driverId: string): Promise<ApproveMe
   }) | null;
 
   if (!response.ok || !payload?.ok) {
+    console.error("Falha ao aprovar motorista via Mercado Pago", {
+      status: response.status,
+      payload,
+    });
     if (payload?.error === "missing_required_fields" && Array.isArray(payload.missing)) {
       throw new Error(`missing_required_fields:${payload.missing.join(", ")}`);
     }
@@ -249,7 +260,7 @@ function AdminMotoristas() {
         .from("rides")
         .select("driver_id,status")
         .not("driver_id", "is", null)
-        .in("status", ["aceita", "em_andamento", "a_caminho", "chegou_no_local"] as never[]),
+        .in("status", [...ACTIVE_RIDE_STATUSES] as never[]),
     ]);
     if (error) {
       toast.error("Erro ao carregar motoristas: " + error.message);
@@ -321,6 +332,7 @@ function AdminMotoristas() {
 
   async function updateStatus(d: Driver, status: Status, reason?: string | null) {
     setBusyId(d.id);
+    const toastId = status === "aprovado" ? toast.loading("Aprovando motorista e gerando link...") : undefined;
     try {
       if (status === "aprovado") {
         // Aprovação → cria assinatura (preapproval) no Mercado Pago via Edge Function.
@@ -348,6 +360,7 @@ function AdminMotoristas() {
             ? "Motorista aprovado (assinatura já existia). Link copiado."
             : "Motorista aprovado — link de pagamento gerado (copiado).",
           {
+            id: toastId,
             description: result.initPoint ?? undefined,
             action: result.initPoint
               ? {
@@ -383,6 +396,7 @@ function AdminMotoristas() {
         before: { approval_status: d.approval_status },
         after: patch,
       });
+      if (toastId) toast.dismiss(toastId);
       if (status === "reprovado") toast.success("Motorista reprovado");
       if (status === "bloqueado") toast.success("Motorista bloqueado");
       if (status === "em_analise") toast.success("Cadastro reenviado para análise");
@@ -403,7 +417,7 @@ function AdminMotoristas() {
       } else if (raw === "forbidden") {
         msg = "Você não tem permissão para aprovar motoristas";
       }
-      toast.error("Erro ao atualizar status: " + msg);
+      toast.error("Erro ao atualizar status: " + msg, { id: toastId });
     } finally {
       setBusyId(null);
     }
