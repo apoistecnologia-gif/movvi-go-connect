@@ -3688,7 +3688,7 @@ function FareEstimateCard({ route, fare }: { route: RouteResult; fare: number | 
         </span>
       </div>
       <p className="mt-1.5 text-[10.5px] text-[#707070] leading-tight">
-        Valor estimado. Pode variar conforme rota e disponibilidade.
+        O valor pode mudar apenas se houver alteração no trajeto, parada extra ou cobrança adicional.
       </p>
     </div>
   );
@@ -3937,7 +3937,7 @@ function EnviosBlock({
       {fare != null && (
         <div className="flex items-center justify-between rounded-xl bg-background/60 px-3 py-2 ring-1 ring-border">
           <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
-            Valor estimado
+            Valor da corrida
           </span>
           <span className="text-base font-bold text-primary">{formatBRL(fare)}</span>
         </div>
