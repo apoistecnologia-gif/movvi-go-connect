@@ -812,6 +812,11 @@ function DriverCard({
           <Button size="sm" variant="outline" onClick={onSubscription}>
             <CreditCard className="mr-1 h-4 w-4" /> Assinatura
           </Button>
+          {driver.approval_status === "aprovado" && (
+            <Button size="sm" variant="outline" onClick={onGenerateCharge} disabled={busy}>
+              {busy ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <CreditCard className="mr-1 h-4 w-4" />} Gerar cobrança
+            </Button>
+          )}
           {driver.approval_status !== "aprovado" && (
             <Button size="sm" onClick={onApprove} disabled={busy}>
               {busy ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-1 h-4 w-4" />} Aprovar
