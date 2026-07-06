@@ -3661,7 +3661,7 @@ function StepFlow({
             className="pt-1 animate-in fade-in slide-in-from-bottom-1 duration-[220ms]"
             style={{ animationDelay: "160ms", animationFillMode: "backwards" }}
           >
-            <RequestRideButton busy={busy} categoryLabel={selectedCategory.label} onSubmit={onSubmit} />
+            <RequestRideButton busy={busy} categoryLabel={selectedCategory.label} fare={selectedFare} onSubmit={onSubmit} />
           </div>
           <div style={{ height: "env(safe-area-inset-bottom)" }} />
 
