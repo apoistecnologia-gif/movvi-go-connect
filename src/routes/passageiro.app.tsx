@@ -2329,9 +2329,9 @@ function PassageiroApp() {
           passengerUiStage === "confirming_request";
         const snaps = bigStage ? [45, 62, 90] : [52, 74, 92];
         const initial =
-          passengerUiStage === "selecting_category" ? 62 :
+          passengerUiStage === "selecting_category" ? 58 :
           passengerUiStage === "confirming_request" ? 78 :
-          bigStage ? 55 : 62;
+          bigStage ? 50 : 55;
 
         return (
         <MovviSheet ref={sheetRef} key={bigStage ? "big" : "small"} snaps={snaps} initial={initial}>
@@ -3390,7 +3390,7 @@ function StepFlow({
   }, [route, uiStage, setUiStage]);
 
   useEffect(() => {
-    if (uiStage === "selecting_category") onExpandSheet(68);
+    if (uiStage === "selecting_category") onExpandSheet(58);
     else if (uiStage === "confirming_request") onExpandSheet(82);
   }, [uiStage, onExpandSheet]);
 
@@ -3432,7 +3432,7 @@ function StepFlow({
 
 
       {/* Cabeçalho do destino (oculto na etapa de confirmação — tem card de rota próprio) */}
-      {uiStage !== "confirming_request" && (
+      {uiStage !== "confirming_request" && uiStage !== "selecting_category" && (
         <div className="mb-3 flex items-center gap-2.5 rounded-[20px] bg-white px-3.5 py-2.5 ring-1 ring-border/60 shadow-[0_6px_18px_-14px_rgba(15,23,42,0.18)]">
           <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#76C139]/10 text-[#76C139]">
             <MapPin className="h-[16px] w-[16px]" strokeWidth={2} />
@@ -3487,19 +3487,23 @@ function StepFlow({
         </div>
       )}
 
-      {/* ETAPA 3 — carrossel horizontal de categorias */}
+      {/* ETAPA 3 — CONFIRMAÇÃO ONE-SHOT: origem/destino + categorias horizontais + pagamento + CTA */}
       {uiStage === "selecting_category" && route && (
-        <RideCategorySelector
+        <ConfirmRideCompact
           route={route}
           km={km}
           min={min}
           tariffs={tariffs}
+          pickupLabel={pickupLabel}
+          destinationLabel={destination.label}
           selectedCategoryKey={selectedCategoryKey}
-          onSelect={(c) => {
-            if (import.meta.env.DEV) console.log("[MOVVI UI] categoria selecionada:", c.label);
-            setSelectedCategoryKey(c.key);
-            setUiStage("confirming_request");
-          }}
+          setSelectedCategoryKey={setSelectedCategoryKey}
+          selectedCategory={selectedCategory}
+          selectedFare={selectedFare}
+          paymentMethod={paymentMethod}
+          setPaymentMethod={setPaymentMethod}
+          busy={busy}
+          onSubmit={onSubmit}
         />
       )}
 
@@ -3643,6 +3647,162 @@ function StepFlow({
         </div>
       )}
 
+    </div>
+  );
+}
+
+function ConfirmRideCompact({
+  route,
+  km,
+  min,
+  tariffs,
+  pickupLabel,
+  destinationLabel,
+  selectedCategoryKey,
+  setSelectedCategoryKey,
+  selectedCategory,
+  selectedFare,
+  paymentMethod,
+  setPaymentMethod,
+  busy,
+  onSubmit,
+}: {
+  route: RouteResult;
+  km: number;
+  min: number;
+  tariffs: TariffMap;
+  pickupLabel: string;
+  destinationLabel: string;
+  selectedCategoryKey: string | null;
+  setSelectedCategoryKey: (k: string | null) => void;
+  selectedCategory: UiCategory | null;
+  selectedFare: number | null;
+  paymentMethod: "dinheiro" | "pix" | "cartao_credito";
+  setPaymentMethod: (m: "dinheiro" | "pix" | "cartao_credito") => void;
+  busy: boolean;
+  onSubmit: () => void;
+}) {
+  const uiCategories = useUiCategories();
+  const etaLabel = fmtMin(route.durationSeconds);
+
+  // Auto-selecionar a primeira categoria ao entrar nessa etapa.
+  useEffect(() => {
+    if (!selectedCategoryKey && uiCategories.length > 0) {
+      setSelectedCategoryKey(uiCategories[0].key);
+    }
+  }, [selectedCategoryKey, uiCategories, setSelectedCategoryKey]);
+
+  const paymentLabel =
+    paymentMethod === "dinheiro" ? "Dinheiro" : paymentMethod === "pix" ? "PIX" : "Cartão de crédito";
+  const cyclePayment = () => {
+    const next =
+      paymentMethod === "dinheiro" ? "pix" : paymentMethod === "pix" ? "cartao_credito" : "dinheiro";
+    setPaymentMethod(next);
+  };
+
+  return (
+    <div className="animate-in fade-in slide-in-from-bottom-2 duration-200 space-y-3">
+      {/* Origem → Destino compacto */}
+      <div className="flex items-stretch gap-2.5 rounded-[16px] bg-white p-2.5 ring-1 ring-border/60">
+        <div className="flex flex-col items-center pt-1">
+          <span className="h-2.5 w-2.5 rounded-full bg-[#76C139] ring-4 ring-[#76C139]/15" />
+          <span className="my-1 w-px flex-1 border-l border-dashed border-[#707070]/40" />
+          <span className="h-2.5 w-2.5 rounded-full bg-[#111418]" />
+        </div>
+        <div className="min-w-0 flex-1 flex flex-col justify-between py-0.5">
+          <div className="truncate text-[13px] font-semibold text-[#111418]" title={pickupLabel || "Localização atual"}>
+            {pickupLabel || "Localização atual"}
+          </div>
+          <div className="truncate text-[13px] font-semibold text-[#111418]" title={destinationLabel}>
+            {destinationLabel}
+          </div>
+        </div>
+        <div className="flex shrink-0 flex-col items-end justify-center text-[10.5px] font-semibold text-[#707070]">
+          <span>{etaLabel}</span>
+          <span>{fmtKm(route.distanceMeters)}</span>
+        </div>
+      </div>
+
+      {/* Categorias — chips horizontais */}
+      <div>
+        <div className="mb-1.5 text-[10.5px] font-bold uppercase tracking-[0.14em] text-[#707070]">
+          Escolha a categoria
+        </div>
+        <div className="-mx-4 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex gap-2">
+            {uiCategories.map((c) => {
+              const active = c.key === selectedCategoryKey;
+              const fare = estimateFare(c.backend, km, min, tariffs);
+              const Icon = c.icon;
+              return (
+                <button
+                  key={c.key}
+                  type="button"
+                  onClick={() => setSelectedCategoryKey(c.key)}
+                  aria-pressed={active}
+                  className={`flex shrink-0 flex-col items-center gap-1 rounded-2xl px-3 py-2 text-center transition active:scale-[0.97] ${
+                    active
+                      ? "bg-[#76C139]/12 ring-2 ring-[#76C139]"
+                      : "bg-white ring-1 ring-border/60 hover:ring-[#76C139]/40"
+                  }`}
+                  style={{ minWidth: 92 }}
+                >
+                  <span
+                    className={`grid h-9 w-9 place-items-center rounded-full transition ${
+                      active ? "bg-[#76C139] text-white" : "bg-[#76C139]/10 text-[#5A9A2A]"
+                    }`}
+                  >
+                    <Icon className="h-[18px] w-[18px]" strokeWidth={2} />
+                  </span>
+                  <span className="text-[12px] font-bold text-[#111418] leading-tight">{c.label}</span>
+                  <span className="text-[11px] font-semibold text-[#111418] tabular-nums leading-none">
+                    {formatBRL(fare)}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Pagamento — linha compacta */}
+      <button
+        type="button"
+        onClick={cyclePayment}
+        className="flex w-full items-center gap-2.5 rounded-[14px] bg-white p-2.5 text-left ring-1 ring-border/60 transition hover:bg-[#F7F9F7] active:scale-[0.99]"
+      >
+        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#76C139]/10 text-[#5A9A2A]">
+          <CreditCard className="h-[15px] w-[15px]" strokeWidth={2} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#707070] leading-none">
+            Pagamento
+          </div>
+          <div className="mt-0.5 truncate text-[13px] font-semibold text-[#111418]">{paymentLabel}</div>
+        </div>
+        <ChevronRight className="h-4 w-4 shrink-0 text-[#94A3B8]" strokeWidth={2} />
+      </button>
+
+      {/* CTA + valor final */}
+      {selectedCategory && selectedFare != null && (
+        <div className="pt-1">
+          <div className="mb-2 flex items-baseline justify-between">
+            <span className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-[#707070]">
+              Você paga
+            </span>
+            <span className="text-[22px] font-bold tracking-tight text-[#111418] tabular-nums leading-none">
+              {formatBRL(selectedFare)}
+            </span>
+          </div>
+          <RequestRideButton
+            busy={busy}
+            categoryLabel={selectedCategory.label}
+            fare={selectedFare}
+            onSubmit={onSubmit}
+          />
+        </div>
+      )}
+      <div style={{ height: "env(safe-area-inset-bottom)" }} />
     </div>
   );
 }
