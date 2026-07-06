@@ -3800,24 +3800,64 @@ function RequestRideButton({
   categoryLabel: string;
   onSubmit: () => void;
 }) {
+  const navigate = useNavigate();
+  const [blocked, setBlocked] = useState<{ blocked: boolean; reason: string | null }>({ blocked: false, reason: null });
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from("passenger_wallets")
+        .select("is_blocked,blocked_reason")
+        .eq("passenger_id", user.id)
+        .maybeSingle();
+      if (!alive || !data) return;
+      setBlocked({ blocked: !!data.is_blocked, reason: data.blocked_reason });
+    })();
+    return () => { alive = false; };
+  }, []);
+
+  const isBlocked = blocked.blocked;
+
   return (
-    <button
-      type="button"
-      disabled={busy}
-      onClick={onSubmit}
-      className="flex h-11 w-full items-center justify-center gap-2 rounded-[14px] bg-[#76C139] text-[15px] font-bold text-[#071008] shadow-[0_10px_22px_-14px_rgba(118,193,57,0.35)] transition-[transform,filter,box-shadow] duration-200 active:scale-[0.98] hover:brightness-[1.04] disabled:cursor-not-allowed disabled:opacity-60"
-    >
-      {busy ? (
-        <>
-          <span className="h-4 w-4 rounded-full border-2 border-white/70 border-t-transparent animate-spin" />
-          Solicitando...
-        </>
-      ) : (
-        `Confirmar MOVVI ${categoryLabel}`
+    <div className="space-y-2">
+      {isBlocked && (
+        <div className="flex items-start gap-2 rounded-xl border-2 border-destructive bg-destructive/10 p-3 text-[12.5px] leading-snug text-destructive">
+          <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
+          <div className="flex-1">
+            <strong className="block">Conta bloqueada</strong>
+            <span>Você tem uma multa de cancelamento em aberto. Regularize na sua carteira para pedir corridas.</span>
+            <button
+              type="button"
+              onClick={() => navigate({ to: "/passageiro/carteira" })}
+              className="mt-1.5 rounded-md bg-destructive px-2.5 py-1 text-[11px] font-bold text-destructive-foreground"
+            >
+              Ver carteira
+            </button>
+          </div>
+        </div>
       )}
-    </button>
+      <button
+        type="button"
+        disabled={busy || isBlocked}
+        onClick={onSubmit}
+        className="flex h-11 w-full items-center justify-center gap-2 rounded-[14px] bg-[#76C139] text-[15px] font-bold text-[#071008] shadow-[0_10px_22px_-14px_rgba(118,193,57,0.35)] transition-[transform,filter,box-shadow] duration-200 active:scale-[0.98] hover:brightness-[1.04] disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {busy ? (
+          <>
+            <span className="h-4 w-4 rounded-full border-2 border-white/70 border-t-transparent animate-spin" />
+            Solicitando...
+          </>
+        ) : (
+          `Confirmar MOVVI ${categoryLabel}`
+        )}
+      </button>
+    </div>
   );
 }
+
 
 function EnviosBlock({
   mode,
