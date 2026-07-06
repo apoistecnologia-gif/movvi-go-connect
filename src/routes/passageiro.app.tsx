@@ -4458,10 +4458,10 @@ function QuickCircleAction({
 }) {
   const inner = (
     <>
-      <span className="grid h-14 w-14 place-items-center rounded-full bg-white text-[#111418] ring-1 ring-black/5 shadow-[0_8px_20px_-12px_rgba(15,23,42,0.4)] transition duration-[220ms] group-active:scale-90 group-hover:ring-[#76C139]/40">
+      <span className="grid h-12 w-12 place-items-center rounded-full bg-[#76C139]/12 text-[#4a8a1e] ring-1 ring-[#76C139]/30 transition duration-[220ms] group-active:scale-90 group-hover:bg-[#76C139]/18">
         {icon}
       </span>
-      <span className="text-[12px] font-semibold text-[#111418]">{label}</span>
+      <span className="text-[11.5px] font-semibold text-[#111418]">{label}</span>
     </>
   );
   const cls = "group flex flex-col items-center gap-2";
