@@ -211,24 +211,22 @@ export const cadastrarMotorista = createServerFn({ method: "POST" })
         veiculo: docMap.veiculo.path,
       });
 
-      // Profile photo: copy selfie to public-readable bucket so passengers can view it.
-      let photoUrl: string | null = null;
+      // Profile photo: copy selfie to profile-photos bucket. Salvamos apenas o
+      // path — a UI gera signed URL curta sob demanda.
+      let photoPath: string | null = null;
       try {
         const selfie = docMap.selfie;
-        const photoPath = `${finalAuthUserId}/avatar-${Date.now()}.${cleanExt(selfie.fileName)}`;
+        const p = `${finalAuthUserId}/avatar-${Date.now()}.${cleanExt(selfie.fileName)}`;
         const photoUpload = await supabaseAdmin.storage
           .from("profile-photos")
-          .upload(photoPath, selfie.body, { upsert: true, contentType: selfie.contentType });
+          .upload(p, selfie.body, { upsert: true, contentType: selfie.contentType });
         if (photoUpload.error) throw photoUpload.error;
-        uploaded.push({ bucket: "profile-photos", path: photoPath });
-        const signed = await supabaseAdmin.storage
-          .from("profile-photos")
-          .createSignedUrl(photoPath, 60 * 60 * 24 * 365);
-        if (signed.error) throw signed.error;
-        photoUrl = signed.data?.signedUrl ?? null;
+        uploaded.push({ bucket: "profile-photos", path: p });
+        photoPath = p;
       } catch (photoErr) {
-        console.error("[MOVVI PHOTO] falha ao gerar foto pública do motorista:", photoErr);
+        console.error("[MOVVI PHOTO] falha ao copiar foto do motorista:", photoErr);
       }
+      const photoUrl: string | null = photoPath;
 
       const profile = await supabaseAdmin.from("users").upsert(
         {
