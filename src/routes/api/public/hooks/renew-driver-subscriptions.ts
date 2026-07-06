@@ -2,7 +2,9 @@
 // - Motoristas com next_due_date <= hoje+3 e financial_status='active' recebem
 //   uma nova preference do Mercado Pago e voltam para 'pending' até o pagamento.
 // - Motoristas com next_due_date < hoje-3 (tolerância) e ainda pendentes viram 'overdue'.
-// Chamado via pg_cron diariamente. Autentica pela apikey (anon) do Supabase.
+// Chamado via pg_cron diariamente.
+// Autentica por header: Authorization: Bearer ${CRON_SECRET}.
+// Requer secret dedicado CRON_SECRET. Sem ele, responde 503.
 
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
