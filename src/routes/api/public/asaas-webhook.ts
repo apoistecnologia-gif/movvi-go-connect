@@ -73,14 +73,14 @@ export const Route = createFileRoute("/api/public/asaas-webhook")({
           driver_id: driverId,
           asaas_event: parsed.event || "UNKNOWN",
           asaas_payment_id: parsed.providerReference,
-          asaas_subscription_id: parsed.subscriptionId,
+          asaas_subscription_id: parsed.subscriptionId ?? null,
           status: parsed.status,
-          value: parsed.value,
-          due_date: parsed.dueDate,
-          paid_at: parsed.paidAt,
-          invoice_url: parsed.invoiceUrl ?? parsed.bankSlipUrl,
-          raw_payload: payload as object,
-        });
+          value: parsed.value ?? null,
+          due_date: parsed.dueDate ?? null,
+          paid_at: parsed.paidAt ?? null,
+          invoice_url: parsed.invoiceUrl ?? parsed.bankSlipUrl ?? null,
+          raw_payload: payload as any,
+        } as any);
 
         if (!driverId) {
           return Response.json({ ok: true, note: "driver_not_matched" });
@@ -100,7 +100,7 @@ export const Route = createFileRoute("/api/public/asaas-webhook")({
         else if (parsed.status === "failed") driverPatch.financial_status = "overdue";
         else if (parsed.status === "pending") driverPatch.financial_status = "pending";
 
-        await supabaseAdmin.from("drivers").update(driverPatch).eq("id", driverId);
+        await supabaseAdmin.from("drivers").update(driverPatch as any).eq("id", driverId);
 
         // 6) Também mantém a tabela subscriptions em sincronia (trigger já espelha
         //    subscriptions.status -> drivers.subscription_status/financial_status,
@@ -127,7 +127,7 @@ export const Route = createFileRoute("/api/public/asaas-webhook")({
             else if (parsed.status === "refunded") subPatch.status = "cancelled";
 
             if (Object.keys(subPatch).length) {
-              await supabaseAdmin.from("subscriptions").update(subPatch).eq("id", sub.id);
+              await supabaseAdmin.from("subscriptions").update(subPatch as any).eq("id", sub.id);
             }
           }
         }

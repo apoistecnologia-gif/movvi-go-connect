@@ -19,7 +19,7 @@ export const approveDriverAndCreateSubscription = createServerFn({ method: "POST
     const { supabase, userId } = context;
 
     // 1) Autorização — precisa ser admin
-    const { data: isAdmin, error: roleErr } = await supabase.rpc("has_role", {
+    const { data: isAdmin, error: roleErr } = await (supabase.rpc as any)("has_role", {
       _user_id: userId,
       _role: "admin",
     });
@@ -61,7 +61,7 @@ export const approveDriverAndCreateSubscription = createServerFn({ method: "POST
         patch.documents_status = "approved";
       }
       if (Object.keys(patch).length) {
-        await supabaseAdmin.from("drivers").update(patch).eq("id", driver.id);
+        await supabaseAdmin.from("drivers").update(patch as any).eq("id", driver.id);
       }
       return {
         ok: true as const,
@@ -125,7 +125,7 @@ export const approveDriverAndCreateSubscription = createServerFn({ method: "POST
         last_payment_id: subResult.firstPaymentId,
         last_payment_status: "PENDING",
         last_invoice_url: subResult.invoiceUrl ?? subResult.bankSlipUrl,
-      })
+      } as any)
       .eq("id", driver.id);
 
     const { data: subRow } = await supabaseAdmin
@@ -155,9 +155,9 @@ export const approveDriverAndCreateSubscription = createServerFn({ method: "POST
       invoice_url: subResult.invoiceUrl ?? subResult.bankSlipUrl,
       raw_payload: {
         source: "approveDriverAndCreateSubscription",
-        subscription: subResult,
-      },
-    });
+        subscription: JSON.parse(JSON.stringify(subResult)),
+      } as any,
+    } as any);
 
     return {
       ok: true as const,
