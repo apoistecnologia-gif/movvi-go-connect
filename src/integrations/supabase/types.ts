@@ -604,43 +604,55 @@ export type Database = {
       }
       driver_payment_events: {
         Row: {
-          asaas_event: string
+          asaas_event: string | null
           asaas_payment_id: string | null
           asaas_subscription_id: string | null
           created_at: string
           driver_id: string | null
           due_date: string | null
+          event_type: string | null
           id: string
           invoice_url: string | null
+          mp_payment_id: string | null
+          mp_preapproval_id: string | null
           paid_at: string | null
+          provider: string
           raw_payload: Json
           status: string | null
           value: number | null
         }
         Insert: {
-          asaas_event: string
+          asaas_event?: string | null
           asaas_payment_id?: string | null
           asaas_subscription_id?: string | null
           created_at?: string
           driver_id?: string | null
           due_date?: string | null
+          event_type?: string | null
           id?: string
           invoice_url?: string | null
+          mp_payment_id?: string | null
+          mp_preapproval_id?: string | null
           paid_at?: string | null
+          provider?: string
           raw_payload: Json
           status?: string | null
           value?: number | null
         }
         Update: {
-          asaas_event?: string
+          asaas_event?: string | null
           asaas_payment_id?: string | null
           asaas_subscription_id?: string | null
           created_at?: string
           driver_id?: string | null
           due_date?: string | null
+          event_type?: string | null
           id?: string
           invoice_url?: string | null
+          mp_payment_id?: string | null
+          mp_preapproval_id?: string | null
           paid_at?: string | null
+          provider?: string
           raw_payload?: Json
           status?: string | null
           value?: number | null
@@ -915,6 +927,9 @@ export type Database = {
           last_location_at: string | null
           last_payment_id: string | null
           last_payment_status: string | null
+          mercadopago_init_point: string | null
+          mercadopago_payer_id: string | null
+          mercadopago_preapproval_id: string | null
           motivo_reprovacao: string | null
           name: string
           next_due_date: string | null
@@ -969,6 +984,9 @@ export type Database = {
           last_location_at?: string | null
           last_payment_id?: string | null
           last_payment_status?: string | null
+          mercadopago_init_point?: string | null
+          mercadopago_payer_id?: string | null
+          mercadopago_preapproval_id?: string | null
           motivo_reprovacao?: string | null
           name: string
           next_due_date?: string | null
@@ -1023,6 +1041,9 @@ export type Database = {
           last_location_at?: string | null
           last_payment_id?: string | null
           last_payment_status?: string | null
+          mercadopago_init_point?: string | null
+          mercadopago_payer_id?: string | null
+          mercadopago_preapproval_id?: string | null
           motivo_reprovacao?: string | null
           name?: string
           next_due_date?: string | null
