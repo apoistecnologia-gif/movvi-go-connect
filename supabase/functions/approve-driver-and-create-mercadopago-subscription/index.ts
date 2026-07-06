@@ -187,7 +187,7 @@ Deno.serve(async (req) => {
     .eq("id", driver.id);
 
   await admin.from("subscriptions").insert({
-    driver_id: driver.id,
+    driver_id: driver.user_id,
     status: "pending",
     amount: MONTHLY_FEE,
     period_start: nowIso,
