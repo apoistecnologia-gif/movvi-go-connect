@@ -73,6 +73,7 @@ import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 import { Route as AdminAdministradoresRouteImport } from './routes/admin.administradores'
 import { Route as MotoristaCorridasIdRouteImport } from './routes/motorista.corridas.$id'
 import { Route as ApiPublicAsaasWebhookRouteImport } from './routes/api/public/asaas-webhook'
+import { Route as ApiPublicHooksRenewDriverSubscriptionsRouteImport } from './routes/api/public/hooks/renew-driver-subscriptions'
 
 const MapTestRoute = MapTestRouteImport.update({
   id: '/map-test',
@@ -396,6 +397,12 @@ const ApiPublicAsaasWebhookRoute = ApiPublicAsaasWebhookRouteImport.update({
   path: '/api/public/asaas-webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksRenewDriverSubscriptionsRoute =
+  ApiPublicHooksRenewDriverSubscriptionsRouteImport.update({
+    id: '/api/public/hooks/renew-driver-subscriptions',
+    path: '/api/public/hooks/renew-driver-subscriptions',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -462,6 +469,7 @@ export interface FileRoutesByFullPath {
   '/t/$token': typeof TTokenRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
   '/motorista/corridas/$id': typeof MotoristaCorridasIdRoute
+  '/api/public/hooks/renew-driver-subscriptions': typeof ApiPublicHooksRenewDriverSubscriptionsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -528,6 +536,7 @@ export interface FileRoutesByTo {
   '/t/$token': typeof TTokenRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
   '/motorista/corridas/$id': typeof MotoristaCorridasIdRoute
+  '/api/public/hooks/renew-driver-subscriptions': typeof ApiPublicHooksRenewDriverSubscriptionsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -595,6 +604,7 @@ export interface FileRoutesById {
   '/t/$token': typeof TTokenRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
   '/motorista/corridas/$id': typeof MotoristaCorridasIdRoute
+  '/api/public/hooks/renew-driver-subscriptions': typeof ApiPublicHooksRenewDriverSubscriptionsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -663,6 +673,7 @@ export interface FileRouteTypes {
     | '/t/$token'
     | '/api/public/asaas-webhook'
     | '/motorista/corridas/$id'
+    | '/api/public/hooks/renew-driver-subscriptions'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -729,6 +740,7 @@ export interface FileRouteTypes {
     | '/t/$token'
     | '/api/public/asaas-webhook'
     | '/motorista/corridas/$id'
+    | '/api/public/hooks/renew-driver-subscriptions'
   id:
     | '__root__'
     | '/'
@@ -795,6 +807,7 @@ export interface FileRouteTypes {
     | '/t/$token'
     | '/api/public/asaas-webhook'
     | '/motorista/corridas/$id'
+    | '/api/public/hooks/renew-driver-subscriptions'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -861,6 +874,7 @@ export interface RootRouteChildren {
   PassageiroTermosRoute: typeof PassageiroTermosRoute
   TTokenRoute: typeof TTokenRoute
   ApiPublicAsaasWebhookRoute: typeof ApiPublicAsaasWebhookRoute
+  ApiPublicHooksRenewDriverSubscriptionsRoute: typeof ApiPublicHooksRenewDriverSubscriptionsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1313,6 +1327,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAsaasWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/renew-driver-subscriptions': {
+      id: '/api/public/hooks/renew-driver-subscriptions'
+      path: '/api/public/hooks/renew-driver-subscriptions'
+      fullPath: '/api/public/hooks/renew-driver-subscriptions'
+      preLoaderRoute: typeof ApiPublicHooksRenewDriverSubscriptionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -1393,6 +1414,8 @@ const rootRouteChildren: RootRouteChildren = {
   PassageiroTermosRoute: PassageiroTermosRoute,
   TTokenRoute: TTokenRoute,
   ApiPublicAsaasWebhookRoute: ApiPublicAsaasWebhookRoute,
+  ApiPublicHooksRenewDriverSubscriptionsRoute:
+    ApiPublicHooksRenewDriverSubscriptionsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
