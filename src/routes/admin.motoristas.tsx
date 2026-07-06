@@ -483,6 +483,42 @@ function AdminMotoristas() {
     }
   }
 
+  async function generateCharge(d: Driver) {
+    setBusyId(d.id);
+    const toastId = toast.loading("Gerando nova cobrança no Mercado Pago...");
+    try {
+      const result = await regenerateDriverCharge(d.id);
+      await logAdminAction({
+        action: "driver.charge_regenerated",
+        entity: "drivers",
+        entity_id: d.id,
+        before: { mercadopago_preapproval_id: d.mercadopago_preapproval_id ?? null },
+        after: { mercadopago_preapproval_id: result.preferenceId, mercadopago_init_point: result.initPoint },
+      });
+      if (result.initPoint && typeof window !== "undefined") {
+        try { await navigator.clipboard.writeText(result.initPoint); } catch { /* ignore */ }
+      }
+      toast.success("Nova cobrança gerada — link copiado", {
+        id: toastId,
+        description: result.initPoint ?? undefined,
+        action: result.initPoint
+          ? { label: "Abrir", onClick: () => window.open(result.initPoint!, "_blank") }
+          : undefined,
+        duration: 10000,
+      });
+      load();
+    } catch (e) {
+      const raw = e instanceof Error ? e.message : "falha";
+      let msg = mapAdminError(raw);
+      if (raw === "driver_not_approved") msg = "Motorista precisa estar aprovado para gerar cobrança.";
+      else if (raw.startsWith("missing_required_fields:")) msg = `Cadastro incompleto: faltam ${raw.split(":")[1]}`;
+      else if (raw.startsWith("mercadopago_preference_failed:")) msg = "Erro no Mercado Pago: " + raw.split(":").slice(1).join(":");
+      toast.error("Erro ao gerar cobrança: " + msg, { id: toastId });
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   return (
     <AdminLayout
       title="Gestão de Motoristas"
