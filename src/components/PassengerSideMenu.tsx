@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "@tanstack/react-router";
-import { Bell, ClipboardList, FileText, HelpCircle, Info, Loader2, Lock, Mail, Phone, Save, Settings, Shield, User as UserIcon, LogOut } from "lucide-react";
+import { Bell, ClipboardList, FileText, HelpCircle, Info, Loader2, Lock, Mail, Phone, Save, Settings, Shield, User as UserIcon, LogOut, Wallet } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -266,6 +266,14 @@ export function PassengerSideMenu({ open, onOpenChange, onLogout }: Props) {
                 >
                   <ClipboardList className="h-4 w-4 text-primary" />
                   Minhas corridas
+                </Link>
+                <Link
+                  to="/passageiro/carteira"
+                  onClick={() => onOpenChange(false)}
+                  className="flex items-center gap-3 rounded-lg border border-border bg-card/60 px-3 py-2.5 text-sm font-medium text-foreground transition hover:bg-accent/40"
+                >
+                  <Wallet className="h-4 w-4 text-primary" />
+                  Minha carteira
                 </Link>
                 <Link
                   to="/passageiro/notificacoes"

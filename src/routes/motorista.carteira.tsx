@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Wallet as WalletIcon, ArrowLeft, Clock, CheckCircle2 } from "lucide-react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
   listDriverWalletTx,
@@ -22,6 +23,7 @@ function DriverWalletPage() {
 
   useEffect(() => {
     let alive = true;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { navigate({ to: "/motorista/login" }); return; }
@@ -29,9 +31,32 @@ function DriverWalletPage() {
       if (!alive) return;
       setTx(rows);
       setLoading(false);
+
+      channel = supabase
+        .channel(`driver-wallet-${user.id}`)
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "driver_wallet_transactions", filter: `driver_id=eq.${user.id}` },
+          (payload) => {
+            const t = payload.new as DriverWalletTx;
+            setTx((prev) => [t, ...prev]);
+            if (t.source === "cancellation_fee") {
+              toast.success(`Novo crédito: ${formatBRL(Number(t.amount))}`, {
+                description: t.status === "pending"
+                  ? "Aguardando pagamento do passageiro."
+                  : "Já disponível para desconto na mensalidade.",
+              });
+            }
+          },
+        )
+        .subscribe();
     })();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+      if (channel) supabase.removeChannel(channel);
+    };
   }, [navigate]);
+
 
   const { pending, available } = useMemo(() => {
     let p = 0, a = 0;
