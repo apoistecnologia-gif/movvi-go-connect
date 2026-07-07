@@ -2211,6 +2211,7 @@ function PassageiroApp() {
           themeOverride={ride && (ride.status === "motorista_a_caminho" || ride.status === "motorista_chegou" || ride.status === "em_viagem") ? "light" : undefined}
           onLoad={(m) => {
             mapRef.current = m;
+            try { m.setOptions({ heading: 0, tilt: 0, disableDefaultUI: true, gestureHandling: "greedy" }); } catch {}
           }}
         >
           {position && (
@@ -2347,8 +2348,8 @@ function PassageiroApp() {
       {(passengerVisualStep === "destination" || passengerVisualStep === "route_preview" || passengerVisualStep === "category") && (() => {
         const categoryStage = passengerVisualStep === "category";
         const routeStage = passengerVisualStep === "route_preview";
-        const snaps = categoryStage ? [58, 76, 92] : routeStage ? [38, 58, 84] : [52, 74, 92];
-        const initial = categoryStage ? 76 : routeStage ? 44 : 55;
+        const snaps = categoryStage ? [58, 76, 92] : routeStage ? [38, 58, 84] : [40, 62, 92];
+        const initial = categoryStage ? 76 : routeStage ? 44 : 42;
 
         return (
         <MovviSheet ref={sheetRef} key={categoryStage ? "category" : routeStage ? "route" : "destination"} snaps={snaps} initial={initial}>
@@ -3214,37 +3215,35 @@ function SheetContent({
       {/* Hero search — "Para onde você vai?" — protagonista da home */}
       {showDestinationInput && (
         <div className="mb-3 animate-fade-slide">
-          <div className="surface-card rounded-2xl px-4 py-3.5 shadow-[var(--ds-shadow-card)] transition focus-within:border-primary/60 focus-within:shadow-[var(--ds-shadow-floating)]">
-            <div className="flex items-center gap-3">
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/12 text-primary">
-                <Search className="h-[18px] w-[18px]" strokeWidth={2.2} />
-              </span>
-              <input
-                ref={searchInputRef}
-                value={destinationText}
-                onChange={(e) => {
-                  if (destination) onClearDestination();
-                  setDestinationText(e.target.value);
+          <div className="surface-card flex items-center gap-2.5 rounded-full px-3 py-2 shadow-[var(--ds-shadow-card)] transition focus-within:border-primary/60 focus-within:shadow-[var(--ds-shadow-floating)]">
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary/12 text-primary">
+              <Search className="h-[15px] w-[15px]" strokeWidth={2.4} />
+            </span>
+            <input
+              ref={searchInputRef}
+              value={destinationText}
+              onChange={(e) => {
+                if (destination) onClearDestination();
+                setDestinationText(e.target.value);
+              }}
+              onFocus={onFocusSearch}
+              placeholder="Para onde?"
+              className="min-w-0 flex-1 bg-transparent text-[15px] font-semibold text-foreground outline-none placeholder:text-muted-foreground placeholder:font-semibold"
+            />
+            {destinationText && (
+              <button
+                type="button"
+                onClick={() => {
+                  setDestinationText("");
+                  onClearDestination();
+                  searchInputRef.current?.focus();
                 }}
-                onFocus={onFocusSearch}
-                placeholder="Para onde?"
-                className="min-w-0 flex-1 bg-transparent text-[17px] font-bold text-foreground outline-none placeholder:text-muted-foreground placeholder:font-semibold"
-              />
-              {destinationText && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setDestinationText("");
-                    onClearDestination();
-                    searchInputRef.current?.focus();
-                  }}
-                  aria-label="Limpar"
-                  className="active-press grid h-8 w-8 place-items-center rounded-full text-muted-foreground hover:bg-muted"
-                >
-                  <X className="h-4 w-4" strokeWidth={2} />
-                </button>
-              )}
-            </div>
+                aria-label="Limpar"
+                className="active-press grid h-7 w-7 place-items-center rounded-full text-muted-foreground hover:bg-muted"
+              >
+                <X className="h-3.5 w-3.5" strokeWidth={2} />
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -3300,7 +3299,7 @@ function SheetContent({
               Serviços MOVVI
             </div>
             <div className="text-[10.5px] font-medium text-muted-foreground/70">
-              Informe o destino
+              Escolha o destino para ver valores
             </div>
           </div>
           <div className="grid grid-cols-5 gap-1.5">
@@ -3311,7 +3310,7 @@ function SheetContent({
                   key={c.key}
                   type="button"
                   onClick={() => searchInputRef.current?.focus()}
-                  className="flex flex-col items-center gap-1.5 rounded-2xl bg-card px-1 py-2.5 ring-1 ring-border/60 transition hover:ring-primary/40 active:scale-[0.97]"
+                  className="flex flex-col items-center gap-1.5 rounded-2xl bg-card px-1 py-2.5 ring-1 ring-border/60 opacity-80 transition hover:opacity-100 hover:ring-primary/40 active:scale-[0.97]"
                 >
                   <span
                     className="grid h-9 w-9 place-items-center rounded-full"
