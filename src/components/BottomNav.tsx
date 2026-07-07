@@ -59,7 +59,7 @@ export function BottomNav({
   items,
   floating = false,
   theme = "auto",
-  bottomOffset = 0,
+  bottomOffset = "0px",
   zIndex,
 }: BottomNavProps) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
