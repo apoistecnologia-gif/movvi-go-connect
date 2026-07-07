@@ -2498,6 +2498,7 @@ function PassageiroApp() {
             onExpandSheet={(p) => sheetRef.current?.snapTo(p)}
             paymentMethod={paymentMethod}
             setPaymentMethod={setPaymentMethod}
+            userName={userName}
           />
         </MovviSheet>
         );
@@ -3193,6 +3194,7 @@ function SheetContent({
   onExpandSheet,
   paymentMethod,
   setPaymentMethod,
+  userName,
 }: {
   geo: GeocodeResult | null;
   addressStatus: "idle" | "loading" | "resolved" | "failed";
@@ -3226,6 +3228,7 @@ function SheetContent({
   onExpandSheet: (p: number) => void;
   paymentMethod: "dinheiro" | "pix" | "cartao_credito";
   setPaymentMethod: (m: "dinheiro" | "pix" | "cartao_credito") => void;
+  userName: string;
 }) {
   const km = route ? route.distanceMeters / 1000 : 0;
   const min = route ? route.durationSeconds / 60 : 0;
@@ -3339,9 +3342,16 @@ function SheetContent({
       {showDestinationInput && (
         <div className="mb-3 animate-fade-slide">
           {!destination && suggestions.length === 0 && (
-            <h1 className="mb-2 px-0.5 text-[22px] font-semibold leading-tight tracking-tight text-foreground">
-              Para onde vamos?
-            </h1>
+            <div className="mb-2 px-0.5 animate-in fade-in slide-in-from-bottom-1 duration-[220ms]">
+              <div className="flex items-center gap-1.5 text-[12px] font-medium text-muted-foreground">
+                <span>Olá,</span>
+                <span className="text-[#8DD92B] font-semibold">{properCase(userName)?.split(" ")[0] || "passageiro"}</span>
+                <span aria-hidden>👋</span>
+              </div>
+              <h1 className="mt-0.5 text-[22px] font-semibold leading-tight tracking-tight text-foreground">
+                Para onde vamos?
+              </h1>
+            </div>
           )}
           <div className="flex items-center gap-2.5 rounded-2xl bg-white/[0.06] px-3 py-2.5 ring-1 ring-white/12 shadow-[0_12px_32px_-18px_rgba(0,0,0,0.9)] transition focus-within:ring-[#8DD92B]/60 focus-within:bg-white/[0.09]">
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#8DD92B]/18 text-[#8DD92B]">
