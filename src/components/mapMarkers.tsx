@@ -266,17 +266,30 @@ export function InterpolatedDriverMarker({
   );
 }
 
-/* ────────────── Motorista próximo (idle no mapa do passageiro) ────────────── */
-export function NearbyDriverMarker({ position }: { position: LatLng }) {
+/* ────────────── Motorista próximo (idle no mapa do passageiro) ──────────────
+ * `dimmed` reduz opacidade/tamanho para que motoristas próximos NUNCA sejam
+ * confundidos com o motorista da corrida ativa (que usa InterpolatedDriverMarker
+ * em azul, maior e com halo). Cor verde-limão + carro menor + sombra suave.
+ */
+export function NearbyDriverMarker({
+  position,
+  dimmed = false,
+}: {
+  position: LatLng;
+  dimmed?: boolean;
+}) {
+  const opacity = dimmed ? 0.55 : 1;
+  const scale = dimmed ? 1.05 : 1.35;
   return (
     <>
       <Marker
         position={position}
         clickable={false}
         zIndex={9995}
+        opacity={dimmed ? 0.35 : 1}
         icon={{
           path: safeSymbol("CIRCLE"),
-          scale: 11,
+          scale: dimmed ? 8 : 11,
           fillColor: "#000000",
           fillOpacity: 0.18,
           strokeWeight: 0,
@@ -284,13 +297,14 @@ export function NearbyDriverMarker({ position }: { position: LatLng }) {
       />
       <Marker
         position={position}
+        opacity={opacity}
         icon={{
           path: CAR_PATH,
           fillColor: "#8DD92B",
           fillOpacity: 1,
           strokeColor: "#05070D",
           strokeWeight: 1.4,
-          scale: 1.35,
+          scale,
           anchor: safePoint(12, 14),
         }}
       />
