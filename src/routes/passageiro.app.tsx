@@ -3228,6 +3228,7 @@ function SheetContent({
   onExpandSheet: (p: number) => void;
   paymentMethod: "dinheiro" | "pix" | "cartao_credito";
   setPaymentMethod: (m: "dinheiro" | "pix" | "cartao_credito") => void;
+  userName: string;
 }) {
   const km = route ? route.distanceMeters / 1000 : 0;
   const min = route ? route.durationSeconds / 60 : 0;
