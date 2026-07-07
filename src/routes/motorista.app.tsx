@@ -823,6 +823,11 @@ function MotoristaApp() {
       if (pending.data) presentOffer(pending.data as RideRow);
     };
     document.addEventListener("visibilitychange", onVisibility);
+    // Também refetch em focus da janela e reconexão de rede
+    const onFocus = () => { void onVisibility(); };
+    window.addEventListener("focus", onFocus);
+    window.addEventListener("online", onFocus);
+
 
     // Rede de segurança 2: polling leve da corrida ativa a cada 8s caso o realtime caia
     const poll = window.setInterval(async () => {
