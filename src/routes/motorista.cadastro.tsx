@@ -13,7 +13,7 @@ import { compressDocumentImage } from "@/lib/imageCompress";
 import { DSButton, DSCard, DSCardContent, DSCardDescription, DSCardHeader, DSCardTitle, DSInput, DSLabel, DSSelect, DSSelectContent, DSSelectItem, DSSelectTrigger, DSSelectValue } from "@/design-system";
 
 export const Route = createFileRoute("/motorista/cadastro")({
-  head: () => ({ meta: [{ title: "Cadastro do Motorista — MOVVI DRIVE" }] }),
+  head: () => ({ meta: [{ title: "Cadastro do Motorista — MOVVI DRIVE" }, { name: "robots", content: "noindex" }] }),
   component: DriverSignUpPage,
 });
 

@@ -7,7 +7,7 @@ import { Loader2 } from "lucide-react";
 import { DSButton, DSInput, DSLabel } from "@/design-system";
 
 export const Route = createFileRoute("/motorista/login")({
-  head: () => ({ meta: [{ title: "Entrar — Motorista MOVVI DRIVE" }] }),
+  head: () => ({ meta: [{ title: "Entrar — Motorista MOVVI DRIVE" }, { name: "robots", content: "noindex" }] }),
   component: DriverLoginPage,
 });
 
