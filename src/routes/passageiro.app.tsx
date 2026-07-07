@@ -3971,11 +3971,13 @@ function FareEstimateCard({ route, fare }: { route: RouteResult; fare: number | 
 function RequestRideButton({
   busy,
   categoryLabel,
+  ctaLabel,
   fare,
   onSubmit,
 }: {
   busy: boolean;
   categoryLabel: string;
+  ctaLabel?: string;
   fare: number;
   onSubmit: () => void;
 }) {
