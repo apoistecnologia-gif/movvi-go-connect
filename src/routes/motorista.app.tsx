@@ -1104,11 +1104,11 @@ function MotoristaApp() {
       {/* Top bar — glass flutuante premium (60px, radius 22, backdrop blur) */}
       <div className="absolute inset-x-0 top-0 z-40 px-3 pt-[calc(env(safe-area-inset-top)+8px)] motion-safe:animate-[fadeIn_320ms_ease-out]">
         <div
-          className="mx-auto flex h-[60px] max-w-5xl items-center gap-3 rounded-[22px] px-3 shadow-[0_12px_32px_-16px_rgba(0,0,0,0.55)]"
+          className="mx-auto flex h-[52px] max-w-5xl items-center gap-3 rounded-[20px] px-3 shadow-[0_8px_22px_-14px_rgba(0,0,0,0.45)]"
           style={{
-            background: "color-mix(in oklab, #0b0d10 62%, transparent)",
+            background: "color-mix(in oklab, #0b0d10 68%, transparent)",
             border: "1px solid rgba(255,255,255,0.06)",
-            backdropFilter: "blur(10px) saturate(140%)",
+            backdropFilter: "blur(8px) saturate(140%)",
           }}
         >
           <button
