@@ -88,7 +88,7 @@ function ServicosPage() {
           />
         </ServicesGrid>
       </main>
-      <BottomNav items={PASSENGER_NAV} floating />
+      <BottomNav items={PASSENGER_NAV} floating theme="dark" />
     </div>
   );
 }
