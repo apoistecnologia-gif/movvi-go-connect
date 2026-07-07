@@ -1167,14 +1167,15 @@ function MotoristaApp() {
       {!incoming && !ratingRide && (
         <button onClick={recenter}
           aria-label="Centralizar mapa"
-          className="press-scale absolute right-4 z-20 flex h-14 w-14 items-center justify-center rounded-full text-foreground shadow-[0_16px_36px_-14px_rgba(0,0,0,0.6)] transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+          className="press-scale absolute z-20 flex h-12 w-12 items-center justify-center rounded-full text-foreground shadow-[0_12px_28px_-14px_rgba(0,0,0,0.55)] transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
           style={{
-            bottom: active ? "calc(58vh + 16px)" : "calc(env(safe-area-inset-bottom) + 340px)",
-            background: "color-mix(in oklab, #111418 70%, transparent)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            backdropFilter: "blur(10px) saturate(140%)",
+            right: 20,
+            bottom: active ? "calc(76dvh + 12px)" : "calc(env(safe-area-inset-bottom) + 260px)",
+            background: "color-mix(in oklab, #111418 72%, transparent)",
+            border: "1px solid rgba(255,255,255,0.10)",
+            backdropFilter: "blur(8px) saturate(140%)",
           }}>
-          <Crosshair className="h-[20px] w-[20px]" strokeWidth={1.75} />
+          <Crosshair className="h-[18px] w-[18px]" strokeWidth={1.75} />
         </button>
       )}
 
