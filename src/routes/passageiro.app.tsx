@@ -874,6 +874,61 @@ function PassageiroApp() {
     };
   }, [userId, navigate]);
 
+  /* ---------------------- Recuperação da corrida ativa ----------------------
+   * Se o passageiro sai do app durante uma corrida e volta, precisamos
+   * restaurar automaticamente o fluxo (motorista, mapa, PIN, botões) em vez
+   * de mostrar a tela "Para onde?". Consulta o Supabase por qualquer corrida
+   * ainda não finalizada/cancelada, no mount, ao voltar a aba, ao focar a
+   * janela e ao reconectar a rede. O canal realtime por rideId já cuida das
+   * atualizações depois que rideId é setado. */
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+    const recover = async (tag: string) => {
+      if (cancelled) return;
+      try {
+        const { data, error } = await supabase
+          .from("rides")
+          .select("*")
+          .eq("passenger_id", userId)
+          .in("status", [
+            "procurar_motorista",
+            "motorista_a_caminho",
+            "motorista_chegou",
+            "em_viagem",
+          ])
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (cancelled || error || !data) return;
+        setRide((prev) => (prev && prev.id === data.id ? { ...prev, ...data } : data));
+        setRideId((prev) => prev ?? data.id);
+        if (import.meta.env.DEV) {
+          console.log("[MOVVI PASSAGEIRO] corrida ativa restaurada:", tag, data.id, data.status);
+        }
+      } catch (e) {
+        if (import.meta.env.DEV) console.warn("[MOVVI PASSAGEIRO] falha ao restaurar corrida:", tag, e);
+      }
+    };
+    void recover("mount");
+    const onVis = () => {
+      if (document.visibilityState === "visible") void recover("visibility");
+    };
+    const onFocus = () => void recover("focus");
+    const onOnline = () => void recover("online");
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("focus", onFocus);
+    window.addEventListener("online", onOnline);
+    return () => {
+      cancelled = true;
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("online", onOnline);
+    };
+  }, [userId]);
+
+
+
   /* ---------------------- recents (localStorage) ---------------------- */
   useEffect(() => {
     try {
@@ -2045,12 +2100,13 @@ function PassageiroApp() {
     autoFollowRef.current = false;
     const bounds = new google.maps.LatLngBounds();
     bounds.extend(a); bounds.extend(b);
-    // Na busca de motorista o sheet ocupa ~44vh e mostramos a rota inteira,
-    // por isso o bottom padding precisa ser generoso (>= 360px) e o zoom
-    // NÃO deve estourar em cima do pickup.
+    // Sheet compact ocupa ~48vh no fluxo assigned (motorista a caminho / em viagem)
+    // e ~44vh na busca. Padding inferior precisa manter rota/motorista visíveis
+    // acima do sheet, sem esconder atrás da barra do sistema.
     const bottomPad = ride.status === "procurar_motorista"
-      ? Math.max(280, Math.round(window.innerHeight * 0.42))
-      : Math.round(window.innerHeight * 0.34) + 16;
+      ? Math.max(280, Math.round(window.innerHeight * 0.46))
+      : Math.round(window.innerHeight * 0.52) + 16;
+
     mapRef.current.fitBounds(bounds, {
       top: 130,
       bottom: bottomPad,
@@ -2706,9 +2762,11 @@ function PassageiroApp() {
           phase === "motorista_chegou" ||
           phase === "em_viagem") && (
           <MovviSheet
-            snaps={[32, 64, 92]}
-            initial={32}
+            ref={sheetRef}
+            snaps={[48, 74, 94]}
+            initial={48}
           >
+
             <DriverEnRoute
               ride={ride}
               driver={rideDriverInfo}
