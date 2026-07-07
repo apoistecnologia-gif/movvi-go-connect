@@ -2208,10 +2208,10 @@ function PassageiroApp() {
           center={center}
           zoom={stableZoom}
           height="100%"
-          themeOverride={ride && (ride.status === "motorista_a_caminho" || ride.status === "motorista_chegou" || ride.status === "em_viagem") ? "light" : undefined}
+          themeOverride={ride && (ride.status === "motorista_a_caminho" || ride.status === "motorista_chegou" || ride.status === "em_viagem") ? "light" : "dark"}
           onLoad={(m) => {
             mapRef.current = m;
-            try { m.setOptions({ heading: 0, tilt: 0, disableDefaultUI: true, gestureHandling: "greedy" }); } catch {}
+            try { m.setOptions({ heading: 0, tilt: 0, disableDefaultUI: true, gestureHandling: "greedy", rotateControl: false, backgroundColor: "#0B1017" }); } catch {}
           }}
         >
           {position && (
