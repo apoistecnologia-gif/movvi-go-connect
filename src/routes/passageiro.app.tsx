@@ -3300,9 +3300,10 @@ function SheetContent({
             <div className="shrink-0 text-[10px] font-bold uppercase tracking-[0.12em] text-foreground/70">
               Serviços
             </div>
-            <div className="hidden xs:block truncate text-[10.5px] font-medium text-foreground/60">
+            <div className="min-w-0 truncate text-[10.5px] font-medium text-foreground/60">
               Escolha o destino para ver valores
             </div>
+
           </div>
           <div className="-mx-4 overflow-x-auto pl-4 pr-6 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <div className="flex gap-2 min-w-max">
