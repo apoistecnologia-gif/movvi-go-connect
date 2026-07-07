@@ -2208,10 +2208,10 @@ function PassageiroApp() {
           center={center}
           zoom={stableZoom}
           height="100%"
-          themeOverride={ride && (ride.status === "motorista_a_caminho" || ride.status === "motorista_chegou" || ride.status === "em_viagem") ? "light" : undefined}
+          themeOverride={ride && (ride.status === "motorista_a_caminho" || ride.status === "motorista_chegou" || ride.status === "em_viagem") ? "light" : "dark"}
           onLoad={(m) => {
             mapRef.current = m;
-            try { m.setOptions({ heading: 0, tilt: 0, disableDefaultUI: true, gestureHandling: "greedy" }); } catch {}
+            try { m.setOptions({ heading: 0, tilt: 0, disableDefaultUI: true, gestureHandling: "greedy", rotateControl: false, backgroundColor: "#0B1017" }); } catch {}
           }}
         >
           {position && (
@@ -2334,13 +2334,13 @@ function PassageiroApp() {
       />
 
       {/* Floating recenter — 56px, glass, MOVVI DS */}
-      <div className="pointer-events-none absolute right-4 z-30" style={{ bottom: "calc(24vh + 16px)" }}>
+      <div className="pointer-events-none absolute right-4 z-30" style={{ bottom: "calc(50dvh + 12px)" }}>
         <button
           onClick={recenter}
-          className="pointer-events-auto flex h-14 w-14 items-center justify-center rounded-full border border-border/60 bg-card/90 text-[#76C139] shadow-[0_12px_28px_-14px_rgba(15,23,42,0.35)] backdrop-blur-xl transition active:scale-[0.92] hover:scale-105"
+          className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-[#0F141B]/90 text-[#8DD92B] shadow-[0_12px_28px_-14px_rgba(0,0,0,0.7)] backdrop-blur-xl transition active:scale-[0.92] hover:scale-105"
           aria-label="Recentralizar"
         >
-          <Crosshair className="h-[22px] w-[22px]" strokeWidth={2} />
+          <Crosshair className="h-[20px] w-[20px]" strokeWidth={2} />
         </button>
       </div>
 
@@ -2348,8 +2348,8 @@ function PassageiroApp() {
       {(passengerVisualStep === "destination" || passengerVisualStep === "route_preview" || passengerVisualStep === "category") && (() => {
         const categoryStage = passengerVisualStep === "category";
         const routeStage = passengerVisualStep === "route_preview";
-        const snaps = categoryStage ? [58, 76, 92] : routeStage ? [38, 58, 84] : [40, 62, 92];
-        const initial = categoryStage ? 76 : routeStage ? 44 : 42;
+        const snaps = categoryStage ? [58, 76, 92] : routeStage ? [42, 62, 88] : [48, 68, 92];
+        const initial = categoryStage ? 76 : routeStage ? 48 : 48;
 
         return (
         <MovviSheet ref={sheetRef} key={categoryStage ? "category" : routeStage ? "route" : "destination"} snaps={snaps} initial={initial}>
@@ -3009,7 +3009,7 @@ function FavoritesStrip({ onPick }: { onPick: (point: LatLng, label: string) => 
   const navigate = useNavigate();
 
   return (
-    <div className="-mx-1 mb-3 flex items-center gap-2 overflow-x-auto px-1 pb-1">
+    <div className="-mx-1 mb-2 flex items-center gap-1.5 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {items.slice(0, 6).map((f) => {
         const Icon = f.kind === "home" ? HomeIcon : f.kind === "work" ? Briefcase : Heart;
         return (
@@ -3017,21 +3017,20 @@ function FavoritesStrip({ onPick }: { onPick: (point: LatLng, label: string) => 
             key={f.id}
             type="button"
             onClick={() => onPick({ lat: f.lat, lng: f.lng }, f.address)}
-            className="flex shrink-0 items-center gap-2 rounded-full border border-border/60 bg-card px-3 py-1.5 text-[12.5px] font-semibold text-foreground shadow-[0_4px_14px_-10px_rgba(15,23,42,0.2)] transition hover:border-[#76C139]/50 hover:bg-[#76C139]/5 active:scale-[0.97]"
+            className="flex shrink-0 items-center gap-1.5 rounded-full bg-white/[0.05] px-2.5 py-1 text-[11.5px] font-semibold text-foreground/90 ring-1 ring-white/10 transition hover:bg-white/[0.09] hover:ring-[#8DD92B]/40 active:scale-[0.97]"
           >
-            <Icon className="h-3.5 w-3.5 text-[#76C139]" strokeWidth={2} />
-            <span className="max-w-[140px] truncate">{f.label}</span>
+            <Icon className="h-3 w-3 text-[#8DD92B]" strokeWidth={2} />
+            <span className="max-w-[120px] truncate">{f.label}</span>
           </button>
         );
       })}
       <button
         type="button"
         onClick={() => navigate({ to: "/passageiro/favoritos" })}
-        className="flex shrink-0 items-center gap-2 rounded-full border border-dashed border-border/70 px-3 py-1.5 text-[12.5px] font-semibold text-muted-foreground transition hover:border-[#76C139]/50 hover:text-foreground active:scale-[0.97]"
-
+        className="flex shrink-0 items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium text-foreground/55 transition hover:text-[#8DD92B] active:scale-[0.97]"
       >
-        <Heart className="h-3.5 w-3.5" strokeWidth={2} />
-        <span>{items.length === 0 ? "Adicionar favoritos" : "Gerenciar"}</span>
+        <Heart className="h-3 w-3" strokeWidth={2} />
+        <span>{items.length === 0 ? "Adicionar" : "Gerenciar"}</span>
       </button>
     </div>
   );
@@ -3186,15 +3185,15 @@ function SheetContent({
               onOpenAddressDetails();
             }
           }}
-          className="press-scale mb-3 flex w-full cursor-pointer items-center gap-2 rounded-full bg-muted/60 px-3 py-1.5 text-left ring-1 ring-border/50 hover:ring-primary/40"
+          className="press-scale mb-3 flex w-full cursor-pointer items-center gap-2 rounded-full bg-white/[0.04] px-3 py-1.5 text-left ring-1 ring-white/10 hover:ring-[#8DD92B]/50"
         >
-          <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-primary/12 text-primary">
+          <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[#8DD92B]/15 text-[#8DD92B]">
             <MapPin className="h-3 w-3" strokeWidth={2.2} />
           </span>
-          <div className="min-w-0 flex-1 truncate text-[12.5px] font-medium text-foreground">
+          <div className="min-w-0 flex-1 truncate text-[12.5px] font-medium text-foreground/90">
             {addressStatus === "loading" && !pickupAddressLine
               ? "Localizando…"
-              : pickupAddressLine || (hasPosition ? "Localização atual" : "Endereço não identificado")}
+              : pickupAddressLine || (hasPosition ? "Localização atual" : "Definir local de embarque")}
           </div>
           <button
             type="button"
@@ -3205,7 +3204,7 @@ function SheetContent({
             disabled={gpsRequesting}
             aria-label="Atualizar GPS"
             title="Atualizar GPS"
-            className="active-press grid h-6 w-6 shrink-0 place-items-center rounded-full text-primary hover:bg-primary/10 disabled:opacity-60"
+            className="active-press grid h-6 w-6 shrink-0 place-items-center rounded-full text-[#8DD92B] hover:bg-[#8DD92B]/10 disabled:opacity-60"
           >
             <Crosshair className={`h-3 w-3 ${gpsRequesting ? "animate-spin" : ""}`} strokeWidth={2.2} />
           </button>
@@ -3215,9 +3214,9 @@ function SheetContent({
       {/* Hero search — "Para onde você vai?" — protagonista da home */}
       {showDestinationInput && (
         <div className="mb-3 animate-fade-slide">
-          <div className="surface-card flex items-center gap-2.5 rounded-full px-3 py-2 shadow-[var(--ds-shadow-card)] transition focus-within:border-primary/60 focus-within:shadow-[var(--ds-shadow-floating)]">
-            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary/12 text-primary">
-              <Search className="h-[15px] w-[15px]" strokeWidth={2.4} />
+          <div className="flex items-center gap-3 rounded-2xl bg-white/[0.06] px-3.5 py-3 ring-1 ring-white/12 shadow-[0_10px_28px_-18px_rgba(0,0,0,0.9)] transition focus-within:ring-[#8DD92B]/60 focus-within:bg-white/[0.09]">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#8DD92B]/18 text-[#8DD92B]">
+              <Search className="h-4 w-4" strokeWidth={2.4} />
             </span>
             <input
               ref={searchInputRef}
@@ -3228,7 +3227,7 @@ function SheetContent({
               }}
               onFocus={onFocusSearch}
               placeholder="Para onde?"
-              className="min-w-0 flex-1 bg-transparent text-[15px] font-semibold text-foreground outline-none placeholder:text-muted-foreground placeholder:font-semibold"
+              className="min-w-0 flex-1 bg-transparent text-[16px] font-semibold text-foreground outline-none placeholder:text-foreground/85 placeholder:font-semibold"
             />
             {destinationText && (
               <button
@@ -3239,7 +3238,7 @@ function SheetContent({
                   searchInputRef.current?.focus();
                 }}
                 aria-label="Limpar"
-                className="active-press grid h-7 w-7 place-items-center rounded-full text-muted-foreground hover:bg-muted"
+                className="active-press grid h-7 w-7 place-items-center rounded-full text-muted-foreground hover:bg-white/10"
               >
                 <X className="h-3.5 w-3.5" strokeWidth={2} />
               </button>
@@ -3293,37 +3292,39 @@ function SheetContent({
 
       {/* Categorias — preview compacto de serviços disponíveis */}
       {showDestinationInput && !destination && suggestions.length === 0 && (
-        <div className="animate-fade-slide mt-1">
-          <div className="mb-2 flex items-center justify-between">
-            <div className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+        <div className="animate-fade-slide mt-1 mb-2">
+          <div className="mb-1.5 flex items-center justify-between">
+            <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-foreground/60">
               Serviços MOVVI
             </div>
-            <div className="text-[10.5px] font-medium text-muted-foreground/70">
+            <div className="text-[10px] font-medium text-foreground/45">
               Escolha o destino para ver valores
             </div>
           </div>
-          <div className="grid grid-cols-5 gap-1.5">
-            {uiCategories.slice(0, 5).map((c) => {
-              const Icon = c.icon;
-              return (
-                <button
-                  key={c.key}
-                  type="button"
-                  onClick={() => searchInputRef.current?.focus()}
-                  className="flex flex-col items-center gap-1.5 rounded-2xl bg-card px-1 py-2.5 ring-1 ring-border/60 opacity-80 transition hover:opacity-100 hover:ring-primary/40 active:scale-[0.97]"
-                >
-                  <span
-                    className="grid h-9 w-9 place-items-center rounded-full"
-                    style={{ backgroundColor: `${c.color}22`, color: c.color }}
+          <div className="-mx-4 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="flex gap-2 min-w-max">
+              {uiCategories.map((c) => {
+                const Icon = c.icon;
+                return (
+                  <button
+                    key={c.key}
+                    type="button"
+                    onClick={() => searchInputRef.current?.focus()}
+                    className="flex w-[68px] shrink-0 flex-col items-center gap-1.5 rounded-xl bg-white/[0.04] px-1.5 py-2 ring-1 ring-white/10 transition hover:bg-white/[0.08] hover:ring-[#8DD92B]/40 active:scale-[0.97]"
                   >
-                    <Icon className="h-4 w-4" strokeWidth={2.2} />
-                  </span>
-                  <span className="truncate text-[10.5px] font-semibold text-foreground">
-                    {c.label}
-                  </span>
-                </button>
-              );
-            })}
+                    <span
+                      className="grid h-8 w-8 place-items-center rounded-full"
+                      style={{ backgroundColor: `${c.color}26`, color: c.color }}
+                    >
+                      <Icon className="h-4 w-4" strokeWidth={2.2} />
+                    </span>
+                    <span className="truncate w-full text-center text-[10.5px] font-semibold text-foreground/90">
+                      {c.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
