@@ -3977,14 +3977,8 @@ function RequestRideButton({
           </div>
         </div>
       )}
-      <div className="flex items-baseline justify-between px-1">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#707070]">
-          Você paga
-        </span>
-        <span className="text-[16px] font-bold tabular-nums text-[#111418]">
-          {formatBRL(fare)}
-        </span>
-      </div>
+      {/* Preço é exibido pelo chamador (ConfirmRideCompact / etapa de confirmação)
+          para evitar duplicação de "Você paga". */}
       <button
         type="button"
         disabled={busy || isBlocked}
