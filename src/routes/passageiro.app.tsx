@@ -3271,12 +3271,17 @@ function SheetContent({
         </div>
       )}
 
-      {/* Hero search — "Para onde você vai?" — protagonista da home */}
+      {/* Hero search — "Para onde vamos?" — protagonista da home */}
       {showDestinationInput && (
-        <div className="mb-2.5 animate-fade-slide">
-          <div className="flex items-center gap-2.5 rounded-2xl bg-white/[0.06] px-3 py-2 ring-1 ring-white/12 shadow-[0_10px_28px_-18px_rgba(0,0,0,0.9)] transition focus-within:ring-[#8DD92B]/60 focus-within:bg-white/[0.09]">
-            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#8DD92B]/18 text-[#8DD92B]">
-              <Search className="h-[15px] w-[15px]" strokeWidth={2.4} />
+        <div className="mb-3 animate-fade-slide">
+          {!destination && suggestions.length === 0 && (
+            <h1 className="mb-2 px-0.5 text-[22px] font-semibold leading-tight tracking-tight text-foreground">
+              Para onde vamos?
+            </h1>
+          )}
+          <div className="flex items-center gap-2.5 rounded-2xl bg-white/[0.06] px-3 py-2.5 ring-1 ring-white/12 shadow-[0_12px_32px_-18px_rgba(0,0,0,0.9)] transition focus-within:ring-[#8DD92B]/60 focus-within:bg-white/[0.09]">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#8DD92B]/18 text-[#8DD92B]">
+              <Search className="h-[16px] w-[16px]" strokeWidth={2.4} />
             </span>
             <input
               ref={searchInputRef}
@@ -3286,8 +3291,8 @@ function SheetContent({
                 setDestinationText(e.target.value);
               }}
               onFocus={onFocusSearch}
-              placeholder="Para onde?"
-              className="min-w-0 flex-1 bg-transparent text-[15px] font-semibold text-foreground outline-none placeholder:text-foreground/80 placeholder:font-semibold"
+              placeholder="Digite um endereço, bairro ou lugar"
+              className="min-w-0 flex-1 bg-transparent text-[15px] font-medium text-foreground outline-none placeholder:text-muted-foreground placeholder:font-normal"
             />
             {destinationText && (
               <button
@@ -3306,6 +3311,7 @@ function SheetContent({
           </div>
         </div>
       )}
+
 
 
       {/* Favoritos rápidos */}
@@ -3354,15 +3360,15 @@ function SheetContent({
       {/* Categorias — preview compacto de serviços disponíveis */}
       {showDestinationInput && !destination && suggestions.length === 0 && (
         <div className="animate-fade-slide mt-1 mb-1">
-          <div className="mb-1.5 flex items-center justify-between gap-2">
-            <div className="shrink-0 text-[10px] font-bold uppercase tracking-[0.12em] text-foreground/70">
-              Serviços
+          <div className="mb-2 flex items-baseline justify-between gap-2">
+            <div className="shrink-0 text-[12px] font-semibold tracking-tight text-foreground">
+              Serviços disponíveis
             </div>
-            <div className="min-w-0 truncate text-[10.5px] font-medium text-foreground/60">
+            <div className="min-w-0 truncate text-[11px] font-normal text-muted-foreground">
               Escolha o destino para ver valores
             </div>
-
           </div>
+
           <div className="-mx-4 overflow-x-auto pl-4 pr-8 pb-4 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <div className="flex gap-2 min-w-max">
               {uiCategories.map((c) => {
