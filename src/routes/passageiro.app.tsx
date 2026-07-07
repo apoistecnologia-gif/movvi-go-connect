@@ -3090,6 +3090,11 @@ function PassageiroApp() {
         onOpenChange={setDriverProfileOpen}
         driverUserId={ride?.driver_id ?? rideDriverInfo?.user_id ?? null}
       />
+
+      {/* Bottom navigation — visible only on idle home; hidden during ride flow */}
+      {!ride && passengerVisualStep === "destination" && (
+        <BottomNav items={PASSENGER_NAV} floating theme="dark" />
+      )}
     </div>
   );
 }
