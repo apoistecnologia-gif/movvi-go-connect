@@ -3293,37 +3293,39 @@ function SheetContent({
 
       {/* Categorias — preview compacto de serviços disponíveis */}
       {showDestinationInput && !destination && suggestions.length === 0 && (
-        <div className="animate-fade-slide mt-1">
-          <div className="mb-2 flex items-center justify-between">
-            <div className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+        <div className="animate-fade-slide mt-1 mb-2">
+          <div className="mb-1.5 flex items-center justify-between">
+            <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-foreground/60">
               Serviços MOVVI
             </div>
-            <div className="text-[10.5px] font-medium text-muted-foreground/70">
+            <div className="text-[10px] font-medium text-foreground/45">
               Escolha o destino para ver valores
             </div>
           </div>
-          <div className="grid grid-cols-5 gap-1.5">
-            {uiCategories.slice(0, 5).map((c) => {
-              const Icon = c.icon;
-              return (
-                <button
-                  key={c.key}
-                  type="button"
-                  onClick={() => searchInputRef.current?.focus()}
-                  className="flex flex-col items-center gap-1.5 rounded-2xl bg-card px-1 py-2.5 ring-1 ring-border/60 opacity-80 transition hover:opacity-100 hover:ring-primary/40 active:scale-[0.97]"
-                >
-                  <span
-                    className="grid h-9 w-9 place-items-center rounded-full"
-                    style={{ backgroundColor: `${c.color}22`, color: c.color }}
+          <div className="-mx-4 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="flex gap-2 min-w-max">
+              {uiCategories.map((c) => {
+                const Icon = c.icon;
+                return (
+                  <button
+                    key={c.key}
+                    type="button"
+                    onClick={() => searchInputRef.current?.focus()}
+                    className="flex w-[68px] shrink-0 flex-col items-center gap-1.5 rounded-xl bg-white/[0.04] px-1.5 py-2 ring-1 ring-white/10 transition hover:bg-white/[0.08] hover:ring-[#8DD92B]/40 active:scale-[0.97]"
                   >
-                    <Icon className="h-4 w-4" strokeWidth={2.2} />
-                  </span>
-                  <span className="truncate text-[10.5px] font-semibold text-foreground">
-                    {c.label}
-                  </span>
-                </button>
-              );
-            })}
+                    <span
+                      className="grid h-8 w-8 place-items-center rounded-full"
+                      style={{ backgroundColor: `${c.color}26`, color: c.color }}
+                    >
+                      <Icon className="h-4 w-4" strokeWidth={2.2} />
+                    </span>
+                    <span className="truncate w-full text-center text-[10.5px] font-semibold text-foreground/90">
+                      {c.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
