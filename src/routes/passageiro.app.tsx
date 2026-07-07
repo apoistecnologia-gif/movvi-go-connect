@@ -2208,7 +2208,7 @@ function PassageiroApp() {
           center={center}
           zoom={stableZoom}
           height="100%"
-          themeOverride={ride && (ride.status === "motorista_a_caminho" || ride.status === "motorista_chegou" || ride.status === "em_viagem") ? "light" : "dark"}
+          themeOverride="dark"
           onLoad={(m) => {
             mapRef.current = m;
             try { m.setOptions({ heading: 0, tilt: 0, disableDefaultUI: true, gestureHandling: "greedy", rotateControl: false, backgroundColor: "#0B1017" }); } catch {}
@@ -2310,7 +2310,7 @@ function PassageiroApp() {
       {/* Overlay para reduzir ênfase do mapa na conclusão da viagem */}
       {phase === "finalizada" && (
         <div
-          className="pointer-events-none absolute inset-0 z-10 backdrop-blur-[6px] bg-[#F7F9F7]/55 animate-in fade-in duration-500"
+          className="pointer-events-none absolute inset-0 z-10 backdrop-blur-[2px] bg-black/45 animate-in fade-in duration-500"
           aria-hidden
         />
       )}
@@ -2768,8 +2768,8 @@ function PassageiroApp() {
         };
 
         return (
-          <MovviSheet snaps={[62, 92]} initial={62}>
-            <div className="pt-1 pb-[calc(env(safe-area-inset-bottom)+8px)] space-y-3">
+          <MovviSheet snaps={[72, 94]} initial={72}>
+            <div className="pt-1 pb-[calc(env(safe-area-inset-bottom)+28px)] space-y-3">
               {/* Success header */}
               <div className="text-center animate-in fade-in slide-in-from-bottom-2 duration-[220ms]">
                 <div className="relative mx-auto flex h-16 w-16 items-center justify-center">
@@ -3305,7 +3305,7 @@ function SheetContent({
             </div>
 
           </div>
-          <div className="-mx-4 overflow-x-auto pl-4 pr-6 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="-mx-4 overflow-x-auto pl-4 pr-8 pb-4 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <div className="flex gap-2 min-w-max">
               {uiCategories.map((c) => {
                 const Icon = c.icon;
@@ -3314,7 +3314,7 @@ function SheetContent({
                     key={c.key}
                     type="button"
                     onClick={() => searchInputRef.current?.focus()}
-                    className="flex w-[62px] shrink-0 flex-col items-center gap-1 rounded-xl bg-white/[0.04] px-1 py-1.5 ring-1 ring-white/10 transition hover:bg-white/[0.08] hover:ring-[#8DD92B]/40 active:scale-[0.97]"
+                    className="snap-start flex w-[62px] shrink-0 flex-col items-center gap-1 rounded-xl bg-white/[0.04] px-1 py-1.5 ring-1 ring-white/10 transition hover:bg-white/[0.08] hover:ring-[#8DD92B]/40 active:scale-[0.97]"
                   >
                     <span
                       className="grid h-7 w-7 place-items-center rounded-full"
@@ -3931,24 +3931,10 @@ function SearchingPanel({
   const cat = RIDE_CATEGORIES.find((c) => c.key === category)!;
   const CatIcon = (cat as unknown as { icon?: LucideIcon }).icon;
 
-  // Rotating status messages — visual only, no backend logic.
-  const messages = noDriversAvailable
-    ? [
-        "Ampliando o raio de busca...",
-        "Verificando novos motoristas...",
-        "Aguarde só mais um instante...",
-      ]
-    : [
-        "Buscando motoristas próximos...",
-        "Verificando disponibilidade...",
-        "Escolhendo o melhor motorista...",
-        "Quase lá, preparando sua viagem...",
-      ];
-  const [msgIdx, setMsgIdx] = useState(0);
-  useEffect(() => {
-    const t = setInterval(() => setMsgIdx((i) => (i + 1) % messages.length), 2600);
-    return () => clearInterval(t);
-  }, [messages.length]);
+  // Mensagem única e legível (evita textos apagados/piscando).
+  const singleMessage = noDriversAvailable
+    ? "Ampliando o raio de busca..."
+    : "Estamos procurando o melhor motorista para você.";
 
   const paymentLabel =
     paymentMethod === "dinheiro"
@@ -4004,16 +3990,13 @@ function SearchingPanel({
       </div>
 
 
-      {/* Rotating status message */}
-      <div className="mb-0.5 flex min-h-[20px] items-center justify-center">
-        <p
-          key={msgIdx}
-          className="animate-in fade-in slide-in-from-bottom-1 duration-[300ms] text-[14px] font-medium text-[#111418]"
-        >
-          {messages[msgIdx]}
+      {/* Status message — legível, sem piscar */}
+      <div className="mb-0.5 flex min-h-[20px] items-center justify-center px-2">
+        <p className="text-center text-[14px] font-semibold text-[#111418]">
+          {singleMessage}
         </p>
       </div>
-      <p className="mb-3 text-center text-[11.5px] text-[#707070]">
+      <p className="mb-3 text-center text-[12px] text-[#4a5158]">
         Costuma levar menos de 30 segundos.
       </p>
 
@@ -4365,7 +4348,7 @@ function QuickCircleAction({
       <span className="grid h-12 w-12 place-items-center rounded-full bg-[#76C139]/12 text-[#4a8a1e] ring-1 ring-[#76C139]/30 transition duration-[220ms] group-active:scale-90 group-hover:bg-[#76C139]/18">
         {icon}
       </span>
-      <span className="text-[11.5px] font-semibold text-[#111418]">{label}</span>
+      <span className="text-[12px] font-bold text-[#111418]">{label}</span>
     </>
   );
   const cls = "group flex flex-col items-center gap-2";
