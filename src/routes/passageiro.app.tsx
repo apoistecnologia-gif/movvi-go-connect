@@ -4055,59 +4055,43 @@ function SearchingPanel({
       : null;
 
   return (
-    <div className="space-y-2.5 pt-0.5 animate-in fade-in duration-[220ms]">
-      {/* Status header — compacto, alinhado com C6 */}
-      <div className="flex items-center gap-2 rounded-2xl bg-white px-2.5 py-2 ring-1 ring-border/60">
-        <span className="relative grid h-6 w-6 shrink-0 place-items-center">
-          <span className="absolute inset-0 rounded-full bg-[#76C139]/25 animate-ping [animation-duration:1.8s]" />
-          <span className="relative h-2 w-2 rounded-full bg-[#76C139]" />
-        </span>
-        <div className="min-w-0 flex-1">
-          <div className="truncate text-[13px] font-semibold leading-tight text-[#111418]">
-            {noDriversAvailable ? "Ampliando busca" : "Buscando motorista"}
-          </div>
-          <div className="mt-0.5 text-[11px] leading-tight text-[#707070]">
-            Motoristas próximos
+    <div className="space-y-3 pt-1 animate-in fade-in duration-[220ms]">
+      {/* HERO — contador de motoristas online, foco visual principal */}
+      <div className="relative overflow-hidden rounded-[22px] bg-gradient-to-br from-[#0F1712] via-[#152016] to-[#0F1712] px-4 py-4 text-white shadow-[0_18px_40px_-24px_rgba(15,23,18,0.55)]">
+        {/* Radar sutil no fundo */}
+        <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 opacity-70">
+          <span className="absolute inset-0 rounded-full bg-[#76C139]/12 animate-ping [animation-duration:2.6s]" />
+          <span className="absolute inset-4 rounded-full bg-[#76C139]/16 animate-ping [animation-duration:2.6s]" style={{ animationDelay: "0.5s" }} />
+          <span className="absolute inset-8 rounded-full bg-[#76C139]/24" />
+        </div>
+        <div className="relative flex items-center gap-3">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[#76C139] text-[#0F1712] shadow-[0_10px_24px_-8px_rgba(118,193,57,0.7)]">
+            {CatIcon ? <CatIcon className="h-5 w-5" strokeWidth={2} /> : <Navigation2 className="h-5 w-5" strokeWidth={2} />}
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-[0.16em] text-[#76C139]">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="absolute inset-0 rounded-full bg-[#76C139] animate-ping [animation-duration:1.6s]" />
+                <span className="relative h-1.5 w-1.5 rounded-full bg-[#76C139]" />
+              </span>
+              {noDriversAvailable ? "Ampliando busca" : "Procurando motorista"}
+            </div>
+            <div className="mt-1 flex items-baseline gap-1.5">
+              <span className="text-[26px] font-bold leading-none tabular-nums text-white">{driversCount}</span>
+              <span className="text-[12px] font-medium text-white/70">
+                {driversCount === 1 ? "motorista online por perto" : "motoristas online por perto"}
+              </span>
+            </div>
           </div>
         </div>
-        <span className="shrink-0 rounded-full bg-[#76C139]/12 px-2 py-0.5 text-[10.5px] font-semibold text-[#5A9A2A] tabular-nums">
-          {driversCount} perto
-        </span>
-      </div>
-
-      {/* Radar — foco visual, mais discreto */}
-      <div className="relative mx-auto grid h-[64px] w-[64px] place-items-center">
-        <span className="absolute inset-0 rounded-full bg-[#76C139]/8 animate-ping [animation-duration:2.4s]" />
-        <span
-          className="absolute inset-2 rounded-full bg-[#76C139]/10 animate-ping [animation-duration:2.4s]"
-          style={{ animationDelay: "0.4s" }}
-        />
-        <span
-          className="absolute inset-4 rounded-full bg-[#76C139]/14 animate-ping [animation-duration:2.4s]"
-          style={{ animationDelay: "0.8s" }}
-        />
-        <span className="relative grid h-8 w-8 place-items-center rounded-full bg-gradient-to-br from-[#8FD24A] to-[#5A9A2A] text-white shadow-[0_8px_20px_-10px_rgba(118,193,57,0.6)]">
-          {CatIcon ? (
-            <CatIcon className="h-4 w-4" strokeWidth={1.75} />
-          ) : (
-            <Navigation2 className="h-4 w-4" strokeWidth={1.75} />
-          )}
-        </span>
-      </div>
-
-      {/* Status message */}
-      <div className="px-1 text-center">
-        <p className="text-[13.5px] font-semibold leading-tight text-[#111418]">
+        <p className="relative mt-3 text-[12px] leading-snug text-white/75">
           {singleMessage}
-        </p>
-        <p className="mt-1 text-[11.5px] text-[#707070]">
-          Costuma levar menos de 30 segundos.
         </p>
       </div>
 
       {/* Resumo compacto — categoria · valor · pagamento */}
       {(cat || fare != null || paymentLabel) && (
-        <div className="flex items-center justify-between gap-2 rounded-2xl bg-white px-2.5 py-2 ring-1 ring-border/60">
+        <div className="flex items-center justify-between gap-2 rounded-2xl bg-white px-3 py-2.5 ring-1 ring-border/60">
           <div className="flex min-w-0 items-center gap-2">
             <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[#76C139]/12 text-[#5A9A2A]">
               {CatIcon ? <CatIcon className="h-3.5 w-3.5" strokeWidth={2} /> : <Navigation2 className="h-3.5 w-3.5" strokeWidth={2} />}
@@ -4131,7 +4115,7 @@ function SearchingPanel({
       {/* Detalhes da corrida — accordion, fechado por padrão */}
       {(pickupLabel || destinationLabel) && (
         <details className="group rounded-2xl bg-white ring-1 ring-border/60">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-2.5 py-2 [&::-webkit-details-marker]:hidden">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2.5 [&::-webkit-details-marker]:hidden">
             <div className="flex items-center gap-2">
               <ListChecks className="h-3.5 w-3.5 text-[#5A9A2A]" strokeWidth={2} />
               <span className="text-[12px] font-semibold text-[#111418]">Detalhes da corrida</span>
