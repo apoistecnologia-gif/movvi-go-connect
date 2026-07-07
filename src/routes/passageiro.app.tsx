@@ -742,7 +742,19 @@ function PassageiroApp() {
   const [passengerUiStage, setPassengerUiStage] = useState<PassengerUiStage>("selecting_destination");
   const [selectedCategoryKey, setSelectedCategoryKey] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<"dinheiro" | "pix" | "cartao_credito">("dinheiro");
-  const uiCategories = useUiCategories();
+  const rawUiCategories = useUiCategories();
+  const enviosMode = Route.useSearch({ select: (s) => s.envios }) as
+    | "enviar"
+    | "receber"
+    | undefined;
+  const uiCategories = useMemo(
+    () =>
+      enviosMode
+        ? rawUiCategories.filter((c) => c.backend === "envios")
+        : rawUiCategories.filter((c) => c.backend !== "envios"),
+    [rawUiCategories, enviosMode],
+  );
+
   const selectedUiCategory = useMemo(
     () => uiCategories.find((c) => c.key === selectedCategoryKey) ?? null,
     [uiCategories, selectedCategoryKey],
