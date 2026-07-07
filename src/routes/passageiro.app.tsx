@@ -91,6 +91,7 @@ import { Briefcase, Heart, Home as HomeIcon, Plus } from "lucide-react";
 
 import type { Database } from "@/integrations/supabase/types";
 import { BrandSplash } from "@/components/BrandSplash";
+import { RideOptionRow } from "@/components/ui-kit";
 
 /** Saudação dinâmica com base no horário local (pt-BR). */
 function getGreeting(): { text: string; icon: LucideIcon } {
