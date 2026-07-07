@@ -1912,17 +1912,31 @@ function PassageiroApp() {
       });
       return;
     }
+    // Otimista: limpa a UI imediatamente para não deixar o usuário
+    // preso na tela de "procurando motorista" caso a rede oscile ou
+    // ele feche o app antes de o servidor responder. Em seguida chamamos
+    // o servidor; se ele responder que já não é possível cancelar
+    // (transição inválida / corrida não encontrada), tratamos como sucesso
+    // (idempotente).
+    const rideIdToCancel = ride.id;
+    const prevStatus = ride.status;
+    resetRide();
     try {
-      await callCancelByPassenger({ data: { rideId: ride.id } });
+      await callCancelByPassenger({ data: { rideId: rideIdToCancel } });
       toast.success("Corrida cancelada");
     } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      const alreadyResolved = /Transição inválida|não encontrada|not found|PGRST116/i.test(msg);
+      if (alreadyResolved) {
+        console.warn("[MOVVI] cancelamento idempotente (estado já resolvido):", prevStatus, msg);
+        toast.success("Corrida cancelada");
+        return;
+      }
       console.error("[MOVVI] cancelarPeloPassageiro falhou:", err);
       toast.error("Não foi possível cancelar agora", {
-        description: err instanceof Error ? err.message : undefined,
+        description: "Tente novamente. Se persistir, contate o suporte.",
       });
-      return;
     }
-    resetRide();
   }
 
   async function handleLogout() {
