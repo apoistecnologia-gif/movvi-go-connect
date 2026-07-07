@@ -72,12 +72,19 @@ export function BottomNav({
       ? "bg-white/95 ring-black/5"
       : "bg-card/95 ring-border";
 
+  const solidBg =
+    theme === "dark"
+      ? "bg-[#0B0F17]/95 border-white/[0.08]"
+      : theme === "light"
+      ? "bg-white/95 border-black/5"
+      : "bg-background/95 border-border";
+
   return (
     <nav
       className={
         floating
           ? "pointer-events-none fixed inset-x-0"
-          : "sticky bottom-0 z-30 border-t border-border bg-background/95 backdrop-blur-md"
+          : `fixed inset-x-0 bottom-0 border-t backdrop-blur-xl ${solidBg}`
       }
       style={
         floating
@@ -87,10 +94,11 @@ export function BottomNav({
               paddingRight: 24,
               zIndex: zIndex ?? 40,
             }
-          : { paddingBottom: "env(safe-area-inset-bottom)" }
+          : { paddingBottom: "env(safe-area-inset-bottom)", zIndex: zIndex ?? 40 }
       }
       aria-label="Navegação principal"
     >
+
       <ul
         className={
           floating
