@@ -3305,7 +3305,7 @@ function SheetContent({
             </div>
 
           </div>
-          <div className="-mx-4 overflow-x-auto pl-4 pr-6 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="-mx-4 overflow-x-auto pl-4 pr-8 pb-4 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <div className="flex gap-2 min-w-max">
               {uiCategories.map((c) => {
                 const Icon = c.icon;
