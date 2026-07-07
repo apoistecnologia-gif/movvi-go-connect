@@ -3009,7 +3009,7 @@ function FavoritesStrip({ onPick }: { onPick: (point: LatLng, label: string) => 
   const navigate = useNavigate();
 
   return (
-    <div className="-mx-1 mb-3 flex items-center gap-2 overflow-x-auto px-1 pb-1">
+    <div className="-mx-1 mb-2 flex items-center gap-1.5 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {items.slice(0, 6).map((f) => {
         const Icon = f.kind === "home" ? HomeIcon : f.kind === "work" ? Briefcase : Heart;
         return (
@@ -3017,21 +3017,20 @@ function FavoritesStrip({ onPick }: { onPick: (point: LatLng, label: string) => 
             key={f.id}
             type="button"
             onClick={() => onPick({ lat: f.lat, lng: f.lng }, f.address)}
-            className="flex shrink-0 items-center gap-2 rounded-full border border-border/60 bg-card px-3 py-1.5 text-[12.5px] font-semibold text-foreground shadow-[0_4px_14px_-10px_rgba(15,23,42,0.2)] transition hover:border-[#76C139]/50 hover:bg-[#76C139]/5 active:scale-[0.97]"
+            className="flex shrink-0 items-center gap-1.5 rounded-full bg-white/[0.05] px-2.5 py-1 text-[11.5px] font-semibold text-foreground/90 ring-1 ring-white/10 transition hover:bg-white/[0.09] hover:ring-[#8DD92B]/40 active:scale-[0.97]"
           >
-            <Icon className="h-3.5 w-3.5 text-[#76C139]" strokeWidth={2} />
-            <span className="max-w-[140px] truncate">{f.label}</span>
+            <Icon className="h-3 w-3 text-[#8DD92B]" strokeWidth={2} />
+            <span className="max-w-[120px] truncate">{f.label}</span>
           </button>
         );
       })}
       <button
         type="button"
         onClick={() => navigate({ to: "/passageiro/favoritos" })}
-        className="flex shrink-0 items-center gap-2 rounded-full border border-dashed border-border/70 px-3 py-1.5 text-[12.5px] font-semibold text-muted-foreground transition hover:border-[#76C139]/50 hover:text-foreground active:scale-[0.97]"
-
+        className="flex shrink-0 items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium text-foreground/55 transition hover:text-[#8DD92B] active:scale-[0.97]"
       >
-        <Heart className="h-3.5 w-3.5" strokeWidth={2} />
-        <span>{items.length === 0 ? "Adicionar favoritos" : "Gerenciar"}</span>
+        <Heart className="h-3 w-3" strokeWidth={2} />
+        <span>{items.length === 0 ? "Adicionar" : "Gerenciar"}</span>
       </button>
     </div>
   );
