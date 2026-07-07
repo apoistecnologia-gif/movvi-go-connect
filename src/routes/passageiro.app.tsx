@@ -2334,7 +2334,7 @@ function PassageiroApp() {
       />
 
       {/* Floating recenter — 56px, glass, MOVVI DS */}
-      <div className="pointer-events-none absolute right-4 z-30" style={{ bottom: "calc(50dvh + 12px)" }}>
+      <div className="pointer-events-none absolute right-4 z-30" style={{ bottom: "calc(58dvh + 16px)" }}>
         <button
           onClick={recenter}
           className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-[#0F141B]/90 text-[#8DD92B] shadow-[0_12px_28px_-14px_rgba(0,0,0,0.7)] backdrop-blur-xl transition active:scale-[0.92] hover:scale-105"
