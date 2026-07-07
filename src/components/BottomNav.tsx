@@ -109,7 +109,13 @@ export function BottomNav({
         {items.map((item) => {
           const active =
             pathname === item.to ||
-            (item.to !== "/" && pathname.startsWith(item.to));
+            (item.to !== "/" && pathname.startsWith(item.to)) ||
+            (item.to === "/passageiro/servicos" &&
+              [
+                "/passageiro/envios",
+                "/passageiro/guincho",
+                "/passageiro/mudancas",
+              ].some((prefix) => pathname.startsWith(prefix)));
           const Icon = item.icon;
 
           const activeCls = active

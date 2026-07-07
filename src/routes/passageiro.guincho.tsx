@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, Check, Truck } from "lucide-react";
 import { useMemo, useState } from "react";
 import { MovviHeader } from "@/components/MovviHeader";
+import { BottomNav, PASSENGER_NAV } from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -77,7 +78,7 @@ function GuinchoFlow() {
   };
 
   return (
-    <div className="min-h-dvh bg-background pb-40">
+    <div className="min-h-dvh bg-background pb-64">
       <MovviHeader />
       <main className="mx-auto w-full max-w-md space-y-4 px-4 pt-4">
         <header className="space-y-1 px-1">
@@ -185,10 +186,12 @@ function GuinchoFlow() {
       </main>
 
       {/* Barra fixa de ação */}
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.08] bg-[#0B0F17]/95 backdrop-blur-xl">
+      <div
+        className="fixed inset-x-0 z-50 border-t border-white/[0.08] bg-[#0B0F17]/95 backdrop-blur-xl"
+        style={{ bottom: "calc(env(safe-area-inset-bottom) + 78px)" }}
+      >
         <div
           className="mx-auto flex w-full max-w-md items-center gap-2 px-4 py-3"
-          style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 12px)" }}
         >
           <Button
             type="button"
@@ -219,6 +222,7 @@ function GuinchoFlow() {
           )}
         </div>
       </div>
+      <BottomNav items={PASSENGER_NAV} floating theme="dark" />
     </div>
   );
 }

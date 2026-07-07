@@ -1,8 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { Bike, Box, Car, Send, Truck } from "lucide-react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { ArrowRight, Bike, Box, Car, Send, Truck, type LucideIcon } from "lucide-react";
 import { MovviHeader } from "@/components/MovviHeader";
 import { BottomNav, PASSENGER_NAV } from "@/components/BottomNav";
-import { ServiceCard, ServicesGrid } from "@/components/ui-kit";
 
 export const Route = createFileRoute("/passageiro/servicos")({
   head: () => ({
@@ -21,62 +20,109 @@ export const Route = createFileRoute("/passageiro/servicos")({
 
 function ServicosPage() {
   return (
-    <div className="min-h-dvh bg-background pb-28">
+    <div className="min-h-dvh bg-background pb-32">
       <MovviHeader />
-      <main className="mx-auto w-full max-w-md space-y-6 px-4 pt-4">
+      <main className="mx-auto w-full max-w-md space-y-5 px-4 pt-4">
         <header className="space-y-1 px-1">
           <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
             Serviços MOVVI
           </h1>
           <p className="text-[13px] text-muted-foreground">
-            Corridas para pessoas, entregas de itens e serviços especiais —
-            cada um com o fluxo certo.
+            Escolha o tipo de atendimento. Corridas comuns continuam separadas
+            dos fluxos de Envios, Guincho e Mudanças.
           </p>
         </header>
 
-        {/* A. Corridas — transporte de passageiros */}
-        <ServicesGrid title="Corridas">
-          <ServiceCard
+        <section className="space-y-3">
+          <h2 className="px-1 text-[12px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+            Corridas de passageiros
+          </h2>
+          <ServiceFlowCard
             icon={Car}
-            title="Carros"
-            description="Viagens urbanas com conforto."
+            title="Carros e Motos"
+            description="Escolha apenas o destino. As categorias de transporte aparecem depois do trajeto calculado."
+            action="Buscar destino"
             to="/passageiro/app"
           />
-          <ServiceCard
-            icon={Bike}
-            title="Motos"
-            description="Ágil no trânsito, preço menor."
-            to="/passageiro/app"
-          />
-        </ServicesGrid>
+        </section>
 
-        {/* B. Entregas */}
-        <ServicesGrid title="Entregas">
-          <ServiceCard
+        <section className="space-y-3">
+          <h2 className="px-1 text-[12px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+            Entregas
+          </h2>
+          <ServiceFlowCard
             icon={Send}
             title="MOVVI Envios"
-            description="Enviar ou receber documentos e pequenos volumes."
+            description="Fluxo próprio para escolher Enviar ou Receber, informar retirada e entrega."
+            action="Abrir Envios"
             to="/passageiro/envios"
           />
-        </ServicesGrid>
+        </section>
 
-        {/* C. Serviços especiais — cada um com fluxo próprio */}
-        <ServicesGrid title="Serviços especiais">
-          <ServiceCard
+        <section className="space-y-3">
+          <h2 className="px-1 text-[12px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+            Serviços especiais
+          </h2>
+          <ServiceFlowCard
             icon={Truck}
             title="MOVVI Guincho"
-            description="Remoção e transporte de veículos com questionário guiado."
+            description="Questionário de veículo e situação antes de confirmar o atendimento no mapa."
+            action="Solicitar Guincho"
             to="/passageiro/guincho"
           />
-          <ServiceCard
+          <ServiceFlowCard
             icon={Box}
-            title="MOVVI Mudanças"
-            description="Mudanças, fretes grandes e cargas volumosas."
+            title="Mudanças / Fretes Grandes"
+            description="Questionário de carga, retirada e entrega para volumes maiores."
+            action="Solicitar Mudança"
             to="/passageiro/mudancas"
           />
-        </ServicesGrid>
+        </section>
       </main>
-      <BottomNav items={PASSENGER_NAV} theme="dark" />
+      <BottomNav items={PASSENGER_NAV} floating theme="dark" />
     </div>
+  );
+}
+
+type ServiceRoute =
+  | "/passageiro/app"
+  | "/passageiro/envios"
+  | "/passageiro/guincho"
+  | "/passageiro/mudancas";
+
+function ServiceFlowCard({
+  icon: Icon,
+  title,
+  description,
+  action,
+  to,
+}: {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+  action: string;
+  to: ServiceRoute;
+}) {
+  return (
+    <Link
+      to={to}
+      className="group flex items-center gap-3 rounded-2xl border border-border bg-card p-4 text-left shadow-[0_14px_34px_-24px_rgba(0,0,0,0.75)] transition active:scale-[0.98]"
+    >
+      <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary/15 text-primary transition group-hover:bg-primary/25">
+        <Icon className="h-5 w-5" strokeWidth={2} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[16px] font-bold leading-tight text-foreground">
+          {title}
+        </span>
+        <span className="mt-1 block text-[12.5px] leading-snug text-muted-foreground">
+          {description}
+        </span>
+        <span className="mt-3 inline-flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-[0.12em] text-primary">
+          {action}
+          <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" strokeWidth={2.4} />
+        </span>
+      </span>
+    </Link>
   );
 }
