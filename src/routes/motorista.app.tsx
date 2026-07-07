@@ -1835,6 +1835,15 @@ function ActiveRidePanel({
             Cheguei ao local
           </DSButton>
 
+          <button
+            type="button"
+            onClick={() => { setCancelReason("Não consigo atender esta corrida"); setCancelOpen(true); }}
+            className="press-scale flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-destructive/10 px-4 py-3 text-[13px] font-bold uppercase tracking-[0.12em] text-destructive ring-1 ring-destructive/25 transition hover:bg-destructive/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/50"
+          >
+            <AlertTriangle className="h-4 w-4" strokeWidth={2} />
+            Cancelar corrida
+          </button>
+
           {/* Secondary circular actions — Call · Chat · Navigate */}
           <div className="mt-1 flex items-center justify-center gap-6">
             <CircleAction
