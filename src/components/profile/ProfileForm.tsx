@@ -10,11 +10,22 @@ import { supabase } from "@/integrations/supabase/client";
 import { MovviHeader } from "@/components/MovviHeader";
 import { BottomNav, PASSENGER_NAV, DRIVER_NAV } from "@/components/BottomNav";
 import { ProfilePhotoUploader } from "@/components/ProfilePhotoUploader";
+import { refreshProfilePhotoUrl } from "@/lib/profilePhoto";
 import {
   Loader2, Save, Lock, MailCheck, PhoneCall, ShieldAlert, Trash2, BadgeCheck, X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { DSButton, DSCard, DSCardContent, DSCardDescription, DSCardHeader, DSCardTitle, DSInput, DSLabel } from "@/design-system";
+
+/**
+ * Storage-path vs URL: novos uploads persistem apenas o `path` no banco.
+ * Registros antigos podem conter uma URL absoluta (http...) — usamos como está.
+ */
+async function resolveStoredPhoto(value: string | null | undefined): Promise<string | null> {
+  if (!value) return null;
+  if (/^https?:\/\//i.test(value)) return value;
+  return (await refreshProfilePhotoUrl(value)) ?? null;
+}
 
 /* ---------- Validation helpers ---------- */
 const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -93,7 +104,7 @@ export function ProfileForm({
         emergencyPhone: profile?.emergency_contact_phone ?? "",
         city: profile?.city ?? "",
       };
-      setPhotoUrl(profile?.avatar_url ?? null);
+      setPhotoUrl(await resolveStoredPhoto(profile?.avatar_url));
       setFullName(snap.fullName);
       setPhone(snap.phone);
       setCpf(snap.cpf);
@@ -189,14 +200,15 @@ export function ProfileForm({
 
   async function handlePhotoUploaded(result: { signedUrl: string; path: string }) {
     if (!userId) return;
+    // Preview imediato usa a signed URL curta; no banco persistimos apenas o path.
     setPhotoUrl(result.signedUrl);
     try {
-      const { error } = await supabase.from("users").update({ avatar_url: result.signedUrl }).eq("auth_user_id", userId);
+      const { error } = await supabase.from("users").update({ avatar_url: result.path }).eq("auth_user_id", userId);
       if (error) throw error;
       if (role === "driver") {
-        await supabase.from("drivers").update({ photo_url: result.signedUrl }).eq("user_id", userId);
+        await supabase.from("drivers").update({ photo_url: result.path }).eq("user_id", userId);
       }
-      await supabase.auth.updateUser({ data: { avatar_url: result.signedUrl } });
+      await supabase.auth.updateUser({ data: { avatar_url: result.path } });
       toast.success("Foto atualizada!");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Falha ao salvar a foto.");

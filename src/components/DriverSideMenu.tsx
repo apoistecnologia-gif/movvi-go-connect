@@ -27,7 +27,14 @@ import {
 } from "@/components/ui/sheet";
 import { ProfilePhotoUploader } from "@/components/ProfilePhotoUploader";
 import { supabase } from "@/integrations/supabase/client";
+import { refreshProfilePhotoUrl } from "@/lib/profilePhoto";
 import { DSButton, DSInput, DSLabel } from "@/design-system";
+
+async function resolveStoredPhoto(value: string | null | undefined): Promise<string | null> {
+  if (!value) return null;
+  if (/^https?:\/\//i.test(value)) return value;
+  return (await refreshProfilePhotoUrl(value)) ?? null;
+}
 
 type Props = {
   open: boolean;
@@ -85,7 +92,7 @@ export function DriverSideMenu({ open, onOpenChange, onLogout }: Props) {
         .eq("user_id", u.id)
         .maybeSingle();
       if (drv) {
-        setPhotoUrl(drv.photo_url ?? null);
+        setPhotoUrl(await resolveStoredPhoto(drv.photo_url));
         if (!meta.full_name && !meta.name && drv.name) setName(drv.name);
         if (!meta.phone && drv.phone) setPhone(drv.phone);
       }
@@ -140,12 +147,13 @@ export function DriverSideMenu({ open, onOpenChange, onLogout }: Props) {
 
   async function handlePhotoUploaded(result: { signedUrl: string; path: string }) {
     if (!userId) return;
+    // Preview imediato com a signed URL curta; no banco persistimos apenas o path.
     setPhotoUrl(result.signedUrl);
     try {
       await Promise.all([
-        supabase.from("users").update({ avatar_url: result.signedUrl }).eq("auth_user_id", userId),
-        supabase.from("drivers").update({ photo_url: result.signedUrl }).eq("user_id", userId),
-        supabase.auth.updateUser({ data: { avatar_url: result.signedUrl } }),
+        supabase.from("users").update({ avatar_url: result.path }).eq("auth_user_id", userId),
+        supabase.from("drivers").update({ photo_url: result.path }).eq("user_id", userId),
+        supabase.auth.updateUser({ data: { avatar_url: result.path } }),
       ]);
       setMsg({ kind: "ok", text: "Foto de perfil atualizada!" });
     } catch (err) {
