@@ -1317,7 +1317,7 @@ function IdleBottomPanel({
             </span>
             {online ? "ONLINE" : "OFFLINE"}
           </div>
-          <span className="text-[13px] font-medium text-muted-foreground">
+          <span className="text-[13px] font-semibold text-foreground/85">
             {online ? "Recebendo solicitações" : "Toque para ativar"}
           </span>
         </div>
