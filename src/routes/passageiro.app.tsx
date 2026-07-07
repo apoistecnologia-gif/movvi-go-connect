@@ -611,6 +611,14 @@ type PassengerUiStage =
   | "selecting_category"
   | "searching_driver";
 
+type PassengerVisualStep =
+  | "destination"
+  | "route_preview"
+  | "category"
+  | "searching"
+  | "assigned"
+  | "finished";
+
 function PassageiroApp() {
   const navigate = useNavigate();
   const callComputeRoute = useServerFn(computeRoute);
@@ -1937,6 +1945,18 @@ function PassageiroApp() {
 
 
   const phase = ride?.status;
+  const passengerVisualStep: PassengerVisualStep =
+    phase === "finalizada"
+      ? "finished"
+      : ride && phase === "procurar_motorista"
+        ? "searching"
+        : ride && (phase === "motorista_a_caminho" || phase === "motorista_chegou" || phase === "em_viagem")
+          ? "assigned"
+          : passengerUiStage === "selecting_category" && destination && route
+            ? "category"
+            : passengerUiStage === "route_preview" && destination
+              ? "route_preview"
+              : "destination";
 
   const rideDriverInfo = useMemo<DriverRow | null>(() => {
     // Snapshot do motorista gravado na corrida tem prioridade — é o que garante
@@ -2324,9 +2344,9 @@ function PassageiroApp() {
       </div>
 
       {/* BOTTOM SHEET — novo, próprio do MOVVI */}
-      {!ride && passengerUiStage !== "searching_driver" && (() => {
-        const categoryStage = passengerUiStage === "selecting_category";
-        const routeStage = passengerUiStage === "route_preview";
+      {(passengerVisualStep === "destination" || passengerVisualStep === "route_preview" || passengerVisualStep === "category") && (() => {
+        const categoryStage = passengerVisualStep === "category";
+        const routeStage = passengerVisualStep === "route_preview";
         const snaps = categoryStage ? [58, 76, 92] : routeStage ? [38, 58, 84] : [52, 74, 92];
         const initial = categoryStage ? 76 : routeStage ? 44 : 55;
 
@@ -2428,7 +2448,7 @@ function PassageiroApp() {
       )}
 
 
-      {ride && ride.status === "procurar_motorista" && (
+      {ride && passengerVisualStep === "searching" && (
         <MovviSheet
           snaps={[42, 62, 88]}
           initial={42}
@@ -2449,7 +2469,7 @@ function PassageiroApp() {
 
 
 
-      {(DEV_MODE || isDevelopmentEnvironment()) && ride && ride.status === "procurar_motorista" && dispatchDiag && (
+      {(DEV_MODE || isDevelopmentEnvironment()) && ride && passengerVisualStep === "searching" && dispatchDiag && (
         <div className="pointer-events-auto absolute left-2 top-20 z-50 max-w-[280px] rounded-lg bg-black/85 p-2 font-mono text-[10px] text-white ring-1 ring-white/20">
           <div className="mb-1 font-bold text-primary">[DEV] DISPATCH</div>
           <div>category: {dispatchDiag.ride?.category}</div>
@@ -2475,7 +2495,7 @@ function PassageiroApp() {
 
       {/* PIN de segurança exibido no bottom sheet (DriverEnRoute). */}
 
-      {ride && rideDriverInfo && phase === "motorista_chegou" && (
+      {ride && rideDriverInfo && passengerVisualStep === "assigned" && phase === "motorista_chegou" && (
         <div
           className="pointer-events-none absolute inset-x-0 z-40 flex justify-center px-3"
           style={{ top: "calc(env(safe-area-inset-top) + 16px)" }}
@@ -2499,6 +2519,7 @@ function PassageiroApp() {
 
       {ride &&
         rideDriverInfo &&
+        passengerVisualStep === "assigned" &&
         phase === "motorista_a_caminho" &&
         (() => {
           const dLat = rideDriverInfo.current_lat as number | null | undefined;
@@ -2589,7 +2610,7 @@ function PassageiroApp() {
         })()}
 
       {/* Trip in Progress — top floating navigation card + SOS */}
-      {ride && rideDriverInfo && phase === "em_viagem" && (() => {
+      {ride && rideDriverInfo && passengerVisualStep === "assigned" && phase === "em_viagem" && (() => {
         const remainingMin =
           ride.duration_min != null
             ? Math.max(1, Math.round(Number(ride.duration_min)))
@@ -2678,6 +2699,7 @@ function PassageiroApp() {
 
       {ride &&
         rideDriverInfo &&
+        passengerVisualStep === "assigned" &&
         (phase === "motorista_a_caminho" ||
           phase === "motorista_chegou" ||
           phase === "em_viagem") && (
@@ -2695,7 +2717,7 @@ function PassageiroApp() {
         )}
 
 
-      {ride && phase === "finalizada" && (() => {
+      {ride && passengerVisualStep === "finished" && phase === "finalizada" && (() => {
         const rated = !!ride.passenger_rated_at;
         const pickupLabel =
           (ride as any).pickup_address ??
