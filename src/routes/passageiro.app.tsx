@@ -3360,15 +3360,15 @@ function SheetContent({
       {/* Categorias — preview compacto de serviços disponíveis */}
       {showDestinationInput && !destination && suggestions.length === 0 && (
         <div className="animate-fade-slide mt-1 mb-1">
-          <div className="mb-1.5 flex items-center justify-between gap-2">
-            <div className="shrink-0 text-[10px] font-bold uppercase tracking-[0.12em] text-foreground/70">
-              Serviços
+          <div className="mb-2 flex items-baseline justify-between gap-2">
+            <div className="shrink-0 text-[12px] font-semibold tracking-tight text-foreground">
+              Serviços disponíveis
             </div>
-            <div className="min-w-0 truncate text-[10.5px] font-medium text-foreground/60">
+            <div className="min-w-0 truncate text-[11px] font-normal text-muted-foreground">
               Escolha o destino para ver valores
             </div>
-
           </div>
+
           <div className="-mx-4 overflow-x-auto pl-4 pr-8 pb-4 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <div className="flex gap-2 min-w-max">
               {uiCategories.map((c) => {
