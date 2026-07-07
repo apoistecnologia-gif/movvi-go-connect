@@ -2334,13 +2334,13 @@ function PassageiroApp() {
       />
 
       {/* Floating recenter — 56px, glass, MOVVI DS */}
-      <div className="pointer-events-none absolute right-4 z-30" style={{ bottom: "calc(24vh + 16px)" }}>
+      <div className="pointer-events-none absolute right-4 z-30" style={{ bottom: "calc(50dvh + 12px)" }}>
         <button
           onClick={recenter}
-          className="pointer-events-auto flex h-14 w-14 items-center justify-center rounded-full border border-border/60 bg-card/90 text-[#76C139] shadow-[0_12px_28px_-14px_rgba(15,23,42,0.35)] backdrop-blur-xl transition active:scale-[0.92] hover:scale-105"
+          className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-[#0F141B]/90 text-[#8DD92B] shadow-[0_12px_28px_-14px_rgba(0,0,0,0.7)] backdrop-blur-xl transition active:scale-[0.92] hover:scale-105"
           aria-label="Recentralizar"
         >
-          <Crosshair className="h-[22px] w-[22px]" strokeWidth={2} />
+          <Crosshair className="h-[20px] w-[20px]" strokeWidth={2} />
         </button>
       </div>
 
@@ -2348,8 +2348,8 @@ function PassageiroApp() {
       {(passengerVisualStep === "destination" || passengerVisualStep === "route_preview" || passengerVisualStep === "category") && (() => {
         const categoryStage = passengerVisualStep === "category";
         const routeStage = passengerVisualStep === "route_preview";
-        const snaps = categoryStage ? [58, 76, 92] : routeStage ? [38, 58, 84] : [40, 62, 92];
-        const initial = categoryStage ? 76 : routeStage ? 44 : 42;
+        const snaps = categoryStage ? [58, 76, 92] : routeStage ? [42, 62, 88] : [48, 68, 92];
+        const initial = categoryStage ? 76 : routeStage ? 48 : 48;
 
         return (
         <MovviSheet ref={sheetRef} key={categoryStage ? "category" : routeStage ? "route" : "destination"} snaps={snaps} initial={initial}>
