@@ -1,6 +1,6 @@
 /**
  * Smoke test do fluxo de avaliação.
- * Executar:  bun test src/lib/ratingFlow.test.ts
+ * Executar:  bun test src/__tests__/ratingFlow.test.ts
  */
 import { describe, it, expect, mock } from "bun:test";
 import { canSubmitRating, shouldShowRating, type MinimalRide } from "./ratingFlow";
