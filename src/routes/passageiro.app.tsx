@@ -3274,7 +3274,7 @@ function SheetContent({
   const showDestinationInput = !destination || uiStage === "selecting_destination";
 
   return (
-    <div className="pt-1">
+    <div className="pt-1 pb-[calc(env(safe-area-inset-bottom)+72px)]">
       {/* Pickup pill — compacto, no topo, apenas rua e status */}
       {gpsFailed ? (
         <div className="mb-2.5 flex w-full items-start gap-2.5 rounded-2xl bg-destructive/10 px-3 py-2.5 ring-1 ring-destructive/40">
