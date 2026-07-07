@@ -17,6 +17,7 @@ import { Route as TTokenRouteImport } from './routes/t.$token'
 import { Route as PassageiroTermosRouteImport } from './routes/passageiro.termos'
 import { Route as PassageiroSuporteRouteImport } from './routes/passageiro.suporte'
 import { Route as PassageiroSobreRouteImport } from './routes/passageiro.sobre'
+import { Route as PassageiroServicosRouteImport } from './routes/passageiro.servicos'
 import { Route as PassageiroSegurancaRouteImport } from './routes/passageiro.seguranca'
 import { Route as PassageiroPrivacidadeRouteImport } from './routes/passageiro.privacidade'
 import { Route as PassageiroPreferenciasNotificacoesRouteImport } from './routes/passageiro.preferencias-notificacoes'
@@ -114,6 +115,11 @@ const PassageiroSuporteRoute = PassageiroSuporteRouteImport.update({
 const PassageiroSobreRoute = PassageiroSobreRouteImport.update({
   id: '/passageiro/sobre',
   path: '/passageiro/sobre',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PassageiroServicosRoute = PassageiroServicosRouteImport.update({
+  id: '/passageiro/servicos',
+  path: '/passageiro/servicos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PassageiroSegurancaRoute = PassageiroSegurancaRouteImport.update({
@@ -471,6 +477,7 @@ export interface FileRoutesByFullPath {
   '/passageiro/preferencias-notificacoes': typeof PassageiroPreferenciasNotificacoesRoute
   '/passageiro/privacidade': typeof PassageiroPrivacidadeRoute
   '/passageiro/seguranca': typeof PassageiroSegurancaRoute
+  '/passageiro/servicos': typeof PassageiroServicosRoute
   '/passageiro/sobre': typeof PassageiroSobreRoute
   '/passageiro/suporte': typeof PassageiroSuporteRoute
   '/passageiro/termos': typeof PassageiroTermosRoute
@@ -539,6 +546,7 @@ export interface FileRoutesByTo {
   '/passageiro/preferencias-notificacoes': typeof PassageiroPreferenciasNotificacoesRoute
   '/passageiro/privacidade': typeof PassageiroPrivacidadeRoute
   '/passageiro/seguranca': typeof PassageiroSegurancaRoute
+  '/passageiro/servicos': typeof PassageiroServicosRoute
   '/passageiro/sobre': typeof PassageiroSobreRoute
   '/passageiro/suporte': typeof PassageiroSuporteRoute
   '/passageiro/termos': typeof PassageiroTermosRoute
@@ -608,6 +616,7 @@ export interface FileRoutesById {
   '/passageiro/preferencias-notificacoes': typeof PassageiroPreferenciasNotificacoesRoute
   '/passageiro/privacidade': typeof PassageiroPrivacidadeRoute
   '/passageiro/seguranca': typeof PassageiroSegurancaRoute
+  '/passageiro/servicos': typeof PassageiroServicosRoute
   '/passageiro/sobre': typeof PassageiroSobreRoute
   '/passageiro/suporte': typeof PassageiroSuporteRoute
   '/passageiro/termos': typeof PassageiroTermosRoute
@@ -678,6 +687,7 @@ export interface FileRouteTypes {
     | '/passageiro/preferencias-notificacoes'
     | '/passageiro/privacidade'
     | '/passageiro/seguranca'
+    | '/passageiro/servicos'
     | '/passageiro/sobre'
     | '/passageiro/suporte'
     | '/passageiro/termos'
@@ -746,6 +756,7 @@ export interface FileRouteTypes {
     | '/passageiro/preferencias-notificacoes'
     | '/passageiro/privacidade'
     | '/passageiro/seguranca'
+    | '/passageiro/servicos'
     | '/passageiro/sobre'
     | '/passageiro/suporte'
     | '/passageiro/termos'
@@ -814,6 +825,7 @@ export interface FileRouteTypes {
     | '/passageiro/preferencias-notificacoes'
     | '/passageiro/privacidade'
     | '/passageiro/seguranca'
+    | '/passageiro/servicos'
     | '/passageiro/sobre'
     | '/passageiro/suporte'
     | '/passageiro/termos'
@@ -883,6 +895,7 @@ export interface RootRouteChildren {
   PassageiroPreferenciasNotificacoesRoute: typeof PassageiroPreferenciasNotificacoesRoute
   PassageiroPrivacidadeRoute: typeof PassageiroPrivacidadeRoute
   PassageiroSegurancaRoute: typeof PassageiroSegurancaRoute
+  PassageiroServicosRoute: typeof PassageiroServicosRoute
   PassageiroSobreRoute: typeof PassageiroSobreRoute
   PassageiroSuporteRoute: typeof PassageiroSuporteRoute
   PassageiroTermosRoute: typeof PassageiroTermosRoute
@@ -947,6 +960,13 @@ declare module '@tanstack/react-router' {
       path: '/passageiro/sobre'
       fullPath: '/passageiro/sobre'
       preLoaderRoute: typeof PassageiroSobreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/passageiro/servicos': {
+      id: '/passageiro/servicos'
+      path: '/passageiro/servicos'
+      fullPath: '/passageiro/servicos'
+      preLoaderRoute: typeof PassageiroServicosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/passageiro/seguranca': {
@@ -1431,6 +1451,7 @@ const rootRouteChildren: RootRouteChildren = {
     PassageiroPreferenciasNotificacoesRoute,
   PassageiroPrivacidadeRoute: PassageiroPrivacidadeRoute,
   PassageiroSegurancaRoute: PassageiroSegurancaRoute,
+  PassageiroServicosRoute: PassageiroServicosRoute,
   PassageiroSobreRoute: PassageiroSobreRoute,
   PassageiroSuporteRoute: PassageiroSuporteRoute,
   PassageiroTermosRoute: PassageiroTermosRoute,
