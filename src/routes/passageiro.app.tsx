@@ -3100,28 +3100,19 @@ function PassageiroApp() {
       />
 
       {/*
-        Bottom navigation — fixo no rodapé (safe-area + 12px), com 24px de
-        margem lateral. Visível apenas no home (estado "destination") e
-        oculto automaticamente quando o sheet cobre a área do nav ou durante
-        preview de rota / seleção de categoria / corrida ativa, para nunca
-        cobrir CTA, ficha do motorista ou PIN.
+        Bottom navigation — barra sólida fixa no rodapé (safe-area).
+        Visível apenas no home (estado "destination"); oculta durante
+        preview de rota, seleção de categoria ou corrida ativa, para
+        nunca competir com o CTA principal ou a ficha do motorista.
       */}
       {!ride && passengerVisualStep === "destination" && (
-        <div
-          className="pointer-events-auto transition-opacity duration-[220ms]"
-          style={{
-            opacity: sheetSnap > 34 ? 0 : 1,
-            pointerEvents: sheetSnap > 34 ? "none" : "auto",
-          }}
-        >
-          <BottomNav
-            items={PASSENGER_NAV}
-            floating
-            theme="dark"
-            zIndex={25}
-          />
-        </div>
+        <BottomNav
+          items={PASSENGER_NAV}
+          theme="dark"
+          zIndex={25}
+        />
       )}
+
     </div>
   );
 }
