@@ -775,6 +775,7 @@ function PassageiroApp() {
   const debounceRef = useRef<number | null>(null);
   const sheetRef = useRef<MovviSheetHandle | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
+  const [sheetSnap, setSheetSnap] = useState<number>(42);
 
   const drivers = useNearbyDrivers({ category });
 
@@ -2457,7 +2458,7 @@ function PassageiroApp() {
 
 
         return (
-        <MovviSheet ref={sheetRef} key={categoryStage ? "category" : routeStage ? "route" : "destination"} snaps={snaps} initial={initial}>
+        <MovviSheet ref={sheetRef} key={categoryStage ? "category" : routeStage ? "route" : "destination"} snaps={snaps} initial={initial} onSnapChange={setSheetSnap}>
           <SheetContent
             geo={geo}
             addressStatus={addressStatus}
@@ -3097,15 +3098,23 @@ function PassageiroApp() {
         driverUserId={ride?.driver_id ?? rideDriverInfo?.user_id ?? null}
       />
 
-      {/* Bottom navigation — visível apenas no home ocioso; sobe acima do sheet (~42dvh). */}
+      {/* Bottom navigation — visível apenas no home ocioso; some quando o sheet passa de ~50dvh. */}
       {!ride && passengerVisualStep === "destination" && (
-        <BottomNav
-          items={PASSENGER_NAV}
-          floating
-          theme="dark"
-          zIndex={50}
-          bottomOffset="42dvh"
-        />
+        <div
+          className="pointer-events-auto transition-opacity duration-[220ms]"
+          style={{
+            opacity: sheetSnap > 50 ? 0 : 1,
+            pointerEvents: sheetSnap > 50 ? "none" : "auto",
+          }}
+        >
+          <BottomNav
+            items={PASSENGER_NAV}
+            floating
+            theme="dark"
+            zIndex={50}
+            bottomOffset="42dvh"
+          />
+        </div>
       )}
     </div>
   );
