@@ -590,10 +590,12 @@ type UiCategory = {
 // UI_CATEGORIES agora vem do banco em realtime via `useUiCategories()` (lib/uiCategories.tsx).
 
 /**
- * Categoria "envios" (Entrega) NÃO aparece no fluxo normal de corrida.
- * Ela só é exibida quando o passageiro entrou pelo fluxo dedicado MOVVI
- * Envios (`/passageiro/envios/*`), que navega para `/passageiro/app` com
- * `?envios=enviar|receber`. Neste modo, a lista contém apenas Entrega.
+ * Categorias "especiais" (envios, guincho, fretes/mudança) NÃO aparecem no
+ * fluxo normal de corrida. Elas só aparecem quando o passageiro entrou pelo
+ * fluxo dedicado correspondente:
+ *  - `/passageiro/envios/*` → `?envios=enviar|receber` → só "Entrega"
+ *  - `/passageiro/guincho`  → `?service=guincho`      → só "Guincho"
+ *  - `/passageiro/mudancas` → `?service=mudanca`      → só "Mudança/Fretes"
  */
 function useFlowCategories() {
   const all = useUiCategories();
@@ -601,14 +603,20 @@ function useFlowCategories() {
     | "enviar"
     | "receber"
     | undefined;
-  return useMemo(
-    () =>
-      envios
-        ? all.filter((c) => c.backend === "envios")
-        : all.filter((c) => c.backend !== "envios"),
-    [all, envios],
-  );
+  const service = Route.useSearch({ select: (s) => s.service }) as
+    | "guincho"
+    | "mudanca"
+    | undefined;
+  return useMemo(() => {
+    if (envios) return all.filter((c) => c.backend === "envios");
+    if (service === "guincho") return all.filter((c) => c.backend === "guincho");
+    if (service === "mudanca") return all.filter((c) => c.backend === "fretes");
+    return all.filter(
+      (c) => c.backend !== "envios" && c.backend !== "guincho" && c.backend !== "fretes",
+    );
+  }, [all, envios, service]);
 }
+
 
 
 const fmtMin = (s: number) => `${Math.max(1, Math.round(s / 60))} min`;
