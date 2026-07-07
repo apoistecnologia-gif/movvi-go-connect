@@ -47,6 +47,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { PassengerSideMenu } from "@/components/PassengerSideMenu";
+import { BottomNav, PASSENGER_NAV } from "@/components/BottomNav";
 import { MovviMap } from "@/components/MovviMap";
 import { useDriverProximityAlerts } from "@/hooks/useDriverProximityAlerts";
 import { MovviSheet, type MovviSheetHandle } from "@/components/MovviSheet";
