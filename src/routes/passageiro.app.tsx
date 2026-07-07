@@ -2294,8 +2294,9 @@ function PassageiroApp() {
             <SearchRadiusCircle center={position} />
           )}
 
-          {(!ride || ride.status === "procurar_motorista") &&
-            drivers.map((d) => (
+          {drivers
+            .filter((d) => !ride?.driver_id || d.user_id !== ride.driver_id)
+            .map((d) => (
               <NearbyDriverMarker
                 key={d.user_id}
                 position={{ lat: d.current_lat, lng: d.current_lng }}
