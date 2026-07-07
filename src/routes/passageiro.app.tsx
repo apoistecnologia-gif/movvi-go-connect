@@ -902,6 +902,31 @@ function PassageiroApp() {
           .limit(1)
           .maybeSingle();
         if (cancelled || error || !data) return;
+
+        // Se a corrida ainda está em "procurar_motorista" mas a janela de
+        // oferta já expirou há bastante tempo E nenhum motorista aceitou,
+        // ela é lixo (usuário fechou o app sem cancelar). Auto-cancela
+        // silenciosamente em vez de voltar a mostrar "procurando motorista".
+        if (data.status === "procurar_motorista" && !data.driver_id) {
+          const expiresAt = data.request_expires_at
+            ? new Date(data.request_expires_at as string).getTime()
+            : 0;
+          const ageMs = Date.now() - new Date(data.created_at as string).getTime();
+          const STALE_MS = 3 * 60 * 1000; // 3 min
+          const isStale = ageMs > STALE_MS && (!expiresAt || expiresAt < Date.now());
+          if (isStale) {
+            if (import.meta.env.DEV) {
+              console.log("[MOVVI PASSAGEIRO] auto-cancelando corrida órfã:", data.id, "idade(ms)=", ageMs);
+            }
+            try {
+              await callCancelByPassenger({ data: { rideId: data.id } });
+            } catch (e) {
+              if (import.meta.env.DEV) console.warn("[MOVVI PASSAGEIRO] falha auto-cancel:", e);
+            }
+            return;
+          }
+        }
+
         setRide((prev) => (prev && prev.id === data.id ? { ...prev, ...data } : data));
         setRideId((prev) => prev ?? data.id);
         if (import.meta.env.DEV) {
@@ -926,7 +951,7 @@ function PassageiroApp() {
       window.removeEventListener("focus", onFocus);
       window.removeEventListener("online", onOnline);
     };
-  }, [userId]);
+  }, [userId, callCancelByPassenger]);
 
 
 
