@@ -2100,12 +2100,13 @@ function PassageiroApp() {
     autoFollowRef.current = false;
     const bounds = new google.maps.LatLngBounds();
     bounds.extend(a); bounds.extend(b);
-    // Na busca de motorista o sheet ocupa ~44vh e mostramos a rota inteira,
-    // por isso o bottom padding precisa ser generoso (>= 360px) e o zoom
-    // NÃO deve estourar em cima do pickup.
+    // Sheet compact ocupa ~48vh no fluxo assigned (motorista a caminho / em viagem)
+    // e ~44vh na busca. Padding inferior precisa manter rota/motorista visíveis
+    // acima do sheet, sem esconder atrás da barra do sistema.
     const bottomPad = ride.status === "procurar_motorista"
-      ? Math.max(280, Math.round(window.innerHeight * 0.42))
-      : Math.round(window.innerHeight * 0.34) + 16;
+      ? Math.max(280, Math.round(window.innerHeight * 0.46))
+      : Math.round(window.innerHeight * 0.52) + 16;
+
     mapRef.current.fitBounds(bounds, {
       top: 130,
       bottom: bottomPad,
