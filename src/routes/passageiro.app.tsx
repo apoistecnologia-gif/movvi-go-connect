@@ -3299,7 +3299,7 @@ function SheetContent({
               Serviços MOVVI
             </div>
             <div className="text-[10.5px] font-medium text-muted-foreground/70">
-              Informe o destino
+              Escolha o destino para ver valores
             </div>
           </div>
           <div className="grid grid-cols-5 gap-1.5">
