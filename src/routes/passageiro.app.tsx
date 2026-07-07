@@ -3773,7 +3773,7 @@ function ConfirmRideCompact({
               <button
                 key={c.key}
                 type="button"
-                onClick={() => setSelectedCategoryKey(c.key)}
+                onClick={() => { if (!active) haptic("select"); setSelectedCategoryKey(c.key); }}
                 aria-pressed={active}
                 className={`flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition-all active:scale-[0.99] ${
                   active
