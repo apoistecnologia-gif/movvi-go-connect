@@ -3925,7 +3925,7 @@ function ConfirmRideCompact({
           </div>
           <RequestRideButton
             busy={busy}
-            categoryLabel={isEnvios ? "Envios" : selectedCategory.label}
+            categoryLabel={isEnvios ? "Envios" : isGuincho ? "Guincho" : isMudanca ? "Mudanças" : selectedCategory.label}
             fare={selectedFare}
             onSubmit={onSubmit}
           />
