@@ -3151,17 +3151,21 @@ function PassageiroApp() {
 
       {/*
         Bottom navigation — barra sólida fixa no rodapé (safe-area).
-        Visível apenas no home (estado "destination"); oculta durante
-        preview de rota, seleção de categoria ou corrida ativa, para
-        nunca competir com o CTA principal ou a ficha do motorista.
+        Visível em todas as etapas de pré-corrida (destination, route_preview,
+        category). Ocultada apenas durante corrida ativa (searching /
+        assigned / finished) para não competir com controles e ficha do
+        motorista.
       */}
-      {!ride && passengerVisualStep === "destination" && (
-        <BottomNav
-          items={PASSENGER_NAV}
-          theme="dark"
-          zIndex={25}
-        />
-      )}
+      {!ride &&
+        (passengerVisualStep === "destination" ||
+          passengerVisualStep === "route_preview" ||
+          passengerVisualStep === "category") && (
+          <BottomNav
+            items={PASSENGER_NAV}
+            theme="dark"
+            zIndex={25}
+          />
+        )}
 
     </div>
   );
