@@ -4177,22 +4177,22 @@ function DriverEnRoute({
     : undefined;
 
   return (
-    <div className="pt-1 pb-2 animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-3">
+    <div className="pt-1 pb-2 animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-2.5">
       {/* ── COMPACT (visível sem scroll) ─────────────────────────────── */}
 
       {/* Phase + ETA em uma linha */}
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[#707070]">
-          <span className="relative flex h-2 w-2">
+        <div className="flex items-center gap-2 text-[10.5px] font-bold uppercase tracking-[0.16em] text-[#707070]">
+          <span className="relative flex h-1.5 w-1.5">
             <span className="absolute inset-0 animate-ping rounded-full bg-[#76C139]/60" />
-            <span className="relative h-2 w-2 rounded-full bg-[#76C139]" />
+            <span className="relative h-1.5 w-1.5 rounded-full bg-[#76C139]" />
           </span>
           <span className="text-[#111418]">{phaseLabel}</span>
         </div>
         {eta != null && ride.status !== "em_viagem" && (
-          <div className="flex items-baseline gap-1 rounded-full bg-[#76C139]/12 px-2.5 py-1 text-[#4a8a1e]">
-            <span className="text-[14px] font-extrabold tabular-nums">{eta}</span>
-            <span className="text-[10.5px] font-bold uppercase tracking-wider">min</span>
+          <div className="flex items-baseline gap-1 rounded-full bg-[#76C139]/12 px-2 py-0.5 text-[#4a8a1e]">
+            <span className="text-[13px] font-extrabold tabular-nums">{eta}</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider">min</span>
           </div>
         )}
       </div>
@@ -4202,14 +4202,14 @@ function DriverEnRoute({
         type="button"
         onClick={onOpenProfile}
         aria-label="Ver perfil do motorista"
-        className="flex w-full items-center gap-3 rounded-[18px] bg-white p-3 text-left ring-1 ring-black/5 shadow-[0_6px_18px_-16px_rgba(15,23,42,0.22)] transition duration-[220ms] active:scale-[0.99]"
+        className="flex w-full items-center gap-2.5 rounded-2xl bg-white p-2.5 text-left ring-1 ring-black/5 shadow-[0_4px_14px_-14px_rgba(15,23,42,0.22)] transition duration-[220ms] active:scale-[0.99]"
       >
-        <Avatar src={driver.photo_url ?? null} name={driver.name} size={44} />
+        <Avatar src={driver.photo_url ?? null} name={driver.name} size={40} />
         <div className="min-w-0 flex-1">
-          <div className="truncate text-[15px] font-bold leading-tight text-[#111418]">
+          <div className="truncate text-[14px] font-bold leading-tight text-[#111418]">
             {driver.name}
           </div>
-          <div className="mt-0.5 flex items-center gap-1.5 text-[11.5px] text-[#707070]">
+          <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-[#707070]">
             <Star className="h-3 w-3 fill-[#F5B301] text-[#F5B301]" strokeWidth={0} />
             <span className="font-semibold text-[#111418]">{driver.rating?.toFixed(1) ?? "5.0"}</span>
             <span>·</span>
@@ -4219,7 +4219,7 @@ function DriverEnRoute({
           </div>
         </div>
         {driver.vehicle_plate && (
-          <div className="inline-flex shrink-0 items-center rounded-md bg-[#111418] px-2 py-1 font-mono text-[11.5px] font-extrabold tracking-[0.15em] text-white">
+          <div className="inline-flex shrink-0 items-center rounded-md bg-[#111418] px-1.5 py-0.5 font-mono text-[11px] font-extrabold tracking-[0.14em] text-white">
             {driver.vehicle_plate}
           </div>
         )}
@@ -4229,28 +4229,28 @@ function DriverEnRoute({
       {/* Código de segurança — compacto e sempre visível antes da viagem */}
       {ride.safety_code && ride.status !== "em_viagem" && (
         <div
-          className={`flex items-center gap-3 rounded-[18px] p-3 ring-1 ${
+          className={`flex items-center gap-2.5 rounded-2xl p-2.5 ring-1 ${
             ride.status === "motorista_chegou"
               ? "bg-[#76C139]/10 ring-[#76C139]/40 animate-pulse-soft"
               : "bg-white ring-[#76C139]/25"
           }`}
         >
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#76C139] text-white">
+          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#76C139] text-white">
             <Shield className="h-4 w-4" strokeWidth={2.4} />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[#4a8a1e]">
+            <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#4a8a1e]">
               Código de segurança
             </div>
-            <div className="mt-0.5 text-[11px] font-medium text-[#707070] leading-snug">
+            <div className="mt-0.5 text-[10.5px] font-medium text-[#707070] leading-snug">
               Mostre ao motorista antes de iniciar.
             </div>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5">
             {ride.safety_code.split("").map((d, i) => (
               <span
                 key={i}
-                className="grid h-9 w-7 place-items-center rounded-md bg-white text-[18px] font-extrabold tabular-nums text-[#111418] ring-1 ring-[#76C139]/25 shadow-[0_2px_6px_-4px_rgba(0,0,0,0.15)]"
+                className="grid h-8 w-6 place-items-center rounded-md bg-white text-[16px] font-extrabold tabular-nums text-[#111418] ring-1 ring-[#76C139]/25 shadow-[0_2px_6px_-4px_rgba(0,0,0,0.15)]"
               >
                 {d}
               </span>
@@ -4262,18 +4262,18 @@ function DriverEnRoute({
       {/* Ações rápidas — labels legíveis (fundo branco, ícone verde) */}
       <div className="grid grid-cols-3 gap-2">
         <QuickCircleAction
-          icon={<Phone className="h-5 w-5" strokeWidth={2.2} />}
+          icon={<Phone className="h-[18px] w-[18px]" strokeWidth={2.2} />}
           label="Ligar"
           href={telHref}
           onClick={telHref ? undefined : () => toast.info("Telefone do motorista indisponível")}
         />
         <QuickCircleAction
-          icon={<MessageCircle className="h-5 w-5" strokeWidth={2.2} />}
+          icon={<MessageCircle className="h-[18px] w-[18px]" strokeWidth={2.2} />}
           label="Mensagem"
           onClick={() => toast.info("Chat em breve")}
         />
         <QuickCircleAction
-          icon={<Share2 className="h-5 w-5" strokeWidth={2.2} />}
+          icon={<Share2 className="h-[18px] w-[18px]" strokeWidth={2.2} />}
           label="Compartilhar"
           onClick={() => {
             const text =
@@ -4291,11 +4291,12 @@ function DriverEnRoute({
       </div>
 
       {/* ── EXPANDIDO (arrastar para ver) ─────────────────────────────── */}
-      <div className="flex items-center gap-2 pt-1 pb-0.5 text-[10.5px] font-bold uppercase tracking-[0.16em] text-[#a0a4a8]">
+      <div className="flex items-center gap-2 pt-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[#a0a4a8]">
         <span className="h-px flex-1 bg-[#e6e8eb]" />
         Mais detalhes
         <span className="h-px flex-1 bg-[#e6e8eb]" />
       </div>
+
 
       {ride.status === "motorista_chegou" && (
         <div className="flex items-center justify-center gap-2 rounded-[14px] bg-[#76C139]/10 py-2 text-[12.5px] font-semibold text-[#111418]">
@@ -4395,13 +4396,14 @@ function QuickCircleAction({
 }) {
   const inner = (
     <>
-      <span className="grid h-12 w-12 place-items-center rounded-full bg-[#76C139]/12 text-[#4a8a1e] ring-1 ring-[#76C139]/30 transition duration-[220ms] group-active:scale-90 group-hover:bg-[#76C139]/18">
+      <span className="grid h-11 w-11 place-items-center rounded-full bg-[#76C139]/12 text-[#4a8a1e] ring-1 ring-[#76C139]/30 transition duration-[220ms] group-active:scale-90 group-hover:bg-[#76C139]/18">
         {icon}
       </span>
-      <span className="text-[12px] font-bold text-[#111418]">{label}</span>
+      <span className="text-[11.5px] font-bold text-[#111418]">{label}</span>
     </>
   );
-  const cls = "group flex flex-col items-center gap-2";
+  const cls = "group flex flex-col items-center gap-1.5";
+
   if (href) {
     return (
       <a href={href} className={cls}>
