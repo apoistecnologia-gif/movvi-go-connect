@@ -933,7 +933,7 @@ function MotoristaApp() {
     () => initialMapCenter ?? BRAZIL_CENTER,
     [initialMapCenter],
   );
-  const stableMapZoom = useMemo(() => (initialMapCenter ? 16 : 5), [initialMapCenter]);
+  const stableMapZoom = useMemo(() => (initialMapCenter ? 16 : 13), [initialMapCenter]);
 
   const autoFollowRef = useRef(true);
   const lastFollowAtRef = useRef(0);
