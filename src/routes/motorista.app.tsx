@@ -991,7 +991,7 @@ function MotoristaApp() {
           autoFollowRef.current = false; // evita conflito com follow
           const b = new google.maps.LatLngBounds();
           b.extend(pos); b.extend(dest);
-          mapRef.current.fitBounds(b, { top: 120, bottom: window.innerHeight * 0.55, left: 60, right: 60 });
+          mapRef.current.fitBounds(b, { top: 120, bottom: Math.round(window.innerHeight * 0.42), left: 60, right: 60 });
           // reativa follow depois da animação inicial
           window.setTimeout(() => { autoFollowRef.current = true; }, 1200);
         }
