@@ -20,6 +20,9 @@ import {
   Clock,
   CreditCard,
   Crosshair,
+  ChevronDown,
+  ListChecks,
+
   LogOut,
   MapPin,
   Menu,
