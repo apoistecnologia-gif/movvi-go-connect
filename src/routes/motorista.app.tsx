@@ -873,7 +873,7 @@ function MotoristaApp() {
       handledRidesRef.current.add(offer.id);
       setIncoming(null);
       setActive(r as RideRow);
-      sheetRef.current?.snapTo(50);
+      sheetRef.current?.snapTo(76);
     } catch (e) {
       console.error("[MOVVI MOTORISTA] erro ao aceitar:", e);
       handledRidesRef.current.delete(offer.id);
@@ -991,7 +991,7 @@ function MotoristaApp() {
           autoFollowRef.current = false; // evita conflito com follow
           const b = new google.maps.LatLngBounds();
           b.extend(pos); b.extend(dest);
-          mapRef.current.fitBounds(b, { top: 120, bottom: Math.round(window.innerHeight * 0.42), left: 60, right: 60 });
+          mapRef.current.fitBounds(b, { top: 110, bottom: Math.round(window.innerHeight * 0.62), left: 56, right: 56 });
           // reativa follow depois da animação inicial
           window.setTimeout(() => { autoFollowRef.current = true; }, 1200);
         }
@@ -1104,11 +1104,11 @@ function MotoristaApp() {
       {/* Top bar — glass flutuante premium (60px, radius 22, backdrop blur) */}
       <div className="absolute inset-x-0 top-0 z-40 px-3 pt-[calc(env(safe-area-inset-top)+8px)] motion-safe:animate-[fadeIn_320ms_ease-out]">
         <div
-          className="mx-auto flex h-[60px] max-w-5xl items-center gap-3 rounded-[22px] px-3 shadow-[0_12px_32px_-16px_rgba(0,0,0,0.55)]"
+          className="mx-auto flex h-[52px] max-w-5xl items-center gap-3 rounded-[20px] px-3 shadow-[0_8px_22px_-14px_rgba(0,0,0,0.45)]"
           style={{
-            background: "color-mix(in oklab, #0b0d10 62%, transparent)",
+            background: "color-mix(in oklab, #0b0d10 68%, transparent)",
             border: "1px solid rgba(255,255,255,0.06)",
-            backdropFilter: "blur(10px) saturate(140%)",
+            backdropFilter: "blur(8px) saturate(140%)",
           }}
         >
           <button
@@ -1167,20 +1167,21 @@ function MotoristaApp() {
       {!incoming && !ratingRide && (
         <button onClick={recenter}
           aria-label="Centralizar mapa"
-          className="press-scale absolute right-4 z-20 flex h-14 w-14 items-center justify-center rounded-full text-foreground shadow-[0_16px_36px_-14px_rgba(0,0,0,0.6)] transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+          className="press-scale absolute z-20 flex h-12 w-12 items-center justify-center rounded-full text-foreground shadow-[0_12px_28px_-14px_rgba(0,0,0,0.55)] transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
           style={{
-            bottom: active ? "calc(58vh + 16px)" : "calc(env(safe-area-inset-bottom) + 340px)",
-            background: "color-mix(in oklab, #111418 70%, transparent)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            backdropFilter: "blur(10px) saturate(140%)",
+            right: 20,
+            bottom: active ? "calc(76dvh + 12px)" : "calc(env(safe-area-inset-bottom) + 260px)",
+            background: "color-mix(in oklab, #111418 72%, transparent)",
+            border: "1px solid rgba(255,255,255,0.10)",
+            backdropFilter: "blur(8px) saturate(140%)",
           }}>
-          <Crosshair className="h-[20px] w-[20px]" strokeWidth={1.75} />
+          <Crosshair className="h-[18px] w-[18px]" strokeWidth={1.75} />
         </button>
       )}
 
       {/* ===== Corrida ativa — usa bottom sheet ===== */}
       {!incoming && !ratingRide && active && (
-        <MovviSheet ref={sheetRef} snaps={[34, 56, 86]} initial={40}>
+        <MovviSheet ref={sheetRef} snaps={[54, 76, 92]} initial={62}>
           <ActiveRidePanel
             ride={active}
             passenger={passenger}
@@ -1286,7 +1287,7 @@ function IdleBottomPanel({
   canUseTestLocation: boolean;
   onUseTestLocation: () => void;
 }) {
-  const navReserve = "calc(env(safe-area-inset-bottom) + 84px)";
+  const navReserve = "calc(env(safe-area-inset-bottom) + 12px)";
 
   return (
     <div
@@ -1316,7 +1317,7 @@ function IdleBottomPanel({
             </span>
             {online ? "ONLINE" : "OFFLINE"}
           </div>
-          <span className="text-[13px] font-medium text-muted-foreground">
+          <span className="text-[13px] font-semibold text-foreground/85">
             {online ? "Recebendo solicitações" : "Toque para ativar"}
           </span>
         </div>
@@ -1776,7 +1777,7 @@ function ActiveRidePanel({
 
           {/* Live ETA hero */}
           <div className="text-center">
-            <div className="text-[13px] font-medium text-muted-foreground">Chegando em</div>
+            <div className="text-[13px] font-semibold text-foreground/75">Chegando em</div>
             <div className="mt-0.5 text-[28px] font-extrabold tabular-nums leading-none tracking-tight text-foreground">
               {minutes != null ? `${minutes} min` : "—"}
             </div>
@@ -1930,7 +1931,7 @@ function ActiveRidePanel({
 
           {/* Live ETA hero */}
           <div className="text-center">
-            <div className="text-[13px] font-medium text-muted-foreground">Chegando ao destino em</div>
+            <div className="text-[13px] font-semibold text-foreground/75">Chegando ao destino em</div>
             <div className="mt-0.5 text-[30px] font-extrabold tabular-nums leading-none tracking-tight text-foreground">
               {minutes != null ? `${minutes} min` : "—"}
             </div>
