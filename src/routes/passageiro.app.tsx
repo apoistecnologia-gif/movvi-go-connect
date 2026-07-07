@@ -91,6 +91,7 @@ import { Briefcase, Heart, Home as HomeIcon, Plus } from "lucide-react";
 
 import type { Database } from "@/integrations/supabase/types";
 import { BrandSplash } from "@/components/BrandSplash";
+import { RideOptionRow } from "@/components/ui-kit";
 
 /** Saudação dinâmica com base no horário local (pt-BR). */
 function getGreeting(): { text: string; icon: LucideIcon } {
@@ -3673,48 +3674,33 @@ function ConfirmRideCompact({
         </div>
       </div>
 
-      {/* Categorias — chips horizontais */}
+      {/* Categorias — lista vertical (RideOptionRow) */}
       <div>
         <div className="mb-1.5 text-[10.5px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
           Escolha a categoria
         </div>
-        <div className="-mx-4 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <div className="flex gap-2">
-            {uiCategories.map((c) => {
-              const active = c.key === selectedCategoryKey;
-              const fare = estimateFare(c.backend, km, min, tariffs);
-              const Icon = c.icon;
-              return (
-                <button
-                  key={c.key}
-                  type="button"
-                  onClick={() => setSelectedCategoryKey(c.key)}
-                  aria-pressed={active}
-                  className={`flex shrink-0 flex-col items-center gap-1 rounded-2xl px-3 py-2 text-center transition active:scale-[0.97] ${
-                    active
-                      ? "bg-[#5A9A2A] ring-2 ring-[#76C139] shadow-[0_10px_24px_-14px_rgba(118,193,57,0.55)]"
-                      : "bg-white ring-1 ring-border/60 hover:ring-[#76C139]/40"
-                  }`}
-                  style={{ minWidth: 92 }}
-                >
-                  <span
-                    className={`grid h-9 w-9 place-items-center rounded-full transition ${
-                      active ? "bg-white/18 text-white" : "bg-[#76C139]/10 text-[#5A9A2A]"
-                    }`}
-                  >
-                    <Icon className="h-[18px] w-[18px]" strokeWidth={2} />
-                  </span>
-                  <span className={`text-[12px] font-bold leading-tight ${active ? "text-white" : "text-[#111418]"}`}>{c.label}</span>
-                  <span className={`text-[11px] font-semibold tabular-nums leading-none ${active ? "text-white" : "text-[#111418]"}`}>
-                    {formatBRL(fare)}
-                  </span>
-                </button>
-
-              );
-            })}
-          </div>
+        <div className="space-y-2">
+          {uiCategories.map((c, idx) => {
+            const active = c.key === selectedCategoryKey;
+            const fare = estimateFare(c.backend, km, min, tariffs);
+            const Icon = c.icon;
+            return (
+              <RideOptionRow
+                key={c.key}
+                icon={<Icon className="h-6 w-6" strokeWidth={2} style={{ color: c.color }} />}
+                name={c.label}
+                etaLabel={`${etaLabel} · ${fmtKm(route.distanceMeters)}`}
+                helper={idx === 0 ? "Mais rápido" : undefined}
+                price={formatBRL(fare)}
+                selected={active}
+                fastPill={idx === 0}
+                onClick={() => setSelectedCategoryKey(c.key)}
+              />
+            );
+          })}
         </div>
       </div>
+
 
       {/* Pagamento — linha compacta */}
       <button
