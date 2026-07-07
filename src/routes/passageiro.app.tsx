@@ -609,8 +609,15 @@ type PassengerUiStage =
   | "selecting_destination"
   | "route_preview"
   | "selecting_category"
-  | "confirming_request"
   | "searching_driver";
+
+type PassengerVisualStep =
+  | "destination"
+  | "route_preview"
+  | "category"
+  | "searching"
+  | "assigned"
+  | "finished";
 
 function PassageiroApp() {
   const navigate = useNavigate();
@@ -1938,6 +1945,18 @@ function PassageiroApp() {
 
 
   const phase = ride?.status;
+  const passengerVisualStep: PassengerVisualStep =
+    phase === "finalizada"
+      ? "finished"
+      : ride && phase === "procurar_motorista"
+        ? "searching"
+        : ride && (phase === "motorista_a_caminho" || phase === "motorista_chegou" || phase === "em_viagem")
+          ? "assigned"
+          : passengerUiStage === "selecting_category" && destination && route
+            ? "category"
+            : passengerUiStage === "route_preview" && destination
+              ? "route_preview"
+              : "destination";
 
   const rideDriverInfo = useMemo<DriverRow | null>(() => {
     // Snapshot do motorista gravado na corrida tem prioridade — é o que garante
@@ -2325,19 +2344,14 @@ function PassageiroApp() {
       </div>
 
       {/* BOTTOM SHEET — novo, próprio do MOVVI */}
-      {!ride && (() => {
-        const bigStage =
-          passengerUiStage === "route_preview" ||
-          passengerUiStage === "selecting_category" ||
-          passengerUiStage === "confirming_request";
-        const snaps = bigStage ? [45, 62, 90] : [52, 74, 92];
-        const initial =
-          passengerUiStage === "selecting_category" ? 58 :
-          passengerUiStage === "confirming_request" ? 78 :
-          bigStage ? 50 : 55;
+      {(passengerVisualStep === "destination" || passengerVisualStep === "route_preview" || passengerVisualStep === "category") && (() => {
+        const categoryStage = passengerVisualStep === "category";
+        const routeStage = passengerVisualStep === "route_preview";
+        const snaps = categoryStage ? [58, 76, 92] : routeStage ? [38, 58, 84] : [52, 74, 92];
+        const initial = categoryStage ? 76 : routeStage ? 44 : 55;
 
         return (
-        <MovviSheet ref={sheetRef} key={bigStage ? "big" : "small"} snaps={snaps} initial={initial}>
+        <MovviSheet ref={sheetRef} key={categoryStage ? "category" : routeStage ? "route" : "destination"} snaps={snaps} initial={initial}>
           <SheetContent
             geo={geo}
             addressStatus={addressStatus}
@@ -2434,7 +2448,7 @@ function PassageiroApp() {
       )}
 
 
-      {ride && ride.status === "procurar_motorista" && (
+      {ride && passengerVisualStep === "searching" && (
         <MovviSheet
           snaps={[42, 62, 88]}
           initial={42}
@@ -2455,7 +2469,7 @@ function PassageiroApp() {
 
 
 
-      {(DEV_MODE || isDevelopmentEnvironment()) && ride && ride.status === "procurar_motorista" && dispatchDiag && (
+      {(DEV_MODE || isDevelopmentEnvironment()) && ride && passengerVisualStep === "searching" && dispatchDiag && (
         <div className="pointer-events-auto absolute left-2 top-20 z-50 max-w-[280px] rounded-lg bg-black/85 p-2 font-mono text-[10px] text-white ring-1 ring-white/20">
           <div className="mb-1 font-bold text-primary">[DEV] DISPATCH</div>
           <div>category: {dispatchDiag.ride?.category}</div>
@@ -2481,7 +2495,7 @@ function PassageiroApp() {
 
       {/* PIN de segurança exibido no bottom sheet (DriverEnRoute). */}
 
-      {ride && rideDriverInfo && phase === "motorista_chegou" && (
+      {ride && rideDriverInfo && passengerVisualStep === "assigned" && phase === "motorista_chegou" && (
         <div
           className="pointer-events-none absolute inset-x-0 z-40 flex justify-center px-3"
           style={{ top: "calc(env(safe-area-inset-top) + 16px)" }}
@@ -2505,6 +2519,7 @@ function PassageiroApp() {
 
       {ride &&
         rideDriverInfo &&
+        passengerVisualStep === "assigned" &&
         phase === "motorista_a_caminho" &&
         (() => {
           const dLat = rideDriverInfo.current_lat as number | null | undefined;
@@ -2595,7 +2610,7 @@ function PassageiroApp() {
         })()}
 
       {/* Trip in Progress — top floating navigation card + SOS */}
-      {ride && rideDriverInfo && phase === "em_viagem" && (() => {
+      {ride && rideDriverInfo && passengerVisualStep === "assigned" && phase === "em_viagem" && (() => {
         const remainingMin =
           ride.duration_min != null
             ? Math.max(1, Math.round(Number(ride.duration_min)))
@@ -2684,6 +2699,7 @@ function PassageiroApp() {
 
       {ride &&
         rideDriverInfo &&
+        passengerVisualStep === "assigned" &&
         (phase === "motorista_a_caminho" ||
           phase === "motorista_chegou" ||
           phase === "em_viagem") && (
@@ -2701,7 +2717,7 @@ function PassageiroApp() {
         )}
 
 
-      {ride && phase === "finalizada" && (() => {
+      {ride && passengerVisualStep === "finished" && phase === "finalizada" && (() => {
         const rated = !!ride.passenger_rated_at;
         const pickupLabel =
           (ride as any).pickup_address ??
@@ -3398,8 +3414,7 @@ function StepFlow({
   }, [route, uiStage, setUiStage]);
 
   useEffect(() => {
-    if (uiStage === "selecting_category") onExpandSheet(58);
-    else if (uiStage === "confirming_request") onExpandSheet(82);
+    if (uiStage === "selecting_category") onExpandSheet(76);
   }, [uiStage, onExpandSheet]);
 
 
@@ -3415,29 +3430,9 @@ function StepFlow({
     : null;
 
   return (
-    <div className="animate-in fade-in duration-200">
-      {/* Header "Escolha sua corrida" removido — ConfirmRideCompact já traz o
-          próprio cabeçalho ("Escolha a categoria") + card origem→destino. */}
-      {uiStage === "selecting_category" && (
-        <div className="mb-2 flex items-center gap-2 animate-in fade-in slide-in-from-top-1 duration-200">
-          <button
-            type="button"
-            onClick={() => setUiStage("route_preview")}
-            aria-label="Voltar"
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-card text-[#1B1B1B] ring-1 ring-border/60 shadow-[0_6px_18px_-14px_rgba(15,23,42,0.25)] transition active:scale-[0.92]"
-          >
-            <ArrowLeft className="h-[16px] w-[16px]" strokeWidth={2} />
-          </button>
-          <h2 className="text-[15px] font-bold leading-tight tracking-tight text-[#111418]">
-            Confirme sua corrida
-          </h2>
-        </div>
-      )}
-
-
-
-      {/* Cabeçalho do destino (oculto na etapa de confirmação — tem card de rota próprio) */}
-      {uiStage !== "confirming_request" && uiStage !== "selecting_category" && (
+    <div key={uiStage} className="animate-in fade-in duration-200">
+      {/* Cabeçalho do destino (oculto na escolha de categoria — tem card de rota próprio) */}
+      {uiStage !== "selecting_category" && (
         <div className="mb-3 flex items-center gap-2.5 rounded-[20px] bg-white px-3.5 py-2.5 ring-1 ring-border/60 shadow-[0_6px_18px_-14px_rgba(15,23,42,0.18)]">
           <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#76C139]/10 text-[#76C139]">
             <MapPin className="h-[16px] w-[16px]" strokeWidth={2} />
@@ -3509,16 +3504,12 @@ function StepFlow({
           setPaymentMethod={setPaymentMethod}
           busy={busy}
           onSubmit={onSubmit}
+          onBack={() => setUiStage("route_preview")}
         />
       )}
 
-      {/* ETAPA 4 (confirming_request) removida:
-          - Bloco nunca era ativado (nenhum código chama setUiStage("confirming_request")).
-          - Continha um segundo "Você paga" e um segundo header "Confirme sua corrida",
-            criando duplicação visual quando o navegador cacheava o DOM anterior.
-          - A confirmação final agora vive apenas em ConfirmRideCompact (etapa
-            selecting_category), que já renderiza rota, categoria, pagamento,
-            "Você paga" único e o botão "Confirmar MOVVI …". */}
+      {/* A confirmação final vive somente em ConfirmRideCompact: rota, categoria,
+          pagamento, "Você paga" único e botão "Confirmar MOVVI …". */}
 
     </div>
   );
@@ -3539,6 +3530,7 @@ function ConfirmRideCompact({
   setPaymentMethod,
   busy,
   onSubmit,
+  onBack,
 }: {
   route: RouteResult;
   km: number;
@@ -3554,6 +3546,7 @@ function ConfirmRideCompact({
   setPaymentMethod: (m: "dinheiro" | "pix" | "cartao_credito") => void;
   busy: boolean;
   onSubmit: () => void;
+  onBack: () => void;
 }) {
   const uiCategories = useUiCategories();
   const etaLabel = fmtMin(route.durationSeconds);
@@ -3575,6 +3568,21 @@ function ConfirmRideCompact({
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-2 duration-200 space-y-3">
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={onBack}
+          aria-label="Voltar"
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white text-[#111418] ring-1 ring-border/60 shadow-[0_6px_18px_-14px_rgba(15,23,42,0.25)] transition active:scale-[0.92]"
+        >
+          <ArrowLeft className="h-[16px] w-[16px]" strokeWidth={2} />
+        </button>
+        <div className="min-w-0">
+          <h2 className="text-[16px] font-bold leading-tight text-foreground">Escolha sua corrida</h2>
+          <p className="text-[11.5px] font-medium text-muted-foreground">Categoria, pagamento e confirmação</p>
+        </div>
+      </div>
+
       {/* Origem → Destino compacto */}
       <div className="flex items-stretch gap-2.5 rounded-[16px] bg-white p-2.5 ring-1 ring-border/60">
         <div className="flex flex-col items-center pt-1">
@@ -3598,7 +3606,7 @@ function ConfirmRideCompact({
 
       {/* Categorias — chips horizontais */}
       <div>
-        <div className="mb-1.5 text-[10.5px] font-bold uppercase tracking-[0.14em] text-[#707070]">
+        <div className="mb-1.5 text-[10.5px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
           Escolha a categoria
         </div>
         <div className="-mx-4 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -3615,20 +3623,20 @@ function ConfirmRideCompact({
                   aria-pressed={active}
                   className={`flex shrink-0 flex-col items-center gap-1 rounded-2xl px-3 py-2 text-center transition active:scale-[0.97] ${
                     active
-                      ? "bg-white ring-2 ring-[#76C139] shadow-[0_10px_24px_-14px_rgba(118,193,57,0.55)]"
+                      ? "bg-[#5A9A2A] ring-2 ring-[#76C139] shadow-[0_10px_24px_-14px_rgba(118,193,57,0.55)]"
                       : "bg-white ring-1 ring-border/60 hover:ring-[#76C139]/40"
                   }`}
                   style={{ minWidth: 92 }}
                 >
                   <span
                     className={`grid h-9 w-9 place-items-center rounded-full transition ${
-                      active ? "bg-[#76C139] text-white" : "bg-[#76C139]/10 text-[#5A9A2A]"
+                      active ? "bg-white/18 text-white" : "bg-[#76C139]/10 text-[#5A9A2A]"
                     }`}
                   >
                     <Icon className="h-[18px] w-[18px]" strokeWidth={2} />
                   </span>
-                  <span className="text-[12px] font-bold leading-tight text-[#111418]">{c.label}</span>
-                  <span className={`text-[11px] font-semibold tabular-nums leading-none ${active ? "text-[#5A9A2A]" : "text-[#111418]"}`}>
+                  <span className={`text-[12px] font-bold leading-tight ${active ? "text-white" : "text-[#111418]"}`}>{c.label}</span>
+                  <span className={`text-[11px] font-semibold tabular-nums leading-none ${active ? "text-white" : "text-[#111418]"}`}>
                     {formatBRL(fare)}
                   </span>
                 </button>
@@ -3659,7 +3667,7 @@ function ConfirmRideCompact({
 
       {/* CTA + valor final */}
       {selectedCategory && selectedFare != null && (
-        <div className="pt-1">
+        <div className="rounded-[18px] bg-white p-3 ring-1 ring-border/60 shadow-[0_12px_30px_-20px_rgba(15,23,42,0.25)]">
           <div className="mb-2 flex items-baseline justify-between">
             <span className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-[#707070]">
               Você paga
@@ -3699,104 +3707,6 @@ function FareEstimateCard({ route, fare }: { route: RouteResult; fare: number | 
       <p className="mt-1.5 text-[10.5px] text-[#707070] leading-tight">
         O valor pode mudar apenas se houver alteração no trajeto, parada extra ou cobrança adicional.
       </p>
-    </div>
-  );
-}
-
-function RideCategorySelector({
-  route,
-  km,
-  min,
-  tariffs,
-  selectedCategoryKey,
-  onSelect,
-}: {
-  route: RouteResult;
-  km: number;
-  min: number;
-  tariffs: TariffMap;
-  selectedCategoryKey: string | null;
-  onSelect: (category: UiCategory) => void;
-}) {
-  const uiCategories = useUiCategories();
-  const etaLabel = fmtMin(route.durationSeconds);
-  return (
-    <div className="animate-in fade-in slide-in-from-bottom-2 duration-200">
-      <ul className="space-y-2">
-        {uiCategories.map((c, idx) => {
-          const active = c.key === selectedCategoryKey;
-          const fare = estimateFare(c.backend, km, min, tariffs);
-          const Icon = c.icon;
-          return (
-            <li
-              key={c.key}
-              className="animate-in fade-in slide-in-from-bottom-1"
-              style={{
-                animationDuration: "220ms",
-                animationDelay: `${Math.min(idx, 5) * 40}ms`,
-                animationFillMode: "backwards",
-              }}
-            >
-              <button
-                type="button"
-                onClick={() => onSelect(c)}
-                aria-pressed={active}
-                className={`group grid w-full items-center rounded-[14px] bg-white px-2.5 py-1.5 text-left transition-[transform,box-shadow,border-color] duration-200 active:scale-[0.99] ${
-                  active
-                    ? "border-2 border-[#76C139] shadow-[0_10px_24px_-18px_rgba(118,193,57,0.28)]"
-                    : "border border-border/60 shadow-[0_4px_14px_-14px_rgba(15,23,42,0.15)] hover:border-[#76C139]/40"
-                }`}
-                style={{ gridTemplateColumns: "32px minmax(64px,1fr) auto 20px", columnGap: "10px" }}
-              >
-                <span
-                  className={`grid h-8 w-8 shrink-0 place-items-center rounded-[10px] transition ${
-                    active
-                      ? "bg-[#76C139] text-white shadow-[0_6px_14px_-10px_rgba(118,193,57,0.4)]"
-                      : "bg-[#76C139]/10 text-[#5A9A2A] group-hover:bg-[#76C139]/15"
-                  }`}
-                >
-                  <Icon className="h-[16px] w-[16px]" strokeWidth={1.75} />
-                </span>
-
-                <div className="min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <span className="whitespace-nowrap text-[13.5px] font-bold text-[#111418] leading-tight">
-                      {c.label}
-                    </span>
-                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#76C139]/12 px-1.5 py-[1px] text-[9.5px] font-semibold text-[#5A9A2A]">
-                      <Clock className="h-2.5 w-2.5" strokeWidth={2.25} />
-                      {etaLabel}
-                    </span>
-                  </div>
-                  <p className="line-clamp-1 text-[10.5px] text-[#707070] leading-tight">
-                    {c.tagline}
-                  </p>
-                </div>
-
-                <span
-                  className={`shrink-0 whitespace-nowrap text-[15px] font-bold leading-none tracking-tight ${
-                    active ? "text-[#5A9A2A]" : "text-[#111418]"
-                  }`}
-                >
-                  {formatBRL(fare)}
-                </span>
-
-                <span
-                  className={`grid h-[20px] w-[20px] shrink-0 place-items-center rounded-full transition ${
-                    active
-                      ? "bg-[#76C139] text-white shadow-[0_3px_8px_-4px_rgba(118,193,57,0.4)]"
-                      : "bg-transparent text-transparent ring-1 ring-border/70"
-                  }`}
-                  aria-hidden
-                >
-                  <Check className="h-3 w-3" strokeWidth={3} />
-                </span>
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-
     </div>
   );
 }
