@@ -47,6 +47,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { PassengerSideMenu } from "@/components/PassengerSideMenu";
+import { BottomNav, PASSENGER_NAV } from "@/components/BottomNav";
 import { MovviMap } from "@/components/MovviMap";
 import { useDriverProximityAlerts } from "@/hooks/useDriverProximityAlerts";
 import { MovviSheet, type MovviSheetHandle } from "@/components/MovviSheet";
@@ -3089,6 +3090,17 @@ function PassageiroApp() {
         onOpenChange={setDriverProfileOpen}
         driverUserId={ride?.driver_id ?? rideDriverInfo?.user_id ?? null}
       />
+
+      {/* Bottom navigation — visível apenas no home ocioso; sobe acima do sheet (~42dvh). */}
+      {!ride && passengerVisualStep === "destination" && (
+        <BottomNav
+          items={PASSENGER_NAV}
+          floating
+          theme="dark"
+          zIndex={50}
+          bottomOffset="42dvh"
+        />
+      )}
     </div>
   );
 }

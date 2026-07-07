@@ -799,7 +799,7 @@ function PassengerRidesPage() {
         </div>
       </main>
 
-      <BottomNav items={PASSENGER_NAV} />
+      <BottomNav items={PASSENGER_NAV} floating theme="dark" />
       <RideDetailSheet
         ride={selected}
         onClose={() => setSelected(null)}

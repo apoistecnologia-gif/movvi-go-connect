@@ -12,6 +12,7 @@ import { Avatar } from "@/components/Avatar";
 import {
   SettingsSection, SettingsLinkRow,
 } from "@/components/settings";
+import { BottomNav, PASSENGER_NAV } from "@/components/BottomNav";
 import { listFavorites } from "@/lib/favoritePlaces";
 import { toast } from "sonner";
 
@@ -112,6 +113,7 @@ function PerfilPassageiro() {
         onOpenChange={setPublicProfileOpen}
         passengerUserId={userId}
       />
+      <BottomNav items={PASSENGER_NAV} floating theme="dark" />
     </>
   );
 }
