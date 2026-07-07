@@ -3099,21 +3099,26 @@ function PassageiroApp() {
         driverUserId={ride?.driver_id ?? rideDriverInfo?.user_id ?? null}
       />
 
-      {/* Bottom navigation — visível apenas no home ocioso; some quando o sheet passa de ~50dvh. */}
+      {/*
+        Bottom navigation — fixo no rodapé (safe-area + 12px), com 24px de
+        margem lateral. Visível apenas no home (estado "destination") e
+        oculto automaticamente quando o sheet cobre a área do nav ou durante
+        preview de rota / seleção de categoria / corrida ativa, para nunca
+        cobrir CTA, ficha do motorista ou PIN.
+      */}
       {!ride && passengerVisualStep === "destination" && (
         <div
           className="pointer-events-auto transition-opacity duration-[220ms]"
           style={{
-            opacity: sheetSnap > 50 ? 0 : 1,
-            pointerEvents: sheetSnap > 50 ? "none" : "auto",
+            opacity: sheetSnap > 34 ? 0 : 1,
+            pointerEvents: sheetSnap > 34 ? "none" : "auto",
           }}
         >
           <BottomNav
             items={PASSENGER_NAV}
             floating
             theme="dark"
-            zIndex={50}
-            bottomOffset="42dvh"
+            zIndex={25}
           />
         </div>
       )}
