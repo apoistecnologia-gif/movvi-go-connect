@@ -3926,6 +3926,15 @@ function ConfirmRideCompact({
           <RequestRideButton
             busy={busy}
             categoryLabel={isEnvios ? "Envios" : isGuincho ? "Guincho" : isMudanca ? "Mudanças" : selectedCategory.label}
+            ctaLabel={
+              isGuincho
+                ? "Solicitar guincho"
+                : isMudanca
+                  ? "Solicitar mudança"
+                  : isEnvios
+                    ? "Solicitar MOVVI Envios"
+                    : undefined
+            }
             fare={selectedFare}
             onSubmit={onSubmit}
           />
