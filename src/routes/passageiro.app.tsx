@@ -2310,7 +2310,7 @@ function PassageiroApp() {
       {/* Overlay para reduzir ênfase do mapa na conclusão da viagem */}
       {phase === "finalizada" && (
         <div
-          className="pointer-events-none absolute inset-0 z-10 backdrop-blur-[6px] bg-[#F7F9F7]/55 animate-in fade-in duration-500"
+          className="pointer-events-none absolute inset-0 z-10 backdrop-blur-[2px] bg-black/45 animate-in fade-in duration-500"
           aria-hidden
         />
       )}
