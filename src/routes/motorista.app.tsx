@@ -1181,7 +1181,7 @@ function MotoristaApp() {
 
       {/* ===== Corrida ativa — usa bottom sheet ===== */}
       {!incoming && !ratingRide && active && (
-        <MovviSheet ref={sheetRef} snaps={[34, 56, 86]} initial={40}>
+        <MovviSheet ref={sheetRef} snaps={[54, 76, 92]} initial={62}>
           <ActiveRidePanel
             ride={active}
             passenger={passenger}
