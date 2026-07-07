@@ -2017,8 +2017,10 @@ function ActiveRidePanel({
     );
   }
 
+  const isArrived = phase === "motorista_chegou";
+
   return (
-    <div className="flex flex-col gap-3 pt-1">
+    <div className="flex flex-col gap-2.5 pt-1">
       {/* status pill */}
       <div className="flex items-center justify-between">
         <div className="min-w-0 flex items-center gap-2">
@@ -2028,105 +2030,134 @@ function ActiveRidePanel({
           </span>
           <span className={`truncate text-[11px] font-bold uppercase tracking-widest ${header.tone}`}>{header.title}</span>
         </div>
-        {phase === "motorista_chegou" && (
-          <span className="shrink-0 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+        {isArrived && (
+          <span className="shrink-0 rounded-full bg-primary/15 px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-[0.14em] text-primary ring-1 ring-primary/30">
             Peça o PIN
           </span>
         )}
       </div>
 
-
-      {/* ETA / distância — sem informação financeira durante a corrida */}
-      {(minutes != null || legKm != null) && (
+      {/* ETA / distância — apenas a caminho; ao chegar, esses dados são irrelevantes */}
+      {!isArrived && (minutes != null || legKm != null) && (
         <div className="grid grid-cols-2 gap-2">
           <Metric label="ETA" value={minutes != null ? `${minutes} min` : "—"} highlight />
           <Metric label="Distância" value={legKm != null ? `${legKm.toFixed(1)} km` : "—"} />
         </div>
       )}
 
-      {/* passageiro — tap para abrir perfil profissional */}
-      <div className="flex items-center gap-2 rounded-2xl bg-background/55 p-2 ring-1 ring-border/60">
+      {/* passageiro — compacto */}
+      <div className="flex items-center gap-2 rounded-2xl bg-background/55 p-1.5 ring-1 ring-border/60">
         <button
           type="button"
           onClick={onOpenProfile}
-          className="flex min-w-0 flex-1 items-center gap-3.5 rounded-xl p-1.5 text-left transition active:scale-[0.99] hover:bg-background/70"
+          className="flex min-w-0 flex-1 items-center gap-2.5 rounded-xl p-1 text-left transition active:scale-[0.99] hover:bg-background/70"
           aria-label="Ver perfil do passageiro"
         >
           <div className="shrink-0 rounded-full ring-2 ring-white/85 shadow-[0_6px_18px_-6px_rgba(0,0,0,0.5)]">
-            <Avatar src={passenger?.avatar_url ?? (ride as { passenger_photo_url?: string | null }).passenger_photo_url ?? null} name={passenger?.name ?? "?"} size={56} />
+            <Avatar src={passenger?.avatar_url ?? (ride as { passenger_photo_url?: string | null }).passenger_photo_url ?? null} name={passenger?.name ?? "?"} size={44} />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="truncate text-[15px] font-semibold tracking-tight">{passenger?.name ?? "Passageiro"}</div>
-            <div className="mt-1 flex items-center gap-1.5 text-[12px] text-muted-foreground">
+            <div className="truncate text-[14px] font-semibold tracking-tight">{passenger?.name ?? "Passageiro"}</div>
+            <div className="mt-0.5 flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
               <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" /> 5.0
               <span className="text-muted-foreground/50">·</span>
-              {paymentLabelFor(ride.payment_method)}
+              <span className="truncate">{paymentLabelFor(ride.payment_method)}</span>
             </div>
           </div>
           <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/70" />
         </button>
         {passenger?.phone && (
           <a href={`tel:${passenger.phone}`}
-            className="active-press flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/12 text-primary ring-1 ring-primary/30 hover:bg-primary/20">
-            <Phone className="h-[17px] w-[17px]" />
+            aria-label="Ligar para passageiro"
+            className="active-press flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/12 text-primary ring-1 ring-primary/30 hover:bg-primary/20">
+            <Phone className="h-[16px] w-[16px]" />
           </a>
         )}
       </div>
 
-
-
-      {/* endereços */}
-      <div className="space-y-3 rounded-2xl bg-background/60 p-3 ring-1 ring-border">
-        <div className="flex items-start gap-3">
-          <span className={`mt-1 h-3 w-3 shrink-0 rounded-full ring-2 ring-card ${
+      {/* endereços compactos — 1 linha cada, sem espaços verticais grandes */}
+      <div className="space-y-2 rounded-2xl bg-background/60 p-2.5 ring-1 ring-border">
+        <div className="flex items-center gap-2.5">
+          <span className={`h-2.5 w-2.5 shrink-0 rounded-full ring-2 ring-card ${
             toPickup ? "bg-blue-500 animate-pulse" : "bg-blue-500/60"}`} />
           <div className="min-w-0 flex-1">
-            <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Embarque</div>
-            <div className="line-clamp-2 text-sm font-medium">{ride.pickup_short_label || ride.pickup_label || ride.origin_name || "Endereço não identificado"}</div>
+            <div className="text-[9.5px] uppercase tracking-widest text-muted-foreground leading-none mb-0.5">Embarque</div>
+            <div className="truncate text-[13px] font-medium">{ride.pickup_short_label || ride.pickup_label || ride.origin_name || "—"}</div>
           </div>
           {toPickup && (
             <a target="_blank" rel="noreferrer"
+              aria-label="Navegar até embarque"
               href={`https://www.google.com/maps/dir/?api=1&destination=${ride.origin_lat},${ride.origin_lng}&travelmode=driving`}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground shadow shadow-primary/30">
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow shadow-primary/30">
               <Navigation2 className="h-4 w-4" />
             </a>
           )}
         </div>
-        <div className="ml-[7px] h-3 w-px bg-border" />
-        <div className="flex items-start gap-3">
-          <span className="mt-1 h-3 w-3 shrink-0 rounded-full ring-2 ring-card bg-destructive/60" />
+        <div className="ml-[5px] h-2 w-px bg-border" />
+        <div className="flex items-center gap-2.5">
+          <span className="h-2.5 w-2.5 shrink-0 rounded-full ring-2 ring-card bg-destructive/60" />
           <div className="min-w-0 flex-1">
-            <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Destino</div>
-            <div className="line-clamp-2 text-sm font-medium">{ride.destination_name || "Endereço não identificado"}</div>
+            <div className="text-[9.5px] uppercase tracking-widest text-muted-foreground leading-none mb-0.5">Destino</div>
+            <div className="truncate text-[13px] font-medium">{ride.destination_name || "—"}</div>
           </div>
         </div>
       </div>
 
-      {/* Safety card — SOS, share, incident */}
-      <SafetyCard
-        role="driver"
-        rideId={ride.id}
-        counterpartLabel={`Passageiro ${passenger?.name ?? ""}`.trim()}
-        shareInput={{
-          role: "driver",
-          status: ride.status,
-          passengerName: passenger?.name ?? null,
-          originName: ride.pickup_label ?? ride.origin_name ?? null,
-          destinationName: ride.destination_name,
-        }}
-      />
+      {/* Segurança — no estado "aguardando", vira accordion compacto para não empurrar o CTA */}
+      {isArrived ? (
+        <details className="group rounded-2xl bg-background/50 ring-1 ring-border/60 [&_summary::-webkit-details-marker]:hidden">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2.5 text-[12.5px] font-semibold text-foreground/90">
+            <span className="flex items-center gap-2">
+              <ShieldIcon />
+              Segurança MOVVI
+            </span>
+            <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-90" />
+          </summary>
+          <div className="px-3 pb-3 pt-1">
+            <SafetyCard
+              role="driver"
+              rideId={ride.id}
+              counterpartLabel={`Passageiro ${passenger?.name ?? ""}`.trim()}
+              shareInput={{
+                role: "driver",
+                status: ride.status,
+                passengerName: passenger?.name ?? null,
+                originName: ride.pickup_label ?? ride.origin_name ?? null,
+                destinationName: ride.destination_name,
+              }}
+            />
+          </div>
+        </details>
+      ) : (
+        <SafetyCard
+          role="driver"
+          rideId={ride.id}
+          counterpartLabel={`Passageiro ${passenger?.name ?? ""}`.trim()}
+          shareInput={{
+            role: "driver",
+            status: ride.status,
+            passengerName: passenger?.name ?? null,
+            originName: ride.pickup_label ?? ride.origin_name ?? null,
+            destinationName: ride.destination_name,
+          }}
+        />
+      )}
 
-      {/* CTA conforme fase — transições suaves entre estados */}
-      <div key={phase} className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-        {phase === "motorista_chegou" && (
+      {/* CTA — sticky no rodapé da sheet para nunca sair da tela */}
+      <div
+        key={phase}
+        className="sticky bottom-0 -mx-1 mt-1 animate-in fade-in slide-in-from-bottom-2 duration-300 bg-gradient-to-t from-card via-card/95 to-transparent px-1 pt-2"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 4px)" }}
+      >
+        {isArrived && (
           <div className="space-y-2">
             <ActionButton label="Iniciar corrida" onClick={() => { setPinError(null); setPinCode(""); setPinOpen(true); }} icon={ChevronRight} emphasize />
             <button
               type="button"
               onClick={() => { setCancelReason("Passageiro não apareceu"); setCancelOpen(true); }}
-              className="press-scale flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-destructive/10 px-4 py-3 text-[13px] font-bold uppercase tracking-[0.12em] text-destructive ring-1 ring-destructive/25 transition hover:bg-destructive/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/50"
+              className="press-scale flex min-h-10 w-full items-center justify-center gap-2 rounded-2xl bg-destructive/10 px-4 py-2 text-[12px] font-bold uppercase tracking-[0.12em] text-destructive ring-1 ring-destructive/25 transition hover:bg-destructive/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/50"
             >
-              <AlertTriangle className="h-4 w-4" strokeWidth={2} />
+              <AlertTriangle className="h-3.5 w-3.5" strokeWidth={2} />
               Passageiro não apareceu
             </button>
           </div>
@@ -2134,6 +2165,7 @@ function ActiveRidePanel({
       </div>
 
       {cancelRideDialog}
+
 
       {/* Modal de validação do PIN de segurança — PIN é o herói da tela */}
       {pinOpen && (
