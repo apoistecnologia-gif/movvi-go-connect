@@ -3408,27 +3408,24 @@ function StepFlow({
 
   return (
     <div className="animate-in fade-in duration-200">
-      {/* Header MOVVI DS — título quando escolhendo categoria */}
+      {/* Header "Escolha sua corrida" removido — ConfirmRideCompact já traz o
+          próprio cabeçalho ("Escolha a categoria") + card origem→destino. */}
       {uiStage === "selecting_category" && (
-        <div className="mb-3 flex items-start gap-3 animate-in fade-in slide-in-from-top-1 duration-200">
+        <div className="mb-2 flex items-center gap-2 animate-in fade-in slide-in-from-top-1 duration-200">
           <button
             type="button"
             onClick={() => setUiStage("route_preview")}
             aria-label="Voltar"
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-card text-[#1B1B1B] ring-1 ring-border/60 shadow-[0_6px_18px_-14px_rgba(15,23,42,0.25)] transition active:scale-[0.92]"
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-card text-[#1B1B1B] ring-1 ring-border/60 shadow-[0_6px_18px_-14px_rgba(15,23,42,0.25)] transition active:scale-[0.92]"
           >
-            <ArrowLeft className="h-[18px] w-[18px]" strokeWidth={2} />
+            <ArrowLeft className="h-[16px] w-[16px]" strokeWidth={2} />
           </button>
-          <div className="min-w-0 flex-1">
-            <h2 className="text-[24px] font-bold leading-tight tracking-tight text-[#111418]">
-              Escolha sua corrida
-            </h2>
-            <p className="mt-0.5 text-[13px] text-[#707070]">
-              Selecione a melhor opção para sua viagem.
-            </p>
-          </div>
+          <h2 className="text-[15px] font-bold leading-tight tracking-tight text-[#111418]">
+            Confirme sua corrida
+          </h2>
         </div>
       )}
+
 
 
       {/* Cabeçalho do destino (oculto na etapa de confirmação — tem card de rota próprio) */}
@@ -3977,14 +3974,8 @@ function RequestRideButton({
           </div>
         </div>
       )}
-      <div className="flex items-baseline justify-between px-1">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#707070]">
-          Você paga
-        </span>
-        <span className="text-[16px] font-bold tabular-nums text-[#111418]">
-          {formatBRL(fare)}
-        </span>
-      </div>
+      {/* Preço é exibido pelo chamador (ConfirmRideCompact / etapa de confirmação)
+          para evitar duplicação de "Você paga". */}
       <button
         type="button"
         disabled={busy || isBlocked}
