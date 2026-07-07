@@ -25,6 +25,7 @@ import { Route as PassageiroPerfilRouteImport } from './routes/passageiro.perfil
 import { Route as PassageiroNotificacoesRouteImport } from './routes/passageiro.notificacoes'
 import { Route as PassageiroLoginRouteImport } from './routes/passageiro.login'
 import { Route as PassageiroFavoritosRouteImport } from './routes/passageiro.favoritos'
+import { Route as PassageiroEnviosRouteImport } from './routes/passageiro.envios'
 import { Route as PassageiroCorridasRouteImport } from './routes/passageiro.corridas'
 import { Route as PassageiroConfiguracoesRouteImport } from './routes/passageiro.configuracoes'
 import { Route as PassageiroCarteiraRouteImport } from './routes/passageiro.carteira'
@@ -156,6 +157,11 @@ const PassageiroLoginRoute = PassageiroLoginRouteImport.update({
 const PassageiroFavoritosRoute = PassageiroFavoritosRouteImport.update({
   id: '/passageiro/favoritos',
   path: '/passageiro/favoritos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PassageiroEnviosRoute = PassageiroEnviosRouteImport.update({
+  id: '/passageiro/envios',
+  path: '/passageiro/envios',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PassageiroCorridasRoute = PassageiroCorridasRouteImport.update({
@@ -470,6 +476,7 @@ export interface FileRoutesByFullPath {
   '/passageiro/carteira': typeof PassageiroCarteiraRoute
   '/passageiro/configuracoes': typeof PassageiroConfiguracoesRoute
   '/passageiro/corridas': typeof PassageiroCorridasRoute
+  '/passageiro/envios': typeof PassageiroEnviosRoute
   '/passageiro/favoritos': typeof PassageiroFavoritosRoute
   '/passageiro/login': typeof PassageiroLoginRoute
   '/passageiro/notificacoes': typeof PassageiroNotificacoesRoute
@@ -539,6 +546,7 @@ export interface FileRoutesByTo {
   '/passageiro/carteira': typeof PassageiroCarteiraRoute
   '/passageiro/configuracoes': typeof PassageiroConfiguracoesRoute
   '/passageiro/corridas': typeof PassageiroCorridasRoute
+  '/passageiro/envios': typeof PassageiroEnviosRoute
   '/passageiro/favoritos': typeof PassageiroFavoritosRoute
   '/passageiro/login': typeof PassageiroLoginRoute
   '/passageiro/notificacoes': typeof PassageiroNotificacoesRoute
@@ -609,6 +617,7 @@ export interface FileRoutesById {
   '/passageiro/carteira': typeof PassageiroCarteiraRoute
   '/passageiro/configuracoes': typeof PassageiroConfiguracoesRoute
   '/passageiro/corridas': typeof PassageiroCorridasRoute
+  '/passageiro/envios': typeof PassageiroEnviosRoute
   '/passageiro/favoritos': typeof PassageiroFavoritosRoute
   '/passageiro/login': typeof PassageiroLoginRoute
   '/passageiro/notificacoes': typeof PassageiroNotificacoesRoute
@@ -680,6 +689,7 @@ export interface FileRouteTypes {
     | '/passageiro/carteira'
     | '/passageiro/configuracoes'
     | '/passageiro/corridas'
+    | '/passageiro/envios'
     | '/passageiro/favoritos'
     | '/passageiro/login'
     | '/passageiro/notificacoes'
@@ -749,6 +759,7 @@ export interface FileRouteTypes {
     | '/passageiro/carteira'
     | '/passageiro/configuracoes'
     | '/passageiro/corridas'
+    | '/passageiro/envios'
     | '/passageiro/favoritos'
     | '/passageiro/login'
     | '/passageiro/notificacoes'
@@ -818,6 +829,7 @@ export interface FileRouteTypes {
     | '/passageiro/carteira'
     | '/passageiro/configuracoes'
     | '/passageiro/corridas'
+    | '/passageiro/envios'
     | '/passageiro/favoritos'
     | '/passageiro/login'
     | '/passageiro/notificacoes'
@@ -888,6 +900,7 @@ export interface RootRouteChildren {
   PassageiroCarteiraRoute: typeof PassageiroCarteiraRoute
   PassageiroConfiguracoesRoute: typeof PassageiroConfiguracoesRoute
   PassageiroCorridasRoute: typeof PassageiroCorridasRoute
+  PassageiroEnviosRoute: typeof PassageiroEnviosRoute
   PassageiroFavoritosRoute: typeof PassageiroFavoritosRoute
   PassageiroLoginRoute: typeof PassageiroLoginRoute
   PassageiroNotificacoesRoute: typeof PassageiroNotificacoesRoute
@@ -1016,6 +1029,13 @@ declare module '@tanstack/react-router' {
       path: '/passageiro/favoritos'
       fullPath: '/passageiro/favoritos'
       preLoaderRoute: typeof PassageiroFavoritosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/passageiro/envios': {
+      id: '/passageiro/envios'
+      path: '/passageiro/envios'
+      fullPath: '/passageiro/envios'
+      preLoaderRoute: typeof PassageiroEnviosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/passageiro/corridas': {
@@ -1443,6 +1463,7 @@ const rootRouteChildren: RootRouteChildren = {
   PassageiroCarteiraRoute: PassageiroCarteiraRoute,
   PassageiroConfiguracoesRoute: PassageiroConfiguracoesRoute,
   PassageiroCorridasRoute: PassageiroCorridasRoute,
+  PassageiroEnviosRoute: PassageiroEnviosRoute,
   PassageiroFavoritosRoute: PassageiroFavoritosRoute,
   PassageiroLoginRoute: PassageiroLoginRoute,
   PassageiroNotificacoesRoute: PassageiroNotificacoesRoute,
