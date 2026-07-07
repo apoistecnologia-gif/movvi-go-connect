@@ -2894,23 +2894,28 @@ function PassageiroApp() {
                 </p>
               </div>
 
-              {/* Fare hero */}
-              <div className="rounded-[20px] bg-white p-3.5 ring-1 ring-[#76C139]/25 shadow-[0_4px_12px_-12px_rgba(118,193,57,0.12)] animate-in fade-in slide-in-from-bottom-2 duration-[220ms]">
-                <div className="flex items-center justify-between gap-3">
+              {/* Fare hero — dark MOVVI */}
+              <div className="relative overflow-hidden rounded-[22px] bg-gradient-to-br from-[#0F1712] via-[#152016] to-[#0F1712] p-4 text-white shadow-[0_18px_40px_-24px_rgba(15,23,18,0.55)] animate-in fade-in slide-in-from-bottom-2 duration-[220ms]">
+                <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-[#76C139]/16" />
+                <div className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-[#76C139]/20" />
+                <div className="relative flex items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="text-[10.5px] font-semibold uppercase tracking-wider text-[#707070]">Valor pago</div>
-                    <div className="mt-1 text-[26px] font-bold leading-none tracking-tight text-[#111418]">
+                    <div className="flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-[0.16em] text-[#76C139]">
+                      <Check className="h-3 w-3" strokeWidth={3} />
+                      Valor pago
+                    </div>
+                    <div className="mt-1.5 text-[30px] font-bold leading-none tracking-tight text-white tabular-nums">
                       {paidValue != null ? formatBRL(Number(paidValue)) : "—"}
                     </div>
                     {paymentLabel && (
-                      <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-[#F7F9F7] px-2.5 py-1 text-[11px] font-medium text-[#707070]">
+                      <div className="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-medium text-white/85 ring-1 ring-white/10">
                         <CreditCard className="h-3 w-3" strokeWidth={2} />
                         {paymentLabel}
                       </div>
                     )}
                   </div>
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#76C139]/12 text-[#76C139]">
-                    <Check className="h-5 w-5" strokeWidth={2.6} />
+                  <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[#76C139] text-[#0F1712] shadow-[0_10px_24px_-8px_rgba(118,193,57,0.7)]">
+                    <Check className="h-6 w-6" strokeWidth={2.8} />
                   </div>
                 </div>
               </div>
