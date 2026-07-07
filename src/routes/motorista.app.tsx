@@ -890,6 +890,26 @@ function MotoristaApp() {
     catch (e) { console.error("[MOVVI MOTORISTA] erro ao recusar:", e); }
   }
 
+  async function handleDriverCancelRide(motivo: string) {
+    const ride = activeRef.current;
+    if (!ride) return;
+    try {
+      await callCancel({ data: { rideId: ride.id, motivo } });
+      handledRidesRef.current.add(ride.id);
+      setActive(null);
+      setPolyline([]);
+      setEtaSeconds(null);
+      setLegKm(null);
+      toast.success("Corrida cancelada", {
+        description: "Você está disponível para receber outra chamada.",
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Não foi possível cancelar a corrida.";
+      toast.error("Falha ao cancelar", { description: msg });
+      throw e;
+    }
+  }
+
   // ===== CONTROLADOR ÚNICO DE CÂMERA =====
   // Regras:
   //  - initialCenter é congelado na primeira coord válida (evita setCenter
@@ -1175,7 +1195,7 @@ function MotoristaApp() {
                 final_price: active.estimated_price ? Number(active.estimated_price) : undefined,
               } });
             }}
-            onCancel={async () => { await callCancel({ data: { rideId: active.id } }); }}
+            onCancel={handleDriverCancelRide}
           />
         </MovviSheet>
       )}
