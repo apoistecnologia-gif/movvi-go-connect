@@ -4385,16 +4385,9 @@ function DriverEnRoute({
             <MapPin className="h-4 w-4 shrink-0 text-[#76C139]" strokeWidth={2} />
             <span className="truncate font-medium">{ride.destination_name}</span>
           </div>
-          {ride.estimated_price && (
-            <div className="mt-2 flex items-center justify-between text-[12px]">
-              <span className="text-[#707070]">Você paga</span>
-              <span className="text-[14px] font-bold text-[#111418] tabular-nums">
-                {formatBRL(Number(ride.estimated_price))}
-              </span>
-            </div>
-          )}
         </div>
       )}
+
 
       {/* Segurança MOVVI (SOS/incident) */}
       <SafetyCard
