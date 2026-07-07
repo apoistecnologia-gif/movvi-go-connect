@@ -115,6 +115,7 @@ export function BottomNav({
             <li key={item.to} className="flex-1">
               <Link
                 to={item.to}
+                viewTransition
                 aria-label={item.label}
                 aria-current={active ? "page" : undefined}
                 className={
