@@ -2,20 +2,38 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { MovviLogo } from "@/components/MovviLogo";
 import { ArrowUpRight, User, Shield } from "lucide-react";
 
+const HOME_TITLE = "MOVVI DRIVE — Mobilidade brasileira que move você";
+const HOME_DESC =
+  "Plataforma brasileira de mobilidade urbana. Peça corridas, dirija com a MOVVI ou gerencie a operação — rapidez, segurança e tecnologia em todo o Brasil.";
+const HOME_URL = "https://movvi-go-connect.lovable.app/";
+const HOME_OG_IMAGE =
+  "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/70a94c15-531e-4bf4-824b-6f2cef2bea65/id-preview-047658fb--0900bef2-57d2-47b9-93b1-0ea5defee501.lovable.app-1782494344290.png";
+
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "MOVVI — Acesso" },
+      { title: HOME_TITLE },
+      { name: "description", content: HOME_DESC },
+      { property: "og:title", content: HOME_TITLE },
+      { property: "og:description", content: HOME_DESC },
+      { property: "og:url", content: HOME_URL },
+      { property: "og:image", content: HOME_OG_IMAGE },
+      { name: "twitter:title", content: HOME_TITLE },
+      { name: "twitter:description", content: HOME_DESC },
+      { name: "twitter:image", content: HOME_OG_IMAGE },
+    ],
+    links: [{ rel: "canonical", href: HOME_URL }],
+    scripts: [
       {
-        name: "description",
-        content:
-          "A plataforma brasileira de mobilidade que conecta passageiros, motoristas e serviços com rapidez, segurança e tecnologia.",
-      },
-      { property: "og:title", content: "MOVVI — Acesso" },
-      {
-        property: "og:description",
-        content:
-          "Plataforma brasileira de mobilidade. Acesse como passageiro, motorista ou administrador.",
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          name: "MOVVI DRIVE",
+          url: HOME_URL,
+          logo: HOME_OG_IMAGE,
+          sameAs: [],
+        }),
       },
     ],
   }),
