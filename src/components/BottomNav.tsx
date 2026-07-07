@@ -76,14 +76,15 @@ export function BottomNav({
     <nav
       className={
         floating
-          ? "pointer-events-none fixed inset-x-0 bottom-0 px-3"
+          ? "pointer-events-none fixed inset-x-0"
           : "sticky bottom-0 z-30 border-t border-border bg-background/95 backdrop-blur-md"
       }
       style={
         floating
           ? {
-              paddingBottom: `calc(env(safe-area-inset-bottom) + 10px + ${bottomOffset})`,
-              paddingTop: 8,
+              bottom: `calc(env(safe-area-inset-bottom) + 12px + ${bottomOffset})`,
+              paddingLeft: 24,
+              paddingRight: 24,
               zIndex: zIndex ?? 40,
             }
           : { paddingBottom: "env(safe-area-inset-bottom)" }
