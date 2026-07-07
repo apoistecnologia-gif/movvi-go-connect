@@ -3441,45 +3441,11 @@ function SheetContent({
         </div>
       )}
 
-      {/* Serviços — grid horizontal com cards maiores e legíveis */}
-      {showDestinationInput && !destination && suggestions.length === 0 && (
-        <div className="animate-fade-slide mt-1 mb-1">
-          <div className="mb-2 flex items-baseline justify-between gap-2 px-0.5">
-            <div className="shrink-0 text-[13px] font-bold tracking-tight text-foreground">
-              Para você
-            </div>
-            <div className="min-w-0 truncate text-[11px] font-normal text-muted-foreground">
-              Escolha o serviço
-            </div>
-          </div>
-
-          <div className="-mx-4 overflow-x-auto pl-4 pr-6 pb-3 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <div className="flex gap-2.5 min-w-max">
-              {uiCategories.map((c) => {
-                const Icon = c.icon;
-                return (
-                  <button
-                    key={c.key}
-                    type="button"
-                    onClick={() => searchInputRef.current?.focus()}
-                    className="snap-start flex w-[88px] shrink-0 flex-col items-center gap-2 rounded-2xl bg-white/[0.05] px-2 py-3 ring-1 ring-white/10 transition hover:bg-white/[0.09] hover:ring-[#8DD92B]/50 active:scale-[0.97]"
-                  >
-                    <span
-                      className="grid h-12 w-12 place-items-center rounded-2xl"
-                      style={{ backgroundColor: `${c.color}22`, color: c.color }}
-                    >
-                      <Icon className="h-[22px] w-[22px]" strokeWidth={2} />
-                    </span>
-                    <span className="truncate w-full text-center text-[11.5px] font-semibold text-foreground/95">
-                      {c.label}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
+      {/*
+        Home NÃO exibe seleção de categoria/serviço. A escolha de categoria
+        acontece somente depois do destino, na tela ConfirmRideCompact.
+        Ver: `Regras UX MOVVI passageiro` — nada de "Escolha o serviço" aqui.
+      */}
 
 
 
