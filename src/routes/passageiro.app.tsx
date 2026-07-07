@@ -2458,7 +2458,7 @@ function PassageiroApp() {
 
 
         return (
-        <MovviSheet ref={sheetRef} key={categoryStage ? "category" : routeStage ? "route" : "destination"} snaps={snaps} initial={initial}>
+        <MovviSheet ref={sheetRef} key={categoryStage ? "category" : routeStage ? "route" : "destination"} snaps={snaps} initial={initial} onSnapChange={setSheetSnap}>
           <SheetContent
             geo={geo}
             addressStatus={addressStatus}
