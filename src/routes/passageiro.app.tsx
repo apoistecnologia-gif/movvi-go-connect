@@ -3719,11 +3719,15 @@ function ConfirmRideCompact({
     | "enviar"
     | "receber"
     | undefined;
+  const serviceMode = Route.useSearch({ select: (s) => s.service }) as
+    | "guincho"
+    | "mudanca"
+    | undefined;
   const etaLabel = fmtMin(route.durationSeconds);
 
   // Auto-selecionar a primeira categoria ao entrar nessa etapa.
-  // No modo Envios, a lista só contém "Entrega" — o auto-select força
-  // essa categoria e a listagem de escolha é ocultada.
+  // Em modos dedicados (Envios/Guincho/Mudança), a lista contém apenas uma
+  // categoria — o auto-select força essa categoria e a listagem é ocultada.
   useEffect(() => {
     if (!selectedCategoryKey && uiCategories.length > 0) {
       setSelectedCategoryKey(uiCategories[0].key);
@@ -3739,22 +3743,45 @@ function ConfirmRideCompact({
     haptic("select");
   };
 
-  // Copy adaptativa para o fluxo MOVVI Envios.
+  // Copy adaptativa para fluxos dedicados (Envios / Guincho / Mudança).
   const isEnvios = !!enviosMode;
+  const isGuincho = serviceMode === "guincho";
+  const isMudanca = serviceMode === "mudanca";
+  const isDedicated = isEnvios || isGuincho || isMudanca;
   const headingTitle = isEnvios
     ? enviosMode === "enviar"
       ? "MOVVI Envios · Enviar"
       : "MOVVI Envios · Receber"
-    : "Escolha sua corrida";
+    : isGuincho
+      ? "MOVVI Guincho"
+      : isMudanca
+        ? "MOVVI Mudanças"
+        : "Escolha sua corrida";
   const headingSubtitle = isEnvios
     ? "Confirme retirada, entrega e pagamento"
-    : "Categoria, pagamento e confirmação";
+    : isGuincho
+      ? "Confirme local do veículo, destino e pagamento"
+      : isMudanca
+        ? "Confirme retirada, entrega e pagamento"
+        : "Categoria, pagamento e confirmação";
   const originLabel = isEnvios
     ? enviosMode === "enviar"
       ? "Retirada"
       : "Coleta"
-    : null;
-  const destinationLabelHint = isEnvios ? "Entrega" : null;
+    : isGuincho
+      ? "Local do veículo"
+      : isMudanca
+        ? "Retirada"
+        : null;
+  const destinationLabelHint = isEnvios
+    ? "Entrega"
+    : isGuincho
+      ? "Destino do veículo"
+      : isMudanca
+        ? "Entrega"
+        : null;
+
+
 
 
   return (
