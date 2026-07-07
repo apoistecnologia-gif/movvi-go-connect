@@ -3996,30 +3996,28 @@ function SearchingPanel({
       : null;
 
   return (
-    <div className="pt-0.5 animate-in fade-in duration-[220ms]">
-      {/* Top status card — floating glass */}
-      <div className="mb-3 rounded-[20px] bg-white/95 px-3 py-2.5 ring-1 ring-border/60 shadow-[0_12px_32px_-20px_rgba(15,23,42,0.25)] backdrop-blur-xl animate-in fade-in slide-in-from-top-1 duration-[220ms]">
-        <div className="flex items-center gap-2.5">
-          <span className="relative grid h-8 w-8 shrink-0 place-items-center">
-            <span className="absolute inset-0 rounded-full bg-[#76C139]/25 animate-ping [animation-duration:1.8s]" />
-            <span className="relative grid h-2.5 w-2.5 place-items-center rounded-full bg-[#76C139] shadow-[0_0_0_4px_rgba(118,193,57,0.18)]" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <div className="text-[14px] font-bold leading-tight text-[#111418]">
-              {noDriversAvailable ? "Ampliando busca" : "Buscando motorista"}
-            </div>
-            <div className="mt-0.5 text-[11.5px] leading-tight text-[#707070]">
-              Motoristas próximos
-            </div>
+    <div className="space-y-2.5 pt-0.5 animate-in fade-in duration-[220ms]">
+      {/* Status header — compacto, alinhado com C6 */}
+      <div className="flex items-center gap-2 rounded-2xl bg-white px-2.5 py-2 ring-1 ring-border/60">
+        <span className="relative grid h-6 w-6 shrink-0 place-items-center">
+          <span className="absolute inset-0 rounded-full bg-[#76C139]/25 animate-ping [animation-duration:1.8s]" />
+          <span className="relative h-2 w-2 rounded-full bg-[#76C139]" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-[13px] font-semibold leading-tight text-[#111418]">
+            {noDriversAvailable ? "Ampliando busca" : "Buscando motorista"}
           </div>
-          <span className="shrink-0 rounded-full bg-[#76C139]/12 px-2 py-0.5 text-[10.5px] font-semibold text-[#5A9A2A] tabular-nums">
-            {driversCount} {driversCount === 1 ? "perto" : "perto"}
-          </span>
+          <div className="mt-0.5 text-[11px] leading-tight text-[#707070]">
+            Motoristas próximos
+          </div>
         </div>
+        <span className="shrink-0 rounded-full bg-[#76C139]/12 px-2 py-0.5 text-[10.5px] font-semibold text-[#5A9A2A] tabular-nums">
+          {driversCount} perto
+        </span>
       </div>
 
-      {/* Radar / searching animation — primary visual focus (compact) */}
-      <div className="relative mx-auto mb-1.5 grid h-[76px] w-[76px] place-items-center">
+      {/* Radar — foco visual, mais discreto */}
+      <div className="relative mx-auto grid h-[64px] w-[64px] place-items-center">
         <span className="absolute inset-0 rounded-full bg-[#76C139]/8 animate-ping [animation-duration:2.4s]" />
         <span
           className="absolute inset-2 rounded-full bg-[#76C139]/10 animate-ping [animation-duration:2.4s]"
@@ -4029,37 +4027,35 @@ function SearchingPanel({
           className="absolute inset-4 rounded-full bg-[#76C139]/14 animate-ping [animation-duration:2.4s]"
           style={{ animationDelay: "0.8s" }}
         />
-        <span className="absolute inset-[24px] rounded-full bg-white ring-1 ring-[#76C139]/25 shadow-[0_10px_28px_-14px_rgba(118,193,57,0.5)]" />
-        <span className="relative grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-[#8FD24A] to-[#5A9A2A] text-white shadow-[0_12px_28px_-12px_rgba(118,193,57,0.65)]">
+        <span className="relative grid h-8 w-8 place-items-center rounded-full bg-gradient-to-br from-[#8FD24A] to-[#5A9A2A] text-white shadow-[0_8px_20px_-10px_rgba(118,193,57,0.6)]">
           {CatIcon ? (
-            <CatIcon className="h-4.5 w-4.5" strokeWidth={1.75} />
+            <CatIcon className="h-4 w-4" strokeWidth={1.75} />
           ) : (
-            <Navigation2 className="h-4.5 w-4.5" strokeWidth={1.75} />
+            <Navigation2 className="h-4 w-4" strokeWidth={1.75} />
           )}
         </span>
       </div>
 
-
-      {/* Status message — legível, sem piscar */}
-      <div className="mb-0.5 flex min-h-[20px] items-center justify-center px-2">
-        <p className="text-center text-[14px] font-semibold text-[#111418]">
+      {/* Status message */}
+      <div className="px-1 text-center">
+        <p className="text-[13.5px] font-semibold leading-tight text-[#111418]">
           {singleMessage}
         </p>
+        <p className="mt-1 text-[11.5px] text-[#707070]">
+          Costuma levar menos de 30 segundos.
+        </p>
       </div>
-      <p className="mb-3 text-center text-[12px] text-[#4a5158]">
-        Costuma levar menos de 30 segundos.
-      </p>
 
-      {/* Resumo compacto — categoria · valor · pagamento (sempre visível, uma linha) */}
+      {/* Resumo compacto — categoria · valor · pagamento */}
       {(cat || fare != null || paymentLabel) && (
-        <div className="mb-2 flex items-center justify-between gap-2 rounded-[16px] bg-white px-3 py-2.5 ring-1 ring-border/60 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.22)]">
+        <div className="flex items-center justify-between gap-2 rounded-2xl bg-white px-2.5 py-2 ring-1 ring-border/60">
           <div className="flex min-w-0 items-center gap-2">
-            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#76C139]/12 text-[#5A9A2A]">
-              {CatIcon ? <CatIcon className="h-4 w-4" strokeWidth={2} /> : <Navigation2 className="h-4 w-4" strokeWidth={2} />}
+            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[#76C139]/12 text-[#5A9A2A]">
+              {CatIcon ? <CatIcon className="h-3.5 w-3.5" strokeWidth={2} /> : <Navigation2 className="h-3.5 w-3.5" strokeWidth={2} />}
             </span>
-            <span className="truncate text-[13px] font-semibold text-[#111418]">MOVVI {cat.label}</span>
+            <span className="truncate text-[12.5px] font-semibold text-[#111418]">MOVVI {cat.label}</span>
           </div>
-          <div className="flex shrink-0 items-center gap-2 text-[13px]">
+          <div className="flex shrink-0 items-center gap-2 text-[12.5px]">
             {fare != null && (
               <span className="font-bold text-[#111418] tabular-nums">{formatBRL(fare)}</span>
             )}
@@ -4075,31 +4071,31 @@ function SearchingPanel({
 
       {/* Detalhes da corrida — accordion, fechado por padrão */}
       {(pickupLabel || destinationLabel) && (
-        <details className="mb-2 group rounded-[16px] bg-white ring-1 ring-border/60">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2.5 [&::-webkit-details-marker]:hidden">
+        <details className="group rounded-2xl bg-white ring-1 ring-border/60">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-2.5 py-2 [&::-webkit-details-marker]:hidden">
             <div className="flex items-center gap-2">
-              <ListChecks className="h-4 w-4 text-[#5A9A2A]" strokeWidth={2} />
-              <span className="text-[13px] font-semibold text-[#111418]">Detalhes da corrida</span>
+              <ListChecks className="h-3.5 w-3.5 text-[#5A9A2A]" strokeWidth={2} />
+              <span className="text-[12px] font-semibold text-[#111418]">Detalhes da corrida</span>
             </div>
-            <ChevronDown className="h-4 w-4 text-[#94A3B8] transition-transform group-open:rotate-180" strokeWidth={2} />
+            <ChevronDown className="h-3.5 w-3.5 text-[#94A3B8] transition-transform group-open:rotate-180" strokeWidth={2} />
           </summary>
-          <div className="border-t border-border/50 px-3 py-3">
-            <div className="flex items-stretch gap-3.5">
+          <div className="border-t border-border/50 px-3 py-2.5">
+            <div className="flex items-stretch gap-3">
               <div className="flex flex-col items-center pt-1">
-                <span className="h-2.5 w-2.5 rounded-full bg-[#76C139] ring-4 ring-[#76C139]/15" />
+                <span className="h-2 w-2 rounded-full bg-[#76C139] ring-4 ring-[#76C139]/15" />
                 <span className="my-1.5 w-px flex-1 bg-gradient-to-b from-[#76C139]/40 via-border/60 to-[#111418]/30" />
-                <span className="grid h-5 w-5 place-items-center rounded-full bg-[#111418] text-white">
-                  <MapPin className="h-[11px] w-[11px]" strokeWidth={2.25} />
+                <span className="grid h-4 w-4 place-items-center rounded-full bg-[#111418] text-white">
+                  <MapPin className="h-[10px] w-[10px]" strokeWidth={2.25} />
                 </span>
               </div>
               <div className="min-w-0 flex-1">
-                <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#707070] leading-none">Embarque</div>
-                <div className="mt-1 line-clamp-2 text-[13.5px] font-semibold text-[#111418] leading-snug">
+                <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#707070] leading-none">Embarque</div>
+                <div className="mt-1 line-clamp-2 text-[13px] font-semibold text-[#111418] leading-snug">
                   {pickupLabel || "Localização atual"}
                 </div>
-                <div className="my-2.5 h-px bg-border/50" />
-                <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#707070] leading-none">Destino</div>
-                <div className="mt-1 line-clamp-2 text-[13.5px] font-semibold text-[#111418] leading-snug">
+                <div className="my-2 h-px bg-border/50" />
+                <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#707070] leading-none">Destino</div>
+                <div className="mt-1 line-clamp-2 text-[13px] font-semibold text-[#111418] leading-snug">
                   {destinationLabel || "—"}
                 </div>
               </div>
@@ -4110,6 +4106,7 @@ function SearchingPanel({
     </div>
   );
 }
+
 
 function SearchingCancelButton({ onCancel }: { onCancel: () => void }) {
   return (
