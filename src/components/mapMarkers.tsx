@@ -18,7 +18,27 @@ const CAR_PATH =
 const PIN_PATH =
   "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z";
 
-/* ────────────── Passageiro: ponto GPS com pulso + glow ────────────── */
+/* ────────────── Passageiro: ponto GPS com pulso animado + glow ──────────────
+ * O pulso é interpolado via RAF (scale 8→22, opacidade 0.30→0). Um segundo
+ * anel entra defasado 900ms para sensação contínua de "vivo". Custo: 2 setState
+ * a cada frame — desprezível para 1 marcador na tela.
+ */
+function useRipple(period = 1800, offset = 0) {
+  const [phase, setPhase] = useState(0);
+  useEffect(() => {
+    let raf = 0;
+    const start = performance.now() - offset;
+    const step = (now: number) => {
+      const t = ((now - start) % period) / period; // 0..1
+      setPhase(t);
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [period, offset]);
+  return phase;
+}
+
 export function PassengerLocationMarker({
   position,
   color = "#3b82f6",
@@ -26,38 +46,34 @@ export function PassengerLocationMarker({
   position: LatLng;
   color?: string;
 }) {
+  const p1 = useRipple(1800, 0);
+  const p2 = useRipple(1800, 900);
+  const ring = (t: number, z: number) => {
+    const scale = 8 + t * 16; // 8 → 24
+    const opacity = (1 - t) * 0.28;
+    return (
+      <Marker
+        position={position}
+        clickable={false}
+        zIndex={z}
+        icon={{
+          path: safeSymbol("CIRCLE"),
+          scale,
+          fillColor: color,
+          fillOpacity: opacity * 0.5,
+          strokeColor: color,
+          strokeOpacity: opacity,
+          strokeWeight: 1.5,
+        }}
+      />
+    );
+  };
   return (
     <>
-      {/* glow externo — reduzido ~40% para acabamento premium */}
-      <Marker
-        position={position}
-        clickable={false}
-        zIndex={9996}
-        icon={{
-          path: safeSymbol("CIRCLE"),
-          scale: 17,
-          fillColor: color,
-          fillOpacity: 0.06,
-          strokeColor: color,
-          strokeOpacity: 0.15,
-          strokeWeight: 1,
-        }}
-      />
-      <Marker
-        position={position}
-        clickable={false}
-        zIndex={9997}
-        icon={{
-          path: safeSymbol("CIRCLE"),
-          scale: 12,
-          fillColor: color,
-          fillOpacity: 0.14,
-          strokeColor: color,
-          strokeOpacity: 0.3,
-          strokeWeight: 1,
-        }}
-      />
+      {ring(p1, 9995)}
+      {ring(p2, 9996)}
       {/* sombra suave */}
+
       <Marker
         position={position}
         clickable={false}
