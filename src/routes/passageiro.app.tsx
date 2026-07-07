@@ -2498,6 +2498,7 @@ function PassageiroApp() {
             onExpandSheet={(p) => sheetRef.current?.snapTo(p)}
             paymentMethod={paymentMethod}
             setPaymentMethod={setPaymentMethod}
+            userName={userName}
           />
         </MovviSheet>
         );
