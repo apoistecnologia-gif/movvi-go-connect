@@ -3883,10 +3883,11 @@ function ConfirmRideCompact({
           </div>
           <RequestRideButton
             busy={busy}
-            categoryLabel={selectedCategory.label}
+            categoryLabel={isEnvios ? "Envios" : selectedCategory.label}
             fare={selectedFare}
             onSubmit={onSubmit}
           />
+
         </div>
       )}
       <div style={{ height: "env(safe-area-inset-bottom)" }} />
