@@ -2108,7 +2108,7 @@ function ActiveRidePanel({
         <details className="group rounded-2xl bg-background/50 ring-1 ring-border/60 [&_summary::-webkit-details-marker]:hidden">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2.5 text-[12.5px] font-semibold text-foreground/90">
             <span className="flex items-center gap-2">
-              <ShieldIcon />
+              <AlertTriangle className="h-3.5 w-3.5 text-primary" strokeWidth={2} />
               Segurança MOVVI
             </span>
             <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-90" />
