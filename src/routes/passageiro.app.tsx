@@ -3274,7 +3274,7 @@ function SheetContent({
   const km = route ? route.distanceMeters / 1000 : 0;
   const min = route ? route.durationSeconds / 60 : 0;
 
-  const uiCategories = useUiCategories();
+  const uiCategories = useFlowCategories();
   const selectedCategory = useMemo(
     () => uiCategories.find((c) => c.key === selectedCategoryKey) ?? null,
     [uiCategories, selectedCategoryKey],
@@ -3559,7 +3559,7 @@ function StepFlow({
   setPaymentMethod,
 }: StepFlowProps) {
 
-  const uiCategories = useUiCategories();
+  const uiCategories = useFlowCategories();
   useEffect(() => {
     if (route && uiStage === "selecting_destination") setUiStage("route_preview");
   }, [route, uiStage, setUiStage]);
@@ -3699,7 +3699,7 @@ function ConfirmRideCompact({
   onSubmit: () => void;
   onBack: () => void;
 }) {
-  const uiCategories = useUiCategories();
+  const uiCategories = useFlowCategories();
   const etaLabel = fmtMin(route.durationSeconds);
 
   // Auto-selecionar a primeira categoria ao entrar nessa etapa.
