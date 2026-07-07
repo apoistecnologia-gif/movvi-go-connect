@@ -231,6 +231,7 @@ export type Database = {
         Row: {
           category: string
           description: string | null
+          is_public: boolean
           key: string
           updated_at: string
           updated_by: string | null
@@ -239,6 +240,7 @@ export type Database = {
         Insert: {
           category?: string
           description?: string | null
+          is_public?: boolean
           key: string
           updated_at?: string
           updated_by?: string | null
@@ -247,6 +249,7 @@ export type Database = {
         Update: {
           category?: string
           description?: string | null
+          is_public?: boolean
           key?: string
           updated_at?: string
           updated_by?: string | null
@@ -2541,6 +2544,22 @@ export type Database = {
       }
       auto_suspend_overdue_subscriptions: { Args: never; Returns: undefined }
       generate_share_token: { Args: never; Returns: string }
+      get_driver_amenities_public: {
+        Args: { target_user_id: string }
+        Returns: {
+          air_conditioning: boolean
+          candy: boolean
+          charger: boolean
+          child_seat: boolean
+          large_luggage: boolean
+          music_on_demand: boolean
+          pet_friendly: boolean
+          quiet_ride: boolean
+          user_id: string
+          water: boolean
+          wifi: boolean
+        }[]
+      }
       get_driver_home_kpis: {
         Args: { _user_id: string }
         Returns: {
