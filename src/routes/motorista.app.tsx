@@ -2598,3 +2598,146 @@ function CircleAction({
     </div>
   );
 }
+
+/* ============================================================
+   FULL-SCREEN NAVIGATION OVERLAY — Fase EM_VIAGEM
+   Sem MovviSheet. Painel superior compacto (ETA/km/chegada) +
+   painel inferior fixo (~128px) com passageiro, destino,
+   ações rápidas e CTA "Finalizar corrida".
+   ============================================================ */
+function ActiveTripNavOverlay({
+  ride,
+  passenger,
+  etaSeconds,
+  legKm,
+  onOpenProfile,
+  onComplete,
+}: {
+  ride: RideRow;
+  passenger: Passenger | null;
+  etaSeconds: number | null;
+  legKm: number | null;
+  onOpenProfile?: () => void;
+  onComplete: () => Promise<void> | void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const minutes = etaSeconds != null ? Math.max(1, Math.round(etaSeconds / 60)) : null;
+  const arrivalTime = etaSeconds != null
+    ? new Date(Date.now() + etaSeconds * 1000).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+    : null;
+
+  const handleComplete = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await onComplete();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <>
+      {/* Top overlay — instrução + ETA/km/chegada */}
+      <div
+        className="fixed left-1/2 z-40 -translate-x-1/2 px-4 w-full max-w-md pointer-events-none"
+        style={{ top: "calc(env(safe-area-inset-top) + 12px)" }}
+      >
+        <div className="pointer-events-auto rounded-[22px] border border-white/70 bg-white/90 px-4 py-3 shadow-[0_12px_36px_-16px_rgba(0,0,0,0.35)] backdrop-blur-md backdrop-saturate-150 animate-in fade-in slide-in-from-top-3 duration-300">
+          <div className="mb-2 flex items-center gap-2">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-70" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+            </span>
+            <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-primary">
+              Indo para o destino
+            </span>
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <TopStat
+              icon={<Clock className="h-[15px] w-[15px]" strokeWidth={1.75} />}
+              value={minutes != null ? String(minutes) : "—"}
+              unit="min"
+              label="ETA"
+              highlight
+            />
+            <div className="h-9 w-px bg-black/10" />
+            <TopStat
+              icon={<RouteIcon className="h-[15px] w-[15px]" strokeWidth={1.75} />}
+              value={legKm != null ? legKm.toFixed(1) : "—"}
+              unit="km"
+              label="Restante"
+            />
+            <div className="h-9 w-px bg-black/10" />
+            <TopStat
+              icon={<MapPin className="h-[15px] w-[15px]" strokeWidth={1.75} />}
+              value={arrivalTime ?? "—"}
+              unit=""
+              label="Chegada"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom compact bar — passageiro, destino, ações e CTA */}
+      <div
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.08] bg-[#0B0F17]/95 backdrop-blur-xl animate-in fade-in slide-in-from-bottom-2 duration-200"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      >
+        <div className="mx-auto flex w-full max-w-md flex-col gap-2.5 px-4 pt-3 pb-3">
+          <div className="flex items-center gap-2.5">
+            <button
+              type="button"
+              onClick={onOpenProfile}
+              aria-label="Ver perfil do passageiro"
+              className="flex min-w-0 flex-1 items-center gap-2.5 rounded-2xl bg-white/[0.05] px-2.5 py-2 text-left ring-1 ring-white/10 transition active:scale-[0.99] hover:bg-white/[0.08]"
+            >
+              <Avatar
+                src={passenger?.avatar_url ?? (ride as { passenger_photo_url?: string | null }).passenger_photo_url ?? null}
+                name={passenger?.name ?? "?"}
+                size={36}
+              />
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-[13px] font-bold leading-tight text-white">
+                  {passenger?.name ?? "Passageiro"}
+                </div>
+                <div className="mt-0.5 flex items-center gap-1 truncate text-[11.5px] text-white/60">
+                  <MapPin className="h-3 w-3 shrink-0" strokeWidth={2} />
+                  <span className="truncate">{ride.destination_name || "Destino"}</span>
+                </div>
+              </div>
+            </button>
+            <a
+              href={passenger?.phone ? `tel:${passenger.phone}` : undefined}
+              aria-label="Ligar para o passageiro"
+              className={`grid h-11 w-11 shrink-0 place-items-center rounded-full bg-white/[0.05] text-white ring-1 ring-white/10 transition active:scale-[0.95] hover:bg-white/[0.1] ${
+                passenger?.phone ? "" : "pointer-events-none opacity-40"
+              }`}
+            >
+              <Phone className="h-[17px] w-[17px]" strokeWidth={1.9} />
+            </a>
+          </div>
+
+          <button
+            type="button"
+            disabled={busy}
+            onClick={handleComplete}
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-[14px] bg-[#76C139] text-[15px] font-bold uppercase tracking-[0.06em] text-[#071008] shadow-[0_10px_22px_-14px_rgba(118,193,57,0.4)] transition active:scale-[0.98] hover:brightness-[1.05] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {busy ? (
+              <>
+                <span className="h-4 w-4 rounded-full border-2 border-[#071008]/70 border-t-transparent animate-spin" />
+                Finalizando…
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="h-5 w-5" strokeWidth={2} />
+                Finalizar corrida
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
