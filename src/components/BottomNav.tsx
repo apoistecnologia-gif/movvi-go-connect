@@ -29,8 +29,8 @@ type NavTheme = "auto" | "dark" | "light";
 
 export const PASSENGER_NAV: NavItem[] = [
   { to: "/passageiro/app", label: "Início", icon: Home },
+  { to: "/passageiro/servicos", label: "Serviços", icon: LayoutGrid },
   { to: "/passageiro/corridas", label: "Atividade", icon: ClipboardList },
-  { to: "/passageiro/favoritos", label: "Favoritos", icon: Heart },
   { to: "/passageiro/perfil", label: "Conta", icon: User },
 ];
 
