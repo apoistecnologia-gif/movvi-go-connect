@@ -3295,16 +3295,16 @@ function SheetContent({
 
       {/* Categorias — preview compacto de serviços disponíveis */}
       {showDestinationInput && !destination && suggestions.length === 0 && (
-        <div className="animate-fade-slide mt-1 mb-2">
-          <div className="mb-1.5 flex items-center justify-between">
-            <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-foreground/60">
-              Serviços MOVVI
+        <div className="animate-fade-slide mt-1 mb-1">
+          <div className="mb-1.5 flex items-center justify-between gap-2">
+            <div className="shrink-0 text-[10px] font-bold uppercase tracking-[0.12em] text-foreground/70">
+              Serviços
             </div>
-            <div className="text-[10px] font-medium text-foreground/45">
+            <div className="hidden xs:block truncate text-[10.5px] font-medium text-foreground/60">
               Escolha o destino para ver valores
             </div>
           </div>
-          <div className="-mx-4 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="-mx-4 overflow-x-auto pl-4 pr-6 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <div className="flex gap-2 min-w-max">
               {uiCategories.map((c) => {
                 const Icon = c.icon;
@@ -3313,15 +3313,15 @@ function SheetContent({
                     key={c.key}
                     type="button"
                     onClick={() => searchInputRef.current?.focus()}
-                    className="flex w-[68px] shrink-0 flex-col items-center gap-1.5 rounded-xl bg-white/[0.04] px-1.5 py-2 ring-1 ring-white/10 transition hover:bg-white/[0.08] hover:ring-[#8DD92B]/40 active:scale-[0.97]"
+                    className="flex w-[62px] shrink-0 flex-col items-center gap-1 rounded-xl bg-white/[0.04] px-1 py-1.5 ring-1 ring-white/10 transition hover:bg-white/[0.08] hover:ring-[#8DD92B]/40 active:scale-[0.97]"
                   >
                     <span
-                      className="grid h-8 w-8 place-items-center rounded-full"
+                      className="grid h-7 w-7 place-items-center rounded-full"
                       style={{ backgroundColor: `${c.color}26`, color: c.color }}
                     >
-                      <Icon className="h-4 w-4" strokeWidth={2.2} />
+                      <Icon className="h-[14px] w-[14px]" strokeWidth={2.2} />
                     </span>
-                    <span className="truncate w-full text-center text-[10.5px] font-semibold text-foreground/90">
+                    <span className="truncate w-full text-center text-[10px] font-semibold text-foreground/90">
                       {c.label}
                     </span>
                   </button>
@@ -3331,6 +3331,7 @@ function SheetContent({
           </div>
         </div>
       )}
+
 
 
       {/* COM destino: fluxo em 4 etapas (estilo Uber/99/InDrive) */}
