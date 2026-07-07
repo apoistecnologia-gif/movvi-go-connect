@@ -5,7 +5,7 @@ import { PASSENGER_NAV } from "@/components/BottomNav";
 import { MovviLogo } from "@/components/MovviLogo";
 
 export const Route = createFileRoute("/passageiro/sobre")({
-  head: () => ({ meta: [{ title: "Sobre — MOVVI" }] }),
+  head: () => ({ meta: [{ title: "Sobre — MOVVI" }, { name: "robots", content: "noindex" }] }),
   component: SobrePage,
 });
 

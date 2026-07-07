@@ -7,7 +7,7 @@ import { Loader2, ShieldCheck } from "lucide-react";
 import { DSButton, DSInput, DSLabel } from "@/design-system";
 
 export const Route = createFileRoute("/admin/login")({
-  head: () => ({ meta: [{ title: "Admin — MOVVI DRIVE" }] }),
+  head: () => ({ meta: [{ title: "Admin — MOVVI DRIVE" }, { name: "robots", content: "noindex" }] }),
   component: AdminLoginPage,
 });
 
