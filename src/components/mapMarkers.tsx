@@ -296,13 +296,38 @@ export function NearbyDriverMarker({
 }) {
   const opacity = dimmed ? 0.55 : 1;
   const scale = dimmed ? 1.05 : 1.35;
+  // Fade-in suave ao entrar no mapa (~450ms) — sem RAF por marker.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    const t = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(t);
+  }, []);
+  const fade = mounted ? 1 : 0;
   return (
     <>
+      {/* halo verde suave — só nos "vivos", indica presença */}
+      {!dimmed && (
+        <Marker
+          position={position}
+          clickable={false}
+          zIndex={9994}
+          opacity={fade}
+          icon={{
+            path: safeSymbol("CIRCLE"),
+            scale: 14,
+            fillColor: "#8DD92B",
+            fillOpacity: 0.08,
+            strokeColor: "#8DD92B",
+            strokeOpacity: 0.22,
+            strokeWeight: 1,
+          }}
+        />
+      )}
       <Marker
         position={position}
         clickable={false}
         zIndex={9995}
-        opacity={dimmed ? 0.35 : 1}
+        opacity={(dimmed ? 0.35 : 1) * fade}
         icon={{
           path: safeSymbol("CIRCLE"),
           scale: dimmed ? 8 : 11,
@@ -313,7 +338,7 @@ export function NearbyDriverMarker({
       />
       <Marker
         position={position}
-        opacity={opacity}
+        opacity={opacity * fade}
         icon={{
           path: CAR_PATH,
           fillColor: "#8DD92B",
@@ -327,3 +352,4 @@ export function NearbyDriverMarker({
     </>
   );
 }
+
