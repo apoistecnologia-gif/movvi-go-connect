@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Car, Bike, Truck, Package, Send } from "lucide-react";
+import { Bike, Box, Car, Send, Truck } from "lucide-react";
 import { MovviHeader } from "@/components/MovviHeader";
 import { BottomNav, PASSENGER_NAV } from "@/components/BottomNav";
 import { ServiceCard, ServicesGrid } from "@/components/ui-kit";
@@ -11,7 +11,7 @@ export const Route = createFileRoute("/passageiro/servicos")({
       {
         name: "description",
         content:
-          "Escolha o serviço MOVVI ideal: carro, moto, frete, guincho ou MOVVI Envios.",
+          "Escolha o serviço MOVVI: corridas, entregas, guincho, mudanças e fretes grandes.",
       },
       { name: "robots", content: "noindex, nofollow" },
     ],
@@ -29,16 +29,17 @@ function ServicosPage() {
             Serviços MOVVI
           </h1>
           <p className="text-[13px] text-muted-foreground">
-            Escolha o serviço que você precisa. Corridas usam a busca de
-            destino do início. MOVVI Envios tem um fluxo próprio.
+            Corridas para pessoas, entregas de itens e serviços especiais —
+            cada um com o fluxo certo.
           </p>
         </header>
 
-        <ServicesGrid title="Transporte de passageiros">
+        {/* A. Corridas — transporte de passageiros */}
+        <ServicesGrid title="Corridas">
           <ServiceCard
             icon={Car}
-            title="Corridas"
-            description="Viagens rápidas de carro pela cidade."
+            title="Carros"
+            description="Viagens urbanas com conforto."
             to="/passageiro/app"
           />
           <ServiceCard
@@ -49,27 +50,29 @@ function ServicosPage() {
           />
         </ServicesGrid>
 
-        <ServicesGrid title="Carga e veículos">
-          <ServiceCard
-            icon={Package}
-            title="Fretes"
-            description="Mudanças e cargas maiores."
-            to="/passageiro/app"
-          />
-          <ServiceCard
-            icon={Truck}
-            title="Guincho"
-            description="Remoção e transporte de veículos."
-            to="/passageiro/app"
-          />
-        </ServicesGrid>
-
+        {/* B. Entregas */}
         <ServicesGrid title="Entregas">
           <ServiceCard
             icon={Send}
             title="MOVVI Envios"
             description="Enviar ou receber documentos e pequenos volumes."
             to="/passageiro/envios"
+          />
+        </ServicesGrid>
+
+        {/* C. Serviços especiais — cada um com fluxo próprio */}
+        <ServicesGrid title="Serviços especiais">
+          <ServiceCard
+            icon={Truck}
+            title="MOVVI Guincho"
+            description="Remoção e transporte de veículos com questionário guiado."
+            to="/passageiro/guincho"
+          />
+          <ServiceCard
+            icon={Box}
+            title="MOVVI Mudanças"
+            description="Mudanças, fretes grandes e cargas volumosas."
+            to="/passageiro/mudancas"
           />
         </ServicesGrid>
       </main>

@@ -441,13 +441,20 @@ function OriginAction({
 
 
 
-type PassageiroSearch = { envios?: "enviar" | "receber" };
+type PassageiroSearch = {
+  envios?: "enviar" | "receber";
+  service?: "guincho" | "mudanca";
+};
 
 export const Route = createFileRoute("/passageiro/app")({
   head: () => ({ meta: [{ title: "MOVVI Drive — Passageiro" }] }),
   validateSearch: (raw: Record<string, unknown>): PassageiroSearch => {
+    const out: PassageiroSearch = {};
     const v = raw?.envios;
-    return v === "enviar" || v === "receber" ? { envios: v } : {};
+    if (v === "enviar" || v === "receber") out.envios = v;
+    const s = raw?.service;
+    if (s === "guincho" || s === "mudanca") out.service = s;
+    return out;
   },
   component: () => (
     <UiCategoriesProvider>
@@ -583,10 +590,12 @@ type UiCategory = {
 // UI_CATEGORIES agora vem do banco em realtime via `useUiCategories()` (lib/uiCategories.tsx).
 
 /**
- * Categoria "envios" (Entrega) NÃO aparece no fluxo normal de corrida.
- * Ela só é exibida quando o passageiro entrou pelo fluxo dedicado MOVVI
- * Envios (`/passageiro/envios/*`), que navega para `/passageiro/app` com
- * `?envios=enviar|receber`. Neste modo, a lista contém apenas Entrega.
+ * Categorias "especiais" (envios, guincho, fretes/mudança) NÃO aparecem no
+ * fluxo normal de corrida. Elas só aparecem quando o passageiro entrou pelo
+ * fluxo dedicado correspondente:
+ *  - `/passageiro/envios/*` → `?envios=enviar|receber` → só "Entrega"
+ *  - `/passageiro/guincho`  → `?service=guincho`      → só "Guincho"
+ *  - `/passageiro/mudancas` → `?service=mudanca`      → só "Mudança/Fretes"
  */
 function useFlowCategories() {
   const all = useUiCategories();
@@ -594,14 +603,20 @@ function useFlowCategories() {
     | "enviar"
     | "receber"
     | undefined;
-  return useMemo(
-    () =>
-      envios
-        ? all.filter((c) => c.backend === "envios")
-        : all.filter((c) => c.backend !== "envios"),
-    [all, envios],
-  );
+  const service = Route.useSearch({ select: (s) => s.service }) as
+    | "guincho"
+    | "mudanca"
+    | undefined;
+  return useMemo(() => {
+    if (envios) return all.filter((c) => c.backend === "envios");
+    if (service === "guincho") return all.filter((c) => c.backend === "guincho");
+    if (service === "mudanca") return all.filter((c) => c.backend === "fretes");
+    return all.filter(
+      (c) => c.backend !== "envios" && c.backend !== "guincho" && c.backend !== "fretes",
+    );
+  }, [all, envios, service]);
 }
+
 
 
 const fmtMin = (s: number) => `${Math.max(1, Math.round(s / 60))} min`;
@@ -3704,11 +3719,15 @@ function ConfirmRideCompact({
     | "enviar"
     | "receber"
     | undefined;
+  const serviceMode = Route.useSearch({ select: (s) => s.service }) as
+    | "guincho"
+    | "mudanca"
+    | undefined;
   const etaLabel = fmtMin(route.durationSeconds);
 
   // Auto-selecionar a primeira categoria ao entrar nessa etapa.
-  // No modo Envios, a lista só contém "Entrega" — o auto-select força
-  // essa categoria e a listagem de escolha é ocultada.
+  // Em modos dedicados (Envios/Guincho/Mudança), a lista contém apenas uma
+  // categoria — o auto-select força essa categoria e a listagem é ocultada.
   useEffect(() => {
     if (!selectedCategoryKey && uiCategories.length > 0) {
       setSelectedCategoryKey(uiCategories[0].key);
@@ -3724,22 +3743,45 @@ function ConfirmRideCompact({
     haptic("select");
   };
 
-  // Copy adaptativa para o fluxo MOVVI Envios.
+  // Copy adaptativa para fluxos dedicados (Envios / Guincho / Mudança).
   const isEnvios = !!enviosMode;
+  const isGuincho = serviceMode === "guincho";
+  const isMudanca = serviceMode === "mudanca";
+  const isDedicated = isEnvios || isGuincho || isMudanca;
   const headingTitle = isEnvios
     ? enviosMode === "enviar"
       ? "MOVVI Envios · Enviar"
       : "MOVVI Envios · Receber"
-    : "Escolha sua corrida";
+    : isGuincho
+      ? "MOVVI Guincho"
+      : isMudanca
+        ? "MOVVI Mudanças"
+        : "Escolha sua corrida";
   const headingSubtitle = isEnvios
     ? "Confirme retirada, entrega e pagamento"
-    : "Categoria, pagamento e confirmação";
+    : isGuincho
+      ? "Confirme local do veículo, destino e pagamento"
+      : isMudanca
+        ? "Confirme retirada, entrega e pagamento"
+        : "Categoria, pagamento e confirmação";
   const originLabel = isEnvios
     ? enviosMode === "enviar"
       ? "Retirada"
       : "Coleta"
-    : null;
-  const destinationLabelHint = isEnvios ? "Entrega" : null;
+    : isGuincho
+      ? "Local do veículo"
+      : isMudanca
+        ? "Retirada"
+        : null;
+  const destinationLabelHint = isEnvios
+    ? "Entrega"
+    : isGuincho
+      ? "Destino do veículo"
+      : isMudanca
+        ? "Entrega"
+        : null;
+
+
 
 
   return (
@@ -3799,7 +3841,7 @@ function ConfirmRideCompact({
           No fluxo MOVVI Envios só existe uma opção (Entrega), então a
           listagem de escolha é ocultada — a categoria já foi definida
           pela entrada em `/passageiro/envios`. */}
-      <div className={isEnvios ? "hidden" : undefined}>
+      <div className={isDedicated ? "hidden" : undefined}>
         <div className="mb-1.5 text-[10.5px] font-bold uppercase tracking-[0.14em] text-white/50">
           Escolha a categoria
         </div>
@@ -3883,7 +3925,16 @@ function ConfirmRideCompact({
           </div>
           <RequestRideButton
             busy={busy}
-            categoryLabel={isEnvios ? "Envios" : selectedCategory.label}
+            categoryLabel={isEnvios ? "Envios" : isGuincho ? "Guincho" : isMudanca ? "Mudanças" : selectedCategory.label}
+            ctaLabel={
+              isGuincho
+                ? "Solicitar guincho"
+                : isMudanca
+                  ? "Solicitar mudança"
+                  : isEnvios
+                    ? "Solicitar MOVVI Envios"
+                    : undefined
+            }
             fare={selectedFare}
             onSubmit={onSubmit}
           />
@@ -3920,11 +3971,13 @@ function FareEstimateCard({ route, fare }: { route: RouteResult; fare: number | 
 function RequestRideButton({
   busy,
   categoryLabel,
+  ctaLabel,
   fare,
   onSubmit,
 }: {
   busy: boolean;
   categoryLabel: string;
+  ctaLabel?: string;
   fare: number;
   onSubmit: () => void;
 }) {
@@ -3981,7 +4034,7 @@ function RequestRideButton({
             Solicitando...
           </>
         ) : (
-          `Confirmar MOVVI ${categoryLabel}`
+          ctaLabel ?? `Confirmar MOVVI ${categoryLabel}`
         )}
       </button>
     </div>
