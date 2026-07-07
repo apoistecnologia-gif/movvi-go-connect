@@ -3990,16 +3990,13 @@ function SearchingPanel({
       </div>
 
 
-      {/* Rotating status message */}
-      <div className="mb-0.5 flex min-h-[20px] items-center justify-center">
-        <p
-          key={msgIdx}
-          className="animate-in fade-in slide-in-from-bottom-1 duration-[300ms] text-[14px] font-medium text-[#111418]"
-        >
-          {messages[msgIdx]}
+      {/* Status message — legível, sem piscar */}
+      <div className="mb-0.5 flex min-h-[20px] items-center justify-center px-2">
+        <p className="text-center text-[14px] font-semibold text-[#111418]">
+          {singleMessage}
         </p>
       </div>
-      <p className="mb-3 text-center text-[11.5px] text-[#707070]">
+      <p className="mb-3 text-center text-[12px] text-[#4a5158]">
         Costuma levar menos de 30 segundos.
       </p>
 
