@@ -48,18 +48,6 @@ function ServicosPage() {
             description="Ágil no trânsito, preço menor."
             to="/passageiro/app"
           />
-          <ServiceCard
-            icon={Briefcase}
-            title="Executivo"
-            description="Carros premium para reuniões e viagens de negócio."
-            to="/passageiro/app"
-          />
-          <ServiceCard
-            icon={PawPrint}
-            title="Pet"
-            description="Motorista preparado para levar seu pet com segurança."
-            to="/passageiro/app"
-          />
         </ServicesGrid>
 
         {/* B. Entregas */}
