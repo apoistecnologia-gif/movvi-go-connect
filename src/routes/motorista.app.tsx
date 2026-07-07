@@ -1931,7 +1931,7 @@ function ActiveRidePanel({
 
           {/* Live ETA hero */}
           <div className="text-center">
-            <div className="text-[13px] font-medium text-muted-foreground">Chegando ao destino em</div>
+            <div className="text-[13px] font-semibold text-foreground/75">Chegando ao destino em</div>
             <div className="mt-0.5 text-[30px] font-extrabold tabular-nums leading-none tracking-tight text-foreground">
               {minutes != null ? `${minutes} min` : "—"}
             </div>
