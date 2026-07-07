@@ -3931,24 +3931,10 @@ function SearchingPanel({
   const cat = RIDE_CATEGORIES.find((c) => c.key === category)!;
   const CatIcon = (cat as unknown as { icon?: LucideIcon }).icon;
 
-  // Rotating status messages — visual only, no backend logic.
-  const messages = noDriversAvailable
-    ? [
-        "Ampliando o raio de busca...",
-        "Verificando novos motoristas...",
-        "Aguarde só mais um instante...",
-      ]
-    : [
-        "Buscando motoristas próximos...",
-        "Verificando disponibilidade...",
-        "Escolhendo o melhor motorista...",
-        "Quase lá, preparando sua viagem...",
-      ];
-  const [msgIdx, setMsgIdx] = useState(0);
-  useEffect(() => {
-    const t = setInterval(() => setMsgIdx((i) => (i + 1) % messages.length), 2600);
-    return () => clearInterval(t);
-  }, [messages.length]);
+  // Mensagem única e legível (evita textos apagados/piscando).
+  const singleMessage = noDriversAvailable
+    ? "Ampliando o raio de busca..."
+    : "Estamos procurando o melhor motorista para você.";
 
   const paymentLabel =
     paymentMethod === "dinheiro"
