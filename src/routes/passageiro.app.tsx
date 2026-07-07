@@ -4034,7 +4034,7 @@ function RequestRideButton({
             Solicitando...
           </>
         ) : (
-          `Confirmar MOVVI ${categoryLabel}`
+          ctaLabel ?? `Confirmar MOVVI ${categoryLabel}`
         )}
       </button>
     </div>
