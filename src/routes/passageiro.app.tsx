@@ -3416,20 +3416,20 @@ function SheetContent({
         </div>
       )}
 
-      {/* Categorias — preview compacto de serviços disponíveis */}
+      {/* Serviços — grid horizontal com cards maiores e legíveis */}
       {showDestinationInput && !destination && suggestions.length === 0 && (
         <div className="animate-fade-slide mt-1 mb-1">
-          <div className="mb-2 flex items-baseline justify-between gap-2">
-            <div className="shrink-0 text-[12px] font-semibold tracking-tight text-foreground">
-              Serviços disponíveis
+          <div className="mb-2 flex items-baseline justify-between gap-2 px-0.5">
+            <div className="shrink-0 text-[13px] font-bold tracking-tight text-foreground">
+              Para você
             </div>
             <div className="min-w-0 truncate text-[11px] font-normal text-muted-foreground">
-              Escolha o destino para ver valores
+              Escolha o serviço
             </div>
           </div>
 
-          <div className="-mx-4 overflow-x-auto pl-4 pr-8 pb-4 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <div className="flex gap-2 min-w-max">
+          <div className="-mx-4 overflow-x-auto pl-4 pr-6 pb-3 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="flex gap-2.5 min-w-max">
               {uiCategories.map((c) => {
                 const Icon = c.icon;
                 return (
@@ -3437,15 +3437,15 @@ function SheetContent({
                     key={c.key}
                     type="button"
                     onClick={() => searchInputRef.current?.focus()}
-                    className="snap-start flex w-[62px] shrink-0 flex-col items-center gap-1 rounded-xl bg-white/[0.04] px-1 py-1.5 ring-1 ring-white/10 transition hover:bg-white/[0.08] hover:ring-[#8DD92B]/40 active:scale-[0.97]"
+                    className="snap-start flex w-[88px] shrink-0 flex-col items-center gap-2 rounded-2xl bg-white/[0.05] px-2 py-3 ring-1 ring-white/10 transition hover:bg-white/[0.09] hover:ring-[#8DD92B]/50 active:scale-[0.97]"
                   >
                     <span
-                      className="grid h-7 w-7 place-items-center rounded-full"
-                      style={{ backgroundColor: `${c.color}26`, color: c.color }}
+                      className="grid h-12 w-12 place-items-center rounded-2xl"
+                      style={{ backgroundColor: `${c.color}22`, color: c.color }}
                     >
-                      <Icon className="h-[14px] w-[14px]" strokeWidth={2.2} />
+                      <Icon className="h-[22px] w-[22px]" strokeWidth={2} />
                     </span>
-                    <span className="truncate w-full text-center text-[10px] font-semibold text-foreground/90">
+                    <span className="truncate w-full text-center text-[11.5px] font-semibold text-foreground/95">
                       {c.label}
                     </span>
                   </button>
@@ -3455,6 +3455,7 @@ function SheetContent({
           </div>
         </div>
       )}
+
 
 
 
