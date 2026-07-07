@@ -82,7 +82,7 @@ export function BottomNav({
       style={
         floating
           ? {
-              paddingBottom: `calc(env(safe-area-inset-bottom) + 10px + ${bottomOffset}px)`,
+              paddingBottom: `calc(env(safe-area-inset-bottom) + 10px + ${bottomOffset})`,
               paddingTop: 8,
               zIndex: zIndex ?? 40,
             }
