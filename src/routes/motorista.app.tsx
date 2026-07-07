@@ -1586,13 +1586,35 @@ function ActiveRidePanel({
   onArrive: () => Promise<void> | void;
   onStart: (code: string) => Promise<void> | void;
   onComplete: () => Promise<void> | void;
-  onCancel: () => Promise<void> | void;
+  onCancel: (motivo: string) => Promise<void> | void;
   onOpenProfile?: () => void;
 }) {
   const [pinOpen, setPinOpen] = useState(false);
   const [pinCode, setPinCode] = useState("");
   const [pinError, setPinError] = useState<string | null>(null);
   const [pinBusy, setPinBusy] = useState(false);
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelBusy, setCancelBusy] = useState(false);
+  const [cancelReason, setCancelReason] = useState("Passageiro não apareceu");
+
+  const cancelReasons = [
+    "Passageiro não apareceu",
+    "Passageiro pediu para cancelar",
+    "Problema no ponto de embarque",
+    "Não consigo atender esta corrida",
+  ];
+
+  async function submitCancelRide() {
+    if (cancelBusy) return;
+    const motivo = cancelReason.trim() || "Cancelada pelo motorista";
+    setCancelBusy(true);
+    try {
+      await onCancel(motivo);
+      setCancelOpen(false);
+    } finally {
+      setCancelBusy(false);
+    }
+  }
 
   async function submitPin() {
     if (pinBusy) return;
@@ -1628,6 +1650,75 @@ function ActiveRidePanel({
   }, [phase]);
 
   const minutes = etaSeconds != null ? Math.max(1, Math.round(etaSeconds / 60)) : null;
+  const cancelRideDialog = cancelOpen ? (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-sm animate-in fade-in"
+      role="dialog"
+      aria-modal="true"
+      onClick={() => { if (!cancelBusy) setCancelOpen(false); }}
+    >
+      <div
+        className="w-full max-w-md rounded-t-[28px] bg-card p-5 shadow-[0_-28px_80px_-24px_rgba(0,0,0,0.65)] ring-1 ring-border animate-sheet-in"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mx-auto -mt-1 mb-4 h-1.5 w-11 rounded-full bg-muted-foreground/25" />
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-destructive">Cancelar corrida</div>
+            <h3 className="mt-1 text-[22px] font-extrabold leading-tight text-foreground">Informe o motivo</h3>
+            <p className="mt-1 text-[13px] leading-snug text-muted-foreground">
+              A corrida será encerrada e o app ficará livre para receber novas chamadas.
+            </p>
+          </div>
+          <button
+            type="button"
+            aria-label="Fechar cancelamento"
+            disabled={cancelBusy}
+            onClick={() => setCancelOpen(false)}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-muted/40 disabled:opacity-50"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="mt-4 grid gap-2">
+          {cancelReasons.map((reason) => {
+            const selected = cancelReason === reason;
+            return (
+              <button
+                key={reason}
+                type="button"
+                disabled={cancelBusy}
+                onClick={() => setCancelReason(reason)}
+                className={`flex min-h-12 items-center justify-between rounded-2xl px-4 text-left text-[14px] font-semibold transition disabled:opacity-60 ${
+                  selected
+                    ? "bg-destructive/12 text-destructive ring-1 ring-destructive/35"
+                    : "bg-background/70 text-foreground ring-1 ring-border hover:bg-background"
+                }`}
+              >
+                <span>{reason}</span>
+                {selected && <CheckCircle2 className="h-4 w-4 shrink-0" strokeWidth={2} />}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="mt-5 grid grid-cols-[auto_1fr] gap-2" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
+          <DSButton variant="outline" size="lg" disabled={cancelBusy} onClick={() => setCancelOpen(false)}>
+            Voltar
+          </DSButton>
+          <DSButton
+            size="lg"
+            disabled={cancelBusy}
+            onClick={submitCancelRide}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            {cancelBusy ? "Cancelando…" : "Confirmar cancelamento"}
+          </DSButton>
+        </div>
+      </div>
+    </div>
+  ) : null;
 
   // ==========================================================
   // FASE 1 — A CAMINHO DO PASSAGEIRO (redesign premium 2026)
@@ -1671,7 +1762,7 @@ function ActiveRidePanel({
               <DSButton
                 variant="ghost"
                 size="icon"
-                onClick={onCancel}
+                onClick={() => setCancelOpen(true)}
                 aria-label="Cancelar corrida"
                 className="h-9 w-9 text-muted-foreground hover:text-destructive"
               >
@@ -1778,6 +1869,7 @@ function ActiveRidePanel({
               destinationName: ride.destination_name,
             }}
           />
+          {cancelRideDialog}
         </div>
       </>
     );
@@ -2018,9 +2110,21 @@ function ActiveRidePanel({
       {/* CTA conforme fase — transições suaves entre estados */}
       <div key={phase} className="animate-in fade-in slide-in-from-bottom-2 duration-300">
         {phase === "motorista_chegou" && (
-          <ActionButton label="Iniciar corrida" onClick={() => { setPinError(null); setPinCode(""); setPinOpen(true); }} icon={ChevronRight} emphasize />
+          <div className="space-y-2">
+            <ActionButton label="Iniciar corrida" onClick={() => { setPinError(null); setPinCode(""); setPinOpen(true); }} icon={ChevronRight} emphasize />
+            <button
+              type="button"
+              onClick={() => { setCancelReason("Passageiro não apareceu"); setCancelOpen(true); }}
+              className="press-scale flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-destructive/10 px-4 py-3 text-[13px] font-bold uppercase tracking-[0.12em] text-destructive ring-1 ring-destructive/25 transition hover:bg-destructive/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/50"
+            >
+              <AlertTriangle className="h-4 w-4" strokeWidth={2} />
+              Passageiro não apareceu
+            </button>
+          </div>
         )}
       </div>
+
+      {cancelRideDialog}
 
       {/* Modal de validação do PIN de segurança — PIN é o herói da tela */}
       {pinOpen && (
