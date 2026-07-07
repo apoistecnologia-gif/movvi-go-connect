@@ -113,6 +113,7 @@ function PerfilPassageiro() {
         onOpenChange={setPublicProfileOpen}
         passengerUserId={userId}
       />
+      <BottomNav items={PASSENGER_NAV} floating theme="dark" />
     </>
   );
 }
