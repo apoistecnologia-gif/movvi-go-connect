@@ -87,7 +87,7 @@ import { useTariffs } from "@/hooks/useTariffs";
 import { UiCategoriesProvider, useUiCategories } from "@/lib/uiCategories";
 import { logGpsTelemetry } from "@/lib/gpsTelemetry";
 import { listFavorites, type FavoritePlace } from "@/lib/favoritePlaces";
-import { Briefcase, Heart, Home as HomeIcon } from "lucide-react";
+import { Briefcase, Heart, Home as HomeIcon, Plus } from "lucide-react";
 
 import type { Database } from "@/integrations/supabase/types";
 import { BrandSplash } from "@/components/BrandSplash";
