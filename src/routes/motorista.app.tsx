@@ -1059,7 +1059,7 @@ function MotoristaApp() {
       {/* MAPA */}
       <div className="absolute inset-0">
         <MovviMap center={stableMapCenter} zoom={stableMapZoom} height="100%"
-          themeOverride={active ? "light" : undefined}
+          themeOverride="dark"
           onLoad={(m) => { mapRef.current = m; }}>
           {position && (
             <InterpolatedDriverMarker
