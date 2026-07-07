@@ -2348,8 +2348,8 @@ function PassageiroApp() {
       {(passengerVisualStep === "destination" || passengerVisualStep === "route_preview" || passengerVisualStep === "category") && (() => {
         const categoryStage = passengerVisualStep === "category";
         const routeStage = passengerVisualStep === "route_preview";
-        const snaps = categoryStage ? [58, 76, 92] : routeStage ? [38, 58, 84] : [52, 74, 92];
-        const initial = categoryStage ? 76 : routeStage ? 44 : 55;
+        const snaps = categoryStage ? [58, 76, 92] : routeStage ? [38, 58, 84] : [40, 62, 92];
+        const initial = categoryStage ? 76 : routeStage ? 44 : 42;
 
         return (
         <MovviSheet ref={sheetRef} key={categoryStage ? "category" : routeStage ? "route" : "destination"} snaps={snaps} initial={initial}>
