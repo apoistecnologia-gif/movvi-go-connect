@@ -3795,12 +3795,16 @@ function ConfirmRideCompact({
       </div>
 
 
-      {/* Categorias — lista vertical (RideOptionRow) */}
-      <div>
+      {/* Categorias — lista vertical (RideOptionRow).
+          No fluxo MOVVI Envios só existe uma opção (Entrega), então a
+          listagem de escolha é ocultada — a categoria já foi definida
+          pela entrada em `/passageiro/envios`. */}
+      <div className={isEnvios ? "hidden" : undefined}>
         <div className="mb-1.5 text-[10.5px] font-bold uppercase tracking-[0.14em] text-white/50">
           Escolha a categoria
         </div>
         <div className="space-y-2">
+
           {uiCategories.map((c, idx) => {
             const active = c.key === selectedCategoryKey;
             const fare = estimateFare(c.backend, km, min, tariffs);
