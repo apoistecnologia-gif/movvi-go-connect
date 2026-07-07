@@ -22,10 +22,11 @@ function ServicosPage() {
       <main className="mx-auto w-full max-w-md space-y-6 px-4 pt-4">
         <header className="space-y-1 px-1">
           <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
-            Como podemos te levar hoje?
+            Conheça os serviços MOVVI
           </h1>
           <p className="text-[13px] text-muted-foreground">
-            Selecione o serviço que melhor combina com o seu momento.
+            Veja o que oferecemos. A escolha final do serviço acontece depois
+            que você informa o destino no início.
           </p>
         </header>
 
