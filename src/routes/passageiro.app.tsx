@@ -3718,6 +3718,7 @@ function ConfirmRideCompact({
     const next =
       paymentMethod === "dinheiro" ? "pix" : paymentMethod === "pix" ? "cartao_credito" : "dinheiro";
     setPaymentMethod(next);
+    haptic("select");
   };
 
   return (
