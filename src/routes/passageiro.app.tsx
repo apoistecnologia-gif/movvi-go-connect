@@ -2768,8 +2768,8 @@ function PassageiroApp() {
         };
 
         return (
-          <MovviSheet snaps={[62, 92]} initial={62}>
-            <div className="pt-1 pb-[calc(env(safe-area-inset-bottom)+8px)] space-y-3">
+          <MovviSheet snaps={[72, 94]} initial={72}>
+            <div className="pt-1 pb-[calc(env(safe-area-inset-bottom)+28px)] space-y-3">
               {/* Success header */}
               <div className="text-center animate-in fade-in slide-in-from-bottom-2 duration-[220ms]">
                 <div className="relative mx-auto flex h-16 w-16 items-center justify-center">
