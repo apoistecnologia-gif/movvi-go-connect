@@ -3310,7 +3310,7 @@ function SheetContent({
                   key={c.key}
                   type="button"
                   onClick={() => searchInputRef.current?.focus()}
-                  className="flex flex-col items-center gap-1.5 rounded-2xl bg-card px-1 py-2.5 ring-1 ring-border/60 transition hover:ring-primary/40 active:scale-[0.97]"
+                  className="flex flex-col items-center gap-1.5 rounded-2xl bg-card px-1 py-2.5 ring-1 ring-border/60 opacity-80 transition hover:opacity-100 hover:ring-primary/40 active:scale-[0.97]"
                 >
                   <span
                     className="grid h-9 w-9 place-items-center rounded-full"
