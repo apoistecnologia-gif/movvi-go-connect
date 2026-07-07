@@ -7,6 +7,7 @@ import {
   User,
   DollarSign,
   Settings,
+  LayoutGrid,
 } from "lucide-react";
 
 type NavItem = {
