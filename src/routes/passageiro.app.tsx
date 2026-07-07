@@ -3215,37 +3215,35 @@ function SheetContent({
       {/* Hero search — "Para onde você vai?" — protagonista da home */}
       {showDestinationInput && (
         <div className="mb-3 animate-fade-slide">
-          <div className="surface-card rounded-2xl px-4 py-3.5 shadow-[var(--ds-shadow-card)] transition focus-within:border-primary/60 focus-within:shadow-[var(--ds-shadow-floating)]">
-            <div className="flex items-center gap-3">
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/12 text-primary">
-                <Search className="h-[18px] w-[18px]" strokeWidth={2.2} />
-              </span>
-              <input
-                ref={searchInputRef}
-                value={destinationText}
-                onChange={(e) => {
-                  if (destination) onClearDestination();
-                  setDestinationText(e.target.value);
+          <div className="surface-card flex items-center gap-2.5 rounded-full px-3 py-2 shadow-[var(--ds-shadow-card)] transition focus-within:border-primary/60 focus-within:shadow-[var(--ds-shadow-floating)]">
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary/12 text-primary">
+              <Search className="h-[15px] w-[15px]" strokeWidth={2.4} />
+            </span>
+            <input
+              ref={searchInputRef}
+              value={destinationText}
+              onChange={(e) => {
+                if (destination) onClearDestination();
+                setDestinationText(e.target.value);
+              }}
+              onFocus={onFocusSearch}
+              placeholder="Para onde?"
+              className="min-w-0 flex-1 bg-transparent text-[15px] font-semibold text-foreground outline-none placeholder:text-muted-foreground placeholder:font-semibold"
+            />
+            {destinationText && (
+              <button
+                type="button"
+                onClick={() => {
+                  setDestinationText("");
+                  onClearDestination();
+                  searchInputRef.current?.focus();
                 }}
-                onFocus={onFocusSearch}
-                placeholder="Para onde?"
-                className="min-w-0 flex-1 bg-transparent text-[17px] font-bold text-foreground outline-none placeholder:text-muted-foreground placeholder:font-semibold"
-              />
-              {destinationText && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setDestinationText("");
-                    onClearDestination();
-                    searchInputRef.current?.focus();
-                  }}
-                  aria-label="Limpar"
-                  className="active-press grid h-8 w-8 place-items-center rounded-full text-muted-foreground hover:bg-muted"
-                >
-                  <X className="h-4 w-4" strokeWidth={2} />
-                </button>
-              )}
-            </div>
+                aria-label="Limpar"
+                className="active-press grid h-7 w-7 place-items-center rounded-full text-muted-foreground hover:bg-muted"
+              >
+                <X className="h-3.5 w-3.5" strokeWidth={2} />
+              </button>
+            )}
           </div>
         </div>
       )}
