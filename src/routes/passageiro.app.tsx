@@ -2300,6 +2300,12 @@ function PassageiroApp() {
               <NearbyDriverMarker
                 key={d.user_id}
                 position={{ lat: d.current_lat, lng: d.current_lng }}
+                dimmed={
+                  !!ride &&
+                  (ride.status === "motorista_a_caminho" ||
+                    ride.status === "motorista_chegou" ||
+                    ride.status === "em_viagem")
+                }
               />
             ))}
 
