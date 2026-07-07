@@ -441,14 +441,21 @@ function OriginAction({
 
 
 
+type PassageiroSearch = { envios?: "enviar" | "receber" };
+
 export const Route = createFileRoute("/passageiro/app")({
   head: () => ({ meta: [{ title: "MOVVI Drive — Passageiro" }] }),
+  validateSearch: (raw: Record<string, unknown>): PassageiroSearch => {
+    const v = raw?.envios;
+    return v === "enviar" || v === "receber" ? { envios: v } : {};
+  },
   component: () => (
     <UiCategoriesProvider>
       <BrandSplash storageKey="movvi:splash:passageiro" />
       <PassageiroApp />
     </UiCategoriesProvider>
   ),
+
   errorComponent: ({ error, reset }) => {
     console.error("[MOVVI] Erro na tela do passageiro:", error);
     const message = (error as Error)?.message ?? String(error ?? "Erro desconhecido");
