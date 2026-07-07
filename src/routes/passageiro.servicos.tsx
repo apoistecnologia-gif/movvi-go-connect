@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Bike, Box, Briefcase, Car, PawPrint, Send, Truck } from "lucide-react";
+import { Bike, Box, Car, Send, Truck } from "lucide-react";
 import { MovviHeader } from "@/components/MovviHeader";
 import { BottomNav, PASSENGER_NAV } from "@/components/BottomNav";
 import { ServiceCard, ServicesGrid } from "@/components/ui-kit";
