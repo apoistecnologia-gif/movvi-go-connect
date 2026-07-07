@@ -87,7 +87,7 @@ import { useTariffs } from "@/hooks/useTariffs";
 import { UiCategoriesProvider, useUiCategories } from "@/lib/uiCategories";
 import { logGpsTelemetry } from "@/lib/gpsTelemetry";
 import { listFavorites, type FavoritePlace } from "@/lib/favoritePlaces";
-import { Briefcase, Heart, Home as HomeIcon } from "lucide-react";
+import { Briefcase, Heart, Home as HomeIcon, Plus } from "lucide-react";
 
 import type { Database } from "@/integrations/supabase/types";
 import { BrandSplash } from "@/components/BrandSplash";
@@ -2334,7 +2334,7 @@ function PassageiroApp() {
       />
 
       {/* Floating recenter — 56px, glass, MOVVI DS */}
-      <div className="pointer-events-none absolute right-4 z-30" style={{ bottom: "calc(50dvh + 12px)" }}>
+      <div className="pointer-events-none absolute right-4 z-30" style={{ bottom: "calc(58dvh + 16px)" }}>
         <button
           onClick={recenter}
           className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-[#0F141B]/90 text-[#8DD92B] shadow-[0_12px_28px_-14px_rgba(0,0,0,0.7)] backdrop-blur-xl transition active:scale-[0.92] hover:scale-105"
@@ -2348,8 +2348,9 @@ function PassageiroApp() {
       {(passengerVisualStep === "destination" || passengerVisualStep === "route_preview" || passengerVisualStep === "category") && (() => {
         const categoryStage = passengerVisualStep === "category";
         const routeStage = passengerVisualStep === "route_preview";
-        const snaps = categoryStage ? [58, 76, 92] : routeStage ? [42, 62, 88] : [48, 68, 92];
-        const initial = categoryStage ? 76 : routeStage ? 48 : 48;
+        const snaps = categoryStage ? [58, 76, 92] : routeStage ? [42, 62, 88] : [42, 62, 88];
+        const initial = categoryStage ? 76 : routeStage ? 42 : 42;
+
 
         return (
         <MovviSheet ref={sheetRef} key={categoryStage ? "category" : routeStage ? "route" : "destination"} snaps={snaps} initial={initial}>
@@ -3017,9 +3018,9 @@ function FavoritesStrip({ onPick }: { onPick: (point: LatLng, label: string) => 
             key={f.id}
             type="button"
             onClick={() => onPick({ lat: f.lat, lng: f.lng }, f.address)}
-            className="flex shrink-0 items-center gap-1.5 rounded-full bg-white/[0.05] px-2.5 py-1 text-[11.5px] font-semibold text-foreground/90 ring-1 ring-white/10 transition hover:bg-white/[0.09] hover:ring-[#8DD92B]/40 active:scale-[0.97]"
+            className="flex shrink-0 items-center gap-1.5 rounded-full bg-white/[0.06] px-3 py-1.5 text-[12px] font-semibold text-foreground/95 ring-1 ring-white/12 transition hover:bg-white/[0.10] hover:ring-[#8DD92B]/40 active:scale-[0.97]"
           >
-            <Icon className="h-3 w-3 text-[#8DD92B]" strokeWidth={2} />
+            <Icon className="h-3.5 w-3.5 text-[#8DD92B]" strokeWidth={2} />
             <span className="max-w-[120px] truncate">{f.label}</span>
           </button>
         );
@@ -3027,14 +3028,15 @@ function FavoritesStrip({ onPick }: { onPick: (point: LatLng, label: string) => 
       <button
         type="button"
         onClick={() => navigate({ to: "/passageiro/favoritos" })}
-        className="flex shrink-0 items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium text-foreground/55 transition hover:text-[#8DD92B] active:scale-[0.97]"
+        className="flex shrink-0 items-center gap-1.5 rounded-full bg-white/[0.04] px-3 py-1.5 text-[12px] font-semibold text-foreground/80 ring-1 ring-dashed ring-white/15 transition hover:bg-white/[0.08] hover:text-[#8DD92B] hover:ring-[#8DD92B]/40 active:scale-[0.97]"
       >
-        <Heart className="h-3 w-3" strokeWidth={2} />
-        <span>{items.length === 0 ? "Adicionar" : "Gerenciar"}</span>
+        <Plus className="h-3.5 w-3.5" strokeWidth={2.4} />
+        <span>{items.length === 0 ? "Adicionar favorito" : "Gerenciar"}</span>
       </button>
     </div>
   );
 }
+
 
 function SheetContent({
   geo,
@@ -3213,10 +3215,10 @@ function SheetContent({
 
       {/* Hero search — "Para onde você vai?" — protagonista da home */}
       {showDestinationInput && (
-        <div className="mb-3 animate-fade-slide">
-          <div className="flex items-center gap-3 rounded-2xl bg-white/[0.06] px-3.5 py-3 ring-1 ring-white/12 shadow-[0_10px_28px_-18px_rgba(0,0,0,0.9)] transition focus-within:ring-[#8DD92B]/60 focus-within:bg-white/[0.09]">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#8DD92B]/18 text-[#8DD92B]">
-              <Search className="h-4 w-4" strokeWidth={2.4} />
+        <div className="mb-2.5 animate-fade-slide">
+          <div className="flex items-center gap-2.5 rounded-2xl bg-white/[0.06] px-3 py-2 ring-1 ring-white/12 shadow-[0_10px_28px_-18px_rgba(0,0,0,0.9)] transition focus-within:ring-[#8DD92B]/60 focus-within:bg-white/[0.09]">
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#8DD92B]/18 text-[#8DD92B]">
+              <Search className="h-[15px] w-[15px]" strokeWidth={2.4} />
             </span>
             <input
               ref={searchInputRef}
@@ -3227,7 +3229,7 @@ function SheetContent({
               }}
               onFocus={onFocusSearch}
               placeholder="Para onde?"
-              className="min-w-0 flex-1 bg-transparent text-[16px] font-semibold text-foreground outline-none placeholder:text-foreground/85 placeholder:font-semibold"
+              className="min-w-0 flex-1 bg-transparent text-[15px] font-semibold text-foreground outline-none placeholder:text-foreground/80 placeholder:font-semibold"
             />
             {destinationText && (
               <button
@@ -3238,7 +3240,7 @@ function SheetContent({
                   searchInputRef.current?.focus();
                 }}
                 aria-label="Limpar"
-                className="active-press grid h-7 w-7 place-items-center rounded-full text-muted-foreground hover:bg-white/10"
+                className="active-press grid h-6 w-6 place-items-center rounded-full text-muted-foreground hover:bg-white/10"
               >
                 <X className="h-3.5 w-3.5" strokeWidth={2} />
               </button>
@@ -3246,6 +3248,7 @@ function SheetContent({
           </div>
         </div>
       )}
+
 
       {/* Favoritos rápidos */}
       {showDestinationInput && !destination && suggestions.length === 0 && (
@@ -3292,16 +3295,17 @@ function SheetContent({
 
       {/* Categorias — preview compacto de serviços disponíveis */}
       {showDestinationInput && !destination && suggestions.length === 0 && (
-        <div className="animate-fade-slide mt-1 mb-2">
-          <div className="mb-1.5 flex items-center justify-between">
-            <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-foreground/60">
-              Serviços MOVVI
+        <div className="animate-fade-slide mt-1 mb-1">
+          <div className="mb-1.5 flex items-center justify-between gap-2">
+            <div className="shrink-0 text-[10px] font-bold uppercase tracking-[0.12em] text-foreground/70">
+              Serviços
             </div>
-            <div className="text-[10px] font-medium text-foreground/45">
+            <div className="min-w-0 truncate text-[10.5px] font-medium text-foreground/60">
               Escolha o destino para ver valores
             </div>
+
           </div>
-          <div className="-mx-4 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="-mx-4 overflow-x-auto pl-4 pr-6 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <div className="flex gap-2 min-w-max">
               {uiCategories.map((c) => {
                 const Icon = c.icon;
@@ -3310,15 +3314,15 @@ function SheetContent({
                     key={c.key}
                     type="button"
                     onClick={() => searchInputRef.current?.focus()}
-                    className="flex w-[68px] shrink-0 flex-col items-center gap-1.5 rounded-xl bg-white/[0.04] px-1.5 py-2 ring-1 ring-white/10 transition hover:bg-white/[0.08] hover:ring-[#8DD92B]/40 active:scale-[0.97]"
+                    className="flex w-[62px] shrink-0 flex-col items-center gap-1 rounded-xl bg-white/[0.04] px-1 py-1.5 ring-1 ring-white/10 transition hover:bg-white/[0.08] hover:ring-[#8DD92B]/40 active:scale-[0.97]"
                   >
                     <span
-                      className="grid h-8 w-8 place-items-center rounded-full"
+                      className="grid h-7 w-7 place-items-center rounded-full"
                       style={{ backgroundColor: `${c.color}26`, color: c.color }}
                     >
-                      <Icon className="h-4 w-4" strokeWidth={2.2} />
+                      <Icon className="h-[14px] w-[14px]" strokeWidth={2.2} />
                     </span>
-                    <span className="truncate w-full text-center text-[10.5px] font-semibold text-foreground/90">
+                    <span className="truncate w-full text-center text-[10px] font-semibold text-foreground/90">
                       {c.label}
                     </span>
                   </button>
@@ -3328,6 +3332,7 @@ function SheetContent({
           </div>
         </div>
       )}
+
 
 
       {/* COM destino: fluxo em 4 etapas (estilo Uber/99/InDrive) */}
