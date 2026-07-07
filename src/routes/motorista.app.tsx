@@ -1173,23 +1173,50 @@ function MotoristaApp() {
       )}
 
       {/* Recenter — floating GPS button (56px, glass) */}
-      {!incoming && !ratingRide && (
-        <button onClick={recenter}
-          aria-label="Centralizar mapa"
-          className="press-scale absolute z-20 flex h-12 w-12 items-center justify-center rounded-full text-foreground shadow-[0_12px_28px_-14px_rgba(0,0,0,0.55)] transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
-          style={{
-            right: 20,
-            bottom: active ? "calc(76dvh + 12px)" : "calc(env(safe-area-inset-bottom) + 260px)",
-            background: "color-mix(in oklab, #111418 72%, transparent)",
-            border: "1px solid rgba(255,255,255,0.10)",
-            backdropFilter: "blur(8px) saturate(140%)",
-          }}>
-          <Crosshair className="h-[18px] w-[18px]" strokeWidth={1.75} />
-        </button>
+      {!incoming && !ratingRide && (() => {
+        const inTrip = active?.status === "em_viagem";
+        const bottomOffset = inTrip
+          ? "calc(env(safe-area-inset-bottom) + 148px)"
+          : active
+            ? "calc(76dvh + 12px)"
+            : "calc(env(safe-area-inset-bottom) + 260px)";
+        return (
+          <button onClick={recenter}
+            aria-label="Centralizar mapa"
+            className="press-scale absolute z-30 flex h-12 w-12 items-center justify-center rounded-full text-foreground shadow-[0_12px_28px_-14px_rgba(0,0,0,0.55)] transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+            style={{
+              right: 20,
+              bottom: bottomOffset,
+              background: "color-mix(in oklab, #111418 72%, transparent)",
+              border: "1px solid rgba(255,255,255,0.10)",
+              backdropFilter: "blur(8px) saturate(140%)",
+            }}>
+            <Crosshair className="h-[18px] w-[18px]" strokeWidth={1.75} />
+          </button>
+        );
+      })()}
+
+      {/* ===== Corrida ativa =====
+          Fases "a caminho" e "aguardando passageiro" usam o MovviSheet compacto.
+          Fase "em_viagem" entra em modo de navegação em tela cheia — sem sheet
+          grande cobrindo a rota, apenas um painel inferior compacto fixo. */}
+      {!incoming && !ratingRide && active && active.status === "em_viagem" && (
+        <ActiveTripNavOverlay
+          ride={active}
+          passenger={passenger}
+          etaSeconds={etaSeconds}
+          legKm={legKm}
+          onOpenProfile={() => active.passenger_id && setProfilePassengerId(active.passenger_id)}
+          onComplete={async () => {
+            await callComplete({ data: {
+              rideId: active.id,
+              final_price: active.estimated_price ? Number(active.estimated_price) : undefined,
+            } });
+          }}
+        />
       )}
 
-      {/* ===== Corrida ativa — usa bottom sheet ===== */}
-      {!incoming && !ratingRide && active && (
+      {!incoming && !ratingRide && active && active.status !== "em_viagem" && (
         <MovviSheet ref={sheetRef} snaps={[54, 76, 92]} initial={62}>
           <ActiveRidePanel
             ride={active}
