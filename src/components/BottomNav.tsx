@@ -49,8 +49,8 @@ interface BottomNavProps {
   floating?: boolean;
   /** Força o tema visual do container. `auto` (padrão) usa card do tema atual. */
   theme?: NavTheme;
-  /** Offset extra no bottom (px). Útil quando existe um bottom sheet acima. */
-  bottomOffset?: number;
+  /** Offset extra no bottom (CSS length). Útil quando existe um bottom sheet acima. */
+  bottomOffset?: string;
   /** z-index override (padrão 40). */
   zIndex?: number;
 }
