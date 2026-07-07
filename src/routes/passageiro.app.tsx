@@ -441,13 +441,20 @@ function OriginAction({
 
 
 
-type PassageiroSearch = { envios?: "enviar" | "receber" };
+type PassageiroSearch = {
+  envios?: "enviar" | "receber";
+  service?: "guincho" | "mudanca";
+};
 
 export const Route = createFileRoute("/passageiro/app")({
   head: () => ({ meta: [{ title: "MOVVI Drive — Passageiro" }] }),
   validateSearch: (raw: Record<string, unknown>): PassageiroSearch => {
+    const out: PassageiroSearch = {};
     const v = raw?.envios;
-    return v === "enviar" || v === "receber" ? { envios: v } : {};
+    if (v === "enviar" || v === "receber") out.envios = v;
+    const s = raw?.service;
+    if (s === "guincho" || s === "mudanca") out.service = s;
+    return out;
   },
   component: () => (
     <UiCategoriesProvider>
