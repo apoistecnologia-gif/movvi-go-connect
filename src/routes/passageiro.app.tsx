@@ -441,14 +441,21 @@ function OriginAction({
 
 
 
+type PassageiroSearch = { envios?: "enviar" | "receber" };
+
 export const Route = createFileRoute("/passageiro/app")({
   head: () => ({ meta: [{ title: "MOVVI Drive — Passageiro" }] }),
+  validateSearch: (raw: Record<string, unknown>): PassageiroSearch => {
+    const v = raw?.envios;
+    return v === "enviar" || v === "receber" ? { envios: v } : {};
+  },
   component: () => (
     <UiCategoriesProvider>
       <BrandSplash storageKey="movvi:splash:passageiro" />
       <PassageiroApp />
     </UiCategoriesProvider>
   ),
+
   errorComponent: ({ error, reset }) => {
     console.error("[MOVVI] Erro na tela do passageiro:", error);
     const message = (error as Error)?.message ?? String(error ?? "Erro desconhecido");
@@ -574,6 +581,28 @@ type UiCategory = {
   tagline: string;
 };
 // UI_CATEGORIES agora vem do banco em realtime via `useUiCategories()` (lib/uiCategories.tsx).
+
+/**
+ * Categoria "envios" (Entrega) NÃO aparece no fluxo normal de corrida.
+ * Ela só é exibida quando o passageiro entrou pelo fluxo dedicado MOVVI
+ * Envios (`/passageiro/envios/*`), que navega para `/passageiro/app` com
+ * `?envios=enviar|receber`. Neste modo, a lista contém apenas Entrega.
+ */
+function useFlowCategories() {
+  const all = useUiCategories();
+  const envios = Route.useSearch({ select: (s) => s.envios }) as
+    | "enviar"
+    | "receber"
+    | undefined;
+  return useMemo(
+    () =>
+      envios
+        ? all.filter((c) => c.backend === "envios")
+        : all.filter((c) => c.backend !== "envios"),
+    [all, envios],
+  );
+}
+
 
 const fmtMin = (s: number) => `${Math.max(1, Math.round(s / 60))} min`;
 const fmtKm = (m: number) =>
@@ -735,7 +764,13 @@ function PassageiroApp() {
   const [passengerUiStage, setPassengerUiStage] = useState<PassengerUiStage>("selecting_destination");
   const [selectedCategoryKey, setSelectedCategoryKey] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<"dinheiro" | "pix" | "cartao_credito">("dinheiro");
-  const uiCategories = useUiCategories();
+  const uiCategories = useFlowCategories();
+  const enviosMode = Route.useSearch({ select: (s) => s.envios }) as
+    | "enviar"
+    | "receber"
+    | undefined;
+
+
   const selectedUiCategory = useMemo(
     () => uiCategories.find((c) => c.key === selectedCategoryKey) ?? null,
     [uiCategories, selectedCategoryKey],
@@ -3239,7 +3274,7 @@ function SheetContent({
   const km = route ? route.distanceMeters / 1000 : 0;
   const min = route ? route.durationSeconds / 60 : 0;
 
-  const uiCategories = useUiCategories();
+  const uiCategories = useFlowCategories();
   const selectedCategory = useMemo(
     () => uiCategories.find((c) => c.key === selectedCategoryKey) ?? null,
     [uiCategories, selectedCategoryKey],
@@ -3524,7 +3559,7 @@ function StepFlow({
   setPaymentMethod,
 }: StepFlowProps) {
 
-  const uiCategories = useUiCategories();
+  const uiCategories = useFlowCategories();
   useEffect(() => {
     if (route && uiStage === "selecting_destination") setUiStage("route_preview");
   }, [route, uiStage, setUiStage]);
@@ -3664,10 +3699,16 @@ function ConfirmRideCompact({
   onSubmit: () => void;
   onBack: () => void;
 }) {
-  const uiCategories = useUiCategories();
+  const uiCategories = useFlowCategories();
+  const enviosMode = Route.useSearch({ select: (s) => s.envios }) as
+    | "enviar"
+    | "receber"
+    | undefined;
   const etaLabel = fmtMin(route.durationSeconds);
 
   // Auto-selecionar a primeira categoria ao entrar nessa etapa.
+  // No modo Envios, a lista só contém "Entrega" — o auto-select força
+  // essa categoria e a listagem de escolha é ocultada.
   useEffect(() => {
     if (!selectedCategoryKey && uiCategories.length > 0) {
       setSelectedCategoryKey(uiCategories[0].key);
@@ -3683,6 +3724,24 @@ function ConfirmRideCompact({
     haptic("select");
   };
 
+  // Copy adaptativa para o fluxo MOVVI Envios.
+  const isEnvios = !!enviosMode;
+  const headingTitle = isEnvios
+    ? enviosMode === "enviar"
+      ? "MOVVI Envios · Enviar"
+      : "MOVVI Envios · Receber"
+    : "Escolha sua corrida";
+  const headingSubtitle = isEnvios
+    ? "Confirme retirada, entrega e pagamento"
+    : "Categoria, pagamento e confirmação";
+  const originLabel = isEnvios
+    ? enviosMode === "enviar"
+      ? "Retirada"
+      : "Coleta"
+    : null;
+  const destinationLabelHint = isEnvios ? "Entrega" : null;
+
+
   return (
     <div className="animate-in fade-in slide-in-from-bottom-2 duration-200 space-y-3">
       <div className="flex items-center gap-2">
@@ -3695,12 +3754,12 @@ function ConfirmRideCompact({
           <ArrowLeft className="h-[16px] w-[16px]" strokeWidth={2} />
         </button>
         <div className="min-w-0">
-          <h2 className="text-[16px] font-bold leading-tight text-white">Escolha sua corrida</h2>
-          <p className="text-[11.5px] font-medium text-white/55">Categoria, pagamento e confirmação</p>
+          <h2 className="text-[16px] font-bold leading-tight text-white">{headingTitle}</h2>
+          <p className="text-[11.5px] font-medium text-white/55">{headingSubtitle}</p>
         </div>
       </div>
 
-      {/* Origem → Destino compacto */}
+      {/* Origem → Destino compacto (rotulado como Retirada/Entrega no Envios) */}
       <div className="flex items-stretch gap-2.5 rounded-[16px] bg-white/[0.04] p-2.5 ring-1 ring-white/10">
         <div className="flex flex-col items-center pt-1">
           <span className="h-2.5 w-2.5 rounded-full bg-[#8DD92B] ring-4 ring-[#8DD92B]/20" />
@@ -3708,11 +3767,25 @@ function ConfirmRideCompact({
           <span className="h-2.5 w-2.5 rounded-full bg-white ring-4 ring-white/10" />
         </div>
         <div className="min-w-0 flex-1 flex flex-col justify-between py-0.5">
-          <div className="truncate text-[13px] font-semibold text-white" title={pickupLabel || "Localização atual"}>
-            {pickupLabel || "Localização atual"}
+          <div className="min-w-0">
+            {originLabel && (
+              <div className="text-[9.5px] font-bold uppercase tracking-[0.14em] text-[#8DD92B]/90 leading-none">
+                {originLabel}
+              </div>
+            )}
+            <div className="mt-0.5 truncate text-[13px] font-semibold text-white" title={pickupLabel || "Localização atual"}>
+              {pickupLabel || "Localização atual"}
+            </div>
           </div>
-          <div className="truncate text-[13px] font-semibold text-white" title={destinationLabel}>
-            {destinationLabel}
+          <div className="min-w-0">
+            {destinationLabelHint && (
+              <div className="text-[9.5px] font-bold uppercase tracking-[0.14em] text-white/60 leading-none">
+                {destinationLabelHint}
+              </div>
+            )}
+            <div className="mt-0.5 truncate text-[13px] font-semibold text-white" title={destinationLabel}>
+              {destinationLabel}
+            </div>
           </div>
         </div>
         <div className="flex shrink-0 flex-col items-end justify-center text-[10.5px] font-semibold text-white/60">
@@ -3721,12 +3794,17 @@ function ConfirmRideCompact({
         </div>
       </div>
 
-      {/* Categorias — lista vertical (RideOptionRow) */}
-      <div>
+
+      {/* Categorias — lista vertical (RideOptionRow).
+          No fluxo MOVVI Envios só existe uma opção (Entrega), então a
+          listagem de escolha é ocultada — a categoria já foi definida
+          pela entrada em `/passageiro/envios`. */}
+      <div className={isEnvios ? "hidden" : undefined}>
         <div className="mb-1.5 text-[10.5px] font-bold uppercase tracking-[0.14em] text-white/50">
           Escolha a categoria
         </div>
         <div className="space-y-2">
+
           {uiCategories.map((c, idx) => {
             const active = c.key === selectedCategoryKey;
             const fare = estimateFare(c.backend, km, min, tariffs);
@@ -3805,10 +3883,11 @@ function ConfirmRideCompact({
           </div>
           <RequestRideButton
             busy={busy}
-            categoryLabel={selectedCategory.label}
+            categoryLabel={isEnvios ? "Envios" : selectedCategory.label}
             fare={selectedFare}
             onSubmit={onSubmit}
           />
+
         </div>
       )}
       <div style={{ height: "env(safe-area-inset-bottom)" }} />

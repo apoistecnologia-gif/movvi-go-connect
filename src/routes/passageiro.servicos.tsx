@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Car, Bike, Package, Truck, Dog, Briefcase, Sparkles, Clock } from "lucide-react";
+import { Car, Bike, Truck, Package, Send } from "lucide-react";
 import { MovviHeader } from "@/components/MovviHeader";
 import { BottomNav, PASSENGER_NAV } from "@/components/BottomNav";
 import { ServiceCard, ServicesGrid } from "@/components/ui-kit";
@@ -8,7 +8,11 @@ export const Route = createFileRoute("/passageiro/servicos")({
   head: () => ({
     meta: [
       { title: "Serviços — MOVVI" },
-      { name: "description", content: "Escolha o serviço MOVVI ideal: carro, moto, entrega, pet e mais." },
+      {
+        name: "description",
+        content:
+          "Escolha o serviço MOVVI ideal: carro, moto, frete, guincho ou MOVVI Envios.",
+      },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
@@ -22,74 +26,54 @@ function ServicosPage() {
       <main className="mx-auto w-full max-w-md space-y-6 px-4 pt-4">
         <header className="space-y-1 px-1">
           <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
-            Conheça os serviços MOVVI
+            Serviços MOVVI
           </h1>
           <p className="text-[13px] text-muted-foreground">
-            Veja o que oferecemos. A escolha final do serviço acontece depois
-            que você informa o destino no início.
+            Escolha o serviço que você precisa. Corridas usam a busca de
+            destino do início. MOVVI Envios tem um fluxo próprio.
           </p>
         </header>
 
-        <ServicesGrid title="Transporte">
+        <ServicesGrid title="Transporte de passageiros">
           <ServiceCard
             icon={Car}
-            title="Carro"
-            description="Viagens rápidas pela cidade."
+            title="Corridas"
+            description="Viagens rápidas de carro pela cidade."
             to="/passageiro/app"
           />
           <ServiceCard
             icon={Bike}
-            title="Moto"
+            title="Motos"
             description="Ágil no trânsito, preço menor."
             to="/passageiro/app"
           />
+        </ServicesGrid>
+
+        <ServicesGrid title="Carga e veículos">
           <ServiceCard
-            icon={Briefcase}
-            title="Executivo"
-            description="Conforto para reuniões."
+            icon={Package}
+            title="Fretes"
+            description="Mudanças e cargas maiores."
             to="/passageiro/app"
           />
           <ServiceCard
-            icon={Dog}
-            title="Pet"
-            description="Viagem com seu pet."
+            icon={Truck}
+            title="Guincho"
+            description="Remoção e transporte de veículos."
             to="/passageiro/app"
           />
         </ServicesGrid>
 
         <ServicesGrid title="Entregas">
           <ServiceCard
-            icon={Package}
-            title="Envio"
-            description="Documentos e pequenos volumes."
-            to="/passageiro/app"
-          />
-          <ServiceCard
-            icon={Truck}
-            title="Frete"
-            description="Cargas maiores."
-            badge="Em breve"
-            disabled
-          />
-        </ServicesGrid>
-
-        <ServicesGrid title="Novidades">
-          <ServiceCard
-            icon={Sparkles}
-            title="Promoções"
-            description="Cupons e descontos ativos."
-            to="/passageiro/app"
-          />
-          <ServiceCard
-            icon={Clock}
-            title="Agendar"
-            description="Reserve com antecedência."
-            badge="Em breve"
-            disabled
+            icon={Send}
+            title="MOVVI Envios"
+            description="Enviar ou receber documentos e pequenos volumes."
+            to="/passageiro/envios"
           />
         </ServicesGrid>
       </main>
-      <BottomNav items={PASSENGER_NAV} floating theme="dark" />
+      <BottomNav items={PASSENGER_NAV} theme="dark" />
     </div>
   );
 }
