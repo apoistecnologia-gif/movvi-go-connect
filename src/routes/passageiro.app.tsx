@@ -20,6 +20,9 @@ import {
   Clock,
   CreditCard,
   Crosshair,
+  ChevronDown,
+  ListChecks,
+
   LogOut,
   MapPin,
   Menu,
@@ -2432,7 +2435,11 @@ function PassageiroApp() {
 
 
       {ride && ride.status === "procurar_motorista" && (
-        <MovviSheet snaps={[36, 68, 92]} initial={36}>
+        <MovviSheet
+          snaps={[42, 62, 88]}
+          initial={42}
+          footer={<SearchingCancelButton onCancel={cancelRide} />}
+        >
           <SearchingPanel
             category={category}
             driversCount={nearbyCount}
@@ -2445,6 +2452,7 @@ function PassageiroApp() {
           />
         </MovviSheet>
       )}
+
 
 
       {(DEV_MODE || isDevelopmentEnvironment()) && ride && ride.status === "procurar_motorista" && dispatchDiag && (
@@ -3607,23 +3615,24 @@ function ConfirmRideCompact({
                   aria-pressed={active}
                   className={`flex shrink-0 flex-col items-center gap-1 rounded-2xl px-3 py-2 text-center transition active:scale-[0.97] ${
                     active
-                      ? "bg-[#5A9A2A] ring-2 ring-[#3F7A1C] shadow-[0_10px_24px_-14px_rgba(90,154,42,0.55)]"
+                      ? "bg-white ring-2 ring-[#76C139] shadow-[0_10px_24px_-14px_rgba(118,193,57,0.55)]"
                       : "bg-white ring-1 ring-border/60 hover:ring-[#76C139]/40"
                   }`}
                   style={{ minWidth: 92 }}
                 >
                   <span
                     className={`grid h-9 w-9 place-items-center rounded-full transition ${
-                      active ? "bg-white text-[#3F7A1C]" : "bg-[#76C139]/10 text-[#5A9A2A]"
+                      active ? "bg-[#76C139] text-white" : "bg-[#76C139]/10 text-[#5A9A2A]"
                     }`}
                   >
                     <Icon className="h-[18px] w-[18px]" strokeWidth={2} />
                   </span>
-                  <span className={`text-[12px] font-bold leading-tight ${active ? "text-white" : "text-[#111418]"}`}>{c.label}</span>
-                  <span className={`text-[11px] font-semibold tabular-nums leading-none ${active ? "text-white" : "text-[#111418]"}`}>
+                  <span className="text-[12px] font-bold leading-tight text-[#111418]">{c.label}</span>
+                  <span className={`text-[11px] font-semibold tabular-nums leading-none ${active ? "text-[#5A9A2A]" : "text-[#111418]"}`}>
                     {formatBRL(fare)}
                   </span>
                 </button>
+
               );
             })}
           </div>
@@ -4093,19 +4102,40 @@ function SearchingPanel({
         Costuma levar menos de 30 segundos.
       </p>
 
-      {/* ── EXPANDIDO (arrastar para ver) ─────────────────────────────── */}
-      {(pickupLabel || destinationLabel || fare != null || paymentLabel) && (
-        <div className="mb-2 flex items-center gap-2 text-[10.5px] font-bold uppercase tracking-[0.16em] text-[#a0a4a8]">
-          <span className="h-px flex-1 bg-[#e6e8eb]" />
-          Detalhes da corrida
-          <span className="h-px flex-1 bg-[#e6e8eb]" />
+      {/* Resumo compacto — categoria · valor · pagamento (sempre visível, uma linha) */}
+      {(cat || fare != null || paymentLabel) && (
+        <div className="mb-2 flex items-center justify-between gap-2 rounded-[16px] bg-white px-3 py-2.5 ring-1 ring-border/60 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.22)]">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#76C139]/12 text-[#5A9A2A]">
+              {CatIcon ? <CatIcon className="h-4 w-4" strokeWidth={2} /> : <Navigation2 className="h-4 w-4" strokeWidth={2} />}
+            </span>
+            <span className="truncate text-[13px] font-semibold text-[#111418]">MOVVI {cat.label}</span>
+          </div>
+          <div className="flex shrink-0 items-center gap-2 text-[13px]">
+            {fare != null && (
+              <span className="font-bold text-[#111418] tabular-nums">{formatBRL(fare)}</span>
+            )}
+            {paymentLabel && (
+              <>
+                <span className="text-[#c9cdd1]">·</span>
+                <span className="font-semibold text-[#5A9A2A]">{paymentLabel}</span>
+              </>
+            )}
+          </div>
         </div>
       )}
 
-      {/* Trip summary card */}
-      {(pickupLabel || destinationLabel || fare != null || paymentLabel) && (
-        <div className="mb-2 rounded-[18px] bg-white p-3 ring-1 ring-border/60 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.22)] animate-in fade-in slide-in-from-bottom-1 duration-[220ms]">
-          {(pickupLabel || destinationLabel) && (
+      {/* Detalhes da corrida — accordion, fechado por padrão */}
+      {(pickupLabel || destinationLabel) && (
+        <details className="mb-2 group rounded-[16px] bg-white ring-1 ring-border/60">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2.5 [&::-webkit-details-marker]:hidden">
+            <div className="flex items-center gap-2">
+              <ListChecks className="h-4 w-4 text-[#5A9A2A]" strokeWidth={2} />
+              <span className="text-[13px] font-semibold text-[#111418]">Detalhes da corrida</span>
+            </div>
+            <ChevronDown className="h-4 w-4 text-[#94A3B8] transition-transform group-open:rotate-180" strokeWidth={2} />
+          </summary>
+          <div className="border-t border-border/50 px-3 py-3">
             <div className="flex items-stretch gap-3.5">
               <div className="flex flex-col items-center pt-1">
                 <span className="h-2.5 w-2.5 rounded-full bg-[#76C139] ring-4 ring-[#76C139]/15" />
@@ -4115,71 +4145,38 @@ function SearchingPanel({
                 </span>
               </div>
               <div className="min-w-0 flex-1">
-                <div>
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#707070] leading-none">
-                    Embarque
-                  </div>
-                  <div className="mt-1 line-clamp-2 text-[14.5px] font-semibold text-[#111418] leading-snug">
-                    {pickupLabel || "Localização atual"}
-                  </div>
+                <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#707070] leading-none">Embarque</div>
+                <div className="mt-1 line-clamp-2 text-[13.5px] font-semibold text-[#111418] leading-snug">
+                  {pickupLabel || "Localização atual"}
                 </div>
                 <div className="my-2.5 h-px bg-border/50" />
-                <div>
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#707070] leading-none">
-                    Destino
-                  </div>
-                  <div className="mt-1 line-clamp-2 text-[14.5px] font-semibold text-[#111418] leading-snug">
-                    {destinationLabel || "—"}
-                  </div>
+                <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#707070] leading-none">Destino</div>
+                <div className="mt-1 line-clamp-2 text-[13.5px] font-semibold text-[#111418] leading-snug">
+                  {destinationLabel || "—"}
                 </div>
               </div>
             </div>
-          )}
-
-          {(cat || fare != null || paymentLabel) && (
-            <div className="mt-3.5 grid grid-cols-3 gap-2.5 border-t border-border/50 pt-3.5">
-              <div className="min-w-0">
-                <div className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-[#707070] leading-none">
-                  Categoria
-                </div>
-                <div className="mt-1 truncate text-[13.5px] font-semibold text-[#111418]">
-                  {cat.label}
-                </div>
-              </div>
-              <div className="min-w-0">
-                <div className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-[#707070] leading-none">
-                  Valor
-                </div>
-                <div className="mt-1 truncate text-[13.5px] font-bold text-[#111418] tabular-nums">
-                  {fare != null ? formatBRL(fare) : "—"}
-                </div>
-              </div>
-              <div className="min-w-0">
-                <div className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-[#707070] leading-none">
-                  Pagamento
-                </div>
-                <div className="mt-1 truncate text-[13.5px] font-semibold text-[#111418]">
-                  {paymentLabel ?? "—"}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+          </div>
+        </details>
       )}
-
-      {/* Cancel — outlined, secondary */}
-      <button
-        type="button"
-        onClick={onCancel}
-        aria-label="Cancelar solicitação"
-        className="sticky bottom-0 z-50 flex h-12 w-full items-center justify-center gap-2 rounded-[16px] border border-[#111418]/25 bg-white text-[14px] font-semibold text-[#111418] transition duration-[220ms] hover:bg-[#F7F9F7] hover:border-[#111418]/40 active:scale-[0.98]"
-      >
-        <X className="h-4 w-4" strokeWidth={2} />
-        Cancelar solicitação
-      </button>
     </div>
   );
 }
+
+function SearchingCancelButton({ onCancel }: { onCancel: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onCancel}
+      aria-label="Cancelar solicitação"
+      className="flex h-12 w-full items-center justify-center gap-2 rounded-[16px] border border-[#111418]/25 bg-white text-[14px] font-semibold text-[#111418] transition duration-[220ms] hover:bg-[#F7F9F7] hover:border-[#111418]/40 active:scale-[0.98]"
+    >
+      <X className="h-4 w-4" strokeWidth={2} />
+      Cancelar solicitação
+    </button>
+  );
+}
+
 
 
 function DriverEnRoute({
@@ -4384,16 +4381,9 @@ function DriverEnRoute({
             <MapPin className="h-4 w-4 shrink-0 text-[#76C139]" strokeWidth={2} />
             <span className="truncate font-medium">{ride.destination_name}</span>
           </div>
-          {ride.estimated_price && (
-            <div className="mt-2 flex items-center justify-between text-[12px]">
-              <span className="text-[#707070]">Você paga</span>
-              <span className="text-[14px] font-bold text-[#111418] tabular-nums">
-                {formatBRL(Number(ride.estimated_price))}
-              </span>
-            </div>
-          )}
         </div>
       )}
+
 
       {/* Segurança MOVVI (SOS/incident) */}
       <SafetyCard
