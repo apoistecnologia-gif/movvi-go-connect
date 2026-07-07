@@ -3607,23 +3607,24 @@ function ConfirmRideCompact({
                   aria-pressed={active}
                   className={`flex shrink-0 flex-col items-center gap-1 rounded-2xl px-3 py-2 text-center transition active:scale-[0.97] ${
                     active
-                      ? "bg-[#5A9A2A] ring-2 ring-[#3F7A1C] shadow-[0_10px_24px_-14px_rgba(90,154,42,0.55)]"
+                      ? "bg-white ring-2 ring-[#76C139] shadow-[0_10px_24px_-14px_rgba(118,193,57,0.55)]"
                       : "bg-white ring-1 ring-border/60 hover:ring-[#76C139]/40"
                   }`}
                   style={{ minWidth: 92 }}
                 >
                   <span
                     className={`grid h-9 w-9 place-items-center rounded-full transition ${
-                      active ? "bg-white text-[#3F7A1C]" : "bg-[#76C139]/10 text-[#5A9A2A]"
+                      active ? "bg-[#76C139] text-white" : "bg-[#76C139]/10 text-[#5A9A2A]"
                     }`}
                   >
                     <Icon className="h-[18px] w-[18px]" strokeWidth={2} />
                   </span>
-                  <span className={`text-[12px] font-bold leading-tight ${active ? "text-white" : "text-[#111418]"}`}>{c.label}</span>
-                  <span className={`text-[11px] font-semibold tabular-nums leading-none ${active ? "text-white" : "text-[#111418]"}`}>
+                  <span className="text-[12px] font-bold leading-tight text-[#111418]">{c.label}</span>
+                  <span className={`text-[11px] font-semibold tabular-nums leading-none ${active ? "text-[#5A9A2A]" : "text-[#111418]"}`}>
                     {formatBRL(fare)}
                   </span>
                 </button>
+
               );
             })}
           </div>
