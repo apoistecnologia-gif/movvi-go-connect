@@ -3754,12 +3754,12 @@ function ConfirmRideCompact({
           <ArrowLeft className="h-[16px] w-[16px]" strokeWidth={2} />
         </button>
         <div className="min-w-0">
-          <h2 className="text-[16px] font-bold leading-tight text-white">Escolha sua corrida</h2>
-          <p className="text-[11.5px] font-medium text-white/55">Categoria, pagamento e confirmação</p>
+          <h2 className="text-[16px] font-bold leading-tight text-white">{headingTitle}</h2>
+          <p className="text-[11.5px] font-medium text-white/55">{headingSubtitle}</p>
         </div>
       </div>
 
-      {/* Origem → Destino compacto */}
+      {/* Origem → Destino compacto (rotulado como Retirada/Entrega no Envios) */}
       <div className="flex items-stretch gap-2.5 rounded-[16px] bg-white/[0.04] p-2.5 ring-1 ring-white/10">
         <div className="flex flex-col items-center pt-1">
           <span className="h-2.5 w-2.5 rounded-full bg-[#8DD92B] ring-4 ring-[#8DD92B]/20" />
@@ -3767,11 +3767,25 @@ function ConfirmRideCompact({
           <span className="h-2.5 w-2.5 rounded-full bg-white ring-4 ring-white/10" />
         </div>
         <div className="min-w-0 flex-1 flex flex-col justify-between py-0.5">
-          <div className="truncate text-[13px] font-semibold text-white" title={pickupLabel || "Localização atual"}>
-            {pickupLabel || "Localização atual"}
+          <div className="min-w-0">
+            {originLabel && (
+              <div className="text-[9.5px] font-bold uppercase tracking-[0.14em] text-[#8DD92B]/90 leading-none">
+                {originLabel}
+              </div>
+            )}
+            <div className="mt-0.5 truncate text-[13px] font-semibold text-white" title={pickupLabel || "Localização atual"}>
+              {pickupLabel || "Localização atual"}
+            </div>
           </div>
-          <div className="truncate text-[13px] font-semibold text-white" title={destinationLabel}>
-            {destinationLabel}
+          <div className="min-w-0">
+            {destinationLabelHint && (
+              <div className="text-[9.5px] font-bold uppercase tracking-[0.14em] text-white/60 leading-none">
+                {destinationLabelHint}
+              </div>
+            )}
+            <div className="mt-0.5 truncate text-[13px] font-semibold text-white" title={destinationLabel}>
+              {destinationLabel}
+            </div>
           </div>
         </div>
         <div className="flex shrink-0 flex-col items-end justify-center text-[10.5px] font-semibold text-white/60">
@@ -3779,6 +3793,7 @@ function ConfirmRideCompact({
           <span>{fmtKm(route.distanceMeters)}</span>
         </div>
       </div>
+
 
       {/* Categorias — lista vertical (RideOptionRow) */}
       <div>
