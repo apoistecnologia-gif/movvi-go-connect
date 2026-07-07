@@ -1287,7 +1287,7 @@ function IdleBottomPanel({
   canUseTestLocation: boolean;
   onUseTestLocation: () => void;
 }) {
-  const navReserve = "calc(env(safe-area-inset-bottom) + 84px)";
+  const navReserve = "calc(env(safe-area-inset-bottom) + 12px)";
 
   return (
     <div
