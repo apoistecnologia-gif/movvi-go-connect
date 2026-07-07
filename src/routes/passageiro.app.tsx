@@ -58,6 +58,7 @@ import {
   InterpolatedDriverMarker,
 } from "@/components/mapMarkers";
 import { smoothPanZoom } from "@/lib/mapCamera";
+import { haptic } from "@/lib/haptics";
 import { supabase } from "@/integrations/supabase/client";
 import {
   BRAZIL_CENTER,
@@ -2458,7 +2459,7 @@ function PassageiroApp() {
 
 
         return (
-        <MovviSheet ref={sheetRef} key={categoryStage ? "category" : routeStage ? "route" : "destination"} snaps={snaps} initial={initial} onSnapChange={setSheetSnap}>
+        <MovviSheet ref={sheetRef} key={categoryStage ? "category" : routeStage ? "route" : "destination"} snaps={snaps} initial={initial} onSnapChange={(s) => { setSheetSnap(s); haptic("tap"); }}>
           <SheetContent
             geo={geo}
             addressStatus={addressStatus}
@@ -3717,6 +3718,7 @@ function ConfirmRideCompact({
     const next =
       paymentMethod === "dinheiro" ? "pix" : paymentMethod === "pix" ? "cartao_credito" : "dinheiro";
     setPaymentMethod(next);
+    haptic("select");
   };
 
   return (
@@ -3771,7 +3773,7 @@ function ConfirmRideCompact({
               <button
                 key={c.key}
                 type="button"
-                onClick={() => setSelectedCategoryKey(c.key)}
+                onClick={() => { if (!active) haptic("select"); setSelectedCategoryKey(c.key); }}
                 aria-pressed={active}
                 className={`flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition-all active:scale-[0.99] ${
                   active
