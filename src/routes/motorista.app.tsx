@@ -842,8 +842,7 @@ function MotoristaApp() {
 
     return () => {
       supabase.removeChannel(ch);
-    return () => {
-      supabase.removeChannel(ch);
+
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("focus", onFocus);
       window.removeEventListener("online", onFocus);
