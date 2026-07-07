@@ -3091,15 +3091,15 @@ function PassageiroApp() {
         driverUserId={ride?.driver_id ?? rideDriverInfo?.user_id ?? null}
       />
 
-      {/* Bottom navigation — visible only on idle home; hidden during ride flow.
-          Fica acima do bottom sheet (que ocupa 42dvh no snap inicial). */}
+      {/* Bottom navigation — visível apenas no home ocioso; sobe acima do sheet (~42dvh). */}
       {!ride && passengerVisualStep === "destination" && (
-        <div
-          className="pointer-events-none fixed inset-x-0 z-50"
-          style={{ bottom: "calc(42dvh + 4px)" }}
-        >
-          <BottomNav items={PASSENGER_NAV} floating theme="dark" zIndex={50} />
-        </div>
+        <BottomNav
+          items={PASSENGER_NAV}
+          floating
+          theme="dark"
+          zIndex={50}
+          bottomOffset="42dvh"
+        />
       )}
     </div>
   );
