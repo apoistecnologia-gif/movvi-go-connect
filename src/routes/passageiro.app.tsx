@@ -2454,8 +2454,8 @@ function PassageiroApp() {
       {(passengerVisualStep === "destination" || passengerVisualStep === "route_preview" || passengerVisualStep === "category") && (() => {
         const categoryStage = passengerVisualStep === "category";
         const routeStage = passengerVisualStep === "route_preview";
-        const snaps = categoryStage ? [58, 76, 92] : routeStage ? [42, 62, 88] : [42, 62, 88];
-        const initial = categoryStage ? 76 : routeStage ? 42 : 42;
+        const snaps = categoryStage ? [62, 78, 92] : routeStage ? [52, 68, 88] : [40, 62, 88];
+        const initial = categoryStage ? 78 : routeStage ? 52 : 40;
 
 
         return (
