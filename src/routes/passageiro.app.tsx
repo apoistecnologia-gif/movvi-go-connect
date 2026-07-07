@@ -775,6 +775,7 @@ function PassageiroApp() {
   const debounceRef = useRef<number | null>(null);
   const sheetRef = useRef<MovviSheetHandle | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
+  const [sheetSnap, setSheetSnap] = useState<number>(42);
 
   const drivers = useNearbyDrivers({ category });
 
