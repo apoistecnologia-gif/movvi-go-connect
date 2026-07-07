@@ -86,16 +86,16 @@ export async function saveDriverAmenities(userId: string, prefs: DriverAmenities
 }
 
 export async function fetchDriverAmenitiesPublic(userId: string): Promise<DriverAmenities> {
-  const { data, error } = await (supabase as any)
-    .from("driver_amenities")
-    .select("*")
-    .eq("user_id", userId)
-    .maybeSingle();
+  // Uses SECURITY DEFINER RPC so passengers can read amenities without a broad SELECT policy.
+  const { data, error } = await (supabase as any).rpc("get_driver_amenities_public", {
+    target_user_id: userId,
+  });
   if (error) {
     if (import.meta.env.DEV) console.warn("[MOVVI AMENITIES] public", error.message);
     return DEFAULT_AMENITIES;
   }
-  return normalize(data as Partial<DriverAmenities> | null);
+  const row = Array.isArray(data) ? data[0] : data;
+  return normalize(row as Partial<DriverAmenities> | null);
 }
 
 export function enabledAmenities(prefs: DriverAmenities): AmenityKey[] {
