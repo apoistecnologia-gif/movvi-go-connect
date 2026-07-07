@@ -582,6 +582,28 @@ type UiCategory = {
 };
 // UI_CATEGORIES agora vem do banco em realtime via `useUiCategories()` (lib/uiCategories.tsx).
 
+/**
+ * Categoria "envios" (Entrega) NÃO aparece no fluxo normal de corrida.
+ * Ela só é exibida quando o passageiro entrou pelo fluxo dedicado MOVVI
+ * Envios (`/passageiro/envios/*`), que navega para `/passageiro/app` com
+ * `?envios=enviar|receber`. Neste modo, a lista contém apenas Entrega.
+ */
+function useFlowCategories() {
+  const all = useUiCategories();
+  const envios = Route.useSearch({ select: (s) => s.envios }) as
+    | "enviar"
+    | "receber"
+    | undefined;
+  return useMemo(
+    () =>
+      envios
+        ? all.filter((c) => c.backend === "envios")
+        : all.filter((c) => c.backend !== "envios"),
+    [all, envios],
+  );
+}
+
+
 const fmtMin = (s: number) => `${Math.max(1, Math.round(s / 60))} min`;
 const fmtKm = (m: number) =>
   m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(1)} km`;
