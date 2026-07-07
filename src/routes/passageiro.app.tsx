@@ -3314,7 +3314,7 @@ function SheetContent({
                     key={c.key}
                     type="button"
                     onClick={() => searchInputRef.current?.focus()}
-                    className="flex w-[62px] shrink-0 flex-col items-center gap-1 rounded-xl bg-white/[0.04] px-1 py-1.5 ring-1 ring-white/10 transition hover:bg-white/[0.08] hover:ring-[#8DD92B]/40 active:scale-[0.97]"
+                    className="snap-start flex w-[62px] shrink-0 flex-col items-center gap-1 rounded-xl bg-white/[0.04] px-1 py-1.5 ring-1 ring-white/10 transition hover:bg-white/[0.08] hover:ring-[#8DD92B]/40 active:scale-[0.97]"
                   >
                     <span
                       className="grid h-7 w-7 place-items-center rounded-full"
