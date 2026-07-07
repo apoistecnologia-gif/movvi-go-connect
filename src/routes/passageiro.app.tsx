@@ -3186,15 +3186,15 @@ function SheetContent({
               onOpenAddressDetails();
             }
           }}
-          className="press-scale mb-3 flex w-full cursor-pointer items-center gap-2 rounded-full bg-muted/60 px-3 py-1.5 text-left ring-1 ring-border/50 hover:ring-primary/40"
+          className="press-scale mb-3 flex w-full cursor-pointer items-center gap-2 rounded-full bg-white/[0.04] px-3 py-1.5 text-left ring-1 ring-white/10 hover:ring-[#8DD92B]/50"
         >
-          <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-primary/12 text-primary">
+          <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[#8DD92B]/15 text-[#8DD92B]">
             <MapPin className="h-3 w-3" strokeWidth={2.2} />
           </span>
-          <div className="min-w-0 flex-1 truncate text-[12.5px] font-medium text-foreground">
+          <div className="min-w-0 flex-1 truncate text-[12.5px] font-medium text-foreground/90">
             {addressStatus === "loading" && !pickupAddressLine
               ? "Localizando…"
-              : pickupAddressLine || (hasPosition ? "Localização atual" : "Endereço não identificado")}
+              : pickupAddressLine || (hasPosition ? "Localização atual" : "Definir local de embarque")}
           </div>
           <button
             type="button"
@@ -3205,7 +3205,7 @@ function SheetContent({
             disabled={gpsRequesting}
             aria-label="Atualizar GPS"
             title="Atualizar GPS"
-            className="active-press grid h-6 w-6 shrink-0 place-items-center rounded-full text-primary hover:bg-primary/10 disabled:opacity-60"
+            className="active-press grid h-6 w-6 shrink-0 place-items-center rounded-full text-[#8DD92B] hover:bg-[#8DD92B]/10 disabled:opacity-60"
           >
             <Crosshair className={`h-3 w-3 ${gpsRequesting ? "animate-spin" : ""}`} strokeWidth={2.2} />
           </button>
