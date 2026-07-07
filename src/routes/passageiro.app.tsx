@@ -3215,9 +3215,9 @@ function SheetContent({
       {/* Hero search — "Para onde você vai?" — protagonista da home */}
       {showDestinationInput && (
         <div className="mb-3 animate-fade-slide">
-          <div className="surface-card flex items-center gap-2.5 rounded-full px-3 py-2 shadow-[var(--ds-shadow-card)] transition focus-within:border-primary/60 focus-within:shadow-[var(--ds-shadow-floating)]">
-            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary/12 text-primary">
-              <Search className="h-[15px] w-[15px]" strokeWidth={2.4} />
+          <div className="flex items-center gap-3 rounded-2xl bg-white/[0.06] px-3.5 py-3 ring-1 ring-white/12 shadow-[0_10px_28px_-18px_rgba(0,0,0,0.9)] transition focus-within:ring-[#8DD92B]/60 focus-within:bg-white/[0.09]">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#8DD92B]/18 text-[#8DD92B]">
+              <Search className="h-4 w-4" strokeWidth={2.4} />
             </span>
             <input
               ref={searchInputRef}
@@ -3228,7 +3228,7 @@ function SheetContent({
               }}
               onFocus={onFocusSearch}
               placeholder="Para onde?"
-              className="min-w-0 flex-1 bg-transparent text-[15px] font-semibold text-foreground outline-none placeholder:text-muted-foreground placeholder:font-semibold"
+              className="min-w-0 flex-1 bg-transparent text-[16px] font-semibold text-foreground outline-none placeholder:text-foreground/85 placeholder:font-semibold"
             />
             {destinationText && (
               <button
@@ -3239,7 +3239,7 @@ function SheetContent({
                   searchInputRef.current?.focus();
                 }}
                 aria-label="Limpar"
-                className="active-press grid h-7 w-7 place-items-center rounded-full text-muted-foreground hover:bg-muted"
+                className="active-press grid h-7 w-7 place-items-center rounded-full text-muted-foreground hover:bg-white/10"
               >
                 <X className="h-3.5 w-3.5" strokeWidth={2} />
               </button>
