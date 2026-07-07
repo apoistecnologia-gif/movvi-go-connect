@@ -2435,7 +2435,11 @@ function PassageiroApp() {
 
 
       {ride && ride.status === "procurar_motorista" && (
-        <MovviSheet snaps={[36, 68, 92]} initial={36}>
+        <MovviSheet
+          snaps={[42, 62, 88]}
+          initial={42}
+          footer={<SearchingCancelButton onCancel={cancelRide} />}
+        >
           <SearchingPanel
             category={category}
             driversCount={nearbyCount}
@@ -2448,6 +2452,7 @@ function PassageiroApp() {
           />
         </MovviSheet>
       )}
+
 
 
       {(DEV_MODE || isDevelopmentEnvironment()) && ride && ride.status === "procurar_motorista" && dispatchDiag && (
