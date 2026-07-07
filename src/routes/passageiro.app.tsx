@@ -58,6 +58,7 @@ import {
   InterpolatedDriverMarker,
 } from "@/components/mapMarkers";
 import { smoothPanZoom } from "@/lib/mapCamera";
+import { haptic } from "@/lib/haptics";
 import { supabase } from "@/integrations/supabase/client";
 import {
   BRAZIL_CENTER,
