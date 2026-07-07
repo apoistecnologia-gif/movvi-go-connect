@@ -3726,32 +3726,32 @@ function ConfirmRideCompact({
           type="button"
           onClick={onBack}
           aria-label="Voltar"
-          className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white text-[#111418] ring-1 ring-border/60 shadow-[0_6px_18px_-14px_rgba(15,23,42,0.25)] transition active:scale-[0.92]"
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/[0.06] text-white ring-1 ring-white/10 shadow-[0_6px_18px_-14px_rgba(0,0,0,0.6)] transition active:scale-[0.92] hover:bg-white/[0.1]"
         >
           <ArrowLeft className="h-[16px] w-[16px]" strokeWidth={2} />
         </button>
         <div className="min-w-0">
-          <h2 className="text-[16px] font-bold leading-tight text-foreground">Escolha sua corrida</h2>
-          <p className="text-[11.5px] font-medium text-muted-foreground">Categoria, pagamento e confirmação</p>
+          <h2 className="text-[16px] font-bold leading-tight text-white">Escolha sua corrida</h2>
+          <p className="text-[11.5px] font-medium text-white/55">Categoria, pagamento e confirmação</p>
         </div>
       </div>
 
       {/* Origem → Destino compacto */}
-      <div className="flex items-stretch gap-2.5 rounded-[16px] bg-white p-2.5 ring-1 ring-border/60">
+      <div className="flex items-stretch gap-2.5 rounded-[16px] bg-white/[0.04] p-2.5 ring-1 ring-white/10">
         <div className="flex flex-col items-center pt-1">
-          <span className="h-2.5 w-2.5 rounded-full bg-[#76C139] ring-4 ring-[#76C139]/15" />
-          <span className="my-1 w-px flex-1 border-l border-dashed border-[#707070]/40" />
-          <span className="h-2.5 w-2.5 rounded-full bg-[#111418]" />
+          <span className="h-2.5 w-2.5 rounded-full bg-[#8DD92B] ring-4 ring-[#8DD92B]/20" />
+          <span className="my-1 w-px flex-1 border-l border-dashed border-white/20" />
+          <span className="h-2.5 w-2.5 rounded-full bg-white ring-4 ring-white/10" />
         </div>
         <div className="min-w-0 flex-1 flex flex-col justify-between py-0.5">
-          <div className="truncate text-[13px] font-semibold text-[#111418]" title={pickupLabel || "Localização atual"}>
+          <div className="truncate text-[13px] font-semibold text-white" title={pickupLabel || "Localização atual"}>
             {pickupLabel || "Localização atual"}
           </div>
-          <div className="truncate text-[13px] font-semibold text-[#111418]" title={destinationLabel}>
+          <div className="truncate text-[13px] font-semibold text-white" title={destinationLabel}>
             {destinationLabel}
           </div>
         </div>
-        <div className="flex shrink-0 flex-col items-end justify-center text-[10.5px] font-semibold text-[#707070]">
+        <div className="flex shrink-0 flex-col items-end justify-center text-[10.5px] font-semibold text-white/60">
           <span>{etaLabel}</span>
           <span>{fmtKm(route.distanceMeters)}</span>
         </div>
@@ -3759,7 +3759,7 @@ function ConfirmRideCompact({
 
       {/* Categorias — lista vertical (RideOptionRow) */}
       <div>
-        <div className="mb-1.5 text-[10.5px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+        <div className="mb-1.5 text-[10.5px] font-bold uppercase tracking-[0.14em] text-white/50">
           Escolha a categoria
         </div>
         <div className="space-y-2">
@@ -3768,17 +3768,42 @@ function ConfirmRideCompact({
             const fare = estimateFare(c.backend, km, min, tariffs);
             const Icon = c.icon;
             return (
-              <RideOptionRow
+              <button
                 key={c.key}
-                icon={<Icon className="h-6 w-6" strokeWidth={2} style={{ color: c.color }} />}
-                name={c.label}
-                etaLabel={`${etaLabel} · ${fmtKm(route.distanceMeters)}`}
-                helper={idx === 0 ? "Mais rápido" : undefined}
-                price={formatBRL(fare)}
-                selected={active}
-                fastPill={idx === 0}
+                type="button"
                 onClick={() => setSelectedCategoryKey(c.key)}
-              />
+                aria-pressed={active}
+                className={`flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition-all active:scale-[0.99] ${
+                  active
+                    ? "bg-[#8DD92B]/[0.08] ring-1 ring-[#8DD92B] shadow-[0_10px_28px_-18px_rgba(141,217,43,0.55)]"
+                    : "bg-white/[0.04] ring-1 ring-white/10 hover:bg-white/[0.07]"
+                }`}
+              >
+                <div
+                  className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ${
+                    active ? "bg-[#8DD92B]/15" : "bg-white/[0.06]"
+                  }`}
+                >
+                  <Icon className="h-6 w-6" strokeWidth={2} style={{ color: c.color }} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="truncate text-[15px] font-semibold text-white">{c.label}</p>
+                    {idx === 0 ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-[#8DD92B]/15 px-2 py-0.5 text-[10px] font-semibold text-[#8DD92B]">
+                        <Zap className="h-3 w-3" strokeWidth={2.5} />
+                        Rápido
+                      </span>
+                    ) : null}
+                  </div>
+                  <p className="mt-0.5 truncate text-[12px] text-white/55">
+                    {etaLabel} · {fmtKm(route.distanceMeters)}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[15px] font-bold tabular-nums text-white">{formatBRL(fare)}</p>
+                </div>
+              </button>
             );
           })}
         </div>
@@ -3789,28 +3814,28 @@ function ConfirmRideCompact({
       <button
         type="button"
         onClick={cyclePayment}
-        className="flex w-full items-center gap-2.5 rounded-[14px] bg-white p-2.5 text-left ring-1 ring-border/60 transition hover:bg-[#F7F9F7] active:scale-[0.99]"
+        className="flex w-full items-center gap-2.5 rounded-[14px] bg-white/[0.04] p-2.5 text-left ring-1 ring-white/10 transition hover:bg-white/[0.07] active:scale-[0.99]"
       >
-        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#76C139]/10 text-[#5A9A2A]">
+        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#8DD92B]/15 text-[#8DD92B]">
           <CreditCard className="h-[15px] w-[15px]" strokeWidth={2} />
         </span>
         <div className="min-w-0 flex-1">
-          <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#707070] leading-none">
+          <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/50 leading-none">
             Pagamento
           </div>
-          <div className="mt-0.5 truncate text-[13px] font-semibold text-[#111418]">{paymentLabel}</div>
+          <div className="mt-0.5 truncate text-[13px] font-semibold text-white">{paymentLabel}</div>
         </div>
-        <ChevronRight className="h-4 w-4 shrink-0 text-[#94A3B8]" strokeWidth={2} />
+        <ChevronRight className="h-4 w-4 shrink-0 text-white/40" strokeWidth={2} />
       </button>
 
       {/* CTA + valor final */}
       {selectedCategory && selectedFare != null && (
-        <div className="rounded-[18px] bg-white p-3 ring-1 ring-border/60 shadow-[0_12px_30px_-20px_rgba(15,23,42,0.25)]">
+        <div className="rounded-[18px] bg-white/[0.05] p-3 ring-1 ring-white/10 shadow-[0_12px_30px_-20px_rgba(0,0,0,0.7)]">
           <div className="mb-2 flex items-baseline justify-between">
-            <span className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-[#707070]">
+            <span className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-white/55">
               Você paga
             </span>
-            <span className="text-[22px] font-bold tracking-tight text-[#111418] tabular-nums leading-none">
+            <span className="text-[22px] font-bold tracking-tight text-white tabular-nums leading-none">
               {formatBRL(selectedFare)}
             </span>
           </div>
