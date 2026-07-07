@@ -4396,13 +4396,14 @@ function QuickCircleAction({
 }) {
   const inner = (
     <>
-      <span className="grid h-12 w-12 place-items-center rounded-full bg-[#76C139]/12 text-[#4a8a1e] ring-1 ring-[#76C139]/30 transition duration-[220ms] group-active:scale-90 group-hover:bg-[#76C139]/18">
+      <span className="grid h-11 w-11 place-items-center rounded-full bg-[#76C139]/12 text-[#4a8a1e] ring-1 ring-[#76C139]/30 transition duration-[220ms] group-active:scale-90 group-hover:bg-[#76C139]/18">
         {icon}
       </span>
-      <span className="text-[12px] font-bold text-[#111418]">{label}</span>
+      <span className="text-[11.5px] font-bold text-[#111418]">{label}</span>
     </>
   );
-  const cls = "group flex flex-col items-center gap-2";
+  const cls = "group flex flex-col items-center gap-1.5";
+
   if (href) {
     return (
       <a href={href} className={cls}>
