@@ -45,16 +45,22 @@ export const DRIVER_NAV: NavItem[] = [
 
 interface BottomNavProps {
   items: NavItem[];
-  /** Quando true, fica flutuando sobre o mapa */
+  /** Quando true, fica flutuando sobre o conteúdo/mapa */
   floating?: boolean;
   /** Força o tema visual do container. `auto` (padrão) usa card do tema atual. */
   theme?: NavTheme;
+  /** Offset extra no bottom (px). Útil quando existe um bottom sheet acima. */
+  bottomOffset?: number;
+  /** z-index override (padrão 40). */
+  zIndex?: number;
 }
 
 export function BottomNav({
   items,
   floating = false,
   theme = "auto",
+  bottomOffset = 0,
+  zIndex,
 }: BottomNavProps) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
@@ -70,14 +76,15 @@ export function BottomNav({
     <nav
       className={
         floating
-          ? "pointer-events-none fixed inset-x-0 bottom-0 z-40 px-3"
+          ? "pointer-events-none fixed inset-x-0 bottom-0 px-3"
           : "sticky bottom-0 z-30 border-t border-border bg-background/95 backdrop-blur-md"
       }
       style={
         floating
           ? {
-              paddingBottom: "calc(env(safe-area-inset-bottom) + 10px)",
+              paddingBottom: `calc(env(safe-area-inset-bottom) + 10px + ${bottomOffset}px)`,
               paddingTop: 8,
+              zIndex: zIndex ?? 40,
             }
           : { paddingBottom: "env(safe-area-inset-bottom)" }
       }
