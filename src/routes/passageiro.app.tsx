@@ -151,49 +151,45 @@ function writePickupCache(c: PickupCache) {
 
 function PremiumTopBar({
   userName,
+  avatarUrl,
   gpsState,
   drivers,
   searching,
   onLogout,
-  onOpenMenu,
+  onOpenAccount,
 }: {
   userName: string;
+  avatarUrl?: string | null;
   gpsState: "idle" | "requesting" | "granted" | "denied" | "unavailable";
   drivers: number;
   searching: boolean;
   onLogout: () => void;
-  onOpenMenu: () => void;
+  onOpenAccount: () => void;
 }) {
   const { text: greet, icon: GIcon } = getGreeting();
   const fname = properCase(userName) || "passageiro";
   const greetingClass = greetingTextSize(fname);
 
-  let statusIcon = "🔎";
   let statusText = "Procurando motoristas próximos";
   if (gpsState === "requesting" || gpsState === "idle") {
-    statusIcon = "📍";
     statusText = "Obtendo sua localização...";
   } else if (gpsState === "unavailable" || gpsState === "denied") {
-    statusIcon = "⚠️";
     statusText = "Localização indisponível";
   } else if (searching) {
-    statusIcon = "🔎";
     statusText = "Procurando motoristas próximos";
   } else if (drivers > 0) {
-    statusIcon = "🚗";
     statusText = `${drivers} ${drivers === 1 ? "motorista próximo" : "motoristas próximos"}`;
   }
-
 
   return (
     <div className="absolute inset-x-0 top-0 z-40 px-3 pt-[calc(env(safe-area-inset-top)+8px)]">
       <div className="mx-auto flex max-w-5xl items-center gap-2 rounded-[20px] border border-border/60 bg-card/85 px-2.5 py-1.5 shadow-[0_10px_28px_-16px_rgba(15,23,42,0.28)] backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
         <button
-          onClick={onOpenMenu}
-          aria-label="Abrir menu"
-          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-foreground/80 transition hover:bg-[#76C139]/10 hover:text-[#76C139] active:scale-[0.95]"
+          onClick={onOpenAccount}
+          aria-label="Abrir minha conta"
+          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full ring-2 ring-[#76C139]/60 transition hover:ring-[#76C139] active:scale-[0.95]"
         >
-          <Menu className="h-[16px] w-[16px]" strokeWidth={1.75} />
+          <Avatar src={avatarUrl ?? undefined} name={fname} size={40} />
         </button>
         <div className="min-w-0 flex-1">
           <div className={`${greetingClass} flex items-center gap-1.5 font-normal leading-tight tracking-tight text-muted-foreground`}>
@@ -213,10 +209,8 @@ function PremiumTopBar({
         >
           <LogOut className="h-[14px] w-[14px]" strokeWidth={1.75} />
         </button>
-
       </div>
     </div>
-
   );
 }
 
