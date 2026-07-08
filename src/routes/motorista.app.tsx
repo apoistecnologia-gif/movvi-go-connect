@@ -1224,6 +1224,15 @@ function MotoristaApp() {
         setPolyline(points);
         setEtaSeconds(res.durationSeconds);
         setLegKm(res.distanceMeters / 1000);
+        setRouteSteps(
+          (res.steps ?? []).map((s: RouteStep) => ({
+            lat: s.lat, lng: s.lng,
+            distanceMeters: s.distanceMeters,
+            instruction: s.instruction,
+            maneuver: s.maneuver,
+          })),
+        );
+        resetSpokenCache();
         if (routeFailToastedRef.current === fitKey) routeFailToastedRef.current = null;
         focusRoute(points);
       })
@@ -1232,6 +1241,7 @@ function MotoristaApp() {
         // Fallback: mantém marcadores e desenha linha reta para não quebrar UX.
         const fallback = [pos, dest];
         setPolyline(fallback);
+        setRouteSteps([]);
         const km = haversineKm(pos, dest);
         setLegKm(km); setEtaSeconds(Math.round((km / 35) * 3600));
         focusRoute(fallback);
