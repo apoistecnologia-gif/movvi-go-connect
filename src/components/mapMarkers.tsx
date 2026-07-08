@@ -18,35 +18,24 @@ const PIN_PATH =
 
 
 /* Top-down car silhouette. Centered on (0,0), front pointing "up" (−Y).
- * Bounding box ≈ 14×22. Designed original for MOVVI — realistic sedan with
- * rounded body, dark cabin/windshield, headlights and taillights. */
+ * Original MOVVI design: closed-roof compact sedan with dark windshield and
+ * rear glass. Body is a single rounded silhouette so the roof reads solid,
+ * never "open". Only 4 stacked layers → cheap and coherent under rotation. */
 const CAR_BODY_PATH =
-  "M -6 -10 C -7 -10 -7 -8.5 -7 -7.5 L -7 8 C -7 9.5 -6 10.5 -4.5 10.5 L 4.5 10.5 C 6 10.5 7 9.5 7 8 L 7 -7.5 C 7 -8.5 7 -10 6 -10 C 5 -11 3 -11.5 0 -11.5 C -3 -11.5 -5 -11 -6 -10 Z";
-/* Highlight strip (lighter red gloss). */
-const CAR_HIGHLIGHT_PATH =
-  "M -5 -8 C -5 -9 -3 -10 0 -10 C 3 -10 5 -9 5 -8 L 5 8 C 5 9 4 9.5 3 9.5 L -3 9.5 C -4 9.5 -5 9 -5 8 Z";
-/* Front windshield (dark trapezoid, wider at bottom). */
+  "M -5.2 -10.5 C -6 -10.5 -6.4 -9.8 -6.4 -9 L -6.4 9 C -6.4 10.2 -5.6 11 -4.4 11 L 4.4 11 C 5.6 11 6.4 10.2 6.4 9 L 6.4 -9 C 6.4 -9.8 6 -10.5 5.2 -10.5 C 4 -11 2.2 -11.2 0 -11.2 C -2.2 -11.2 -4 -11 -5.2 -10.5 Z";
+/* Front windshield — dark trapezoid, wider toward cabin. */
 const CAR_WINDSHIELD_PATH =
-  "M -4.5 -4 L 4.5 -4 L 4 2 L -4 2 Z";
-/* Roof (dark rectangle covering cabin). */
-const CAR_ROOF_PATH =
-  "M -4 2 L 4 2 L 4 6.5 L -4 6.5 Z";
-/* Rear windshield. */
+  "M -4.2 -1 L 4.2 -1 L 3.6 -5 L -3.6 -5 Z";
+/* Rear window — dark trapezoid, wider toward cabin. */
 const CAR_REAR_GLASS_PATH =
-  "M -4 6.5 L 4 6.5 L 4.5 9 L -4.5 9 Z";
-/* Headlight (small oval) — one at left, mirror right via separate marker. */
-const HEADLIGHT_PATH =
-  "M -0.9 -0.6 A 0.9 0.6 0 1 0 0.9 -0.6 A 0.9 0.6 0 1 0 -0.9 -0.6 Z";
+  "M -4.2 4 L 4.2 4 L 3.6 8 L -3.6 8 Z";
 
-const MOVVI_RED = "#E63946";
-const MOVVI_RED_DARK = "#8a0a12";
-const CAR_OUTLINE = "#2a0408";
-const GLASS_DARK = "#0f1420";
-const HEADLIGHT_COLOR = "#fff4c2";
-const TAILLIGHT_COLOR = "#ffb347";
+const MOVVI_RED = "#E4232C";
+const CAR_OUTLINE = "#3a0509";
+const GLASS_DARK = "#0d1119";
 
 /* Layered top-down car. Renders stacked Markers so rotation stays coherent.
- * All layers share position + rotation. */
+ * All layers share position + rotation and anchor (0,0). */
 function CarShape({
   position,
   heading = 0,
@@ -67,29 +56,23 @@ function CarShape({
 }) {
   const rot = heading;
   const anchor0 = safePoint(0, 0);
-  // Offset anchors for lights — Google rotates around anchor, so we translate
-  // via anchor offsets to keep lights at correct positions relative to body.
-  const headlightLeftAnchor = safePoint(-3.5, 9.5);
-  const headlightRightAnchor = safePoint(3.5, 9.5);
-  const taillightLeftAnchor = safePoint(-2.5, -8);
-  const taillightRightAnchor = safePoint(2.5, -8);
   return (
     <>
-      {/* ground shadow — larger, softer */}
+      {/* ground shadow — soft, offset slightly behind car */}
       <Marker
         position={position}
         clickable={false}
         zIndex={zBase - 3}
-        opacity={opacity * 0.5}
+        opacity={opacity * 0.45}
         icon={{
           path: safeSymbol("CIRCLE"),
-          scale: 11 * (scale / 1.6),
+          scale: 10 * (scale / 1.6),
           fillColor: "#000000",
-          fillOpacity: 0.4,
+          fillOpacity: 0.5,
           strokeWeight: 0,
         }}
       />
-      {/* body with dark outline */}
+      {/* body with dark outline — closed roof (solid red silhouette) */}
       <Marker
         position={position}
         zIndex={zBase}
@@ -100,23 +83,7 @@ function CarShape({
           fillOpacity: 1,
           strokeColor: outlineColor,
           strokeOpacity: 1,
-          strokeWeight: 1.2,
-          scale,
-          rotation: rot,
-          anchor: anchor0,
-        }}
-      />
-      {/* subtle red highlight for gloss */}
-      <Marker
-        position={position}
-        clickable={false}
-        zIndex={zBase + 1}
-        opacity={opacity * 0.55}
-        icon={{
-          path: CAR_HIGHLIGHT_PATH,
-          fillColor: "#ff8a92",
-          fillOpacity: 0.5,
-          strokeWeight: 0,
+          strokeWeight: 1.3,
           scale,
           rotation: rot,
           anchor: anchor0,
@@ -132,26 +99,8 @@ function CarShape({
           path: CAR_WINDSHIELD_PATH,
           fillColor: GLASS_DARK,
           fillOpacity: 0.95,
-          strokeColor: CAR_OUTLINE,
+          strokeColor: outlineColor,
           strokeOpacity: 0.9,
-          strokeWeight: 0.6,
-          scale,
-          rotation: rot,
-          anchor: anchor0,
-        }}
-      />
-      {/* roof (darker red) */}
-      <Marker
-        position={position}
-        clickable={false}
-        zIndex={zBase + 3}
-        opacity={opacity}
-        icon={{
-          path: CAR_ROOF_PATH,
-          fillColor: MOVVI_RED_DARK,
-          fillOpacity: 1,
-          strokeColor: CAR_OUTLINE,
-          strokeOpacity: 0.8,
           strokeWeight: 0.5,
           scale,
           rotation: rot,
@@ -162,88 +111,18 @@ function CarShape({
       <Marker
         position={position}
         clickable={false}
-        zIndex={zBase + 4}
+        zIndex={zBase + 3}
         opacity={opacity}
         icon={{
           path: CAR_REAR_GLASS_PATH,
           fillColor: GLASS_DARK,
           fillOpacity: 0.9,
-          strokeColor: CAR_OUTLINE,
+          strokeColor: outlineColor,
           strokeOpacity: 0.85,
           strokeWeight: 0.5,
           scale,
           rotation: rot,
           anchor: anchor0,
-        }}
-      />
-      {/* headlights (left + right) */}
-      <Marker
-        position={position}
-        clickable={false}
-        zIndex={zBase + 5}
-        opacity={opacity}
-        icon={{
-          path: HEADLIGHT_PATH,
-          fillColor: HEADLIGHT_COLOR,
-          fillOpacity: 1,
-          strokeColor: CAR_OUTLINE,
-          strokeOpacity: 0.7,
-          strokeWeight: 0.3,
-          scale,
-          rotation: rot,
-          anchor: headlightLeftAnchor,
-        }}
-      />
-      <Marker
-        position={position}
-        clickable={false}
-        zIndex={zBase + 5}
-        opacity={opacity}
-        icon={{
-          path: HEADLIGHT_PATH,
-          fillColor: HEADLIGHT_COLOR,
-          fillOpacity: 1,
-          strokeColor: CAR_OUTLINE,
-          strokeOpacity: 0.7,
-          strokeWeight: 0.3,
-          scale,
-          rotation: rot,
-          anchor: headlightRightAnchor,
-        }}
-      />
-      {/* taillights (left + right) */}
-      <Marker
-        position={position}
-        clickable={false}
-        zIndex={zBase + 5}
-        opacity={opacity}
-        icon={{
-          path: HEADLIGHT_PATH,
-          fillColor: TAILLIGHT_COLOR,
-          fillOpacity: 0.9,
-          strokeColor: CAR_OUTLINE,
-          strokeOpacity: 0.6,
-          strokeWeight: 0.3,
-          scale: scale * 0.8,
-          rotation: rot,
-          anchor: taillightLeftAnchor,
-        }}
-      />
-      <Marker
-        position={position}
-        clickable={false}
-        zIndex={zBase + 5}
-        opacity={opacity}
-        icon={{
-          path: HEADLIGHT_PATH,
-          fillColor: TAILLIGHT_COLOR,
-          fillOpacity: 0.9,
-          strokeColor: CAR_OUTLINE,
-          strokeOpacity: 0.6,
-          strokeWeight: 0.3,
-          scale: scale * 0.8,
-          rotation: rot,
-          anchor: taillightRightAnchor,
         }}
       />
     </>
