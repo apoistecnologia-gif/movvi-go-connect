@@ -639,6 +639,125 @@ function RideDetailSheet({
   );
 }
 
+function ScheduledRidesSection({
+  rides,
+  onCancelled,
+}: {
+  rides: RideRow[] | null;
+  onCancelled: () => void;
+}) {
+  const cancel = useServerFn(cancelarAgendamento);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  async function handleCancel(id: string) {
+    if (!confirm("Cancelar este agendamento?")) return;
+    setBusyId(id);
+    try {
+      await cancel({ data: { rideId: id } });
+      toast.success("Agendamento cancelado.");
+      onCancelled();
+    } catch (e) {
+      toast.error((e as Error).message || "Não foi possível cancelar.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  return (
+    <section className="mb-5">
+      <div className="mb-2.5 flex items-center justify-between">
+        <h2 className="text-[15px] font-bold text-[#111418]">Corridas agendadas</h2>
+        <Link
+          to="/passageiro/agendar"
+          className="inline-flex items-center gap-1 rounded-full bg-[#111418] px-3 py-1.5 text-[12px] font-semibold text-white shadow-[0_10px_24px_-14px_rgba(17,20,24,0.5)]"
+        >
+          <Plus className="h-3.5 w-3.5" /> Agendar
+        </Link>
+      </div>
+
+      {rides === null && (
+        <div className="h-[92px] animate-pulse rounded-[20px] bg-white ring-1 ring-black/5" />
+      )}
+
+      {rides && rides.length === 0 && (
+        <div className="flex items-center gap-3 rounded-[20px] bg-white p-4 ring-1 ring-black/5">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#76C139]/12">
+            <CalendarClock className="h-5 w-5 text-[#76C139]" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-[13px] font-semibold text-[#111418]">
+              Nenhuma corrida agendada
+            </p>
+            <p className="text-[12px] text-[#707070]">
+              Reserve seu horário e MOVVI busca o motorista para você.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {rides && rides.length > 0 && (
+        <div className="space-y-2.5">
+          {rides.map((r) => {
+            const when = new Date(r.scheduled_for!);
+            const date = when.toLocaleDateString("pt-BR", {
+              day: "2-digit",
+              month: "short",
+            });
+            const time = when.toLocaleTimeString("pt-BR", {
+              hour: "2-digit",
+              minute: "2-digit",
+            });
+            const price = r.estimated_price;
+            return (
+              <article
+                key={r.id}
+                className="rounded-[20px] bg-white p-4 ring-1 ring-black/5 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.22)]"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="inline-flex items-center gap-1.5 rounded-full bg-[#76C139]/12 px-2.5 py-0.5 text-[11px] font-semibold text-[#4d8823]">
+                      <CalendarClock className="h-3 w-3" /> {date} • {time}
+                    </div>
+                    <p className="mt-2 truncate text-[13px] text-[#111418]">
+                      <span className="text-[#707070]">De: </span>
+                      {r.origin_name}
+                    </p>
+                    <p className="truncate text-[13px] text-[#111418]">
+                      <span className="text-[#707070]">Para: </span>
+                      {r.destination_name}
+                    </p>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className="text-[16px] font-bold text-[#111418]">
+                      {price !== null ? `R$ ${Number(price).toFixed(2)}` : "—"}
+                    </p>
+                    <p className="text-[11px] text-[#707070]">Estimado</p>
+                  </div>
+                </div>
+                <div className="mt-3 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => handleCancel(r.id)}
+                    disabled={busyId === r.id}
+                    className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[12px] font-semibold text-[#c53030] transition hover:bg-[#c53030]/10 disabled:opacity-50"
+                  >
+                    {busyId === r.id ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <X className="h-3.5 w-3.5" />
+                    )}
+                    Cancelar
+                  </button>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      )}
+    </section>
+  );
+}
+
 function PassengerRidesPage() {
   const [rides, setRides] = useState<RideRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
