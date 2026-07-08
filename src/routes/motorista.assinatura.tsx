@@ -79,6 +79,7 @@ const BENEFITS = [
 function DriverSubscriptionPage() {
   const [driver, setDriver] = useState<DriverInfo | null>(null);
   const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
 
   async function refresh() {
     setLoading(true);
