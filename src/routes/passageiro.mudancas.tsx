@@ -33,6 +33,8 @@ type LocationInfo = {
   estacionar: YesNo | "";
   escadas: YesNo | "";
   dificilAcesso: YesNo | "";
+  endereco: string;
+  coords: { lat: number; lng: number } | null;
 };
 
 type MudancasData = {
