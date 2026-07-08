@@ -44,7 +44,9 @@ import {
 import { useDriverBroadcast } from "@/hooks/useDriverBroadcast";
 import { loadDriverProfile, driverProfileCompletionIssues } from "@/lib/driverProfile";
 import { isDevelopmentEnvironment } from "@/lib/environment";
-import { computeRoute } from "@/lib/routes.functions";
+import { computeRoute, type RouteStep } from "@/lib/routes.functions";
+import { primeVoice, resetSpokenCache, speak, tickNavigation, type NavStep } from "@/lib/voiceNav";
+import { startRideRingtone, stopRideRingtone } from "@/lib/rideRingtone";
 import {
   aceitarCorrida,
   recusarCorrida,
@@ -317,6 +319,7 @@ function MotoristaApp() {
   const [profilePassengerId, setProfilePassengerId] = useState<string | null>(null);
 
   const [polyline, setPolyline] = useState<LatLng[]>([]);
+  const [routeSteps, setRouteSteps] = useState<NavStep[]>([]);
   const [etaSeconds, setEtaSeconds] = useState<number | null>(null);
   const [legKm, setLegKm] = useState<number | null>(null);
 
