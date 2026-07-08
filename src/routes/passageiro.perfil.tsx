@@ -148,9 +148,10 @@ function PerfilPassageiro() {
 
       <main className="mx-auto max-w-md space-y-5 px-4 pt-5">
         {/* Profile hero */}
-        <section className="flex items-center gap-4 rounded-3xl border border-white/5 bg-[#141A1B] p-4">
+        <section className="flex items-center gap-3.5 rounded-3xl border border-white/5 bg-[#141A1B] px-4 py-3.5">
           <div className="relative">
-            <Avatar src={photoUrl} name={displayName} size={72} />
+            <Avatar src={photoUrl} name={displayName} size={60} />
+
             {verified && (
               <span
                 className="absolute -bottom-0.5 -right-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-[#76C139] ring-2 ring-[#141A1B]"
