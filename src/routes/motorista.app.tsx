@@ -1138,7 +1138,7 @@ function MotoristaApp() {
     const toPickup = active.status === "motorista_a_caminho" || active.status === "motorista_chegou";
     const dest = toPickup
       ? { lat: active.origin_lat, lng: active.origin_lng }
-      : active.status === "em_viagem"
+      : isNavigationRideStatus(active.status)
         ? { lat: active.destination_lat, lng: active.destination_lng }
         : null;
     if (!dest) { setPolyline([]); return; }
