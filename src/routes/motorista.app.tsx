@@ -1845,7 +1845,7 @@ function ActiveRidePanel({
           >
             <Avatar
               src={passenger?.avatar_url ?? (ride as { passenger_photo_url?: string | null }).passenger_photo_url ?? null}
-              name={passenger?.name ?? "?"}
+              name={passenger?.name ?? "Passageiro"}
               size={52}
             />
             <div className="min-w-0 flex-1">
@@ -1999,7 +1999,7 @@ function ActiveRidePanel({
           >
             <Avatar
               src={passenger?.avatar_url ?? (ride as { passenger_photo_url?: string | null }).passenger_photo_url ?? null}
-              name={passenger?.name ?? "?"}
+              name={passenger?.name ?? "Passageiro"}
               size={52}
             />
             <div className="min-w-0 flex-1">
@@ -2108,7 +2108,7 @@ function ActiveRidePanel({
           aria-label="Ver perfil do passageiro"
         >
           <div className="shrink-0 rounded-full ring-2 ring-white/85 shadow-[0_6px_18px_-6px_rgba(0,0,0,0.5)]">
-            <Avatar src={passenger?.avatar_url ?? (ride as { passenger_photo_url?: string | null }).passenger_photo_url ?? null} name={passenger?.name ?? "?"} size={44} />
+            <Avatar src={passenger?.avatar_url ?? (ride as { passenger_photo_url?: string | null }).passenger_photo_url ?? null} name={passenger?.name ?? "Passageiro"} size={44} />
           </div>
           <div className="min-w-0 flex-1">
             <div className="truncate text-[14px] font-semibold tracking-tight">{passenger?.name ?? "Passageiro"}</div>
@@ -2494,7 +2494,7 @@ function RatingScreen({
               <div className="flex items-center gap-3">
                 <Avatar
                   src={passenger?.avatar_url ?? (ride as { passenger_photo_url?: string | null }).passenger_photo_url ?? null}
-                  name={passenger?.name ?? "?"}
+                  name={passenger?.name ?? "Passageiro"}
                   size={48}
                 />
                 <div className="min-w-0 flex-1">
@@ -2711,7 +2711,7 @@ function ActiveTripNavOverlay({
             >
               <Avatar
                 src={passenger?.avatar_url ?? (ride as { passenger_photo_url?: string | null }).passenger_photo_url ?? null}
-                name={passenger?.name ?? "?"}
+                name={passenger?.name ?? "Passageiro"}
                 size={36}
               />
               <div className="min-w-0 flex-1">
