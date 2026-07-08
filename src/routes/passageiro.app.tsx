@@ -720,6 +720,7 @@ function PassageiroApp() {
 
   const [userId, setUserId] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>("");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   const [position, setPosition] = useState<LatLng | null>(null);
   const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
