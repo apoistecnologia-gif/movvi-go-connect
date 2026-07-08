@@ -8,3 +8,6 @@ verify_jwt = true
 
 [functions.create-my-mercadopago-subscription]
 verify_jwt = true
+
+[functions.create-cancellation-fee-charge]
+verify_jwt = true
