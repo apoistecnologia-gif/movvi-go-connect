@@ -1178,7 +1178,7 @@ function MotoristaApp() {
         const bottomOffset = inTrip
           ? "calc(env(safe-area-inset-bottom) + 148px)"
           : active
-            ? "calc(76dvh + 12px)"
+            ? "calc(78dvh + 12px)"
             : "calc(env(safe-area-inset-bottom) + 260px)";
         return (
           <button onClick={recenter}
