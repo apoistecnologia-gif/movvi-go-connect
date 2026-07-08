@@ -2507,17 +2507,12 @@ function PassageiroApp() {
       {/* TOP BAR — premium: saudação + status dinâmico */}
       <PremiumTopBar
         userName={userName}
+        avatarUrl={avatarUrl}
         gpsState={gpsState}
         drivers={nearbyCount}
         searching={!!ride && ride.status === "procurar_motorista"}
         onLogout={handleLogout}
-        onOpenMenu={() => setSideMenuOpen(true)}
-      />
-
-      <PassengerSideMenu
-        open={sideMenuOpen}
-        onOpenChange={setSideMenuOpen}
-        onLogout={handleLogout}
+        onOpenAccount={() => navigate({ to: "/passageiro/perfil" })}
       />
 
       {/* Floating recenter — 56px, glass, MOVVI DS */}
