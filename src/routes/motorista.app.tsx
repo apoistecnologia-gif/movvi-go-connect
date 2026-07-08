@@ -1346,6 +1346,7 @@ function MotoristaApp() {
       </div>
 
       {/* Top bar — glass flutuante premium (60px, radius 22, backdrop blur) */}
+      {!active && (
       <div className="absolute inset-x-0 top-0 z-40 px-3 pt-[calc(env(safe-area-inset-top)+8px)] motion-safe:animate-[fadeIn_320ms_ease-out]">
         <div
           className="mx-auto flex h-[52px] max-w-5xl items-center gap-3 rounded-[20px] px-3 shadow-[0_8px_22px_-14px_rgba(0,0,0,0.45)]"
@@ -1381,6 +1382,7 @@ function MotoristaApp() {
           </button>
         </div>
       </div>
+      )}
 
       <DriverSideMenu
         open={sideMenuOpen}
@@ -1409,7 +1411,7 @@ function MotoristaApp() {
 
       {/* Recenter — floating GPS button (56px, glass) */}
       {!incoming && !ratingRide && (() => {
-        const inTrip = active?.status === "em_viagem";
+        const inTrip = isNavigationRideStatus(active?.status);
         const bottomOffset = inTrip
           ? "calc(env(safe-area-inset-bottom) + 148px)"
           : active
