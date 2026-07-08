@@ -128,7 +128,9 @@ function DriverSubscriptionPage() {
     ? "active"
     : ((driver?.financial_status ?? "inactive") as FinancialStatus);
   const isActive = financial === "active";
-  const dueDate = driver?.next_due_date ? new Date(driver.next_due_date) : null;
+  const dueDate = driver?.next_due_date
+    ? new Date(driver.next_due_date)
+    : expiresAt;
   const initPoint = driver?.mercadopago_init_point ?? null;
   const notApprovedYet = driver?.approval_status !== "aprovado";
 
