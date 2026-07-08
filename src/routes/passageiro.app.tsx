@@ -896,7 +896,7 @@ function PassageiroApp() {
       try {
         const { data: u } = await supabase
           .from("users")
-          .select("blocked_at, suspended_at, block_reason")
+          .select("blocked_at, suspended_at, block_reason, avatar_url, name")
           .eq("auth_user_id", data.user.id)
           .maybeSingle();
         if (u?.blocked_at) {
