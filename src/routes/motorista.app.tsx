@@ -1234,7 +1234,15 @@ function MotoristaApp() {
       <div className="absolute inset-0">
         <MovviMap center={stableMapCenter} zoom={stableMapZoom} height="100%"
           themeOverride="dark"
-          onLoad={(m) => { mapRef.current = m; }}>
+          onLoad={(m) => {
+            mapRef.current = m;
+            if (inNavigationMode && position) {
+              autoFollowRef.current = true;
+              navigationModeKeyRef.current = `${active?.id ?? "ride"}-${active?.status ?? "status"}`;
+              lastNavigationPositionRef.current = { lat: position.lat, lng: position.lng };
+              applyNavigationCamera(m, position, polyline, activeNavigationDestination, true);
+            }
+          }}>
           {position && (
             <InterpolatedDriverMarker
               position={position}
