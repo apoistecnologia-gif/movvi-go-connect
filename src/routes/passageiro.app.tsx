@@ -4403,8 +4403,7 @@ function DriverEnRoute({
     let active = true;
     const uid = (driver as any).user_id as string | undefined;
     if (!uid) return;
-    supabase
-      .rpc("get_driver_public_stats" as never, { p_user_id: uid })
+    (supabase.rpc as any)("get_driver_public_stats", { p_user_id: uid })
       .then(({ data }: { data: any }) => {
         if (!active || !data) return;
         const row = Array.isArray(data) ? data[0] : data;
