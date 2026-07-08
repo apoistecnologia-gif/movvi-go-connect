@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight, Box, PackageCheck, Send } from "lucide-react";
 import { useMemo, useState } from "react";
 import { MovviHeader } from "@/components/MovviHeader";
 import { BottomNav, PASSENGER_NAV } from "@/components/BottomNav";
+import { AddressAutocomplete, type PickedAddress } from "@/components/AddressAutocomplete";
 
 type EnviosMode = "enviar" | "receber";
 
@@ -25,7 +26,9 @@ function EnviosLanding() {
   const navigate = useNavigate();
   const [mode, setMode] = useState<EnviosMode | null>(null);
   const [pickup, setPickup] = useState("");
+  const [pickupCoords, setPickupCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [delivery, setDelivery] = useState("");
+  const [deliveryCoords, setDeliveryCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [item, setItem] = useState("");
   const [notes, setNotes] = useState("");
 
@@ -55,11 +58,29 @@ function EnviosLanding() {
     try {
       sessionStorage.setItem(
         "movvi:envios:draft",
-        JSON.stringify({ mode, pickup, delivery, item, notes }),
+        JSON.stringify({
+          mode,
+          pickup,
+          pickupCoords,
+          delivery,
+          deliveryCoords,
+          item,
+          notes,
+        }),
       );
     } catch {}
     navigate({ to: "/passageiro/app", search: { envios: mode } });
   };
+
+  const handlePickupPick = (p: PickedAddress) => {
+    setPickup(p.address);
+    setPickupCoords({ lat: p.lat, lng: p.lng });
+  };
+  const handleDeliveryPick = (p: PickedAddress) => {
+    setDelivery(p.address);
+    setDeliveryCoords({ lat: p.lat, lng: p.lng });
+  };
+
 
   return (
     <div className="min-h-dvh bg-background pb-56">
@@ -109,27 +130,32 @@ function EnviosLanding() {
               </div>
             </div>
 
-            <EnviosField
+            <AddressAutocomplete
               label={labels.pickup}
-              hint={labels.pickupHint}
+              placeholder={labels.pickupHint}
               value={pickup}
-              onChange={setPickup}
-              placeholder="Digite rua, número, bairro ou referência"
+              onChangeText={setPickup}
+              onPick={handlePickupPick}
             />
-            <EnviosField
+            <AddressAutocomplete
               label={labels.delivery}
-              hint={labels.deliveryHint}
+              placeholder={labels.deliveryHint}
               value={delivery}
-              onChange={setDelivery}
-              placeholder="Digite rua, número, bairro ou referência"
+              onChangeText={setDelivery}
+              onPick={handleDeliveryPick}
             />
-            <EnviosField
-              label="Item (opcional)"
-              hint="Documento, pacote pequeno, chave, compra..."
-              value={item}
-              onChange={setItem}
-              placeholder="Ex.: envelope com documentos"
-            />
+            <label className="block space-y-1.5">
+              <span className="text-[12.5px] font-semibold text-foreground">
+                Item (opcional)
+              </span>
+              <input
+                value={item}
+                onChange={(e) => setItem(e.target.value)}
+                placeholder="Ex.: envelope com documentos"
+                className="h-11 w-full rounded-xl border border-border bg-background px-3 text-[13px] text-foreground outline-none placeholder:text-muted-foreground focus:border-primary"
+              />
+            </label>
+
             <label className="block space-y-1.5">
               <span className="text-[12.5px] font-semibold text-foreground">Observações</span>
               <textarea
@@ -232,31 +258,3 @@ function EnviosOption({
   );
 }
 
-function EnviosField({
-  label,
-  hint,
-  value,
-  onChange,
-  placeholder,
-}: {
-  label: string;
-  hint: string;
-  value: string;
-  onChange: (value: string) => void;
-  placeholder: string;
-}) {
-  return (
-    <label className="block space-y-1.5">
-      <span className="flex items-baseline justify-between gap-2">
-        <span className="text-[12.5px] font-semibold text-foreground">{label}</span>
-        <span className="truncate text-[11px] text-muted-foreground">{hint}</span>
-      </span>
-      <input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="h-11 w-full rounded-xl border border-border bg-background px-3 text-[13px] text-foreground outline-none placeholder:text-muted-foreground focus:border-primary"
-      />
-    </label>
-  );
-}

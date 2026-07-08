@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight, Box, Check } from "lucide-react";
 import { useMemo, useState } from "react";
 import { MovviHeader } from "@/components/MovviHeader";
 import { BottomNav, PASSENGER_NAV } from "@/components/BottomNav";
+import { AddressAutocomplete, type PickedAddress } from "@/components/AddressAutocomplete";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,6 +33,8 @@ type LocationInfo = {
   estacionar: YesNo | "";
   escadas: YesNo | "";
   dificilAcesso: YesNo | "";
+  endereco: string;
+  coords: { lat: number; lng: number } | null;
 };
 
 type MudancasData = {
@@ -68,6 +71,8 @@ const initialLoc = (): LocationInfo => ({
   estacionar: "",
   escadas: "",
   dificilAcesso: "",
+  endereco: "",
+  coords: null,
 });
 
 const STEP_LABELS = ["Tipo", "Carga", "Retirada", "Entrega", "Revisão"];
@@ -101,8 +106,18 @@ function MudancasFlow() {
         !!data.desmontar &&
         !!data.embalar
       );
-    if (step === 2) return !!data.retirada.tipo && !!data.retirada.dificilAcesso;
-    if (step === 3) return !!data.entrega.tipo && !!data.entrega.dificilAcesso;
+    if (step === 2)
+      return (
+        !!data.retirada.tipo &&
+        !!data.retirada.dificilAcesso &&
+        data.retirada.endereco.trim().length > 2
+      );
+    if (step === 3)
+      return (
+        !!data.entrega.tipo &&
+        !!data.entrega.dificilAcesso &&
+        data.entrega.endereco.trim().length > 2
+      );
     return true;
   }, [step, data]);
 
@@ -300,6 +315,19 @@ function LocationSection({
     onChange({ ...value, [k]: v });
   return (
     <Section title={title}>
+      <AddressAutocomplete
+        label="Endereço"
+        placeholder="Rua, número, bairro"
+        value={value.endereco}
+        onChangeText={(v) => set("endereco", v)}
+        onPick={(p: PickedAddress) =>
+          onChange({
+            ...value,
+            endereco: p.address,
+            coords: { lat: p.lat, lng: p.lng },
+          })
+        }
+      />
       <ChoiceGroup
         label="Tipo do local"
         value={value.tipo}
@@ -325,12 +353,10 @@ function LocationSection({
       <YN label="Dá para estacionar perto?" value={value.estacionar} set={(v) => set("estacionar", v)} />
       <YN label="Há escadas?" value={value.escadas} set={(v) => set("escadas", v)} />
       <YN label="Local de difícil acesso?" value={value.dificilAcesso} set={(v) => set("dificilAcesso", v)} />
-      <p className="text-[12px] text-muted-foreground">
-        O endereço exato será definido no mapa MOVVI na próxima tela.
-      </p>
     </Section>
   );
 }
+
 
 function locSummary(l: LocationInfo): string {
   if (!l.tipo) return "—";
