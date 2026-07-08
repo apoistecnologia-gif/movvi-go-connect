@@ -2654,6 +2654,14 @@ function RatingScreen({
               </div>
             </div>
 
+            <PaymentConfirmBlock
+              paymentLabel={paymentLabel}
+              confirmedAt={paymentConfirmedAt}
+              loading={paymentConfirming}
+              onConfirm={onConfirmPayment}
+            />
+
+
             {/* Next status */}
             <div className="mt-4 flex items-center gap-3 rounded-[18px] bg-primary/10 p-3.5 ring-1 ring-primary/25 animate-in fade-in slide-in-from-bottom-2 duration-500">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
