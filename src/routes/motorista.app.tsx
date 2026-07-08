@@ -330,7 +330,30 @@ function MotoristaApp() {
   const [submittingRating, setSubmittingRating] = useState(false);
   const [ratingSubmitted, setRatingSubmitted] = useState(false);
   const [ratingError, setRatingError] = useState<string | null>(null);
+  const [paymentConfirming, setPaymentConfirming] = useState(false);
+  const [paymentConfirmedAt, setPaymentConfirmedAt] = useState<string | null>(null);
   const ratedRidesRef = useRef<Set<string>>(new Set());
+
+  async function confirmPaymentReceived() {
+    if (!ratingRide || paymentConfirming || paymentConfirmedAt) return;
+    setPaymentConfirming(true);
+    try {
+      const nowIso = new Date().toISOString();
+      const { error } = await supabase
+        .from("rides")
+        .update({ payment_received_at: nowIso, payment_received_by: userId })
+        .eq("id", ratingRide.id)
+        .is("payment_received_at", null);
+      if (error) throw error;
+      setPaymentConfirmedAt(nowIso);
+      toast.success("Pagamento confirmado");
+      if (navigator.vibrate) navigator.vibrate(30);
+    } catch (e) {
+      toast.error("Não foi possível confirmar", { description: (e as Error).message });
+    } finally {
+      setPaymentConfirming(false);
+    }
+  }
 
   const mapRef = useRef<google.maps.Map | null>(null);
   const sheetRef = useRef<MovviSheetHandle | null>(null);
