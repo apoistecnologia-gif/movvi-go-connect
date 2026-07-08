@@ -115,7 +115,17 @@ function DriverSubscriptionPage() {
     );
   }
 
-  const financial = (driver?.financial_status ?? "inactive") as FinancialStatus;
+  const subActive =
+    (driver?.subscription_status ?? "").toLowerCase() === "active" ||
+    (driver?.subscription_status ?? "").toLowerCase() === "ativa";
+  const expiresAt = driver?.subscription_expires_at
+    ? new Date(driver.subscription_expires_at)
+    : null;
+  const notExpired = expiresAt ? expiresAt.getTime() > Date.now() : false;
+  const derivedActive = subActive && notExpired;
+  const financial: FinancialStatus = derivedActive
+    ? "active"
+    : ((driver?.financial_status ?? "inactive") as FinancialStatus);
   const isActive = financial === "active";
   const dueDate = driver?.next_due_date ? new Date(driver.next_due_date) : null;
   const initPoint = driver?.mercadopago_init_point ?? null;
