@@ -305,6 +305,11 @@ export type Database = {
           fee_amount: number
           id: string
           is_paid: boolean
+          mp_expires_at: string | null
+          mp_payment_id: string | null
+          mp_qr_code: string | null
+          mp_qr_code_base64: string | null
+          mp_ticket_url: string | null
           paid_at: string | null
           passenger_id: string
           platform_fee: number
@@ -321,6 +326,11 @@ export type Database = {
           fee_amount?: number
           id?: string
           is_paid?: boolean
+          mp_expires_at?: string | null
+          mp_payment_id?: string | null
+          mp_qr_code?: string | null
+          mp_qr_code_base64?: string | null
+          mp_ticket_url?: string | null
           paid_at?: string | null
           passenger_id: string
           platform_fee?: number
@@ -337,6 +347,11 @@ export type Database = {
           fee_amount?: number
           id?: string
           is_paid?: boolean
+          mp_expires_at?: string | null
+          mp_payment_id?: string | null
+          mp_qr_code?: string | null
+          mp_qr_code_base64?: string | null
+          mp_ticket_url?: string | null
           paid_at?: string | null
           passenger_id?: string
           platform_fee?: number
