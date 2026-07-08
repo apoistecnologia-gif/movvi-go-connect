@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight, Box, PackageCheck, Send } from "lucide-react";
 import { useMemo, useState } from "react";
 import { MovviHeader } from "@/components/MovviHeader";
 import { BottomNav, PASSENGER_NAV } from "@/components/BottomNav";
+import { AddressAutocomplete, type PickedAddress } from "@/components/AddressAutocomplete";
 
 type EnviosMode = "enviar" | "receber";
 
