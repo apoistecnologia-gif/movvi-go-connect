@@ -2690,7 +2690,15 @@ function RatingScreen({
               </div>
             </div>
 
+            <PaymentConfirmBlock
+              paymentLabel={paymentLabel}
+              confirmedAt={paymentConfirmedAt}
+              loading={paymentConfirming}
+              onConfirm={onConfirmPayment}
+            />
+
             {/* ===== TRIP SUMMARY ===== */}
+
             <div className="mt-3 rounded-[20px] bg-background/60 p-3.5 ring-1 ring-border animate-in fade-in slide-in-from-bottom-2 duration-500">
               <div className="grid grid-cols-2 gap-3">
                 <SummaryRow icon={<RouteIcon className="h-3.5 w-3.5" strokeWidth={1.75} />} label="Distância" value={distanceLabel} />
