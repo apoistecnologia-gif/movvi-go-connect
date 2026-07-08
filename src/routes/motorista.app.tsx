@@ -1217,7 +1217,7 @@ function MotoristaApp() {
       )}
 
       {!incoming && !ratingRide && active && active.status !== "em_viagem" && (
-        <MovviSheet ref={sheetRef} snaps={[54, 76, 92]} initial={62}>
+        <MovviSheet ref={sheetRef} snaps={[58, 78, 92]} initial={70}>
           <ActiveRidePanel
             ride={active}
             passenger={passenger}
