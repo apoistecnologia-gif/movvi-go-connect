@@ -1010,7 +1010,7 @@ function MotoristaApp() {
       handledRidesRef.current.add(offer.id);
       setIncoming(null);
       setActive(r as RideRow);
-      sheetRef.current?.snapTo(78);
+      sheetRef.current?.snapTo(34);
     } catch (e) {
       console.error("[MOVVI MOTORISTA] erro ao aceitar:", e);
       handledRidesRef.current.delete(offer.id);
