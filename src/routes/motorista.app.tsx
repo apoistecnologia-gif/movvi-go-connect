@@ -1491,17 +1491,17 @@ function IncomingOffer({
           </div>
 
           {/* Preço hero */}
-          <div className="mt-3 flex flex-col items-center">
-            <div className="text-[28px] font-extrabold leading-none tracking-tight text-foreground tabular-nums sm:text-[32px]">
+          <div className="mt-2 flex flex-col items-center">
+            <div className="text-[26px] font-extrabold leading-none tracking-tight text-foreground tabular-nums sm:text-[30px]">
               {ride.estimated_price != null ? formatBRL(Number(ride.estimated_price)) : "—"}
             </div>
-            <div className="mt-1 text-[12px] font-medium text-muted-foreground">
+            <div className="mt-0.5 text-[11px] font-medium text-muted-foreground">
               Ganho da corrida
             </div>
           </div>
 
           {/* Quatro cards compactos */}
-          <div className="mt-4 grid grid-cols-4 gap-1.5 sm:gap-2">
+          <div className="mt-3 grid grid-cols-4 gap-1.5 sm:gap-2">
             <InfoCard icon={<Clock className="h-[14px] w-[14px]" strokeWidth={1.75} />} value={pickupMin != null ? `${pickupMin} min` : "—"} label="Até coleta" />
             <InfoCard icon={<MapPin className="h-[14px] w-[14px]" strokeWidth={1.75} />} value={pickupKm != null ? `${pickupKm.toFixed(1)} km` : "—"} label="Embarque" />
             <InfoCard icon={<RouteIcon className="h-[14px] w-[14px]" strokeWidth={1.75} />} value={ride.distance_km != null ? `${Number(ride.distance_km).toFixed(1)} km` : "—"} label="Corrida" />
@@ -1513,19 +1513,19 @@ function IncomingOffer({
           <button
             type="button"
             onClick={onOpenProfile}
-            className="press-scale mt-3 flex w-full items-center gap-3 rounded-2xl border border-border bg-background/40 px-3 py-2.5 text-left transition hover:bg-muted/30"
+            className="press-scale mt-2.5 flex w-full items-center gap-3 rounded-2xl border border-border bg-background/40 px-3 py-2 text-left transition hover:bg-muted/30"
             aria-label="Ver perfil do passageiro"
           >
             <Avatar
               src={passenger?.avatar_url ?? (ride as { passenger_photo_url?: string | null }).passenger_photo_url ?? null}
               name={passenger?.name ?? "Passageiro"}
-              size={36}
+              size={34}
             />
             <div className="min-w-0 flex-1">
-              <div className="truncate text-[15px] font-semibold text-foreground">
+              <div className="truncate text-[14px] font-semibold text-foreground">
                 {passenger?.name ?? "Passageiro"}
               </div>
-              <div className="mt-0.5 flex items-center gap-1 text-[13px] text-muted-foreground">
+              <div className="mt-0.5 flex items-center gap-1 text-[12px] text-muted-foreground">
                 <Star className="h-3 w-3 fill-amber-400 text-amber-400" strokeWidth={0} />
                 <span className="tabular-nums">{ratingText}</span>
               </div>
@@ -1534,15 +1534,15 @@ function IncomingOffer({
           </button>
 
           {/* Endereços */}
-          <div className="mt-3 rounded-2xl border border-border bg-background/40 px-4 py-3.5">
+          <div className="mt-2.5 rounded-2xl border border-border bg-background/40 px-4 py-3">
             <AddressRow dotColor="bg-primary" label="Embarque" name={ride.pickup_label || ride.origin_name} />
-            <div className="my-2.5 ml-[5px] h-px w-full bg-border/60" />
+            <div className="my-2 ml-[5px] h-px w-full bg-border/60" />
             <AddressRow dotColor="bg-destructive" label="Destino" name={ride.destination_name} />
           </div>
 
           {/* Pagamento */}
-          <div className="mt-3 mb-2 flex items-center justify-between rounded-2xl border border-border bg-background/40 px-4 py-2.5">
-            <span className="text-[12px] font-medium uppercase tracking-[0.12em] text-muted-foreground">Pagamento</span>
+          <div className="mt-2.5 mb-2 flex items-center justify-between rounded-2xl border border-border bg-background/40 px-4 py-2">
+            <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">Pagamento</span>
             <span className="text-[13px] font-semibold text-foreground">{paymentLabelFor(ride.payment_method)}</span>
           </div>
         </div>
