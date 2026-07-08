@@ -40,6 +40,10 @@ type GuinchoData = {
   viaPublica: YesNo | "";
   acidente: YesNo | "";
   precisaPlataforma: YesNoUnknown | "";
+  origem: string;
+  origemCoords: { lat: number; lng: number } | null;
+  destino: string;
+  destinoCoords: { lat: number; lng: number } | null;
   observacoes: string;
 };
 
