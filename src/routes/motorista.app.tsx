@@ -1502,11 +1502,12 @@ function IncomingOffer({
 
           {/* Quatro cards compactos */}
           <div className="mt-4 grid grid-cols-4 gap-1.5 sm:gap-2">
-            <InfoCard icon={<Clock className="h-[14px] w-[14px]" strokeWidth={1.75} />} value={pickupMin != null ? `${pickupMin} min` : "—"} label="ETA" />
+            <InfoCard icon={<Clock className="h-[14px] w-[14px]" strokeWidth={1.75} />} value={pickupMin != null ? `${pickupMin} min` : "—"} label="Até coleta" />
             <InfoCard icon={<MapPin className="h-[14px] w-[14px]" strokeWidth={1.75} />} value={pickupKm != null ? `${pickupKm.toFixed(1)} km` : "—"} label="Embarque" />
+            <InfoCard icon={<RouteIcon className="h-[14px] w-[14px]" strokeWidth={1.75} />} value={ride.distance_km != null ? `${Number(ride.distance_km).toFixed(1)} km` : "—"} label="Corrida" />
             <InfoCard icon={<CatIcon className="h-[14px] w-[14px]" strokeWidth={1.75} />} value={catLabel} label="Categoria" compactValue />
-            <InfoCard icon={<Star className="h-[14px] w-[14px] fill-amber-400 text-amber-400" strokeWidth={0} />} value={ratingText} label="Passageiro" />
           </div>
+
 
           {/* Passageiro — nome + rating */}
           <button
