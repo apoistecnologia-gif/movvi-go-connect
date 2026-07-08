@@ -2799,6 +2799,45 @@ function SummaryRow({ icon, label, value }: { icon: ReactNode; label: string; va
   );
 }
 
+function PaymentConfirmBlock({
+  paymentLabel, confirmedAt, loading, onConfirm,
+}: {
+  paymentLabel: string;
+  confirmedAt: string | null;
+  loading: boolean;
+  onConfirm: () => void;
+}) {
+  if (confirmedAt) {
+    return (
+      <div className="mt-3 flex items-center gap-3 rounded-[18px] bg-emerald-500/10 p-3.5 ring-1 ring-emerald-500/30">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-500">
+          <CheckCircle2 className="h-4 w-4" strokeWidth={2} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="text-[13.5px] font-semibold text-foreground">Pagamento recebido</div>
+          <div className="text-[12px] text-muted-foreground">{paymentLabel} · confirmado por você</div>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="mt-3 rounded-[18px] bg-amber-500/10 p-3.5 ring-1 ring-amber-500/30">
+      <div className="flex items-center gap-2 text-[12px] font-semibold text-amber-600 dark:text-amber-400">
+        <Banknote className="h-3.5 w-3.5" /> Aguardando confirmação — {paymentLabel}
+      </div>
+      <DSButton
+        onClick={onConfirm}
+        disabled={loading}
+        size="sm"
+        className="mt-2 w-full"
+      >
+        {loading ? "Confirmando…" : "Confirmar recebimento"}
+      </DSButton>
+    </div>
+  );
+}
+
+
 /* ============================================================
    TOP FLOATING GLASS STAT (usado na fase "a caminho")
    ============================================================ */
