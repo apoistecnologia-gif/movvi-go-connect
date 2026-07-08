@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import {
   ClipboardList,
@@ -14,6 +14,8 @@ import {
   Receipt as ReceiptIcon,
   Clock,
   CreditCard,
+  CalendarClock,
+  Plus,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -28,7 +30,7 @@ import {
 } from "@/components/ui/sheet";
 import { Avatar } from "@/components/Avatar";
 import { supabase } from "@/integrations/supabase/client";
-import { avaliarMotorista } from "@/lib/rideLifecycle";
+import { avaliarMotorista, cancelarAgendamento } from "@/lib/rideLifecycle";
 import { RideReceiptDialog } from "@/components/rides/RideReceiptDialog";
 import type { ReceiptData } from "@/lib/rideReceipt";
 import { DSButton, DSTextarea } from "@/design-system";
