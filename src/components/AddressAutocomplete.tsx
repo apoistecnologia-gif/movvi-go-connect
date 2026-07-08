@@ -32,7 +32,7 @@ export function AddressAutocomplete({
   disabled,
 }: AddressAutocompleteProps) {
   const { isLoaded } = useJsApiLoader({
-    id: "google-map-script",
+    id: "movvi-google-maps",
     googleMapsApiKey: GOOGLE_MAPS_API_KEY,
     libraries: GOOGLE_MAPS_LIBRARIES,
     language: "pt-BR",
