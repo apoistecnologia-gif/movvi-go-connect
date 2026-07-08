@@ -315,6 +315,19 @@ function LocationSection({
     onChange({ ...value, [k]: v });
   return (
     <Section title={title}>
+      <AddressAutocomplete
+        label="Endereço"
+        placeholder="Rua, número, bairro"
+        value={value.endereco}
+        onChangeText={(v) => set("endereco", v)}
+        onPick={(p: PickedAddress) =>
+          onChange({
+            ...value,
+            endereco: p.address,
+            coords: { lat: p.lat, lng: p.lng },
+          })
+        }
+      />
       <ChoiceGroup
         label="Tipo do local"
         value={value.tipo}
@@ -340,12 +353,10 @@ function LocationSection({
       <YN label="Dá para estacionar perto?" value={value.estacionar} set={(v) => set("estacionar", v)} />
       <YN label="Há escadas?" value={value.escadas} set={(v) => set("escadas", v)} />
       <YN label="Local de difícil acesso?" value={value.dificilAcesso} set={(v) => set("dificilAcesso", v)} />
-      <p className="text-[12px] text-muted-foreground">
-        O endereço exato será definido no mapa MOVVI na próxima tela.
-      </p>
     </Section>
   );
 }
+
 
 function locSummary(l: LocationInfo): string {
   if (!l.tipo) return "—";
