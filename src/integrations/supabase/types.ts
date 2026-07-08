@@ -2593,6 +2593,14 @@ export type Database = {
           vehicle_year: number
         }[]
       }
+      get_driver_public_stats: {
+        Args: { p_user_id: string }
+        Returns: {
+          completed_rides: number
+          rating: number
+          total_ratings: number
+        }[]
+      }
       get_driver_stats: {
         Args: { _from: string; _to: string; _user_id: string }
         Returns: {
