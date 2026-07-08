@@ -1905,6 +1905,7 @@ export type Database = {
           request_expires_at: string | null
           route_polyline: string | null
           safety_code: string | null
+          scheduled_for: string | null
           share_token: string | null
           started_at: string | null
           status: Database["public"]["Enums"]["ride_status"]
@@ -1967,6 +1968,7 @@ export type Database = {
           request_expires_at?: string | null
           route_polyline?: string | null
           safety_code?: string | null
+          scheduled_for?: string | null
           share_token?: string | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["ride_status"]
@@ -2029,6 +2031,7 @@ export type Database = {
           request_expires_at?: string | null
           route_polyline?: string | null
           safety_code?: string | null
+          scheduled_for?: string | null
           share_token?: string | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["ride_status"]
@@ -2577,6 +2580,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      activate_due_scheduled_rides: {
+        Args: never
+        Returns: {
+          activated_ride_id: string
+        }[]
+      }
       admin_analytics_financial: { Args: never; Returns: Json }
       admin_analytics_new_users_timeseries: {
         Args: { _bucket?: string; _from: string; _to: string }
