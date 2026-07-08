@@ -2923,7 +2923,7 @@ function PassageiroApp() {
             ? `${Number(ride.distance_km).toFixed(1)} km`
             : "—";
         const paidValue = ride.final_price ?? (ride as any).estimated_price ?? null;
-        const driverName = ride.driver_name ?? "Motorista MOVVI";
+        const driverName = (ride.driver_name ?? "Motorista MOVVI").trim().split(/\s+/)[0] || "Motorista";
         const driverPhoto = (ride as any).driver_photo_url ?? null;
         const driverVehicle =
           (ride as any).driver_vehicle ??
