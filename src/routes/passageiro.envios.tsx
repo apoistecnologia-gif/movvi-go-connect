@@ -258,31 +258,3 @@ function EnviosOption({
   );
 }
 
-function EnviosField({
-  label,
-  hint,
-  value,
-  onChange,
-  placeholder,
-}: {
-  label: string;
-  hint: string;
-  value: string;
-  onChange: (value: string) => void;
-  placeholder: string;
-}) {
-  return (
-    <label className="block space-y-1.5">
-      <span className="flex items-baseline justify-between gap-2">
-        <span className="text-[12.5px] font-semibold text-foreground">{label}</span>
-        <span className="truncate text-[11px] text-muted-foreground">{hint}</span>
-      </span>
-      <input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="h-11 w-full rounded-xl border border-border bg-background px-3 text-[13px] text-foreground outline-none placeholder:text-muted-foreground focus:border-primary"
-      />
-    </label>
-  );
-}
