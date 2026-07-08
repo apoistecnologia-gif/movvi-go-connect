@@ -1075,9 +1075,11 @@ function MotoristaApp() {
   const autoFollowRef = useRef(true);
   const lastFollowAtRef = useRef(0);
   const lastFitKeyRef = useRef<string | null>(null);
+  const lastRouteRequestKeyRef = useRef<string | null>(null);
   const navigationModeKeyRef = useRef<string | null>(null);
   const lastNavigationPositionRef = useRef<LatLng | null>(null);
   const routeFailToastedRef = useRef<string | null>(null);
+  const [mapReadyNonce, setMapReadyNonce] = useState(0);
   const inNavigationMode = isNavigationRideStatus(active?.status);
   const activeRouteKey = active ? `${active.id}-${active.status}` : null;
   const activeNavigationDestination = useMemo(() => {
@@ -1159,11 +1161,20 @@ function MotoristaApp() {
     applyNavigationCamera(map, position, cameraPolyline, activeNavigationDestination, true);
   }, [inNavigationMode, active?.id, active?.status, position, cameraPolyline, activeNavigationDestination]);
 
-  // Rota — depende SOMENTE de rideId/status. Usa posição via ref para não
-  // recomputar a rota nem fazer fitBounds a cada GPS.
+  // Rota da corrida ativa.
+  // Importante: depende também da primeira posição válida e do carregamento do
+  // mapa. Antes, se a corrida ativa chegasse antes do GPS/mapa, o efeito saía
+  // cedo e não tentava de novo — por isso não aparecia rota nem zoom.
   useEffect(() => {
-    if (!active) { setPolyline([]); setEtaSeconds(null); setLegKm(null); lastFitKeyRef.current = null; return; }
-    const pos = positionRef.current;
+    if (!active) {
+      setPolyline([]);
+      setEtaSeconds(null);
+      setLegKm(null);
+      lastFitKeyRef.current = null;
+      lastRouteRequestKeyRef.current = null;
+      return;
+    }
+    const pos = position;
     if (!pos) return;
     const toPickup = active.status === "motorista_a_caminho" || active.status === "motorista_chegou";
     const dest = toPickup
@@ -1173,43 +1184,64 @@ function MotoristaApp() {
         : null;
     if (!dest) { setPolyline([]); return; }
     const fitKey = `${active.id}-${active.status}`;
+    const routeRequestKey = fitKey;
+
+    const focusRoute = (points: LatLng[]) => {
+      // Marca a rota como pronta mesmo se o mapa ainda não carregou; o onLoad
+      // aplica a câmera usando a polyline atual.
+      lastFitKeyRef.current = fitKey;
+      const map = mapRef.current;
+      if (!map) return;
+      if (isNavigationRideStatus(active.status)) {
+        autoFollowRef.current = true;
+        lastFollowAtRef.current = Date.now();
+        lastNavigationPositionRef.current = { lat: pos.lat, lng: pos.lng };
+        applyNavigationCamera(map, pos, points, dest, true);
+        return;
+      }
+      autoFollowRef.current = false;
+      const b = new google.maps.LatLngBounds();
+      b.extend(pos);
+      b.extend(dest);
+      points.forEach((p) => b.extend(p));
+      map.fitBounds(b, { top: 110, bottom: Math.round(window.innerHeight * 0.62), left: 56, right: 56 });
+      window.setTimeout(() => { autoFollowRef.current = true; }, 1200);
+    };
+
+    if (lastRouteRequestKeyRef.current === routeRequestKey) {
+      if (polyline.length > 0 && lastFitKeyRef.current !== fitKey) focusRoute(polyline);
+      return;
+    }
+
+    lastRouteRequestKeyRef.current = routeRequestKey;
     if (lastFitKeyRef.current !== fitKey) setPolyline([]);
+    let cancelled = false;
     callRoute({ data: { origin: pos, destination: dest } })
       .then((res) => {
-        setPolyline(decodePolyline(res.encodedPolyline));
+        if (cancelled) return;
+        const points = decodePolyline(res.encodedPolyline);
+        setPolyline(points);
         setEtaSeconds(res.durationSeconds);
         setLegKm(res.distanceMeters / 1000);
         if (routeFailToastedRef.current === fitKey) routeFailToastedRef.current = null;
-        // fitBounds APENAS uma vez por transição de status.
-        if (mapRef.current && lastFitKeyRef.current !== fitKey) {
-          lastFitKeyRef.current = fitKey;
-          if (isNavigationRideStatus(active.status)) {
-            autoFollowRef.current = true;
-            lastFollowAtRef.current = Date.now();
-            lastNavigationPositionRef.current = { lat: pos.lat, lng: pos.lng };
-            applyNavigationCamera(mapRef.current, pos, decodePolyline(res.encodedPolyline), dest, true);
-          } else {
-            autoFollowRef.current = false; // evita conflito com follow
-            const b = new google.maps.LatLngBounds();
-            b.extend(pos); b.extend(dest);
-            mapRef.current.fitBounds(b, { top: 110, bottom: Math.round(window.innerHeight * 0.62), left: 56, right: 56 });
-            // reativa follow depois da animação inicial
-            window.setTimeout(() => { autoFollowRef.current = true; }, 1200);
-          }
-        }
+        focusRoute(points);
       })
       .catch(() => {
+        if (cancelled) return;
         // Fallback: mantém marcadores e desenha linha reta para não quebrar UX.
-        setPolyline([pos, dest]);
+        const fallback = [pos, dest];
+        setPolyline(fallback);
         const km = haversineKm(pos, dest);
         setLegKm(km); setEtaSeconds(Math.round((km / 35) * 3600));
+        focusRoute(fallback);
         // Aviso não-bloqueante — apenas uma vez por transição de status.
         if (routeFailToastedRef.current !== fitKey) {
           routeFailToastedRef.current = fitKey;
           toast.message("Não foi possível traçar a rota agora. Use navegação externa.");
         }
       });
-  }, [active?.id, active?.status]); // eslint-disable-line react-hooks/exhaustive-deps
+    return () => { cancelled = true; };
+  }, [active?.id, active?.status, position?.lat, position?.lng, mapReadyNonce]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function recenter() {
     autoFollowRef.current = true;
@@ -1267,6 +1299,7 @@ function MotoristaApp() {
           themeOverride="dark"
           onLoad={(m) => {
             mapRef.current = m;
+            setMapReadyNonce((n) => n + 1);
             if (inNavigationMode && position) {
               autoFollowRef.current = true;
               navigationModeKeyRef.current = `${active?.id ?? "ride"}-${active?.status ?? "status"}`;
