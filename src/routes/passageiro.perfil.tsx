@@ -111,13 +111,19 @@ function PerfilPassageiro() {
     );
   }
 
-  const displayName = name || email?.split("@")[0] || "Passageiro MOVVI";
+  const rawName = name || email?.split("@")[0] || "Passageiro MOVVI";
+  const displayName = rawName
+    .toLocaleLowerCase("pt-BR")
+    .split(/\s+/)
+    .map((w) => (w.length <= 2 && /^(da|de|do|das|dos|e)$/i.test(w) ? w : w.charAt(0).toLocaleUpperCase("pt-BR") + w.slice(1)))
+    .join(" ");
   const contact = email || phone || "—";
 
   return (
     <div
       className="min-h-dvh bg-[#0B0F10] text-white"
-      style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 110px)" }}
+      style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 120px)" }}
+
     >
       {/* Simple header */}
       <header className="sticky top-0 z-20 flex items-center justify-between border-b border-white/5 bg-[#0B0F10]/95 px-4 py-3 backdrop-blur">
@@ -142,9 +148,10 @@ function PerfilPassageiro() {
 
       <main className="mx-auto max-w-md space-y-5 px-4 pt-5">
         {/* Profile hero */}
-        <section className="flex items-center gap-4 rounded-3xl border border-white/5 bg-[#141A1B] p-4">
+        <section className="flex items-center gap-3.5 rounded-3xl border border-white/5 bg-[#141A1B] px-4 py-3.5">
           <div className="relative">
-            <Avatar src={photoUrl} name={displayName} size={72} />
+            <Avatar src={photoUrl} name={displayName} size={60} />
+
             {verified && (
               <span
                 className="absolute -bottom-0.5 -right-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-[#76C139] ring-2 ring-[#141A1B]"
