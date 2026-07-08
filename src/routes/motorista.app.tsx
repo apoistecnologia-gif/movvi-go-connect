@@ -1010,7 +1010,7 @@ function MotoristaApp() {
       handledRidesRef.current.add(offer.id);
       setIncoming(null);
       setActive(r as RideRow);
-      sheetRef.current?.snapTo(78);
+      sheetRef.current?.snapTo(34);
     } catch (e) {
       console.error("[MOVVI MOTORISTA] erro ao aceitar:", e);
       handledRidesRef.current.delete(offer.id);
@@ -1075,9 +1075,11 @@ function MotoristaApp() {
   const autoFollowRef = useRef(true);
   const lastFollowAtRef = useRef(0);
   const lastFitKeyRef = useRef<string | null>(null);
+  const lastRouteRequestKeyRef = useRef<string | null>(null);
   const navigationModeKeyRef = useRef<string | null>(null);
   const lastNavigationPositionRef = useRef<LatLng | null>(null);
   const routeFailToastedRef = useRef<string | null>(null);
+  const [mapReadyNonce, setMapReadyNonce] = useState(0);
   const inNavigationMode = isNavigationRideStatus(active?.status);
   const activeRouteKey = active ? `${active.id}-${active.status}` : null;
   const activeNavigationDestination = useMemo(() => {
@@ -1159,11 +1161,20 @@ function MotoristaApp() {
     applyNavigationCamera(map, position, cameraPolyline, activeNavigationDestination, true);
   }, [inNavigationMode, active?.id, active?.status, position, cameraPolyline, activeNavigationDestination]);
 
-  // Rota — depende SOMENTE de rideId/status. Usa posição via ref para não
-  // recomputar a rota nem fazer fitBounds a cada GPS.
+  // Rota da corrida ativa.
+  // Importante: depende também da primeira posição válida e do carregamento do
+  // mapa. Antes, se a corrida ativa chegasse antes do GPS/mapa, o efeito saía
+  // cedo e não tentava de novo — por isso não aparecia rota nem zoom.
   useEffect(() => {
-    if (!active) { setPolyline([]); setEtaSeconds(null); setLegKm(null); lastFitKeyRef.current = null; return; }
-    const pos = positionRef.current;
+    if (!active) {
+      setPolyline([]);
+      setEtaSeconds(null);
+      setLegKm(null);
+      lastFitKeyRef.current = null;
+      lastRouteRequestKeyRef.current = null;
+      return;
+    }
+    const pos = position;
     if (!pos) return;
     const toPickup = active.status === "motorista_a_caminho" || active.status === "motorista_chegou";
     const dest = toPickup
@@ -1173,43 +1184,62 @@ function MotoristaApp() {
         : null;
     if (!dest) { setPolyline([]); return; }
     const fitKey = `${active.id}-${active.status}`;
+    const routeRequestKey = fitKey;
+
+    const focusRoute = (points: LatLng[]) => {
+      const map = mapRef.current;
+      if (!map) return;
+      lastFitKeyRef.current = fitKey;
+      if (isNavigationRideStatus(active.status)) {
+        autoFollowRef.current = true;
+        lastFollowAtRef.current = Date.now();
+        lastNavigationPositionRef.current = { lat: pos.lat, lng: pos.lng };
+        applyNavigationCamera(map, pos, points, dest, true);
+        return;
+      }
+      autoFollowRef.current = false;
+      const b = new google.maps.LatLngBounds();
+      b.extend(pos);
+      b.extend(dest);
+      points.forEach((p) => b.extend(p));
+      map.fitBounds(b, { top: 110, bottom: Math.round(window.innerHeight * 0.62), left: 56, right: 56 });
+      window.setTimeout(() => { autoFollowRef.current = true; }, 1200);
+    };
+
+    if (lastRouteRequestKeyRef.current === routeRequestKey) {
+      if (polyline.length > 0 && lastFitKeyRef.current !== fitKey) focusRoute(polyline);
+      return;
+    }
+
+    lastRouteRequestKeyRef.current = routeRequestKey;
     if (lastFitKeyRef.current !== fitKey) setPolyline([]);
+    let cancelled = false;
     callRoute({ data: { origin: pos, destination: dest } })
       .then((res) => {
-        setPolyline(decodePolyline(res.encodedPolyline));
+        if (cancelled) return;
+        const points = decodePolyline(res.encodedPolyline);
+        setPolyline(points);
         setEtaSeconds(res.durationSeconds);
         setLegKm(res.distanceMeters / 1000);
         if (routeFailToastedRef.current === fitKey) routeFailToastedRef.current = null;
-        // fitBounds APENAS uma vez por transição de status.
-        if (mapRef.current && lastFitKeyRef.current !== fitKey) {
-          lastFitKeyRef.current = fitKey;
-          if (isNavigationRideStatus(active.status)) {
-            autoFollowRef.current = true;
-            lastFollowAtRef.current = Date.now();
-            lastNavigationPositionRef.current = { lat: pos.lat, lng: pos.lng };
-            applyNavigationCamera(mapRef.current, pos, decodePolyline(res.encodedPolyline), dest, true);
-          } else {
-            autoFollowRef.current = false; // evita conflito com follow
-            const b = new google.maps.LatLngBounds();
-            b.extend(pos); b.extend(dest);
-            mapRef.current.fitBounds(b, { top: 110, bottom: Math.round(window.innerHeight * 0.62), left: 56, right: 56 });
-            // reativa follow depois da animação inicial
-            window.setTimeout(() => { autoFollowRef.current = true; }, 1200);
-          }
-        }
+        focusRoute(points);
       })
       .catch(() => {
+        if (cancelled) return;
         // Fallback: mantém marcadores e desenha linha reta para não quebrar UX.
-        setPolyline([pos, dest]);
+        const fallback = [pos, dest];
+        setPolyline(fallback);
         const km = haversineKm(pos, dest);
         setLegKm(km); setEtaSeconds(Math.round((km / 35) * 3600));
+        focusRoute(fallback);
         // Aviso não-bloqueante — apenas uma vez por transição de status.
         if (routeFailToastedRef.current !== fitKey) {
           routeFailToastedRef.current = fitKey;
           toast.message("Não foi possível traçar a rota agora. Use navegação externa.");
         }
       });
-  }, [active?.id, active?.status]); // eslint-disable-line react-hooks/exhaustive-deps
+    return () => { cancelled = true; };
+  }, [active?.id, active?.status, position?.lat, position?.lng, mapReadyNonce]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function recenter() {
     autoFollowRef.current = true;
@@ -1267,6 +1297,7 @@ function MotoristaApp() {
           themeOverride="dark"
           onLoad={(m) => {
             mapRef.current = m;
+            setMapReadyNonce((n) => n + 1);
             if (inNavigationMode && position) {
               autoFollowRef.current = true;
               navigationModeKeyRef.current = `${active?.id ?? "ride"}-${active?.status ?? "status"}`;
@@ -1315,6 +1346,7 @@ function MotoristaApp() {
       </div>
 
       {/* Top bar — glass flutuante premium (60px, radius 22, backdrop blur) */}
+      {!active && (
       <div className="absolute inset-x-0 top-0 z-40 px-3 pt-[calc(env(safe-area-inset-top)+8px)] motion-safe:animate-[fadeIn_320ms_ease-out]">
         <div
           className="mx-auto flex h-[52px] max-w-5xl items-center gap-3 rounded-[20px] px-3 shadow-[0_8px_22px_-14px_rgba(0,0,0,0.45)]"
@@ -1350,6 +1382,7 @@ function MotoristaApp() {
           </button>
         </div>
       </div>
+      )}
 
       <DriverSideMenu
         open={sideMenuOpen}
@@ -1378,7 +1411,7 @@ function MotoristaApp() {
 
       {/* Recenter — floating GPS button (56px, glass) */}
       {!incoming && !ratingRide && (() => {
-        const inTrip = active?.status === "em_viagem";
+        const inTrip = isNavigationRideStatus(active?.status);
         const bottomOffset = inTrip
           ? "calc(env(safe-area-inset-bottom) + 148px)"
           : active
@@ -1404,6 +1437,21 @@ function MotoristaApp() {
           Fases "a caminho" e "aguardando passageiro" usam o MovviSheet compacto.
           Fase "em_viagem" entra em modo de navegação em tela cheia — sem sheet
           grande cobrindo a rota, apenas um painel inferior compacto fixo. */}
+      {!incoming && !ratingRide && active && active.status === "motorista_a_caminho" && (
+        <PickupNavOverlay
+          ride={active}
+          passenger={passenger}
+          etaSeconds={etaSeconds}
+          legKm={legKm}
+          onOpenProfile={() => active.passenger_id && setProfilePassengerId(active.passenger_id)}
+          onArrive={async () => {
+            await callArrive({ data: { rideId: active.id } });
+            setActive((prev) => (prev && prev.id === active.id ? { ...prev, status: "motorista_chegou" } : prev));
+          }}
+          onCancel={async () => { await handleDriverCancelRide("Cancelado pelo motorista"); }}
+        />
+      )}
+
       {!incoming && !ratingRide && active && active.status === "em_viagem" && (
         <ActiveTripNavOverlay
           ride={active}
@@ -1420,15 +1468,9 @@ function MotoristaApp() {
         />
       )}
 
-      {!incoming && !ratingRide && active && active.status !== "em_viagem" && (() => {
-        // Durante o trajeto até o passageiro, o mapa precisa dominar a tela
-        // (modo navegação). Sheet começa compacto (~34%) e pode ser arrastado
-        // para cima para ver detalhes/cancelar.
-        const isPickupNav = active.status === "motorista_a_caminho";
-        const sheetSnaps: [number, number, number] = isPickupNav ? [34, 62, 92] : [58, 78, 92];
-        const sheetInitial = isPickupNav ? 34 : 70;
+      {!incoming && !ratingRide && active && active.status !== "motorista_a_caminho" && active.status !== "em_viagem" && (() => {
         return (
-        <MovviSheet ref={sheetRef} snaps={sheetSnaps} initial={sheetInitial}>
+        <MovviSheet ref={sheetRef} snaps={[58, 78, 92]} initial={70}>
           <ActiveRidePanel
             ride={active}
             passenger={passenger}
@@ -2861,6 +2903,100 @@ function TopStat({
       </div>
       <div className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{label}</div>
     </div>
+  );
+}
+
+function PickupNavOverlay({
+  ride,
+  passenger,
+  etaSeconds,
+  legKm,
+  onOpenProfile,
+  onArrive,
+  onCancel,
+}: {
+  ride: RideRow;
+  passenger: Passenger | null;
+  etaSeconds: number | null;
+  legKm: number | null;
+  onOpenProfile?: () => void;
+  onArrive: () => Promise<void> | void;
+  onCancel: () => Promise<void> | void;
+}) {
+  const [arriveBusy, setArriveBusy] = useState(false);
+  const [cancelBusy, setCancelBusy] = useState(false);
+  const minutes = etaSeconds != null ? Math.max(1, Math.round(etaSeconds / 60)) : null;
+  const arrivalTime = etaSeconds != null
+    ? new Date(Date.now() + etaSeconds * 1000).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+    : null;
+
+  const handleArrive = async () => {
+    if (arriveBusy) return;
+    setArriveBusy(true);
+    try { await onArrive(); }
+    finally { setArriveBusy(false); }
+  };
+
+  const handleCancel = async () => {
+    if (cancelBusy) return;
+    if (!window.confirm("Cancelar esta corrida?")) return;
+    setCancelBusy(true);
+    try { await onCancel(); }
+    finally { setCancelBusy(false); }
+  };
+
+  return (
+    <>
+      <div className="fixed left-1/2 z-40 w-full max-w-md -translate-x-1/2 px-4 pointer-events-none" style={{ top: "calc(env(safe-area-inset-top) + 12px)" }}>
+        <div className="pointer-events-auto rounded-[22px] border border-white/70 bg-white/90 px-4 py-3 shadow-[0_12px_36px_-16px_rgba(0,0,0,0.35)] backdrop-blur-md backdrop-saturate-150 animate-in fade-in slide-in-from-top-3 duration-300">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <div className="flex min-w-0 items-center gap-2">
+              <span className="relative flex h-2 w-2 shrink-0">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-70" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+              </span>
+              <span className="truncate text-[11px] font-bold uppercase tracking-[0.16em] text-primary">Indo até o passageiro</span>
+            </div>
+            <button type="button" onClick={handleCancel} disabled={cancelBusy} aria-label="Cancelar corrida" className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-black/[0.04] text-black/60 ring-1 ring-black/10 transition hover:bg-black/[0.08] hover:text-destructive disabled:opacity-50">
+              <X className="h-4 w-4" strokeWidth={2} />
+            </button>
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <TopStat icon={<Clock className="h-[15px] w-[15px]" strokeWidth={1.75} />} value={minutes != null ? String(minutes) : "—"} unit="min" label="ETA" highlight />
+            <div className="h-9 w-px bg-black/10" />
+            <TopStat icon={<RouteIcon className="h-[15px] w-[15px]" strokeWidth={1.75} />} value={legKm != null ? legKm.toFixed(1) : "—"} unit="km" label="Até coleta" />
+            <div className="h-9 w-px bg-black/10" />
+            <TopStat icon={<MapPin className="h-[15px] w-[15px]" strokeWidth={1.75} />} value={arrivalTime ?? "—"} unit="" label="Chegada" />
+          </div>
+        </div>
+      </div>
+
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.08] bg-[#0B0F17]/95 backdrop-blur-xl animate-in fade-in slide-in-from-bottom-2 duration-200" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
+        <div className="mx-auto flex w-full max-w-md flex-col gap-2.5 px-4 pb-3 pt-3">
+          <button type="button" onClick={onOpenProfile} aria-label="Ver perfil do passageiro" className="flex min-w-0 items-center gap-2.5 rounded-2xl bg-white/[0.05] px-2.5 py-2 text-left ring-1 ring-white/10 transition active:scale-[0.99] hover:bg-white/[0.08]">
+            <Avatar src={passenger?.avatar_url ?? (ride as { passenger_photo_url?: string | null }).passenger_photo_url ?? null} name={passenger?.name ?? "Passageiro"} size={38} />
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-[13px] font-bold leading-tight text-white">{passenger?.name ?? "Passageiro"}</div>
+              <div className="mt-0.5 flex items-center gap-1 truncate text-[11.5px] text-white/60">
+                <MapPin className="h-3 w-3 shrink-0" strokeWidth={2} />
+                <span className="truncate">{ride.pickup_label || ride.origin_name || "Embarque"}</span>
+              </div>
+            </div>
+            <a href={passenger?.phone ? `tel:${passenger.phone}` : undefined} onClick={(event) => event.stopPropagation()} aria-label="Ligar para o passageiro" className={`grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white/[0.06] text-white ring-1 ring-white/10 transition active:scale-[0.95] hover:bg-white/[0.1] ${passenger?.phone ? "" : "pointer-events-none opacity-40"}`}>
+              <Phone className="h-[16px] w-[16px]" strokeWidth={1.9} />
+            </a>
+          </button>
+
+          <button type="button" disabled={arriveBusy} onClick={handleArrive} className="flex h-12 w-full items-center justify-center gap-2 rounded-[14px] bg-[#76C139] text-[15px] font-bold uppercase tracking-[0.06em] text-[#071008] shadow-[0_10px_22px_-14px_rgba(118,193,57,0.4)] transition active:scale-[0.98] hover:brightness-[1.05] disabled:cursor-not-allowed disabled:opacity-60">
+            {arriveBusy ? (
+              <><span className="h-4 w-4 rounded-full border-2 border-[#071008]/70 border-t-transparent animate-spin" />Confirmando…</>
+            ) : (
+              <><CheckCircle2 className="h-5 w-5" strokeWidth={2} />Cheguei ao local</>
+            )}
+          </button>
+        </div>
+      </div>
+    </>
   );
 }
 
