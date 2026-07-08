@@ -1502,6 +1502,9 @@ function MotoristaApp() {
           onSubmit={submitRating}
           onDismiss={dismissRating}
           onSkip={skipRating}
+          paymentConfirmedAt={paymentConfirmedAt}
+          paymentConfirming={paymentConfirming}
+          onConfirmPayment={confirmPaymentReceived}
         />
       )}
 
