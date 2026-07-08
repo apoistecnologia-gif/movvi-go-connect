@@ -1254,6 +1254,37 @@ function MotoristaApp() {
     return () => { cancelled = true; };
   }, [active?.id, active?.status, position?.lat, position?.lng, mapReadyNonce]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Voz de navegação curva a curva — usa vozes nativas do navegador (pt-BR).
+  useEffect(() => { void primeVoice(); }, []);
+
+  // Anuncia manobras conforme o motorista se aproxima.
+  useEffect(() => {
+    if (!active) return;
+    if (!position) return;
+    if (routeSteps.length === 0) return;
+    if (active.status !== "motorista_a_caminho" && active.status !== "em_viagem") return;
+    tickNavigation({ lat: position.lat, lng: position.lng }, routeSteps, active.id);
+  }, [position?.lat, position?.lng, routeSteps, active?.id, active?.status]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fala transições de status importantes.
+  const lastSpokenStatusRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!active) { lastSpokenStatusRef.current = null; return; }
+    const key = `${active.id}:${active.status}`;
+    if (lastSpokenStatusRef.current === key) return;
+    lastSpokenStatusRef.current = key;
+    if (active.status === "motorista_a_caminho") {
+      void speak("Corrida aceita. Siga até o ponto de embarque.", { interrupt: true });
+    } else if (active.status === "motorista_chegou") {
+      void speak("Você chegou ao ponto de embarque.", { interrupt: true });
+    } else if (active.status === "em_viagem") {
+      void speak("Viagem iniciada. Boa viagem.", { interrupt: true });
+    } else if (active.status === "finalizada") {
+      void speak("Corrida finalizada.", { interrupt: true });
+    }
+  }, [active?.id, active?.status]);
+
+
   function recenter() {
     autoFollowRef.current = true;
     lastFollowAtRef.current = 0;
