@@ -870,6 +870,7 @@ function MotoristaApp() {
           if (ratingRef.current?.id === r.id && !ratingSubmitted) setRatingRide(null);
         } else if (!r.driver_rated_at && !ratingRef.current) {
           setRatingRide(r); setStars(5); setRatingComment(""); setRatingSubmitted(false);
+          setPaymentConfirmedAt((r as any).payment_received_at ?? null);
         } else if (r.driver_rated_at) {
           ratedRidesRef.current.add(r.id);
           if (ratingRef.current?.id === r.id && !ratingSubmitted) setRatingRide(null);
