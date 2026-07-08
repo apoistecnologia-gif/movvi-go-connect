@@ -1551,7 +1551,7 @@ function IncomingOffer({
         {/* Footer sticky — botões sempre visíveis */}
         <div
           className="shrink-0 border-t border-border/60 bg-card px-4 pt-3 sm:px-5"
-          style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 12px)" }}
+          style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 20px)" }}
         >
           <div className="grid grid-cols-2 gap-3">
             <DSButton type="button" variant="outline" size="lg" onClick={onReject}>
