@@ -1539,7 +1539,14 @@ function IncomingOffer({
             <div className="my-2.5 ml-[5px] h-px w-full bg-border/60" />
             <AddressRow dotColor="bg-destructive" label="Destino" name={ride.destination_name} />
           </div>
+
+          {/* Pagamento */}
+          <div className="mt-3 mb-2 flex items-center justify-between rounded-2xl border border-border bg-background/40 px-4 py-2.5">
+            <span className="text-[12px] font-medium uppercase tracking-[0.12em] text-muted-foreground">Pagamento</span>
+            <span className="text-[13px] font-semibold text-foreground">{paymentLabelFor(ride.payment_method)}</span>
+          </div>
         </div>
+
 
         {/* Footer sticky — botões sempre visíveis */}
         <div
