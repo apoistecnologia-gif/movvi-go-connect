@@ -674,16 +674,35 @@ function PassengerRidesPage() {
   const startOfWeek = startOfToday - 6 * 24 * 60 * 60 * 1000; // últimos 7 dias
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
 
+  const scheduled = useMemo(
+    () =>
+      rides
+        ? rides
+            .filter((r) => r.status === "agendada" && r.scheduled_for)
+            .sort(
+              (a, b) =>
+                new Date(a.scheduled_for!).getTime() -
+                new Date(b.scheduled_for!).getTime(),
+            )
+        : null,
+    [rides],
+  );
+
+  const history = useMemo(
+    () => (rides ? rides.filter((r) => r.status !== "agendada") : null),
+    [rides],
+  );
+
   const filtered = useMemo(() => {
-    if (!rides) return null;
-    if (filter === "todas") return rides;
+    if (!history) return null;
+    if (filter === "todas") return history;
     const threshold =
       filter === "hoje" ? startOfToday : filter === "semana" ? startOfWeek : startOfMonth;
-    return rides.filter((r) => {
+    return history.filter((r) => {
       const iso = r.completed_at ?? r.created_at;
       return new Date(iso).getTime() >= threshold;
     });
-  }, [rides, filter, startOfToday, startOfWeek, startOfMonth]);
+  }, [history, filter, startOfToday, startOfWeek, startOfMonth]);
 
   const stats = useMemo(() => {
     if (!rides) return { today: 0, month: 0, total: 0 };
