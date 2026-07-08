@@ -1802,6 +1802,8 @@ export type Database = {
           passenger_rating: number | null
           passenger_rating_comment: string | null
           payment_method: string | null
+          payment_received_at: string | null
+          payment_received_by: string | null
           pickup_address: string | null
           pickup_label: string | null
           pickup_place_id: string | null
@@ -1862,6 +1864,8 @@ export type Database = {
           passenger_rating?: number | null
           passenger_rating_comment?: string | null
           payment_method?: string | null
+          payment_received_at?: string | null
+          payment_received_by?: string | null
           pickup_address?: string | null
           pickup_label?: string | null
           pickup_place_id?: string | null
@@ -1922,6 +1926,8 @@ export type Database = {
           passenger_rating?: number | null
           passenger_rating_comment?: string | null
           payment_method?: string | null
+          payment_received_at?: string | null
+          payment_received_by?: string | null
           pickup_address?: string | null
           pickup_label?: string | null
           pickup_place_id?: string | null
