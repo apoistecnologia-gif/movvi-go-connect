@@ -179,6 +179,66 @@ Deno.serve(async (req) => {
         metadata?: Record<string, unknown>;
       }>(`/v1/payments/${dataId}`);
 
+      // === Cancellation-fee Pix payments ===
+      const metaKind = (pay.metadata?.kind as string | undefined) ?? null;
+      const metaFeeId = (pay.metadata?.fee_id as string | undefined) ?? null;
+      const extRef = pay.external_reference ?? "";
+      const feeId =
+        metaFeeId ??
+        (extRef.startsWith("fee:") ? extRef.slice(4) : null);
+
+      if (metaKind === "cancellation_fee" || feeId) {
+        if (!feeId) {
+          await admin.from("driver_payment_events").insert({
+            provider: "mercadopago",
+            event_type: `fee.${pay.status}`,
+            asaas_event: `MP_FEE_${pay.status.toUpperCase()}`,
+            mp_payment_id: String(pay.id),
+            status: pay.status,
+            value: pay.transaction_amount ?? null,
+            raw_payload: { warning: "fee_id_missing", payment: pay },
+          });
+          return json({ ok: true, ignored: "fee_id_missing" });
+        }
+
+        if (pay.status === "approved") {
+          const { error: settleErr } = await admin.rpc("settle_cancellation_fee", {
+            _fee_id: feeId,
+          });
+          if (settleErr) {
+            await admin.from("driver_payment_events").insert({
+              provider: "mercadopago",
+              event_type: "fee.settle_failed",
+              asaas_event: "MP_FEE_SETTLE_FAILED",
+              mp_payment_id: String(pay.id),
+              status: "error",
+              value: pay.transaction_amount ?? null,
+              raw_payload: { error: settleErr.message, fee_id: feeId, payment: pay },
+            });
+            return json({ error: "settle_failed", detail: settleErr.message }, 500);
+          }
+        }
+
+        await admin
+          .from("cancellation_fees")
+          .update({ mp_payment_id: String(pay.id) })
+          .eq("id", feeId);
+
+        await admin.from("driver_payment_events").insert({
+          provider: "mercadopago",
+          event_type: `fee.${pay.status}`,
+          asaas_event: `MP_FEE_${pay.status.toUpperCase()}`,
+          mp_payment_id: String(pay.id),
+          status: pay.status,
+          value: pay.transaction_amount ?? null,
+          paid_at: pay.date_approved ?? null,
+          raw_payload: { fee_id: feeId, payment: pay },
+        });
+
+        return json({ ok: true, processed: "cancellation_fee", feeId, status: pay.status });
+      }
+
+
       const preapprovalId =
         pay.preapproval_id ??
         (pay.metadata?.preapproval_id as string | undefined) ??
