@@ -90,6 +90,8 @@ type LatLng = { lat: number; lng: number };
 type RideRow = Database["public"]["Tables"]["rides"]["Row"];
 type Passenger = { name: string | null; phone: string | null; avatar_url: string | null };
 
+const EMPTY_ROUTE: LatLng[] = [];
+
 function decodePolyline(encoded: string): LatLng[] {
   const points: LatLng[] = []; let index = 0, lat = 0, lng = 0;
   while (index < encoded.length) {
@@ -1064,7 +1066,7 @@ function MotoristaApp() {
     }
     return null;
   }, [active]);
-  const cameraPolyline = activeRouteKey && lastFitKeyRef.current === activeRouteKey ? polyline : [];
+  const cameraPolyline = activeRouteKey && lastFitKeyRef.current === activeRouteKey ? polyline : EMPTY_ROUTE;
 
   // Detecta arrasto manual → desliga follow.
   useEffect(() => {
