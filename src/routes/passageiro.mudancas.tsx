@@ -71,6 +71,8 @@ const initialLoc = (): LocationInfo => ({
   estacionar: "",
   escadas: "",
   dificilAcesso: "",
+  endereco: "",
+  coords: null,
 });
 
 const STEP_LABELS = ["Tipo", "Carga", "Retirada", "Entrega", "Revisão"];
