@@ -1496,6 +1496,10 @@ function MotoristaApp() {
           legKm={legKm}
           onOpenProfile={() => active.passenger_id && setProfilePassengerId(active.passenger_id)}
           onArrive={async () => {
+            // Fala sincronamente dentro do gesto do clique — alguns navegadores
+            // móveis bloqueiam SpeechSynthesis.speak depois de um await.
+            resetSpokenCache();
+            void speak("Você chegou ao ponto de embarque. Aguarde o passageiro.", { interrupt: true });
             await callArrive({ data: { rideId: active.id } });
             setActive((prev) => (prev && prev.id === active.id ? { ...prev, status: "motorista_chegou" } : prev));
           }}
