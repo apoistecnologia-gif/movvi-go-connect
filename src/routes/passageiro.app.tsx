@@ -3083,7 +3083,7 @@ function PassageiroApp() {
                         Como foi sua viagem?
                       </div>
                       <div className="mt-0.5 text-[12px] text-[#707070]">
-                        Avalie {ride.driver_name ?? "o motorista"}
+                        Avalie {driverName}
                       </div>
                     </div>
                     <div className="mt-3 flex items-center justify-center gap-1.5">
