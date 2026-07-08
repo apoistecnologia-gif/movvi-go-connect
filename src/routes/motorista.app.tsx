@@ -1273,15 +1273,22 @@ function MotoristaApp() {
     const key = `${active.id}:${active.status}`;
     if (lastSpokenStatusRef.current === key) return;
     lastSpokenStatusRef.current = key;
-    if (active.status === "motorista_a_caminho") {
-      void speak("Corrida aceita. Siga até o ponto de embarque.", { interrupt: true });
-    } else if (active.status === "motorista_chegou") {
-      void speak("Você chegou ao ponto de embarque.", { interrupt: true });
-    } else if (active.status === "em_viagem") {
-      void speak("Viagem iniciada. Boa viagem.", { interrupt: true });
-    } else if (active.status === "finalizada") {
-      void speak("Corrida finalizada.", { interrupt: true });
-    }
+    // Cancela qualquer instrução passo-a-passo em curso antes de anunciar a transição,
+    // senão o último "vire à direita" da rota engole o "Você chegou ao ponto de embarque".
+    resetSpokenCache();
+    // Pequeno atraso garante que o cancel() foi processado pelo SpeechSynthesis antes do novo speak.
+    const t = setTimeout(() => {
+      if (active.status === "motorista_a_caminho") {
+        void speak("Corrida aceita. Siga até o ponto de embarque.", { interrupt: true });
+      } else if (active.status === "motorista_chegou") {
+        void speak("Você chegou ao ponto de embarque. Aguarde o passageiro.", { interrupt: true });
+      } else if (active.status === "em_viagem") {
+        void speak("Viagem iniciada. Boa viagem.", { interrupt: true });
+      } else if (active.status === "finalizada") {
+        void speak("Corrida finalizada.", { interrupt: true });
+      }
+    }, 180);
+    return () => clearTimeout(t);
   }, [active?.id, active?.status]);
 
 
