@@ -1418,14 +1418,15 @@ function IdleBottomPanel({
 function StatMini({ label, value }: { label: string; value: string }) {
   return (
     <div
-      className="flex items-center justify-between rounded-2xl px-4 py-3"
+      className="flex flex-col gap-1 rounded-2xl px-3.5 py-2.5"
       style={{ background: "#0e1114", border: "1px solid rgba(255,255,255,0.06)" }}
     >
-      <span className="text-[13px] font-normal text-muted-foreground">{label}</span>
-      <span className="tabular-nums text-[24px] font-bold leading-none text-foreground">
+      <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">{label}</span>
+      <span className="tabular-nums text-[20px] font-bold leading-none text-foreground">
         {value}
       </span>
     </div>
+
   );
 }
 
