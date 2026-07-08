@@ -13,10 +13,116 @@ import { safePoint, safeSymbol } from "@/lib/googleMaps";
 
 type LatLng = { lat: number; lng: number };
 
-const CAR_PATH =
-  "M5 11l1.5-4.5h11L19 11M6 14h12M7.5 17a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Zm12 0a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0ZM5 11h14v4H5z";
+/* Top-down car silhouette. Centered on (0,0), front pointing "up" (−Y).
+ * Bounding box ≈ 12×20. Designed original for MOVVI — smooth capsule body
+ * with slight nose taper, no brand references. */
+const CAR_BODY_PATH =
+  "M -5 -9 C -5.7 -9 -6 -8.4 -6 -7.4 L -6 7.4 C -6 8.4 -5.7 9 -5 9 L 5 9 C 5.7 9 6 8.4 6 7.4 L 6 -7.4 C 6 -8.4 5.7 -9 5 -9 Z";
+/* Cabin/roof accent — rounded rectangle. Painted in MOVVI lime. */
+const CAR_CABIN_PATH =
+  "M -3.2 -2.4 Q -3.7 -2.4 -3.7 -1.9 L -3.7 3.2 Q -3.7 3.7 -3.2 3.7 L 3.2 3.7 Q 3.7 3.7 3.7 3.2 L 3.7 -1.9 Q 3.7 -2.4 3.2 -2.4 Z";
+/* Windshield hint — small dark trapezoid on the front of the cabin. */
+const CAR_WINDSHIELD_PATH =
+  "M -3.2 -2.4 L 3.2 -2.4 L 2.4 -0.6 L -2.4 -0.6 Z";
 const PIN_PATH =
   "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z";
+
+const MOVVI_GREEN = "#8DD92B";
+const CAR_OUTLINE = "#0B0F1A";
+
+/* Layered top-down car. Renders 4 stacked Markers: soft ground shadow,
+ * white body with dark stroke, green cabin, and a subtle windshield.
+ * All layers share the same position + rotation, so heading updates
+ * remain visually coherent. */
+function CarShape({
+  position,
+  heading = 0,
+  scale = 1.4,
+  bodyColor = "#F4F6FA",
+  accentColor = MOVVI_GREEN,
+  outlineColor = CAR_OUTLINE,
+  opacity = 1,
+  zBase = 10000,
+}: {
+  position: LatLng;
+  heading?: number;
+  scale?: number;
+  bodyColor?: string;
+  accentColor?: string;
+  outlineColor?: string;
+  opacity?: number;
+  zBase?: number;
+}) {
+  return (
+    <>
+      {/* ground shadow */}
+      <Marker
+        position={position}
+        clickable={false}
+        zIndex={zBase - 3}
+        opacity={opacity * 0.55}
+        icon={{
+          path: safeSymbol("CIRCLE"),
+          scale: 9 * (scale / 1.4),
+          fillColor: "#000000",
+          fillOpacity: 0.35,
+          strokeWeight: 0,
+        }}
+      />
+      {/* body with dark outline */}
+      <Marker
+        position={position}
+        zIndex={zBase}
+        opacity={opacity}
+        icon={{
+          path: CAR_BODY_PATH,
+          fillColor: bodyColor,
+          fillOpacity: 1,
+          strokeColor: outlineColor,
+          strokeOpacity: 1,
+          strokeWeight: 1.2,
+          scale,
+          rotation: heading,
+          anchor: safePoint(0, 0),
+        }}
+      />
+      {/* cabin/roof */}
+      <Marker
+        position={position}
+        clickable={false}
+        zIndex={zBase + 1}
+        opacity={opacity}
+        icon={{
+          path: CAR_CABIN_PATH,
+          fillColor: accentColor,
+          fillOpacity: 1,
+          strokeColor: outlineColor,
+          strokeOpacity: 0.85,
+          strokeWeight: 0.6,
+          scale,
+          rotation: heading,
+          anchor: safePoint(0, 0),
+        }}
+      />
+      {/* windshield hint */}
+      <Marker
+        position={position}
+        clickable={false}
+        zIndex={zBase + 2}
+        opacity={opacity * 0.9}
+        icon={{
+          path: CAR_WINDSHIELD_PATH,
+          fillColor: outlineColor,
+          fillOpacity: 0.55,
+          strokeWeight: 0,
+          scale,
+          rotation: heading,
+          anchor: safePoint(0, 0),
+        }}
+      />
+    </>
+  );
+}
 
 /* ────────────── Passageiro: ponto GPS com pulso animado + glow ──────────────
  * O pulso é interpolado via RAF (scale 8→22, opacidade 0.30→0). Um segundo
@@ -235,48 +341,29 @@ export function InterpolatedDriverMarker({
 
   return (
     <>
-      {/* halo suave — reduzido ~40% */}
+      {/* halo colorido para destacar o motorista da corrida ativa */}
       <Marker
         position={display}
         clickable={false}
         zIndex={9997}
         icon={{
           path: safeSymbol("CIRCLE"),
-          scale: 13,
+          scale: 15,
           fillColor: color,
-          fillOpacity: 0.08,
+          fillOpacity: 0.1,
           strokeColor: color,
-          strokeOpacity: 0.2,
-          strokeWeight: 1,
+          strokeOpacity: 0.28,
+          strokeWeight: 1.2,
         }}
       />
-      {/* sombra */}
-      <Marker
+      {/* carro top-down com identidade MOVVI (corpo claro + cabine verde) */}
+      <CarShape
         position={display}
-        clickable={false}
-        zIndex={9998}
-        icon={{
-          path: safeSymbol("CIRCLE"),
-          scale: 10,
-          fillColor: "#000000",
-          fillOpacity: 0.18,
-          strokeWeight: 0,
-        }}
-      />
-      {/* carro — 32px */}
-      <Marker
-        position={display}
-        zIndex={10000}
-        icon={{
-          path: CAR_PATH,
-          fillColor: color,
-          fillOpacity: 1,
-          strokeColor: "#ffffff",
-          strokeWeight: 2.2,
-          scale,
-          rotation: displayHeading,
-          anchor: safePoint(12, 14),
-        }}
+        heading={displayHeading}
+        scale={scale}
+        bodyColor="#F4F6FA"
+        accentColor={color}
+        zBase={10000}
       />
     </>
   );
@@ -323,31 +410,16 @@ export function NearbyDriverMarker({
           }}
         />
       )}
-      <Marker
+      {/* carro top-down em verde MOVVI para motoristas próximos */}
+      <CarShape
         position={position}
-        clickable={false}
-        zIndex={9995}
-        opacity={(dimmed ? 0.35 : 1) * fade}
-        icon={{
-          path: safeSymbol("CIRCLE"),
-          scale: dimmed ? 8 : 11,
-          fillColor: "#000000",
-          fillOpacity: 0.18,
-          strokeWeight: 0,
-        }}
-      />
-      <Marker
-        position={position}
+        heading={0}
+        scale={scale}
+        bodyColor="#8DD92B"
+        accentColor="#F4F6FA"
+        outlineColor="#05070D"
         opacity={opacity * fade}
-        icon={{
-          path: CAR_PATH,
-          fillColor: "#8DD92B",
-          fillOpacity: 1,
-          strokeColor: "#05070D",
-          strokeWeight: 1.4,
-          scale,
-          anchor: safePoint(12, 14),
-        }}
+        zBase={9996}
       />
     </>
   );
