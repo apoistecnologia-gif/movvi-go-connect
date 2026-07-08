@@ -915,6 +915,74 @@ export type Database = {
         }
         Relationships: []
       }
+      driver_withdrawals: {
+        Row: {
+          amount: number
+          created_at: string
+          driver_id: string
+          failure_reason: string | null
+          id: string
+          mp_end_to_end_id: string | null
+          mp_response: Json | null
+          mp_transfer_id: string | null
+          paid_at: string | null
+          pix_holder_name: string | null
+          pix_key: string
+          pix_key_type: Database["public"]["Enums"]["pix_key_type"]
+          processed_at: string | null
+          requested_at: string
+          status: string
+          updated_at: string
+          wallet_tx_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          driver_id: string
+          failure_reason?: string | null
+          id?: string
+          mp_end_to_end_id?: string | null
+          mp_response?: Json | null
+          mp_transfer_id?: string | null
+          paid_at?: string | null
+          pix_holder_name?: string | null
+          pix_key: string
+          pix_key_type: Database["public"]["Enums"]["pix_key_type"]
+          processed_at?: string | null
+          requested_at?: string
+          status?: string
+          updated_at?: string
+          wallet_tx_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          driver_id?: string
+          failure_reason?: string | null
+          id?: string
+          mp_end_to_end_id?: string | null
+          mp_response?: Json | null
+          mp_transfer_id?: string | null
+          paid_at?: string | null
+          pix_holder_name?: string | null
+          pix_key?: string
+          pix_key_type?: Database["public"]["Enums"]["pix_key_type"]
+          processed_at?: string | null
+          requested_at?: string
+          status?: string
+          updated_at?: string
+          wallet_tx_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_withdrawals_wallet_tx_id_fkey"
+            columns: ["wallet_tx_id"]
+            isOneToOne: false
+            referencedRelation: "driver_wallet_transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       drivers: {
         Row: {
           approval_status: Database["public"]["Enums"]["driver_approval_status"]
@@ -954,6 +1022,9 @@ export type Database = {
           payment_status: string
           phone: string
           photo_url: string | null
+          pix_holder_name: string | null
+          pix_key: string | null
+          pix_key_type: Database["public"]["Enums"]["pix_key_type"] | null
           rating: number
           selfie_url: string | null
           state: string
@@ -1011,6 +1082,9 @@ export type Database = {
           payment_status?: string
           phone: string
           photo_url?: string | null
+          pix_holder_name?: string | null
+          pix_key?: string | null
+          pix_key_type?: Database["public"]["Enums"]["pix_key_type"] | null
           rating?: number
           selfie_url?: string | null
           state: string
@@ -1068,6 +1142,9 @@ export type Database = {
           payment_status?: string
           phone?: string
           photo_url?: string | null
+          pix_holder_name?: string | null
+          pix_key?: string | null
+          pix_key_type?: Database["public"]["Enums"]["pix_key_type"] | null
           rating?: number
           selfie_url?: string | null
           state?: string
@@ -2681,6 +2758,19 @@ export type Database = {
           vehicle_plate_masked: string
         }[]
       }
+      mark_driver_withdrawal_failed: {
+        Args: { _reason: string; _response: Json; _withdrawal_id: string }
+        Returns: undefined
+      }
+      mark_driver_withdrawal_paid: {
+        Args: {
+          _end_to_end_id: string
+          _response: Json
+          _transfer_id: string
+          _withdrawal_id: string
+        }
+        Returns: undefined
+      }
       recompute_driver_rating: {
         Args: { _driver_id: string }
         Returns: undefined
@@ -2689,6 +2779,7 @@ export type Database = {
         Args: { _passenger_id: string }
         Returns: undefined
       }
+      request_driver_withdrawal: { Args: { _amount: number }; Returns: string }
       settle_cancellation_fee: { Args: { _fee_id: string }; Returns: undefined }
     }
     Enums: {
@@ -2756,6 +2847,7 @@ export type Database = {
         | "wallet"
         | "corporate"
       payment_status: "pending" | "paid" | "failed" | "refunded"
+      pix_key_type: "cpf" | "cnpj" | "email" | "phone" | "random"
       ride_category: "carros" | "motos" | "fretes" | "guincho" | "envios"
       ride_status:
         | "procurar_motorista"
@@ -2966,6 +3058,7 @@ export const Constants = {
         "corporate",
       ],
       payment_status: ["pending", "paid", "failed", "refunded"],
+      pix_key_type: ["cpf", "cnpj", "email", "phone", "random"],
       ride_category: ["carros", "motos", "fretes", "guincho", "envios"],
       ride_status: [
         "procurar_motorista",
