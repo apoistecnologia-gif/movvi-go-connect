@@ -1420,8 +1420,15 @@ function MotoristaApp() {
         />
       )}
 
-      {!incoming && !ratingRide && active && active.status !== "em_viagem" && (
-        <MovviSheet ref={sheetRef} snaps={[58, 78, 92]} initial={70}>
+      {!incoming && !ratingRide && active && active.status !== "em_viagem" && (() => {
+        // Durante o trajeto até o passageiro, o mapa precisa dominar a tela
+        // (modo navegação). Sheet começa compacto (~34%) e pode ser arrastado
+        // para cima para ver detalhes/cancelar.
+        const isPickupNav = active.status === "motorista_a_caminho";
+        const sheetSnaps: [number, number, number] = isPickupNav ? [34, 62, 92] : [58, 78, 92];
+        const sheetInitial = isPickupNav ? 34 : 70;
+        return (
+        <MovviSheet ref={sheetRef} snaps={sheetSnaps} initial={sheetInitial}>
           <ActiveRidePanel
             ride={active}
             passenger={passenger}
@@ -1445,7 +1452,8 @@ function MotoristaApp() {
             onCancel={handleDriverCancelRide}
           />
         </MovviSheet>
-      )}
+        );
+      })()}
 
       {/* ===== Idle — painel fixo compacto (~28vh) com botão ONLINE/OFFLINE sempre visível ===== */}
       {!incoming && !ratingRide && !active && (
