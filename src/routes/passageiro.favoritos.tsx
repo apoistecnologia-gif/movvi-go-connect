@@ -412,7 +412,7 @@ function FavoriteEditor({
 
 function PlaceSearch({ onPick, initialValue }: { onPick: (p: PickedPlace) => void; initialValue: string }) {
   const { isLoaded } = useJsApiLoader({
-    id: "google-map-script",
+    id: "movvi-google-maps",
     googleMapsApiKey: GOOGLE_MAPS_API_KEY,
     libraries: GOOGLE_MAPS_LIBRARIES,
     language: "pt-BR",
