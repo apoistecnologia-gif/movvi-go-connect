@@ -106,8 +106,18 @@ function MudancasFlow() {
         !!data.desmontar &&
         !!data.embalar
       );
-    if (step === 2) return !!data.retirada.tipo && !!data.retirada.dificilAcesso;
-    if (step === 3) return !!data.entrega.tipo && !!data.entrega.dificilAcesso;
+    if (step === 2)
+      return (
+        !!data.retirada.tipo &&
+        !!data.retirada.dificilAcesso &&
+        data.retirada.endereco.trim().length > 2
+      );
+    if (step === 3)
+      return (
+        !!data.entrega.tipo &&
+        !!data.entrega.dificilAcesso &&
+        data.entrega.endereco.trim().length > 2
+      );
     return true;
   }, [step, data]);
 
