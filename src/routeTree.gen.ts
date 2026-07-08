@@ -33,6 +33,7 @@ import { Route as PassageiroConfiguracoesRouteImport } from './routes/passageiro
 import { Route as PassageiroCarteiraRouteImport } from './routes/passageiro.carteira'
 import { Route as PassageiroCadastroRouteImport } from './routes/passageiro.cadastro'
 import { Route as PassageiroAppRouteImport } from './routes/passageiro.app'
+import { Route as PassageiroAgendarRouteImport } from './routes/passageiro.agendar'
 import { Route as MotoristaTermosRouteImport } from './routes/motorista.termos'
 import { Route as MotoristaSuporteRouteImport } from './routes/motorista.suporte'
 import { Route as MotoristaStatusRouteImport } from './routes/motorista.status'
@@ -78,6 +79,7 @@ import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 import { Route as AdminAdministradoresRouteImport } from './routes/admin.administradores'
 import { Route as MotoristaCorridasIdRouteImport } from './routes/motorista.corridas.$id'
 import { Route as ApiPublicHooksRenewDriverSubscriptionsRouteImport } from './routes/api/public/hooks/renew-driver-subscriptions'
+import { Route as ApiPublicHooksActivateScheduledRidesRouteImport } from './routes/api/public/hooks/activate-scheduled-rides'
 
 const MapTestRoute = MapTestRouteImport.update({
   id: '/map-test',
@@ -198,6 +200,11 @@ const PassageiroCadastroRoute = PassageiroCadastroRouteImport.update({
 const PassageiroAppRoute = PassageiroAppRouteImport.update({
   id: '/passageiro/app',
   path: '/passageiro/app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PassageiroAgendarRoute = PassageiroAgendarRouteImport.update({
+  id: '/passageiro/agendar',
+  path: '/passageiro/agendar',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MotoristaTermosRoute = MotoristaTermosRouteImport.update({
@@ -428,6 +435,12 @@ const ApiPublicHooksRenewDriverSubscriptionsRoute =
     path: '/api/public/hooks/renew-driver-subscriptions',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksActivateScheduledRidesRoute =
+  ApiPublicHooksActivateScheduledRidesRouteImport.update({
+    id: '/api/public/hooks/activate-scheduled-rides',
+    path: '/api/public/hooks/activate-scheduled-rides',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -477,6 +490,7 @@ export interface FileRoutesByFullPath {
   '/motorista/status': typeof MotoristaStatusRoute
   '/motorista/suporte': typeof MotoristaSuporteRoute
   '/motorista/termos': typeof MotoristaTermosRoute
+  '/passageiro/agendar': typeof PassageiroAgendarRoute
   '/passageiro/app': typeof PassageiroAppRoute
   '/passageiro/cadastro': typeof PassageiroCadastroRoute
   '/passageiro/carteira': typeof PassageiroCarteiraRoute
@@ -498,6 +512,7 @@ export interface FileRoutesByFullPath {
   '/passageiro/termos': typeof PassageiroTermosRoute
   '/t/$token': typeof TTokenRoute
   '/motorista/corridas/$id': typeof MotoristaCorridasIdRoute
+  '/api/public/hooks/activate-scheduled-rides': typeof ApiPublicHooksActivateScheduledRidesRoute
   '/api/public/hooks/renew-driver-subscriptions': typeof ApiPublicHooksRenewDriverSubscriptionsRoute
 }
 export interface FileRoutesByTo {
@@ -548,6 +563,7 @@ export interface FileRoutesByTo {
   '/motorista/status': typeof MotoristaStatusRoute
   '/motorista/suporte': typeof MotoristaSuporteRoute
   '/motorista/termos': typeof MotoristaTermosRoute
+  '/passageiro/agendar': typeof PassageiroAgendarRoute
   '/passageiro/app': typeof PassageiroAppRoute
   '/passageiro/cadastro': typeof PassageiroCadastroRoute
   '/passageiro/carteira': typeof PassageiroCarteiraRoute
@@ -569,6 +585,7 @@ export interface FileRoutesByTo {
   '/passageiro/termos': typeof PassageiroTermosRoute
   '/t/$token': typeof TTokenRoute
   '/motorista/corridas/$id': typeof MotoristaCorridasIdRoute
+  '/api/public/hooks/activate-scheduled-rides': typeof ApiPublicHooksActivateScheduledRidesRoute
   '/api/public/hooks/renew-driver-subscriptions': typeof ApiPublicHooksRenewDriverSubscriptionsRoute
 }
 export interface FileRoutesById {
@@ -620,6 +637,7 @@ export interface FileRoutesById {
   '/motorista/status': typeof MotoristaStatusRoute
   '/motorista/suporte': typeof MotoristaSuporteRoute
   '/motorista/termos': typeof MotoristaTermosRoute
+  '/passageiro/agendar': typeof PassageiroAgendarRoute
   '/passageiro/app': typeof PassageiroAppRoute
   '/passageiro/cadastro': typeof PassageiroCadastroRoute
   '/passageiro/carteira': typeof PassageiroCarteiraRoute
@@ -641,6 +659,7 @@ export interface FileRoutesById {
   '/passageiro/termos': typeof PassageiroTermosRoute
   '/t/$token': typeof TTokenRoute
   '/motorista/corridas/$id': typeof MotoristaCorridasIdRoute
+  '/api/public/hooks/activate-scheduled-rides': typeof ApiPublicHooksActivateScheduledRidesRoute
   '/api/public/hooks/renew-driver-subscriptions': typeof ApiPublicHooksRenewDriverSubscriptionsRoute
 }
 export interface FileRouteTypes {
@@ -693,6 +712,7 @@ export interface FileRouteTypes {
     | '/motorista/status'
     | '/motorista/suporte'
     | '/motorista/termos'
+    | '/passageiro/agendar'
     | '/passageiro/app'
     | '/passageiro/cadastro'
     | '/passageiro/carteira'
@@ -714,6 +734,7 @@ export interface FileRouteTypes {
     | '/passageiro/termos'
     | '/t/$token'
     | '/motorista/corridas/$id'
+    | '/api/public/hooks/activate-scheduled-rides'
     | '/api/public/hooks/renew-driver-subscriptions'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -764,6 +785,7 @@ export interface FileRouteTypes {
     | '/motorista/status'
     | '/motorista/suporte'
     | '/motorista/termos'
+    | '/passageiro/agendar'
     | '/passageiro/app'
     | '/passageiro/cadastro'
     | '/passageiro/carteira'
@@ -785,6 +807,7 @@ export interface FileRouteTypes {
     | '/passageiro/termos'
     | '/t/$token'
     | '/motorista/corridas/$id'
+    | '/api/public/hooks/activate-scheduled-rides'
     | '/api/public/hooks/renew-driver-subscriptions'
   id:
     | '__root__'
@@ -835,6 +858,7 @@ export interface FileRouteTypes {
     | '/motorista/status'
     | '/motorista/suporte'
     | '/motorista/termos'
+    | '/passageiro/agendar'
     | '/passageiro/app'
     | '/passageiro/cadastro'
     | '/passageiro/carteira'
@@ -856,6 +880,7 @@ export interface FileRouteTypes {
     | '/passageiro/termos'
     | '/t/$token'
     | '/motorista/corridas/$id'
+    | '/api/public/hooks/activate-scheduled-rides'
     | '/api/public/hooks/renew-driver-subscriptions'
   fileRoutesById: FileRoutesById
 }
@@ -907,6 +932,7 @@ export interface RootRouteChildren {
   MotoristaStatusRoute: typeof MotoristaStatusRoute
   MotoristaSuporteRoute: typeof MotoristaSuporteRoute
   MotoristaTermosRoute: typeof MotoristaTermosRoute
+  PassageiroAgendarRoute: typeof PassageiroAgendarRoute
   PassageiroAppRoute: typeof PassageiroAppRoute
   PassageiroCadastroRoute: typeof PassageiroCadastroRoute
   PassageiroCarteiraRoute: typeof PassageiroCarteiraRoute
@@ -927,6 +953,7 @@ export interface RootRouteChildren {
   PassageiroSuporteRoute: typeof PassageiroSuporteRoute
   PassageiroTermosRoute: typeof PassageiroTermosRoute
   TTokenRoute: typeof TTokenRoute
+  ApiPublicHooksActivateScheduledRidesRoute: typeof ApiPublicHooksActivateScheduledRidesRoute
   ApiPublicHooksRenewDriverSubscriptionsRoute: typeof ApiPublicHooksRenewDriverSubscriptionsRoute
 }
 
@@ -1098,6 +1125,13 @@ declare module '@tanstack/react-router' {
       path: '/passageiro/app'
       fullPath: '/passageiro/app'
       preLoaderRoute: typeof PassageiroAppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/passageiro/agendar': {
+      id: '/passageiro/agendar'
+      path: '/passageiro/agendar'
+      fullPath: '/passageiro/agendar'
+      preLoaderRoute: typeof PassageiroAgendarRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/motorista/termos': {
@@ -1415,6 +1449,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksRenewDriverSubscriptionsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/activate-scheduled-rides': {
+      id: '/api/public/hooks/activate-scheduled-rides'
+      path: '/api/public/hooks/activate-scheduled-rides'
+      fullPath: '/api/public/hooks/activate-scheduled-rides'
+      preLoaderRoute: typeof ApiPublicHooksActivateScheduledRidesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -1478,6 +1519,7 @@ const rootRouteChildren: RootRouteChildren = {
   MotoristaStatusRoute: MotoristaStatusRoute,
   MotoristaSuporteRoute: MotoristaSuporteRoute,
   MotoristaTermosRoute: MotoristaTermosRoute,
+  PassageiroAgendarRoute: PassageiroAgendarRoute,
   PassageiroAppRoute: PassageiroAppRoute,
   PassageiroCadastroRoute: PassageiroCadastroRoute,
   PassageiroCarteiraRoute: PassageiroCarteiraRoute,
@@ -1499,6 +1541,8 @@ const rootRouteChildren: RootRouteChildren = {
   PassageiroSuporteRoute: PassageiroSuporteRoute,
   PassageiroTermosRoute: PassageiroTermosRoute,
   TTokenRoute: TTokenRoute,
+  ApiPublicHooksActivateScheduledRidesRoute:
+    ApiPublicHooksActivateScheduledRidesRoute,
   ApiPublicHooksRenewDriverSubscriptionsRoute:
     ApiPublicHooksRenewDriverSubscriptionsRoute,
 }
