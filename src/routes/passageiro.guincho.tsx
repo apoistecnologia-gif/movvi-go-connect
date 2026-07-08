@@ -156,17 +156,38 @@ function GuinchoFlow() {
 
         {step === 2 && (
           <Section title="Endereços">
-            <p className="text-[12.5px] text-muted-foreground">
-              Você vai definir o local do veículo e o destino na próxima tela,
-              pelo mapa MOVVI. Aqui você pode deixar observações que ajudem o
-              motorista guincheiro.
-            </p>
+            <AddressAutocomplete
+              label="Onde está o veículo?"
+              placeholder="Rua, número, referência"
+              value={data.origem}
+              onChangeText={(v) => setData({ ...data, origem: v })}
+              onPick={(p: PickedAddress) =>
+                setData({
+                  ...data,
+                  origem: p.address,
+                  origemCoords: { lat: p.lat, lng: p.lng },
+                })
+              }
+            />
+            <AddressAutocomplete
+              label="Para onde o veículo vai?"
+              placeholder="Oficina, endereço de destino, etc."
+              value={data.destino}
+              onChangeText={(v) => setData({ ...data, destino: v })}
+              onPick={(p: PickedAddress) =>
+                setData({
+                  ...data,
+                  destino: p.address,
+                  destinoCoords: { lat: p.lat, lng: p.lng },
+                })
+              }
+            />
             <Field label="Observações adicionais">
               <Textarea
-                rows={4}
+                rows={3}
                 value={data.observacoes}
                 onChange={(e) => setData({ ...data, observacoes: e.target.value })}
-                placeholder="Ex.: veículo está no 2º subsolo do edifício, vaga 42."
+                placeholder="Ex.: veículo está no 2º subsolo, vaga 42."
               />
             </Field>
           </Section>
@@ -186,13 +207,16 @@ function GuinchoFlow() {
             <ReviewRow k="Via pública" v={data.viaPublica || "—"} />
             <ReviewRow k="Acidente" v={data.acidente || "—"} />
             <ReviewRow k="Precisa plataforma" v={data.precisaPlataforma || "—"} />
+            <ReviewRow k="Origem" v={data.origem || "—"} />
+            <ReviewRow k="Destino" v={data.destino || "—"} />
             {data.observacoes && <ReviewRow k="Observações" v={data.observacoes} />}
             <p className="pt-2 text-[12px] text-muted-foreground">
-              Ao continuar, você vai definir o local do veículo e o destino no
-              mapa e confirmar o valor do guincho.
+              Ao continuar, o mapa MOVVI abre já com os endereços informados
+              para você confirmar o valor do guincho.
             </p>
           </Section>
         )}
+
       </main>
 
       {/* Barra fixa de ação */}
