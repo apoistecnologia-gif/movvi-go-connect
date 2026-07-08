@@ -13,6 +13,10 @@ import { safePoint, safeSymbol } from "@/lib/googleMaps";
 
 type LatLng = { lat: number; lng: number };
 
+const PIN_PATH =
+  "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z";
+
+
 /* Top-down car silhouette. Centered on (0,0), front pointing "up" (−Y).
  * Bounding box ≈ 14×22. Designed original for MOVVI — realistic sedan with
  * rounded body, dark cabin/windshield, headlights and taillights. */
