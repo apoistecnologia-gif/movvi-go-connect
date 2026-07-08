@@ -410,31 +410,16 @@ export function NearbyDriverMarker({
           }}
         />
       )}
-      <Marker
+      {/* carro top-down em verde MOVVI para motoristas próximos */}
+      <CarShape
         position={position}
-        clickable={false}
-        zIndex={9995}
-        opacity={(dimmed ? 0.35 : 1) * fade}
-        icon={{
-          path: safeSymbol("CIRCLE"),
-          scale: dimmed ? 8 : 11,
-          fillColor: "#000000",
-          fillOpacity: 0.18,
-          strokeWeight: 0,
-        }}
-      />
-      <Marker
-        position={position}
+        heading={0}
+        scale={scale}
+        bodyColor="#8DD92B"
+        accentColor="#F4F6FA"
+        outlineColor="#05070D"
         opacity={opacity * fade}
-        icon={{
-          path: CAR_PATH,
-          fillColor: "#8DD92B",
-          fillOpacity: 1,
-          strokeColor: "#05070D",
-          strokeWeight: 1.4,
-          scale,
-          anchor: safePoint(12, 14),
-        }}
+        zBase={9996}
       />
     </>
   );
