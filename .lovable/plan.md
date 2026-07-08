@@ -1,99 +1,62 @@
-# Refatoração UX do fluxo do passageiro
+## Escopo
 
-Apenas UI, layout, navegação e apresentação. Nenhuma alteração em backend, RLS, migrations, edge functions, preço, pagamento, PIN, state machine da corrida, matching, auth ou recuperação de corrida ativa.
+Apenas UI, layout, navegação, comportamento de mapa e responsividade do app do motorista (`src/routes/motorista.app.tsx` + subcomponentes). Nada de schema, RLS, edge functions, precificação, PIN, autenticação ou matching.
 
-## 1. Máquina de estados de UI (client-only)
+O app já tem a maioria das estruturas pedidas (IdleBottomPanel, MovviSheet compacto, `ActiveTripNavOverlay` em tela cheia, offer entrante). O trabalho é polir cada uma delas para os critérios da tarefa.
 
-Introduzir no `src/routes/passageiro.app.tsx` um `flowStep` puramente visual:
+## Mudanças por seção
 
-```text
-idle  →  destination_picked  →  category_select  →  confirming  →  active_ride
-```
+### 1. Home online/offline (`IdleBottomPanel`, ~L1316–1410)
+- Reduzir altura total do card idle (hoje ocupa ~28vh) para deixar mais mapa à mostra.
+- Header compacto no topo (avatar + nome + pill ONLINE/OFFLINE + "Recebendo solicitações").
+- Métricas "Corridas hoje" em linha única de 3 mini-stats.
+- CTA "Ficar online/offline" sempre visível no rodapé com `padding-bottom: calc(env(safe-area-inset-bottom) + 20px)`.
+- Remover cards vazios/redundantes; preservar mensagens de GPS.
 
-- `idle`: home limpa (só busca de destino).
-- `destination_picked`: destino escolhido, calculando rota.
-- `category_select`: mostra lista vertical de categorias + preço + pagamento + CTA.
-- `confirming` / `active_ride`: telas atuais preservadas, apenas reorganizadas para não exigir arraste.
+### 2. Oferta entrante (bloco de incoming request)
+- Reescrever card em layout fixo (não arrastável, `min-h-dvh` com scroll interno se preciso).
+- Ordem: valor motorista → distância/tempo até coleta → distância/tempo total → categoria → passageiro (nome+rating) → endereços coleta/destino → forma de pagamento → countdown.
+- Botões "Recusar" (secundário) e "Aceitar corrida" (primário verde MOVVI) fixos no rodapé com safe-area.
+- Testar visualmente em 360x800 / 390x844 / 412x915 via Playwright.
 
-A lógica de tarifa, matching e ciclo de vida da corrida permanece intacta — o step só controla qual seção da UI aparece.
+### 3. Indo à coleta (`ActiveRidePanel` fase `motorista_a_caminho`)
+- Sheet compacto com snaps reduzidos (~ `[46, 62]` em vez de `[54, 76, 92]`) para não cobrir a rota.
+- Conteúdo: passageiro (nome+rating+avatar), endereço coleta, ETA/km.
+- CTA "Cheguei ao local" fixo no snap mínimo — sempre visível sem arrastar.
+- Ações call/mensagem em ícones compactos.
 
-## 2. Home (`Início`) — apenas destino
+### 4. Chegou / PIN (fase `motorista_chegou`)
+- Painel compacto com status "Aguardando passageiro", passageiro, instrução "Peça o PIN ao passageiro".
+- CTA "Iniciar corrida" fixo. Diálogo de PIN continua o mesmo (lógica intacta).
 
-Remover da home:
-- grid/carousel de categorias (Carros/Motos/Fretes/Guincho/Envios)
-- bloco "Escolha o serviço"
-- preços e "valor estimado"
+### 5. Em viagem (`ActiveTripNavOverlay`, L2608+)
+- Auditar altura do painel inferior: garantir 96–140px.
+- Barra superior compacta com instrução/status + ETA/km à direita.
+- Botão recenter posicionado acima do painel (já existe, ajustar offset).
+- CTA "Finalizar corrida" sempre visível.
+- Confirmar `fitBounds` / camera com padding inferior correto para a rota não ficar escondida.
+- Manter estilo dark do mapa.
 
-Manter/introduzir:
-- mapa escuro como hero (já existe)
-- header compacto com saudação
-- pill do endereço de origem (pickup atual)
-- input grande **"Para onde vamos?"** abrindo o autocomplete em sheet/modal
-- linha de atalhos: Casa · Trabalho · recentes (quando existirem)
+### 6. Trip completed
+- Tela de resumo já existe (rating + summary). Ajustar para exibir claramente: ganho, passageiro, resumo de rota, status pagamento, CTA "Receber novas corridas" (volta ao idle online).
 
-Sem sheet arrastável obrigatório neste estado — o input é o único foco.
+### 7. Safe-area e responsividade global
+- Trocar quaisquer `min-h-screen` / `h-screen` residuais por `min-h-dvh` / `h-dvh`.
+- Aplicar `padding-bottom: calc(env(safe-area-inset-bottom) + 20px)` em todos os painéis fixos inferiores.
+- Verificar overflow/clipping em 360x800.
 
-## 3. Seleção de categoria — só após destino
+### 8. Validação
+- Playwright headless em 360x800, 390x844, 412x915 capturando: idle online, idle offline, mock de oferta (se possível via estado), painel a caminho, overlay em viagem.
+- Ler screenshots para confirmar CTAs visíveis e mapa não coberto.
 
-Nova seção `CategoryPicker` (componente em `src/components/passenger/CategoryPicker.tsx`) exibida quando `flowStep === "category_select"`:
+## Fora de escopo (não tocar)
+- Passageiro (`passageiro.*`).
+- `rideLifecycle`, server functions de accept/arrive/start/complete, PIN, pricing, matching.
+- Migrations, RLS, edge functions.
+- `MovviMap` internals além de padding/camera props existentes.
 
-- resumo pickup → destino no topo (2 linhas, truncáveis)
-- **lista vertical** (não carrossel) de categorias disponíveis, cada linha:
-  - ícone + nome (Carros, Motos, Fretes, Guincho, Envios)
-  - ETA · distância
-  - **Total** em destaque à direita
-- linha do método de pagamento (tocável, abre seletor)
-- rótulo único **"Você paga"** acima do total consolidado
-- CTA fixo no rodapé: **"Confirmar MOVVI {Categoria}"**
-
-Substituir em toda a UI: "valor estimado" / "preço estimado" → **"Você paga"**, **"Total"**, **"Valor da corrida"**.
-
-## 4. Bottom nav sempre fixo
-
-Ajustar `BottomNav` (modo `floating`):
-- `position: fixed`, `bottom: calc(env(safe-area-inset-bottom) + 12px)`
-- margens laterais 24px, pill dark MOVVI, ativo em verde `#8DD92B`
-- z-index abaixo do bottom sheet (sheet permanece z-30, nav sobe só quando não há sheet aberta expandindo até o topo)
-- **auto-hide** em `flowStep ∈ {confirming, active_ride}` para não competir com CTA/ficha do motorista
-- páginas ganham `padding-bottom` calculado para conteúdo rolar acima da nav
-
-## 5. Serviços (aba) — informacional
-
-`passageiro.servicos.tsx` deixa de ser atalho para "iniciar corrida com categoria X". Vira catálogo:
-- cards Carros, Motos, Fretes, Guincho, Envios
-- cada card: descrição curta + "Buscar destino" → leva à home em estado `idle` (sem pré-selecionar categoria)
-- deixa claro que a escolha final ocorre após o destino
-
-## 6. Zero arraste obrigatório
-
-Regra geral aplicada a todas as sheets do fluxo:
-- snap inicial já mostra: categoria selecionada, método de pagamento, total, CTA
-- em corrida ativa, snap inicial mostra: status, ETA, distância, card do motorista (foto, nome, rating, modelo, placa), PIN, ações rápidas (ligar, mensagem, compartilhar)
-- detalhes secundários vão para link **"Mais detalhes"** que expande ou navega para página dedicada
-- CTA principal nunca sai da viewport
-
-Auditoria dos snaps atuais em `passageiro.app.tsx` para elevar o snap mínimo quando necessário.
-
-## 7. Testes visuais
-
-Rodar Playwright headless em 360×800, 390×844, 412×915 validando:
-- home sem categorias
-- categoria só aparece pós-destino
-- CTA, total, pagamento visíveis sem drag
-- bottom nav fixo, não sobrepõe sheet, não corta cards
-
-## Arquivos afetados
-
-- `src/routes/passageiro.app.tsx` — máquina de flowStep, home simplificada, integração do CategoryPicker, auto-hide da nav
-- `src/components/passenger/CategoryPicker.tsx` — novo
-- `src/components/passenger/DestinationSearch.tsx` — extraído/ajustado (input grande + atalhos)
-- `src/components/BottomNav.tsx` — offset fixo, safe-area, prop para ocultar
-- `src/routes/passageiro.servicos.tsx` — tom informacional, remove CTA de seleção direta
-- `src/components/MovviSheet.tsx` — apenas ajuste de snaps default se necessário
-- textos em componentes de preço: "valor estimado" → "Você paga" / "Total"
-
-## Fora do escopo (não tocar)
-
-Supabase, RLS, migrations, edge functions, cálculo de tarifa, pagamento, PIN, state machine, matching, auth, recovery de corrida ativa.
-
-Confirma para eu implementar?
+## Detalhes técnicos
+- Arquivo principal: `src/routes/motorista.app.tsx` (2743 linhas).
+- Subcomponentes já in-file: `IdleBottomPanel`, `ActiveRidePanel`, `ActiveTripNavOverlay`, `PremiumTopBar`-equivalente do driver.
+- `MovviSheet` snaps são configuráveis por prop `snaps` — sem alterar o componente.
+- Nenhum novo arquivo obrigatório; se um subcomponente crescer muito, extrair para `src/components/driver/`.

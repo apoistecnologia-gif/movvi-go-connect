@@ -882,7 +882,7 @@ function MotoristaApp() {
       handledRidesRef.current.add(offer.id);
       setIncoming(null);
       setActive(r as RideRow);
-      sheetRef.current?.snapTo(76);
+      sheetRef.current?.snapTo(78);
     } catch (e) {
       console.error("[MOVVI MOTORISTA] erro ao aceitar:", e);
       handledRidesRef.current.delete(offer.id);
@@ -1178,7 +1178,7 @@ function MotoristaApp() {
         const bottomOffset = inTrip
           ? "calc(env(safe-area-inset-bottom) + 148px)"
           : active
-            ? "calc(76dvh + 12px)"
+            ? "calc(78dvh + 12px)"
             : "calc(env(safe-area-inset-bottom) + 260px)";
         return (
           <button onClick={recenter}
@@ -1217,7 +1217,7 @@ function MotoristaApp() {
       )}
 
       {!incoming && !ratingRide && active && active.status !== "em_viagem" && (
-        <MovviSheet ref={sheetRef} snaps={[54, 76, 92]} initial={62}>
+        <MovviSheet ref={sheetRef} snaps={[58, 78, 92]} initial={70}>
           <ActiveRidePanel
             ride={active}
             passenger={passenger}
@@ -1313,7 +1313,7 @@ function greetingForNow(): string {
 }
 
 function IdleBottomPanel({
-  driverName: _driverName, online, disabled, toggleOnline, stats, gpsMessage, loading,
+  driverName, online, disabled, toggleOnline, stats, gpsMessage, loading,
   canUseTestLocation, onUseTestLocation,
 }: {
   driverName: string; online: boolean; disabled: boolean;
@@ -1324,6 +1324,7 @@ function IdleBottomPanel({
   onUseTestLocation: () => void;
 }) {
   const navReserve = "calc(env(safe-area-inset-bottom) + 12px)";
+  const firstName = (driverName || "").trim().split(/\s+/)[0] || "Motorista";
 
   return (
     <div
@@ -1336,11 +1337,19 @@ function IdleBottomPanel({
     >
       <div className="mx-auto mt-2.5 h-[4px] w-10 rounded-full bg-white/10" />
 
-      <div className="flex flex-col gap-4 px-6 pb-5 pt-3">
-        {/* Status badge (capsule) */}
-        <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 px-6 pb-5 pt-3">
+        {/* Greeting + status */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="truncate text-[15px] font-bold leading-tight text-foreground">
+              Olá, {firstName}
+            </div>
+            <div className="text-[12px] font-medium text-muted-foreground">
+              {online ? "Recebendo solicitações" : "Toque para ativar"}
+            </div>
+          </div>
           <div
-            className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[12px] font-semibold transition ${
+            className={`inline-flex shrink-0 items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] transition ${
               online
                 ? "bg-primary/12 text-primary"
                 : "bg-white/5 text-muted-foreground"
@@ -1351,17 +1360,16 @@ function IdleBottomPanel({
               {online && <span className="absolute inset-0 animate-ping rounded-full bg-primary/60" />}
               <span className={`relative h-2 w-2 rounded-full ${online ? "bg-primary" : "bg-muted-foreground/60"}`} />
             </span>
-            {online ? "ONLINE" : "OFFLINE"}
+            {online ? "Online" : "Offline"}
           </div>
-          <span className="text-[13px] font-semibold text-foreground/85">
-            {online ? "Recebendo solicitações" : "Toque para ativar"}
-          </span>
         </div>
 
-        {/* Stat card premium */}
-        <div className="grid grid-cols-1 gap-3">
+        {/* Stats — 2 cards */}
+        <div className="grid grid-cols-2 gap-2.5">
           <StatMini label="Corridas hoje" value={stats.rides.toString()} />
+          <StatMini label="Ganhos hoje" value={formatBRL(stats.earnings || 0)} />
         </div>
+
 
         {/* GPS error */}
         {gpsMessage && (
@@ -1410,14 +1418,15 @@ function IdleBottomPanel({
 function StatMini({ label, value }: { label: string; value: string }) {
   return (
     <div
-      className="flex items-center justify-between rounded-2xl px-4 py-3"
+      className="flex flex-col gap-1 rounded-2xl px-3.5 py-2.5"
       style={{ background: "#0e1114", border: "1px solid rgba(255,255,255,0.06)" }}
     >
-      <span className="text-[13px] font-normal text-muted-foreground">{label}</span>
-      <span className="tabular-nums text-[24px] font-bold leading-none text-foreground">
+      <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">{label}</span>
+      <span className="tabular-nums text-[20px] font-bold leading-none text-foreground">
         {value}
       </span>
     </div>
+
   );
 }
 
@@ -1493,11 +1502,12 @@ function IncomingOffer({
 
           {/* Quatro cards compactos */}
           <div className="mt-4 grid grid-cols-4 gap-1.5 sm:gap-2">
-            <InfoCard icon={<Clock className="h-[14px] w-[14px]" strokeWidth={1.75} />} value={pickupMin != null ? `${pickupMin} min` : "—"} label="ETA" />
+            <InfoCard icon={<Clock className="h-[14px] w-[14px]" strokeWidth={1.75} />} value={pickupMin != null ? `${pickupMin} min` : "—"} label="Até coleta" />
             <InfoCard icon={<MapPin className="h-[14px] w-[14px]" strokeWidth={1.75} />} value={pickupKm != null ? `${pickupKm.toFixed(1)} km` : "—"} label="Embarque" />
+            <InfoCard icon={<RouteIcon className="h-[14px] w-[14px]" strokeWidth={1.75} />} value={ride.distance_km != null ? `${Number(ride.distance_km).toFixed(1)} km` : "—"} label="Corrida" />
             <InfoCard icon={<CatIcon className="h-[14px] w-[14px]" strokeWidth={1.75} />} value={catLabel} label="Categoria" compactValue />
-            <InfoCard icon={<Star className="h-[14px] w-[14px] fill-amber-400 text-amber-400" strokeWidth={0} />} value={ratingText} label="Passageiro" />
           </div>
+
 
           {/* Passageiro — nome + rating */}
           <button
@@ -1529,7 +1539,14 @@ function IncomingOffer({
             <div className="my-2.5 ml-[5px] h-px w-full bg-border/60" />
             <AddressRow dotColor="bg-destructive" label="Destino" name={ride.destination_name} />
           </div>
+
+          {/* Pagamento */}
+          <div className="mt-3 mb-2 flex items-center justify-between rounded-2xl border border-border bg-background/40 px-4 py-2.5">
+            <span className="text-[12px] font-medium uppercase tracking-[0.12em] text-muted-foreground">Pagamento</span>
+            <span className="text-[13px] font-semibold text-foreground">{paymentLabelFor(ride.payment_method)}</span>
+          </div>
         </div>
+
 
         {/* Footer sticky — botões sempre visíveis */}
         <div
