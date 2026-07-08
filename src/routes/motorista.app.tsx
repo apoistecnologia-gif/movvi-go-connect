@@ -1053,6 +1053,7 @@ function MotoristaApp() {
   const lastNavigationPositionRef = useRef<LatLng | null>(null);
   const routeFailToastedRef = useRef<string | null>(null);
   const inNavigationMode = isNavigationRideStatus(active?.status);
+  const activeRouteKey = active ? `${active.id}-${active.status}` : null;
   const activeNavigationDestination = useMemo(() => {
     if (!active) return null;
     if (active.status === "motorista_a_caminho" || active.status === "motorista_chegou") {
@@ -1063,6 +1064,7 @@ function MotoristaApp() {
     }
     return null;
   }, [active]);
+  const cameraPolyline = activeRouteKey && lastFitKeyRef.current === activeRouteKey ? polyline : [];
 
   // Detecta arrasto manual → desliga follow.
   useEffect(() => {
@@ -1091,7 +1093,7 @@ function MotoristaApp() {
       applyNavigationCamera(
         mapRef.current,
         { ...position, heading: normalizeHeading(position.heading) ?? movementHeading },
-        polyline,
+        cameraPolyline,
         activeNavigationDestination,
       );
       return;
@@ -1126,8 +1128,8 @@ function MotoristaApp() {
     autoFollowRef.current = true;
     lastFollowAtRef.current = Date.now();
     lastNavigationPositionRef.current = { lat: position.lat, lng: position.lng };
-    applyNavigationCamera(map, position, polyline, activeNavigationDestination, true);
-  }, [inNavigationMode, active?.id, active?.status, position, polyline, activeNavigationDestination]);
+    applyNavigationCamera(map, position, cameraPolyline, activeNavigationDestination, true);
+  }, [inNavigationMode, active?.id, active?.status, position, cameraPolyline, activeNavigationDestination]);
 
   // Rota — depende SOMENTE de rideId/status. Usa posição via ref para não
   // recomputar a rota nem fazer fitBounds a cada GPS.
@@ -1143,6 +1145,7 @@ function MotoristaApp() {
         : null;
     if (!dest) { setPolyline([]); return; }
     const fitKey = `${active.id}-${active.status}`;
+    if (lastFitKeyRef.current !== fitKey) setPolyline([]);
     callRoute({ data: { origin: pos, destination: dest } })
       .then((res) => {
         setPolyline(decodePolyline(res.encodedPolyline));
@@ -1185,7 +1188,7 @@ function MotoristaApp() {
     lastFollowAtRef.current = 0;
     const pos = positionRef.current;
     if (pos && mapRef.current) {
-      if (inNavigationMode) applyNavigationCamera(mapRef.current, pos, polyline, activeNavigationDestination, true);
+      if (inNavigationMode) applyNavigationCamera(mapRef.current, pos, cameraPolyline, activeNavigationDestination, true);
       else smoothPanZoom(mapRef.current, pos, 16, 650);
     }
   }
