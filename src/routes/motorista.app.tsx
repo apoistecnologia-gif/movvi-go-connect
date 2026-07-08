@@ -113,7 +113,7 @@ function haversineKm(a: LatLng, b: LatLng) {
   return 2 * R * Math.asin(Math.sqrt(s));
 }
 
-const NAVIGATION_STATUSES = new Set(["em_viagem", "active", "in_progress", "started"]);
+const NAVIGATION_STATUSES = new Set(["motorista_a_caminho", "em_viagem", "active", "in_progress", "started"]);
 const NAVIGATION_ZOOM = 18;
 const NAVIGATION_CENTER_AHEAD_METERS = 105;
 
