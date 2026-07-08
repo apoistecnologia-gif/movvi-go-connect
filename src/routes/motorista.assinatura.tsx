@@ -90,7 +90,7 @@ function DriverSubscriptionPage() {
       const { data, error } = await supabase
         .from("drivers")
         .select(
-          "mercadopago_init_point,mercadopago_preapproval_id,financial_status,subscription_status,subscription_value,next_due_date,last_payment_status,approval_status",
+          "mercadopago_init_point,mercadopago_preapproval_id,financial_status,subscription_status,subscription_value,subscription_expires_at,next_due_date,last_payment_status,approval_status",
         )
         .eq("user_id", u.user.id)
         .maybeSingle();
