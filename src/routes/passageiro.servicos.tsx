@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Bike, Box, Car, Send, Truck, type LucideIcon } from "lucide-react";
+import { ArrowRight, Box, Send, Truck, type LucideIcon } from "lucide-react";
 import { MovviHeader } from "@/components/MovviHeader";
 import { BottomNav, PASSENGER_NAV } from "@/components/BottomNav";
 
@@ -28,53 +28,30 @@ function ServicosPage() {
             Serviços MOVVI
           </h1>
           <p className="text-[13px] text-muted-foreground">
-            Escolha o tipo de atendimento. Corridas comuns continuam separadas
-            dos fluxos de Envios, Guincho e Mudanças.
+            Escolha um atendimento especial.
           </p>
         </header>
 
         <section className="space-y-3">
-          <h2 className="px-1 text-[12px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
-            Corridas de passageiros
-          </h2>
-          <ServiceFlowCard
-            icon={Car}
-            title="Carros e Motos"
-            description="Escolha apenas o destino. As categorias de transporte aparecem depois do trajeto calculado."
-            action="Buscar destino"
-            to="/passageiro/app"
-          />
-        </section>
-
-        <section className="space-y-3">
-          <h2 className="px-1 text-[12px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
-            Entregas
-          </h2>
           <ServiceFlowCard
             icon={Send}
             title="MOVVI Envios"
-            description="Fluxo próprio para escolher Enviar ou Receber, informar retirada e entrega."
-            action="Abrir Envios"
+            description="Envie ou receba itens com praticidade."
+            action="Enviar ou receber"
             to="/passageiro/envios"
           />
-        </section>
-
-        <section className="space-y-3">
-          <h2 className="px-1 text-[12px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
-            Serviços especiais
-          </h2>
           <ServiceFlowCard
             icon={Truck}
             title="MOVVI Guincho"
-            description="Questionário de veículo e situação antes de confirmar o atendimento no mapa."
-            action="Solicitar Guincho"
+            description="Solicite assistência para transportar seu veículo."
+            action="Solicitar guincho"
             to="/passageiro/guincho"
           />
           <ServiceFlowCard
             icon={Box}
-            title="Mudanças / Fretes Grandes"
-            description="Questionário de carga, retirada e entrega para volumes maiores."
-            action="Solicitar Mudança"
+            title="Mudanças e Fretes Grandes"
+            description="Transporte móveis, cargas maiores e mudanças."
+            action="Solicitar frete"
             to="/passageiro/mudancas"
           />
         </section>
