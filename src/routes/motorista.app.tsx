@@ -1313,7 +1313,7 @@ function greetingForNow(): string {
 }
 
 function IdleBottomPanel({
-  driverName: _driverName, online, disabled, toggleOnline, stats, gpsMessage, loading,
+  driverName, online, disabled, toggleOnline, stats, gpsMessage, loading,
   canUseTestLocation, onUseTestLocation,
 }: {
   driverName: string; online: boolean; disabled: boolean;
@@ -1324,6 +1324,7 @@ function IdleBottomPanel({
   onUseTestLocation: () => void;
 }) {
   const navReserve = "calc(env(safe-area-inset-bottom) + 12px)";
+  const firstName = (driverName || "").trim().split(/\s+/)[0] || "Motorista";
 
   return (
     <div
@@ -1336,11 +1337,19 @@ function IdleBottomPanel({
     >
       <div className="mx-auto mt-2.5 h-[4px] w-10 rounded-full bg-white/10" />
 
-      <div className="flex flex-col gap-4 px-6 pb-5 pt-3">
-        {/* Status badge (capsule) */}
-        <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 px-6 pb-5 pt-3">
+        {/* Greeting + status */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="truncate text-[15px] font-bold leading-tight text-foreground">
+              Olá, {firstName}
+            </div>
+            <div className="text-[12px] font-medium text-muted-foreground">
+              {online ? "Recebendo solicitações" : "Toque para ativar"}
+            </div>
+          </div>
           <div
-            className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[12px] font-semibold transition ${
+            className={`inline-flex shrink-0 items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] transition ${
               online
                 ? "bg-primary/12 text-primary"
                 : "bg-white/5 text-muted-foreground"
@@ -1351,17 +1360,16 @@ function IdleBottomPanel({
               {online && <span className="absolute inset-0 animate-ping rounded-full bg-primary/60" />}
               <span className={`relative h-2 w-2 rounded-full ${online ? "bg-primary" : "bg-muted-foreground/60"}`} />
             </span>
-            {online ? "ONLINE" : "OFFLINE"}
+            {online ? "Online" : "Offline"}
           </div>
-          <span className="text-[13px] font-semibold text-foreground/85">
-            {online ? "Recebendo solicitações" : "Toque para ativar"}
-          </span>
         </div>
 
-        {/* Stat card premium */}
-        <div className="grid grid-cols-1 gap-3">
+        {/* Stats — 2 cards */}
+        <div className="grid grid-cols-2 gap-2.5">
           <StatMini label="Corridas hoje" value={stats.rides.toString()} />
+          <StatMini label="Ganhos hoje" value={formatBRL(stats.earnings || 0)} />
         </div>
+
 
         {/* GPS error */}
         {gpsMessage && (
