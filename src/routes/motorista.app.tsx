@@ -330,7 +330,30 @@ function MotoristaApp() {
   const [submittingRating, setSubmittingRating] = useState(false);
   const [ratingSubmitted, setRatingSubmitted] = useState(false);
   const [ratingError, setRatingError] = useState<string | null>(null);
+  const [paymentConfirming, setPaymentConfirming] = useState(false);
+  const [paymentConfirmedAt, setPaymentConfirmedAt] = useState<string | null>(null);
   const ratedRidesRef = useRef<Set<string>>(new Set());
+
+  async function confirmPaymentReceived() {
+    if (!ratingRide || paymentConfirming || paymentConfirmedAt) return;
+    setPaymentConfirming(true);
+    try {
+      const nowIso = new Date().toISOString();
+      const { error } = await supabase
+        .from("rides")
+        .update({ payment_received_at: nowIso, payment_received_by: userId })
+        .eq("id", ratingRide.id)
+        .is("payment_received_at", null);
+      if (error) throw error;
+      setPaymentConfirmedAt(nowIso);
+      toast.success("Pagamento confirmado");
+      if (navigator.vibrate) navigator.vibrate(30);
+    } catch (e) {
+      toast.error("Não foi possível confirmar", { description: (e as Error).message });
+    } finally {
+      setPaymentConfirming(false);
+    }
+  }
 
   const mapRef = useRef<google.maps.Map | null>(null);
   const sheetRef = useRef<MovviSheetHandle | null>(null);
@@ -847,6 +870,7 @@ function MotoristaApp() {
           if (ratingRef.current?.id === r.id && !ratingSubmitted) setRatingRide(null);
         } else if (!r.driver_rated_at && !ratingRef.current) {
           setRatingRide(r); setStars(5); setRatingComment(""); setRatingSubmitted(false);
+          setPaymentConfirmedAt((r as any).payment_received_at ?? null);
         } else if (r.driver_rated_at) {
           ratedRidesRef.current.add(r.id);
           if (ratingRef.current?.id === r.id && !ratingSubmitted) setRatingRide(null);
@@ -1478,6 +1502,9 @@ function MotoristaApp() {
           onSubmit={submitRating}
           onDismiss={dismissRating}
           onSkip={skipRating}
+          paymentConfirmedAt={paymentConfirmedAt}
+          paymentConfirming={paymentConfirming}
+          onConfirmPayment={confirmPaymentReceived}
         />
       )}
 
@@ -2565,6 +2592,7 @@ function ActionButton({
 function RatingScreen({
   ride, passenger, stars, setStars, comment, setComment, submitting, submitted,
   errorMessage, onSubmit, onDismiss, onSkip,
+  paymentConfirmedAt, paymentConfirming, onConfirmPayment,
 }: {
   ride: RideRow; passenger: Passenger | null;
   stars: number; setStars: (n: number) => void;
@@ -2572,6 +2600,9 @@ function RatingScreen({
   submitting: boolean; submitted: boolean;
   errorMessage: string | null;
   onSubmit: () => void; onDismiss: () => void; onSkip: () => void;
+  paymentConfirmedAt: string | null;
+  paymentConfirming: boolean;
+  onConfirmPayment: () => void;
 }) {
   const total = Number(ride.final_price ?? ride.estimated_price ?? 0);
   const paymentLabel = paymentLabelFor(ride.payment_method);
@@ -2623,6 +2654,14 @@ function RatingScreen({
               </div>
             </div>
 
+            <PaymentConfirmBlock
+              paymentLabel={paymentLabel}
+              confirmedAt={paymentConfirmedAt}
+              loading={paymentConfirming}
+              onConfirm={onConfirmPayment}
+            />
+
+
             {/* Next status */}
             <div className="mt-4 flex items-center gap-3 rounded-[18px] bg-primary/10 p-3.5 ring-1 ring-primary/25 animate-in fade-in slide-in-from-bottom-2 duration-500">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
@@ -2651,7 +2690,15 @@ function RatingScreen({
               </div>
             </div>
 
+            <PaymentConfirmBlock
+              paymentLabel={paymentLabel}
+              confirmedAt={paymentConfirmedAt}
+              loading={paymentConfirming}
+              onConfirm={onConfirmPayment}
+            />
+
             {/* ===== TRIP SUMMARY ===== */}
+
             <div className="mt-3 rounded-[20px] bg-background/60 p-3.5 ring-1 ring-border animate-in fade-in slide-in-from-bottom-2 duration-500">
               <div className="grid grid-cols-2 gap-3">
                 <SummaryRow icon={<RouteIcon className="h-3.5 w-3.5" strokeWidth={1.75} />} label="Distância" value={distanceLabel} />
@@ -2751,6 +2798,45 @@ function SummaryRow({ icon, label, value }: { icon: ReactNode; label: string; va
     </div>
   );
 }
+
+function PaymentConfirmBlock({
+  paymentLabel, confirmedAt, loading, onConfirm,
+}: {
+  paymentLabel: string;
+  confirmedAt: string | null;
+  loading: boolean;
+  onConfirm: () => void;
+}) {
+  if (confirmedAt) {
+    return (
+      <div className="mt-3 flex items-center gap-3 rounded-[18px] bg-emerald-500/10 p-3.5 ring-1 ring-emerald-500/30">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-500">
+          <CheckCircle2 className="h-4 w-4" strokeWidth={2} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="text-[13.5px] font-semibold text-foreground">Pagamento recebido</div>
+          <div className="text-[12px] text-muted-foreground">{paymentLabel} · confirmado por você</div>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="mt-3 rounded-[18px] bg-amber-500/10 p-3.5 ring-1 ring-amber-500/30">
+      <div className="flex items-center gap-2 text-[12px] font-semibold text-amber-600 dark:text-amber-400">
+        <Banknote className="h-3.5 w-3.5" /> Aguardando confirmação — {paymentLabel}
+      </div>
+      <DSButton
+        onClick={onConfirm}
+        disabled={loading}
+        size="sm"
+        className="mt-2 w-full"
+      >
+        {loading ? "Confirmando…" : "Confirmar recebimento"}
+      </DSButton>
+    </div>
+  );
+}
+
 
 /* ============================================================
    TOP FLOATING GLASS STAT (usado na fase "a caminho")
