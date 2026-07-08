@@ -483,15 +483,14 @@ export function InterpolatedDriverMarker({
           strokeWeight: 1.2,
         }}
       />
-      {/* carro top-down com identidade MOVVI (corpo claro + cabine verde) */}
+      {/* carro top-down vermelho MOVVI */}
       <CarShape
         position={display}
         heading={displayHeading}
         scale={scale}
-        bodyColor="#F4F6FA"
-        accentColor={color}
         zBase={10000}
       />
+
     </>
   );
 }
