@@ -2592,6 +2592,7 @@ function ActionButton({
 function RatingScreen({
   ride, passenger, stars, setStars, comment, setComment, submitting, submitted,
   errorMessage, onSubmit, onDismiss, onSkip,
+  paymentConfirmedAt, paymentConfirming, onConfirmPayment,
 }: {
   ride: RideRow; passenger: Passenger | null;
   stars: number; setStars: (n: number) => void;
@@ -2599,6 +2600,9 @@ function RatingScreen({
   submitting: boolean; submitted: boolean;
   errorMessage: string | null;
   onSubmit: () => void; onDismiss: () => void; onSkip: () => void;
+  paymentConfirmedAt: string | null;
+  paymentConfirming: boolean;
+  onConfirmPayment: () => void;
 }) {
   const total = Number(ride.final_price ?? ride.estimated_price ?? 0);
   const paymentLabel = paymentLabelFor(ride.payment_method);
