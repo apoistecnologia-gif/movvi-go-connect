@@ -1187,11 +1187,9 @@ function MotoristaApp() {
     const routeRequestKey = fitKey;
 
     const focusRoute = (points: LatLng[]) => {
-      // Marca a rota como pronta mesmo se o mapa ainda não carregou; o onLoad
-      // aplica a câmera usando a polyline atual.
-      lastFitKeyRef.current = fitKey;
       const map = mapRef.current;
       if (!map) return;
+      lastFitKeyRef.current = fitKey;
       if (isNavigationRideStatus(active.status)) {
         autoFollowRef.current = true;
         lastFollowAtRef.current = Date.now();
