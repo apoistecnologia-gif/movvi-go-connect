@@ -1281,7 +1281,9 @@ function MotoristaApp() {
       if (active.status === "motorista_a_caminho") {
         void speak("Corrida aceita. Siga até o ponto de embarque.", { interrupt: true });
       } else if (active.status === "motorista_chegou") {
-        void speak("Você chegou ao ponto de embarque. Aguarde o passageiro.", { interrupt: true });
+        // Já é anunciado sincronamente pelo clique em "Cheguei" (gesto do usuário),
+        // não repete aqui para não cortar a fala com interrupt:true.
+
       } else if (active.status === "em_viagem") {
         void speak("Viagem iniciada. Boa viagem.", { interrupt: true });
       } else if (active.status === "finalizada") {
