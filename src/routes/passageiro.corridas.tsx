@@ -733,6 +733,13 @@ function PassengerRidesPage() {
             </p>
           </header>
 
+          {/* Scheduled rides */}
+          <ScheduledRidesSection
+            rides={scheduled}
+            onCancelled={() => void load()}
+          />
+
+
           {/* Summary cards */}
           <section
             aria-label="Resumo"
