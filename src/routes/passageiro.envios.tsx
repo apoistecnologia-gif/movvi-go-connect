@@ -130,27 +130,32 @@ function EnviosLanding() {
               </div>
             </div>
 
-            <EnviosField
+            <AddressAutocomplete
               label={labels.pickup}
-              hint={labels.pickupHint}
+              placeholder={labels.pickupHint}
               value={pickup}
-              onChange={setPickup}
-              placeholder="Digite rua, número, bairro ou referência"
+              onChangeText={setPickup}
+              onPick={handlePickupPick}
             />
-            <EnviosField
+            <AddressAutocomplete
               label={labels.delivery}
-              hint={labels.deliveryHint}
+              placeholder={labels.deliveryHint}
               value={delivery}
-              onChange={setDelivery}
-              placeholder="Digite rua, número, bairro ou referência"
+              onChangeText={setDelivery}
+              onPick={handleDeliveryPick}
             />
-            <EnviosField
-              label="Item (opcional)"
-              hint="Documento, pacote pequeno, chave, compra..."
-              value={item}
-              onChange={setItem}
-              placeholder="Ex.: envelope com documentos"
-            />
+            <label className="block space-y-1.5">
+              <span className="text-[12.5px] font-semibold text-foreground">
+                Item (opcional)
+              </span>
+              <input
+                value={item}
+                onChange={(e) => setItem(e.target.value)}
+                placeholder="Ex.: envelope com documentos"
+                className="h-11 w-full rounded-xl border border-border bg-background px-3 text-[13px] text-foreground outline-none placeholder:text-muted-foreground focus:border-primary"
+              />
+            </label>
+
             <label className="block space-y-1.5">
               <span className="text-[12.5px] font-semibold text-foreground">Observações</span>
               <textarea
