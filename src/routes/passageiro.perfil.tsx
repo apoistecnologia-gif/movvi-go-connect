@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   User, CreditCard, ShieldCheck, MessageSquare, LifeBuoy, Settings as SettingsIcon,
   LogOut, BadgeCheck, ChevronRight, Star, Heart, ClipboardList, ArrowLeft,
