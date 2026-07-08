@@ -920,3 +920,95 @@ export const startRide         = iniciarCorrida;   // motorista_chegou   → em_
 export const finishRide        = finalizarCorrida; // em_viagem          → finalizada
 export const cancelRideByPassenger = cancelarPeloPassageiro;
 export const cancelRideByDriver    = cancelarPeloMotorista;
+
+// ---------- Corridas agendadas ----------
+
+const AgendarCorridaInput = CriarCorridaInput.extend({
+  scheduled_for: z.string().datetime({ offset: true }),
+});
+
+/** Passageiro agenda uma corrida para o futuro. Status inicial = agendada.
+ *  Um cron promove a corrida para procurar_motorista ~15min antes do horário. */
+export const agendarCorrida = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => AgendarCorridaInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const scheduledAt = new Date(data.scheduled_for);
+    const now = Date.now();
+    if (scheduledAt.getTime() - now < 15 * 60 * 1000) {
+      throw new Error("A corrida precisa ser agendada com pelo menos 15 minutos de antecedência.");
+    }
+    if (scheduledAt.getTime() - now > 30 * 24 * 60 * 60 * 1000) {
+      throw new Error("A corrida pode ser agendada com no máximo 30 dias de antecedência.");
+    }
+
+    const straightKm = distanceKm(data.origin, data.destination);
+    const clientKm =
+      typeof data.distance_km === "number" && Number.isFinite(data.distance_km)
+        ? Math.max(0, data.distance_km) : 0;
+    const distanceKmFinal = clientKm >= straightKm ? clientKm : straightKm * 1.3;
+    const clientMin =
+      typeof data.duration_min === "number" && Number.isFinite(data.duration_min)
+        ? Math.max(0, data.duration_min) : 0;
+    const durationMinFinal = clientMin > 0 ? clientMin : (distanceKmFinal / 30) * 60;
+    const tariff = await loadTariff(supabaseAdmin, data.category);
+    const estimatedPriceServer = computeFareFromTariff(tariff, distanceKmFinal, durationMinFinal);
+
+    const ins = await supabaseAdmin
+      .from("rides")
+      .insert({
+        passenger_id: userId,
+        category: data.category,
+        origin_lat: data.origin.lat,
+        origin_lng: data.origin.lng,
+        origin_name: data.origin_name,
+        destination_lat: data.destination.lat,
+        destination_lng: data.destination.lng,
+        destination_name: data.destination_name,
+        distance_km: distanceKmFinal,
+        duration_min: durationMinFinal,
+        estimated_price: estimatedPriceServer,
+        status: "agendada",
+        scheduled_for: scheduledAt.toISOString(),
+        pickup_label: data.pickup_label ?? null,
+        pickup_short_label: data.pickup_short_label ?? null,
+        pickup_address: data.pickup_address ?? null,
+        pickup_place_id: data.pickup_place_id ?? null,
+        pickup_source: data.pickup_source ?? "manual",
+      } as any)
+      .select("id, scheduled_for, estimated_price")
+      .single();
+    if (ins.error) throw new Error(ins.error.message);
+    return {
+      rideId: ins.data.id as string,
+      scheduledFor: (ins.data as any).scheduled_for as string,
+      estimatedPrice: (ins.data as any).estimated_price as number | null,
+    };
+  });
+
+/** Passageiro cancela uma corrida ainda agendada (antes do cron promover).
+ *  Só permite cancelar rides com status='agendada' do próprio passageiro. */
+export const cancelarAgendamento = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => RideIdInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const upd = await supabase
+      .from("rides")
+      .update({
+        status: "cancelada_passageiro",
+        cancelled_at: new Date().toISOString(),
+        cancelled_by: "passageiro",
+      } as any)
+      .eq("id", data.rideId)
+      .eq("passenger_id", userId)
+      .eq("status", "agendada" as any)
+      .select("id")
+      .maybeSingle();
+    if (upd.error) throw new Error("Não foi possível cancelar o agendamento: " + upd.error.message);
+    if (!upd.data) throw new Error("Este agendamento não pode mais ser cancelado.");
+    return { ok: true };
+  });
