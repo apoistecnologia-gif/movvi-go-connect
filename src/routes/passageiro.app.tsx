@@ -4396,6 +4396,30 @@ function DriverEnRoute({
     ? `tel:+${driverPhoneDigits.startsWith("55") ? driverPhoneDigits : "55" + driverPhoneDigits}`
     : undefined;
 
+  const firstName = (driver.name ?? "Motorista").trim().split(/\s+/)[0] || "Motorista";
+
+  const [driverStats, setDriverStats] = useState<{ completed_rides: number; rating: number } | null>(null);
+  useEffect(() => {
+    let active = true;
+    const uid = (driver as any).user_id as string | undefined;
+    if (!uid) return;
+    supabase
+      .rpc("get_driver_public_stats" as never, { p_user_id: uid })
+      .then(({ data }: { data: any }) => {
+        if (!active || !data) return;
+        const row = Array.isArray(data) ? data[0] : data;
+        if (!row) return;
+        setDriverStats({
+          completed_rides: Number(row.completed_rides ?? 0),
+          rating: Number(row.rating ?? 5),
+        });
+      });
+    return () => { active = false; };
+  }, [(driver as any).user_id]);
+
+  const ratingValue = driverStats?.rating ?? driver.rating ?? 5;
+  const ridesCount = driverStats?.completed_rides ?? 0;
+
   return (
     <div className="pt-1 pb-2 animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-2.5">
       {/* ── COMPACT (visível sem scroll) ─────────────────────────────── */}
@@ -4424,18 +4448,17 @@ function DriverEnRoute({
         aria-label="Ver perfil do motorista"
         className="flex w-full items-center gap-2.5 rounded-2xl bg-white p-2.5 text-left ring-1 ring-black/5 shadow-[0_4px_14px_-14px_rgba(15,23,42,0.22)] transition duration-[220ms] active:scale-[0.99]"
       >
-        <Avatar src={driver.photo_url ?? null} name={driver.name} size={40} />
+        <Avatar src={driver.photo_url ?? null} name={firstName} size={40} />
         <div className="min-w-0 flex-1">
           <div className="truncate text-[14px] font-bold leading-tight text-[#111418]">
-            {driver.name}
+            {firstName}
           </div>
           <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-[#707070]">
             <Star className="h-3 w-3 fill-[#F5B301] text-[#F5B301]" strokeWidth={0} />
-            <span className="font-semibold text-[#111418]">{driver.rating?.toFixed(1) ?? "5.0"}</span>
+            <span className="font-semibold text-[#111418]">{Number(ratingValue).toFixed(1)}</span>
             <span>·</span>
-            <span className="truncate">
-              {[driver.vehicle_color, driver.vehicle_model].filter(Boolean).join(" ") || "MOVVI Driver"}
-            </span>
+            <span className="font-medium text-[#111418]">{ridesCount}</span>
+            <span>{ridesCount === 1 ? "corrida" : "corridas"}</span>
           </div>
         </div>
         {driver.vehicle_plate && (
@@ -4445,6 +4468,7 @@ function DriverEnRoute({
         )}
         <ChevronRight className="h-4 w-4 shrink-0 text-[#707070]" strokeWidth={2} />
       </button>
+
 
       {/* Código de segurança — compacto e sempre visível antes da viagem */}
       {ride.safety_code && ride.status !== "em_viagem" && (
