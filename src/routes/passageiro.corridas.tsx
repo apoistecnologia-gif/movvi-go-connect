@@ -61,6 +61,7 @@ type RideRow = {
   category: string | null;
   payment_method: string | null;
   safety_code: string | null;
+  scheduled_for: string | null;
 };
 
 function rideToReceipt(r: RideRow): ReceiptData {

@@ -33,6 +33,7 @@ import { Route as PassageiroConfiguracoesRouteImport } from './routes/passageiro
 import { Route as PassageiroCarteiraRouteImport } from './routes/passageiro.carteira'
 import { Route as PassageiroCadastroRouteImport } from './routes/passageiro.cadastro'
 import { Route as PassageiroAppRouteImport } from './routes/passageiro.app'
+import { Route as PassageiroAgendarRouteImport } from './routes/passageiro.agendar'
 import { Route as MotoristaTermosRouteImport } from './routes/motorista.termos'
 import { Route as MotoristaSuporteRouteImport } from './routes/motorista.suporte'
 import { Route as MotoristaStatusRouteImport } from './routes/motorista.status'
@@ -199,6 +200,11 @@ const PassageiroCadastroRoute = PassageiroCadastroRouteImport.update({
 const PassageiroAppRoute = PassageiroAppRouteImport.update({
   id: '/passageiro/app',
   path: '/passageiro/app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PassageiroAgendarRoute = PassageiroAgendarRouteImport.update({
+  id: '/passageiro/agendar',
+  path: '/passageiro/agendar',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MotoristaTermosRoute = MotoristaTermosRouteImport.update({
@@ -484,6 +490,7 @@ export interface FileRoutesByFullPath {
   '/motorista/status': typeof MotoristaStatusRoute
   '/motorista/suporte': typeof MotoristaSuporteRoute
   '/motorista/termos': typeof MotoristaTermosRoute
+  '/passageiro/agendar': typeof PassageiroAgendarRoute
   '/passageiro/app': typeof PassageiroAppRoute
   '/passageiro/cadastro': typeof PassageiroCadastroRoute
   '/passageiro/carteira': typeof PassageiroCarteiraRoute
@@ -556,6 +563,7 @@ export interface FileRoutesByTo {
   '/motorista/status': typeof MotoristaStatusRoute
   '/motorista/suporte': typeof MotoristaSuporteRoute
   '/motorista/termos': typeof MotoristaTermosRoute
+  '/passageiro/agendar': typeof PassageiroAgendarRoute
   '/passageiro/app': typeof PassageiroAppRoute
   '/passageiro/cadastro': typeof PassageiroCadastroRoute
   '/passageiro/carteira': typeof PassageiroCarteiraRoute
@@ -629,6 +637,7 @@ export interface FileRoutesById {
   '/motorista/status': typeof MotoristaStatusRoute
   '/motorista/suporte': typeof MotoristaSuporteRoute
   '/motorista/termos': typeof MotoristaTermosRoute
+  '/passageiro/agendar': typeof PassageiroAgendarRoute
   '/passageiro/app': typeof PassageiroAppRoute
   '/passageiro/cadastro': typeof PassageiroCadastroRoute
   '/passageiro/carteira': typeof PassageiroCarteiraRoute
@@ -703,6 +712,7 @@ export interface FileRouteTypes {
     | '/motorista/status'
     | '/motorista/suporte'
     | '/motorista/termos'
+    | '/passageiro/agendar'
     | '/passageiro/app'
     | '/passageiro/cadastro'
     | '/passageiro/carteira'
@@ -775,6 +785,7 @@ export interface FileRouteTypes {
     | '/motorista/status'
     | '/motorista/suporte'
     | '/motorista/termos'
+    | '/passageiro/agendar'
     | '/passageiro/app'
     | '/passageiro/cadastro'
     | '/passageiro/carteira'
@@ -847,6 +858,7 @@ export interface FileRouteTypes {
     | '/motorista/status'
     | '/motorista/suporte'
     | '/motorista/termos'
+    | '/passageiro/agendar'
     | '/passageiro/app'
     | '/passageiro/cadastro'
     | '/passageiro/carteira'
@@ -920,6 +932,7 @@ export interface RootRouteChildren {
   MotoristaStatusRoute: typeof MotoristaStatusRoute
   MotoristaSuporteRoute: typeof MotoristaSuporteRoute
   MotoristaTermosRoute: typeof MotoristaTermosRoute
+  PassageiroAgendarRoute: typeof PassageiroAgendarRoute
   PassageiroAppRoute: typeof PassageiroAppRoute
   PassageiroCadastroRoute: typeof PassageiroCadastroRoute
   PassageiroCarteiraRoute: typeof PassageiroCarteiraRoute
@@ -1112,6 +1125,13 @@ declare module '@tanstack/react-router' {
       path: '/passageiro/app'
       fullPath: '/passageiro/app'
       preLoaderRoute: typeof PassageiroAppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/passageiro/agendar': {
+      id: '/passageiro/agendar'
+      path: '/passageiro/agendar'
+      fullPath: '/passageiro/agendar'
+      preLoaderRoute: typeof PassageiroAgendarRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/motorista/termos': {
@@ -1499,6 +1519,7 @@ const rootRouteChildren: RootRouteChildren = {
   MotoristaStatusRoute: MotoristaStatusRoute,
   MotoristaSuporteRoute: MotoristaSuporteRoute,
   MotoristaTermosRoute: MotoristaTermosRoute,
+  PassageiroAgendarRoute: PassageiroAgendarRoute,
   PassageiroAppRoute: PassageiroAppRoute,
   PassageiroCadastroRoute: PassageiroCadastroRoute,
   PassageiroCarteiraRoute: PassageiroCarteiraRoute,
