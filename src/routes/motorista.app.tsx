@@ -1072,7 +1072,9 @@ function MotoristaApp() {
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    const onDragStart = () => { autoFollowRef.current = false; };
+    const onDragStart = () => {
+      if (!isNavigationRideStatus(activeRef.current?.status)) autoFollowRef.current = false;
+    };
     const listener = google.maps.event.addListener(map, "dragstart", onDragStart);
     return () => { google.maps.event.removeListener(listener); };
   }, [initialMapCenter]); // re-anexa quando o mapa fica disponível
