@@ -2850,6 +2850,7 @@ export type Database = {
       pix_key_type: "cpf" | "cnpj" | "email" | "phone" | "random"
       ride_category: "carros" | "motos" | "fretes" | "guincho" | "envios"
       ride_status:
+        | "agendada"
         | "procurar_motorista"
         | "motorista_a_caminho"
         | "motorista_chegou"
@@ -3061,6 +3062,7 @@ export const Constants = {
       pix_key_type: ["cpf", "cnpj", "email", "phone", "random"],
       ride_category: ["carros", "motos", "fretes", "guincho", "envios"],
       ride_status: [
+        "agendada",
         "procurar_motorista",
         "motorista_a_caminho",
         "motorista_chegou",
