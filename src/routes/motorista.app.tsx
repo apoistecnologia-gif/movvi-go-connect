@@ -111,6 +111,108 @@ function haversineKm(a: LatLng, b: LatLng) {
   return 2 * R * Math.asin(Math.sqrt(s));
 }
 
+const NAVIGATION_STATUSES = new Set(["em_viagem", "active", "in_progress", "started"]);
+const NAVIGATION_ZOOM = 18;
+const NAVIGATION_CENTER_AHEAD_METERS = 105;
+
+function isNavigationRideStatus(status: string | null | undefined) {
+  return !!status && NAVIGATION_STATUSES.has(status);
+}
+
+function normalizeHeading(value: number | null | undefined): number | null {
+  if (!Number.isFinite(value as number)) return null;
+  return (((value as number) % 360) + 360) % 360;
+}
+
+function bearingBetween(a: LatLng, b: LatLng): number | null {
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const toDeg = (r: number) => (r * 180) / Math.PI;
+  const lat1 = toRad(a.lat), lat2 = toRad(b.lat), dLng = toRad(b.lng - a.lng);
+  const y = Math.sin(dLng) * Math.cos(lat2);
+  const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
+  const bearing = toDeg(Math.atan2(y, x));
+  return normalizeHeading(bearing);
+}
+
+function offsetLatLng(origin: LatLng, heading: number, meters: number): LatLng {
+  const radius = 6378137;
+  const δ = meters / radius;
+  const θ = (heading * Math.PI) / 180;
+  const φ1 = (origin.lat * Math.PI) / 180;
+  const λ1 = (origin.lng * Math.PI) / 180;
+  const sinφ2 = Math.sin(φ1) * Math.cos(δ) + Math.cos(φ1) * Math.sin(δ) * Math.cos(θ);
+  const φ2 = Math.asin(sinφ2);
+  const y = Math.sin(θ) * Math.sin(δ) * Math.cos(φ1);
+  const x = Math.cos(δ) - Math.sin(φ1) * sinφ2;
+  const λ2 = λ1 + Math.atan2(y, x);
+  return { lat: (φ2 * 180) / Math.PI, lng: (λ2 * 180) / Math.PI };
+}
+
+function routeHeadingFrom(position: LatLng, route: LatLng[], destination?: LatLng | null): number | null {
+  if (route.length >= 2) {
+    let nearestIndex = 0;
+    let nearestKm = Number.POSITIVE_INFINITY;
+    for (let i = 0; i < route.length; i += 1) {
+      const km = haversineKm(position, route[i]);
+      if (km < nearestKm) {
+        nearestKm = km;
+        nearestIndex = i;
+      }
+    }
+    for (let i = nearestIndex + 1; i < route.length; i += 1) {
+      if (haversineKm(position, route[i]) > 0.018) return bearingBetween(position, route[i]);
+    }
+    if (route[nearestIndex + 1]) return bearingBetween(route[nearestIndex], route[nearestIndex + 1]);
+  }
+  return destination ? bearingBetween(position, destination) : null;
+}
+
+function navigationHeadingFor(
+  position: LatLng & { heading?: number | null },
+  route: LatLng[],
+  destination?: LatLng | null,
+) {
+  return normalizeHeading(position.heading) ?? routeHeadingFrom(position, route, destination);
+}
+
+function applyNavigationCamera(
+  map: google.maps.Map,
+  position: LatLng & { heading?: number | null },
+  route: LatLng[],
+  destination?: LatLng | null,
+  immediate = false,
+) {
+  const heading = navigationHeadingFor(position, route, destination);
+  const center = heading == null ? position : offsetLatLng(position, heading, NAVIGATION_CENTER_AHEAD_METERS);
+  const navMap = map as google.maps.Map & {
+    moveCamera?: (cameraOptions: google.maps.CameraOptions) => void;
+    setHeading?: (heading: number) => void;
+    setTilt?: (tilt: number) => void;
+  };
+
+  try {
+    if (immediate && typeof navMap.moveCamera === "function") {
+      navMap.moveCamera({
+        center,
+        zoom: NAVIGATION_ZOOM,
+        heading: heading ?? undefined,
+        tilt: heading == null ? 0 : 45,
+      });
+      return;
+    }
+
+    map.panTo(center);
+    if ((map.getZoom() ?? 0) < 17) map.setZoom(NAVIGATION_ZOOM);
+    if (heading != null) {
+      navMap.setHeading?.(heading);
+      navMap.setTilt?.(45);
+    }
+  } catch {
+    map.panTo(position);
+    if ((map.getZoom() ?? 0) < 17) map.setZoom(17);
+  }
+}
+
 type RequestRemovalReason =
   | "accepted_by_other"
   | "driver_rejected"
