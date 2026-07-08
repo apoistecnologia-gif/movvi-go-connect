@@ -135,7 +135,7 @@ export function BottomNav({
                 aria-current={active ? "page" : undefined}
                 className={
                   floating
-                    ? `group relative flex h-11 min-w-0 items-center justify-center gap-1.5 rounded-full px-2.5 text-[12px] font-semibold tracking-tight transition-all duration-300 ease-out ${activeCls}`
+                    ? `group relative flex h-12 min-w-0 flex-col items-center justify-center gap-0.5 rounded-full px-1.5 text-[10.5px] font-semibold tracking-tight transition-all duration-300 ease-out ${activeCls}`
                     : `relative flex h-full min-w-0 flex-col items-center justify-center gap-0.5 px-1 text-[10px] font-medium transition-colors ${activeCls}`
                 }
               >
@@ -143,20 +143,11 @@ export function BottomNav({
                   <>
                     <Icon
                       className={`h-[18px] w-[18px] shrink-0 transition-transform duration-300 ${
-                        active ? "scale-105" : "group-active:scale-95"
+                        active ? "scale-110" : "group-active:scale-95"
                       }`}
                       strokeWidth={active ? 2.4 : 2}
                     />
-                    {/* Label aparece só no item ativo — como as refs modernas */}
-                    <span
-                      className={`overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-300 ease-out ${
-                        active
-                          ? "max-w-[110px] opacity-100"
-                          : "max-w-0 opacity-0"
-                      }`}
-                    >
-                      {item.label}
-                    </span>
+                    <span className="leading-none">{item.label}</span>
                   </>
                 ) : (
                   <>
@@ -176,6 +167,7 @@ export function BottomNav({
               </Link>
             </li>
           );
+
         })}
       </ul>
     </nav>
