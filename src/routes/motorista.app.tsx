@@ -1323,7 +1323,7 @@ function IdleBottomPanel({
   canUseTestLocation: boolean;
   onUseTestLocation: () => void;
 }) {
-  const navReserve = "calc(env(safe-area-inset-bottom) + 12px)";
+  const navReserve = "calc(env(safe-area-inset-bottom) + 20px)";
   const firstName = (driverName || "").trim().split(/\s+/)[0] || "Motorista";
 
   return (
