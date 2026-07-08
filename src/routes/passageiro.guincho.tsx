@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight, Check, Truck } from "lucide-react";
 import { useMemo, useState } from "react";
 import { MovviHeader } from "@/components/MovviHeader";
 import { BottomNav, PASSENGER_NAV } from "@/components/BottomNav";
+import { AddressAutocomplete, type PickedAddress } from "@/components/AddressAutocomplete";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
