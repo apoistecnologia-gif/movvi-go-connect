@@ -341,48 +341,29 @@ export function InterpolatedDriverMarker({
 
   return (
     <>
-      {/* halo suave — reduzido ~40% */}
+      {/* halo colorido para destacar o motorista da corrida ativa */}
       <Marker
         position={display}
         clickable={false}
         zIndex={9997}
         icon={{
           path: safeSymbol("CIRCLE"),
-          scale: 13,
+          scale: 15,
           fillColor: color,
-          fillOpacity: 0.08,
+          fillOpacity: 0.1,
           strokeColor: color,
-          strokeOpacity: 0.2,
-          strokeWeight: 1,
+          strokeOpacity: 0.28,
+          strokeWeight: 1.2,
         }}
       />
-      {/* sombra */}
-      <Marker
+      {/* carro top-down com identidade MOVVI (corpo claro + cabine verde) */}
+      <CarShape
         position={display}
-        clickable={false}
-        zIndex={9998}
-        icon={{
-          path: safeSymbol("CIRCLE"),
-          scale: 10,
-          fillColor: "#000000",
-          fillOpacity: 0.18,
-          strokeWeight: 0,
-        }}
-      />
-      {/* carro — 32px */}
-      <Marker
-        position={display}
-        zIndex={10000}
-        icon={{
-          path: CAR_PATH,
-          fillColor: color,
-          fillOpacity: 1,
-          strokeColor: "#ffffff",
-          strokeWeight: 2.2,
-          scale,
-          rotation: displayHeading,
-          anchor: safePoint(12, 14),
-        }}
+        heading={displayHeading}
+        scale={scale}
+        bodyColor="#F4F6FA"
+        accentColor={color}
+        zBase={10000}
       />
     </>
   );
