@@ -79,6 +79,7 @@ const BENEFITS = [
 function DriverSubscriptionPage() {
   const [driver, setDriver] = useState<DriverInfo | null>(null);
   const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
 
   async function refresh() {
     setLoading(true);
@@ -225,14 +226,48 @@ function DriverSubscriptionPage() {
           </BodySmall>
         </DSCard>
       ) : !isActive ? (
-        <DSCard className="p-5 space-y-2">
-          <HeadingS>Assinatura ainda não gerada</HeadingS>
-          <BodySmall className="text-muted-foreground">
-            Não foi possível encontrar o link de pagamento da sua mensalidade.
-            Entre em contato com o suporte.
-          </BodySmall>
+        <DSCard className="p-5 space-y-3">
+          <div className="space-y-1">
+            <HeadingS>Gerar link de pagamento</HeadingS>
+            <BodySmall className="text-muted-foreground">
+              Sua conta foi aprovada. Gere seu link individual e pague a
+              primeira mensalidade para começar a receber corridas.
+            </BodySmall>
+          </div>
+          <DSButton
+            className="w-full"
+            size="lg"
+            disabled={generating}
+            onClick={async () => {
+              setGenerating(true);
+              try {
+                const { data, error } = await supabase.functions.invoke(
+                  "create-my-mercadopago-subscription",
+                  { body: {} },
+                );
+                if (error) throw error;
+                const link = (data as { initPoint?: string } | null)?.initPoint;
+                if (!link) throw new Error("no_init_point");
+                window.open(link, "_blank", "noopener");
+                await refresh();
+              } catch (e) {
+                console.error(e);
+                toast.error("Não foi possível gerar o link. Tente novamente.");
+              } finally {
+                setGenerating(false);
+              }
+            }}
+          >
+            {generating ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Icon as={CreditCard} size="sm" className="mr-2" />
+            )}
+            {generating ? "Gerando…" : "Gerar link e pagar mensalidade"}
+          </DSButton>
         </DSCard>
       ) : null}
+
 
       {driver?.last_payment_status ? (
         <DSCard className="p-5 space-y-2">
