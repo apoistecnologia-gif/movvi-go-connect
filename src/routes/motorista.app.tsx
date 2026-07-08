@@ -1452,7 +1452,8 @@ function MotoristaApp() {
             onCancel={handleDriverCancelRide}
           />
         </MovviSheet>
-      )}
+        );
+      })()}
 
       {/* ===== Idle — painel fixo compacto (~28vh) com botão ONLINE/OFFLINE sempre visível ===== */}
       {!incoming && !ratingRide && !active && (
