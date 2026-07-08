@@ -536,17 +536,15 @@ export function NearbyDriverMarker({
           }}
         />
       )}
-      {/* carro top-down em verde MOVVI para motoristas próximos */}
+      {/* carro top-down vermelho (menor + translúcido para motoristas próximos) */}
       <CarShape
         position={position}
         heading={0}
         scale={scale}
-        bodyColor="#8DD92B"
-        accentColor="#F4F6FA"
-        outlineColor="#05070D"
         opacity={opacity * fade}
         zBase={9996}
       />
+
     </>
   );
 }
