@@ -14,11 +14,21 @@ const InputSchema = z.object({
   destination: LatLngSchema,
 });
 
+export type RouteStep = {
+  lat: number;
+  lng: number;
+  distanceMeters: number;
+  instruction: string;
+  maneuver?: string;
+};
+
 export type RouteResult = {
   distanceMeters: number;
   durationSeconds: number;
   encodedPolyline: string;
+  steps: RouteStep[];
 };
+
 
 // Requer usuário autenticado para evitar consumo abusivo da chave do Google Maps.
 export const computeRoute = createServerFn({ method: "POST" })
@@ -47,7 +57,7 @@ export const computeRoute = createServerFn({ method: "POST" })
         Authorization: `Bearer ${lovableKey}`,
         "X-Connection-Api-Key": connKey,
         "Content-Type": "application/json",
-        "X-Goog-FieldMask": "routes.distanceMeters,routes.duration,routes.polyline.encodedPolyline",
+        "X-Goog-FieldMask": "routes.distanceMeters,routes.duration,routes.polyline.encodedPolyline,routes.legs.steps.navigationInstruction,routes.legs.steps.startLocation,routes.legs.steps.distanceMeters",
       },
       body: JSON.stringify(body),
     });
@@ -64,6 +74,13 @@ export const computeRoute = createServerFn({ method: "POST" })
         distanceMeters?: number;
         duration?: string;
         polyline?: { encodedPolyline?: string };
+        legs?: Array<{
+          steps?: Array<{
+            distanceMeters?: number;
+            navigationInstruction?: { instructions?: string; maneuver?: string };
+            startLocation?: { latLng?: { latitude?: number; longitude?: number } };
+          }>;
+        }>;
       }>;
     };
     const route = json.routes?.[0];
@@ -72,9 +89,27 @@ export const computeRoute = createServerFn({ method: "POST" })
     }
     const durationSeconds = route.duration ? parseInt(route.duration.replace("s", ""), 10) : 0;
 
+    const steps: RouteStep[] = [];
+    for (const leg of route.legs ?? []) {
+      for (const st of leg.steps ?? []) {
+        const lat = st.startLocation?.latLng?.latitude;
+        const lng = st.startLocation?.latLng?.longitude;
+        const instr = st.navigationInstruction?.instructions;
+        if (typeof lat === "number" && typeof lng === "number" && instr) {
+          steps.push({
+            lat, lng,
+            distanceMeters: st.distanceMeters ?? 0,
+            instruction: instr,
+            maneuver: st.navigationInstruction?.maneuver,
+          });
+        }
+      }
+    }
+
     return {
       distanceMeters: route.distanceMeters ?? 0,
       durationSeconds,
       encodedPolyline: route.polyline.encodedPolyline,
+      steps,
     };
   });

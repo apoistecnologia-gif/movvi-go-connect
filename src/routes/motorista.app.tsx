@@ -44,7 +44,9 @@ import {
 import { useDriverBroadcast } from "@/hooks/useDriverBroadcast";
 import { loadDriverProfile, driverProfileCompletionIssues } from "@/lib/driverProfile";
 import { isDevelopmentEnvironment } from "@/lib/environment";
-import { computeRoute } from "@/lib/routes.functions";
+import { computeRoute, type RouteStep } from "@/lib/routes.functions";
+import { primeVoice, resetSpokenCache, speak, tickNavigation, type NavStep } from "@/lib/voiceNav";
+import { startRideRingtone, stopRideRingtone } from "@/lib/rideRingtone";
 import {
   aceitarCorrida,
   recusarCorrida,
@@ -317,6 +319,7 @@ function MotoristaApp() {
   const [profilePassengerId, setProfilePassengerId] = useState<string | null>(null);
 
   const [polyline, setPolyline] = useState<LatLng[]>([]);
+  const [routeSteps, setRouteSteps] = useState<NavStep[]>([]);
   const [etaSeconds, setEtaSeconds] = useState<number | null>(null);
   const [legKm, setLegKm] = useState<number | null>(null);
 
@@ -1221,6 +1224,15 @@ function MotoristaApp() {
         setPolyline(points);
         setEtaSeconds(res.durationSeconds);
         setLegKm(res.distanceMeters / 1000);
+        setRouteSteps(
+          (res.steps ?? []).map((s: RouteStep) => ({
+            lat: s.lat, lng: s.lng,
+            distanceMeters: s.distanceMeters,
+            instruction: s.instruction,
+            maneuver: s.maneuver,
+          })),
+        );
+        resetSpokenCache();
         if (routeFailToastedRef.current === fitKey) routeFailToastedRef.current = null;
         focusRoute(points);
       })
@@ -1229,6 +1241,7 @@ function MotoristaApp() {
         // Fallback: mantém marcadores e desenha linha reta para não quebrar UX.
         const fallback = [pos, dest];
         setPolyline(fallback);
+        setRouteSteps([]);
         const km = haversineKm(pos, dest);
         setLegKm(km); setEtaSeconds(Math.round((km / 35) * 3600));
         focusRoute(fallback);
@@ -1240,6 +1253,37 @@ function MotoristaApp() {
       });
     return () => { cancelled = true; };
   }, [active?.id, active?.status, position?.lat, position?.lng, mapReadyNonce]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Voz de navegação curva a curva — usa vozes nativas do navegador (pt-BR).
+  useEffect(() => { void primeVoice(); }, []);
+
+  // Anuncia manobras conforme o motorista se aproxima.
+  useEffect(() => {
+    if (!active) return;
+    if (!position) return;
+    if (routeSteps.length === 0) return;
+    if (active.status !== "motorista_a_caminho" && active.status !== "em_viagem") return;
+    tickNavigation({ lat: position.lat, lng: position.lng }, routeSteps, active.id);
+  }, [position?.lat, position?.lng, routeSteps, active?.id, active?.status]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fala transições de status importantes.
+  const lastSpokenStatusRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!active) { lastSpokenStatusRef.current = null; return; }
+    const key = `${active.id}:${active.status}`;
+    if (lastSpokenStatusRef.current === key) return;
+    lastSpokenStatusRef.current = key;
+    if (active.status === "motorista_a_caminho") {
+      void speak("Corrida aceita. Siga até o ponto de embarque.", { interrupt: true });
+    } else if (active.status === "motorista_chegou") {
+      void speak("Você chegou ao ponto de embarque.", { interrupt: true });
+    } else if (active.status === "em_viagem") {
+      void speak("Viagem iniciada. Boa viagem.", { interrupt: true });
+    } else if (active.status === "finalizada") {
+      void speak("Corrida finalizada.", { interrupt: true });
+    }
+  }, [active?.id, active?.status]);
+
 
   function recenter() {
     autoFollowRef.current = true;
@@ -1730,6 +1774,13 @@ function IncomingOffer({
 
   const rating = (passenger as { rating?: number | null } | null)?.rating;
   const ratingText = rating != null ? Number(rating).toFixed(2) : "5.00";
+
+  // Toque de chamada + voz "Nova corrida" enquanto a oferta estiver visível.
+  useEffect(() => {
+    startRideRingtone();
+    void speak("Nova corrida", { interrupt: true });
+    return () => { stopRideRingtone(); };
+  }, []);
 
   return (
     <div
