@@ -2906,6 +2906,100 @@ function TopStat({
   );
 }
 
+function PickupNavOverlay({
+  ride,
+  passenger,
+  etaSeconds,
+  legKm,
+  onOpenProfile,
+  onArrive,
+  onCancel,
+}: {
+  ride: RideRow;
+  passenger: Passenger | null;
+  etaSeconds: number | null;
+  legKm: number | null;
+  onOpenProfile?: () => void;
+  onArrive: () => Promise<void> | void;
+  onCancel: () => Promise<void> | void;
+}) {
+  const [arriveBusy, setArriveBusy] = useState(false);
+  const [cancelBusy, setCancelBusy] = useState(false);
+  const minutes = etaSeconds != null ? Math.max(1, Math.round(etaSeconds / 60)) : null;
+  const arrivalTime = etaSeconds != null
+    ? new Date(Date.now() + etaSeconds * 1000).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+    : null;
+
+  const handleArrive = async () => {
+    if (arriveBusy) return;
+    setArriveBusy(true);
+    try { await onArrive(); }
+    finally { setArriveBusy(false); }
+  };
+
+  const handleCancel = async () => {
+    if (cancelBusy) return;
+    if (!window.confirm("Cancelar esta corrida?")) return;
+    setCancelBusy(true);
+    try { await onCancel(); }
+    finally { setCancelBusy(false); }
+  };
+
+  return (
+    <>
+      <div className="fixed left-1/2 z-40 w-full max-w-md -translate-x-1/2 px-4 pointer-events-none" style={{ top: "calc(env(safe-area-inset-top) + 12px)" }}>
+        <div className="pointer-events-auto rounded-[22px] border border-white/70 bg-white/90 px-4 py-3 shadow-[0_12px_36px_-16px_rgba(0,0,0,0.35)] backdrop-blur-md backdrop-saturate-150 animate-in fade-in slide-in-from-top-3 duration-300">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <div className="flex min-w-0 items-center gap-2">
+              <span className="relative flex h-2 w-2 shrink-0">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-70" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+              </span>
+              <span className="truncate text-[11px] font-bold uppercase tracking-[0.16em] text-primary">Indo até o passageiro</span>
+            </div>
+            <button type="button" onClick={handleCancel} disabled={cancelBusy} aria-label="Cancelar corrida" className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-black/[0.04] text-black/60 ring-1 ring-black/10 transition hover:bg-black/[0.08] hover:text-destructive disabled:opacity-50">
+              <X className="h-4 w-4" strokeWidth={2} />
+            </button>
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <TopStat icon={<Clock className="h-[15px] w-[15px]" strokeWidth={1.75} />} value={minutes != null ? String(minutes) : "—"} unit="min" label="ETA" highlight />
+            <div className="h-9 w-px bg-black/10" />
+            <TopStat icon={<RouteIcon className="h-[15px] w-[15px]" strokeWidth={1.75} />} value={legKm != null ? legKm.toFixed(1) : "—"} unit="km" label="Até coleta" />
+            <div className="h-9 w-px bg-black/10" />
+            <TopStat icon={<MapPin className="h-[15px] w-[15px]" strokeWidth={1.75} />} value={arrivalTime ?? "—"} unit="" label="Chegada" />
+          </div>
+        </div>
+      </div>
+
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.08] bg-[#0B0F17]/95 backdrop-blur-xl animate-in fade-in slide-in-from-bottom-2 duration-200" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
+        <div className="mx-auto flex w-full max-w-md flex-col gap-2.5 px-4 pb-3 pt-3">
+          <button type="button" onClick={onOpenProfile} aria-label="Ver perfil do passageiro" className="flex min-w-0 items-center gap-2.5 rounded-2xl bg-white/[0.05] px-2.5 py-2 text-left ring-1 ring-white/10 transition active:scale-[0.99] hover:bg-white/[0.08]">
+            <Avatar src={passenger?.avatar_url ?? (ride as { passenger_photo_url?: string | null }).passenger_photo_url ?? null} name={passenger?.name ?? "Passageiro"} size={38} />
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-[13px] font-bold leading-tight text-white">{passenger?.name ?? "Passageiro"}</div>
+              <div className="mt-0.5 flex items-center gap-1 truncate text-[11.5px] text-white/60">
+                <MapPin className="h-3 w-3 shrink-0" strokeWidth={2} />
+                <span className="truncate">{ride.pickup_label || ride.origin_name || "Embarque"}</span>
+              </div>
+            </div>
+            <a href={passenger?.phone ? `tel:${passenger.phone}` : undefined} onClick={(event) => event.stopPropagation()} aria-label="Ligar para o passageiro" className={`grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white/[0.06] text-white ring-1 ring-white/10 transition active:scale-[0.95] hover:bg-white/[0.1] ${passenger?.phone ? "" : "pointer-events-none opacity-40"}`}>
+              <Phone className="h-[16px] w-[16px]" strokeWidth={1.9} />
+            </a>
+          </button>
+
+          <button type="button" disabled={arriveBusy} onClick={handleArrive} className="flex h-12 w-full items-center justify-center gap-2 rounded-[14px] bg-[#76C139] text-[15px] font-bold uppercase tracking-[0.06em] text-[#071008] shadow-[0_10px_22px_-14px_rgba(118,193,57,0.4)] transition active:scale-[0.98] hover:brightness-[1.05] disabled:cursor-not-allowed disabled:opacity-60">
+            {arriveBusy ? (
+              <><span className="h-4 w-4 rounded-full border-2 border-[#071008]/70 border-t-transparent animate-spin" />Confirmando…</>
+            ) : (
+              <><CheckCircle2 className="h-5 w-5" strokeWidth={2} />Cheguei ao local</>
+            )}
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
 /* ============================================================
    CIRCULAR SECONDARY ACTION (Call / Chat / Navigate)
    ============================================================ */
