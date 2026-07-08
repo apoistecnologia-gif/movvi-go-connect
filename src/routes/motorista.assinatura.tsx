@@ -41,6 +41,7 @@ type DriverInfo = {
   financial_status: FinancialStatus | null;
   subscription_status: string | null;
   subscription_value: number | null;
+  subscription_expires_at: string | null;
   next_due_date: string | null;
   last_payment_status: string | null;
   approval_status: string | null;
@@ -89,7 +90,7 @@ function DriverSubscriptionPage() {
       const { data, error } = await supabase
         .from("drivers")
         .select(
-          "mercadopago_init_point,mercadopago_preapproval_id,financial_status,subscription_status,subscription_value,next_due_date,last_payment_status,approval_status",
+          "mercadopago_init_point,mercadopago_preapproval_id,financial_status,subscription_status,subscription_value,subscription_expires_at,next_due_date,last_payment_status,approval_status",
         )
         .eq("user_id", u.user.id)
         .maybeSingle();
@@ -115,9 +116,21 @@ function DriverSubscriptionPage() {
     );
   }
 
-  const financial = (driver?.financial_status ?? "inactive") as FinancialStatus;
+  const subActive =
+    (driver?.subscription_status ?? "").toLowerCase() === "active" ||
+    (driver?.subscription_status ?? "").toLowerCase() === "ativa";
+  const expiresAt = driver?.subscription_expires_at
+    ? new Date(driver.subscription_expires_at)
+    : null;
+  const notExpired = expiresAt ? expiresAt.getTime() > Date.now() : false;
+  const derivedActive = subActive && notExpired;
+  const financial: FinancialStatus = derivedActive
+    ? "active"
+    : ((driver?.financial_status ?? "inactive") as FinancialStatus);
   const isActive = financial === "active";
-  const dueDate = driver?.next_due_date ? new Date(driver.next_due_date) : null;
+  const dueDate = driver?.next_due_date
+    ? new Date(driver.next_due_date)
+    : expiresAt;
   const initPoint = driver?.mercadopago_init_point ?? null;
   const notApprovedYet = driver?.approval_status !== "aprovado";
 
