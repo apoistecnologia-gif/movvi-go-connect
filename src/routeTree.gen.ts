@@ -77,7 +77,6 @@ import { Route as AdminAssinaturasRouteImport } from './routes/admin.assinaturas
 import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 import { Route as AdminAdministradoresRouteImport } from './routes/admin.administradores'
 import { Route as MotoristaCorridasIdRouteImport } from './routes/motorista.corridas.$id'
-import { Route as ApiPublicAsaasWebhookRouteImport } from './routes/api/public/asaas-webhook'
 import { Route as ApiPublicHooksRenewDriverSubscriptionsRouteImport } from './routes/api/public/hooks/renew-driver-subscriptions'
 
 const MapTestRoute = MapTestRouteImport.update({
@@ -423,11 +422,6 @@ const MotoristaCorridasIdRoute = MotoristaCorridasIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => MotoristaCorridasRoute,
 } as any)
-const ApiPublicAsaasWebhookRoute = ApiPublicAsaasWebhookRouteImport.update({
-  id: '/api/public/asaas-webhook',
-  path: '/api/public/asaas-webhook',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiPublicHooksRenewDriverSubscriptionsRoute =
   ApiPublicHooksRenewDriverSubscriptionsRouteImport.update({
     id: '/api/public/hooks/renew-driver-subscriptions',
@@ -503,7 +497,6 @@ export interface FileRoutesByFullPath {
   '/passageiro/suporte': typeof PassageiroSuporteRoute
   '/passageiro/termos': typeof PassageiroTermosRoute
   '/t/$token': typeof TTokenRoute
-  '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
   '/motorista/corridas/$id': typeof MotoristaCorridasIdRoute
   '/api/public/hooks/renew-driver-subscriptions': typeof ApiPublicHooksRenewDriverSubscriptionsRoute
 }
@@ -575,7 +568,6 @@ export interface FileRoutesByTo {
   '/passageiro/suporte': typeof PassageiroSuporteRoute
   '/passageiro/termos': typeof PassageiroTermosRoute
   '/t/$token': typeof TTokenRoute
-  '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
   '/motorista/corridas/$id': typeof MotoristaCorridasIdRoute
   '/api/public/hooks/renew-driver-subscriptions': typeof ApiPublicHooksRenewDriverSubscriptionsRoute
 }
@@ -648,7 +640,6 @@ export interface FileRoutesById {
   '/passageiro/suporte': typeof PassageiroSuporteRoute
   '/passageiro/termos': typeof PassageiroTermosRoute
   '/t/$token': typeof TTokenRoute
-  '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
   '/motorista/corridas/$id': typeof MotoristaCorridasIdRoute
   '/api/public/hooks/renew-driver-subscriptions': typeof ApiPublicHooksRenewDriverSubscriptionsRoute
 }
@@ -722,7 +713,6 @@ export interface FileRouteTypes {
     | '/passageiro/suporte'
     | '/passageiro/termos'
     | '/t/$token'
-    | '/api/public/asaas-webhook'
     | '/motorista/corridas/$id'
     | '/api/public/hooks/renew-driver-subscriptions'
   fileRoutesByTo: FileRoutesByTo
@@ -794,7 +784,6 @@ export interface FileRouteTypes {
     | '/passageiro/suporte'
     | '/passageiro/termos'
     | '/t/$token'
-    | '/api/public/asaas-webhook'
     | '/motorista/corridas/$id'
     | '/api/public/hooks/renew-driver-subscriptions'
   id:
@@ -866,7 +855,6 @@ export interface FileRouteTypes {
     | '/passageiro/suporte'
     | '/passageiro/termos'
     | '/t/$token'
-    | '/api/public/asaas-webhook'
     | '/motorista/corridas/$id'
     | '/api/public/hooks/renew-driver-subscriptions'
   fileRoutesById: FileRoutesById
@@ -939,7 +927,6 @@ export interface RootRouteChildren {
   PassageiroSuporteRoute: typeof PassageiroSuporteRoute
   PassageiroTermosRoute: typeof PassageiroTermosRoute
   TTokenRoute: typeof TTokenRoute
-  ApiPublicAsaasWebhookRoute: typeof ApiPublicAsaasWebhookRoute
   ApiPublicHooksRenewDriverSubscriptionsRoute: typeof ApiPublicHooksRenewDriverSubscriptionsRoute
 }
 
@@ -1421,13 +1408,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MotoristaCorridasIdRouteImport
       parentRoute: typeof MotoristaCorridasRoute
     }
-    '/api/public/asaas-webhook': {
-      id: '/api/public/asaas-webhook'
-      path: '/api/public/asaas-webhook'
-      fullPath: '/api/public/asaas-webhook'
-      preLoaderRoute: typeof ApiPublicAsaasWebhookRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/public/hooks/renew-driver-subscriptions': {
       id: '/api/public/hooks/renew-driver-subscriptions'
       path: '/api/public/hooks/renew-driver-subscriptions'
@@ -1519,20 +1499,9 @@ const rootRouteChildren: RootRouteChildren = {
   PassageiroSuporteRoute: PassageiroSuporteRoute,
   PassageiroTermosRoute: PassageiroTermosRoute,
   TTokenRoute: TTokenRoute,
-  ApiPublicAsaasWebhookRoute: ApiPublicAsaasWebhookRoute,
   ApiPublicHooksRenewDriverSubscriptionsRoute:
     ApiPublicHooksRenewDriverSubscriptionsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

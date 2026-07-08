@@ -1,11 +1,5 @@
 project_id = "ekddifjpbieuainvjlbl"
 
-[functions.asaas-webhook]
-verify_jwt = false
-
-[functions.approve-driver-and-create-subscription]
-verify_jwt = true
-
 [functions.mercadopago-webhook]
 verify_jwt = false
 
