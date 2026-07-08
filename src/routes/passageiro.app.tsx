@@ -23,7 +23,7 @@ import {
   ChevronDown,
   ListChecks,
 
-  LogOut,
+  
   MapPin,
   Menu,
   MessageCircle,
