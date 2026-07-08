@@ -3162,10 +3162,12 @@ function PassageiroApp() {
           passengerVisualStep === "category") && (
           <BottomNav
             items={PASSENGER_NAV}
+            floating
             theme="dark"
-            zIndex={25}
+            zIndex={70}
           />
         )}
+
 
     </div>
   );
