@@ -26,7 +26,9 @@ function EnviosLanding() {
   const navigate = useNavigate();
   const [mode, setMode] = useState<EnviosMode | null>(null);
   const [pickup, setPickup] = useState("");
+  const [pickupCoords, setPickupCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [delivery, setDelivery] = useState("");
+  const [deliveryCoords, setDeliveryCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [item, setItem] = useState("");
   const [notes, setNotes] = useState("");
 
@@ -56,11 +58,29 @@ function EnviosLanding() {
     try {
       sessionStorage.setItem(
         "movvi:envios:draft",
-        JSON.stringify({ mode, pickup, delivery, item, notes }),
+        JSON.stringify({
+          mode,
+          pickup,
+          pickupCoords,
+          delivery,
+          deliveryCoords,
+          item,
+          notes,
+        }),
       );
     } catch {}
     navigate({ to: "/passageiro/app", search: { envios: mode } });
   };
+
+  const handlePickupPick = (p: PickedAddress) => {
+    setPickup(p.address);
+    setPickupCoords({ lat: p.lat, lng: p.lng });
+  };
+  const handleDeliveryPick = (p: PickedAddress) => {
+    setDelivery(p.address);
+    setDeliveryCoords({ lat: p.lat, lng: p.lng });
+  };
+
 
   return (
     <div className="min-h-dvh bg-background pb-56">
