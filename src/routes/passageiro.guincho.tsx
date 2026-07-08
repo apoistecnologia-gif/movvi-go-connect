@@ -76,6 +76,7 @@ function GuinchoFlow() {
     if (step === 0) return !!data.tipoVeiculo && data.marcaModelo.trim().length > 1;
     if (step === 1)
       return !!data.veiculoNoLocal && !!data.chaveNoLocal && !!data.veiculoLiga && !!data.precisaPlataforma;
+    if (step === 2) return data.origem.trim().length > 2 && data.destino.trim().length > 2;
     return true;
   }, [step, data]);
 
