@@ -1435,6 +1435,18 @@ function MotoristaApp() {
           Fases "a caminho" e "aguardando passageiro" usam o MovviSheet compacto.
           Fase "em_viagem" entra em modo de navegação em tela cheia — sem sheet
           grande cobrindo a rota, apenas um painel inferior compacto fixo. */}
+      {!incoming && !ratingRide && active && active.status === "motorista_a_caminho" && (
+        <PickupNavOverlay
+          ride={active}
+          passenger={passenger}
+          etaSeconds={etaSeconds}
+          legKm={legKm}
+          onOpenProfile={() => active.passenger_id && setProfilePassengerId(active.passenger_id)}
+          onArrive={async () => { await callArrive({ data: { rideId: active.id } }); }}
+          onCancel={async () => { await handleDriverCancelRide("Cancelado pelo motorista"); }}
+        />
+      )}
+
       {!incoming && !ratingRide && active && active.status === "em_viagem" && (
         <ActiveTripNavOverlay
           ride={active}
@@ -1451,7 +1463,7 @@ function MotoristaApp() {
         />
       )}
 
-      {!incoming && !ratingRide && active && active.status !== "em_viagem" && (() => {
+      {!incoming && !ratingRide && active && active.status !== "motorista_a_caminho" && active.status !== "em_viagem" && (() => {
         // Durante o trajeto até o passageiro, o mapa precisa dominar a tela
         // (modo navegação). Sheet começa compacto (~34%) e pode ser arrastado
         // para cima para ver detalhes/cancelar.
