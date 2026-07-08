@@ -910,7 +910,16 @@ function PassageiroApp() {
           navigate({ to: "/passageiro/login" });
           return;
         }
-        if (u?.avatar_url) setAvatarUrl(u.avatar_url as string);
+        if (u?.avatar_url) {
+          const raw = u.avatar_url as string;
+          if (/^https?:\/\//i.test(raw)) {
+            setAvatarUrl(raw);
+          } else {
+            const { refreshProfilePhotoUrl } = await import("@/lib/profilePhoto");
+            const signed = await refreshProfilePhotoUrl(raw);
+            if (signed) setAvatarUrl(signed);
+          }
+        }
         if (u?.name) setUserName(u.name as string);
       } catch {
         /* fallback: deixa entrar; bloqueio será reavaliado em ações */
