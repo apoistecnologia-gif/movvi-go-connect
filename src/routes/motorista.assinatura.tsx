@@ -41,6 +41,7 @@ type DriverInfo = {
   financial_status: FinancialStatus | null;
   subscription_status: string | null;
   subscription_value: number | null;
+  subscription_expires_at: string | null;
   next_due_date: string | null;
   last_payment_status: string | null;
   approval_status: string | null;
