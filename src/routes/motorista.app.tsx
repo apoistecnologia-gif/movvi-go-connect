@@ -1775,6 +1775,13 @@ function IncomingOffer({
   const rating = (passenger as { rating?: number | null } | null)?.rating;
   const ratingText = rating != null ? Number(rating).toFixed(2) : "5.00";
 
+  // Toque de chamada + voz "Nova corrida" enquanto a oferta estiver visível.
+  useEffect(() => {
+    startRideRingtone();
+    void speak("Nova corrida", { interrupt: true });
+    return () => { stopRideRingtone(); };
+  }, []);
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 animate-in fade-in duration-200"
