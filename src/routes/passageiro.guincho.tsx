@@ -65,6 +65,10 @@ function GuinchoFlow() {
     viaPublica: "",
     acidente: "",
     precisaPlataforma: "",
+    origem: "",
+    origemCoords: null,
+    destino: "",
+    destinoCoords: null,
     observacoes: "",
   });
 
