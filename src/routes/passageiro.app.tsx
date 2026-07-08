@@ -855,6 +855,39 @@ function PassageiroApp() {
     if (import.meta.env.DEV) console.log("[MOVVI UI] etapa atual:", passengerUiStage);
   }, [passengerUiStage]);
 
+  /* ------- Hidratação de rascunhos vindos dos fluxos dedicados ------- */
+  const serviceModeForDraft = Route.useSearch({ select: (s) => s.service }) as
+    | "guincho"
+    | "mudanca"
+    | undefined;
+  const hydratedDraftRef = useRef(false);
+  useEffect(() => {
+    if (hydratedDraftRef.current) return;
+    if (!position) return;
+    if (destination) return;
+    let key: string | null = null;
+    if (enviosMode) key = "movvi:envios:draft";
+    else if (serviceModeForDraft === "guincho") key = "movvi:guincho:draft";
+    else if (serviceModeForDraft === "mudanca") key = "movvi:mudanca:draft";
+    if (!key) return;
+    let raw: string | null = null;
+    try { raw = sessionStorage.getItem(key); } catch { raw = null; }
+    if (!raw) return;
+    let draft: any = null;
+    try { draft = JSON.parse(raw); } catch { return; }
+    // Campos possíveis: envios → delivery/deliveryCoords, pickup/pickupCoords
+    //                   guincho/mudanca → destino/destinoCoords, origem/origemCoords
+    const destCoords = draft?.deliveryCoords ?? draft?.destinoCoords ?? null;
+    const destLabel = draft?.delivery ?? draft?.destino ?? "";
+    if (!destCoords || typeof destCoords.lat !== "number" || typeof destCoords.lng !== "number") return;
+    hydratedDraftRef.current = true;
+    setDestination({ point: destCoords, label: destLabel || "Endereço de destino" });
+    setDestinationText(destLabel || "");
+    void calcRoute(destCoords);
+  }, [position, destination, enviosMode, serviceModeForDraft]);
+
+
+
   /* ---------------------- auth ---------------------- */
   useEffect(() => {
     let cancelled = false;
