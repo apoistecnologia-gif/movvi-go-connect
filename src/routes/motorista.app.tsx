@@ -1475,7 +1475,7 @@ function IncomingOffer({
     >
       <div
         className="relative flex w-full max-w-md flex-col rounded-t-[28px] border border-border bg-card shadow-[0_-20px_60px_-24px_rgba(0,0,0,0.55)] animate-in fade-in slide-in-from-bottom-6 zoom-in-95 duration-[260ms] ease-out"
-        style={{ maxHeight: "min(88dvh, 620px)" }}
+        style={{ maxHeight: "min(94dvh, 680px)" }}
       >
         {/* Área rolável */}
         <div className="min-h-0 flex-1 overflow-y-auto px-4 pt-4 sm:px-5">
