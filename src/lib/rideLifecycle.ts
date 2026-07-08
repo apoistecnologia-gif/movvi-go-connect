@@ -1001,7 +1001,7 @@ export const cancelarAgendamento = createServerFn({ method: "POST" })
       .update({
         status: "cancelada_passageiro",
         cancelled_at: new Date().toISOString(),
-        cancelled_by: "passageiro",
+        cancelled_by: userId,
       } as any)
       .eq("id", data.rideId)
       .eq("passenger_id", userId)
