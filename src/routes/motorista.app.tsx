@@ -1225,7 +1225,13 @@ function MotoristaApp() {
             legKm={legKm}
             onOpenProfile={() => active.passenger_id && setProfilePassengerId(active.passenger_id)}
             onArrive={async () => { await callArrive({ data: { rideId: active.id } }); }}
-            onStart={async (code) => { await callStart({ data: { rideId: active.id, safety_code: code } }); }}
+            onStart={async (code) => {
+              await callStart({ data: { rideId: active.id, safety_code: code } });
+              // Optimistic: flip UI to full-screen navigation immediately —
+              // don't wait for the realtime echo, which may lag or be missed
+              // (e.g. tab was backgrounded during PIN entry).
+              setActive((prev) => (prev && prev.id === active.id ? { ...prev, status: "em_viagem" } : prev));
+            }}
             onComplete={async () => {
               await callComplete({ data: {
                 rideId: active.id,
