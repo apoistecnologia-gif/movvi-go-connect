@@ -916,16 +916,19 @@ function PassageiroApp() {
           navigate({ to: "/passageiro/login" });
           return;
         }
+        if (u?.avatar_url) setAvatarUrl(u.avatar_url as string);
+        if (u?.name) setUserName(u.name as string);
       } catch {
         /* fallback: deixa entrar; bloqueio será reavaliado em ações */
       }
       setUserId(data.user.id);
       const meta = (data.user.user_metadata ?? {}) as Record<string, unknown>;
-      setUserName(
+      setUserName((prev) =>
+        prev ||
         (meta.name as string) ||
-          (meta.full_name as string) ||
-          data.user.email?.split("@")[0] ||
-          "Passageiro",
+        (meta.full_name as string) ||
+        data.user.email?.split("@")[0] ||
+        "Passageiro",
       );
     });
     return () => {
