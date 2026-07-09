@@ -15,6 +15,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { ThemeProvider, THEME_INIT_SCRIPT } from "../lib/theme";
 import { MapThemeProvider } from "../lib/mapTheme";
 import { NotificationPermissionPrompt } from "../components/notifications/NotificationPermissionPrompt";
+import { APP_ROLE, isForbiddenPath, defaultLandingPath } from "../lib/appRole";
 
 function NotFoundComponent() {
   return (
@@ -123,6 +124,25 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const router = useRouter();
+
+  // Fase 1 — guarda de bundle por papel (VITE_APP_ROLE).
+  // No build "passenger" e "driver", qualquer tentativa de navegar para
+  // áreas fora do escopo do app (ex.: /motorista/*, /admin/*) é redirecionada
+  // para a landing padrão daquele bundle. No build "web" (padrão) nada muda.
+  useEffect(() => {
+    if (APP_ROLE === "web") return;
+    const unsub = router.subscribe("onBeforeNavigate", ({ toLocation }) => {
+      if (isForbiddenPath(toLocation.pathname)) {
+        router.navigate({ to: defaultLandingPath(), replace: true });
+      }
+    });
+    // Checa também a rota inicial (deep-link direto).
+    if (isForbiddenPath(router.state.location.pathname)) {
+      router.navigate({ to: defaultLandingPath(), replace: true });
+    }
+    return () => unsub();
+  }, [router]);
 
   return (
     <QueryClientProvider client={queryClient}>
