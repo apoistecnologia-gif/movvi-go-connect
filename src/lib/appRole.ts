@@ -19,8 +19,13 @@ export type AppRole = "passenger" | "driver" | "web";
 
 const RAW = (import.meta.env.VITE_APP_ROLE as string | undefined)?.toLowerCase().trim();
 
+// Aceita aliases em português ("passageiro", "motorista") além dos canônicos.
 export const APP_ROLE: AppRole =
-  RAW === "passenger" || RAW === "driver" ? (RAW as AppRole) : "web";
+  RAW === "passenger" || RAW === "passageiro"
+    ? "passenger"
+    : RAW === "driver" || RAW === "motorista"
+      ? "driver"
+      : "web";
 
 export const isPassengerBuild = () => APP_ROLE === "passenger";
 export const isDriverBuild = () => APP_ROLE === "driver";
