@@ -1,6 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { MovviLogo } from "@/components/MovviLogo";
 import { ArrowUpRight, User, Shield } from "lucide-react";
+import { APP_ROLE, isPassengerBuild, isDriverBuild } from "@/lib/appRole";
 
 const HOME_TITLE = "MOVVI DRIVE — Mobilidade brasileira que move você";
 const HOME_DESC =
@@ -10,6 +11,17 @@ const HOME_OG_IMAGE =
   "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/70a94c15-531e-4bf4-824b-6f2cef2bea65/id-preview-047658fb--0900bef2-57d2-47b9-93b1-0ea5defee501.lovable.app-1782494344290.png";
 
 export const Route = createFileRoute("/")({
+  // Fase 1 — nos builds mobile (passageiro/motorista), a raiz salta direto
+  // para o login do papel correspondente. No build "web" mantém a tela
+  // institucional de escolha de perfil.
+  beforeLoad: () => {
+    if (APP_ROLE === "passenger") {
+      throw redirect({ to: "/passageiro/login", replace: true });
+    }
+    if (APP_ROLE === "driver") {
+      throw redirect({ to: "/motorista/login", replace: true });
+    }
+  },
   head: () => ({
     meta: [
       { title: HOME_TITLE },
@@ -117,20 +129,24 @@ function HomePage() {
             primary
             delay={240}
           />
-          <AccessCard
-            to="/motorista/login"
-            title="Motorista"
-            description="Receba chamadas e amplie seus ganhos."
-            icon={<SteeringIcon />}
-            delay={320}
-          />
-          <AccessCard
-            to="/admin/login"
-            title="Administrador"
-            description="Gestão e monitoramento da plataforma."
-            icon={<Shield strokeWidth={1.75} className="h-5 w-5" />}
-            delay={400}
-          />
+          {!isPassengerBuild() && !isDriverBuild() ? (
+            <>
+              <AccessCard
+                to="/motorista/login"
+                title="Motorista"
+                description="Receba chamadas e amplie seus ganhos."
+                icon={<SteeringIcon />}
+                delay={320}
+              />
+              <AccessCard
+                to="/admin/login"
+                title="Administrador"
+                description="Gestão e monitoramento da plataforma."
+                icon={<Shield strokeWidth={1.75} className="h-5 w-5" />}
+                delay={400}
+              />
+            </>
+          ) : null}
         </section>
 
         <footer
