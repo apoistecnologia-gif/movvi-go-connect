@@ -13,9 +13,18 @@
     "test": "bun run lint && bun run typecheck",
     "test:unit": "bunx vitest run --passWithNoTests",
     "test:e2e": "python3 -m pytest tests/e2e",
-    "typecheck": "bunx tsgo --noEmit"
+    "typecheck": "bunx tsgo --noEmit",
+    "build:passageiro": "VITE_APP_ROLE=passageiro vite build",
+    "build:motorista": "VITE_APP_ROLE=motorista vite build",
+    "sync:passageiro": "cp capacitor.passageiro.config.ts capacitor.config.ts && cap sync android",
+    "sync:motorista": "cp capacitor.motorista.config.ts capacitor.config.ts && cap sync android",
+    "android:passageiro": "bun run build:passageiro && bun run sync:passageiro && cap open android",
+    "android:motorista": "bun run build:motorista && bun run sync:motorista && cap open android"
   },
   "dependencies": {
+    "@capacitor/android": "^8.4.1",
+    "@capacitor/cli": "^8.4.1",
+    "@capacitor/core": "^8.4.1",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-avatar": "^1.1.11",
