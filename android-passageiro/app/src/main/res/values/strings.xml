@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">MOVVI</string>
+    <string name="title_activity_main">MOVVI</string>
+    <string name="package_name">com.movvi.passenger</string>
+    <string name="custom_url_scheme">com.movvi.passenger</string>
+</resources>
