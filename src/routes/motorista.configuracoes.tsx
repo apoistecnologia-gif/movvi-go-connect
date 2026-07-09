@@ -233,15 +233,15 @@ function DriverSettingsPage() {
                   hint={notifState === "granted" ? "Permitida" : notifState === "denied" ? "Bloqueada" : notifState === "unsupported" ? "Indisponível" : "Pendente"}
                   right={<DSButton size="sm" variant="outline" onClick={handleEnablePush}>Solicitar</DSButton>}
                 />
-                <SettingsLinkRow icon={FileText} title="Termos de Uso" to="/passageiro/termos" />
-                <SettingsLinkRow icon={ShieldCheck} title="Política de Privacidade" to="/passageiro/privacidade" />
+                <SettingsLinkRow icon={FileText} title="Termos de Uso" to="/motorista/termos" />
+                <SettingsLinkRow icon={ShieldCheck} title="Política de Privacidade" to="/motorista/privacidade" />
               </SettingsSection>
 
               {/* Suporte */}
               <SettingsSection icon={LifeBuoy} title="Suporte">
-                <SettingsLinkRow icon={LifeBuoy} title="Central de ajuda" to="/passageiro/suporte" />
-                <SettingsLinkRow icon={LifeBuoy} title="Perguntas frequentes" to="/passageiro/suporte" />
-                <SettingsLinkRow icon={LifeBuoy} title="Falar com o suporte" to="/passageiro/suporte" />
+                <SettingsLinkRow icon={LifeBuoy} title="Central de ajuda" to="/motorista/suporte" />
+                <SettingsLinkRow icon={LifeBuoy} title="Perguntas frequentes" to="/motorista/suporte" />
+                <SettingsLinkRow icon={LifeBuoy} title="Falar com o suporte" to="/motorista/suporte" />
               </SettingsSection>
 
               <DSButton onClick={handleSave} disabled={saving} className="w-full">
