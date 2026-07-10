@@ -22,7 +22,7 @@ export default defineConfig({
   // Para Capacitor só precisamos de `dist/client` (o SPA prerender);
   // o bundle do servidor é descartado depois.
   ...(IS_MOBILE_BUILD
-    ? { nitro: { preset: "node-server", externals: { trace: false } } }
+    ? { nitro: { preset: "node-server", externals: { trace: false } } as any }
     : {}),
   tanstackStart: {
     ...(IS_MOBILE_BUILD
