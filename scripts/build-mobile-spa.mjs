@@ -12,15 +12,20 @@ if (role !== "passageiro" && role !== "motorista") {
 const root = process.cwd();
 const distClient = resolve(root, "dist/client");
 const outputServer = resolve(root, ".output/server");
-const npx = process.platform === "win32" ? "npx.cmd" : "npx";
+const viteBin = resolve(root, "node_modules/vite/bin/vite.js");
+
+if (!existsSync(viteBin)) {
+  console.error("[mobile-spa] node_modules/vite/bin/vite.js não encontrado. Rode `npm install` primeiro.");
+  process.exit(1);
+}
 
 rmSync(distClient, { recursive: true, force: true });
 rmSync(resolve(root, ".output"), { recursive: true, force: true });
 
 execFileSync(
-  npx,
-  ["vite", "build", "--config", "vite.mobile.config.ts", "--mode", "mobile"],
-  { stdio: "inherit", env: process.env },
+  process.execPath,
+  [viteBin, "build", "--config", "vite.mobile.config.ts", "--mode", "mobile"],
+  { stdio: "inherit", cwd: root, env: process.env },
 );
 
 const indexHtml = resolve(distClient, "index.html");
