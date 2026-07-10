@@ -14,7 +14,16 @@ export default defineConfig({
   // Prerender needs a Node-runnable server bundle, so mobile builds force
   // nitro's `node-server` preset. Web/SSR keeps the Cloudflare preset (Lovable
   // Cloud deploy).
-  ...(IS_MOBILE_BUILD ? { nitro: { preset: "node-server" } } : {}),
+  //
+  // `externals.trace: false` desliga o rastreamento/cópia de node_modules do
+  // Nitro para `.output/server`. No Windows (especialmente em pastas como
+  // Downloads/OneDrive/antivírus ativo) esse passo falha com
+  // `EBUSY: resource busy or locked, copyfile ...tslib...package.json`.
+  // Para Capacitor só precisamos de `dist/client` (o SPA prerender);
+  // o bundle do servidor é descartado depois.
+  ...(IS_MOBILE_BUILD
+    ? { nitro: { preset: "node-server", externals: { trace: false } } }
+    : {}),
   tanstackStart: {
     ...(IS_MOBILE_BUILD
       ? {
