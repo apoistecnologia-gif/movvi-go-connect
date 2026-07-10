@@ -1,62 +1,56 @@
-## Escopo
+## Estratégia: proxy de rede no APK, não reescrita de backend
 
-Apenas UI, layout, navegação, comportamento de mapa e responsividade do app do motorista (`src/routes/motorista.app.tsx` + subcomponentes). Nada de schema, RLS, edge functions, precificação, PIN, autenticação ou matching.
+O diagnóstico está certo — o APK não tem servidor TanStack rodando dentro dele. Mas a solução **não precisa** ser migrar `computeRoute`, `requestRide`, `cancelRide`, `geocode`, `nearby`, `driverAuth`, `driverDocs`, todos os `admin*.functions.ts`, etc., para Supabase Edge Functions. Isso seria:
 
-O app já tem a maioria das estruturas pedidas (IdleBottomPanel, MovviSheet compacto, `ActiveTripNavOverlay` em tela cheia, offer entrante). O trabalho é polir cada uma delas para os critérios da tarefa.
+- ~30 arquivos `.functions.ts` para migrar
+- perda de tipagem end-to-end do `useServerFn`
+- retrabalho no admin/web (que já usa esses server fns via SSR)
+- semanas de trabalho e alta chance de regressão
 
-## Mudanças por seção
+O TanStack Start **já publica** cada `createServerFn` como endpoint HTTP em `https://movvi-go-connect.lovable.app/_serverFn/<hash>`. A web em produção funciona. O que falta é: **quando rodando dentro do Capacitor, redirecionar essas chamadas para a URL publicada** em vez de `https://localhost/_serverFn/...`.
 
-### 1. Home online/offline (`IdleBottomPanel`, ~L1316–1410)
-- Reduzir altura total do card idle (hoje ocupa ~28vh) para deixar mais mapa à mostra.
-- Header compacto no topo (avatar + nome + pill ONLINE/OFFLINE + "Recebendo solicitações").
-- Métricas "Corridas hoje" em linha única de 3 mini-stats.
-- CTA "Ficar online/offline" sempre visível no rodapé com `padding-bottom: calc(env(safe-area-inset-bottom) + 20px)`.
-- Remover cards vazios/redundantes; preservar mensagens de GPS.
+## O que vou fazer
 
-### 2. Oferta entrante (bloco de incoming request)
-- Reescrever card em layout fixo (não arrastável, `min-h-dvh` com scroll interno se preciso).
-- Ordem: valor motorista → distância/tempo até coleta → distância/tempo total → categoria → passageiro (nome+rating) → endereços coleta/destino → forma de pagamento → countdown.
-- Botões "Recusar" (secundário) e "Aceitar corrida" (primário verde MOVVI) fixos no rodapé com safe-area.
-- Testar visualmente em 360x800 / 390x844 / 412x915 via Playwright.
+### 1. Interceptor de fetch para o build mobile (1 arquivo novo)
+`src/lib/mobileFetchProxy.ts` — intercepta `window.fetch` quando `VITE_APP_ROLE=passageiro|motorista`, e reescreve qualquer URL relativa (`/_serverFn/*`, `/api/*`) para `https://movvi-go-connect.lovable.app<path>`. Anexa cookies de sessão via `credentials: 'include'` + header `Authorization: Bearer <supabase-token>`.
 
-### 3. Indo à coleta (`ActiveRidePanel` fase `motorista_a_caminho`)
-- Sheet compacto com snaps reduzidos (~ `[46, 62]` em vez de `[54, 76, 92]`) para não cobrir a rota.
-- Conteúdo: passageiro (nome+rating+avatar), endereço coleta, ETA/km.
-- CTA "Cheguei ao local" fixo no snap mínimo — sempre visível sem arrastar.
-- Ações call/mensagem em ícones compactos.
+Registrado uma única vez em `src/router.tsx` (ou `src/routes/__root.tsx`), guardado por `if (typeof window !== 'undefined' && isMobileBuild())`.
 
-### 4. Chegou / PIN (fase `motorista_chegou`)
-- Painel compacto com status "Aguardando passageiro", passageiro, instrução "Peça o PIN ao passageiro".
-- CTA "Iniciar corrida" fixo. Diálogo de PIN continua o mesmo (lógica intacta).
+### 2. CORS no servidor publicado
+Server routes já rodam com mesma origem no web. Preciso liberar CORS para a origem do WebView Capacitor (`https://localhost`, `capacitor://localhost`, `http://localhost`) nos endpoints `/_serverFn/*` e `/api/*`. TanStack Start expõe isso via middleware em `src/start.ts` — adiciono `requestMiddleware` que responde OPTIONS e injeta `Access-Control-Allow-*` headers para essas origens.
 
-### 5. Em viagem (`ActiveTripNavOverlay`, L2608+)
-- Auditar altura do painel inferior: garantir 96–140px.
-- Barra superior compacta com instrução/status + ETA/km à direita.
-- Botão recenter posicionado acima do painel (já existe, ajustar offset).
-- CTA "Finalizar corrida" sempre visível.
-- Confirmar `fitBounds` / camera com padding inferior correto para a rota não ficar escondida.
-- Manter estilo dark do mapa.
+### 3. Embutir chaves no bundle mobile
+Criar `.env.mobile` (versionado, só chaves publishable) com `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY`. Ajustar `package.json` scripts `android:passageiro` e `android:motorista` para carregar esse env (`dotenv-cli` ou `cross-env` inline) antes do `vite build`.
 
-### 6. Trip completed
-- Tela de resumo já existe (rating + summary). Ajustar para exibir claramente: ganho, passageiro, resumo de rota, status pagamento, CTA "Receber novas corridas" (volta ao idle online).
+### 4. Corrigir `scripts/cap-sync.mjs`
+Salvar o conteúdo original de `capacitor.config.ts` (se existir) num buffer antes de sobrescrever, e restaurar no `finally` em vez de sempre apagar.
 
-### 7. Safe-area e responsividade global
-- Trocar quaisquer `min-h-screen` / `h-screen` residuais por `min-h-dvh` / `h-dvh`.
-- Aplicar `padding-bottom: calc(env(safe-area-inset-bottom) + 20px)` em todos os painéis fixos inferiores.
-- Verificar overflow/clipping em 360x800.
+### 5. Documentar em `README-ANDROID.md`
+Comandos finais (Windows/PowerShell):
+```
+npm install
+npm run android:passageiro   # já builda + sync + copia dist/client
+npm run cap:open
+```
+Depois Android Studio → Build APK.
 
-### 8. Validação
-- Playwright headless em 360x800, 390x844, 412x915 capturando: idle online, idle offline, mock de oferta (se possível via estado), painel a caminho, overlay em viagem.
-- Ler screenshots para confirmar CTAs visíveis e mapa não coberto.
+## O que fica FORA deste plano (frentes 2 e 3 que você não priorizou)
 
-## Fora de escopo (não tocar)
-- Passageiro (`passageiro.*`).
-- `rideLifecycle`, server functions de accept/arrive/start/complete, PIN, pricing, matching.
-- Migrations, RLS, edge functions.
-- `MovviMap` internals além de padding/camera props existentes.
+- Push notifications nativo (FCM + google-services.json)
+- Plugins Capacitor para geolocation/camera runtime
+- Migração real para Edge Functions (só faria sentido se o web fosse desligado)
+
+Faremos em turnos separados se você pedir.
+
+## Riscos e mitigação
+
+- **Latência**: chamadas agora vão pela internet até `movvi-go-connect.lovable.app` em vez de localhost. Aceitável — já é o comportamento no web.
+- **Sessão Supabase**: o cliente Supabase persiste em `localStorage` do WebView, funciona igual. O `attachSupabaseAuth` continua injetando o bearer.
+- **CORS**: liberar apenas as origens Capacitor (`capacitor://localhost`, `https://localhost`), não `*`, mantendo credenciais.
+- **Se `movvi-go-connect.lovable.app` cair**, o APK também cai. Mesmo risco do web hoje.
 
 ## Detalhes técnicos
-- Arquivo principal: `src/routes/motorista.app.tsx` (2743 linhas).
-- Subcomponentes já in-file: `IdleBottomPanel`, `ActiveRidePanel`, `ActiveTripNavOverlay`, `PremiumTopBar`-equivalente do driver.
-- `MovviSheet` snaps são configuráveis por prop `snaps` — sem alterar o componente.
-- Nenhum novo arquivo obrigatório; se um subcomponente crescer muito, extrair para `src/components/driver/`.
+
+- O `.url` de cada server fn é resolvido em runtime como caminho relativo — o interceptor precisa rodar **antes** do primeiro `useServerFn` disparar (por isso é registrado no bootstrap do router).
+- Fetch nativo do Capacitor honra `credentials: 'include'` desde que o servidor devolva `Access-Control-Allow-Credentials: true` com origem específica.
+- `VITE_APP_ROLE` já existe e é lido em `src/lib/appRole.ts` — reuso a mesma checagem.
