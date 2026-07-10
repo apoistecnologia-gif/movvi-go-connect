@@ -16,6 +16,14 @@ import { ThemeProvider, THEME_INIT_SCRIPT } from "../lib/theme";
 import { MapThemeProvider } from "../lib/mapTheme";
 import { NotificationPermissionPrompt } from "../components/notifications/NotificationPermissionPrompt";
 import { APP_ROLE, isForbiddenPath, defaultLandingPath } from "../lib/appRole";
+import { installMobileFetchProxy } from "../lib/mobileFetchProxy";
+
+// Ativa o proxy de rede quando rodando dentro do APK (Capacitor).
+// No build web isso é no-op. Precisa rodar antes de qualquer serverFn
+// disparar — por isso é executado em module scope, com guarda de window.
+if (typeof window !== "undefined") {
+  installMobileFetchProxy();
+}
 
 function NotFoundComponent() {
   return (
