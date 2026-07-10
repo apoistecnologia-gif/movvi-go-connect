@@ -14,12 +14,13 @@
     "test:unit": "bunx vitest run --passWithNoTests",
     "test:e2e": "python3 -m pytest tests/e2e",
     "typecheck": "bunx tsgo --noEmit",
-    "build:passageiro": "VITE_APP_ROLE=passageiro vite build",
-    "build:motorista": "VITE_APP_ROLE=motorista vite build",
-    "sync:passageiro": "cp capacitor.passageiro.config.ts capacitor.config.ts && ln -sfn android-passageiro android && bunx cap sync android; rm -f android",
-    "sync:motorista": "cp capacitor.motorista.config.ts capacitor.config.ts && ln -sfn android-motorista android && bunx cap sync android; rm -f android",
-    "android:passageiro": "bun run build:passageiro && bun run sync:passageiro",
-    "android:motorista": "bun run build:motorista && bun run sync:motorista"
+    "build:passageiro": "cross-env VITE_APP_ROLE=passageiro vite build",
+    "build:motorista": "cross-env VITE_APP_ROLE=motorista vite build",
+    "sync:passageiro": "node scripts/cap-sync.mjs passageiro",
+    "sync:motorista": "node scripts/cap-sync.mjs motorista",
+    "android:passageiro": "npm run build:passageiro && npm run sync:passageiro",
+    "android:motorista": "npm run build:motorista && npm run sync:motorista",
+    "cap:open": "npx cap open android"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.1",
@@ -67,6 +68,7 @@
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^5.2.0",
+    "cross-env": "^10.1.0",
     "eslint": "^9.32.0",
     "eslint-config-prettier": "^10.1.1",
     "eslint-plugin-prettier": "^5.2.6",
