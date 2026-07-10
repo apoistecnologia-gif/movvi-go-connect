@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { execFileSync } from "node:child_process";
-import { existsSync, readdirSync, rmSync, statSync } from "node:fs";
+import { existsSync, readdirSync, renameSync, rmSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 
 const role = process.env.VITE_APP_ROLE;
@@ -24,7 +24,11 @@ execFileSync(
 );
 
 const indexHtml = resolve(distClient, "index.html");
+const generatedMobileHtml = resolve(distClient, "index.mobile.html");
 const assetsDir = resolve(distClient, "assets");
+if (!existsSync(indexHtml) && existsSync(generatedMobileHtml)) {
+  renameSync(generatedMobileHtml, indexHtml);
+}
 if (!existsSync(indexHtml)) {
   console.error("[mobile-spa] dist/client/index.html não foi gerado.");
   process.exit(1);
