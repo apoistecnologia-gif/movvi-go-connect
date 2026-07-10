@@ -60,3 +60,35 @@ npm run cap:open
 - **APK abre mas rede não funciona**: confira que
   `https://movvi-go-connect.lovable.app` está publicado e acessível pelo
   celular (mesma rede não é obrigatória, mas precisa ter internet).
+
+## Push Notifications (Firebase Cloud Messaging)
+
+O app já está preparado para receber push nativo (`@capacitor/push-notifications`)
+e registra o token FCM automaticamente no backend (tabela
+`user_notification_tokens`).
+
+**Para ativar em produção**, você precisa de um projeto Firebase:
+
+1. Crie o projeto em https://console.firebase.google.com/
+2. Adicione um app Android com o **applicationId** correto:
+   - Passageiro → `com.movvi.passenger`
+   - Motorista  → `com.movvi.driver`
+3. Baixe o arquivo `google-services.json` gerado.
+4. Copie para `android/app/google-services.json` **antes** de rodar
+   `npm run apk:<role>` (o `build.gradle` já ativa o plugin quando o arquivo existe).
+5. No servidor de push (edge function ou serviço externo), envie mensagens FCM
+   usando o **Server Key** do projeto Firebase e os tokens armazenados.
+
+Sem o `google-services.json` o APK compila e roda normalmente, mas o registro
+FCM falha silenciosamente (push desativado). Nenhum outro fluxo é afetado.
+
+## Permissões nativas
+
+Ao abrir o app pela primeira vez, o sistema pede:
+
+- **Localização** — mapa e corridas.
+- **Notificações** — atualizações de corrida, ofertas (motorista).
+- **Câmera / Galeria** — foto de perfil e documentos (pedido sob demanda pelo
+  `@capacitor/camera`).
+
+Todas as permissões já estão declaradas em `AndroidManifest.xml`.
