@@ -21,8 +21,9 @@ npm run apk:passageiro     # ou: npm run apk:motorista
 ```
 
 O script único faz **tudo**:
-1. `vite build --mode mobile` — gera `dist/client/` já com as chaves do
-   `.env.mobile` embutidas (Supabase publishable + Google Maps).
+1. `node scripts/build-mobile-spa.mjs` — limpa `dist/client`, roda Vite com
+   `vite.mobile.config.ts`, gera somente SPA estático e valida
+   `dist/client/index.html` + `dist/client/assets/*`.
 2. `cap sync android` — copia o bundle para `android/app/src/main/assets/public/`.
 3. `gradlew assembleDebug` — gera o APK em
    `android/app/build/outputs/apk/debug/app-debug.apk`.
@@ -42,7 +43,7 @@ npm run cap:open
 ## Como o APK conversa com o backend
 
 - **Todas** as chamadas de servidor (rotas Google, corridas, geocoding,
-  autenticação Supabase) são redirecionadas em tempo de execução pelo
+  autenticação do backend) são redirecionadas em tempo de execução pelo
   `src/lib/mobileFetchProxy.ts` para **https://movvi-go-connect.lovable.app**.
 - Publique o app web na Lovable antes de testar o APK — o APK usa o
   backend publicado, não o preview.
@@ -51,10 +52,11 @@ npm run cap:open
 
 ## Solução de problemas
 
-- **Tela branca**: verifique se `dist/client/index.html` foi gerado após o
-  `build:*`. Se não, apague `.output/` e `dist/` e rode de novo.
-- **EBUSY no Windows durante o build**: já mitigado (`nitro.externals.trace: false`
-  em `vite.config.ts`). Se persistir, feche antivírus / OneDrive na pasta.
+- **Tela branca**: verifique se `dist/client/index.html` existe depois do
+  build. O script já falha automaticamente se o HTML, JS ou CSS não forem gerados.
+- **EBUSY no Windows durante o build**: o build mobile não usa Nitro, não cria
+  `.output/server` e não copia `node_modules`; se aparecer Nitro no log, você
+  está rodando um script antigo.
 - **`invalid source release: 21`**: aponte `JAVA_HOME` para o JDK 21
   embutido do Android Studio.
 - **APK abre mas rede não funciona**: confira que
