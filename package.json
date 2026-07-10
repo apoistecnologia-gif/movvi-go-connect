@@ -20,6 +20,8 @@
     "sync:motorista": "node scripts/cap-sync.mjs motorista",
     "android:passageiro": "npm run build:passageiro && npm run sync:passageiro",
     "android:motorista": "npm run build:motorista && npm run sync:motorista",
+    "apk:passageiro": "npm run android:passageiro && node scripts/build-apk.mjs",
+    "apk:motorista": "npm run android:motorista && node scripts/build-apk.mjs",
     "cap:open": "npx cap open android"
   },
   "dependencies": {
