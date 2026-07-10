@@ -1,12 +1,17 @@
 #!/usr/bin/env node
 // Cross-platform Capacitor sync (Windows/macOS/Linux).
-// Copia capacitor.<role>.config.ts → capacitor.config.ts e renomeia
-// android-<role> → android (temporariamente) para rodar `cap sync android`.
+//
+// Faz:
+//   1. Copia capacitor.<role>.config.ts → capacitor.config.ts (temporário)
+//   2. Renomeia android-<role> → android (temporário, se existir)
+//   3. Roda `npx cap sync android`
+//   4. Restaura capacitor.config.ts anterior (ou apaga se não existia)
+//   5. Restaura android → android-<role>
 //
 // Uso: node scripts/cap-sync.mjs <passageiro|motorista>
 
 import { execSync } from "node:child_process";
-import { cpSync, existsSync, renameSync, rmSync } from "node:fs";
+import { cpSync, existsSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const role = process.argv[2];
@@ -26,7 +31,9 @@ if (!existsSync(src)) {
   process.exit(1);
 }
 
-// Se a pasta "android" já existe (ex: extraído de um ZIP por role), reutiliza.
+// Preserva o capacitor.config.ts pré-existente para restaurar depois.
+const previousConfig = existsSync(dst) ? readFileSync(dst) : null;
+
 const roleHadFolder = existsSync(androidRole);
 const androidExists = existsSync(androidLive);
 
@@ -44,7 +51,18 @@ try {
   if (renamed) {
     renameSync(androidLive, androidRole);
   }
-  try {
-    rmSync(dst);
-  } catch {}
+  // Restaura config anterior ou remove o arquivo temporário se não existia.
+  if (previousConfig !== null) {
+    try {
+      writeFileSync(dst, previousConfig);
+    } catch {
+      /* noop */
+    }
+  } else {
+    try {
+      rmSync(dst);
+    } catch {
+      /* noop */
+    }
+  }
 }
