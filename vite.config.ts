@@ -10,11 +10,12 @@ const IS_MOBILE_BUILD =
   process.env.VITE_APP_ROLE === "passageiro" || process.env.VITE_APP_ROLE === "motorista";
 
 export default defineConfig({
+  // Mobile builds prerender a static SPA shell via TanStack Start's SPA mode.
+  // Prerender needs a Node-runnable server bundle, so mobile builds force
+  // nitro's `node-server` preset. Web/SSR keeps the Cloudflare preset (Lovable
+  // Cloud deploy).
+  ...(IS_MOBILE_BUILD ? { nitro: { preset: "node-server" } } : {}),
   tanstackStart: {
-    // Web/SSR build keeps the custom error-wrapper entry (src/server.ts).
-    // Mobile builds prerender a static SPA shell instead, so they must NOT
-    // override the server entry — the prerender preview-server expects the
-    // default `dist/server/server.js` output name.
     ...(IS_MOBILE_BUILD
       ? {
           spa: {
@@ -28,8 +29,10 @@ export default defineConfig({
           },
         }
       : {
+          // Web/SSR: route through our custom error wrapper (src/server.ts).
           server: { entry: "server" },
         }),
   },
 });
+
 
