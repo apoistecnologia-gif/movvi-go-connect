@@ -1,0 +1,192 @@
+name: Build APK — MOVVI Passageiro
+
+# Empacota o app do Passageiro (com.movvi.passenger) como APK Debug para teste
+# no celular. NÃO usa o antigo scripts/postbuild-capacitor.mjs — o index.html
+# deve ser o shell SPA real gerado pelo TanStack Start (prerender).
+#
+# Roda manualmente via "Run workflow" na aba Actions do GitHub, e também em
+# push para main. Não afeta o deploy web/SSR do Lovable Cloud.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "android-passageiro/**"
+      - "capacitor.passageiro.config.ts"
+      - "vite.config.ts"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/build-passageiro-apk.yml"
+
+jobs:
+  build-apk:
+    name: Build Passageiro APK (debug)
+    runs-on: ubuntu-latest
+    env:
+      VITE_APP_ROLE: passageiro
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Setup Java JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Install dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
+
+      # --- Build SPA (TanStack Start prerender) ---------------------------------
+      # vite.config.ts ativa spa.enabled + prerender quando VITE_APP_ROLE=passageiro.
+      # Se o prerender falhar em "Crawling: /", o passo abaixo falha e o log
+      # completo fica anexado como artifact (build-logs).
+      - name: Build web bundle (VITE_APP_ROLE=passageiro)
+        id: vite_build
+        run: |
+          set -o pipefail
+          mkdir -p ci-logs
+          npm run build:passageiro 2>&1 | tee ci-logs/vite-build.log
+
+      - name: Show webDir + prerender result
+        run: |
+          echo "::group::capacitor.passageiro.config.ts (webDir)"
+          grep -E "webDir" capacitor.passageiro.config.ts || true
+          echo "::endgroup::"
+
+          echo "::group::grep Crawling / prerender no log"
+          grep -nE "Crawling|prerender|SPA|maskPath|index\.html" ci-logs/vite-build.log || echo "(sem matches)"
+          echo "::endgroup::"
+
+      - name: Verify dist/client/index.html exists and is non-empty
+        run: |
+          FILE="dist/client/index.html"
+          if [ ! -f "$FILE" ]; then
+            echo "::error::$FILE não foi gerado pelo prerender do TanStack Start."
+            echo "Conteúdo de dist/client:"
+            ls -laR dist/client || true
+            exit 1
+          fi
+          SIZE=$(stat -c%s "$FILE")
+          echo "Tamanho de $FILE: ${SIZE} bytes"
+          if [ "$SIZE" -lt 200 ]; then
+            echo "::error::$FILE está vazio ou é apenas placeholder (${SIZE} bytes)."
+            cat "$FILE"
+            exit 1
+          fi
+          echo "::group::Tags <script> e <link> do index.html"
+          grep -oE "<(script|link)[^>]*>" "$FILE" || true
+          echo "::endgroup::"
+
+      - name: List dist/client/assets
+        run: |
+          echo "::group::dist/client/assets"
+          ls -la dist/client/assets || true
+          echo "::endgroup::"
+
+      - name: Verify every asset referenced by index.html exists
+        run: |
+          FILE="dist/client/index.html"
+          # Extrai src="/..." e href="/..." (asset paths locais).
+          REFS=$(grep -oE '(src|href)="/[^"]+"' "$FILE" | sed -E 's/.*="([^"]+)"/\1/' | sort -u)
+          echo "Referências encontradas:"
+          echo "$REFS"
+          MISSING=0
+          for ref in $REFS; do
+            # ignora URLs externas (não começam com /)
+            case "$ref" in
+              /*) ;;
+              *) continue ;;
+            esac
+            # remove querystring
+            path="dist/client${ref%%\?*}"
+            if [ ! -f "$path" ]; then
+              echo "::error::Arquivo referenciado não existe: $path"
+              MISSING=$((MISSING+1))
+            fi
+          done
+          if [ "$MISSING" -gt 0 ]; then
+            exit 1
+          fi
+
+      # --- Capacitor sync -------------------------------------------------------
+      - name: Sync Capacitor (Passageiro)
+        run: |
+          set -o pipefail
+          cp capacitor.passageiro.config.ts capacitor.config.ts
+          ln -sfn android-passageiro android
+          npx cap sync android 2>&1 | tee ci-logs/cap-sync.log
+
+      - name: Verify Android assets copied
+        run: |
+          PUB="android/app/src/main/assets/public"
+          if [ ! -f "$PUB/index.html" ]; then
+            echo "::error::$PUB/index.html não foi criado pelo cap sync."
+            ls -laR android/app/src/main/assets || true
+            exit 1
+          fi
+          echo "::group::Arquivos em $PUB"
+          ls -la "$PUB"
+          echo "::endgroup::"
+          echo "::group::Arquivos em $PUB/assets"
+          ls -la "$PUB/assets" || { echo "::error::$PUB/assets não existe."; exit 1; }
+          echo "::endgroup::"
+          # Confirma pelo menos um .js e um .css.
+          JS_COUNT=$(find "$PUB/assets" -maxdepth 1 -name "*.js" | wc -l)
+          CSS_COUNT=$(find "$PUB/assets" -maxdepth 1 -name "*.css" | wc -l)
+          echo "JS: $JS_COUNT | CSS: $CSS_COUNT"
+          if [ "$JS_COUNT" -lt 1 ]; then
+            echo "::error::Nenhum JavaScript copiado para o WebView."
+            exit 1
+          fi
+
+      # --- Gradle assembleDebug -------------------------------------------------
+      - name: Grant gradlew exec permission
+        run: chmod +x android/gradlew
+
+      - name: Build APK (assembleDebug)
+        run: |
+          set -o pipefail
+          mkdir -p ci-logs
+          cd android
+          ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tee ../ci-logs/gradle-assembleDebug.log
+
+      - name: Locate APK
+        id: apk
+        run: |
+          APK=$(find android/app/build/outputs/apk/debug -name "*.apk" | head -n1)
+          if [ -z "$APK" ]; then
+            echo "::error::APK não encontrado após build."
+            find android/app/build -name "*.apk" || true
+            exit 1
+          fi
+          echo "Caminho final do APK: $APK"
+          echo "apk_path=$APK" >> "$GITHUB_OUTPUT"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: movvi-passageiro-apk-debug
+          path: ${{ steps.apk.outputs.apk_path }}
+          if-no-files-found: error
+
+      - name: Upload build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: ci-logs/
+          if-no-files-found: warn
