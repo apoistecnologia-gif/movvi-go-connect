@@ -1,15 +1,38 @@
-// @lovable.dev/vite-tanstack-config already includes the following — do NOT add them manually
-// or the app will break with duplicate plugins:
-//   - tanstackStart, viteReact, tailwindcss, tsConfigPaths, nitro (build-only using cloudflare as a default target),
-//     componentTagger (dev-only), VITE_* env injection, @ path alias, React/TanStack dedupe,
-//     error logger plugins, and sandbox detection (port/host/strictPort).
-// You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
+// @lovable.dev/vite-tanstack-config already includes tanstackStart, viteReact, tailwindcss,
+// tsConfigPaths, nitro, componentTagger (dev-only), etc. — do NOT add them manually.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
+// Mobile builds (Capacitor) run VITE_APP_ROLE=passageiro|motorista and need a
+// fully client-rendered SPA — no Cloudflare Worker at runtime. TanStack Start's
+// native SPA mode generates a prerendered static HTML shell at maskPath that
+// boots the router on the client, with no SSR dependency.
+const IS_MOBILE_BUILD =
+  process.env.VITE_APP_ROLE === "passageiro" || process.env.VITE_APP_ROLE === "motorista";
+
 export default defineConfig({
+  // Mobile builds prerender a static SPA shell via TanStack Start's SPA mode.
+  // Prerender needs a Node-runnable server bundle, so mobile builds force
+  // nitro's `node-server` preset. Web/SSR keeps the Cloudflare preset (Lovable
+  // Cloud deploy).
+  ...(IS_MOBILE_BUILD ? { nitro: { preset: "node-server" } } : {}),
   tanstackStart: {
-    // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
-    // nitro/vite builds from this
-    server: { entry: "server" },
+    ...(IS_MOBILE_BUILD
+      ? {
+          spa: {
+            enabled: true,
+            maskPath: "/",
+            prerender: {
+              enabled: true,
+              outputPath: "/index.html",
+              crawlLinks: false,
+            },
+          },
+        }
+      : {
+          // Web/SSR: route through our custom error wrapper (src/server.ts).
+          server: { entry: "server" },
+        }),
   },
 });
+
+
