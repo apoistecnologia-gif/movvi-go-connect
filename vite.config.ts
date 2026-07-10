@@ -11,10 +11,10 @@ const IS_MOBILE_BUILD =
 
 export default defineConfig({
   tanstackStart: {
-    // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
-    server: { entry: "server" },
-    // For Capacitor Android: prerender a static SPA shell. Any deep-link inside
-    // the WebView boots this shell and the client router takes over.
+    // Web/SSR build keeps the custom error-wrapper entry (src/server.ts).
+    // Mobile builds prerender a static SPA shell instead, so they must NOT
+    // override the server entry — the prerender preview-server expects the
+    // default `dist/server/server.js` output name.
     ...(IS_MOBILE_BUILD
       ? {
           spa: {
@@ -26,8 +26,10 @@ export default defineConfig({
               crawlLinks: false,
             },
           },
-          pages: [],
         }
-      : {}),
+      : {
+          server: { entry: "server" },
+        }),
   },
 });
+
