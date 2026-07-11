@@ -60,7 +60,17 @@ async function setupPush(): Promise<void> {
     }
   });
 
-  await PushNotifications.register();
+  // PushNotifications.register() lança se o Firebase Android não estiver
+  // configurado (sem google-services.json). Nesse caso apenas desativa push,
+  // sem derrubar o app.
+  try {
+    await PushNotifications.register();
+  } catch (err) {
+    console.warn(
+      "[native] PushNotifications.register falhou (Firebase ausente? app continua sem push)",
+      err,
+    );
+  }
 }
 
 async function setupGeolocation(): Promise<void> {
