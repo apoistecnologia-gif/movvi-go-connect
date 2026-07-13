@@ -13,6 +13,10 @@ const config: CapacitorConfig = {
   webDir: "dist/client",
   android: {
     allowMixedContent: false,
+    // Força o WebView do Capacitor a capturar a conexão de entrada nativa.
+    // Em alguns aparelhos XOS/Transsion o teclado recebe os toques, mas o
+    // WebView padrão não entrega os caracteres ao <input> focado.
+    captureInput: true,
   },
   server: {
     androidScheme: "https",

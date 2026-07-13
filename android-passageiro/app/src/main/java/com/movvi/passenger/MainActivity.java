@@ -32,6 +32,14 @@ public class MainActivity extends BridgeActivity {
         }
 
         if (webView != null) {
+            webView.setFocusable(true);
+            webView.setFocusableInTouchMode(true);
+            webView.requestFocus(View.FOCUS_DOWN);
+            webView.setOnFocusChangeListener((view, hasFocus) ->
+                Log.i(TAG, "WebView focus=" + hasFocus)
+            );
+            Log.i(TAG, "WebView preparado para entrada de texto");
+
             // Desativa integração nativa de Autofill no WebView (evita loop de
             // AutofillSession em IMEs de terceiros no Android).
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
