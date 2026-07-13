@@ -443,6 +443,28 @@ export const Route = createFileRoute("/passageiro/app")({
     if (s === "guincho" || s === "mudanca") out.service = s;
     return out;
   },
+  // PassengerAuthGuard: mapa, GPS, realtime e todos os hooks pesados só
+  // montam DEPOIS da sessão válida. Sem sessão → login (replace, sem loop).
+  beforeLoad: async () => {
+    const { redirect } = await import("@tanstack/react-router");
+    const { supabase } = await import("@/integrations/supabase/client");
+    try {
+      const { data, error } = await supabase.auth.getSession();
+      if (error) throw error;
+      if (!data.session) {
+        throw redirect({ to: "/passageiro/login", replace: true });
+      }
+    } catch (err) {
+      // Storage inválido / token corrompido: limpa e volta ao login.
+      if (err && typeof err === "object" && "to" in (err as object)) throw err;
+      try {
+        await supabase.auth.signOut();
+      } catch {
+        /* noop */
+      }
+      throw redirect({ to: "/passageiro/login", replace: true });
+    }
+  },
   component: () => (
     <UiCategoriesProvider>
       <BrandSplash storageKey="movvi:splash:passageiro" />
@@ -655,6 +677,11 @@ type PassengerVisualStep =
 
 function PassageiroApp() {
   const navigate = useNavigate();
+  // Guard já garantiu sessão válida. Agora pedimos permissões nativas
+  // (geolocalização / push) — sempre depois da UI e da autenticação.
+  useEffect(() => {
+    void import("@/lib/nativeBridge").then((m) => m.requestPostAuthPermissions());
+  }, []);
   const callComputeRoute = useServerFn(computeRoute);
   const callRequestRide = useServerFn(criarCorrida);
   const callCancelByPassenger = useServerFn(cancelarPeloPassageiro);
