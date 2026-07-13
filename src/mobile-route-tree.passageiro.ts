@@ -56,6 +56,7 @@ const PassageiroTermosRoute = PassageiroTermosRouteImport.update({ id: '/passage
 export const routeTree = rootRouteImport._addFileChildren({
   IndexRoute,
   TTokenRoute,
+  DiagnosticoRoute,
   PassageiroAgendarRoute,
   PassageiroAppRoute,
   PassageiroCadastroRoute,
