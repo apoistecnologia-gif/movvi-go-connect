@@ -14,6 +14,8 @@ export const Route = createFileRoute("/diagnostico")({
 
 function DiagnosticoPage() {
   const [email, setEmail] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [fillReport, setFillReport] = useState<string>("(sem preenchimento)");
   const [viewport, setViewport] = useState({
     innerH: 0,
     innerW: 0,
