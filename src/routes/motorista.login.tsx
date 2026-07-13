@@ -39,11 +39,11 @@ function DriverLoginPage() {
     }
 
     if (driver.approval_status === "aprovado") {
-      navigate({ to: "/motorista/app" });
+      navigate({ to: "/motorista/app", replace: true });
       return;
     }
 
-    navigate({ to: "/motorista/status" });
+    navigate({ to: "/motorista/status", replace: true });
   });
 
   return (
