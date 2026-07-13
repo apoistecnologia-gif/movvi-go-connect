@@ -5,6 +5,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TTokenRouteImport } from './routes/t.$token'
+import { Route as DiagnosticoRouteImport } from './routes/diagnostico'
 
 import { Route as PassageiroAgendarRouteImport } from './routes/passageiro.agendar'
 import { Route as PassageiroAppRouteImport } from './routes/passageiro.app'
@@ -29,6 +30,7 @@ import { Route as PassageiroTermosRouteImport } from './routes/passageiro.termos
 
 const IndexRoute = IndexRouteImport.update({ id: '/', path: '/', getParentRoute: () => rootRouteImport } as any)
 const TTokenRoute = TTokenRouteImport.update({ id: '/t/$token', path: '/t/$token', getParentRoute: () => rootRouteImport } as any)
+const DiagnosticoRoute = DiagnosticoRouteImport.update({ id: '/diagnostico', path: '/diagnostico', getParentRoute: () => rootRouteImport } as any)
 
 const PassageiroAgendarRoute = PassageiroAgendarRouteImport.update({ id: '/passageiro/agendar', path: '/passageiro/agendar', getParentRoute: () => rootRouteImport } as any)
 const PassageiroAppRoute = PassageiroAppRouteImport.update({ id: '/passageiro/app', path: '/passageiro/app', getParentRoute: () => rootRouteImport } as any)
@@ -54,6 +56,7 @@ const PassageiroTermosRoute = PassageiroTermosRouteImport.update({ id: '/passage
 export const routeTree = rootRouteImport._addFileChildren({
   IndexRoute,
   TTokenRoute,
+  DiagnosticoRoute,
   PassageiroAgendarRoute,
   PassageiroAppRoute,
   PassageiroCadastroRoute,
