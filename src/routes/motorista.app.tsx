@@ -60,7 +60,7 @@ import {
 import { notifyRideStatus } from "@/lib/rideStatusToast";
 import { toast } from "sonner";
 
-import { requestPushPermission, showPush } from "@/lib/pushNotifications";
+import { showPush } from "@/lib/pushNotifications";
 import { formatBRL } from "@/lib/rideCategories";
 import type { Database } from "@/integrations/supabase/types";
 import { DSButton } from "@/design-system";
@@ -390,9 +390,6 @@ function MotoristaApp() {
     setIncoming(null);
     if (removeReason !== "expired") handledRidesRef.current.add(ride.id);
   }, [userId]);
-
-  // Solicita permissão de notificações push uma vez ao montar.
-  useEffect(() => { void requestPushPermission(); }, []);
 
   // Toast em cada transição de status da corrida ativa (sem reload)
   const lastNotifiedStatusRef = useRef<RideStatus | null>(null);
