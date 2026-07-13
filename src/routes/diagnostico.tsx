@@ -90,12 +90,14 @@ function DiagnosticoPage() {
         <input
           id="diag-email"
           ref={inputRef}
-          type="email"
+          type="text"
           inputMode="email"
           autoCapitalize="none"
           autoCorrect="off"
           autoComplete="off"
           spellCheck={false}
+          data-lpignore="true"
+          data-form-type="other"
           value={email}
           onChange={(e) => {
             setEmail(e.target.value);

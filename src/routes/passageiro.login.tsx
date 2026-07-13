@@ -168,12 +168,14 @@ function PassengerLoginPage() {
           <input
             id="email"
             name="email"
-            type="email"
+            type="text"
             inputMode="email"
             autoComplete="off"
             autoCapitalize="none"
             autoCorrect="off"
             spellCheck={false}
+            data-lpignore="true"
+            data-form-type="other"
             enterKeyHint="next"
             required
             onFocus={() => console.log("[login.input] email focus")}
@@ -188,6 +190,11 @@ function PassengerLoginPage() {
             name="password"
             type="password"
             autoComplete="off"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            data-lpignore="true"
+            data-form-type="other"
             enterKeyHint="done"
             required
             onFocus={() => console.log("[login.input] password focus")}
