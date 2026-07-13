@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { AuthShell } from "@/components/AuthShell";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
-import { DSButton, DSInput, DSLabel } from "@/design-system";
+import { DSButton, DSLabel } from "@/design-system";
 
 export const Route = createFileRoute("/passageiro/login")({
   head: () => ({ meta: [{ title: "Entrar — Passageiro MOVVI DRIVE" }, { name: "robots", content: "noindex" }] }),
