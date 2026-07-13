@@ -30,6 +30,7 @@ import { Route as PassageiroTermosRouteImport } from './routes/passageiro.termos
 
 const IndexRoute = IndexRouteImport.update({ id: '/', path: '/', getParentRoute: () => rootRouteImport } as any)
 const TTokenRoute = TTokenRouteImport.update({ id: '/t/$token', path: '/t/$token', getParentRoute: () => rootRouteImport } as any)
+const DiagnosticoRoute = DiagnosticoRouteImport.update({ id: '/diagnostico', path: '/diagnostico', getParentRoute: () => rootRouteImport } as any)
 
 const PassageiroAgendarRoute = PassageiroAgendarRouteImport.update({ id: '/passageiro/agendar', path: '/passageiro/agendar', getParentRoute: () => rootRouteImport } as any)
 const PassageiroAppRoute = PassageiroAppRouteImport.update({ id: '/passageiro/app', path: '/passageiro/app', getParentRoute: () => rootRouteImport } as any)
