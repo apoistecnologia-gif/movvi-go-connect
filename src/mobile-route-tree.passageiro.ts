@@ -5,6 +5,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TTokenRouteImport } from './routes/t.$token'
+import { Route as DiagnosticoRouteImport } from './routes/diagnostico'
 
 import { Route as PassageiroAgendarRouteImport } from './routes/passageiro.agendar'
 import { Route as PassageiroAppRouteImport } from './routes/passageiro.app'
