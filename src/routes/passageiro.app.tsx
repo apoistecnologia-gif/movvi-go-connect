@@ -677,6 +677,11 @@ type PassengerVisualStep =
 
 function PassageiroApp() {
   const navigate = useNavigate();
+  // Guard já garantiu sessão válida. Agora pedimos permissões nativas
+  // (geolocalização / push) — sempre depois da UI e da autenticação.
+  useEffect(() => {
+    void import("@/lib/nativeBridge").then((m) => m.requestPostAuthPermissions());
+  }, []);
   const callComputeRoute = useServerFn(computeRoute);
   const callRequestRide = useServerFn(criarCorrida);
   const callCancelByPassenger = useServerFn(cancelarPeloPassageiro);
