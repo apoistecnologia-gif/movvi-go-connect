@@ -2,16 +2,16 @@
 // Cross-platform Capacitor sync (Windows/macOS/Linux).
 //
 // Estratégia:
-//   - Nunca renomeia `android/` de volta para `android-<role>/`.
-//   - Nunca troca silenciosamente um projeto Android ativo entre apps.
-//   - Se `android/` não existir, copia `android-<role>/` para `android/`.
-//   - Se `android/` já existir marcado para outro role, aborta com instrução clara.
+//   - `android-<role>/` é a fonte da verdade do projeto nativo.
+//   - A cada execução, recria `android/` a partir de `android-<role>/`.
+//   - Isso impede que um APK seja compilado com MainActivity/Manifest/assets
+//     antigos que sobraram de uma tentativa anterior.
 //   - Preserva `android/local.properties` durante o sync.
 //
 // Passos:
-//   1. Valida a pasta ativa anterior (se marcada para outro role, aborta).
+//   1. Preserva local.properties da pasta ativa anterior, se existir.
 //   2. Copia capacitor.<role>.config.ts → capacitor.config.ts (temporário).
-//   3. Copia android-<role> → android (se ainda não estiver no lugar).
+//   3. Recria android/ a partir de android-<role>/.
 //   4. Roda `npx cap sync android`.
 //   5. Escreve marcador `android/.movvi-role`.
 //   6. Restaura capacitor.config.ts anterior (ou apaga se não existia).
@@ -47,23 +47,12 @@ if (!existsSync(src)) {
   process.exit(1);
 }
 
-// 1. Se android/ existe e é de outro role, aborta — sem troca silenciosa.
-if (existsSync(androidLive)) {
-  let prevRole = null;
-  try {
-    prevRole = readFileSync(marker, "utf8").trim();
-  } catch {
-    /* sem marcador — assume que pertence ao role atual */
-  }
-  if (prevRole && prevRole !== role) {
-    console.error(
-      `[cap-sync] android/ está marcado como '${prevRole}', não '${role}'. ` +
-      `Para trocar de app, apague ou renomeie android/ manualmente. Nada foi alterado.`,
-    );
-    process.exit(1);
-  }
+if (!existsSync(androidRole)) {
+  console.error(`[cap-sync] android-${role}/ não existe — nada para sincronizar.`);
+  process.exit(1);
 }
 
+// 1. Preserva apenas a configuração local do SDK Android.
 const preservedLocalProperties = existsSync(localProperties)
   ? readFileSync(localProperties)
   : null;
@@ -74,17 +63,11 @@ const previousConfig = existsSync(dst) ? readFileSync(dst) : null;
 // 2. Copia config específica do role.
 cpSync(src, dst);
 
-// 3. Copia android-<role> → android se necessário. Não remove o template.
-if (!existsSync(androidLive)) {
-  if (!existsSync(androidRole)) {
-    console.error(
-      `[cap-sync] nem android/ nem android-${role}/ existem — nada para sincronizar.`,
-    );
-    if (previousConfig !== null) writeFileSync(dst, previousConfig);
-    else try { rmSync(dst); } catch { /* noop */ }
-    process.exit(1);
-  }
-  cpSync(androidRole, androidLive, { recursive: true });
+// 3. Recria android/ a partir da fonte do role para nunca usar código nativo antigo.
+rmSync(androidLive, { recursive: true, force: true });
+cpSync(androidRole, androidLive, { recursive: true });
+if (preservedLocalProperties !== null) {
+  writeFileSync(localProperties, preservedLocalProperties);
 }
 
 try {

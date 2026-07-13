@@ -1,7 +1,10 @@
 ext {
     minSdkVersion = 24
     compileSdkVersion = 36
-    targetSdkVersion = 36
+    // API 35+ força edge-to-edge e mudou o comportamento de IME/WebView.
+    // Enquanto validamos a digitação no APK, mantemos target 34 para usar o
+    // caminho estável do Android WebView com adjustResize.
+    targetSdkVersion = 34
     androidxActivityVersion = '1.11.0'
     androidxAppCompatVersion = '1.7.1'
     androidxCoordinatorLayoutVersion = '1.3.0'

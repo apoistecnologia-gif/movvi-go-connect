@@ -20,6 +20,9 @@ function PassengerLoginPage() {
       <h1 style={{ margin: "0 0 16px", fontSize: 22, fontFamily: "Arial, sans-serif" }}>
         Teste mínimo de digitação
       </h1>
+      <p style={{ margin: "0 0 16px", fontSize: 14, fontFamily: "Arial, sans-serif", color: "#555" }}>
+        Diagnóstico API 34 / fresh sync — 13 jul 2026
+      </p>
       <label htmlFor="email-test" style={{ display: "block", marginBottom: 6, fontFamily: "Arial, sans-serif" }}>
         E-mail teste
       </label>
@@ -27,6 +30,10 @@ function PassengerLoginPage() {
         id="email-test"
         name="email-test"
         type="text"
+        autoComplete="off"
+        autoCapitalize="none"
+        autoCorrect="off"
+        spellCheck={false}
         onFocus={(event) => log("email onFocus", event.currentTarget)}
         onBeforeInput={(event) => log(`email onBeforeInput:${event.nativeEvent.inputType}`, event.currentTarget)}
         onInput={(event) => log("email onInput", event.currentTarget)}
@@ -41,6 +48,10 @@ function PassengerLoginPage() {
         id="password-test"
         name="password-test"
         type="password"
+        autoComplete="off"
+        autoCapitalize="none"
+        autoCorrect="off"
+        spellCheck={false}
         onFocus={(event) => log("password onFocus", event.currentTarget)}
         onBeforeInput={(event) => log(`password onBeforeInput:${event.nativeEvent.inputType}`, event.currentTarget)}
         onInput={(event) => log("password onInput", event.currentTarget)}
