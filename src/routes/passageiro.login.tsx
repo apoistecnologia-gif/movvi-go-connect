@@ -156,20 +156,42 @@ function PassengerLoginPage() {
         </>
       }
     >
-      <form onSubmit={onSubmit} className="space-y-3">
+      <form
+        onSubmit={(e) => {
+          console.log("[login.form] submit");
+          void onSubmit(e);
+        }}
+        className="space-y-3"
+      >
         <div className="space-y-1.5">
           <DSLabel htmlFor="email" className="text-[13px]">E-mail</DSLabel>
-          <DSInput id="email" name="email" type="email" required autoComplete="email" className="h-9 text-[14px]" />
+          <input
+            id="email"
+            name="email"
+            type="email"
+            inputMode="email"
+            autoComplete="off"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            enterKeyHint="next"
+            required
+            onFocus={() => console.log("[login.input] email focus")}
+            onInput={() => console.log("[login.input] email input")}
+            className="flex h-9 w-full rounded-lg border border-input/70 bg-transparent px-3.5 py-1.5 text-[14px] shadow-sm caret-primary placeholder:text-muted-foreground/75 focus-visible:outline-none focus-visible:border-primary/70 focus-visible:ring-2 focus-visible:ring-primary/25 disabled:cursor-not-allowed disabled:opacity-50"
+          />
         </div>
         <div className="space-y-1.5">
           <DSLabel htmlFor="password" className="text-[13px]">Senha</DSLabel>
-          <DSInput
+          <input
             id="password"
             name="password"
             type="password"
+            autoComplete="off"
+            enterKeyHint="done"
             required
-            autoComplete="current-password"
-            className="h-9 text-[14px]"
+            onFocus={() => console.log("[login.input] password focus")}
+            className="flex h-9 w-full rounded-lg border border-input/70 bg-transparent px-3.5 py-1.5 text-[14px] shadow-sm caret-primary placeholder:text-muted-foreground/75 focus-visible:outline-none focus-visible:border-primary/70 focus-visible:ring-2 focus-visible:ring-primary/25 disabled:cursor-not-allowed disabled:opacity-50"
           />
         </div>
         {error && (
