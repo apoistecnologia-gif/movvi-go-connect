@@ -23,38 +23,43 @@ export function AuthShell({ title, description, children, footer }: AuthShellPro
   const hideWebChrome = isNative() || isPassengerBuild() || isDriverBuild();
 
   return (
-    <div className="flex min-h-screen flex-col bg-background px-4 py-6">
-      {!hideWebChrome && (
-        <div className="mx-auto flex w-full max-w-md items-center justify-between">
-          <button
-            type="button"
-            onClick={() => (window.history.length > 1 ? router.history.back() : navigate({ to: "/" }))}
-            className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-medium text-muted-foreground transition hover:bg-accent/40 hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4" /> Voltar
-          </button>
-          <Link
-            to="/"
-            aria-label="Home"
-            className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-medium text-muted-foreground transition hover:bg-accent/40 hover:text-foreground"
-          >
-            <Home className="h-4 w-4" /> Início
-          </Link>
-        </div>
-      )}
+    <div
+      className="min-h-dvh w-full overflow-y-auto bg-background"
+      style={{ overscrollBehaviorY: "contain" }}
+    >
+      <div className="mx-auto flex w-full max-w-md flex-col px-4 pb-10 pt-6 md:min-h-dvh md:justify-center">
+        {!hideWebChrome && (
+          <div className="mb-4 flex w-full items-center justify-between">
+            <button
+              type="button"
+              onClick={() => (window.history.length > 1 ? router.history.back() : navigate({ to: "/" }))}
+              className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-medium text-muted-foreground transition hover:bg-accent/40 hover:text-foreground"
+            >
+              <ArrowLeft className="h-4 w-4" /> Voltar
+            </button>
+            <Link
+              to="/"
+              aria-label="Home"
+              className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-medium text-muted-foreground transition hover:bg-accent/40 hover:text-foreground"
+            >
+              <Home className="h-4 w-4" /> Início
+            </Link>
+          </div>
+        )}
 
-      <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center space-y-6">
-        <div className="flex justify-center">
-          <MovviLogo size={56} />
+        <div className="flex w-full flex-col space-y-6">
+          <div className="flex justify-center">
+            <MovviLogo size={56} />
+          </div>
+          <DSCard>
+            <DSCardHeader>
+              <DSCardTitle className="text-2xl">{title}</DSCardTitle>
+              <DSCardDescription>{description}</DSCardDescription>
+            </DSCardHeader>
+            <DSCardContent>{children}</DSCardContent>
+          </DSCard>
+          {footer && <div className="text-center text-sm text-muted-foreground">{footer}</div>}
         </div>
-        <DSCard>
-          <DSCardHeader>
-            <DSCardTitle className="text-2xl">{title}</DSCardTitle>
-            <DSCardDescription>{description}</DSCardDescription>
-          </DSCardHeader>
-          <DSCardContent>{children}</DSCardContent>
-        </DSCard>
-        {footer && <div className="text-center text-sm text-muted-foreground">{footer}</div>}
       </div>
     </div>
   );
