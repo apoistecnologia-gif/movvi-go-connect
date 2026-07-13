@@ -13,8 +13,18 @@ import {
   DefaultNotFoundComponent,
 } from "./components/routing/DefaultBoundaries";
 
+// Flags de ciclo de vida do bootstrap. Enquanto React não montou, qualquer erro
+// global é considerado FATAL (tela branca real). Depois que a UI já montou,
+// erros globais são apenas registrados — o React Error Boundary do próprio
+// TanStack cuida de falhas em componentes; falhas de recursos, imagens ou
+// network transitórias não devem substituir a aplicação inteira.
+let reactMounted = false;
+let fatalRendered = false;
+
 /** Tela de recuperação — SEMPRE substitui tela branca. */
 function renderFatalBootstrapError(error: unknown) {
+  if (fatalRendered) return;
+  fatalRendered = true;
   try {
     console.error("[mobile] falha crítica no bootstrap", error);
   } catch {
@@ -45,22 +55,42 @@ function renderFatalBootstrapError(error: unknown) {
   `;
 }
 
-// Handlers globais: qualquer erro que escape do React ou de uma Promise
-// rejeitada acaba aqui, evitando tela branca silenciosa.
+/** Distingue erro de recurso/imagem/rede recuperável de erro fatal de JS. */
+function isRecoverableResourceEvent(ev: Event): boolean {
+  // Errors em <img>, <script>, <link>, <video> etc. têm target ≠ window.
+  const target = ev.target as EventTarget | null;
+  if (target && target !== window && target instanceof Element) {
+    return true;
+  }
+  return false;
+}
+
 if (typeof window !== "undefined") {
-  window.addEventListener("error", (ev) => {
-    try {
-      console.error("[mobile] window.onerror", ev.error ?? ev.message);
-    } catch {
-      /* noop */
-    }
-  });
+  window.addEventListener(
+    "error",
+    (ev) => {
+      try {
+        console.error("[mobile] window.onerror", ev.error ?? ev.message);
+      } catch {
+        /* noop */
+      }
+      // Não substituir a UI por falhas de imagem/script/link.
+      if (isRecoverableResourceEvent(ev)) return;
+      // Depois que o React montou, o Error Boundary do TanStack cobre falhas
+      // de render. Não sequestramos a tela aqui.
+      if (reactMounted) return;
+      renderFatalBootstrapError(ev.error ?? new Error(String(ev.message || "erro")));
+    },
+    true, // capture: para pegar erros de recurso (não borbulham na fase de bubble)
+  );
   window.addEventListener("unhandledrejection", (ev) => {
     try {
       console.error("[mobile] unhandledrejection", ev.reason);
     } catch {
       /* noop */
     }
+    if (reactMounted) return; // depois do mount, deixa o app decidir
+    renderFatalBootstrapError(ev.reason ?? new Error("promise rejeitada"));
   });
 }
 
@@ -102,6 +132,12 @@ async function bootstrap() {
       <RouterProvider router={router} />
     </StrictMode>,
   );
+
+  // Assim que o React entrou no ciclo de render, marcamos como montado.
+  // Um microtask garante que o primeiro commit já ocorreu.
+  queueMicrotask(() => {
+    reactMounted = true;
+  });
 }
 
 void bootstrap().catch(renderFatalBootstrapError);
