@@ -13,6 +13,8 @@ const config: CapacitorConfig = {
   webDir: "dist/client",
   android: {
     allowMixedContent: false,
+    // Evita foco inicial programático do WebView antes do usuário tocar no campo.
+    initialFocus: false,
     // IMPORTANTE: manter false.
     // captureInput=true troca a conexão padrão do WebView por BaseInputConnection
     // e causa exatamente o bug visto no APK: o teclado mostra sugestões/letras,

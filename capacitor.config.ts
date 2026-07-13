@@ -13,6 +13,7 @@ const config: CapacitorConfig = {
   webDir: "dist/client",
   android: {
     allowMixedContent: false,
+    initialFocus: false,
   },
   server: {
     androidScheme: "https",
