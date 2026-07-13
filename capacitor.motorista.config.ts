@@ -13,7 +13,10 @@ const config: CapacitorConfig = {
   webDir: "dist/client",
   android: {
     allowMixedContent: false,
+    // Evita foco inicial programático do WebView antes do usuário tocar no campo.
     initialFocus: false,
+    // Mantém a conexão IME padrão do WebView.
+    captureInput: false,
   },
   server: {
     androidScheme: "https",

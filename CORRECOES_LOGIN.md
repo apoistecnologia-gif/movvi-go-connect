@@ -1,7 +1,7 @@
 # MOVVI — Correções do Login e do APK Android (Passageiro)
 
 ## Causa real do travamento
-Três problemas se somavam:
+Quatro problemas se somavam:
 
 1. **`signInWithPassword` sem timeout.** Em redes ruins a Promise nunca
    resolvia, o `finally` do formulário não rodava e o botão "Entrar" ficava
@@ -11,6 +11,10 @@ Três problemas se somavam:
 3. **Chrome web ("Voltar" / "Início") em cima do login.** O `AuthShell`
    renderizava um cabeçalho de site sobre o formulário — parecia página web
    dentro do APK.
+4. **ZIP/Android nativo antigo.** O pacote testado ainda continha
+   `targetSdkVersion 36` e uma `MainActivity` que chamava `requestFocus()` /
+   `requestFocusFromTouch()` no WebView, exatamente a combinação que rompe a
+   conexão IME: o teclado recebe toques, mas o `<input>` não recebe caracteres.
 
 ## Arquivos alterados
 
@@ -35,6 +39,16 @@ Três problemas se somavam:
 - `src/routes/motorista.login.tsx`
   - Mesmo tratamento com `replace: true` para `/motorista/app` e
     `/motorista/status`.
+- `android-passageiro/app/src/main/java/com/movvi/passenger/MainActivity.java`
+  - Voltou a ser Activity Capacitor mínima: `public class MainActivity extends BridgeActivity {}`.
+- `android-passageiro/variables.gradle`
+  - `targetSdkVersion = 34` durante a validação da digitação no APK.
+- `scripts/verify-mobile-native.mjs`
+  - Impede compilar APK com `targetSdkVersion 35/36`, `captureInput` incorreto
+    ou `MainActivity` com manipulação de foco/autofill/soft input.
+- `scripts/cap-sync.mjs`
+  - Recria `android/` a partir de `android-passageiro/` a cada build, em vez de
+    reutilizar uma pasta antiga.
 
 ## Motivo de cada alteração
 
@@ -45,6 +59,10 @@ Três problemas se somavam:
   autenticado.
 - **Chrome web escondido:** o APK precisa parecer nativo — nenhum
   breadcrumb, nenhum "Início".
+- **Sem foco forçado no WebView:** o IME do Android deve se conectar
+  diretamente ao `<input>` tocado pelo usuário.
+- **Validação anti-regressão:** se o ZIP estiver antigo ou alguém reintroduzir
+  `requestFocus()` na Activity, o build falha antes de gerar APK.
 
 ## Como gerar o APK
 
@@ -52,7 +70,7 @@ Em Windows / macOS / Linux, dentro da pasta descompactada:
 
 ```bash
 npm install
-npm run android:passageiro     # build SPA + cap sync android
+npm run apk:passageiro
 ```
 
 Depois abra no Android Studio:
@@ -69,7 +87,7 @@ npm run apk:passageiro
 
 ## Localização do APK
 
-`android-passageiro/app/build/outputs/apk/debug/app-debug.apk`
+`android/app/build/outputs/apk/debug/app-debug.apk`
 
 ## O que este ZIP NÃO contém (proposital)
 

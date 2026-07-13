@@ -15,6 +15,8 @@ on:
       - "src/**"
       - "android-passageiro/**"
       - "capacitor.passageiro.config.ts"
+      - "scripts/cap-sync.mjs"
+      - "scripts/verify-mobile-native.mjs"
       - "vite.config.ts"
       - "package.json"
       - "package-lock.json"
@@ -126,9 +128,7 @@ jobs:
       - name: Sync Capacitor (Passageiro)
         run: |
           set -o pipefail
-          cp capacitor.passageiro.config.ts capacitor.config.ts
-          ln -sfn android-passageiro android
-          npx cap sync android 2>&1 | tee ci-logs/cap-sync.log
+          npm run sync:passageiro 2>&1 | tee ci-logs/cap-sync.log
 
       - name: Verify Android assets copied
         run: |
