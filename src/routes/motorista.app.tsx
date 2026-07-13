@@ -76,6 +76,20 @@ const RIDE_OFFER_TIMEOUT_SECONDS = 60;
 
 export const Route = createFileRoute("/motorista/app")({
   head: () => ({ meta: [{ title: "App do Motorista — MOVVI DRIVE" }] }),
+  // Auth guard: mesmo padrão do passageiro — sem sessão → login (sem loop).
+  beforeLoad: async () => {
+    const { redirect } = await import("@tanstack/react-router");
+    const { supabase } = await import("@/integrations/supabase/client");
+    try {
+      const { data, error } = await supabase.auth.getSession();
+      if (error) throw error;
+      if (!data.session) throw redirect({ to: "/motorista/login", replace: true });
+    } catch (err) {
+      if (err && typeof err === "object" && "to" in (err as object)) throw err;
+      try { await supabase.auth.signOut(); } catch { /* noop */ }
+      throw redirect({ to: "/motorista/login", replace: true });
+    }
+  },
   component: MotoristaAppRoute,
 });
 
