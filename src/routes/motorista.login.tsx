@@ -109,16 +109,18 @@ function DriverLoginPage() {
         null;
       try {
         const res = await withTimeout(
-          supabase
-            .from("drivers")
-            .select("approval_status, motivo_reprovacao")
-            .eq("user_id", data.user.id)
-            .maybeSingle()
-            .then((r) => r),
+          Promise.resolve(
+            supabase
+              .from("drivers")
+              .select("approval_status, motivo_reprovacao")
+              .eq("user_id", data.user.id)
+              .maybeSingle(),
+          ),
           10_000,
         );
         if (res.error) throw res.error;
         driverRow = res.data;
+
 
       } catch (err) {
         console.warn("[motorista.login] falha ao consultar cadastro:", (err as Error)?.message);
