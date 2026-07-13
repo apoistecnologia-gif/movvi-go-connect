@@ -16,12 +16,14 @@
     "typecheck": "bunx tsgo --noEmit",
     "build:passageiro": "cross-env VITE_APP_ROLE=passageiro node scripts/build-mobile-spa.mjs",
     "build:motorista": "cross-env VITE_APP_ROLE=motorista node scripts/build-mobile-spa.mjs",
+    "verify:native:passageiro": "node scripts/verify-mobile-native.mjs passageiro",
+    "verify:native:motorista": "node scripts/verify-mobile-native.mjs motorista",
     "sync:passageiro": "node scripts/cap-sync.mjs passageiro",
     "sync:motorista": "node scripts/cap-sync.mjs motorista",
     "android:passageiro": "npm run build:passageiro && npm run sync:passageiro",
     "android:motorista": "npm run build:motorista && npm run sync:motorista",
-    "apk:passageiro": "npm run android:passageiro && node scripts/build-apk.mjs",
-    "apk:motorista": "npm run android:motorista && node scripts/build-apk.mjs",
+    "apk:passageiro": "npm run android:passageiro && node scripts/verify-mobile-native.mjs passageiro --live && node scripts/build-apk.mjs",
+    "apk:motorista": "npm run android:motorista && node scripts/verify-mobile-native.mjs motorista --live && node scripts/build-apk.mjs",
     "cap:open": "npx cap open android"
   },
   "dependencies": {

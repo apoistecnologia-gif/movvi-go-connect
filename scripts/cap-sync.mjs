@@ -12,9 +12,11 @@
 //   1. Preserva local.properties da pasta ativa anterior, se existir.
 //   2. Copia capacitor.<role>.config.ts → capacitor.config.ts (temporário).
 //   3. Recria android/ a partir de android-<role>/.
-//   4. Roda `npx cap sync android`.
-//   5. Escreve marcador `android/.movvi-role`.
-//   6. Restaura capacitor.config.ts anterior (ou apaga se não existia).
+//   4. Roda validações nativas antes do sync.
+//   5. Roda `npx cap sync android`.
+//   6. Roda validações nativas depois do sync.
+//   7. Escreve marcador `android/.movvi-role`.
+//   8. Restaura capacitor.config.ts anterior (ou apaga se não existia).
 //
 // Uso: node scripts/cap-sync.mjs <passageiro|motorista>
 
@@ -41,6 +43,7 @@ const androidRole = resolve(root, `android-${role}`);
 const androidLive = resolve(root, "android");
 const marker = resolve(androidLive, ".movvi-role");
 const localProperties = resolve(androidLive, "local.properties");
+const verifyScript = resolve(root, "scripts/verify-mobile-native.mjs");
 
 if (!existsSync(src)) {
   console.error(`Arquivo não encontrado: ${src}`);
@@ -71,18 +74,29 @@ if (preservedLocalProperties !== null) {
 }
 
 try {
-  // 4. Roda cap sync.
+  // 4. Valida a fonte nativa antes de criar android/.
+  execSync(`${JSON.stringify(process.execPath)} ${JSON.stringify(verifyScript)} ${role}`, {
+    stdio: "inherit",
+  });
+
+  // 5. Roda cap sync.
   execSync("npx cap sync android", { stdio: "inherit" });
   if (preservedLocalProperties !== null) {
     writeFileSync(localProperties, preservedLocalProperties);
   }
-  // 5. Marca a pasta para o role atual.
+
+  // 6. Confirma que android/ também ficou com a versão nativa correta.
+  execSync(`${JSON.stringify(process.execPath)} ${JSON.stringify(verifyScript)} ${role} --live`, {
+    stdio: "inherit",
+  });
+
+  // 7. Marca a pasta para o role atual.
   writeFileSync(marker, role, "utf8");
   console.log(
     `[cap-sync] android/ pronto para '${role}'. Rode 'node scripts/build-apk.mjs' ou abra no Android Studio.`,
   );
 } finally {
-  // 6. Restaura capacitor.config.ts anterior.
+  // 8. Restaura capacitor.config.ts anterior.
   if (previousConfig !== null) {
     try { writeFileSync(dst, previousConfig); } catch { /* noop */ }
   } else {

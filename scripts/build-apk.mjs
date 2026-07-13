@@ -3,8 +3,8 @@
 // Uso: node scripts/build-apk.mjs
 //
 // Assume que `npm run build:<role>` e `npm run sync:<role>` já rodaram e
-// que existe uma pasta `android/` na raiz (o cap-sync.mjs renomeia
-// android-<role> → android durante a sync).
+// que existe uma pasta `android/` na raiz (o cap-sync.mjs recria android/
+// a partir de android-<role> durante a sync).
 import { execSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";

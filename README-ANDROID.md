@@ -2,8 +2,9 @@
 
 Este pacote empacota o app web MOVVI em um APK nativo via Capacitor.
 Cada ZIP (`movvi-android-passageiro.zip` / `movvi-android-motorista.zip`)
-já vem com a pasta `android/` pronta e a `capacitor.<role>.config.ts`
-correta.
+vem com a pasta fonte `android-<role>/` correta. O comando de build sempre
+recria uma pasta `android/` limpa a partir dela para evitar APK com arquivos
+nativos antigos.
 
 ## Pré-requisitos
 
@@ -13,7 +14,7 @@ correta.
 
 ## Passo a passo (Windows PowerShell / macOS / Linux)
 
-Descompacte o ZIP, entre na pasta `pkg-passageiro/` (ou `pkg-motorista/`) e rode:
+Descompacte o ZIP, entre na pasta raiz do pacote e rode:
 
 ```bash
 npm install
@@ -24,7 +25,8 @@ O script único faz **tudo**:
 1. `node scripts/build-mobile-spa.mjs` — limpa `dist/client`, roda Vite com
    `vite.mobile.config.ts`, gera somente SPA estático e valida
    `dist/client/index.html` + `dist/client/assets/*`.
-2. `cap sync android` — copia o bundle para `android/app/src/main/assets/public/`.
+2. `scripts/cap-sync.mjs` — valida a configuração nativa, recria `android/`
+   a partir de `android-<role>/` e roda `cap sync android`.
 3. `gradlew assembleDebug` — gera o APK em
    `android/app/build/outputs/apk/debug/app-debug.apk`.
 
@@ -54,6 +56,9 @@ npm run cap:open
 
 - **Tela branca**: verifique se `dist/client/index.html` existe depois do
   build. O script já falha automaticamente se o HTML, JS ou CSS não forem gerados.
+- **Login não aceita digitação**: se aparecer `verify-mobile-native` falhando,
+  o pacote está antigo ou foi alterado manualmente. Use um ZIP novo e não copie
+  `android/` de builds anteriores.
 - **EBUSY no Windows durante o build**: o build mobile não usa Nitro, não cria
   `.output/server` e não copia `node_modules`; se aparecer Nitro no log, você
   está rodando um script antigo.
