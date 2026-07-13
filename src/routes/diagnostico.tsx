@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export const Route = createFileRoute("/diagnostico")({
   head: () => ({
@@ -14,6 +14,8 @@ export const Route = createFileRoute("/diagnostico")({
 
 function DiagnosticoPage() {
   const [email, setEmail] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [fillReport, setFillReport] = useState<string>("(sem preenchimento)");
   const [viewport, setViewport] = useState({
     innerH: 0,
     innerW: 0,
@@ -87,6 +89,7 @@ function DiagnosticoPage() {
         </label>
         <input
           id="diag-email"
+          ref={inputRef}
           type="email"
           inputMode="email"
           autoCapitalize="none"
@@ -109,6 +112,13 @@ function DiagnosticoPage() {
           placeholder="voce@exemplo.com"
           style={inputStyle}
         />
+        <button
+          type="button"
+          onClick={() => programaticFill(inputRef.current, setEmail, log, setFillReport)}
+          style={btnStyle}
+        >
+          Preencher com “teste123” e manter foco
+        </button>
         <div style={{ marginTop: 8, fontSize: 13, opacity: 0.85 }}>
           <div>
             valor atual:{" "}
@@ -116,6 +126,7 @@ function DiagnosticoPage() {
             <span style={{ opacity: 0.6 }}>({email.length} chars)</span>
           </div>
           <div>foco: <code style={code}>{focus}</code></div>
+          <div>cursor: <code style={code}>{fillReport}</code></div>
         </div>
       </section>
 
@@ -203,3 +214,70 @@ const code: React.CSSProperties = {
   borderRadius: 4,
   fontFamily: "ui-monospace, Menlo, monospace",
 };
+const btnStyle: React.CSSProperties = {
+  marginTop: 10,
+  width: "100%",
+  height: 40,
+  fontSize: 14,
+  fontWeight: 600,
+  borderRadius: 8,
+  border: "1px solid #b91c1c",
+  background: "#dc2626",
+  color: "#fff",
+  cursor: "pointer",
+};
+
+/**
+ * Preenche o campo com "teste123" usando o setter nativo do HTMLInputElement
+ * (para React "ver" a mudança via evento 'input'), mantém o foco no campo e
+ * amostra por 2s se document.activeElement continua sendo o input — proxy
+ * para "cursor continua piscando" (o caret só pisca em elemento focado e
+ * editável).
+ */
+function programaticFill(
+  el: HTMLInputElement | null,
+  setEmail: (v: string) => void,
+  log: (m: string) => void,
+  setFillReport: (m: string) => void,
+) {
+  if (!el) {
+    setFillReport("input ausente");
+    log("fill: input ausente");
+    return;
+  }
+  const proto = window.HTMLInputElement.prototype;
+  const nativeSetter = Object.getOwnPropertyDescriptor(proto, "value")?.set;
+  try {
+    el.focus({ preventScroll: true });
+  } catch {
+    el.focus();
+  }
+  if (nativeSetter) nativeSetter.call(el, "teste123");
+  else el.value = "teste123";
+  el.dispatchEvent(new Event("input", { bubbles: true }));
+  el.dispatchEvent(new Event("change", { bubbles: true }));
+  try {
+    el.setSelectionRange(el.value.length, el.value.length);
+  } catch { /* type=email: setSelectionRange pode lançar em alguns browsers */ }
+  setEmail(el.value);
+  log(`fill: valor="${el.value}" foco=${document.activeElement === el}`);
+
+  const start = performance.now();
+  let ticks = 0;
+  let stillFocused = 0;
+  const iv = window.setInterval(() => {
+    ticks++;
+    if (document.activeElement === el) stillFocused++;
+    if (performance.now() - start >= 2000) {
+      window.clearInterval(iv);
+      const ratio = stillFocused / ticks;
+      const blinking = ratio >= 0.9; // manteve foco em ≥90% das amostras
+      setFillReport(
+        blinking
+          ? `piscando (foco mantido em ${stillFocused}/${ticks} amostras)`
+          : `foco perdido (${stillFocused}/${ticks} amostras)`,
+      );
+      log(`fill.check: foco ${stillFocused}/${ticks} → ${blinking ? "piscando" : "não piscando"}`);
+    }
+  }, 200);
+}
