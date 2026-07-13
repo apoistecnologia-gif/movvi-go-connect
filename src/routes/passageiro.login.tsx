@@ -22,9 +22,12 @@ function PassengerLoginPage() {
 
   const onSubmit = handle(async (form) => {
     const parsed = schema.parse(Object.fromEntries(form.entries()));
-    const { error: e } = await supabase.auth.signInWithPassword(parsed);
+    console.log("[passageiro.login] signIn start");
+    const { data, error: e } = await supabase.auth.signInWithPassword(parsed);
     if (e) throw new Error("E-mail ou senha inválidos");
-    navigate({ to: "/passageiro/app" });
+    if (!data?.session || !data?.user) throw new Error("Sessão inválida. Tente novamente.");
+    console.log("[passageiro.login] signIn ok -> /passageiro/app");
+    navigate({ to: "/passageiro/app", replace: true });
   });
 
   return (
