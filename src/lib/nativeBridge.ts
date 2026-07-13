@@ -14,7 +14,7 @@ type CapacitorGlobal = {
   isNativePlatform?: () => boolean;
 };
 
-function isNative(): boolean {
+export function isNative(): boolean {
   if (typeof window === "undefined") return false;
   const cap = (window as unknown as { Capacitor?: CapacitorGlobal }).Capacitor;
   return cap?.isNativePlatform?.() === true;
