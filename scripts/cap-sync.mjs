@@ -20,7 +20,7 @@
 //
 // Uso: node scripts/cap-sync.mjs <passageiro|motorista>
 
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import {
   cpSync,
   existsSync,
@@ -44,6 +44,7 @@ const androidLive = resolve(root, "android");
 const marker = resolve(androidLive, ".movvi-role");
 const localProperties = resolve(androidLive, "local.properties");
 const verifyScript = resolve(root, "scripts/verify-mobile-native.mjs");
+const capCli = resolve(root, "node_modules/@capacitor/cli/bin/capacitor");
 
 if (!existsSync(src)) {
   console.error(`Arquivo não encontrado: ${src}`);
@@ -75,18 +76,20 @@ if (preservedLocalProperties !== null) {
 
 try {
   // 4. Valida a fonte nativa antes de criar android/.
-  execSync(`${JSON.stringify(process.execPath)} ${JSON.stringify(verifyScript)} ${role}`, {
+  execFileSync(process.execPath, [verifyScript, role], {
     stdio: "inherit",
   });
 
   // 5. Roda cap sync.
-  execSync("npx cap sync android", { stdio: "inherit" });
+  execFileSync(process.execPath, [capCli, "sync", "android"], {
+    stdio: "inherit",
+  });
   if (preservedLocalProperties !== null) {
     writeFileSync(localProperties, preservedLocalProperties);
   }
 
   // 6. Confirma que android/ também ficou com a versão nativa correta.
-  execSync(`${JSON.stringify(process.execPath)} ${JSON.stringify(verifyScript)} ${role} --live`, {
+  execFileSync(process.execPath, [verifyScript, role, "--live"], {
     stdio: "inherit",
   });
 
