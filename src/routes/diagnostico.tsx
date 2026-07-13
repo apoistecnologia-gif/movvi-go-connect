@@ -89,6 +89,7 @@ function DiagnosticoPage() {
         </label>
         <input
           id="diag-email"
+          ref={inputRef}
           type="email"
           inputMode="email"
           autoCapitalize="none"
@@ -111,6 +112,13 @@ function DiagnosticoPage() {
           placeholder="voce@exemplo.com"
           style={inputStyle}
         />
+        <button
+          type="button"
+          onClick={() => programaticFill(inputRef.current, setEmail, log, setFillReport)}
+          style={btnStyle}
+        >
+          Preencher com “teste123” e manter foco
+        </button>
         <div style={{ marginTop: 8, fontSize: 13, opacity: 0.85 }}>
           <div>
             valor atual:{" "}
@@ -118,6 +126,7 @@ function DiagnosticoPage() {
             <span style={{ opacity: 0.6 }}>({email.length} chars)</span>
           </div>
           <div>foco: <code style={code}>{focus}</code></div>
+          <div>cursor: <code style={code}>{fillReport}</code></div>
         </div>
       </section>
 
