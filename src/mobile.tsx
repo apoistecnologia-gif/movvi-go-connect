@@ -13,6 +13,21 @@ import {
   DefaultNotFoundComponent,
 } from "./components/routing/DefaultBoundaries";
 
+function renderFatalBootstrapError(error: unknown) {
+  console.error("[mobile] falha crítica no bootstrap", error);
+  const root = document.getElementById("root");
+  if (!root) return;
+  root.innerHTML = `
+    <main style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#05070d;color:#f8fafc;padding:24px;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+      <section style="width:100%;max-width:360px;text-align:center">
+        <h1 style="margin:0 0 10px;font-size:22px;line-height:1.15">Não foi possível abrir o MOVVI</h1>
+        <p style="margin:0 0 18px;color:#94a3b8;font-size:14px;line-height:1.45">Verifique sua conexão e tente novamente.</p>
+        <button style="width:100%;border:0;border-radius:12px;background:#ef4444;color:white;font-weight:700;padding:12px 16px" onclick="location.reload()">Tentar novamente</button>
+      </section>
+    </main>
+  `;
+}
+
 async function bootstrap() {
   installMobileFetchProxy();
   initNativeBridge();
@@ -41,4 +56,4 @@ async function bootstrap() {
   );
 }
 
-void bootstrap();
+void bootstrap().catch(renderFatalBootstrapError);

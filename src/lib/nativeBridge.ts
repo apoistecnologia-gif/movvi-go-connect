@@ -9,6 +9,8 @@
 
 import { registerDeviceToken } from "@/lib/notifications/deviceTokenService";
 
+const ENABLE_NATIVE_PUSH = import.meta.env.VITE_ENABLE_NATIVE_PUSH === "true";
+
 type CapacitorGlobal = {
   getPlatform?: () => string;
   isNativePlatform?: () => boolean;
@@ -27,7 +29,11 @@ export function initNativeBridge(): void {
   initStarted = true;
   if (!isNative()) return;
   // Fire-and-forget: falhas aqui NUNCA devem quebrar o app.
-  void setupPush().catch((err) => console.warn("[native] push setup falhou", err));
+  if (ENABLE_NATIVE_PUSH) {
+    void setupPush().catch((err) => console.warn("[native] push setup falhou", err));
+  } else {
+    console.info("[native] push nativo desativado neste build; app não depende de Firebase.");
+  }
   void setupGeolocation().catch((err) =>
     console.warn("[native] geolocation warmup falhou", err),
   );
