@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as MapTestRouteImport } from './routes/map-test'
 import { Route as DownloadRouteImport } from './routes/download'
+import { Route as DiagnosticoRouteImport } from './routes/diagnostico'
 import { Route as DevDiagnosticsRouteImport } from './routes/dev-diagnostics'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TTokenRouteImport } from './routes/t.$token'
@@ -89,6 +90,11 @@ const MapTestRoute = MapTestRouteImport.update({
 const DownloadRoute = DownloadRouteImport.update({
   id: '/download',
   path: '/download',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DiagnosticoRoute = DiagnosticoRouteImport.update({
+  id: '/diagnostico',
+  path: '/diagnostico',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DevDiagnosticsRoute = DevDiagnosticsRouteImport.update({
@@ -445,6 +451,7 @@ const ApiPublicHooksActivateScheduledRidesRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dev-diagnostics': typeof DevDiagnosticsRoute
+  '/diagnostico': typeof DiagnosticoRoute
   '/download': typeof DownloadRoute
   '/map-test': typeof MapTestRoute
   '/admin/administradores': typeof AdminAdministradoresRoute
@@ -518,6 +525,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dev-diagnostics': typeof DevDiagnosticsRoute
+  '/diagnostico': typeof DiagnosticoRoute
   '/download': typeof DownloadRoute
   '/map-test': typeof MapTestRoute
   '/admin/administradores': typeof AdminAdministradoresRoute
@@ -592,6 +600,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/dev-diagnostics': typeof DevDiagnosticsRoute
+  '/diagnostico': typeof DiagnosticoRoute
   '/download': typeof DownloadRoute
   '/map-test': typeof MapTestRoute
   '/admin/administradores': typeof AdminAdministradoresRoute
@@ -667,6 +676,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/dev-diagnostics'
+    | '/diagnostico'
     | '/download'
     | '/map-test'
     | '/admin/administradores'
@@ -740,6 +750,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/dev-diagnostics'
+    | '/diagnostico'
     | '/download'
     | '/map-test'
     | '/admin/administradores'
@@ -813,6 +824,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/dev-diagnostics'
+    | '/diagnostico'
     | '/download'
     | '/map-test'
     | '/admin/administradores'
@@ -887,6 +899,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DevDiagnosticsRoute: typeof DevDiagnosticsRoute
+  DiagnosticoRoute: typeof DiagnosticoRoute
   DownloadRoute: typeof DownloadRoute
   MapTestRoute: typeof MapTestRoute
   AdminAdministradoresRoute: typeof AdminAdministradoresRoute
@@ -971,6 +984,13 @@ declare module '@tanstack/react-router' {
       path: '/download'
       fullPath: '/download'
       preLoaderRoute: typeof DownloadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/diagnostico': {
+      id: '/diagnostico'
+      path: '/diagnostico'
+      fullPath: '/diagnostico'
+      preLoaderRoute: typeof DiagnosticoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dev-diagnostics': {
@@ -1473,6 +1493,7 @@ const MotoristaCorridasRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DevDiagnosticsRoute: DevDiagnosticsRoute,
+  DiagnosticoRoute: DiagnosticoRoute,
   DownloadRoute: DownloadRoute,
   MapTestRoute: MapTestRoute,
   AdminAdministradoresRoute: AdminAdministradoresRoute,
@@ -1549,13 +1570,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
