@@ -13,10 +13,11 @@ const config: CapacitorConfig = {
   webDir: "dist/client",
   android: {
     allowMixedContent: false,
-    // Força o WebView do Capacitor a capturar a conexão de entrada nativa.
-    // Em alguns aparelhos XOS/Transsion o teclado recebe os toques, mas o
-    // WebView padrão não entrega os caracteres ao <input> focado.
-    captureInput: true,
+    // IMPORTANTE: manter false.
+    // captureInput=true troca a conexão padrão do WebView por BaseInputConnection
+    // e causa exatamente o bug visto no APK: o teclado mostra sugestões/letras,
+    // mas os caracteres não entram no <input> focado em alguns Android/WebView.
+    captureInput: false,
   },
   server: {
     androidScheme: "https",

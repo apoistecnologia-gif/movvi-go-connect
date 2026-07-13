@@ -3,6 +3,7 @@ package com.movvi.passenger;
 import android.os.Bundle;
 import android.os.Build;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.webkit.WebView;
@@ -32,9 +33,18 @@ public class MainActivity extends BridgeActivity {
         }
 
         if (webView != null) {
+            webView.setClickable(true);
             webView.setFocusable(true);
             webView.setFocusableInTouchMode(true);
             webView.requestFocus(View.FOCUS_DOWN);
+            webView.setOnTouchListener((view, event) -> {
+                int action = event.getActionMasked();
+                if ((action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_UP) && !view.hasFocus()) {
+                    view.requestFocus();
+                    Log.i(TAG, "WebView requestFocus via touch action=" + action);
+                }
+                return false;
+            });
             webView.setOnFocusChangeListener((view, hasFocus) ->
                 Log.i(TAG, "WebView focus=" + hasFocus)
             );
