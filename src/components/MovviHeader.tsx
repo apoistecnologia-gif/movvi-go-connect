@@ -2,6 +2,7 @@ import { Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ArrowLeft, Home, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { APOIS_LOGO_DATA_URL } from "@/assets/apoisLogoData";
 
 interface MovviHeaderProps {
   /** "floating" para overlay sobre mapas, "solid" para telas normais */
@@ -10,18 +11,19 @@ interface MovviHeaderProps {
   hideBack?: boolean;
   /** Sobrescreve o destino do botão Sair (default: "/") */
   logoutRedirect?: string;
+  /** Sobrescreve o destino do botão Home. */
+  homePath?: string;
 }
 
 /**
- * Cabeçalho padrão de TODA tela autenticada do APOIS:
- * ← Voltar | Logo | Nome do usuário | Home | Sair
- *
- * Garante que nenhuma tela deixe o usuário preso.
+ * Cabeçalho padrão de telas autenticadas APOIS.
+ * Mantém sempre uma saída visível: Voltar, Home e Sair.
  */
 export function MovviHeader({
   variant = "solid",
   hideBack = false,
   logoutRedirect = "/",
+  homePath = "/motorista/app",
 }: MovviHeaderProps) {
   const router = useRouter();
   const navigate = useNavigate();
@@ -31,7 +33,7 @@ export function MovviHeader({
     supabase.auth.getUser().then(({ data }) => {
       const u = data.user;
       if (!u) return;
-      const meta = (u.user_metadata ?? {}) as Record<string, unknown>;
+      const meta = (u.user.user_metadata ?? {}) as Record<string, unknown>;
       const fullName = (meta.full_name as string) || (meta.name as string) || "";
       setName(fullName || u.email?.split("@")[0] || "Usuário");
     });
@@ -55,7 +57,7 @@ export function MovviHeader({
 
   function handleBack() {
     if (window.history.length > 1) router.history.back();
-    else navigate({ to: "/" });
+    else navigate({ to: homePath as "/motorista/app" });
   }
 
   const isFloating = variant === "floating";
@@ -65,23 +67,19 @@ export function MovviHeader({
       className={
         isFloating
           ? "absolute inset-x-0 top-0 z-30 px-3 pt-[calc(env(safe-area-inset-top)+12px)]"
-          : "sticky top-0 z-30 border-b border-border/50 bg-background/85 backdrop-blur-xl"
+          : "sticky top-0 z-30 border-b border-white/5 bg-[#08090A]/92 backdrop-blur-xl"
       }
       style={
         isFloating
           ? undefined
-          : {
-              // Subtle APOIS green accent under the solid header.
-              boxShadow:
-                "inset 0 -1px 0 0 color-mix(in oklab, var(--color-primary) 22%, transparent)",
-            }
+          : { boxShadow: "inset 0 -1px 0 0 rgba(246,190,28,0.10)" }
       }
     >
       <div
         className={
           isFloating
-            ? "mx-auto flex max-w-5xl items-center gap-2 rounded-[20px] bg-card/75 px-2.5 py-2 shadow-[0_16px_40px_-22px_rgba(0,0,0,0.55)] ring-1 ring-border/35 backdrop-blur-xl"
-            : "mx-auto flex h-12 max-w-5xl items-center gap-2 px-3"
+            ? "mx-auto flex max-w-5xl items-center gap-2 rounded-[20px] bg-[#0D0F11]/82 px-2.5 py-2 shadow-[0_16px_40px_-22px_rgba(0,0,0,0.75)] ring-1 ring-white/8 backdrop-blur-xl"
+            : "mx-auto flex h-14 max-w-5xl items-center gap-2 px-3"
         }
       >
         {!hideBack && (
@@ -89,62 +87,55 @@ export function MovviHeader({
             type="button"
             onClick={handleBack}
             aria-label="Voltar"
-            className="active-press inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground/75 transition hover:bg-muted/40 hover:text-foreground"
+            className="active-press inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-zinc-300 transition hover:bg-white/5 hover:text-white"
           >
-            <ArrowLeft className="h-[16px] w-[16px]" strokeWidth={1.75} />
+            <ArrowLeft className="h-[17px] w-[17px]" strokeWidth={1.8} />
           </button>
         )}
 
         <Link
-          to="/"
-          aria-label="Home APOIS"
-          className="active-press flex shrink-0 items-center rounded-full px-0.5 transition hover:opacity-90"
+          to={homePath as "/motorista/app"}
+          aria-label="Início APOIS Motorista"
+          className="active-press flex shrink-0 items-center rounded-full transition hover:opacity-90"
         >
-          <MovviHeaderLogo />
+          <img
+            src={APOIS_LOGO_DATA_URL}
+            alt="APOIS"
+            width={34}
+            height={34}
+            className="h-[34px] w-[34px] rounded-full border border-[#F6BE1C]/20 object-cover"
+            draggable={false}
+          />
         </Link>
 
         <div className="min-w-0 flex-1 pl-1.5">
+          <span className="block text-[9px] font-black uppercase tracking-[0.16em] text-[#F6BE1C]">
+            APOIS Motorista
+          </span>
           {name && (
-            <span
-              className="block truncate text-[13px] font-medium leading-tight tracking-tight text-foreground/90"
-              title={name}
-            >
+            <span className="mt-0.5 block truncate text-[12px] font-semibold leading-tight text-zinc-300" title={name}>
               {name}
             </span>
           )}
         </div>
 
         <Link
-          to="/"
-          aria-label="Home"
-          className="active-press inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground/70 transition hover:bg-muted/40 hover:text-foreground"
+          to={homePath as "/motorista/app"}
+          aria-label="Voltar ao mapa"
+          className="active-press inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-zinc-400 transition hover:bg-white/5 hover:text-[#F6BE1C]"
         >
-          <Home className="h-[16px] w-[16px]" strokeWidth={1.75} />
+          <Home className="h-[17px] w-[17px]" strokeWidth={1.75} />
         </Link>
 
         <button
           type="button"
           onClick={handleLogout}
           aria-label="Sair"
-          className="active-press inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted-foreground/45 transition hover:bg-destructive/10 hover:text-destructive"
+          className="active-press inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-zinc-500 transition hover:bg-red-500/10 hover:text-red-400"
         >
-          <LogOut className="h-[14px] w-[14px]" strokeWidth={1.6} />
+          <LogOut className="h-[15px] w-[15px]" strokeWidth={1.7} />
         </button>
       </div>
     </header>
   );
 }
-
-function MovviHeaderLogo() {
-  return (
-    <svg width={22} height={22} viewBox="0 0 120 120" aria-hidden>
-      <path d="M18 100 L18 28 L40 28 L60 70 L60 100 Z" fill="currentColor" className="text-foreground" />
-      <path
-        d="M60 28 Q100 28 100 64 Q100 100 60 100 L60 78 Q82 78 82 64 Q82 50 60 50 Z"
-        fill="hsl(95 75% 51%)"
-      />
-    </svg>
-  );
-}
-
-
