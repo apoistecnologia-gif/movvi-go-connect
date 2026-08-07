@@ -52,7 +52,38 @@ jobs:
           grep -F 'Você chegou ao destino final.' src/routes/motorista.app.tsx
           grep -F 'Próxima corrida reservada' src/routes/motorista.app.tsx
           grep -F 'queued_after_ride_id' src/routes/motorista.app.tsx
+          grep -F 'Km total' src/routes/motorista.app.tsx
           grep -F 'apois:motorista:voice-enabled' src/lib/voiceNav.ts
+          grep -F 'driver_wallet_transactions' src/routes/motorista.carteira.tsx
+          grep -F 'Saques automáticos' src/routes/motorista.carteira.tsx
+
+      - name: Validar retorno nas telas do menu
+        run: |
+          pages=(
+            src/routes/motorista.corridas.tsx
+            src/routes/motorista.carteira.tsx
+            src/routes/motorista.ganhos.tsx
+            src/routes/motorista.notificacoes.tsx
+            src/routes/motorista.perfil.tsx
+            src/routes/motorista.seguranca.tsx
+            src/routes/motorista.status.tsx
+            src/routes/motorista.suporte.tsx
+            src/routes/motorista.configuracoes.tsx
+          )
+          for page in "${pages[@]}"; do
+            test -f "$page"
+            if ! grep -Eq 'MovviHeader|ArrowLeft|aria-label="Voltar|Voltar ao' "$page"; then
+              echo "Tela sem retorno explícito: $page"
+              exit 1
+            fi
+          done
+
+      - name: Impedir regressão de identidade do motorista
+        run: |
+          if grep -RIn --include='motorista*.tsx' -E '\.eq\("driver_id", (uid|userId)\)' src/routes; then
+            echo 'Consulta de rides usando auth/users id no campo driver_id. Use public.drivers.id.'
+            exit 1
+          fi
 
       - name: Build APOIS Motorista
         run: npm run build:motorista
