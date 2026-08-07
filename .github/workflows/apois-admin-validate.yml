@@ -1,0 +1,25 @@
+name: APOIS Admin - validação
+
+on:
+  push:
+    branches:
+      - feat/apois-admin-supabase-oficial-homologacao
+    paths:
+      - ".github/workflows/apois-admin-validate.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Instalar dependências
+        run: npm install --no-audit --no-fund
+      - name: Build do painel
+        run: npm run build
