@@ -1,0 +1,58 @@
+name: APOIS Motorista - ajustar UX do periodo de teste
+
+on:
+  push:
+    branches:
+      - feat/apois-motorista-producao-homologacao
+    paths:
+      - ".github/workflows/apois-motorista-trial-ux-patch.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: feat/apois-motorista-producao-homologacao
+
+      - name: Ajustar tela de aprovado durante homologacao
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('src/routes/motorista.status.tsx')
+          text = path.read_text(encoding='utf-8')
+          old = 'description: "Parabéns! Seu cadastro foi aprovado. Agora falta apenas ativar sua primeira mensalidade para começar a receber corridas.",'
+          new = 'description: "Parabéns! Seu cadastro foi aprovado. Confira abaixo o status do seu acesso e entre no aplicativo quando estiver liberado.",'
+          if old not in text:
+              raise SystemExit('descricao aprovada esperada nao encontrada')
+          text = text.replace(old, new, 1)
+          old_section = '{status === "aprovado" ? (\n              <section className="overflow-hidden rounded-[26px] border border-[#F6BE1C]/20 bg-[#0D0F11]">'
+          new_section = '{status === "aprovado" && profile?.subscription_status !== "teste" ? (\n              <section className="overflow-hidden rounded-[26px] border border-[#F6BE1C]/20 bg-[#0D0F11]">'
+          if old_section not in text:
+              raise SystemExit('secao de mensalidade esperada nao encontrada')
+          text = text.replace(old_section, new_section, 1)
+          marker = '            {status === "aprovado" && profile?.subscription_status !== "teste" ? (\n'
+          trial = '''            {status === "aprovado" && profile?.subscription_status === "teste" ? (\n              <section className="rounded-[24px] border border-[#F6BE1C]/20 bg-[#F6BE1C]/8 p-4">\n                <div className="flex items-center gap-3">\n                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#F6BE1C] text-black">\n                    <CheckCircle2 className="h-5 w-5" />\n                  </div>\n                  <div>\n                    <p className="text-[12px] font-black text-white">Período de homologação ativo</p>\n                    <p className="mt-1 text-[10px] font-medium leading-relaxed text-zinc-400">Seu acesso está liberado para o teste real. Nenhum pagamento é necessário nesta etapa.</p>\n                  </div>\n                </div>\n              </section>\n            ) : null}\n\n'''
+          if marker not in text:
+              raise SystemExit('marcador da secao de mensalidade nao encontrado')
+          text = text.replace(marker, trial + marker, 1)
+          path.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Validar alteracao
+        run: |
+          grep -F "Período de homologação ativo" src/routes/motorista.status.tsx
+          grep -F "Nenhum pagamento é necessário nesta etapa." src/routes/motorista.status.tsx
+
+      - name: Commit
+        run: |
+          rm -f .github/workflows/apois-motorista-trial-ux-patch.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/routes/motorista.status.tsx .github/workflows/apois-motorista-trial-ux-patch.yml
+          git commit -m "fix(motorista): liberar homologacao sem cobranca de mensalidade"
+          git push origin HEAD:feat/apois-motorista-producao-homologacao
