@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Validação anti-regressão do APK Android.
-// Impede compilar novamente um pacote com MainActivity antigo, target SDK 35/36
+// Impede compilar novamente um pacote com MainActivity antiga, target SDK 35/36
 // ou configuração Capacitor que quebra entrada de texto no WebView.
 
 import { existsSync, readFileSync } from "node:fs";
@@ -16,7 +16,7 @@ if (role !== "passageiro" && role !== "motorista") {
 
 const root = process.cwd();
 const androidDir = resolve(root, checkLiveAndroid ? "android" : `android-${role}`);
-const packageDir = role === "passageiro" ? "com/movvi/passenger" : "com/movvi/driver";
+const packageDir = role === "passageiro" ? "com/movvi/passenger" : "com/apois/motorista";
 const configFile = resolve(root, `capacitor.${role}.config.ts`);
 
 function readRequired(path) {
