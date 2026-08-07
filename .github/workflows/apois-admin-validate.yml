@@ -26,5 +26,11 @@ jobs:
           node-version: 22
       - name: Instalar dependências
         run: npm install --no-audit --no-fund
+      - name: Validar aprovação oficial do motorista
+        run: |
+          ! grep -F 'approve-driver-and-create-mercadopago-subscription' src/routes/admin.motoristas.tsx
+          ! grep -F 'approveDriverWithMercadoPago' src/routes/admin.motoristas.tsx
+          grep -F 'updateApprovalFn({' src/routes/admin.motoristas.tsx
+          grep -F 'admin_set_driver_approval' src/lib/adminDrivers.functions.ts
       - name: Build do painel
         run: npm run build
