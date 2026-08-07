@@ -4,6 +4,7 @@ import { ChevronRight, ClipboardList, MapPin, Navigation2, Search, Star } from "
 import { MovviHeader } from "@/components/MovviHeader";
 import { BottomNav, DRIVER_NAV } from "@/components/BottomNav";
 import { supabase } from "@/integrations/supabase/client";
+import { loadDriverProfile } from "@/lib/driverProfile";
 import {
   Avatar,
   Body,
@@ -192,18 +193,18 @@ function DriverRidesPage() {
   useEffect(() => {
     let active = true;
     (async () => {
-      const { data: auth } = await supabase.auth.getUser();
-      const uid = auth?.user?.id;
-      if (!uid) {
+      const profile = await loadDriverProfile();
+      if (!profile.ok) {
         if (active) setRides([]);
         return;
       }
+      const driverId = profile.profile.id;
       const { data, error } = await supabase
         .from("rides")
         .select(
           "id,status,category,payment_method,passenger_photo_url,origin_name,destination_name,final_price,estimated_price,distance_km,duration_min,completed_at,created_at,accepted_at,passenger_rating,passenger_rating_comment,driver_rated_at",
         )
-        .eq("driver_id", uid)
+        .eq("driver_id", driverId)
         .order("created_at", { ascending: false })
         .limit(50);
       if (!active) return;
