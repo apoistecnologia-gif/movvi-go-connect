@@ -1,21 +1,14 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
-// MOVVI — Configuração Capacitor do app do Motorista (Play Store).
-// Package ID: com.movvi.driver
-// Build correspondente: VITE_APP_ROLE=motorista
-//
-// NÃO altera Supabase, banco, corridas, GPS, mapas, pagamentos ou notificações.
-// Apenas empacota o bundle web (gerado com VITE_APP_ROLE=motorista) em um
-// projeto Android nativo para publicação.
+// APOIS — configuração Capacitor do app real do Motorista.
+// O bundle é gerado pela árvore mobile exclusiva do motorista.
 const config: CapacitorConfig = {
-  appId: "com.movvi.driver",
-  appName: "MOVVI Motorista",
+  appId: "com.apois.motorista",
+  appName: "APOIS Motorista",
   webDir: "dist/client",
   android: {
     allowMixedContent: false,
-    // Evita foco inicial programático do WebView antes do usuário tocar no campo.
     initialFocus: false,
-    // Mantém a conexão IME padrão do WebView.
     captureInput: false,
   },
   server: {
