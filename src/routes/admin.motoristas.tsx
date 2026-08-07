@@ -174,7 +174,7 @@ function fmtRelative(d: string | null | undefined) {
 
 function docsPending(d: Driver) {
   if (d.documents_status && d.documents_status !== "approved" && d.documents_status !== "aprovado") return true;
-  return !d.selfie_url || !d.cnh_url || !d.cnh_back_url || !d.vehicle_document_url || !d.vehicle_photo_url;
+  return !d.selfie_url || !d.cnh_url || !d.cnh_back_url || !d.vehicle_document_url;
 }
 
 function mapAdminError(msg: string): string {
@@ -413,7 +413,7 @@ function AdminMotoristas() {
             <DriverCard
               key={d.id}
               driver={d}
-              activeRideStatus={activeRides[d.user_id] ?? null}
+              activeRideStatus={activeRides[d.id] ?? null}
               busy={busyId === d.id}
               onDetails={() => setDetail(d)}
               onApprove={() => updateStatus(d, "aprovado")}
@@ -432,7 +432,7 @@ function AdminMotoristas() {
 
       <DetailsDialog
         driver={detail}
-        activeRideStatus={detail ? activeRides[detail.user_id] ?? null : null}
+        activeRideStatus={detail ? activeRides[detail.id] ?? null : null}
         onClose={() => setDetail(null)}
         onApprove={(d) => updateStatus(d, "aprovado")}
         onReject={(d) => {
