@@ -24,6 +24,7 @@ import { RIDE_CATEGORIES } from "@/lib/rideCategories";
 import { MovviMap } from "@/components/MovviMap";
 import { DriverSideMenu } from "@/components/DriverSideMenu";
 import { ApoisDriverBottomNav } from "@/components/ApoisDriverBottomNav";
+import { DriverVoiceToggle } from "@/components/DriverVoiceToggle";
 import { BrandSplash } from "@/components/BrandSplash";
 import { MovviSheet, type MovviSheetHandle } from "@/components/MovviSheet";
 import { PassengerProfessionalProfileDialog } from "@/components/profile/PassengerProfessionalProfileDialog";
@@ -1209,6 +1210,25 @@ function MotoristaApp() {
     tickNavigation({ lat: position.lat, lng: position.lng }, routeSteps, active.id);
   }, [position?.lat, position?.lng, routeSteps, active?.id, active?.status]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Avisos automáticos de chegada exigidos pelo checklist do Motorista.
+  // O botão “Cheguei” continua existindo; este aviso é apenas orientação por voz.
+  useEffect(() => {
+    if (!active || !position) return;
+    if (active.status === "motorista_a_caminho") {
+      const km = haversineKm(position, { lat: active.origin_lat, lng: active.origin_lng });
+      if (km <= 0.05) {
+        void speak("Você chegou ao ponto de embarque.", { dedupKey: `${active.id}:pickup-arrival` });
+      }
+      return;
+    }
+    if (active.status === "em_viagem") {
+      const km = haversineKm(position, { lat: active.destination_lat, lng: active.destination_lng });
+      if (km <= 0.05) {
+        void speak("Você chegou ao destino final.", { dedupKey: `${active.id}:destination-arrival` });
+      }
+    }
+  }, [position?.lat, position?.lng, active?.id, active?.status]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Fala transições de status importantes.
   const lastSpokenStatusRef = useRef<string | null>(null);
   useEffect(() => {
@@ -1554,6 +1574,10 @@ function MotoristaApp() {
           onSkip={skipRating}
         />
       )}
+
+      <DriverVoiceToggle
+        visible={!!active && (active.status === "motorista_a_caminho" || active.status === "em_viagem")}
+      />
 
       <ApoisDriverBottomNav hidden={!!ratingRide} />
     </div>
