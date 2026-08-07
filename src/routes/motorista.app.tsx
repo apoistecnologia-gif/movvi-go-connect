@@ -1814,6 +1814,8 @@ function IncomingOffer({
     return haversineKm(driverPos, { lat: ride.origin_lat, lng: ride.origin_lng });
   }, [driverPos, ride.origin_lat, ride.origin_lng]);
   const pickupMin = pickupKm != null ? Math.max(1, Math.round((pickupKm / 32) * 60)) : null;
+  const tripKm = ride.distance_km != null ? Number(ride.distance_km) : null;
+  const totalKm = pickupKm != null && tripKm != null ? pickupKm + tripKm : null;
 
   const cat = RIDE_CATEGORIES.find((c) => c.key === ride.category);
   const CatIcon = cat?.icon ?? RouteIcon;
@@ -1911,10 +1913,18 @@ function IncomingOffer({
             <AddressRow dotColor="bg-destructive" label="Destino" name={ride.destination_name} />
           </div>
 
-          {/* Pagamento */}
-          <div className="mt-2.5 mb-2 flex items-center justify-between rounded-2xl border border-border bg-background/40 px-4 py-2">
-            <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">Pagamento</span>
-            <span className="text-[13px] font-semibold text-foreground">{paymentLabelFor(ride.payment_method)}</span>
+          {/* Total de deslocamento + pagamento */}
+          <div className="mt-2.5 grid grid-cols-2 gap-2">
+            <div className="rounded-2xl border border-[#F6BE1C]/20 bg-[#F6BE1C]/8 px-3 py-2">
+              <span className="block text-[9px] font-black uppercase tracking-[0.12em] text-[#F6BE1C]">Km total</span>
+              <span className="mt-0.5 block text-[13px] font-black tabular-nums text-foreground">
+                {totalKm != null ? `${totalKm.toFixed(1)} km` : "—"}
+              </span>
+            </div>
+            <div className="rounded-2xl border border-border bg-background/40 px-3 py-2 text-right">
+              <span className="block text-[9px] font-medium uppercase tracking-[0.12em] text-muted-foreground">Pagamento</span>
+              <span className="mt-0.5 block truncate text-[12px] font-semibold text-foreground">{paymentLabelFor(ride.payment_method)}</span>
+            </div>
           </div>
         </div>
 
