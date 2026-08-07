@@ -1312,7 +1312,7 @@ function MotoristaApp() {
             <>
               <PlacePinMarker
                 position={{ lat: active.origin_lat, lng: active.origin_lng }}
-                color="#8DD92B"
+                color="#F6BE1C"
                 zIndexBase={9990}
               />
               <PlacePinMarker
@@ -1332,7 +1332,7 @@ function MotoristaApp() {
               <Polyline path={polyline} options={{
                 strokeColor: "#ffffff", strokeOpacity: 0.95, strokeWeight: 14, geodesic: true, zIndex: 2,
               }} />
-              {/* rota — verde MOVVI, encorpado */}
+              {/* rota — dourado APOIS, encorpado */}
               <Polyline path={polyline} options={{
                 strokeColor: "#F6BE1C", strokeOpacity: 1, strokeWeight: 9, geodesic: true, zIndex: 3,
               }} />
@@ -1714,7 +1714,7 @@ function IncomingOffer({
   const CatIcon = cat?.icon ?? RouteIcon;
   const catLabel = cat?.label?.toUpperCase() ?? "CORRIDA";
 
-  // MOVVI Ride Score — badge visual (deriva de distance_km, sem backend novo).
+  // APOIS Ride Score — badge visual (deriva de distance_km, sem backend novo).
   const score = useMemo(() => {
     const km = Number(ride.distance_km ?? 0);
     const pk = pickupKm ?? 0;
@@ -2400,7 +2400,7 @@ function ActiveRidePanel({
       <div className="space-y-2 rounded-2xl bg-background/60 p-2.5 ring-1 ring-border">
         <div className="flex items-center gap-2.5">
           <span className={`h-2.5 w-2.5 shrink-0 rounded-full ring-2 ring-card ${
-            toPickup ? "bg-blue-500 animate-pulse" : "bg-blue-500/60"}`} />
+            toPickup ? "bg-[#F6BE1C] animate-pulse" : "bg-[#F6BE1C]/60"}`} />
           <div className="min-w-0 flex-1">
             <div className="text-[9.5px] uppercase tracking-widest text-muted-foreground leading-none mb-0.5">Embarque</div>
             <div className="truncate text-[13px] font-medium">{ride.pickup_short_label || ride.pickup_label || ride.origin_name || "—"}</div>
