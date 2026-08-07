@@ -1,0 +1,44 @@
+name: APOIS Motorista — validação
+
+on:
+  push:
+    branches:
+      - feat/apois-motorista-producao-homologacao
+    paths:
+      - "src/**"
+      - "scripts/**"
+      - "package.json"
+      - "package-lock.json"
+      - "vite.mobile.config.ts"
+      - ".env.mobile"
+      - "capacitor.motorista.config.ts"
+      - ".github/workflows/apois-motorista-validate.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build-mobile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Build APOIS Motorista
+        run: npm run build:motorista
+
+      - name: Verificar saída mobile
+        run: |
+          test -f dist/client/index.html
+          test ! -d .output/server
+          echo "APOIS_MOTORISTA_BUILD_OK"
