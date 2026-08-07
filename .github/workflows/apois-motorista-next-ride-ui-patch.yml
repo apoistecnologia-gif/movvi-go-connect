@@ -1,0 +1,101 @@
+name: APOIS Motorista - proxima corrida reservada
+
+on:
+  push:
+    branches:
+      - feat/apois-motorista-producao-homologacao
+    paths:
+      - ".github/workflows/apois-motorista-next-ride-ui-patch.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/apois-motorista-producao-homologacao
+      - name: Aplicar fila de próxima corrida no app
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('src/routes/motorista.app.tsx')
+          s=p.read_text()
+
+          old='''  const [incoming, setIncoming] = useState<RideRow | null>(null);\n  const [active, setActive] = useState<RideRow | null>(null);\n  const [passenger, setPassenger] = useState<Passenger | null>(null);'''
+          new='''  const [incoming, setIncoming] = useState<RideRow | null>(null);\n  const [active, setActive] = useState<RideRow | null>(null);\n  const [queuedRide, setQueuedRide] = useState<RideRow | null>(null);\n  const [passenger, setPassenger] = useState<Passenger | null>(null);'''
+          assert old in s
+          s=s.replace(old,new,1)
+
+          old='''  const activeRef = useRef<RideRow | null>(null);\n  const incomingRef = useRef<RideRow | null>(null);\n  const ratingRef = useRef<RideRow | null>(null);'''
+          new='''  const activeRef = useRef<RideRow | null>(null);\n  const incomingRef = useRef<RideRow | null>(null);\n  const queuedRideRef = useRef<RideRow | null>(null);\n  const ratingRef = useRef<RideRow | null>(null);'''
+          assert old in s
+          s=s.replace(old,new,1)
+
+          old='''  useEffect(() => { activeRef.current = active; }, [active]);\n  useEffect(() => { incomingRef.current = incoming; }, [incoming]);\n  useEffect(() => { ratingRef.current = ratingRide; }, [ratingRide]);'''
+          new='''  useEffect(() => { activeRef.current = active; }, [active]);\n  useEffect(() => { incomingRef.current = incoming; }, [incoming]);\n  useEffect(() => { queuedRideRef.current = queuedRide; }, [queuedRide]);\n  useEffect(() => { ratingRef.current = ratingRide; }, [ratingRide]);'''
+          assert old in s
+          s=s.replace(old,new,1)
+
+          old='''      if (handledRidesRef.current.has(r.id)) return;\n      if (activeRef.current || ratingRef.current) return;\n      if (incomingRef.current && incomingRef.current.id !== r.id) return;'''
+          new='''      if (handledRidesRef.current.has(r.id)) return;\n      if (ratingRef.current) return;\n      const currentRide = activeRef.current;\n      if (currentRide && currentRide.status !== "em_viagem") return;\n      if (currentRide?.status === "em_viagem" && queuedRideRef.current) return;\n      if (incomingRef.current && incomingRef.current.id !== r.id) return;'''
+          assert old in s
+          s=s.replace(old,new,1)
+
+          old='''      if (!driverId || (r.driver_id !== driverId && (r as any).accepted_driver_id !== driverId)) return;\n      if (r.status === "finalizada") {'''
+          new='''      if (!driverId || (r.driver_id !== driverId && (r as any).accepted_driver_id !== driverId)) return;\n\n      const queuedAfterRideId = (r as any).queued_after_ride_id as string | null | undefined;\n      if (r.status === "procurar_motorista" && queuedAfterRideId && r.driver_id === driverId) {\n        if (incomingRef.current?.id === r.id) setIncoming(null);\n        handledRidesRef.current.add(r.id);\n        setQueuedRide(r);\n        return;\n      }\n\n      if (r.status === "finalizada") {'''
+          assert old in s
+          s=s.replace(old,new,1)
+
+          old='''      } else if (r.status === "cancelada_passageiro" || r.status === "cancelada_motorista") {\n        const wasActive = activeRef.current?.id === r.id || r.driver_id === driverId || (r as any).accepted_driver_id === driverId;'''
+          new='''      } else if (r.status === "cancelada_passageiro" || r.status === "cancelada_motorista") {\n        const wasQueued = queuedRideRef.current?.id === r.id || Boolean((r as any).queued_after_ride_id && r.driver_id === driverId);\n        if (wasQueued) {\n          handledRidesRef.current.add(r.id);\n          setIncoming(null);\n          setQueuedRide(null);\n          toast.warning("Próxima corrida cancelada", {\n            description: "A corrida reservada foi cancelada. Sua viagem atual continua normalmente.",\n            duration: 6000,\n          });\n          return;\n        }\n        const wasActive = activeRef.current?.id === r.id || r.driver_id === driverId || (r as any).accepted_driver_id === driverId;'''
+          assert old in s
+          s=s.replace(old,new,1)
+
+          old='''      } else if (r.status === "motorista_a_caminho" || r.status === "motorista_chegou" || r.status === "em_viagem") {\n        if (incomingRef.current?.id === r.id) setIncoming(null);\n        handledRidesRef.current.add(r.id);\n        setActive(r);'''
+          new='''      } else if (r.status === "motorista_a_caminho" || r.status === "motorista_chegou" || r.status === "em_viagem") {\n        if (incomingRef.current?.id === r.id) setIncoming(null);\n        if (queuedRideRef.current?.id === r.id) setQueuedRide(null);\n        handledRidesRef.current.add(r.id);\n        setActive(r);'''
+          assert old in s
+          s=s.replace(old,new,1)
+
+          old='''      .subscribe(async (status) => {\n        if (import.meta.env.DEV) console.log("[APOIS MOTORISTA] status do canal:", status);\n        if (status !== "SUBSCRIBED") return;\n        const ongoing = await supabase\n          .from("rides").select("*")\n          .eq("driver_id", driverId)\n          .in("status", ["motorista_a_caminho", "motorista_chegou", "em_viagem"])\n          .order("created_at", { ascending: false })\n          .limit(1).maybeSingle();\n        if (ongoing.data) { applyActive(ongoing.data as RideRow); return; }\n        const pending = await supabase\n          .from("rides").select("*")\n          .contains("candidate_driver_ids", [userId])\n          .eq("status", "procurar_motorista")\n          .order("created_at", { ascending: false })\n          .limit(1).maybeSingle();\n        if (pending.data) presentOffer(pending.data as RideRow);\n      });\n\n    // Rede de segurança 1: re-sincroniza ao retomar a aba (após background no mobile)\n    const onVisibility = async () => {\n      if (document.visibilityState !== "visible") return;\n      if (import.meta.env.DEV) console.log("[APOIS MOTORISTA] aba visível — ressincronizando corrida ativa");\n      const ongoing = await supabase\n        .from("rides").select("*").eq("driver_id", driverId)\n        .in("status", ["motorista_a_caminho", "motorista_chegou", "em_viagem", "finalizada"])\n        .order("created_at", { ascending: false }).limit(1).maybeSingle();\n      if (ongoing.data) { applyActive(ongoing.data as RideRow); return; }\n      const pending = await supabase\n        .from("rides").select("*")\n        .contains("candidate_driver_ids", [userId])\n        .eq("status", "procurar_motorista")\n        .order("created_at", { ascending: false }).limit(1).maybeSingle();\n      if (pending.data) presentOffer(pending.data as RideRow);\n    };'''
+          new='''      .subscribe(async (status) => {\n        if (import.meta.env.DEV) console.log("[APOIS MOTORISTA] status do canal:", status);\n        if (status !== "SUBSCRIBED") return;\n        await resyncDriverRides();\n      });\n\n    const resyncDriverRides = async () => {\n      const ongoing = await supabase\n        .from("rides").select("*")\n        .eq("driver_id", driverId)\n        .in("status", ["motorista_a_caminho", "motorista_chegou", "em_viagem"])\n        .order("created_at", { ascending: false })\n        .limit(1).maybeSingle();\n      const current = ongoing.data as RideRow | null;\n      if (current) applyActive(current);\n\n      const queued = await (supabase.from("rides") as any)\n        .select("*")\n        .eq("driver_id", driverId)\n        .eq("status", "procurar_motorista")\n        .not("queued_after_ride_id", "is", null)\n        .order("queued_at", { ascending: true })\n        .limit(1).maybeSingle();\n      if (queued.data) applyActive(queued.data as RideRow);\n      else setQueuedRide(null);\n\n      const canReceiveNext = !current || (current.status === "em_viagem" && !queued.data);\n      if (!canReceiveNext || ratingRef.current) return;\n      const pending = await supabase\n        .from("rides").select("*")\n        .contains("candidate_driver_ids", [userId])\n        .eq("status", "procurar_motorista")\n        .is("driver_id", null)\n        .order("created_at", { ascending: false })\n        .limit(1).maybeSingle();\n      if (pending.data) presentOffer(pending.data as RideRow);\n    };\n\n    // Rede de segurança 1: re-sincroniza ao retomar a aba (após background no mobile)\n    const onVisibility = async () => {\n      if (document.visibilityState !== "visible") return;\n      if (import.meta.env.DEV) console.log("[APOIS MOTORISTA] aba visível — ressincronizando corrida ativa/fila");\n      await resyncDriverRides();\n    };'''
+          assert old in s
+          s=s.replace(old,new,1)
+
+          old='''      const cur = activeRef.current;\n      if (!cur) return;\n      const { data } = await supabase.from("rides").select("*").eq("id", cur.id).maybeSingle();\n      if (data && (data as RideRow).status !== cur.status) {\n        if (import.meta.env.DEV) console.log("[APOIS MOTORISTA] polling detectou mudança de status:", cur.status, "→", (data as RideRow).status);\n        applyActive(data as RideRow);\n      }'''
+          new='''      const cur = activeRef.current;\n      if (cur) {\n        const { data } = await supabase.from("rides").select("*").eq("id", cur.id).maybeSingle();\n        if (data && (data as RideRow).status !== cur.status) {\n          if (import.meta.env.DEV) console.log("[APOIS MOTORISTA] polling detectou mudança de status:", cur.status, "→", (data as RideRow).status);\n          applyActive(data as RideRow);\n        }\n      }\n      const queued = queuedRideRef.current;\n      if (queued) {\n        const { data } = await supabase.from("rides").select("*").eq("id", queued.id).maybeSingle();\n        if (data) applyActive(data as RideRow);\n      }'''
+          assert old in s
+          s=s.replace(old,new,1)
+
+          old='''    const pid = active?.passenger_id ?? ratingRide?.passenger_id ?? incoming?.passenger_id;'''
+          new='''    const pid = incoming?.passenger_id ?? active?.passenger_id ?? ratingRide?.passenger_id;'''
+          assert old in s
+          s=s.replace(old,new,1)
+
+          old='''      handledRidesRef.current.add(offer.id);\n      setIncoming(null);\n      setActive(r as RideRow);\n      sheetRef.current?.snapTo(34);'''
+          new='''      handledRidesRef.current.add(offer.id);\n      setIncoming(null);\n      const accepted = r as RideRow;\n      if ((accepted as any).queued_after_ride_id && accepted.status === "procurar_motorista") {\n        setQueuedRide(accepted);\n        toast.success("Próxima corrida reservada", {\n          description: "Finalize a viagem atual. Depois, a rota para o próximo embarque será aberta automaticamente.",\n          duration: 6500,\n        });\n      } else {\n        setActive(accepted);\n        sheetRef.current?.snapTo(34);\n      }'''
+          assert old in s
+          s=s.replace(old,new,1)
+
+          marker='''      {/* ===== Rating ===== */}'''
+          banner='''      {queuedRide && active?.status === "em_viagem" && !incoming && (\n        <div\n          className="fixed left-4 right-4 z-[45] mx-auto max-w-md rounded-[18px] border border-[#F6BE1C]/25 bg-[#0D0F11]/94 px-4 py-3 shadow-[0_18px_44px_-22px_rgba(0,0,0,0.95)] backdrop-blur-md"\n          style={{ top: "calc(env(safe-area-inset-top) + 134px)" }}\n        >\n          <div className="flex items-center justify-between gap-3">\n            <div className="min-w-0 flex-1">\n              <p className="text-[9px] font-black uppercase tracking-[0.17em] text-[#F6BE1C]">Próxima corrida reservada</p>\n              <p className="mt-1 truncate text-[12px] font-bold text-white">{queuedRide.pickup_label || queuedRide.origin_name}</p>\n              <p className="mt-0.5 truncate text-[10px] font-medium text-zinc-500">Finalize a atual para seguir ao próximo embarque</p>\n            </div>\n            <div className="shrink-0 text-right">\n              <p className="text-[14px] font-black text-[#F6BE1C]">{formatBRL(Number(queuedRide.estimated_price ?? 0))}</p>\n              <p className="mt-0.5 text-[9px] font-bold text-zinc-600">reservada</p>\n            </div>\n          </div>\n        </div>\n      )}\n\n'''
+          assert marker in s
+          s=s.replace(marker,banner+marker,1)
+
+          p.write_text(s)
+          PY
+      - name: Validar patch
+        run: |
+          grep -q 'queuedRideRef' src/routes/motorista.app.tsx
+          grep -q 'Próxima corrida reservada' src/routes/motorista.app.tsx
+          grep -q 'currentRide.status !== "em_viagem"' src/routes/motorista.app.tsx
+          grep -q 'queued_after_ride_id' src/routes/motorista.app.tsx
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/routes/motorista.app.tsx
+          git commit -m "feat(motorista): reservar próxima corrida durante viagem"
+          git push origin HEAD:feat/apois-motorista-producao-homologacao
