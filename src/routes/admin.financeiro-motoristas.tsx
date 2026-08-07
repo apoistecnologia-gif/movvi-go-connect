@@ -18,7 +18,7 @@ import { formatBRL, formatDate } from "@/lib/formatters";
 
 export const Route = createFileRoute("/admin/financeiro-motoristas")({
   head: () => ({
-    meta: [{ title: "Financeiro dos motoristas — Admin MOVVI" }],
+    meta: [{ title: "Financeiro dos motoristas — Admin APOIS" }],
   }),
   component: AdminFinanceiroMotoristasPage,
 });

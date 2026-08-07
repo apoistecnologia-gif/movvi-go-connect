@@ -8,7 +8,7 @@ import { Marker, Polyline } from "@react-google-maps/api";
 import { DSButton, DSCard, DSCardContent, DSSelect, DSSelectContent, DSSelectItem, DSSelectTrigger, DSSelectValue } from "@/design-system";
 import { Switch } from "@/components/ui/switch";
 export const Route = createFileRoute("/admin/mapa")({
-  head: () => ({ meta: [{ title: "Mapa ao Vivo — Admin MOVVI" }] }),
+  head: () => ({ meta: [{ title: "Mapa ao Vivo — Admin APOIS" }] }),
   component: AdminMapaPage,
 });
 

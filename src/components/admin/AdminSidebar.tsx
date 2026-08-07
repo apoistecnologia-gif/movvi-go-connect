@@ -53,7 +53,7 @@ export const ADMIN_NAV: Item[] = [
   { to: "/admin/logs", label: "Logs", icon: ScrollText },
 ];
 
-/** Compact, centered MOVVI DRIVE mark used in the sidebar header. */
+/** Compact, centered APOIS mark used in the sidebar header. */
 function SidebarBrand() {
   return (
     <div className="flex flex-col items-center leading-none">
@@ -63,7 +63,7 @@ function SidebarBrand() {
         viewBox="0 0 120 120"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
-        aria-label="MOVVI DRIVE"
+        aria-label="APOIS"
         className="drop-shadow-[0_0_12px_color-mix(in_oklab,var(--color-primary)_35%,transparent)]"
       >
         <path d="M18 100 L18 28 L40 28 L60 70 L60 100 Z" fill="currentColor" className="text-foreground" />
@@ -83,7 +83,7 @@ function SidebarBrand() {
         />
       </svg>
       <div className="mt-2 flex flex-col items-center leading-[1.05]">
-        <span className="font-display text-[15px] font-bold tracking-[0.22em] text-foreground">MOVVI</span>
+        <span className="font-display text-[15px] font-bold tracking-[0.22em] text-foreground">APOIS</span>
         <span className="font-display text-[15px] font-bold tracking-[0.22em] text-primary">DRIVE</span>
       </div>
     </div>

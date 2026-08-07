@@ -2,7 +2,7 @@ import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 
 /**
- * MOVVI DS — Settings section.
+ * APOIS DS — Settings section.
  * Unified visual language with the Profile hub:
  * - uppercase micro-label above the group,
  * - white grouped card, 24px radius, soft shadow, hairline ring,

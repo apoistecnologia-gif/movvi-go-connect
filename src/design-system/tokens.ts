@@ -1,5 +1,5 @@
 /**
- * MOVVI DRIVE — Design Tokens (single source of truth)
+ * APOIS — Design Tokens (single source of truth)
  *
  * All values here MIRROR the CSS custom properties defined in `src/styles.css`.
  * Consume these tokens from TS/TSX code so future screens never hardcode
@@ -53,7 +53,7 @@ export const dsColor = {
   shadow: "rgba(0, 0, 0, 0.5)",
 } as const;
 
-/* Raw MOVVI brand hex values (use only for map polylines, markers, SVGs) */
+/* Raw APOIS brand hex values (use only for map polylines, markers, SVGs) */
 export const dsBrand = {
   greenPrimary: "#8DD92B",
   greenSecondary: "#5FAF1A",

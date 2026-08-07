@@ -1,5 +1,5 @@
 // Payment provider abstraction (Phase 3 — Asaas first).
-// This file MUST stay provider-agnostic so MOVVI can migrate to Pagar.me,
+// This file MUST stay provider-agnostic so APOIS can migrate to Pagar.me,
 // Mercado Pago, Iugu, etc. without rewriting the app.
 
 export type PaymentProviderId = "asaas" | "pagarme" | "mercadopago" | "iugu";
@@ -96,4 +96,4 @@ export function toUiStatus(db: string | null | undefined): SubscriptionUiStatus 
   }
 }
 
-export const MOVVI_MONTHLY_FEE_BRL = 49.9;
+export const APOIS_MONTHLY_FEE_BRL = 49.9;

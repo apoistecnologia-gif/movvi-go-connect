@@ -1,5 +1,5 @@
 /**
- * MOVVI DRIVE — Regalias oferecidas a bordo.
+ * APOIS — Regalias oferecidas a bordo.
  * Motorista escolhe (opt-in) o que quer oferecer. Aparece no perfil público
  * para o passageiro perceber o diferencial antes de aceitar a corrida.
  */
@@ -23,7 +23,7 @@ import {
 } from "@/lib/driverAmenities";
 
 export const Route = createFileRoute("/motorista/regalias")({
-  head: () => ({ meta: [{ title: "Regalias a bordo — MOVVI DRIVE" }] }),
+  head: () => ({ meta: [{ title: "Regalias a bordo — APOIS" }] }),
   component: RegaliasPage,
 });
 
@@ -132,7 +132,7 @@ function RegaliasPage() {
           </SettingsSection>
 
           <BodySmall className="px-2 text-center text-muted-foreground">
-            Ofereça só o que realmente entrega — a MOVVI valoriza motoristas que cumprem o combinado.
+            Ofereça só o que realmente entrega — a APOIS valoriza motoristas que cumprem o combinado.
           </BodySmall>
         </div>
       </main>

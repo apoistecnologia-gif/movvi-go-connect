@@ -22,7 +22,7 @@ export const getDriverDocumentUrls = createServerFn({ method: "POST" })
       .maybeSingle();
 
     if (isAdmin.error || !isAdmin.data) {
-      console.error("[MOVVI DOCS] acesso negado para documentos:", {
+      console.error("[APOIS DOCS] acesso negado para documentos:", {
         userId: context.userId,
         error: isAdmin.error?.message ?? null,
       });
@@ -47,10 +47,10 @@ export const getDriverDocumentUrls = createServerFn({ method: "POST" })
         async ([field, bucket]) => {
           const path = driver.data?.[field];
           if (!path) return;
-          if (import.meta.env.DEV) console.log("[MOVVI DOCS] gerando URL assinada:", { driverId: data.driverId, field, bucket, path });
+          if (import.meta.env.DEV) console.log("[APOIS DOCS] gerando URL assinada:", { driverId: data.driverId, field, bucket, path });
           const signed = await supabaseAdmin.storage.from(bucket).createSignedUrl(path, 600);
           if (signed.error) {
-            console.error(`[MOVVI DOCS] erro signed url ${field}:`, signed.error.message);
+            console.error(`[APOIS DOCS] erro signed url ${field}:`, signed.error.message);
             return;
           }
           out[field] = signed.data?.signedUrl ?? null;

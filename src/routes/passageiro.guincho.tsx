@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 export const Route = createFileRoute("/passageiro/guincho")({
   head: () => ({
     meta: [
-      { title: "MOVVI Guincho — Solicitar" },
+      { title: "APOIS Guincho — Solicitar" },
       {
         name: "description",
         content:
@@ -98,7 +98,7 @@ function GuinchoFlow() {
             </span>
             <div>
               <h1 className="font-display text-xl font-bold tracking-tight text-foreground">
-                Guincho MOVVI
+                Guincho APOIS
               </h1>
               <p className="text-[12.5px] text-muted-foreground">
                 Conte como está o veículo para encontrarmos o atendimento ideal.
@@ -211,7 +211,7 @@ function GuinchoFlow() {
             <ReviewRow k="Destino" v={data.destino || "—"} />
             {data.observacoes && <ReviewRow k="Observações" v={data.observacoes} />}
             <p className="pt-2 text-[12px] text-muted-foreground">
-              Ao continuar, o mapa MOVVI abre já com os endereços informados
+              Ao continuar, o mapa APOIS abre já com os endereços informados
               para você confirmar o valor do guincho.
             </p>
           </Section>

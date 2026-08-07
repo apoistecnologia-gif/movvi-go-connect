@@ -8,8 +8,8 @@ import { SettingsPageShell, SettingsHero } from "@/components/settings";
 export const Route = createFileRoute("/motorista/privacidade")({
   head: () => ({
     meta: [
-      { title: "Política de Privacidade — MOVVI DRIVE" },
-      { name: "description", content: "Política de Privacidade da MOVVI DRIVE em conformidade com a LGPD." },
+      { title: "Política de Privacidade — APOIS" },
+      { name: "description", content: "Política de Privacidade da APOIS em conformidade com a LGPD." },
     ],
   }),
   component: PrivacidadeMotoristaPage,
@@ -52,7 +52,7 @@ function PrivacidadeMotoristaPage() {
       />
       <article className="space-y-4 rounded-[24px] bg-white p-6 text-[14px] leading-relaxed text-[#1B1B1B] shadow-[0_6px_20px_-14px_rgba(15,23,42,0.12)] ring-1 ring-black/5">
         <p>
-          A MOVVI DRIVE trata dados pessoais em conformidade com a LGPD (Lei nº 13.709/2018).
+          A APOIS trata dados pessoais em conformidade com a LGPD (Lei nº 13.709/2018).
           Coletamos apenas os dados necessários para operar o serviço: cadastro, documentos,
           localização em tempo real durante corridas ativas e histórico de viagens.
         </p>
@@ -65,7 +65,7 @@ function PrivacidadeMotoristaPage() {
           Você pode solicitar acesso, correção ou exclusão dos seus dados pelo canal de suporte.
         </p>
         <p className="text-[12.5px] text-[#707070]">
-          Esta é uma versão preliminar. O texto oficial será publicado pela MOVVI em breve.
+          Esta é uma versão preliminar. O texto oficial será publicado pela APOIS em breve.
         </p>
       </article>
     </SettingsPageShell>

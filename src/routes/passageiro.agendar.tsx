@@ -133,7 +133,7 @@ function SchedulePage() {
               Agendar uma corrida
             </h1>
             <p className="mt-1 text-[13px] text-[#707070]">
-              Escolha o horário e MOVVI começa a buscar motorista automaticamente ~15 min antes.
+              Escolha o horário e APOIS começa a buscar motorista automaticamente ~15 min antes.
             </p>
           </header>
 
@@ -225,6 +225,6 @@ function SchedulePage() {
 }
 
 export const Route = createFileRoute("/passageiro/agendar")({
-  head: () => ({ meta: [{ title: "Agendar corrida — MOVVI DRIVE" }] }),
+  head: () => ({ meta: [{ title: "Agendar corrida — APOIS" }] }),
   component: SchedulePage,
 });

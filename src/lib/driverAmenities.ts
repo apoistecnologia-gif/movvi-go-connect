@@ -1,4 +1,4 @@
-// MOVVI DRIVE — Regalias oferecidas pelo motorista (opt-in por item).
+// APOIS — Regalias oferecidas pelo motorista (opt-in por item).
 // Cada motorista escolhe o que quer oferecer a bordo. Passageiros veem no perfil público.
 import { Droplet, Candy, Music, Dog, Luggage, Snowflake, Wifi, Baby, VolumeX, BatteryCharging } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -69,7 +69,7 @@ async function refreshFromDb(userId: string): Promise<DriverAmenities> {
     .eq("user_id", userId)
     .maybeSingle();
   if (error) {
-    if (import.meta.env.DEV) console.warn("[MOVVI AMENITIES] load", error.message);
+    if (import.meta.env.DEV) console.warn("[APOIS AMENITIES] load", error.message);
     return DEFAULT_AMENITIES;
   }
   const prefs = normalize(data as Partial<DriverAmenities> | null);
@@ -91,7 +91,7 @@ export async function fetchDriverAmenitiesPublic(userId: string): Promise<Driver
     target_user_id: userId,
   });
   if (error) {
-    if (import.meta.env.DEV) console.warn("[MOVVI AMENITIES] public", error.message);
+    if (import.meta.env.DEV) console.warn("[APOIS AMENITIES] public", error.message);
     return DEFAULT_AMENITIES;
   }
   const row = Array.isArray(data) ? data[0] : data;

@@ -62,7 +62,7 @@ function mapAdminError(msg: string): string {
 }
 
 export const Route = createFileRoute("/admin/passageiros")({
-  head: () => ({ meta: [{ title: "Passageiros — Admin MOVVI" }] }),
+  head: () => ({ meta: [{ title: "Passageiros — Admin APOIS" }] }),
   component: AdminPassageirosPage,
 });
 

@@ -32,7 +32,7 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/motorista/documentos")({
-  head: () => ({ meta: [{ title: "Meus documentos — MOVVI DRIVE" }] }),
+  head: () => ({ meta: [{ title: "Meus documentos — APOIS" }] }),
   component: DriverDocumentsPage,
 });
 

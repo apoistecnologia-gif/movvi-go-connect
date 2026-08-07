@@ -21,7 +21,7 @@ import {
 import { DSButton, DSLabel } from "@/design-system";
 
 export const Route = createFileRoute("/motorista/configuracoes")({
-  head: () => ({ meta: [{ title: "Configurações — MOVVI DRIVE" }] }),
+  head: () => ({ meta: [{ title: "Configurações — APOIS" }] }),
   component: DriverSettingsPage,
 });
 

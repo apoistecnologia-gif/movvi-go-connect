@@ -50,9 +50,9 @@ export function SosSheet({ open, onClose, role, rideId, counterpartLabel, onOpen
       });
       if (error) throw error;
       setSent(true);
-      toast.success("Alerta SOS enviado à central MOVVI");
+      toast.success("Alerta SOS enviado à central APOIS");
     } catch (err) {
-      console.error("[MOVVI] SOS", err);
+      console.error("[APOIS] SOS", err);
       toast.error("Não foi possível enviar. Ligue 190 imediatamente.");
     } finally {
       setSending(false);
@@ -97,7 +97,7 @@ export function SosSheet({ open, onClose, role, rideId, counterpartLabel, onOpen
           </div>
         ) : (
           <p className="text-[13px] text-muted-foreground">
-            Vamos registrar sua localização atual e os dados da corrida para acionamento da central MOVVI.
+            Vamos registrar sua localização atual e os dados da corrida para acionamento da central APOIS.
             {counterpartLabel ? ` (${counterpartLabel})` : ""}
           </p>
         )}
@@ -125,7 +125,7 @@ export function SosSheet({ open, onClose, role, rideId, counterpartLabel, onOpen
               className="flex items-center justify-center gap-2 rounded-2xl border border-destructive/50 bg-destructive/10 py-3 text-[14px] font-bold text-destructive-foreground active:scale-[0.98] disabled:opacity-50"
             >
               {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Shield className="h-4 w-4" />}
-              {sending ? "Enviando alerta..." : "Enviar alerta à central MOVVI"}
+              {sending ? "Enviando alerta..." : "Enviar alerta à central APOIS"}
             </button>
           )}
           {!contact && onOpenContacts && (
@@ -146,7 +146,7 @@ export function SosSheet({ open, onClose, role, rideId, counterpartLabel, onOpen
         </div>
 
         <p className="mt-3 text-center text-[11px] text-muted-foreground">
-          A MOVVI não substitui os serviços de emergência. Em risco imediato, ligue 190.
+          A APOIS não substitui os serviços de emergência. Em risco imediato, ligue 190.
         </p>
       </div>
     </div>

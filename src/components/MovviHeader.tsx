@@ -13,7 +13,7 @@ interface MovviHeaderProps {
 }
 
 /**
- * Cabeçalho padrão de TODA tela autenticada do MOVVI:
+ * Cabeçalho padrão de TODA tela autenticada do APOIS:
  * ← Voltar | Logo | Nome do usuário | Home | Sair
  *
  * Garante que nenhuma tela deixe o usuário preso.
@@ -71,7 +71,7 @@ export function MovviHeader({
         isFloating
           ? undefined
           : {
-              // Subtle MOVVI green accent under the solid header.
+              // Subtle APOIS green accent under the solid header.
               boxShadow:
                 "inset 0 -1px 0 0 color-mix(in oklab, var(--color-primary) 22%, transparent)",
             }
@@ -97,7 +97,7 @@ export function MovviHeader({
 
         <Link
           to="/"
-          aria-label="Home MOVVI"
+          aria-label="Home APOIS"
           className="active-press flex shrink-0 items-center rounded-full px-0.5 transition hover:opacity-90"
         >
           <MovviHeaderLogo />

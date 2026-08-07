@@ -1,5 +1,5 @@
 /**
- * MOVVI UI Kit — componentes reutilizáveis para a nova linguagem visual.
+ * APOIS UI Kit — componentes reutilizáveis para a nova linguagem visual.
  *
  * Cada componente é presentational-only (sem chamada de Supabase, sem
  * lógica de fluxo). Os grandes fluxos de corrida devem adotá-los

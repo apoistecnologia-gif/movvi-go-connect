@@ -44,7 +44,7 @@ const PIX_TYPE_LABEL: Record<PixKeyType, string> = {
 export const Route = createFileRoute("/motorista/carteira")({
   component: DriverWalletPage,
   head: () => ({
-    meta: [{ title: "Carteira — MOVVI" }, { name: "description", content: "Seus créditos MOVVI." }],
+    meta: [{ title: "Carteira — APOIS" }, { name: "description", content: "Seus créditos APOIS." }],
   }),
 });
 
@@ -198,7 +198,7 @@ function DriverWalletPage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 {fin.financial_status === "overdue" ? <AlertTriangle className="h-4 w-4 text-destructive" /> : <Crown className="h-4 w-4 text-primary" />}
-                <div className="text-sm font-semibold">Mensalidade MOVVI</div>
+                <div className="text-sm font-semibold">Mensalidade APOIS</div>
               </div>
               <span className="rounded-full border border-border bg-background px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
                 {fin.financial_status === "active" ? "Ativa" : fin.financial_status === "pending" ? "Pendente" : fin.financial_status === "overdue" ? "Inadimplente" : fin.financial_status === "cancelled" ? "Cancelada" : "Inativa"}

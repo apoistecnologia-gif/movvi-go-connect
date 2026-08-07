@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { MapPin } from "lucide-react";
 
 /**
- * MOVVI ActivityCard — card de viagem no histórico ("Atividade").
+ * APOIS ActivityCard — card de viagem no histórico ("Atividade").
  * Header opcional com miniatura do mapa, endereço em destaque, data/hora e
  * valor. Uma ação secundária (ex: "Reagendar", "Detalhes") vive no rodapé.
  */

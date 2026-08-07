@@ -1,5 +1,5 @@
 // ────────────────────────────────────────────────────────────────────────────
-// MOVVI — Modo desenvolvedor global
+// APOIS — Modo desenvolvedor global
 //
 // DEV_MODE controla TODA a interface de diagnóstico do app (banners de
 // ambiente de teste, painel de GPS, métricas técnicas, link para
@@ -11,7 +11,7 @@ export const DEV_MODE = false;
 export const MODO_DESENVOLVIMENTO = DEV_MODE;
 
 // ────────────────────────────────────────────────────────────────────────────
-// MOVVI — Detecção de ambiente
+// APOIS — Detecção de ambiente
 //
 // REGRA DE OURO:
 //   • Em DESENVOLVIMENTO/PREVIEW (editor Lovable, localhost, sandbox, iframe)

@@ -21,7 +21,7 @@ function mapAdminError(msg: string): string {
 }
 
 export const Route = createFileRoute("/admin/notificacoes")({
-  head: () => ({ meta: [{ title: "Notificações — Admin MOVVI" }] }),
+  head: () => ({ meta: [{ title: "Notificações — Admin APOIS" }] }),
   component: AdminNotificacoesPage,
 });
 

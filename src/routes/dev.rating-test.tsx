@@ -156,7 +156,7 @@ export const Route = createFileRoute("/dev/rating-test")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Rating Test Harness — MOVVI" },
+      { title: "Rating Test Harness — APOIS" },
       { name: "robots", content: "noindex" },
     ],
   }),

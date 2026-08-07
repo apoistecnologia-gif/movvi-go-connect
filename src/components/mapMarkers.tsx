@@ -1,5 +1,5 @@
 /**
- * MOVVI DRIVE — Marcadores premium do mapa.
+ * APOIS — Marcadores premium do mapa.
  *
  * Componentes visuais reutilizados no app do passageiro e do motorista.
  * NÃO alteram nenhuma lógica de corrida, dispatch, GPS ou realtime — são
@@ -18,7 +18,7 @@ const PIN_PATH =
 
 
 /* Top-down car silhouette. Centered on (0,0), front pointing "up" (−Y).
- * Original MOVVI design: closed-roof compact sedan with dark windshield and
+ * Original APOIS design: closed-roof compact sedan with dark windshield and
  * rear glass. Body is a single rounded silhouette so the roof reads solid,
  * never "open". Only 4 stacked layers → cheap and coherent under rotation. */
 const CAR_BODY_PATH =
@@ -30,7 +30,7 @@ const CAR_WINDSHIELD_PATH =
 const CAR_REAR_GLASS_PATH =
   "M -4.2 4 L 4.2 4 L 3.6 8 L -3.6 8 Z";
 
-const MOVVI_RED = "#E4232C";
+const APOIS_RED = "#E4232C";
 const CAR_OUTLINE = "#3a0509";
 const GLASS_DARK = "#0d1119";
 
@@ -40,7 +40,7 @@ function CarShape({
   position,
   heading = 0,
   scale = 1.6,
-  bodyColor = MOVVI_RED,
+  bodyColor = APOIS_RED,
   outlineColor = CAR_OUTLINE,
   opacity = 1,
   zBase = 10000,
@@ -362,7 +362,7 @@ export function InterpolatedDriverMarker({
           strokeWeight: 1.2,
         }}
       />
-      {/* carro top-down vermelho MOVVI */}
+      {/* carro top-down vermelho APOIS */}
       <CarShape
         position={display}
         heading={displayHeading}

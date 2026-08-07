@@ -13,7 +13,7 @@ import { downloadCsv } from "@/lib/csvExport";
 import { DSBadge, DSButton, DSCard, DSCardContent, DSSelect, DSSelectContent, DSSelectItem, DSSelectTrigger, DSSelectValue } from "@/design-system";
 
 export const Route = createFileRoute("/admin/analytics")({
-  head: () => ({ meta: [{ title: "Analytics & BI — Admin MOVVI" }] }),
+  head: () => ({ meta: [{ title: "Analytics & BI — Admin APOIS" }] }),
   component: AnalyticsPage,
 });
 
@@ -291,7 +291,7 @@ function AnalyticsPage() {
         <TabsContent value="financial" className="space-y-4 mt-4">
           <div className="rounded-md border border-primary/30 bg-primary/5 p-3 text-xs text-muted-foreground">
             <TrendingUp className="inline h-4 w-4 text-primary mr-1" />
-            <strong className="text-foreground">Receita MOVVI</strong> = apenas assinaturas de motoristas.
+            <strong className="text-foreground">Receita APOIS</strong> = apenas assinaturas de motoristas.
             Valores de corridas não fazem parte da receita da empresa.
           </div>
 

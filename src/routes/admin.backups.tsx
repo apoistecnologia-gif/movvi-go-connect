@@ -10,7 +10,7 @@ import { formatDate } from "@/lib/formatters";
 import { DSBadge, DSButton, DSCard, DSCardContent, DSCardDescription, DSCardHeader, DSCardTitle } from "@/design-system";
 
 export const Route = createFileRoute("/admin/backups")({
-  head: () => ({ meta: [{ title: "Backups — Admin MOVVI" }] }),
+  head: () => ({ meta: [{ title: "Backups — Admin APOIS" }] }),
   component: AdminBackupsPage,
 });
 

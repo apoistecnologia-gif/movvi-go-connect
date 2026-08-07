@@ -1,5 +1,5 @@
 /**
- * MOVVI — Shared editable profile form.
+ * APOIS — Shared editable profile form.
  * Used by both passenger and driver profile pages.
  * ❗ Purely UI + `users` table updates — NEVER touches ride tables, dispatch,
  * GPS, realtime or payment logic.

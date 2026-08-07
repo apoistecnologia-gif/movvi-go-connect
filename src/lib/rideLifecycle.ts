@@ -1,5 +1,5 @@
 /**
- * MOVVI — Ciclo de vida oficial da corrida.
+ * APOIS — Ciclo de vida oficial da corrida.
  *
  * ÚNICA fonte de verdade para o status da corrida.
  * Toda transição de status DEVE passar por uma destas server functions.
@@ -240,11 +240,11 @@ export async function offerToNextDriver(supabase: any, rideId: string): Promise<
   if (ride.error) throw new Error(ride.error.message);
   const r = ride.data;
   if (r.status !== RIDE_STATUS.PROCURAR_MOTORISTA) {
-    console.log("[MOVVI DESPACHO] corrida não está procurando motorista, status=", r.status);
+    console.log("[APOIS DESPACHO] corrida não está procurando motorista, status=", r.status);
     return null;
   }
   if (r.accepted_driver_id || r.driver_id) {
-    console.log("[MOVVI DESPACHO] corrida já aceita — não reofertar", { rideId, accepted_driver_id: r.accepted_driver_id, driver_id: r.driver_id });
+    console.log("[APOIS DESPACHO] corrida já aceita — não reofertar", { rideId, accepted_driver_id: r.accepted_driver_id, driver_id: r.driver_id });
     return r.accepted_driver_id ?? r.driver_id ?? null;
   }
 
@@ -253,7 +253,7 @@ export async function offerToNextDriver(supabase: any, rideId: string): Promise<
   const visibleExisting = existingCandidates.filter((id) => !rejected.includes(id));
   const expiresAt = r.request_expires_at ? new Date(r.request_expires_at).getTime() : 0;
   if (visibleExisting.length > 0 && expiresAt > Date.now()) {
-    console.log("[MOVVI DESPACHO] oferta broadcast já ativa — mantendo candidatos", {
+    console.log("[APOIS DESPACHO] oferta broadcast já ativa — mantendo candidatos", {
       rideId, candidates: visibleExisting.length, request_expires_at: r.request_expires_at,
     });
     return visibleExisting[0] ?? null;
@@ -261,14 +261,14 @@ export async function offerToNextDriver(supabase: any, rideId: string): Promise<
 
   const rideCategory = normalizeCategory(r.category);
   const origin = { lat: r.origin_lat as number, lng: r.origin_lng as number };
-  console.log("[MOVVI DESPACHO] ▶ início broadcast", { rideId, origin, category: rideCategory });
+  console.log("[APOIS DESPACHO] ▶ início broadcast", { rideId, origin, category: rideCategory });
 
   const allDriversRes = await supabase
     .from("drivers")
     .select("user_id, name, category, is_online, approval_status, current_lat, current_lng, last_location_at");
   if (allDriversRes.error) throw new Error(allDriversRes.error.message);
   const allDrivers = allDriversRes.data ?? [];
-  console.log("[MOVVI DESPACHO] total motoristas no banco:", allDrivers.length);
+  console.log("[APOIS DESPACHO] total motoristas no banco:", allDrivers.length);
 
   const now = Date.now();
 
@@ -294,7 +294,7 @@ export async function offerToNextDriver(supabase: any, rideId: string): Promise<
   });
 
   for (const e of evaluated) {
-    console.log("[MOVVI DESPACHO] candidato:", {
+    console.log("[APOIS DESPACHO] candidato:", {
       driver: e.user_id, name: e.name,
       dist_km: e.dist_km != null ? Number(e.dist_km.toFixed(3)) : null,
       status: e.eligible ? "elegível" : `descartado: ${e.reasons.join(", ")}`,
@@ -302,7 +302,7 @@ export async function offerToNextDriver(supabase: any, rideId: string): Promise<
   }
 
   const eligibleAll = evaluated.filter((e) => e.eligible && e.dist_km != null);
-  console.log("[MOVVI DESPACHO] resumo:", {
+  console.log("[APOIS DESPACHO] resumo:", {
     total: evaluated.length,
     elegiveis: eligibleAll.length,
     rejeitados: rejected.length,
@@ -313,7 +313,7 @@ export async function offerToNextDriver(supabase: any, rideId: string): Promise<
     const within = eligibleAll
       .filter((e) => (e.dist_km ?? Infinity) <= radius)
       .sort((a, b) => (a.dist_km ?? 0) - (b.dist_km ?? 0));
-    console.log(`[MOVVI DESPACHO] raio ${radius} km → ${within.length} motorista(s)`);
+    console.log(`[APOIS DESPACHO] raio ${radius} km → ${within.length} motorista(s)`);
     if (within.length > 0) {
       chosen = within; // TODOS os elegíveis do raio, sem rotação/limite artificial.
       break;
@@ -321,13 +321,13 @@ export async function offerToNextDriver(supabase: any, rideId: string): Promise<
   }
 
   if (chosen.length === 0) {
-    console.log("[MOVVI DESPACHO] ✗ nenhum motorista elegível para corrida", rideId);
+    console.log("[APOIS DESPACHO] ✗ nenhum motorista elegível para corrida", rideId);
     return null;
   }
 
   const candidateIds = chosen.map((c) => c.user_id);
   const requestExpiresAt = new Date(Date.now() + RIDE_REQUEST_TIMEOUT_SECONDS * 1000).toISOString();
-  console.log("[MOVVI DESPACHO] ✓ broadcast candidate_driver_ids =", candidateIds);
+  console.log("[APOIS DESPACHO] ✓ broadcast candidate_driver_ids =", candidateIds);
   const upd = await supabase
     .from("rides")
     .update({
@@ -339,7 +339,7 @@ export async function offerToNextDriver(supabase: any, rideId: string): Promise<
     .eq("id", rideId)
     .eq("status", RIDE_STATUS.PROCURAR_MOTORISTA)
     .is("accepted_driver_id", null);
-  if (upd.error) console.warn("[MOVVI DESPACHO] erro gravando broadcast:", upd.error.message);
+  if (upd.error) console.warn("[APOIS DESPACHO] erro gravando broadcast:", upd.error.message);
   return candidateIds[0] ?? null;
 }
 
@@ -499,13 +499,13 @@ export const criarCorrida = createServerFn({ method: "POST" })
       .select("*")
       .single();
     if (ins.error) throw new Error(ins.error.message);
-    console.log("[MOVVI DESPACHO] corrida criada:", {
+    console.log("[APOIS DESPACHO] corrida criada:", {
       ride_id: ins.data.id, passenger_id: ins.data.passenger_id, category: ins.data.category,
       distance_km: distanceKmFinal, estimated_price: estimatedPriceServer,
       status: ins.data.status, created_at: ins.data.created_at,
     });
     try { await offerToNextDriver(supabaseAdmin, ins.data.id); }
-    catch (e) { console.warn("[MOVVI DESPACHO] offerToNextDriver inicial falhou:", (e as Error).message); }
+    catch (e) { console.warn("[APOIS DESPACHO] offerToNextDriver inicial falhou:", (e as Error).message); }
     return { rideId: ins.data.id };
   });
 
@@ -554,7 +554,7 @@ export const aceitarCorrida = createServerFn({ method: "POST" })
         passengerPhotoUrl = (u.data?.avatar_url as string | null) ?? null;
       }
     } catch (e) {
-      console.warn("[MOVVI ACEITE] foto passageiro indisponível:", (e as Error).message);
+      console.warn("[APOIS ACEITE] foto passageiro indisponível:", (e as Error).message);
     }
 
     // PIN de segurança (4 dígitos) — gerado UMA vez no aceite, nunca regenerado.
@@ -592,14 +592,14 @@ export const aceitarCorrida = createServerFn({ method: "POST" })
       .select("*")
       .single();
     if (upd.error) {
-      console.error("[MOVVI MOTORISTA] aceite falhou:", upd.error);
+      console.error("[APOIS MOTORISTA] aceite falhou:", upd.error);
       throw new Error(
         upd.error.code === "PGRST116"
           ? "Esta corrida já foi aceita por outro motorista."
           : "Não foi possível aceitar a corrida. Tente novamente.",
       );
     }
-    console.log("[MOVVI MOTORISTA] aceite confirmado no backend", {
+    console.log("[APOIS MOTORISTA] aceite confirmado no backend", {
       rideId: upd.data.id,
       driverId: upd.data.driver_id,
       status: upd.data.status,
@@ -643,8 +643,8 @@ export const recusarCorrida = createServerFn({ method: "POST" })
       .eq("status", RIDE_STATUS.PROCURAR_MOTORISTA)
       .is("accepted_driver_id", null);
     const remainingVisible = candidates.filter((id) => !rejected.includes(id));
-    console.log("[MOVVI REQUEST REMOVAL]", { driverId: userId, rideId: data.rideId, timestamp: new Date().toISOString(), removeReason: "driver_rejected" });
-    console.log("[MOVVI MOTORISTA] recusa:", { driver: userId, ride: data.rideId, remainingVisible });
+    console.log("[APOIS REQUEST REMOVAL]", { driverId: userId, rideId: data.rideId, timestamp: new Date().toISOString(), removeReason: "driver_rejected" });
+    console.log("[APOIS MOTORISTA] recusa:", { driver: userId, ride: data.rideId, remainingVisible });
     if (remainingVisible.length === 0) {
       await offerToNextDriver(supabaseAdmin, data.rideId);
     }
@@ -823,7 +823,7 @@ export const cancelarPeloPassageiro = createServerFn({ method: "POST" })
           data: { ride_id: data.rideId, cancelled_by: "passenger", reason: data.motivo ?? null },
         });
       } catch (e) {
-        console.warn("[MOVVI] falha ao gravar notification_inbox:", e);
+        console.warn("[APOIS] falha ao gravar notification_inbox:", e);
       }
     }
 

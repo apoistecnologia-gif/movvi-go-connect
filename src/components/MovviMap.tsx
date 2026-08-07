@@ -24,7 +24,7 @@ interface MovviMapProps {
 }
 
 /**
- * Componente central de mapa do MOVVI DRIVE.
+ * Componente central de mapa do APOIS.
  *
  * - Mapa SEMPRE inicia dentro do Brasil. Coordenadas estrangeiras são ignoradas.
  * - Sem GPS → mostra o Brasil inteiro (zoom 5).

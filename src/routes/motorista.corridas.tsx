@@ -447,6 +447,6 @@ function FilterPill({
 }
 
 export const Route = createFileRoute("/motorista/corridas")({
-  head: () => ({ meta: [{ title: "Histórico — MOVVI DRIVE" }] }),
+  head: () => ({ meta: [{ title: "Histórico — APOIS" }] }),
   component: DriverRidesPage,
 });

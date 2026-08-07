@@ -1,4 +1,4 @@
-// Admin-only signed URL for the MOVVI source ZIP.
+// Admin-only signed URL for the APOIS source ZIP.
 // Replaces the previously public /api/public/download/movvi-source endpoint.
 // Requires an authenticated admin session (has_role check) before creating
 // the short-lived signed URL from the private `downloads` bucket.

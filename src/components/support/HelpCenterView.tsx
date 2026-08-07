@@ -128,7 +128,7 @@ export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
       <header>
         <h1 className="text-2xl font-bold">Central de ajuda</h1>
         <p className="text-sm text-muted-foreground">
-          Encontre respostas rápidas, abra um ticket ou fale com a MOVVI.
+          Encontre respostas rápidas, abra um ticket ou fale com a APOIS.
         </p>
       </header>
 
@@ -295,7 +295,7 @@ export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
         <DSCardContent className="flex flex-col gap-2 pt-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <ShieldCheck className="h-4 w-4 text-primary" />
-            Documentos legais da MOVVI
+            Documentos legais da APOIS
           </div>
           <div className="flex gap-2">
             <DSButton asChild variant="outline" size="sm">

@@ -9,7 +9,7 @@ import { downloadCsv } from "@/lib/csvExport";
 import { DSBadge, DSButton, DSCard, DSCardContent, DSInput } from "@/design-system";
 
 export const Route = createFileRoute("/admin/logs")({
-  head: () => ({ meta: [{ title: "Logs — Admin MOVVI" }] }),
+  head: () => ({ meta: [{ title: "Logs — Admin APOIS" }] }),
   component: AdminLogsPage,
 });
 

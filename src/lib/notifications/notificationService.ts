@@ -1,4 +1,4 @@
-// Provider-agnostic notification facade used across MOVVI.
+// Provider-agnostic notification facade used across APOIS.
 //
 // Front-end responsibility: show local system notifications when the app is
 // backgrounded, log every event to `notification_logs`, and respect user

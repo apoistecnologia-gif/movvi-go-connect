@@ -6,8 +6,8 @@ import { BottomNav, DRIVER_NAV } from "@/components/BottomNav";
 type NavItems = ComponentProps<typeof BottomNav>["items"];
 
 /**
- * MOVVI DS — Shell padrão de toda tela secundária (motorista e passageiro).
- * Fundo #F7F9F7, header MOVVI fixo, largura máxima 2xl,
+ * APOIS DS — Shell padrão de toda tela secundária (motorista e passageiro).
+ * Fundo #F7F9F7, header APOIS fixo, largura máxima 2xl,
  * espaçamento inferior seguro para a BottomNav.
  */
 export function SettingsPageShell({
@@ -34,7 +34,7 @@ export function SettingsPageShell({
 }
 
 /**
- * MOVVI DS — Hero header padrão das telas secundárias.
+ * APOIS DS — Hero header padrão das telas secundárias.
  * Título grande, subtítulo pequeno, ícone verde em tile arredondado.
  * Mesma proporção da tela de Perfil.
  */

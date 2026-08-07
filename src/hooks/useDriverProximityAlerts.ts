@@ -1,5 +1,5 @@
 /**
- * MOVVI — Driver proximity alerts (passenger side).
+ * APOIS — Driver proximity alerts (passenger side).
  *
  * Watches the distance between the driver and the passenger's pickup point
  * during `motorista_a_caminho` and fires one-shot alerts (toast + vibration +
@@ -87,7 +87,7 @@ export function useDriverProximityAlerts(args: Args): void {
       const body = "Prepare-se para o embarque. Confirme a placa antes de entrar.";
       toast.success(title, { description: body, duration: 6000 });
       vibrate([120, 60, 120]);
-      nativeNotify("MOVVI — Motorista chegando", body);
+      nativeNotify("APOIS — Motorista chegando", body);
     }
 
     if (!firedRef.current.arriving && km <= ARRIVING_KM) {
@@ -96,7 +96,7 @@ export function useDriverProximityAlerts(args: Args): void {
       const body = "Já pode ir ao ponto de embarque.";
       toast.success(title, { description: body, duration: 8000 });
       vibrate([200, 80, 200, 80, 200]);
-      nativeNotify("MOVVI — Motorista chegou perto", body);
+      nativeNotify("APOIS — Motorista chegou perto", body);
     }
   }, [rideId, status, driverLat, driverLng, originLat, originLng, driverName, avgKmh]);
 }

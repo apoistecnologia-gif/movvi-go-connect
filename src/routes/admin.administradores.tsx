@@ -11,7 +11,7 @@ import { grantAdminRole, revokeAdminRole } from "@/lib/adminRoles.functions";
 import { formatDate } from "@/lib/formatters";
 
 export const Route = createFileRoute("/admin/administradores")({
-  head: () => ({ meta: [{ title: "Administradores — Admin MOVVI" }] }),
+  head: () => ({ meta: [{ title: "Administradores — Admin APOIS" }] }),
   component: AdminUsersPage,
 });
 

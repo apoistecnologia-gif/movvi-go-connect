@@ -57,7 +57,7 @@ export async function uploadProfilePhoto(
       cacheControl: "3600",
     });
   if (up.error) {
-    console.error("[MOVVI PHOTO] upload error:", up.error.message);
+    console.error("[APOIS PHOTO] upload error:", up.error.message);
     throw new Error("Falha ao enviar a foto. Tente novamente.");
   }
 

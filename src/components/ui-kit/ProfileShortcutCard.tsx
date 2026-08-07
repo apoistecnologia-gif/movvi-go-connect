@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { ChevronRight } from "lucide-react";
 
 /**
- * MOVVI ProfileShortcutCard — atalho grande para a tela de Conta.
+ * APOIS ProfileShortcutCard — atalho grande para a tela de Conta.
  * Ícone + título; opcionalmente subtítulo. Renderiza como link ou botão.
  */
 

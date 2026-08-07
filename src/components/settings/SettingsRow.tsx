@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * MOVVI DS — Settings row.
+ * APOIS DS — Settings row.
  * Matches the Profile MenuRow: 40px rounded green icon tile,
  * 15px semibold title, 12.5px muted hint, right-aligned control.
  */

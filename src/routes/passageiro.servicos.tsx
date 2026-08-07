@@ -6,11 +6,11 @@ import { BottomNav, PASSENGER_NAV } from "@/components/BottomNav";
 export const Route = createFileRoute("/passageiro/servicos")({
   head: () => ({
     meta: [
-      { title: "Serviços — MOVVI" },
+      { title: "Serviços — APOIS" },
       {
         name: "description",
         content:
-          "Escolha o serviço MOVVI: corridas, entregas, guincho, mudanças e fretes grandes.",
+          "Escolha o serviço APOIS: corridas, entregas, guincho, mudanças e fretes grandes.",
       },
       { name: "robots", content: "noindex, nofollow" },
     ],
@@ -25,7 +25,7 @@ function ServicosPage() {
       <main className="mx-auto w-full max-w-md space-y-5 px-4 pt-4">
         <header className="space-y-1 px-1">
           <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
-            Serviços MOVVI
+            Serviços APOIS
           </h1>
           <p className="text-[13px] text-muted-foreground">
             Escolha um atendimento especial.
@@ -35,14 +35,14 @@ function ServicosPage() {
         <section className="space-y-3">
           <ServiceFlowCard
             icon={Send}
-            title="MOVVI Envios"
+            title="APOIS Envios"
             description="Envie ou receba itens com praticidade."
             action="Enviar ou receber"
             to="/passageiro/envios"
           />
           <ServiceFlowCard
             icon={Truck}
-            title="MOVVI Guincho"
+            title="APOIS Guincho"
             description="Solicite assistência para transportar seu veículo."
             action="Solicitar guincho"
             to="/passageiro/guincho"

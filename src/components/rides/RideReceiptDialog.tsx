@@ -12,7 +12,7 @@ import {
   copyReceipt,
   formatBRL,
   shareReceipt,
-  MOVVI_RECEIPT_DISCLAIMER,
+  APOIS_RECEIPT_DISCLAIMER,
   type ReceiptData,
 } from "@/lib/rideReceipt";
 import { DSButton } from "@/design-system";
@@ -57,7 +57,7 @@ export function RideReceiptDialog({
       <DialogContent className="max-h-[92vh] overflow-y-auto bg-background sm:max-w-md">
         <DialogHeader className="sr-only">
           <DialogTitle>Recibo da corrida</DialogTitle>
-          <DialogDescription>Detalhes da corrida MOVVI</DialogDescription>
+          <DialogDescription>Detalhes da corrida APOIS</DialogDescription>
         </DialogHeader>
 
         {/* Header */}
@@ -139,7 +139,7 @@ export function RideReceiptDialog({
 
         {/* Disclaimer */}
         <p className="mt-4 rounded-xl border border-dashed border-border bg-card/40 p-3 text-[11px] leading-relaxed text-muted-foreground">
-          {MOVVI_RECEIPT_DISCLAIMER}
+          {APOIS_RECEIPT_DISCLAIMER}
         </p>
 
         {/* Actions */}

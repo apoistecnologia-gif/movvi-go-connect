@@ -9,8 +9,8 @@ import { PASSENGER_NAV } from "@/components/BottomNav";
 export const Route = createFileRoute("/passageiro/termos")({
   head: () => ({
     meta: [
-      { title: "Termos de Uso — MOVVI" },
-      { name: "description", content: "Termos de Uso da plataforma MOVVI." },
+      { title: "Termos de Uso — APOIS" },
+      { name: "description", content: "Termos de Uso da plataforma APOIS." },
     ],
   }),
   component: TermosPage,
@@ -52,11 +52,11 @@ function TermosPage() {
       />
       <article className="space-y-5 rounded-[24px] bg-white p-6 text-[14px] leading-relaxed text-[#1B1B1B] shadow-[0_6px_20px_-14px_rgba(15,23,42,0.12)] ring-1 ring-black/5">
         <Section title="1. Aceitação">
-          Ao criar conta e utilizar o aplicativo MOVVI, você concorda com estes Termos
+          Ao criar conta e utilizar o aplicativo APOIS, você concorda com estes Termos
           e com a Política de Privacidade.
         </Section>
         <Section title="2. Descrição do Serviço">
-          A MOVVI é uma plataforma tecnológica de intermediação que conecta passageiros
+          A APOIS é uma plataforma tecnológica de intermediação que conecta passageiros
           a motoristas parceiros. Não prestamos serviço de transporte.
         </Section>
         <Section title="3. Conta">
@@ -68,7 +68,7 @@ function TermosPage() {
           da confirmação. Cancelamentos após o aceite podem gerar cobrança.
         </Section>
         <Section title="5. PIN de Segurança">
-          A MOVVI gera um PIN de 4 dígitos por corrida. Informe-o ao motorista para
+          A APOIS gera um PIN de 4 dígitos por corrida. Informe-o ao motorista para
           autorizar o início da viagem.
         </Section>
         <Section title="6. Avaliações">
@@ -76,7 +76,7 @@ function TermosPage() {
           abusivas podem ser removidas.
         </Section>
         <Section title="7. Responsabilidades">
-          A MOVVI busca manter a plataforma disponível e segura, mas não garante
+          A APOIS busca manter a plataforma disponível e segura, mas não garante
           disponibilidade ininterrupta nem responde por condutas de terceiros.
         </Section>
         <Section title="8. Privacidade">

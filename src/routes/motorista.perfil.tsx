@@ -1,5 +1,5 @@
 /**
- * MOVVI DRIVER — Profile screen (UI redesign only — Design System pass).
+ * APOISR — Profile screen (UI redesign only — Design System pass).
  * Preserves all logic: uploads, personal-info edits, subscription, documents, auth.
  */
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
@@ -45,7 +45,7 @@ import {
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/motorista/perfil")({
-  head: () => ({ meta: [{ title: "Perfil do Motorista — MOVVI DRIVE" }] }),
+  head: () => ({ meta: [{ title: "Perfil do Motorista — APOIS" }] }),
   component: DriverProfilePage,
 });
 
@@ -141,7 +141,7 @@ function DriverProfilePage() {
     );
   }
 
-  const name = driver?.name || "Motorista MOVVI";
+  const name = driver?.name || "Motorista APOIS";
   const rating = Number(driver?.average_rating ?? driver?.rating ?? 0);
   const completed = Number(driver?.completed_rides ?? totalRides);
   const totalRatings = Number(driver?.total_ratings ?? 0);
@@ -298,7 +298,7 @@ function DriverProfilePage() {
               </span>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <Body className="font-semibold">MOVVI Premium</Body>
+                  <Body className="font-semibold">APOIS Premium</Body>
                   <StatusPill
                     status={subActive ? "accepted" : "cancelled"}
                     label={subActive ? "Ativa" : "Vencida"}
@@ -400,7 +400,7 @@ function DriverProfilePage() {
               <Icon as={LogOut} size="md" /> Sair da conta
             </DSButton>
             <BodySmall className="text-center text-muted-foreground">
-              MOVVI Driver · Versão 1.0
+              APOIS Motorista · Versão 1.0
             </BodySmall>
           </div>
         </div>

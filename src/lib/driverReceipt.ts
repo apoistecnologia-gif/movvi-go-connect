@@ -1,4 +1,4 @@
-// MOVVI DRIVE — gerador de recibo de corrida em PDF.
+// APOIS — gerador de recibo de corrida em PDF.
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -37,7 +37,7 @@ export function generateRideReceiptPDF(ride: ReceiptRide): jsPDF {
   doc.setTextColor(5, 7, 13);
   doc.setFontSize(18);
   doc.setFont("helvetica", "bold");
-  doc.text("MOVVI DRIVE — Recibo de Corrida", 14, 15);
+  doc.text("APOIS — Recibo de Corrida", 14, 15);
 
   doc.setTextColor(20, 20, 20);
   doc.setFontSize(10);
@@ -82,7 +82,7 @@ export function generateRideReceiptPDF(ride: ReceiptRide): jsPDF {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.text(
-    "Este recibo é uma confirmação de viagem realizada na plataforma MOVVI DRIVE.",
+    "Este recibo é uma confirmação de viagem realizada na plataforma APOIS.",
     14,
     finalY + 36,
   );
@@ -92,5 +92,5 @@ export function generateRideReceiptPDF(ride: ReceiptRide): jsPDF {
 
 export function downloadRideReceipt(ride: ReceiptRide) {
   const doc = generateRideReceiptPDF(ride);
-  doc.save(`movvi-corrida-${ride.id.slice(0, 8)}.pdf`);
+  doc.save(`apois-corrida-${ride.id.slice(0, 8)}.pdf`);
 }

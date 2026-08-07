@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { DSButton, DSInput, DSLabel } from "@/design-system";
 
 export const Route = createFileRoute("/motorista/seguranca")({
-  head: () => ({ meta: [{ title: "Segurança — MOVVI DRIVE" }] }),
+  head: () => ({ meta: [{ title: "Segurança — APOIS" }] }),
   component: DriverSecurityPage,
 });
 
@@ -81,7 +81,7 @@ function DriverSecurityPage() {
       message: "SOS acionado pelo motorista",
     });
     if (error) toast.error(error.message);
-    else toast.success("Alerta SOS enviado para o suporte MOVVI.");
+    else toast.success("Alerta SOS enviado para o suporte APOIS.");
   }
 
   function shareLocation() {
@@ -90,7 +90,7 @@ function DriverSecurityPage() {
       async (p) => {
         const url = `https://maps.google.com/?q=${p.coords.latitude},${p.coords.longitude}`;
         if (navigator.share) {
-          await navigator.share({ title: "Minha localização — MOVVI", text: "Estou aqui agora:", url });
+          await navigator.share({ title: "Minha localização — APOIS", text: "Estou aqui agora:", url });
         } else {
           await navigator.clipboard.writeText(url);
           toast.success("Link da localização copiado!");

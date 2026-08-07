@@ -14,7 +14,7 @@ import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 export const Route = createFileRoute("/admin/operacoes")({
-  head: () => ({ meta: [{ title: "Central de Operações — Admin MOVVI" }] }),
+  head: () => ({ meta: [{ title: "Central de Operações — Admin APOIS" }] }),
   component: OpsCenterPage,
 });
 

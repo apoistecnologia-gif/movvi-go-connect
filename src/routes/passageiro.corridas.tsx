@@ -689,7 +689,7 @@ function ScheduledRidesSection({
               Nenhuma corrida agendada
             </p>
             <p className="text-[12px] text-[#707070]">
-              Reserve seu horário e MOVVI busca o motorista para você.
+              Reserve seu horário e APOIS busca o motorista para você.
             </p>
           </div>
         </div>
@@ -968,6 +968,6 @@ function PassengerRidesPage() {
 
 
 export const Route = createFileRoute("/passageiro/corridas")({
-  head: () => ({ meta: [{ title: "Minhas Corridas — MOVVI DRIVE" }] }),
+  head: () => ({ meta: [{ title: "Minhas Corridas — APOIS" }] }),
   component: PassengerRidesPage,
 });

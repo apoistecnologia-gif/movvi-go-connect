@@ -40,7 +40,7 @@ export interface ShareRideInput {
 }
 
 export function buildShareText(input: ShareRideInput): string {
-  const lines: string[] = ["🚗 MOVVI — Acompanhe minha viagem em tempo real", ""];
+  const lines: string[] = ["🚗 APOIS — Acompanhe minha viagem em tempo real", ""];
   lines.push(`Status: ${statusLabel(input.status)}`);
   if (input.role === "passenger") {
     if (input.driverName) lines.push(`Motorista: ${input.driverName}`);
@@ -60,7 +60,7 @@ export function buildShareText(input: ShareRideInput): string {
       `Localização aproximada: https://www.google.com/maps?q=${input.currentLat},${input.currentLng}`,
     );
   }
-  lines.push("", "Enviado pela MOVVI para sua segurança.");
+  lines.push("", "Enviado pela APOIS para sua segurança.");
   return lines.join("\n");
 }
 
@@ -70,7 +70,7 @@ export async function shareRide(input: ShareRideInput): Promise<void> {
   try {
     const nav = navigator as Navigator & { share?: (d: ShareData) => Promise<void> };
     if (typeof nav.share === "function") {
-      await nav.share({ title: "MOVVI — Minha corrida", text });
+      await nav.share({ title: "APOIS — Minha corrida", text });
       return;
     }
     await navigator.clipboard.writeText(text);

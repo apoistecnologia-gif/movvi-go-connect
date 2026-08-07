@@ -45,7 +45,7 @@ export function notifyRideStatus(audience: Audience, status: RideStatus) {
   // notification opens the correct ride screen (passenger or driver app).
   const deepLink = audience === "passageiro" ? "/passageiro/app" : "/motorista/app";
   showPush({
-    title: `MOVVI • ${n.title}`,
+    title: `APOIS • ${n.title}`,
     body: n.description,
     tag: `movvi-ride-${audience}-${status}`,
     url: deepLink,

@@ -34,6 +34,6 @@ export async function logGpsTelemetry(
     });
   } catch (err) {
     // Telemetria nunca pode quebrar o app.
-    if (import.meta.env.DEV) console.warn("[MOVVI] logGpsTelemetry falhou:", err);
+    if (import.meta.env.DEV) console.warn("[APOIS] logGpsTelemetry falhou:", err);
   }
 }

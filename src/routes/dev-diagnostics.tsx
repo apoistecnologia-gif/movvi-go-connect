@@ -19,7 +19,7 @@ import { DevOrAdminGuard } from "@/components/DevOrAdminGuard";
 export const Route = createFileRoute("/dev-diagnostics")({
   head: () => ({
     meta: [
-      { title: "MOVVI — Diagnóstico (DEV)" },
+      { title: "APOIS — Diagnóstico (DEV)" },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -267,7 +267,7 @@ function DevDiagnosticsPage() {
             <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-amber-400 ring-1 ring-amber-500/40">
               🧪 Modo Desenvolvedor
             </span>
-            <h1 className="mt-2 font-display text-2xl font-bold">Diagnóstico MOVVI</h1>
+            <h1 className="mt-2 font-display text-2xl font-bold">Diagnóstico APOIS</h1>
             <p className="text-sm text-muted-foreground">
               Acessível somente em desenvolvimento/preview. Não substitui o GPS real em produção.
             </p>

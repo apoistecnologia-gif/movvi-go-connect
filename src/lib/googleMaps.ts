@@ -38,7 +38,7 @@ export function sanitizeBrazilCenter(c?: { lat: number; lng: number } | null) {
   if (!c || !isBrazilCoordinate(c.lat, c.lng)) {
     if (c) {
       // eslint-disable-next-line no-console
-      if (import.meta.env.DEV) console.warn("[MOVVI] Coordenada fora do Brasil ignorada:", c);
+      if (import.meta.env.DEV) console.warn("[APOIS] Coordenada fora do Brasil ignorada:", c);
     }
     return BRAZIL_CENTER;
   }
@@ -81,7 +81,7 @@ export function purgeForeignMapCache() {
 // Estilo escuro premium — inspirado em apps de navegação noturna (Uber/Bolt).
 // Fundo navy profundo (não preto puro), ruas em cinza claro de alto contraste,
 // rodovias em verde-azulado escuro, água em azul-marinho, parques em verde escuro.
-export const MOVVI_DARK_MAP_STYLE: google.maps.MapTypeStyle[] = [
+export const APOIS_DARK_MAP_STYLE: google.maps.MapTypeStyle[] = [
   { elementType: "geometry", stylers: [{ color: "#0f1a2c" }] },
   { elementType: "labels.text.stroke", stylers: [{ color: "#0f1a2c" }] },
   { elementType: "labels.text.fill", stylers: [{ color: "#9fb0c8" }] },
@@ -103,7 +103,7 @@ export const MOVVI_DARK_MAP_STYLE: google.maps.MapTypeStyle[] = [
 ];
 
 // Estilo claro premium — inspirado no Google Maps oficial, com ruas mais nítidas.
-export const MOVVI_LIGHT_MAP_STYLE: google.maps.MapTypeStyle[] = [
+export const APOIS_LIGHT_MAP_STYLE: google.maps.MapTypeStyle[] = [
   { elementType: "geometry", stylers: [{ color: "#f4f6f8" }] },
   { elementType: "labels.text.fill", stylers: [{ color: "#4a5460" }] },
   { elementType: "labels.text.stroke", stylers: [{ color: "#ffffff" }, { weight: 3 }] },
@@ -133,7 +133,7 @@ export const MOVVI_LIGHT_MAP_STYLE: google.maps.MapTypeStyle[] = [
 export function getMapStyleForTheme(
   theme: "light" | "dark",
 ): google.maps.MapTypeStyle[] {
-  return theme === "light" ? MOVVI_LIGHT_MAP_STYLE : MOVVI_DARK_MAP_STYLE;
+  return theme === "light" ? APOIS_LIGHT_MAP_STYLE : APOIS_DARK_MAP_STYLE;
 }
 
 export function getMapBackgroundForTheme(theme: "light" | "dark"): string {

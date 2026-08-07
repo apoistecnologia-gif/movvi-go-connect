@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { SettingsRow } from "./SettingsRow";
 
 /**
- * MOVVI DS — Navigable settings row.
+ * APOIS DS — Navigable settings row.
  * If `to` is provided, renders a <Link>. Otherwise renders a <button>.
  */
 export function SettingsLinkRow({

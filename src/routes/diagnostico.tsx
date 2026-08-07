@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 export const Route = createFileRoute("/diagnostico")({
   head: () => ({
     meta: [
-      { title: "Diagnóstico — MOVVI" },
+      { title: "Diagnóstico — APOIS" },
       { name: "robots", content: "noindex" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
     ],

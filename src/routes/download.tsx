@@ -10,8 +10,8 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/download")({
   head: () => ({
     meta: [
-      { title: "Download — MOVVI DRIVE" },
-      { name: "description", content: "Download restrito do código-fonte do MOVVI DRIVE (admin)." },
+      { title: "Download — APOIS" },
+      { name: "description", content: "Download restrito do código-fonte do APOIS (admin)." },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -55,7 +55,7 @@ function DownloadInner() {
               <Package className="h-6 w-6" />
             </div>
             <div>
-              <h1 className="text-xl font-bold">MOVVI DRIVE — Código-fonte</h1>
+              <h1 className="text-xl font-bold">APOIS — Código-fonte</h1>
               <p className="text-xs text-muted-foreground">
                 Arquivo ZIP · acesso restrito a administradores
               </p>

@@ -1,4 +1,4 @@
-// MOVVI — inicialização de recursos nativos (Capacitor).
+// APOIS — inicialização de recursos nativos (Capacitor).
 // Só faz algo quando o app roda dentro do APK (Android/iOS). No web é no-op.
 //
 // FASE ATUAL:

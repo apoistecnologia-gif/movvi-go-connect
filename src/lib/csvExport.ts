@@ -1,4 +1,4 @@
-// MOVVI DRIVE — utilitário simples de exportação CSV (UTF-8 com BOM para Excel/PT-BR).
+// APOIS — utilitário simples de exportação CSV (UTF-8 com BOM para Excel/PT-BR).
 export function toCsv(rows: Record<string, unknown>[], columns?: string[]): string {
   if (!rows.length) return "";
   const cols = columns ?? Object.keys(rows[0]);

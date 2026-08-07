@@ -3,9 +3,9 @@ import { MovviLogo } from "@/components/MovviLogo";
 import { ArrowUpRight, CarFront, ChevronRight, CircleDollarSign, ShieldCheck, User, Shield } from "lucide-react";
 import { APP_ROLE, isPassengerBuild, isDriverBuild } from "@/lib/appRole";
 
-const HOME_TITLE = "MOVVI DRIVE — Mobilidade brasileira que move você";
+const HOME_TITLE = "APOIS — Mobilidade brasileira que move você";
 const HOME_DESC =
-  "Plataforma brasileira de mobilidade urbana. Peça corridas, dirija com a MOVVI ou gerencie a operação — rapidez, segurança e tecnologia em todo o Brasil.";
+  "Plataforma brasileira de mobilidade urbana. Peça corridas, dirija com a APOIS ou gerencie a operação — rapidez, segurança e tecnologia em todo o Brasil.";
 const HOME_URL = "https://movvi-go-connect.lovable.app/";
 const HOME_OG_IMAGE =
   "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/70a94c15-531e-4bf4-824b-6f2cef2bea65/id-preview-047658fb--0900bef2-57d2-47b9-93b1-0ea5defee501.lovable.app-1782494344290.png";
@@ -38,7 +38,7 @@ export const Route = createFileRoute("/")({
         children: JSON.stringify({
           "@context": "https://schema.org",
           "@type": "Organization",
-          name: "MOVVI DRIVE",
+          name: "APOIS",
           url: HOME_URL,
           logo: HOME_OG_IMAGE,
           sameAs: [],
@@ -102,7 +102,7 @@ function HomePage() {
             className="mt-10 text-[36px] font-bold leading-[1.05] tracking-tight text-[#0F172A] animate-in fade-in slide-in-from-bottom-2 duration-500 fill-mode-both"
             style={{ animationDelay: "80ms" }}
           >
-            Bem-vindo à <span className="text-[#22C55E]">MOVVI</span>
+            Bem-vindo à <span className="text-[#22C55E]">APOIS</span>
           </h1>
 
           <p
@@ -154,7 +154,7 @@ function HomePage() {
         >
           <div className="mx-auto mb-3 h-px w-10 bg-[#E5E7EB]" />
           <div className="text-[11.5px] font-medium tracking-wide text-[#94A3B8]/80">
-            Versão 1.0 · © {new Date().getFullYear()} MOVVI Tecnologia
+            Versão 1.0 · © {new Date().getFullYear()} APOIS Tecnologia
           </div>
         </footer>
       </div>

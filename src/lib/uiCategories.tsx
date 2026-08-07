@@ -16,7 +16,7 @@ export type UiCategory = {
   enabled: boolean;
 };
 
-/** Catálogo padrão MOVVI (fallback). O admin pode renomear / desabilitar / recolorir cada uma. */
+/** Catálogo padrão APOIS (fallback). O admin pode renomear / desabilitar / recolorir cada uma. */
 export const UI_CATEGORY_DEFAULTS: UiCategory[] = [
   { key: "carro",   label: "Carro",   icon: Car,   color: "#8DD92B", backend: "carros",  tagline: "Viagens urbanas com conforto",           enabled: true },
   { key: "moto",    label: "Moto",    icon: Bike,  color: "#5FAF1A", backend: "motos",   tagline: "Viagens rápidas e econômicas",           enabled: true },
@@ -59,7 +59,7 @@ export function UiCategoriesProvider({ children }: { children: ReactNode }) {
         .order("sort_order", { ascending: true });
       if (!alive) return;
       if (error) {
-        if (import.meta.env.DEV) console.warn("[MOVVI] ride_categories load:", error.message);
+        if (import.meta.env.DEV) console.warn("[APOIS] ride_categories load:", error.message);
         setRows([]);
         return;
       }

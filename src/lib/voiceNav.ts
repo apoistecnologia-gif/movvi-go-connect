@@ -1,5 +1,5 @@
 /**
- * MOVVI — Voz de navegação para o motorista.
+ * APOIS — Voz de navegação para o motorista.
  *
  * Usa a Web Speech API nativa (SpeechSynthesis). Preferimos vozes pt-BR
  * da Google (femininas por padrão no Android/Chrome), com fallback para

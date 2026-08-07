@@ -43,7 +43,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
 export const Route = createFileRoute("/motorista/ganhos")({
-  head: () => ({ meta: [{ title: "Financeiro — MOVVI DRIVE" }] }),
+  head: () => ({ meta: [{ title: "Financeiro — APOIS" }] }),
   component: DriverEarningsPage,
 });
 
@@ -209,7 +209,7 @@ function DriverEarningsPage() {
   function exportPdf() {
     const doc = new jsPDF();
     doc.setFontSize(16);
-    doc.text("MOVVI DRIVE — Extrato de Ganhos", 14, 16);
+    doc.text("APOIS — Extrato de Ganhos", 14, 16);
     doc.setFontSize(10);
     doc.text(`Período: ${filter} · Gerado em ${new Date().toLocaleString("pt-BR")}`, 14, 23);
     doc.text(`Total: ${brl(periodStats.earnings)} · ${periodStats.trips} corridas`, 14, 30);
@@ -304,7 +304,7 @@ function DriverEarningsPage() {
             </span>
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <Body className="font-semibold">MOVVI Premium</Body>
+                <Body className="font-semibold">APOIS Premium</Body>
                 <StatusPill
                   status={subActive ? "accepted" : "cancelled"}
                   label={subLabel}

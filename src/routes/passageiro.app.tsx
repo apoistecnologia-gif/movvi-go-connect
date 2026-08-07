@@ -434,7 +434,7 @@ type PassageiroSearch = {
 };
 
 export const Route = createFileRoute("/passageiro/app")({
-  head: () => ({ meta: [{ title: "MOVVI Drive — Passageiro" }] }),
+  head: () => ({ meta: [{ title: "APOIS Drive — Passageiro" }] }),
   validateSearch: (raw: Record<string, unknown>): PassageiroSearch => {
     const out: PassageiroSearch = {};
     const v = raw?.envios;
@@ -473,7 +473,7 @@ export const Route = createFileRoute("/passageiro/app")({
   ),
 
   errorComponent: ({ error, reset }) => {
-    console.error("[MOVVI] Erro na tela do passageiro:", error);
+    console.error("[APOIS] Erro na tela do passageiro:", error);
     const message = (error as Error)?.message ?? String(error ?? "Erro desconhecido");
     const stack = (error as Error)?.stack ?? "";
     return (
@@ -588,7 +588,7 @@ function geocodeFromPickupCache(cached: PickupCache): GeocodeResult {
   };
 }
 
-/** Catálogo visual de categorias da MOVVI (mapeia para o enum backend). */
+/** Catálogo visual de categorias da APOIS (mapeia para o enum backend). */
 type UiCategory = {
   key: string;
   label: string;
@@ -722,7 +722,7 @@ function PassageiroApp() {
         : prev));
     } catch (e) {
       const msg = (e as Error)?.message ?? "Falha ao enviar avaliação.";
-      if (import.meta.env.DEV) console.warn("[MOVVI] erro ao avaliar motorista:", msg);
+      if (import.meta.env.DEV) console.warn("[APOIS] erro ao avaliar motorista:", msg);
       setRatingError(msg);
     } finally {
       setSubmittingRating(false);
@@ -864,7 +864,7 @@ function PassageiroApp() {
 
 
   useEffect(() => {
-    if (import.meta.env.DEV) console.log("[MOVVI UI] etapa atual:", passengerUiStage);
+    if (import.meta.env.DEV) console.log("[APOIS UI] etapa atual:", passengerUiStage);
   }, [passengerUiStage]);
 
   /* ------- Hidratação de rascunhos vindos dos fluxos dedicados ------- */
@@ -1026,12 +1026,12 @@ function PassageiroApp() {
           const isStale = ageMs > STALE_MS && (!expiresAt || expiresAt < Date.now());
           if (isStale) {
             if (import.meta.env.DEV) {
-              console.log("[MOVVI PASSAGEIRO] auto-cancelando corrida órfã:", data.id, "idade(ms)=", ageMs);
+              console.log("[APOIS PASSAGEIRO] auto-cancelando corrida órfã:", data.id, "idade(ms)=", ageMs);
             }
             try {
               await callCancelByPassenger({ data: { rideId: data.id } });
             } catch (e) {
-              if (import.meta.env.DEV) console.warn("[MOVVI PASSAGEIRO] falha auto-cancel:", e);
+              if (import.meta.env.DEV) console.warn("[APOIS PASSAGEIRO] falha auto-cancel:", e);
             }
             return;
           }
@@ -1040,10 +1040,10 @@ function PassageiroApp() {
         setRide((prev) => (prev && prev.id === data.id ? { ...prev, ...data } : data));
         setRideId((prev) => prev ?? data.id);
         if (import.meta.env.DEV) {
-          console.log("[MOVVI PASSAGEIRO] corrida ativa restaurada:", tag, data.id, data.status);
+          console.log("[APOIS PASSAGEIRO] corrida ativa restaurada:", tag, data.id, data.status);
         }
       } catch (e) {
-        if (import.meta.env.DEV) console.warn("[MOVVI PASSAGEIRO] falha ao restaurar corrida:", tag, e);
+        if (import.meta.env.DEV) console.warn("[APOIS PASSAGEIRO] falha ao restaurar corrida:", tag, e);
       }
     };
     void recover("mount");
@@ -1091,7 +1091,7 @@ function PassageiroApp() {
   const lastGeocodedRef = useRef<LatLng | null>(null);
   useEffect(() => {
     if (!position) {
-      if (import.meta.env.DEV) console.warn("[MOVVI Reverse Geocoding Diagnostic] reverse geocoding was not called: GPS has not returned coordinates yet.");
+      if (import.meta.env.DEV) console.warn("[APOIS Reverse Geocoding Diagnostic] reverse geocoding was not called: GPS has not returned coordinates yet.");
       return;
     }
     const last = lastGeocodedRef.current;
@@ -1101,7 +1101,7 @@ function PassageiroApp() {
       Math.abs(last.lng - position.lng) < 0.002
     )
     {
-      if (import.meta.env.DEV) console.warn("[MOVVI Reverse Geocoding Diagnostic] reverse geocoding was not called: coordinate delta is below throttle threshold.", {
+      if (import.meta.env.DEV) console.warn("[APOIS Reverse Geocoding Diagnostic] reverse geocoding was not called: coordinate delta is below throttle threshold.", {
         previous: last,
         current: position,
       });
@@ -1112,17 +1112,17 @@ function PassageiroApp() {
     setAddressStatus("loading");
     setReverseGeocodeFailureReason(null);
     const diagnosticRequestUrl = `https://connector-gateway.lovable.dev/google_maps/maps/api/geocode/json?latlng=${position.lat},${position.lng}&language=pt-BR&region=br`;
-    if (import.meta.env.DEV) console.log("[MOVVI Reverse Geocoding Diagnostic] latitude:", position.lat);
-    if (import.meta.env.DEV) console.log("[MOVVI Reverse Geocoding Diagnostic] longitude:", position.lng);
-    if (import.meta.env.DEV) console.log("[MOVVI Reverse Geocoding Diagnostic] exact request URL:", diagnosticRequestUrl);
-    if (import.meta.env.DEV) console.log("[MOVVI] Reverse geocoding iniciado");
+    if (import.meta.env.DEV) console.log("[APOIS Reverse Geocoding Diagnostic] latitude:", position.lat);
+    if (import.meta.env.DEV) console.log("[APOIS Reverse Geocoding Diagnostic] longitude:", position.lng);
+    if (import.meta.env.DEV) console.log("[APOIS Reverse Geocoding Diagnostic] exact request URL:", diagnosticRequestUrl);
+    if (import.meta.env.DEV) console.log("[APOIS] Reverse geocoding iniciado");
     // Timeout de segurança: nunca deixar o cartão preso em "Obtendo seu endereço...".
     // Limite máximo do Reverse Geocoding: 5s. Após isso, marcamos failed se ainda estiver loading.
     const timeoutId = window.setTimeout(() => {
       if (!active) return;
       const reason = "Reverse Geocoding timed out after 5000ms.";
-      if (import.meta.env.DEV) console.warn("[MOVVI] Reverse geocode timeout (5s)");
-      console.error("[MOVVI Reverse Geocoding Diagnostic] Reverse Geocoding failed:", reason);
+      if (import.meta.env.DEV) console.warn("[APOIS] Reverse geocode timeout (5s)");
+      console.error("[APOIS Reverse Geocoding Diagnostic] Reverse Geocoding failed:", reason);
       setReverseGeocodeFailureReason(reason);
       setAddressStatus((s) => {
         if (s !== "loading") return s;
@@ -1140,7 +1140,7 @@ function PassageiroApp() {
 
       if (reverseResult.status === "timeout") {
         const reason = `Reverse Geocoding timed out after ${REVERSE_GEOCODE_CLIENT_TIMEOUT_MS}ms.`;
-        if (import.meta.env.DEV) console.warn("[MOVVI] Reverse geocode finished: timeout");
+        if (import.meta.env.DEV) console.warn("[APOIS] Reverse geocode finished: timeout");
         setReverseGeocodeFailureReason(reason);
         setAddressStatus(hasDisplayablePickup(latestGeoRef.current) ? "resolved" : "failed");
         return;
@@ -1148,36 +1148,36 @@ function PassageiroApp() {
 
       if (reverseResult.status === "error") {
         const reason = reverseResult.error instanceof Error ? reverseResult.error.message : String(reverseResult.error);
-        console.error("[MOVVI] Reverse geocode finished: error", reverseResult.error);
-        console.error("[MOVVI Reverse Geocoding Diagnostic] Reverse Geocoding failed:", reason);
+        console.error("[APOIS] Reverse geocode finished: error", reverseResult.error);
+        console.error("[APOIS Reverse Geocoding Diagnostic] Reverse Geocoding failed:", reason);
         setReverseGeocodeFailureReason(reason);
         setAddressStatus(hasDisplayablePickup(latestGeoRef.current) ? "resolved" : "failed");
         return;
       }
 
       try {
-        if (import.meta.env.DEV) console.log("[MOVVI] Reverse geocode finished: success");
+        if (import.meta.env.DEV) console.log("[APOIS] Reverse geocode finished: success");
         const raw = reverseResult.value;
         const r = raw as GeocodeResult;
         const diagnostic = r.diagnostic;
-        if (import.meta.env.DEV) console.log("[MOVVI Reverse Geocoding Diagnostic] returned latitude:", diagnostic?.latitude ?? position.lat);
-        if (import.meta.env.DEV) console.log("[MOVVI Reverse Geocoding Diagnostic] returned longitude:", diagnostic?.longitude ?? position.lng);
-        if (import.meta.env.DEV) console.log("[MOVVI Reverse Geocoding Diagnostic] returned request URL:", diagnostic?.requestUrl ?? diagnosticRequestUrl);
-        if (import.meta.env.DEV) console.log("[MOVVI Reverse Geocoding Diagnostic] HTTP response status:", diagnostic?.httpStatus ?? "not returned");
-        if (import.meta.env.DEV) console.log("[MOVVI Reverse Geocoding Diagnostic] complete Google JSON/body:", diagnostic?.responseBody ?? "not returned");
+        if (import.meta.env.DEV) console.log("[APOIS Reverse Geocoding Diagnostic] returned latitude:", diagnostic?.latitude ?? position.lat);
+        if (import.meta.env.DEV) console.log("[APOIS Reverse Geocoding Diagnostic] returned longitude:", diagnostic?.longitude ?? position.lng);
+        if (import.meta.env.DEV) console.log("[APOIS Reverse Geocoding Diagnostic] returned request URL:", diagnostic?.requestUrl ?? diagnosticRequestUrl);
+        if (import.meta.env.DEV) console.log("[APOIS Reverse Geocoding Diagnostic] HTTP response status:", diagnostic?.httpStatus ?? "not returned");
+        if (import.meta.env.DEV) console.log("[APOIS Reverse Geocoding Diagnostic] complete Google JSON/body:", diagnostic?.responseBody ?? "not returned");
         if (diagnostic?.googleError) {
-          console.error("[MOVVI Reverse Geocoding Diagnostic] Google returned error exactly:", diagnostic.googleError);
+          console.error("[APOIS Reverse Geocoding Diagnostic] Google returned error exactly:", diagnostic.googleError);
         }
         if (diagnostic?.rejectionReason) {
-          console.error("[MOVVI Reverse Geocoding Diagnostic] API key rejection / failure reason:", diagnostic.rejectionReason);
+          console.error("[APOIS Reverse Geocoding Diagnostic] API key rejection / failure reason:", diagnostic.rejectionReason);
         }
         if (diagnostic?.failureReason || !r.address) {
           const reason = diagnostic?.failureReason || diagnostic?.googleError || diagnostic?.googleStatus || "Google returned no formatted_address.";
-          console.error("[MOVVI Reverse Geocoding Diagnostic] Reverse Geocoding failed:", reason);
+          console.error("[APOIS Reverse Geocoding Diagnostic] Reverse Geocoding failed:", reason);
           // Fallback: tentar cache local recente (≤ 200 m do GPS atual).
           const cached = readPickupCache();
           if (cached && distanceMeters(position, { lat: cached.lat, lng: cached.lng }) < 200) {
-            if (import.meta.env.DEV) console.log("[MOVVI Pickup Cache] reaproveitando label cacheado:", cached.label);
+            if (import.meta.env.DEV) console.log("[APOIS Pickup Cache] reaproveitando label cacheado:", cached.label);
             const cachedGeo = geocodeFromPickupCache(cached);
             latestGeoRef.current = cachedGeo;
             setGeo(cachedGeo);
@@ -1195,18 +1195,18 @@ function PassageiroApp() {
           dist = distanceMeters(position, { lat: r.geocodedLat, lng: r.geocodedLng });
         }
 
-        if (import.meta.env.DEV) console.log("[MOVVI Reverse Geocoding Diagnostic] selected formatted_address:", r.address);
-        if (import.meta.env.DEV) console.log("[MOVVI Reverse Geocoding Diagnostic] selected location_type:", r.locationType || "(none)");
-        if (import.meta.env.DEV) console.log("[MOVVI Reverse Geocoding Diagnostic] confidence:", r.confidence);
-        if (import.meta.env.DEV) console.log("[MOVVI Reverse Geocoding Diagnostic] reason:", r.selectionReason);
-        if (import.meta.env.DEV) console.log("[MOVVI] Distância GPS↔geocoding:", Number.isFinite(dist) ? `${dist.toFixed(1)} m` : "n/d");
+        if (import.meta.env.DEV) console.log("[APOIS Reverse Geocoding Diagnostic] selected formatted_address:", r.address);
+        if (import.meta.env.DEV) console.log("[APOIS Reverse Geocoding Diagnostic] selected location_type:", r.locationType || "(none)");
+        if (import.meta.env.DEV) console.log("[APOIS Reverse Geocoding Diagnostic] confidence:", r.confidence);
+        if (import.meta.env.DEV) console.log("[APOIS Reverse Geocoding Diagnostic] reason:", r.selectionReason);
+        if (import.meta.env.DEV) console.log("[APOIS] Distância GPS↔geocoding:", Number.isFinite(dist) ? `${dist.toFixed(1)} m` : "n/d");
 
         // Stage 1: limpa erro e mostra o endereço imediatamente — sem esperar POI.
         setReverseGeocodeFailureReason(null);
         latestGeoRef.current = r;
         setGeo(r);
         setAddressStatus("resolved");
-        if (import.meta.env.DEV) console.log("[MOVVI] Pickup label generated", r.pickupLabel || r.address);
+        if (import.meta.env.DEV) console.log("[APOIS] Pickup label generated", r.pickupLabel || r.address);
         // Cache local do último pickup label bom.
         if (r.pickupLabel) {
           writePickupCache({
@@ -1227,28 +1227,28 @@ function PassageiroApp() {
           !c.rua && !c.bairro && !c.povoado &&
           (!r.pickupLabel || /zona rural|^br-|^[a-z]{2}-\d/i.test(r.pickupLabel));
         if (labelIsWeak) {
-          if (import.meta.env.DEV) console.log("[MOVVI] Stage 2 POI lookup iniciado");
+          if (import.meta.env.DEV) console.log("[APOIS] Stage 2 POI lookup iniciado");
           void (async () => {
             const poiResult = await withClientTimeout(
               callNearestPoi({ data: { lat: position.lat, lng: position.lng } }) as Promise<{ name?: string; placeId?: string }>,
               NEARBY_PLACES_CLIENT_TIMEOUT_MS,
             );
             if (poiResult.status === "timeout") {
-              if (import.meta.env.DEV) console.warn("[MOVVI] Nearby Places finished: timeout — mantendo label atual");
+              if (import.meta.env.DEV) console.warn("[APOIS] Nearby Places finished: timeout — mantendo label atual");
               return;
             }
             if (poiResult.status === "error") {
-              if (import.meta.env.DEV) console.warn("[MOVVI] Nearby Places finished: error — mantendo label atual", poiResult.error);
+              if (import.meta.env.DEV) console.warn("[APOIS] Nearby Places finished: error — mantendo label atual", poiResult.error);
               return;
             }
             const poi = poiResult.value;
               if (!active) return;
-              if (import.meta.env.DEV) console.log("[MOVVI] Nearby Places finished:", poi?.name ?? "(nenhum)");
+              if (import.meta.env.DEV) console.log("[APOIS] Nearby Places finished:", poi?.name ?? "(nenhum)");
               if (!poi?.name) return;
               setGeo((prev) => {
                 if (!prev) return prev;
                 const newLabel = `Próximo a ${poi.name}`;
-                if (import.meta.env.DEV) console.log("[MOVVI] Pickup label updated", newLabel);
+                if (import.meta.env.DEV) console.log("[APOIS] Pickup label updated", newLabel);
                 const updated: GeocodeResult = {
                   ...prev,
                   nearestPoi: poi.name,
@@ -1302,10 +1302,10 @@ function PassageiroApp() {
   const requestGps = useCallback(() => {
     // Guarda: não permitir cliques duplicados enquanto há uma solicitação em curso.
     if (gpsStateRef.current === "requesting" || gpsRequestInFlightRef.current) {
-      if (import.meta.env.DEV) console.log("[MOVVI] Ignorando clique — já existe uma solicitação de GPS em andamento.");
+      if (import.meta.env.DEV) console.log("[APOIS] Ignorando clique — já existe uma solicitação de GPS em andamento.");
       return;
     }
-    if (import.meta.env.DEV) console.log("[MOVVI] Solicitando localização...");
+    if (import.meta.env.DEV) console.log("[APOIS] Solicitando localização...");
     setPickupSource("gps");
     const fail = (msg: string) => {
       setGpsState("unavailable");
@@ -1328,7 +1328,7 @@ function PassageiroApp() {
       try {
         const lat = pos?.coords?.latitude;
         const lng = pos?.coords?.longitude;
-        if (import.meta.env.DEV) console.log("[MOVVI] Permissão concedida — coordenadas recebidas:", lat, lng, "accuracy:", pos?.coords?.accuracy);
+        if (import.meta.env.DEV) console.log("[APOIS] Permissão concedida — coordenadas recebidas:", lat, lng, "accuracy:", pos?.coords?.accuracy);
         void logGpsTelemetry("getcurrentposition_success", { extra: { lat, lng, accuracy: pos?.coords?.accuracy } });
 
         if (
@@ -1337,7 +1337,7 @@ function PassageiroApp() {
           !Number.isFinite(lat) ||
           !Number.isFinite(lng)
         ) {
-          if (import.meta.env.DEV) console.warn("[MOVVI] Coordenadas inválidas recebidas do GPS — ignorando.", { lat, lng });
+          if (import.meta.env.DEV) console.warn("[APOIS] Coordenadas inválidas recebidas do GPS — ignorando.", { lat, lng });
           setGpsState("unavailable");
           gpsStateRef.current = "unavailable";
           setGpsErrorMsg("Coordenadas inválidas recebidas do GPS.");
@@ -1345,9 +1345,9 @@ function PassageiroApp() {
         }
 
         const insideBR = isBrazilCoordinate(lat, lng);
-        if (import.meta.env.DEV) console.log("[MOVVI] GPS acquired", { lat, lng, accuracy: pos?.coords?.accuracy });
+        if (import.meta.env.DEV) console.log("[APOIS] GPS acquired", { lat, lng, accuracy: pos?.coords?.accuracy });
         if (!insideBR) {
-          if (import.meta.env.DEV) console.warn("[MOVVI] Aviso: coordenada fora do Brasil — aceitando mesmo assim.", { lat, lng });
+          if (import.meta.env.DEV) console.warn("[APOIS] Aviso: coordenada fora do Brasil — aceitando mesmo assim.", { lat, lng });
           setGpsErrorMsg(
             "Sua localização parece estar fora do Brasil. Você pode digitar a origem manualmente se preferir.",
           );
@@ -1355,7 +1355,7 @@ function PassageiroApp() {
           setGpsErrorMsg("");
         }
 
-        if (import.meta.env.DEV) console.log("[MOVVI] Atualizando centro do mapa para:", lat, lng);
+        if (import.meta.env.DEV) console.log("[APOIS] Atualizando centro do mapa para:", lat, lng);
         setPosition({ lat, lng });
         setGpsAccuracy(pos.coords.accuracy ?? null);
         setGpsDiag({
@@ -1385,30 +1385,30 @@ function PassageiroApp() {
                 setPosition({ lat: la, lng: ln });
                 setGpsAccuracy(p.coords.accuracy ?? null);
               } catch (err) {
-                if (import.meta.env.DEV) console.warn("[MOVVI] watchPosition callback falhou:", err);
+                if (import.meta.env.DEV) console.warn("[APOIS] watchPosition callback falhou:", err);
               }
             },
-            (err) => { if (import.meta.env.DEV) console.warn("[MOVVI] watchPosition erro:", err); },
+            (err) => { if (import.meta.env.DEV) console.warn("[APOIS] watchPosition erro:", err); },
             { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 },
           );
         } catch (err) {
-          if (import.meta.env.DEV) console.warn("[MOVVI] Falha ao iniciar watchPosition:", err);
+          if (import.meta.env.DEV) console.warn("[APOIS] Falha ao iniciar watchPosition:", err);
         }
       } catch (err) {
-        console.error("[MOVVI] Erro no onSuccess do GPS:", err);
+        console.error("[APOIS] Erro no onSuccess do GPS:", err);
         setGpsState("unavailable");
         gpsStateRef.current = "unavailable";
       }
     };
 
     const tryLowAccuracy = () => {
-      if (import.meta.env.DEV) console.log("[MOVVI] Tentativa 2 — enableHighAccuracy:false");
+      if (import.meta.env.DEV) console.log("[APOIS] Tentativa 2 — enableHighAccuracy:false");
       try {
         navigator.geolocation.getCurrentPosition(
           onSuccess,
           (err) => {
             gpsRequestInFlightRef.current = false;
-            console.error("[MOVVI] Erro (low accuracy):", err);
+            console.error("[APOIS] Erro (low accuracy):", err);
             void logGpsTelemetry("getcurrentposition_error", { code: err.code, message: err.message, extra: { phase: "low_accuracy" } });
             setGpsState("denied");
             gpsStateRef.current = "denied";
@@ -1424,7 +1424,7 @@ function PassageiroApp() {
         );
       } catch (e) {
         gpsRequestInFlightRef.current = false;
-        console.error("[MOVVI] Falha 2ª tentativa:", e);
+        console.error("[APOIS] Falha 2ª tentativa:", e);
         fail("Não foi possível obter sua localização. Use a localização manual.");
       }
     };
@@ -1433,7 +1433,7 @@ function PassageiroApp() {
       navigator.geolocation.getCurrentPosition(
         onSuccess,
         (err) => {
-          if (import.meta.env.DEV) console.warn("[MOVVI] Erro (high accuracy):", err);
+          if (import.meta.env.DEV) console.warn("[APOIS] Erro (high accuracy):", err);
           void logGpsTelemetry("getcurrentposition_error", { code: err.code, message: err.message, extra: { phase: "high_accuracy" } });
           if (err.code === err.PERMISSION_DENIED) {
             gpsRequestInFlightRef.current = false;
@@ -1448,7 +1448,7 @@ function PassageiroApp() {
         { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 },
       );
     } catch (e) {
-      console.error("[MOVVI] Falha ao iniciar geolocalização:", e);
+      console.error("[APOIS] Falha ao iniciar geolocalização:", e);
       tryLowAccuracy();
     }
   }, []);
@@ -1466,9 +1466,9 @@ function PassageiroApp() {
 
   const setManualLocation = useCallback((p: LatLng) => {
     if (!isBrazilCoordinate(p.lat, p.lng)) {
-      if (import.meta.env.DEV) console.warn("[MOVVI] Origem manual fora do Brasil — aceitando assim mesmo.", p);
+      if (import.meta.env.DEV) console.warn("[APOIS] Origem manual fora do Brasil — aceitando assim mesmo.", p);
     }
-    if (import.meta.env.DEV) console.log("[MOVVI] Origem manual selecionada", p);
+    if (import.meta.env.DEV) console.log("[APOIS] Origem manual selecionada", p);
     void logGpsTelemetry("manual_origin_set", { extra: { lat: p.lat, lng: p.lng } });
     setPosition(p);
     setPickupSource("manual");
@@ -1491,10 +1491,10 @@ function PassageiroApp() {
     try {
       purgeForeignMapCache();
     } catch (err) {
-      if (import.meta.env.DEV) console.warn("[MOVVI] purgeForeignMapCache falhou:", err);
+      if (import.meta.env.DEV) console.warn("[APOIS] purgeForeignMapCache falhou:", err);
     }
     let cancelled = false;
-    if (import.meta.env.DEV) console.log("[MOVVI] Permissão de localização solicitada");
+    if (import.meta.env.DEV) console.log("[APOIS] Permissão de localização solicitada");
 
     if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
       setPermissionStatus("unsupported");
@@ -1511,7 +1511,7 @@ function PassageiroApp() {
       if (cancelled) return;
       setPermissionStatus((prev) => (prev === "checking" ? "prompt" : prev));
       if (gpsStateRef.current === "idle") {
-        try { requestGps(); } catch (err) { if (import.meta.env.DEV) console.warn("[MOVVI] requestGps watchdog falhou:", err); }
+        try { requestGps(); } catch (err) { if (import.meta.env.DEV) console.warn("[APOIS] requestGps watchdog falhou:", err); }
       }
     }, 1500);
 
@@ -1519,7 +1519,7 @@ function PassageiroApp() {
     if (!perms || typeof perms.query !== "function") {
       window.clearTimeout(watchdog);
       setPermissionStatus("prompt");
-      try { requestGps(); } catch (err) { if (import.meta.env.DEV) console.warn("[MOVVI] requestGps fallback falhou:", err); }
+      try { requestGps(); } catch (err) { if (import.meta.env.DEV) console.warn("[APOIS] requestGps fallback falhou:", err); }
       return () => { cancelled = true; };
     }
 
@@ -1534,11 +1534,11 @@ function PassageiroApp() {
           try {
             void logGpsTelemetry("permissions_query_ok", { extra: { state: s } });
             if (s === "granted") {
-              if (import.meta.env.DEV) console.log("[MOVVI] Permissão de localização concedida");
+              if (import.meta.env.DEV) console.log("[APOIS] Permissão de localização concedida");
               setPermissionStatus("granted");
               requestGps();
             } else if (s === "denied") {
-              if (import.meta.env.DEV) console.log("[MOVVI] Permissão de localização negada");
+              if (import.meta.env.DEV) console.log("[APOIS] Permissão de localização negada");
               setPermissionStatus("denied");
               setGpsState("denied");
               setGpsErrorMsg("Permissão de localização negada.");
@@ -1547,7 +1547,7 @@ function PassageiroApp() {
               requestGps();
             }
           } catch (err) {
-            console.error("[MOVVI] Erro ao aplicar permissão de localização:", err);
+            console.error("[APOIS] Erro ao aplicar permissão de localização:", err);
           }
         };
         apply(status.state);
@@ -1556,10 +1556,10 @@ function PassageiroApp() {
       .catch((err) => {
         if (cancelled) return;
         window.clearTimeout(watchdog);
-        if (import.meta.env.DEV) console.warn("[MOVVI] permissions.query falhou:", err);
+        if (import.meta.env.DEV) console.warn("[APOIS] permissions.query falhou:", err);
         void logGpsTelemetry("permissions_query_error", { message: (err as Error)?.message ?? String(err) });
         setPermissionStatus("prompt");
-        try { requestGps(); } catch (e) { if (import.meta.env.DEV) console.warn("[MOVVI] requestGps catch falhou:", e); }
+        try { requestGps(); } catch (e) { if (import.meta.env.DEV) console.warn("[APOIS] requestGps catch falhou:", e); }
       });
 
     return () => {
@@ -1649,7 +1649,7 @@ function PassageiroApp() {
         loc = first?.geometry?.location ?? null;
         formatted = first?.formatted_address ?? null;
       } catch (geocoderErr) {
-        if (import.meta.env.DEV) console.warn("[MOVVI] Geocoder fallback falhou:", geocoderErr);
+        if (import.meta.env.DEV) console.warn("[APOIS] Geocoder fallback falhou:", geocoderErr);
       }
       // Plano B: tentar Places New caso o Geocoder tenha retornado vazio.
       if (!loc) {
@@ -1664,7 +1664,7 @@ function PassageiroApp() {
           loc = place.location ?? null;
           formatted = formatted ?? place.formattedAddress ?? null;
         } catch (placesErr) {
-          if (import.meta.env.DEV) console.warn("[MOVVI] Places.fetchFields falhou:", placesErr);
+          if (import.meta.env.DEV) console.warn("[APOIS] Places.fetchFields falhou:", placesErr);
         }
       }
       if (!loc) throw new Error("Local sem coordenadas.");
@@ -1679,7 +1679,7 @@ function PassageiroApp() {
       searchInputRef.current?.blur();
       await calcRoute(point);
     } catch (e) {
-      if (import.meta.env.DEV) console.warn("[MOVVI] pickSuggestion falhou:", e);
+      if (import.meta.env.DEV) console.warn("[APOIS] pickSuggestion falhou:", e);
       setError(e instanceof Error ? e.message : "Falha ao buscar o local.");
     }
   }
@@ -1714,7 +1714,7 @@ function PassageiroApp() {
           destination: { lat: dest.lat, lng: dest.lng },
         },
       });
-      if (import.meta.env.DEV) console.log("[MOVVI UI] rota calculada:", result);
+      if (import.meta.env.DEV) console.log("[APOIS UI] rota calculada:", result);
       setRoute(result);
       setPassengerUiStage("route_preview");
       sheetRef.current?.snapTo(55);
@@ -1762,7 +1762,7 @@ function PassageiroApp() {
   async function submitRide() {
     if (!position || !destination || !route) return;
     if (!selectedUiCategory) {
-      setError("Escolha uma categoria antes de solicitar a MOVVI.");
+      setError("Escolha uma categoria antes de solicitar a APOIS.");
       setPassengerUiStage("selecting_category");
       sheetRef.current?.snapTo(50);
       return;
@@ -1808,7 +1808,7 @@ function PassageiroApp() {
         },
       });
       setRideId(newId);
-      // Payment method is informational (MOVVI does not process ride payments).
+      // Payment method is informational (APOIS does not process ride payments).
       try {
         await supabase.from("rides").update({ payment_method: paymentMethod }).eq("id", newId);
       } catch { /* ignore — column is optional metadata */ }
@@ -1835,13 +1835,13 @@ function PassageiroApp() {
         .maybeSingle();
       if (!active) return;
       if (error) {
-        if (import.meta.env.DEV) console.warn("[MOVVI PASSAGEIRO] erro ao recarregar corrida:", tag, error.message);
+        if (import.meta.env.DEV) console.warn("[APOIS PASSAGEIRO] erro ao recarregar corrida:", tag, error.message);
         return;
       }
       if (data) {
         setRide((prev) => {
           if (prev && prev.id === data.id && prev.status !== data.status) {
-            if (import.meta.env.DEV) console.log("[MOVVI PASSAGEIRO] status atualizou:", prev.status, "→", data.status);
+            if (import.meta.env.DEV) console.log("[APOIS PASSAGEIRO] status atualizou:", prev.status, "→", data.status);
           }
           return data;
         });
@@ -1856,7 +1856,7 @@ function PassageiroApp() {
     };
     const startPolling = () => {
       if (pollTimer != null || !active) return;
-      if (import.meta.env.DEV) console.log("[MOVVI PASSAGEIRO] polling de segurança da corrida ativo");
+      if (import.meta.env.DEV) console.log("[APOIS PASSAGEIRO] polling de segurança da corrida ativo");
       pollTimer = window.setInterval(() => { void load("poll"); }, 3500);
     };
 
@@ -1870,12 +1870,12 @@ function PassageiroApp() {
         { event: "UPDATE", schema: "public", table: "rides", filter: `id=eq.${rideId}` },
         (p) => {
           const next = p.new as RideRow;
-          if (import.meta.env.DEV) console.log("[MOVVI PASSAGEIRO] realtime UPDATE rides:", next.id, "status=", next.status);
+          if (import.meta.env.DEV) console.log("[APOIS PASSAGEIRO] realtime UPDATE rides:", next.id, "status=", next.status);
           setRide(next);
         },
       )
       .subscribe((status) => {
-        if (import.meta.env.DEV) console.log("[MOVVI PASSAGEIRO] canal ride-" + rideId + " status:", status);
+        if (import.meta.env.DEV) console.log("[APOIS PASSAGEIRO] canal ride-" + rideId + " status:", status);
         if (status === "SUBSCRIBED") {
           subscribed = true;
           // recarrega para capturar updates ocorridos durante o handshake;
@@ -1895,7 +1895,7 @@ function PassageiroApp() {
     // Rede de segurança: re-sincroniza ao retomar a aba
     const onVisibility = () => {
       if (document.visibilityState === "visible") {
-        if (import.meta.env.DEV) console.log("[MOVVI PASSAGEIRO] aba visível — ressincronizando corrida");
+        if (import.meta.env.DEV) console.log("[APOIS PASSAGEIRO] aba visível — ressincronizando corrida");
         void load("visibility");
       }
     };
@@ -1926,7 +1926,7 @@ function PassageiroApp() {
       if (cancelled) return;
       try {
         const r = await callRedispatch({ data: { rideId: ride.id } });
-        if (import.meta.env.DEV) console.log("[MOVVI PASSAGEIRO] re-despacho:", r);
+        if (import.meta.env.DEV) console.log("[APOIS PASSAGEIRO] re-despacho:", r);
         const c = (r as { candidates?: number }).candidates ?? 0;
         const offered = (r as { skipped?: string | null }).skipped === "already_offered";
         if (!offered && c === 0) {
@@ -1936,7 +1936,7 @@ function PassageiroApp() {
         }
         if (!cancelled) setNoDriversAvailable(emptyStreak >= 3);
       } catch (e) {
-        if (import.meta.env.DEV) console.warn("[MOVVI PASSAGEIRO] re-despacho falhou:", (e as Error).message);
+        if (import.meta.env.DEV) console.warn("[APOIS PASSAGEIRO] re-despacho falhou:", (e as Error).message);
       }
       if (DEV_MODE || isDevelopmentEnvironment()) {
         try {
@@ -1987,7 +1987,7 @@ function PassageiroApp() {
     };
     const startPolling = () => {
       if (pollTimer != null || cancelled) return;
-      if (import.meta.env.DEV) console.log("[MOVVI PASSAGEIRO] fallback polling motorista (realtime indisponível)");
+      if (import.meta.env.DEV) console.log("[APOIS PASSAGEIRO] fallback polling motorista (realtime indisponível)");
       pollTimer = window.setInterval(load, 5000);
     };
 
@@ -2063,11 +2063,11 @@ function PassageiroApp() {
       const msg = err instanceof Error ? err.message : String(err);
       const alreadyResolved = /Transição inválida|não encontrada|not found|PGRST116/i.test(msg);
       if (alreadyResolved) {
-        console.warn("[MOVVI] cancelamento idempotente (estado já resolvido):", prevStatus, msg);
+        console.warn("[APOIS] cancelamento idempotente (estado já resolvido):", prevStatus, msg);
         toast.success("Corrida cancelada");
         return;
       }
-      console.error("[MOVVI] cancelarPeloPassageiro falhou:", err);
+      console.error("[APOIS] cancelarPeloPassageiro falhou:", err);
       toast.error("Não foi possível cancelar agora", {
         description: "Tente novamente. Se persistir, contate o suporte.",
       });
@@ -2177,7 +2177,7 @@ function PassageiroApp() {
 
     return {
       user_id: driverInfo?.user_id ?? ride?.driver_id ?? "",
-      name: driverInfo?.name ?? ride?.driver_name ?? "Motorista MOVVI",
+      name: driverInfo?.name ?? ride?.driver_name ?? "Motorista APOIS",
       phone: driverInfo?.phone ?? ride?.driver_phone ?? "",
       current_lat: driverInfo?.current_lat ?? ride?.driver_lat ?? null,
       current_lng: driverInfo?.current_lng ?? ride?.driver_lng ?? null,
@@ -2286,7 +2286,7 @@ function PassageiroApp() {
       <div className="flex min-h-[100dvh] items-center justify-center bg-background text-foreground">
         <div className="flex flex-col items-center gap-3">
           <div className="h-10 w-10 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-          <p className="text-sm text-muted-foreground">Preparando a MOVVI...</p>
+          <p className="text-sm text-muted-foreground">Preparando a APOIS...</p>
         </div>
       </div>
     );
@@ -2502,7 +2502,7 @@ function PassageiroApp() {
                   zIndex: 2,
                 }}
               />
-              {/* Núcleo verde MOVVI */}
+              {/* Núcleo verde APOIS */}
               <Polyline
                 path={polyPath}
                 options={{
@@ -2541,7 +2541,7 @@ function PassageiroApp() {
         onOpenAccount={() => navigate({ to: "/passageiro/perfil" })}
       />
 
-      {/* Floating recenter — 56px, glass, MOVVI DS */}
+      {/* Floating recenter — 56px, glass, APOIS DS */}
       <div className="pointer-events-none absolute right-4 z-30" style={{ bottom: "calc(58dvh + 16px)" }}>
         <button
           onClick={recenter}
@@ -2552,7 +2552,7 @@ function PassageiroApp() {
         </button>
       </div>
 
-      {/* BOTTOM SHEET — novo, próprio do MOVVI */}
+      {/* BOTTOM SHEET — novo, próprio do APOIS */}
       {(passengerVisualStep === "destination" || passengerVisualStep === "route_preview" || passengerVisualStep === "category") && (() => {
         const categoryStage = passengerVisualStep === "category";
         const routeStage = passengerVisualStep === "route_preview";
@@ -2946,7 +2946,7 @@ function PassageiroApp() {
             ? `${Number(ride.distance_km).toFixed(1)} km`
             : "—";
         const paidValue = ride.final_price ?? (ride as any).estimated_price ?? null;
-        const driverName = (ride.driver_name ?? "Motorista MOVVI").trim().split(/\s+/)[0] || "Motorista";
+        const driverName = (ride.driver_name ?? "Motorista APOIS").trim().split(/\s+/)[0] || "Motorista";
         const driverPhoto = (ride as any).driver_photo_url ?? null;
         const driverVehicle =
           (ride as any).driver_vehicle ??
@@ -2995,11 +2995,11 @@ function PassageiroApp() {
                   Corrida finalizada
                 </h2>
                 <p className="mt-0.5 text-[12.5px] text-[#707070]">
-                  Obrigado por usar a MOVVI.
+                  Obrigado por usar a APOIS.
                 </p>
               </div>
 
-              {/* Fare hero — dark MOVVI */}
+              {/* Fare hero — dark APOIS */}
               <div className="relative overflow-hidden rounded-[22px] bg-gradient-to-br from-[#0F1712] via-[#152016] to-[#0F1712] p-4 text-white shadow-[0_18px_40px_-24px_rgba(15,23,18,0.55)] animate-in fade-in slide-in-from-bottom-2 duration-[220ms]">
                 <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-[#76C139]/16" />
                 <div className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-[#76C139]/20" />
@@ -3230,7 +3230,7 @@ function PassageiroApp() {
 /*                         SHEET CONTENT                        */
 /* ============================================================ */
 
-/* (Grupos antigos removidos — agora exibimos as 5 categorias flat conforme spec MOVVI.) */
+/* (Grupos antigos removidos — agora exibimos as 5 categorias flat conforme spec APOIS.) */
 
 function FavoritesStrip({ onPick }: { onPick: (point: LatLng, label: string) => void }) {
   const [items, setItems] = useState<FavoritePlace[]>([]);
@@ -3548,7 +3548,7 @@ function SheetContent({
       {/*
         Home NÃO exibe seleção de categoria/serviço. A escolha de categoria
         acontece somente depois do destino, na tela ConfirmRideCompact.
-        Ver: `Regras UX MOVVI passageiro` — nada de "Escolha o serviço" aqui.
+        Ver: `Regras UX APOIS passageiro` — nada de "Escolha o serviço" aqui.
       */}
 
 
@@ -3644,7 +3644,7 @@ function StepFlow({
 
   useEffect(() => {
     if (uiStage === "selecting_category") {
-      if (import.meta.env.DEV) console.log("[MOVVI UI] exibindo categorias:", uiCategories.map((c) => c.label));
+      if (import.meta.env.DEV) console.log("[APOIS UI] exibindo categorias:", uiCategories.map((c) => c.label));
     }
   }, [uiStage, uiCategories]);
 
@@ -3699,7 +3699,7 @@ function StepFlow({
           <button
             type="button"
             onClick={() => {
-              if (import.meta.env.DEV) console.log("[MOVVI UI] botão continuar clicado");
+              if (import.meta.env.DEV) console.log("[APOIS UI] botão continuar clicado");
               setUiStage("selecting_category");
               onExpandSheet(88);
             }}
@@ -3733,7 +3733,7 @@ function StepFlow({
       )}
 
       {/* A confirmação final vive somente em ConfirmRideCompact: rota, categoria,
-          pagamento, "Você paga" único e botão "Confirmar MOVVI …". */}
+          pagamento, "Você paga" único e botão "Confirmar APOIS …". */}
 
     </div>
   );
@@ -3808,12 +3808,12 @@ function ConfirmRideCompact({
   const isDedicated = isEnvios || isGuincho || isMudanca;
   const headingTitle = isEnvios
     ? enviosMode === "enviar"
-      ? "MOVVI Envios · Enviar"
-      : "MOVVI Envios · Receber"
+      ? "APOIS Envios · Enviar"
+      : "APOIS Envios · Receber"
     : isGuincho
-      ? "MOVVI Guincho"
+      ? "APOIS Guincho"
       : isMudanca
-        ? "MOVVI Mudanças"
+        ? "APOIS Mudanças"
         : "Escolha sua corrida";
   const headingSubtitle = isEnvios
     ? "Confirme retirada, entrega e pagamento"
@@ -3896,7 +3896,7 @@ function ConfirmRideCompact({
 
 
       {/* Categorias — lista vertical (RideOptionRow).
-          No fluxo MOVVI Envios só existe uma opção (Entrega), então a
+          No fluxo APOIS Envios só existe uma opção (Entrega), então a
           listagem de escolha é ocultada — a categoria já foi definida
           pela entrada em `/passageiro/envios`. */}
       <div className={isDedicated ? "hidden" : undefined}>
@@ -3990,7 +3990,7 @@ function ConfirmRideCompact({
                 : isMudanca
                   ? "Solicitar mudança"
                   : isEnvios
-                    ? "Solicitar MOVVI Envios"
+                    ? "Solicitar APOIS Envios"
                     : undefined
             }
             fare={selectedFare}
@@ -4092,7 +4092,7 @@ function RequestRideButton({
             Solicitando...
           </>
         ) : (
-          ctaLabel ?? `Confirmar MOVVI ${categoryLabel}`
+          ctaLabel ?? `Confirmar APOIS ${categoryLabel}`
         )}
       </button>
     </div>
@@ -4299,7 +4299,7 @@ function SearchingPanel({
             <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[#76C139]/12 text-[#5A9A2A]">
               {CatIcon ? <CatIcon className="h-3.5 w-3.5" strokeWidth={2} /> : <Navigation2 className="h-3.5 w-3.5" strokeWidth={2} />}
             </span>
-            <span className="truncate text-[12.5px] font-semibold text-[#111418]">MOVVI {cat.label}</span>
+            <span className="truncate text-[12.5px] font-semibold text-[#111418]">APOIS {cat.label}</span>
           </div>
           <div className="flex shrink-0 items-center gap-2 text-[12.5px]">
             {fare != null && (
@@ -4543,12 +4543,12 @@ function DriverEnRoute({
           label="Compartilhar"
           onClick={() => {
             const text =
-              `MOVVI — Estou em uma corrida\n` +
+              `APOIS — Estou em uma corrida\n` +
               `Motorista: ${driver.name}\n` +
               `Veículo: ${driver.vehicle_color ?? ""} ${driver.vehicle_model ?? ""} (${driver.vehicle_plate ?? "-"})\n` +
               `Destino: ${ride.destination_name ?? "-"}`;
             if (navigator.share) {
-              navigator.share({ title: "MOVVI", text }).catch(() => {});
+              navigator.share({ title: "APOIS", text }).catch(() => {});
             } else {
               navigator.clipboard.writeText(text).then(() => toast.success("Detalhes copiados"));
             }
@@ -4600,7 +4600,7 @@ function DriverEnRoute({
       )}
 
 
-      {/* Segurança MOVVI (SOS/incident) */}
+      {/* Segurança APOIS (SOS/incident) */}
       <SafetyCard
         role="passenger"
         rideId={ride.id}
@@ -4770,14 +4770,14 @@ function RideQuickActions({
 
   async function handleShare() {
     const text =
-      `🚗 MOVVI Drive — Estou em uma corrida\n` +
+      `🚗 APOIS Drive — Estou em uma corrida\n` +
       `Motorista: ${driver.name}\n` +
       `Veículo: ${driver.vehicle_color ?? ""} ${driver.vehicle_model ?? ""} (${driver.vehicle_plate ?? "-"})\n` +
       `Destino: ${ride.destination_name ?? "-"}\n` +
       `Código de segurança: ${ride.safety_code ?? "-"}`;
     try {
       if (navigator.share) {
-        await navigator.share({ title: "MOVVI Drive", text });
+        await navigator.share({ title: "APOIS Drive", text });
       } else {
         await navigator.clipboard.writeText(text);
         toast.success("Detalhes da corrida copiados");
@@ -4816,7 +4816,7 @@ function RideQuickActions({
       setSosSent(true);
       toast.success("Alerta SOS enviado. Nossa central foi notificada.");
     } catch (err) {
-      console.error("[MOVVI] SOS falhou:", err);
+      console.error("[APOIS] SOS falhou:", err);
       toast.error("Não foi possível enviar o SOS. Ligue 190 imediatamente.");
     } finally {
       setSosSending(false);
@@ -4909,7 +4909,7 @@ function RideQuickActions({
                   className="flex items-center justify-center gap-2 rounded-2xl border border-destructive/60 bg-destructive/10 py-3 text-[14px] font-bold text-destructive-foreground active:scale-[0.98] disabled:opacity-50"
                 >
                   <Shield className="h-4 w-4" />
-                  {sosSending ? "Enviando alerta..." : "Enviar alerta para a MOVVI"}
+                  {sosSending ? "Enviando alerta..." : "Enviar alerta para a APOIS"}
                 </button>
               )}
               <button
@@ -4953,7 +4953,7 @@ function GpsDeniedScreen({
     ? "Ative sua localização"
     : "Não foi possível obter sua localização";
   const description = isPrompt
-    ? "A MOVVI precisa da sua localização para encontrar motoristas próximos e calcular sua corrida."
+    ? "A APOIS precisa da sua localização para encontrar motoristas próximos e calcular sua corrida."
     : errorMessage ||
       "Não conseguimos acessar sua localização automaticamente. Digite sua origem manualmente.";
   const primaryLabel = requesting
@@ -5094,7 +5094,7 @@ function GpsDeniedScreen({
         <button
           type="button"
           onClick={() => {
-            if (import.meta.env.DEV) console.log("[MOVVI] Clique em", primaryLabel);
+            if (import.meta.env.DEV) console.log("[APOIS] Clique em", primaryLabel);
             onRetry();
           }}
           disabled={requesting}
@@ -5306,7 +5306,7 @@ function OriginManualSearchOverlay({
             })),
         );
       } catch (e) {
-        console.error("[MOVVI] autocomplete origem manual", e);
+        console.error("[APOIS] autocomplete origem manual", e);
         setErr("Falha na busca. Tente novamente em alguns segundos.");
       } finally {
         setBusy(false);
@@ -5330,7 +5330,7 @@ function OriginManualSearchOverlay({
       sessionRef.current = null;
       onConfirm(p);
     } catch (e) {
-      console.error("[MOVVI] falha origem manual", e);
+      console.error("[APOIS] falha origem manual", e);
       setErr("Não foi possível obter as coordenadas desse endereço.");
     }
   }

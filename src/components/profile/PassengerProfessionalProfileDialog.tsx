@@ -1,5 +1,5 @@
 /**
- * MOVVI — Passenger Professional Profile Dialog.
+ * APOIS — Passenger Professional Profile Dialog.
  * Modal showing the passenger public trust profile.
  * Used by drivers (tap passenger card) and passengers (own profile preview).
  */

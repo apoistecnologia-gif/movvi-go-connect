@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { DSButton } from "@/design-system";
 
 export const Route = createFileRoute("/motorista/notificacoes")({
-  head: () => ({ meta: [{ title: "Notificações — MOVVI DRIVE" }] }),
+  head: () => ({ meta: [{ title: "Notificações — APOIS" }] }),
   component: DriverNotificationsPage,
 });
 

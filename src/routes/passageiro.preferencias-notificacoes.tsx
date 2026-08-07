@@ -20,6 +20,6 @@ function Page() {
 }
 
 export const Route = createFileRoute("/passageiro/preferencias-notificacoes")({
-  head: () => ({ meta: [{ title: "Preferências de notificação — MOVVI" }] }),
+  head: () => ({ meta: [{ title: "Preferências de notificação — APOIS" }] }),
   component: Page,
 });
