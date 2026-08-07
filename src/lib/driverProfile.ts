@@ -18,6 +18,7 @@ export type DriverProfileRow = {
   cnh_url: string | null;
   cnh_back_url: string | null;
   vehicle_document_url: string | null;
+  vehicle_photo_url: string | null;
   documents_status: "pending_upload" | "pending_review" | "approved" | "rejected" | null;
 };
 
@@ -52,20 +53,21 @@ export function driverProfileCompletionIssues(p: DriverProfileRow): {
     !p.cnh_url ||
     !p.cnh_back_url ||
     !p.vehicle_document_url ||
+    !p.vehicle_photo_url ||
     p.documents_status === "pending_upload" ||
     p.documents_status === "rejected";
   const complete = !missingPhoto && !missingDocs;
 
   let message: string | null = null;
   if (missingPhoto && missingDocs) {
-    message = "Complete sua foto de perfil e envie todos os documentos obrigatórios para continuar.";
+    message = "Complete sua foto de perfil e envie os documentos obrigatórios para continuar.";
   } else if (missingPhoto) {
     message = "Adicione sua foto de perfil para continuar.";
   } else if (missingDocs) {
     message =
       p.documents_status === "rejected"
         ? "Um ou mais documentos foram reprovados. Reenvie para continuar."
-        : "Envie todos os 4 documentos obrigatórios para continuar.";
+        : "Envie CNH, CRLV e foto do veículo para continuar.";
   }
   return { complete, missingPhoto, missingDocs, message };
 }
