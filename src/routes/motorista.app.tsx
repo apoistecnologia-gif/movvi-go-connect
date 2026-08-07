@@ -105,7 +105,18 @@ function MotoristaAppRoute() {
 
 type LatLng = { lat: number; lng: number };
 type RideRow = Database["public"]["Tables"]["rides"]["Row"];
-type Passenger = { name: string | null; phone: string | null; avatar_url: string | null };
+type Passenger = {
+  name: string | null;
+  phone: string | null;
+  avatar_url: string | null;
+  average_rating: number | null;
+  total_ratings: number | null;
+};
+
+function passengerRatingText(passenger: Passenger | null, digits = 1) {
+  const value = passenger?.average_rating == null ? 5 : Number(passenger.average_rating);
+  return (Number.isFinite(value) ? value : 5).toFixed(digits);
+}
 
 const EMPTY_ROUTE: LatLng[] = [];
 
@@ -931,8 +942,8 @@ function MotoristaApp() {
   useEffect(() => {
     const pid = active?.passenger_id ?? ratingRide?.passenger_id ?? incoming?.passenger_id;
     if (!pid) { setPassenger(null); return; }
-    supabase.from("users").select("name, phone, avatar_url").eq("id", pid).maybeSingle()
-      .then(({ data }) => setPassenger(data ?? { name: null, phone: null, avatar_url: null }));
+    supabase.from("users").select("name, phone, avatar_url, average_rating, total_ratings").eq("id", pid).maybeSingle()
+      .then(({ data }) => setPassenger(data ?? { name: null, phone: null, avatar_url: null, average_rating: 5, total_ratings: 0 }));
   }, [active?.passenger_id, ratingRide?.passenger_id, incoming?.passenger_id]);
 
   // countdown da oferta
@@ -1749,8 +1760,7 @@ function IncomingOffer({
     return { label: "Corrida disponível", tone: "text-primary", dot: "bg-primary", bg: "bg-primary/10", border: "border-primary/25" };
   }, [ride.distance_km, pickupKm]);
 
-  const rating = (passenger as { rating?: number | null } | null)?.rating;
-  const ratingText = rating != null ? Number(rating).toFixed(2) : "5.00";
+  const ratingText = passengerRatingText(passenger, 2);
 
   // Toque de chamada + voz "Nova corrida" enquanto a oferta estiver visível.
   useEffect(() => {
@@ -2142,7 +2152,7 @@ function ActiveRidePanel({
             <div className="min-w-0 flex-1">
               <div className="truncate text-[20px] font-bold leading-tight tracking-tight">{passenger?.name ?? "Passageiro"}</div>
               <div className="mt-1 flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground">
-                <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" /> 5.0
+                <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" /> {passengerRatingText(passenger)}
                 <span className="text-muted-foreground/50">·</span>
                 <CatIcon className="h-3.5 w-3.5" strokeWidth={1.75} />
                 <span>APOIS {(category?.label ?? "CAR").toUpperCase()}</span>
@@ -2296,7 +2306,7 @@ function ActiveRidePanel({
             <div className="min-w-0 flex-1">
               <div className="truncate text-[20px] font-bold leading-tight tracking-tight">{passenger?.name ?? "Passageiro"}</div>
               <div className="mt-1 flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground">
-                <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" /> 5.0
+                <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" /> {passengerRatingText(passenger)}
                 <span className="text-muted-foreground/50">·</span>
                 <CatIcon className="h-3.5 w-3.5" strokeWidth={1.75} />
                 <span>APOIS {(category?.label ?? "CAR").toUpperCase()}</span>
@@ -2404,7 +2414,7 @@ function ActiveRidePanel({
           <div className="min-w-0 flex-1">
             <div className="truncate text-[14px] font-semibold tracking-tight">{passenger?.name ?? "Passageiro"}</div>
             <div className="mt-0.5 flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
-              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" /> 5.0
+              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" /> {passengerRatingText(passenger)}
               <span className="text-muted-foreground/50">·</span>
               <span className="truncate">{paymentLabelFor(ride.payment_method)}</span>
             </div>
