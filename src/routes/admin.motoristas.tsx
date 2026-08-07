@@ -30,7 +30,6 @@ import {
   setDriverSuspension,
   updateDriverApprovalStatus,
 } from "@/lib/adminDrivers.functions";
-// Aprovação chama a Edge Function Mercado Pago via fetch autenticado.
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Caption, DSBadge, DSButton as Button, DSCard, DSCardContent, DSInput, DSLabel, DSTextarea, EmptyState, Loading, StatusPill } from "@/design-system";
 import {
@@ -89,14 +88,6 @@ type AdminNote = {
   created_at: string;
 };
 
-type ApproveMercadoPagoResult = {
-  ok: boolean;
-  alreadyExists: boolean;
-  preapprovalId: string;
-  initPoint: string | null;
-  dueDate: string | null;
-  error?: string;
-};
 
 const ACTIVE_RIDE_STATUSES = [
   "procurar_motorista",
@@ -193,48 +184,6 @@ function mapAdminError(msg: string): string {
   if (msg === "forbidden") return "Ação restrita a administradores.";
   if (/^invalid_|^Required$|uuid/i.test(msg)) return "Dados inválidos.";
   return msg;
-}
-
-async function approveDriverWithMercadoPago(driverId: string): Promise<ApproveMercadoPagoResult> {
-  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-  const accessToken = sessionData.session?.access_token;
-  if (sessionError || !accessToken) throw new Error("admin_session_missing");
-
-  const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/approve-driver-and-create-mercadopago-subscription`;
-  const response = await fetch(functionUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${accessToken}`,
-      apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-    },
-    body: JSON.stringify({ driverId }),
-  });
-
-  const payload = (await response.json().catch(() => null)) as (ApproveMercadoPagoResult & {
-    message?: string;
-    detail?: string;
-    missing?: string[];
-  }) | null;
-
-  if (!response.ok || !payload?.ok) {
-    console.error("Falha ao aprovar motorista via Mercado Pago", {
-      status: response.status,
-      payload,
-    });
-    if (payload?.error === "missing_required_fields" && Array.isArray(payload.missing)) {
-      throw new Error(`missing_required_fields:${payload.missing.join(", ")}`);
-    }
-    if (payload?.error === "mercadopago_preapproval_failed" && payload.detail) {
-      throw new Error(`mercadopago_preapproval_failed:${payload.detail.slice(0, 200)}`);
-    }
-    if (payload?.error === "mercadopago_environment_mismatch") {
-      throw new Error("mercadopago_environment_mismatch");
-    }
-    throw new Error(payload?.error || payload?.message || payload?.detail || `function_http_${response.status}`);
-  }
-
-  return payload;
 }
 
 async function regenerateDriverCharge(
