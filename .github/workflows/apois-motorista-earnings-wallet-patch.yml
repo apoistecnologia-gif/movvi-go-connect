@@ -1,0 +1,62 @@
+name: APOIS Motorista - ganhos e carteira oficial
+
+on:
+  push:
+    branches:
+      - feat/apois-motorista-producao-homologacao
+    paths:
+      - ".github/workflows/apois-motorista-earnings-wallet-patch.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/apois-motorista-producao-homologacao
+      - name: Corrigir identidade e saldo do financeiro
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('src/routes/motorista.ganhos.tsx')
+          s=p.read_text()
+          s=s.replace('import { getDriverWallet } from "@/lib/finance/wallet";\n','')
+          anchor='import { supabase } from "@/integrations/supabase/client";'
+          if 'loadDriverProfile' not in s:
+            if anchor not in s: raise RuntimeError('import supabase ausente')
+            s=s.replace(anchor,anchor+'\nimport { loadDriverProfile } from "@/lib/driverProfile";',1)
+
+          s=s.replace('const [userId, setUserId] = useState<string | null>(null);','const [driverId, setDriverId] = useState<string | null>(null);',1)
+          old='''  useEffect(() => {\n    (async () => {\n      const { data: a } = await supabase.auth.getUser();\n      if (!a?.user) { navigate({ to: "/motorista/login" }); return; }\n      setUserId(a.user.id);\n    })();\n  }, [navigate]);'''
+          new='''  useEffect(() => {\n    (async () => {\n      const profile = await loadDriverProfile();\n      if (!profile.ok) {\n        navigate({ to: profile.reason === "no_session" ? "/motorista/login" : "/motorista/status" });\n        return;\n      }\n      setDriverId(profile.profile.id);\n    })();\n  }, [navigate]);'''
+          if old not in s: raise RuntimeError('bootstrap antigo ganhos ausente')
+          s=s.replace(old,new,1)
+
+          old='''  useEffect(() => {\n    if (!userId) return;\n    (async () => {\n      try {\n        const [wallet, subInfo] = await Promise.all([\n          getDriverWallet(userId),\n          loadSubscription({}).catch(() => null),\n        ]);\n        if (wallet) setAvailable(Number(wallet.available_balance ?? 0));\n        if (subInfo) setSub(subInfo);\n      } catch {\n        /* silent */\n      }\n    })();\n  }, [userId, loadSubscription]);'''
+          new='''  useEffect(() => {\n    if (!driverId) return;\n    (async () => {\n      try {\n        const [walletResult, subInfo] = await Promise.all([\n          (supabase as any).from("driver_wallets").select("available_balance").eq("driver_id", driverId).maybeSingle(),\n          loadSubscription({}).catch(() => null),\n        ]);\n        if (walletResult?.data) setAvailable(Number(walletResult.data.available_balance ?? 0));\n        if (subInfo) setSub(subInfo);\n      } catch {\n        /* silent */\n      }\n    })();\n  }, [driverId, loadSubscription]);'''
+          if old not in s: raise RuntimeError('wallet antigo ganhos ausente')
+          s=s.replace(old,new,1)
+
+          s=s.replace('if (!userId) return;', 'if (!driverId) return;')
+          s=s.replace('.eq("driver_id", userId)', '.eq("driver_id", driverId)')
+          s=s.replace('}, [userId, filter, customFrom, customTo]);','}, [driverId, filter, customFrom, customTo]);')
+          s=s.replace('`movvi-ganhos-${filter}`','`apois-ganhos-${filter}`')
+          s=s.replace('`movvi-extrato-${filter}.pdf`','`apois-extrato-${filter}.pdf`')
+          p.write_text(s)
+          PY
+      - name: Validar
+        run: |
+          grep -F 'setDriverId(profile.profile.id)' src/routes/motorista.ganhos.tsx
+          grep -F 'from("driver_wallets")' src/routes/motorista.ganhos.tsx
+          if grep -F '.eq("driver_id", userId)' src/routes/motorista.ganhos.tsx; then exit 1; fi
+          if grep -F 'movvi-' src/routes/motorista.ganhos.tsx; then exit 1; fi
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/routes/motorista.ganhos.tsx
+          git commit -m "fix(motorista): alinhar financeiro ao id e carteira oficiais"
+          git push origin HEAD:feat/apois-motorista-producao-homologacao
