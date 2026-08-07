@@ -58,4 +58,5 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-# Candidato validado após limpeza total da marca antiga e ajuste do período de homologação.
+# Candidato validado após checklist funcional do PDF: voz, PIN, fila de próxima corrida,
+# carteira, navegação/retorno e identidade de drivers.id.
