@@ -33,6 +33,13 @@ jobs:
       - name: Instalar dependências
         run: npm install --no-audit --no-fund
 
+      - name: Garantir que a marca antiga não ficou no código do app
+        run: |
+          if grep -RIn --include='*.ts' --include='*.tsx' 'MOVVI' src; then
+            echo 'Marca antiga encontrada no código do APOIS Motorista.'
+            exit 1
+          fi
+
       - name: Build APOIS Motorista
         run: npm run build:motorista
 
@@ -40,4 +47,8 @@ jobs:
         run: |
           test -f dist/client/index.html
           test ! -d .output/server
+          if grep -RIn 'MOVVI' dist/client; then
+            echo 'Marca antiga encontrada no bundle final do APOIS Motorista.'
+            exit 1
+          fi
           echo "APOIS_MOTORISTA_BUILD_OK"
