@@ -36,7 +36,7 @@ jobs:
       - name: Build APOIS Motorista
         run: npm run build:motorista
 
-      - name: Verificar saída mobile
+      - name: Verificar saída mobile final
         run: |
           test -f dist/client/index.html
           test ! -d .output/server
