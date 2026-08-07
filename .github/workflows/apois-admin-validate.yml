@@ -30,7 +30,10 @@ jobs:
         run: |
           ! grep -F 'approve-driver-and-create-mercadopago-subscription' src/routes/admin.motoristas.tsx
           ! grep -F 'approveDriverWithMercadoPago' src/routes/admin.motoristas.tsx
+          ! grep -F 'regenerate-driver-mercadopago-charge' src/routes/admin.motoristas.tsx
+          ! grep -F 'onGenerateCharge' src/routes/admin.motoristas.tsx
           grep -F 'updateApprovalFn({' src/routes/admin.motoristas.tsx
           grep -F 'admin_set_driver_approval' src/lib/adminDrivers.functions.ts
+          grep -F 'onSubscription' src/routes/admin.motoristas.tsx
       - name: Build do painel
         run: npm run build
