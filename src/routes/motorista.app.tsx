@@ -343,6 +343,7 @@ function MotoristaApp() {
 
   const [incoming, setIncoming] = useState<RideRow | null>(null);
   const [active, setActive] = useState<RideRow | null>(null);
+  const [queuedRide, setQueuedRide] = useState<RideRow | null>(null);
   const [passenger, setPassenger] = useState<Passenger | null>(null);
   const [countdown, setCountdown] = useState(RIDE_OFFER_TIMEOUT_SECONDS);
   const [profilePassengerId, setProfilePassengerId] = useState<string | null>(null);
@@ -370,11 +371,13 @@ function MotoristaApp() {
   // Refs para evitar recriação do canal Realtime e impedir loop de oferta
   const activeRef = useRef<RideRow | null>(null);
   const incomingRef = useRef<RideRow | null>(null);
+  const queuedRideRef = useRef<RideRow | null>(null);
   const ratingRef = useRef<RideRow | null>(null);
   // Corridas que o motorista já tratou (aceitou/recusou) — NUNCA reabrir
   const handledRidesRef = useRef<Set<string>>(new Set());
   useEffect(() => { activeRef.current = active; }, [active]);
   useEffect(() => { incomingRef.current = incoming; }, [incoming]);
+  useEffect(() => { queuedRideRef.current = queuedRide; }, [queuedRide]);
   useEffect(() => { ratingRef.current = ratingRide; }, [ratingRide]);
 
   const removeIncomingRequest = useCallback((ride: RideRow, removeReason: RequestRemovalReason | string) => {
@@ -794,7 +797,10 @@ function MotoristaApp() {
       if (r.status !== "procurar_motorista") return;
       if (acceptedDriverId || didReject || !isCandidate || expired) return;
       if (handledRidesRef.current.has(r.id)) return;
-      if (activeRef.current || ratingRef.current) return;
+      if (ratingRef.current) return;
+      const currentRide = activeRef.current;
+      if (currentRide && currentRide.status !== "em_viagem") return;
+      if (currentRide?.status === "em_viagem" && queuedRideRef.current) return;
       if (incomingRef.current && incomingRef.current.id !== r.id) return;
 
       if (import.meta.env.DEV) console.log("[APOIS MOTORISTA] corrida recebida (broadcast candidatos):", r.id, {
@@ -823,6 +829,15 @@ function MotoristaApp() {
         }
       }
       if (!driverId || (r.driver_id !== driverId && (r as any).accepted_driver_id !== driverId)) return;
+
+      const queuedAfterRideId = (r as any).queued_after_ride_id as string | null | undefined;
+      if (r.status === "procurar_motorista" && queuedAfterRideId && r.driver_id === driverId) {
+        if (incomingRef.current?.id === r.id) setIncoming(null);
+        handledRidesRef.current.add(r.id);
+        setQueuedRide(r);
+        return;
+      }
+
       if (r.status === "finalizada") {
         setActive(null); setPolyline([]);
         if (ratedRidesRef.current.has(r.id)) {
@@ -835,6 +850,17 @@ function MotoristaApp() {
         }
         if (driverId) loadTodayStats(driverId);
       } else if (r.status === "cancelada_passageiro" || r.status === "cancelada_motorista") {
+        const wasQueued = queuedRideRef.current?.id === r.id || Boolean((r as any).queued_after_ride_id && r.driver_id === driverId);
+        if (wasQueued) {
+          handledRidesRef.current.add(r.id);
+          setIncoming(null);
+          setQueuedRide(null);
+          toast.warning("Próxima corrida cancelada", {
+            description: "A corrida reservada foi cancelada. Sua viagem atual continua normalmente.",
+            duration: 6000,
+          });
+          return;
+        }
         const wasActive = activeRef.current?.id === r.id || r.driver_id === driverId || (r as any).accepted_driver_id === driverId;
         if (wasActive && r.status === "cancelada_passageiro") {
           const reason = (r.cancel_reason ?? "").trim();
@@ -856,6 +882,7 @@ function MotoristaApp() {
         setPolyline([]);
       } else if (r.status === "motorista_a_caminho" || r.status === "motorista_chegou" || r.status === "em_viagem") {
         if (incomingRef.current?.id === r.id) setIncoming(null);
+        if (queuedRideRef.current?.id === r.id) setQueuedRide(null);
         handledRidesRef.current.add(r.id);
         setActive(r);
       }
@@ -876,37 +903,46 @@ function MotoristaApp() {
       .subscribe(async (status) => {
         if (import.meta.env.DEV) console.log("[APOIS MOTORISTA] status do canal:", status);
         if (status !== "SUBSCRIBED") return;
-        const ongoing = await supabase
-          .from("rides").select("*")
-          .eq("driver_id", driverId)
-          .in("status", ["motorista_a_caminho", "motorista_chegou", "em_viagem"])
-          .order("created_at", { ascending: false })
-          .limit(1).maybeSingle();
-        if (ongoing.data) { applyActive(ongoing.data as RideRow); return; }
-        const pending = await supabase
-          .from("rides").select("*")
-          .contains("candidate_driver_ids", [userId])
-          .eq("status", "procurar_motorista")
-          .order("created_at", { ascending: false })
-          .limit(1).maybeSingle();
-        if (pending.data) presentOffer(pending.data as RideRow);
+        await resyncDriverRides();
       });
 
-    // Rede de segurança 1: re-sincroniza ao retomar a aba (após background no mobile)
-    const onVisibility = async () => {
-      if (document.visibilityState !== "visible") return;
-      if (import.meta.env.DEV) console.log("[APOIS MOTORISTA] aba visível — ressincronizando corrida ativa");
+    const resyncDriverRides = async () => {
       const ongoing = await supabase
-        .from("rides").select("*").eq("driver_id", driverId)
-        .in("status", ["motorista_a_caminho", "motorista_chegou", "em_viagem", "finalizada"])
-        .order("created_at", { ascending: false }).limit(1).maybeSingle();
-      if (ongoing.data) { applyActive(ongoing.data as RideRow); return; }
+        .from("rides").select("*")
+        .eq("driver_id", driverId)
+        .in("status", ["motorista_a_caminho", "motorista_chegou", "em_viagem"])
+        .order("created_at", { ascending: false })
+        .limit(1).maybeSingle();
+      const current = ongoing.data as RideRow | null;
+      if (current) applyActive(current);
+
+      const queued = await (supabase.from("rides") as any)
+        .select("*")
+        .eq("driver_id", driverId)
+        .eq("status", "procurar_motorista")
+        .not("queued_after_ride_id", "is", null)
+        .order("queued_at", { ascending: true })
+        .limit(1).maybeSingle();
+      if (queued.data) applyActive(queued.data as RideRow);
+      else setQueuedRide(null);
+
+      const canReceiveNext = !current || (current.status === "em_viagem" && !queued.data);
+      if (!canReceiveNext || ratingRef.current) return;
       const pending = await supabase
         .from("rides").select("*")
         .contains("candidate_driver_ids", [userId])
         .eq("status", "procurar_motorista")
-        .order("created_at", { ascending: false }).limit(1).maybeSingle();
+        .is("driver_id", null)
+        .order("created_at", { ascending: false })
+        .limit(1).maybeSingle();
       if (pending.data) presentOffer(pending.data as RideRow);
+    };
+
+    // Rede de segurança 1: re-sincroniza ao retomar a aba (após background no mobile)
+    const onVisibility = async () => {
+      if (document.visibilityState !== "visible") return;
+      if (import.meta.env.DEV) console.log("[APOIS MOTORISTA] aba visível — ressincronizando corrida ativa/fila");
+      await resyncDriverRides();
     };
     document.addEventListener("visibilitychange", onVisibility);
     // Também refetch em focus da janela e reconexão de rede
@@ -918,11 +954,17 @@ function MotoristaApp() {
     // Rede de segurança 2: polling leve da corrida ativa a cada 8s caso o realtime caia
     const poll = window.setInterval(async () => {
       const cur = activeRef.current;
-      if (!cur) return;
-      const { data } = await supabase.from("rides").select("*").eq("id", cur.id).maybeSingle();
-      if (data && (data as RideRow).status !== cur.status) {
-        if (import.meta.env.DEV) console.log("[APOIS MOTORISTA] polling detectou mudança de status:", cur.status, "→", (data as RideRow).status);
-        applyActive(data as RideRow);
+      if (cur) {
+        const { data } = await supabase.from("rides").select("*").eq("id", cur.id).maybeSingle();
+        if (data && (data as RideRow).status !== cur.status) {
+          if (import.meta.env.DEV) console.log("[APOIS MOTORISTA] polling detectou mudança de status:", cur.status, "→", (data as RideRow).status);
+          applyActive(data as RideRow);
+        }
+      }
+      const queued = queuedRideRef.current;
+      if (queued) {
+        const { data } = await supabase.from("rides").select("*").eq("id", queued.id).maybeSingle();
+        if (data) applyActive(data as RideRow);
       }
     }, 8000);
 
@@ -940,7 +982,7 @@ function MotoristaApp() {
 
   // carrega dados do passageiro
   useEffect(() => {
-    const pid = active?.passenger_id ?? ratingRide?.passenger_id ?? incoming?.passenger_id;
+    const pid = incoming?.passenger_id ?? active?.passenger_id ?? ratingRide?.passenger_id;
     if (!pid) { setPassenger(null); return; }
     supabase.from("users").select("name, phone, avatar_url, average_rating, total_ratings").eq("id", pid).maybeSingle()
       .then(({ data }) => setPassenger(data ?? { name: null, phone: null, avatar_url: null, average_rating: 5, total_ratings: 0 }));
@@ -967,8 +1009,17 @@ function MotoristaApp() {
       // Só remove o alerta depois que o backend confirma o aceite da MESMA corrida.
       handledRidesRef.current.add(offer.id);
       setIncoming(null);
-      setActive(r as RideRow);
-      sheetRef.current?.snapTo(34);
+      const accepted = r as RideRow;
+      if ((accepted as any).queued_after_ride_id && accepted.status === "procurar_motorista") {
+        setQueuedRide(accepted);
+        toast.success("Próxima corrida reservada", {
+          description: "Finalize a viagem atual. Depois, a rota para o próximo embarque será aberta automaticamente.",
+          duration: 6500,
+        });
+      } else {
+        setActive(accepted);
+        sheetRef.current?.snapTo(34);
+      }
     } catch (e) {
       console.error("[APOIS MOTORISTA] erro ao aceitar:", e);
       handledRidesRef.current.delete(offer.id);
@@ -1569,6 +1620,25 @@ function MotoristaApp() {
         passengerUserId={profilePassengerId}
       />
 
+
+      {queuedRide && active?.status === "em_viagem" && !incoming && (
+        <div
+          className="fixed left-4 right-4 z-[45] mx-auto max-w-md rounded-[18px] border border-[#F6BE1C]/25 bg-[#0D0F11]/94 px-4 py-3 shadow-[0_18px_44px_-22px_rgba(0,0,0,0.95)] backdrop-blur-md"
+          style={{ top: "calc(env(safe-area-inset-top) + 134px)" }}
+        >
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="text-[9px] font-black uppercase tracking-[0.17em] text-[#F6BE1C]">Próxima corrida reservada</p>
+              <p className="mt-1 truncate text-[12px] font-bold text-white">{queuedRide.pickup_label || queuedRide.origin_name}</p>
+              <p className="mt-0.5 truncate text-[10px] font-medium text-zinc-500">Finalize a atual para seguir ao próximo embarque</p>
+            </div>
+            <div className="shrink-0 text-right">
+              <p className="text-[14px] font-black text-[#F6BE1C]">{formatBRL(Number(queuedRide.estimated_price ?? 0))}</p>
+              <p className="mt-0.5 text-[9px] font-bold text-zinc-600">reservada</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ===== Rating ===== */}
       {ratingRide && (
