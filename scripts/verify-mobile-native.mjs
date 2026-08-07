@@ -51,8 +51,17 @@ if (!/android:hardwareAccelerated="true"/.test(manifest)) {
   fail('AndroidManifest.xml precisa declarar android:hardwareAccelerated="true" no <application>.');
 }
 
-if (!/initialFocus:\s*false/.test(config)) {
-  fail(`capacitor.${role}.config.ts precisa declarar android.initialFocus=false.`);
+// No APOIS Motorista o WebView precisa receber foco inicial para que os campos
+// HTML aceitem toque, cursor e IME/teclado no Android. O passageiro mantém seu
+// contrato nativo atual até uma homologação específica exigir mudança.
+const expectedInitialFocus = role === "motorista" ? true : false;
+const initialFocusPattern = expectedInitialFocus
+  ? /initialFocus:\s*true/
+  : /initialFocus:\s*false/;
+if (!initialFocusPattern.test(config)) {
+  fail(
+    `capacitor.${role}.config.ts precisa declarar android.initialFocus=${expectedInitialFocus}.`,
+  );
 }
 
 if (!/captureInput:\s*false/.test(config)) {
