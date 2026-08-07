@@ -1,5 +1,12 @@
 import { supabase } from "@/integrations/supabase/client";
 
+type DriverRidePushEvent =
+  | "ride.accepted"
+  | "ride.driver_arrived"
+  | "ride.started"
+  | "ride.completed"
+  | "ride.cancelled";
+
 function readableDriverRpcError(message: string) {
   const raw = String(message ?? "");
   if (/ride_offer_unavailable/i.test(raw)) return "Esta corrida não está mais disponível.";
@@ -19,8 +26,30 @@ async function callRpc<T = unknown>(name: string, args: Record<string, unknown>)
   return data as T;
 }
 
+/**
+ * Push é complementar ao realtime. A ação da corrida nunca deve voltar a falhar
+ * só porque o aparelho do passageiro está sem token ou o FCM está indisponível.
+ */
+function notifyPassenger(rideId: string, event: DriverRidePushEvent) {
+  void supabase.functions
+    .invoke("send-ride-push", {
+      body: {
+        event,
+        ride_id: rideId,
+      },
+    })
+    .then(({ error }) => {
+      if (error) console.warn(`[APOIS MOTORISTA] push ${event} não enviado:`, error.message);
+    })
+    .catch((error) => {
+      console.warn(`[APOIS MOTORISTA] push ${event} indisponível:`, error);
+    });
+}
+
 export async function aceitarCorridaMobile({ data }: { data: { rideId: string } }) {
-  return callRpc("driver_accept_ride", { _ride_id: data.rideId });
+  const ride = await callRpc("driver_accept_ride", { _ride_id: data.rideId });
+  notifyPassenger(data.rideId, "ride.accepted");
+  return ride;
 }
 
 export async function recusarCorridaMobile({ data }: { data: { rideId: string } }) {
@@ -28,25 +57,33 @@ export async function recusarCorridaMobile({ data }: { data: { rideId: string } 
 }
 
 export async function informarChegadaMobile({ data }: { data: { rideId: string } }) {
-  return callRpc("driver_mark_arrived", { _ride_id: data.rideId });
+  const ride = await callRpc("driver_mark_arrived", { _ride_id: data.rideId });
+  notifyPassenger(data.rideId, "ride.driver_arrived");
+  return ride;
 }
 
 export async function iniciarCorridaMobile({ data }: { data: { rideId: string; safety_code: string } }) {
-  return callRpc("driver_start_ride", {
+  const ride = await callRpc("driver_start_ride", {
     _ride_id: data.rideId,
     _security_code: data.safety_code,
   });
+  notifyPassenger(data.rideId, "ride.started");
+  return ride;
 }
 
 export async function finalizarCorridaMobile({ data }: { data: { rideId: string; final_price?: number } }) {
-  return callRpc("driver_finish_ride", { _ride_id: data.rideId });
+  const ride = await callRpc("driver_finish_ride", { _ride_id: data.rideId });
+  notifyPassenger(data.rideId, "ride.completed");
+  return ride;
 }
 
 export async function cancelarPeloMotoristaMobile({ data }: { data: { rideId: string; motivo?: string } }) {
-  return callRpc("driver_cancel_ride", {
+  const ride = await callRpc("driver_cancel_ride", {
     _ride_id: data.rideId,
     _reason: data.motivo ?? null,
   });
+  notifyPassenger(data.rideId, "ride.cancelled");
+  return ride;
 }
 
 export async function avaliarPassageiroMobile({
