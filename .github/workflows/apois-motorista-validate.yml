@@ -53,6 +53,7 @@ jobs:
           grep -F 'Próxima corrida reservada' src/routes/motorista.app.tsx
           grep -F 'queued_after_ride_id' src/routes/motorista.app.tsx
           grep -F 'Km total' src/routes/motorista.app.tsx
+          grep -F 'driverRecordId' src/routes/motorista.app.tsx
           grep -F 'apois:motorista:voice-enabled' src/lib/voiceNav.ts
           grep -F 'driver_wallet_transactions' src/routes/motorista.carteira.tsx
           grep -F 'Saques automáticos' src/routes/motorista.carteira.tsx
