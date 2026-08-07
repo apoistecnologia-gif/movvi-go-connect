@@ -1,0 +1,53 @@
+name: APOIS Motorista - controles de voz
+
+on:
+  push:
+    branches:
+      - feat/apois-motorista-producao-homologacao
+    paths:
+      - ".github/workflows/apois-motorista-voice-controls-patch.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/apois-motorista-producao-homologacao
+      - name: Aplicar voz persistente e avisos de chegada
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('src/routes/motorista.app.tsx')
+          s = p.read_text()
+          old = 'import { ApoisDriverBottomNav } from "@/components/ApoisDriverBottomNav";'
+          new = old + '\nimport { DriverVoiceToggle } from "@/components/DriverVoiceToggle";'
+          assert old in s and 'DriverVoiceToggle' not in s
+          s = s.replace(old, new, 1)
+
+          marker = '''  // Fala transições de status importantes.\n  const lastSpokenStatusRef = useRef<string | null>(null);'''
+          proximity = '''  // Avisos automáticos de chegada exigidos pelo checklist do Motorista.\n  // O botão “Cheguei” continua existindo; este aviso é apenas orientação por voz.\n  useEffect(() => {\n    if (!active || !position) return;\n    if (active.status === "motorista_a_caminho") {\n      const km = haversineKm(position, { lat: active.origin_lat, lng: active.origin_lng });\n      if (km <= 0.05) {\n        void speak("Você chegou ao ponto de embarque.", { dedupKey: `${active.id}:pickup-arrival` });\n      }\n      return;\n    }\n    if (active.status === "em_viagem") {\n      const km = haversineKm(position, { lat: active.destination_lat, lng: active.destination_lng });\n      if (km <= 0.05) {\n        void speak("Você chegou ao destino final.", { dedupKey: `${active.id}:destination-arrival` });\n      }\n    }\n  }, [position?.lat, position?.lng, active?.id, active?.status]); // eslint-disable-line react-hooks/exhaustive-deps\n\n'''
+          assert marker in s
+          s = s.replace(marker, proximity + marker, 1)
+
+          render_marker = '      <ApoisDriverBottomNav hidden={!!ratingRide} />'
+          render = '''      <DriverVoiceToggle\n        visible={!!active && (active.status === "motorista_a_caminho" || active.status === "em_viagem")}\n      />\n\n''' + render_marker
+          assert render_marker in s
+          s = s.replace(render_marker, render, 1)
+          p.write_text(s)
+          PY
+      - name: Validar patch
+        run: |
+          grep -q 'DriverVoiceToggle' src/routes/motorista.app.tsx
+          grep -q 'Você chegou ao destino final' src/routes/motorista.app.tsx
+          grep -q 'Você chegou ao ponto de embarque' src/routes/motorista.app.tsx
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/routes/motorista.app.tsx
+          git commit -m "feat(motorista): voz, chegada e botão silenciar"
+          git push origin HEAD:feat/apois-motorista-producao-homologacao
