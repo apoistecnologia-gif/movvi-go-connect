@@ -56,6 +56,7 @@ jobs:
           grep -F 'apois:motorista:voice-enabled' src/lib/voiceNav.ts
           grep -F 'driver_wallet_transactions' src/routes/motorista.carteira.tsx
           grep -F 'Saques automáticos' src/routes/motorista.carteira.tsx
+          grep -F 'aria-label="Voltar"' src/routes/motorista.status.tsx
 
       - name: Validar retorno nas telas do menu
         run: |
