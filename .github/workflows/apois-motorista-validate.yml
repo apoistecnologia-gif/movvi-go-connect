@@ -56,4 +56,6 @@ jobs:
             echo 'Marca antiga encontrada no bundle final do APOIS Motorista.'
             exit 1
           fi
+          grep -F 'Período de homologação ativo' src/routes/motorista.status.tsx
+          grep -F 'Nenhum pagamento é necessário nesta etapa.' src/routes/motorista.status.tsx
           echo "APOIS_MOTORISTA_BUILD_OK"
