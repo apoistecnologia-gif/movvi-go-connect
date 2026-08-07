@@ -10,6 +10,7 @@ on:
       - "package.json"
       - "bun.lock"
       - "vite.mobile.config.ts"
+      - "index.mobile.html"
       - ".env.mobile"
       - "capacitor.motorista.config.ts"
       - ".github/workflows/apois-motorista-validate.yml"
@@ -37,6 +38,10 @@ jobs:
         run: |
           if grep -RIn --include='*.ts' --include='*.tsx' 'MOVVI' src; then
             echo 'Marca antiga encontrada no código do APOIS Motorista.'
+            exit 1
+          fi
+          if grep -n 'MOVVI' index.mobile.html; then
+            echo 'Marca antiga encontrada no shell mobile do APOIS Motorista.'
             exit 1
           fi
 
