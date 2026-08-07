@@ -5,6 +5,11 @@ on:
     branches:
       - feat/apois-admin-supabase-oficial-homologacao
     paths:
+      - "src/routes/admin.motoristas.tsx"
+      - "src/routes/admin.login.tsx"
+      - "src/lib/adminDrivers.functions.ts"
+      - "src/lib/driverDocs.functions.ts"
+      - ".env"
       - ".github/workflows/apois-admin-validate.yml"
 
 permissions:
