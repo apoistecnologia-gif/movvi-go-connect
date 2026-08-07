@@ -74,13 +74,18 @@ s = s.replace(offline_effect, '')
 s = s.replace('''            if (userId) {\n              void supabase.from("drivers").update({ is_online: false }).eq("user_id", userId);\n            }\n''', '')
 s = s.replace('''              if (userId) {\n                void supabase.from("drivers").update({ is_online: false }).eq("user_id", userId);\n              }\n''', '')
 
-# Identidade visual dos mockups.
+# Identidade visual dos mockups APOIS: mapa escuro, rota e embarque dourados.
 s = s.replace('MOVVI {(category?.label ?? "CAR").toUpperCase()}', 'APOIS {(category?.label ?? "CAR").toUpperCase()}')
 s = s.replace('bg-[#76C139]', 'bg-[#F6BE1C]')
 s = s.replace('text-[#071008]', 'text-black')
 s = s.replace('border-[#071008]/70', 'border-black/70')
 s = s.replace('rgba(118,193,57,0.4)', 'rgba(246,190,28,0.45)')
 s = s.replace('Cheguei ao local', 'Cheguei no embarque')
+s = s.replace('color="#8DD92B"', 'color="#F6BE1C"')
+s = s.replace('bg-blue-500 animate-pulse', 'bg-[#F6BE1C] animate-pulse')
+s = s.replace('bg-blue-500/60', 'bg-[#F6BE1C]/60')
+s = s.replace('rota — verde MOVVI', 'rota — dourado APOIS')
+s = s.replace('MOVVI Ride Score', 'APOIS Ride Score')
 
 # Tags/console visíveis internamente podem conservar nomes de componentes, mas
 # notificações e textos apresentados ao usuário devem ser APOIS.
