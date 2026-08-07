@@ -8,7 +8,11 @@ const config: CapacitorConfig = {
   webDir: "dist/client",
   android: {
     allowMixedContent: false,
-    initialFocus: false,
+    // O WebView precisa receber foco para que inputs HTML possam abrir o teclado
+    // e aceitar digitação normalmente no Android. O default do Capacitor é true.
+    initialFocus: true,
+    // Mantemos a conexão de entrada padrão do Android. captureInput=true troca
+    // para uma implementação simplificada com limitações de teclado.
     captureInput: false,
   },
   server: {
