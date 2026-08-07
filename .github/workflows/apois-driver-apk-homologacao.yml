@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - name: Checkout candidato atual
+      - name: Checkout candidato final
         uses: actions/checkout@v4
 
       - name: Node 22
