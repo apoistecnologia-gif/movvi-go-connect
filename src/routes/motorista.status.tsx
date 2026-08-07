@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
+  BadgeCheck,
   CheckCircle2,
   ChevronRight,
   Clock3,
@@ -8,7 +9,10 @@ import {
   FileText,
   Loader2,
   LogIn,
+  QrCode,
   ShieldAlert,
+  ShieldCheck,
+  Star,
   UserRoundCheck,
   XCircle,
 } from "lucide-react";
@@ -51,11 +55,11 @@ const STATUS_META: Record<DisplayStatus, StatusMeta> = {
   },
   aprovado: {
     label: "Aprovado",
-    title: "Cadastro aprovado",
-    description: "Sua conta de motorista foi liberada. Você já pode entrar no aplicativo.",
+    title: "Cadastro aprovado!",
+    description: "Parabéns! Seu cadastro foi aprovado. Agora falta apenas ativar sua primeira mensalidade para começar a receber corridas.",
     icon: UserRoundCheck,
     tone: "border-emerald-400/25 bg-emerald-400/10 text-emerald-400",
-    iconTone: "bg-emerald-400 text-black",
+    iconTone: "bg-[#F6BE1C] text-black",
   },
   reprovado: {
     label: "Reprovado",
@@ -85,6 +89,7 @@ const STATUS_META: Record<DisplayStatus, StatusMeta> = {
 
 type DocumentItem = {
   label: string;
+  description: string;
   sent: boolean;
 };
 
@@ -118,8 +123,6 @@ function DriverStatusPage() {
 
     void fetchProfile();
 
-    // A tela reage à aprovação feita no painel sem depender da antiga tabela
-    // driver_documents, que não existe no contrato atual do Supabase oficial.
     const channel = supabase
       .channel("apois-driver-status-self")
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "drivers" }, () => {
@@ -141,10 +144,26 @@ function DriverStatusPage() {
 
   const documents = useMemo<DocumentItem[]>(
     () => [
-      { label: "Foto de perfil / validação", sent: Boolean(profile?.selfie_url || profile?.photo_url) },
-      { label: "CNH — frente", sent: Boolean(profile?.cnh_url) },
-      { label: "CNH — verso", sent: Boolean(profile?.cnh_back_url) },
-      { label: "Documento do veículo (CRLV)", sent: Boolean(profile?.vehicle_document_url) },
+      {
+        label: "Foto de perfil",
+        description: "Rosto visível para identificação",
+        sent: Boolean(profile?.selfie_url || profile?.photo_url),
+      },
+      {
+        label: "CNH",
+        description: "Frente e verso da habilitação",
+        sent: Boolean(profile?.cnh_url && profile?.cnh_back_url),
+      },
+      {
+        label: "Documento do veículo (CRLV)",
+        description: "Documento atual do veículo",
+        sent: Boolean(profile?.vehicle_document_url),
+      },
+      {
+        label: "Foto do veículo",
+        description: "Veículo visível por inteiro",
+        sent: Boolean(profile?.vehicle_photo_url),
+      },
     ],
     [profile],
   );
@@ -182,19 +201,35 @@ function DriverStatusPage() {
           <>
             <section className="overflow-hidden rounded-[28px] border border-white/5 bg-[#101214] shadow-[0_24px_70px_-38px_rgba(0,0,0,0.95)]">
               <div className="px-5 pb-5 pt-6 text-center">
-                <div className={`mx-auto flex h-16 w-16 items-center justify-center rounded-[22px] ${meta.iconTone}`}>
-                  <Icon className="h-8 w-8" strokeWidth={2.1} />
+                <div className={`mx-auto flex h-20 w-20 items-center justify-center rounded-full border border-[#F6BE1C]/20 ${meta.iconTone}`}>
+                  <Icon className="h-9 w-9" strokeWidth={2.1} />
                 </div>
                 <span className={`mt-4 inline-flex rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] ${meta.tone}`}>
                   {meta.label}
                 </span>
-                <h1 className="mt-4 text-[25px] font-black leading-tight tracking-tight text-white">
+                <h1 className="mt-4 text-[26px] font-black leading-tight tracking-tight text-white">
                   {meta.title}
                 </h1>
                 <p className="mx-auto mt-2 max-w-md text-[13px] font-medium leading-relaxed text-zinc-400">
                   {meta.description}
                 </p>
               </div>
+
+              {status === "aprovado" && profile ? (
+                <div className="mx-4 mb-4 flex items-center gap-3 rounded-[20px] border border-white/5 bg-black/45 px-4 py-3 text-left">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#F6BE1C]/10 text-[#F6BE1C]">
+                    <BadgeCheck className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[13px] font-black text-white">{profile.name || "Motorista APOIS"}</p>
+                    <p className="mt-0.5 text-[10px] font-medium text-zinc-500">Motorista parceiro</p>
+                  </div>
+                  <div className="text-right">
+                    <ShieldCheck className="ml-auto h-4 w-4 text-[#F6BE1C]" />
+                    <p className="mt-1 text-[9px] font-black uppercase tracking-[0.1em] text-[#F6BE1C]">Aprovado</p>
+                  </div>
+                </div>
+              ) : null}
 
               {status === "reprovado" && profile?.motivo_reprovacao ? (
                 <div className="mx-4 mb-4 rounded-2xl border border-red-400/20 bg-red-400/8 px-4 py-3">
@@ -206,32 +241,26 @@ function DriverStatusPage() {
               ) : null}
             </section>
 
-            {status !== "nao_encontrado" ? (
+            {status !== "nao_encontrado" && status !== "aprovado" ? (
               <section className="rounded-[24px] border border-white/5 bg-[#0D0F11] p-4">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#F6BE1C]">Documentos enviados</p>
-                    <p className="mt-1 text-[13px] font-semibold text-zinc-400">
-                      {sentCount} de 4 itens recebidos
-                    </p>
+                    <p className="mt-1 text-[13px] font-semibold text-zinc-400">{sentCount} de 4 itens recebidos</p>
                   </div>
-                  <div className="rounded-2xl bg-black px-3 py-2 text-[18px] font-black tabular-nums text-white">
-                    {sentCount}/4
-                  </div>
+                  <div className="rounded-2xl bg-black px-3 py-2 text-[18px] font-black tabular-nums text-white">{sentCount}/4</div>
                 </div>
 
                 <div className="mt-4 space-y-2">
                   {documents.map((item) => (
-                    <div
-                      key={item.label}
-                      className="flex min-h-12 items-center gap-3 rounded-2xl border border-white/5 bg-[#111315] px-3.5 py-2.5"
-                    >
-                      <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${
-                        item.sent ? "bg-emerald-400/10 text-emerald-400" : "bg-white/5 text-zinc-600"
-                      }`}>
+                    <div key={item.label} className="flex min-h-14 items-center gap-3 rounded-2xl border border-white/5 bg-[#111315] px-3.5 py-2.5">
+                      <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${item.sent ? "bg-emerald-400/10 text-emerald-400" : "bg-white/5 text-zinc-600"}`}>
                         {item.sent ? <CheckCircle2 className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
                       </div>
-                      <span className="min-w-0 flex-1 text-[12px] font-bold text-zinc-200">{item.label}</span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[12px] font-black text-zinc-200">{item.label}</p>
+                        <p className="mt-0.5 truncate text-[9.5px] font-medium text-zinc-600">{item.description}</p>
+                      </div>
                       <span className={`text-[9px] font-black uppercase tracking-[0.12em] ${item.sent ? "text-emerald-400" : "text-zinc-600"}`}>
                         {item.sent ? "Enviado" : "Pendente"}
                       </span>
@@ -251,14 +280,65 @@ function DriverStatusPage() {
               </section>
             ) : null}
 
+            {status === "aprovado" ? (
+              <section className="overflow-hidden rounded-[26px] border border-[#F6BE1C]/20 bg-[#0D0F11]">
+                <div className="border-b border-white/5 px-4 py-4">
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">Sua primeira mensalidade</p>
+                  <div className="mt-3 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-full border border-[#F6BE1C]/20 bg-[#F6BE1C]/10 text-[#F6BE1C]"><Star className="h-5 w-5" /></div>
+                      <div>
+                        <p className="text-[12px] font-black text-white">Plano Motorista Parceiro</p>
+                        <p className="mt-0.5 text-[9.5px] font-medium text-zinc-500">Acesso à plataforma APOIS</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[20px] font-black leading-none text-[#F6BE1C]">R$ 49,90</p>
+                      <p className="mt-1 text-[9px] font-bold text-zinc-600">por mês</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 divide-x divide-white/5 border-b border-white/5 bg-black/25">
+                  {["100% das corridas", "Sem taxa por corrida", "Suporte exclusivo"].map((benefit) => (
+                    <div key={benefit} className="px-2 py-3 text-center">
+                      <CheckCircle2 className="mx-auto h-4 w-4 text-[#F6BE1C]" />
+                      <p className="mt-1.5 text-[8.5px] font-bold leading-tight text-zinc-400">{benefit}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="p-4">
+                  <div className="mb-3 flex items-center justify-between gap-3 rounded-[18px] border border-white/5 bg-black/35 px-3 py-3">
+                    <div className="flex items-center gap-2">
+                      <QrCode className="h-5 w-5 text-[#F6BE1C]" />
+                      <div>
+                        <p className="text-[10px] font-black text-white">Pague com PIX</p>
+                        <p className="mt-0.5 text-[9px] font-medium text-zinc-600">Pagamento rápido e seguro</p>
+                      </div>
+                    </div>
+                    <span className="text-[13px] font-black text-[#F6BE1C]">R$ 49,90</span>
+                  </div>
+
+                  <Link
+                    to="/motorista/assinatura"
+                    className="flex h-14 w-full items-center justify-center gap-2 rounded-[18px] bg-[#F6BE1C] text-[13px] font-black text-black shadow-[0_18px_40px_-24px_rgba(246,190,28,0.85)]"
+                  >
+                    Pagar primeira mensalidade
+                    <ChevronRight className="h-4 w-4" />
+                  </Link>
+                </div>
+              </section>
+            ) : null}
+
             <section className="space-y-2 pb-[calc(env(safe-area-inset-bottom)+14px)]">
-              {status === "aprovado" ? (
+              {status === "aprovado" && ["teste", "active", "ativa"].includes(profile?.subscription_status ?? "") ? (
                 <Link
                   to="/motorista/app"
-                  className="flex min-h-14 w-full items-center justify-center gap-2 rounded-[20px] bg-[#F6BE1C] px-5 text-[14px] font-black text-black shadow-[0_18px_40px_-22px_rgba(246,190,28,0.75)]"
+                  className="flex min-h-14 w-full items-center justify-center gap-2 rounded-[20px] border border-white/8 bg-[#101214] px-5 text-[12px] font-black text-white"
                 >
-                  Entrar no APOIS Motorista
-                  <ChevronRight className="h-4 w-4" />
+                  Abrir APOIS Motorista
+                  <ChevronRight className="h-4 w-4 text-[#F6BE1C]" />
                 </Link>
               ) : null}
 
