@@ -35,5 +35,12 @@ jobs:
           grep -F 'updateApprovalFn({' src/routes/admin.motoristas.tsx
           grep -F 'admin_set_driver_approval' src/lib/adminDrivers.functions.ts
           grep -F 'onSubscription' src/routes/admin.motoristas.tsx
+      - name: Validar identidade operacional e documentos
+        run: |
+          grep -F 'activeRides[d.id] ?? null' src/routes/admin.motoristas.tsx
+          grep -F 'activeRides[detail.id] ?? null' src/routes/admin.motoristas.tsx
+          ! grep -F 'activeRides[d.user_id]' src/routes/admin.motoristas.tsx
+          ! grep -F '|| !d.vehicle_photo_url' src/routes/admin.motoristas.tsx
+          grep -F 'return !d.selfie_url || !d.cnh_url || !d.cnh_back_url || !d.vehicle_document_url;' src/routes/admin.motoristas.tsx
       - name: Build do painel
         run: npm run build
