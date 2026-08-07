@@ -45,6 +45,15 @@ jobs:
             exit 1
           fi
 
+      - name: Validar requisitos do checklist do motorista
+        run: |
+          grep -F 'DriverVoiceToggle' src/routes/motorista.app.tsx
+          grep -F 'Você chegou ao ponto de embarque.' src/routes/motorista.app.tsx
+          grep -F 'Você chegou ao destino final.' src/routes/motorista.app.tsx
+          grep -F 'Próxima corrida reservada' src/routes/motorista.app.tsx
+          grep -F 'queued_after_ride_id' src/routes/motorista.app.tsx
+          grep -F 'apois:motorista:voice-enabled' src/lib/voiceNav.ts
+
       - name: Build APOIS Motorista
         run: npm run build:motorista
 
