@@ -55,7 +55,7 @@ import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 
 export const Route = createFileRoute("/admin/motoristas")({
-  head: () => ({ meta: [{ title: "Motoristas — Admin MOVVI" }] }),
+  head: () => ({ meta: [{ title: "Motoristas — Admin APOIS" }] }),
   component: AdminMotoristas,
 });
 
@@ -368,60 +368,8 @@ function AdminMotoristas() {
 
   async function updateStatus(d: Driver, status: Status, reason?: string | null) {
     setBusyId(d.id);
-    const toastId = status === "aprovado" ? toast.loading("Aprovando motorista e gerando link...") : undefined;
+    const toastId = status === "aprovado" ? toast.loading("Aprovando motorista...") : undefined;
     try {
-      if (status === "aprovado") {
-        // Aprovação → cria assinatura (preapproval) no Mercado Pago via Edge Function.
-        const result = await approveDriverWithMercadoPago(d.id);
-        await logAdminAction({
-          action: "driver.aprovado",
-          entity: "drivers",
-          entity_id: d.id,
-          before: { approval_status: d.approval_status },
-          after: {
-            approval_status: "aprovado",
-            mercadopago_preapproval_id: result.preapprovalId,
-            mercadopago_init_point: result.initPoint,
-          },
-        });
-        if (result.initPoint && typeof window !== "undefined") {
-          try {
-            await navigator.clipboard.writeText(result.initPoint);
-          } catch {
-            /* ignore */
-          }
-        }
-        toast.success(
-          result.alreadyExists
-            ? "Motorista aprovado (assinatura já existia). Link copiado."
-            : "Motorista aprovado — link de pagamento gerado (copiado).",
-          {
-            id: toastId,
-            description: result.initPoint ?? undefined,
-            action: result.initPoint
-              ? {
-                  label: "Abrir",
-                  onClick: () => window.open(result.initPoint!, "_blank"),
-                }
-              : undefined,
-            duration: 10000,
-          },
-        );
-        setRejectFor(null);
-        setBlockFor(null);
-        setUnblockFor(null);
-        setRejectReason("");
-        if (detail?.id === d.id) {
-          setDetail({
-            ...d,
-            approval_status: "aprovado",
-            approved_at: new Date().toISOString(),
-          } as Driver);
-        }
-        load();
-        return;
-      }
-
       const { patch } = await updateApprovalFn({
         data: { id: d.id, status, reason: reason ?? null },
       });
@@ -432,29 +380,35 @@ function AdminMotoristas() {
         before: { approval_status: d.approval_status },
         after: patch,
       });
-      if (toastId) toast.dismiss(toastId);
-      if (status === "reprovado") toast.success("Motorista reprovado");
-      if (status === "bloqueado") toast.success("Motorista bloqueado");
-      if (status === "em_analise") toast.success("Cadastro reenviado para análise");
+
+      if (status === "aprovado") {
+        toast.success("Motorista aprovado", {
+          id: toastId,
+          description: "O cadastro foi liberado. A mensalidade será ativada pelo fluxo financeiro da APOIS.",
+        });
+      } else {
+        if (toastId) toast.dismiss(toastId);
+        if (status === "reprovado") toast.success("Motorista reprovado");
+        if (status === "bloqueado") toast.success("Motorista bloqueado");
+        if (status === "em_analise") toast.success("Cadastro reenviado para análise");
+      }
+
       setRejectFor(null);
       setBlockFor(null);
       setUnblockFor(null);
       setRejectReason("");
-      if (detail?.id === d.id)
-        setDetail({ ...d, ...(patch as Database["public"]["Tables"]["drivers"]["Update"]) } as Driver);
-      load();
+      if (detail?.id === d.id) {
+        setDetail({
+          ...d,
+          ...(patch as Database["public"]["Tables"]["drivers"]["Update"]),
+        } as Driver);
+      }
+      await load();
     } catch (e) {
       const raw = e instanceof Error ? e.message : "falha";
-      let msg = mapAdminError(raw);
-      if (raw.startsWith("missing_required_fields:")) {
-        msg = `Cadastro incompleto: faltam ${raw.split(":")[1]}`;
-      } else if (raw.startsWith("mercadopago_preapproval_failed:")) {
-        msg = "Erro no Mercado Pago ao criar assinatura: " + raw.split(":").slice(1).join(":");
-      } else if (raw === "mercadopago_environment_mismatch") {
-        msg = "Credencial do Mercado Pago em modo teste não aceita e-mail real. Atualize o token para produção ou use contas de teste do Mercado Pago.";
-      } else if (raw === "forbidden") {
-        msg = "Você não tem permissão para aprovar motoristas";
-      }
+      const msg = raw === "forbidden"
+        ? "Você não tem permissão para aprovar motoristas"
+        : mapAdminError(raw);
       toast.error("Erro ao atualizar status: " + msg, { id: toastId });
     } finally {
       setBusyId(null);
