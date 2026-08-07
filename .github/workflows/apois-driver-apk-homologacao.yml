@@ -57,3 +57,5 @@ jobs:
           path: APOIS-Motorista-Homologacao.apk
           if-no-files-found: error
           retention-days: 7
+
+# Candidato validado após limpeza total da marca antiga e ajuste do período de homologação.
