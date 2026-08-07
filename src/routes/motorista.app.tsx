@@ -1,6 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Avatar } from "@/components/Avatar";
-import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Marker, Polyline } from "@react-google-maps/api";
 import {
@@ -45,7 +44,7 @@ import {
 import { useDriverBroadcast } from "@/hooks/useDriverBroadcast";
 import { loadDriverProfile, driverProfileCompletionIssues } from "@/lib/driverProfile";
 import { isDevelopmentEnvironment } from "@/lib/environment";
-import { computeRoute, type RouteStep } from "@/lib/routes.functions";
+import { computeDriverRoute, type DriverRouteStep } from "@/lib/driverRoutes.mobile";
 import { primeVoice, resetSpokenCache, speak, tickNavigation, type NavStep } from "@/lib/voiceNav";
 import { startRideRingtone, stopRideRingtone } from "@/lib/rideRingtone";
 import { type RideStatus } from "@/lib/rideLifecycle";
@@ -307,7 +306,7 @@ function MotoristaApp() {
   const callComplete = finalizarCorridaMobile;
   const callCancel   = cancelarPeloMotoristaMobile;
   const callRate     = avaliarPassageiroMobile;
-  const callRoute    = useServerFn(computeRoute);
+  const callRoute    = computeDriverRoute;
 
   // userId = public.users.id (usado em candidate_driver_ids e drivers.user_id).
   // driverId = public.drivers.id (usado em rides.driver_id/accepted_driver_id).
@@ -351,30 +350,7 @@ function MotoristaApp() {
   const [submittingRating, setSubmittingRating] = useState(false);
   const [ratingSubmitted, setRatingSubmitted] = useState(false);
   const [ratingError, setRatingError] = useState<string | null>(null);
-  const [paymentConfirming, setPaymentConfirming] = useState(false);
-  const [paymentConfirmedAt, setPaymentConfirmedAt] = useState<string | null>(null);
   const ratedRidesRef = useRef<Set<string>>(new Set());
-
-  async function confirmPaymentReceived() {
-    if (!ratingRide || paymentConfirming || paymentConfirmedAt) return;
-    setPaymentConfirming(true);
-    try {
-      const nowIso = new Date().toISOString();
-      const { error } = await supabase
-        .from("rides")
-        .update({ payment_received_at: nowIso, payment_received_by: userId })
-        .eq("id", ratingRide.id)
-        .is("payment_received_at", null);
-      if (error) throw error;
-      setPaymentConfirmedAt(nowIso);
-      toast.success("Pagamento confirmado");
-      if (navigator.vibrate) navigator.vibrate(30);
-    } catch (e) {
-      toast.error("Não foi possível confirmar", { description: (e as Error).message });
-    } finally {
-      setPaymentConfirming(false);
-    }
-  }
 
   const mapRef = useRef<google.maps.Map | null>(null);
   const sheetRef = useRef<MovviSheetHandle | null>(null);
@@ -487,9 +463,6 @@ function MotoristaApp() {
                   : "Cadastro em análise.";
             setStatusBlock(msg);
             setOnline(false);
-            if (userId) {
-              void supabase.from("drivers").update({ is_online: false }).eq("user_id", userId);
-            }
             return;
           }
           if (row.subscription_status && !["active", "ativa", "teste"].includes(row.subscription_status)) {
@@ -499,14 +472,8 @@ function MotoristaApp() {
             // marcando is_online=false no banco (o dispatch ignora offline).
             // Após finalizar, o statusBlock permanece e bloqueia voltar a online.
             if (activeRef.current) {
-              if (userId) {
-                void supabase.from("drivers").update({ is_online: false }).eq("user_id", userId);
-              }
             } else {
               setOnline(false);
-              if (userId) {
-                void supabase.from("drivers").update({ is_online: false }).eq("user_id", userId);
-              }
             }
             return;
           }
@@ -578,17 +545,6 @@ function MotoristaApp() {
         setGpsStatus("granted");
         setGpsMessage(null);
         setShowTestLocationButton(false);
-        // salva imediatamente no perfil do motorista
-        supabase.auth.getUser().then(({ data: u }) => {
-          if (!u.user) return;
-          supabase.from("drivers").update({
-            current_lat: lat, current_lng: lng,
-            last_location_at: new Date().toISOString(),
-          }).eq("user_id", u.user.id).then(({ error }) => {
-            if (error) { if (import.meta.env.DEV) console.warn("[MOVVI MOTORISTA] erro salvando localização:", error.message); }
-            else { if (import.meta.env.DEV) console.log("[MOVVI MOTORISTA] localização salva no perfil"); }
-          });
-        });
         // centraliza mapa
         if (mapRef.current && !initialCenteredRef.current) {
           smoothPanZoom(mapRef.current, { lat, lng }, 16, 700);
@@ -662,18 +618,6 @@ function MotoristaApp() {
       setGpsStatus("granted");
       setGpsMessage(isTest ? "Modo teste ativo com localização no Brasil." : null);
       setShowTestLocationButton(false);
-      if (userId) {
-        supabase.from("drivers").update({
-          is_online: true,
-          current_lat: lat, current_lng: lng,
-          current_heading: heading,
-          current_speed: speed,
-          last_location_at: new Date().toISOString(),
-        }).eq("user_id", userId).then(({ error }) => {
-          if (error) { if (import.meta.env.DEV) console.warn("[MOVVI MOTORISTA] erro salvando localização:", error.message); }
-          else { if (import.meta.env.DEV) console.log("[MOVVI MOTORISTA] localização salva:", { lat, lng, isTest }); }
-        });
-      }
       if (mapRef.current) {
         smoothPanZoom(mapRef.current, { lat, lng }, 16, 700);
         initialCenteredRef.current = true;
@@ -696,18 +640,6 @@ function MotoristaApp() {
     setGpsMessage("Modo teste ativo com localização no Brasil.");
     setShowTestLocationButton(false);
     setOnline(true);
-
-    await supabase
-      .from("drivers")
-      .update({
-        is_online: true,
-        current_lat: lat,
-        current_lng: lng,
-        current_heading: null,
-        current_speed: null,
-        last_location_at: new Date().toISOString(),
-      })
-      .eq("user_id", userId);
 
     if (mapRef.current) {
       smoothPanZoom(mapRef.current, { lat, lng }, 16, 700);
@@ -811,11 +743,6 @@ function MotoristaApp() {
     }
   }, [online, statusBlock, activateOnlineWithCoords]);
 
-  // offline ao desmontar
-  useEffect(() => () => { if (online && userId)
-    supabase.from("drivers").update({ is_online: false }).eq("user_id", userId).then();
-  }, [online, userId]);
-
   // realtime: ofertas (broadcast) + corrida ativa — canal estável
   useEffect(() => {
     if (!userId) return;
@@ -890,12 +817,11 @@ function MotoristaApp() {
           if (ratingRef.current?.id === r.id && !ratingSubmitted) setRatingRide(null);
         } else if (!r.driver_rated_at && !ratingRef.current) {
           setRatingRide(r); setStars(5); setRatingComment(""); setRatingSubmitted(false);
-          setPaymentConfirmedAt((r as any).payment_received_at ?? null);
         } else if (r.driver_rated_at) {
           ratedRidesRef.current.add(r.id);
           if (ratingRef.current?.id === r.id && !ratingSubmitted) setRatingRide(null);
         }
-        loadTodayStats(userId);
+        if (driverId) loadTodayStats(driverId);
       } else if (r.status === "cancelada_passageiro" || r.status === "cancelada_motorista") {
         const wasActive = activeRef.current?.id === r.id || r.driver_id === driverId || (r as any).accepted_driver_id === driverId;
         if (wasActive && r.status === "cancelada_passageiro") {
@@ -908,7 +834,7 @@ function MotoristaApp() {
           showPush({
             title: "APOIS • Corrida cancelada",
             body: reason ? `Motivo: ${reason}` : "O passageiro cancelou a corrida.",
-            tag: `movvi-ride-motorista-cancelada_passageiro-${r.id}`,
+            tag: `apois-ride-motorista-cancelada_passageiro-${r.id}`,
             url: "/motorista/app",
           });
         }
@@ -1242,7 +1168,7 @@ function MotoristaApp() {
         setEtaSeconds(res.durationSeconds);
         setLegKm(res.distanceMeters / 1000);
         setRouteSteps(
-          (res.steps ?? []).map((s: RouteStep) => ({
+          (res.steps ?? []).map((s: DriverRouteStep) => ({
             lat: s.lat, lng: s.lng,
             distanceMeters: s.distanceMeters,
             instruction: s.instruction,
@@ -1626,9 +1552,6 @@ function MotoristaApp() {
           onSubmit={submitRating}
           onDismiss={dismissRating}
           onSkip={skipRating}
-          paymentConfirmedAt={paymentConfirmedAt}
-          paymentConfirming={paymentConfirming}
-          onConfirmPayment={confirmPaymentReceived}
         />
       )}
 
@@ -2198,7 +2121,7 @@ function ActiveRidePanel({
                 <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" /> 5.0
                 <span className="text-muted-foreground/50">·</span>
                 <CatIcon className="h-3.5 w-3.5" strokeWidth={1.75} />
-                <span>MOVVI {(category?.label ?? "CAR").toUpperCase()}</span>
+                <span>APOIS {(category?.label ?? "CAR").toUpperCase()}</span>
               </div>
             </div>
             <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/70" />
@@ -2227,10 +2150,10 @@ function ActiveRidePanel({
             </div>
           </div>
 
-          {/* Primary CTA — Cheguei ao local */}
+          {/* Primary CTA — Cheguei no embarque */}
           <DSButton size="lg" onClick={() => onArrive()} className="h-14 w-full text-[15px] font-bold uppercase tracking-[0.06em]">
             <CheckCircle2 className="h-5 w-5" strokeWidth={2} />
-            Cheguei ao local
+            Cheguei no embarque
           </DSButton>
 
           <button
@@ -2352,7 +2275,7 @@ function ActiveRidePanel({
                 <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" /> 5.0
                 <span className="text-muted-foreground/50">·</span>
                 <CatIcon className="h-3.5 w-3.5" strokeWidth={1.75} />
-                <span>MOVVI {(category?.label ?? "CAR").toUpperCase()}</span>
+                <span>APOIS {(category?.label ?? "CAR").toUpperCase()}</span>
               </div>
             </div>
             <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/70" />
@@ -2723,7 +2646,6 @@ function ActionButton({
 function RatingScreen({
   ride, passenger, stars, setStars, comment, setComment, submitting, submitted,
   errorMessage, onSubmit, onDismiss, onSkip,
-  paymentConfirmedAt, paymentConfirming, onConfirmPayment,
 }: {
   ride: RideRow; passenger: Passenger | null;
   stars: number; setStars: (n: number) => void;
@@ -2731,9 +2653,6 @@ function RatingScreen({
   submitting: boolean; submitted: boolean;
   errorMessage: string | null;
   onSubmit: () => void; onDismiss: () => void; onSkip: () => void;
-  paymentConfirmedAt: string | null;
-  paymentConfirming: boolean;
-  onConfirmPayment: () => void;
 }) {
   const total = Number(ride.final_price ?? ride.estimated_price ?? 0);
   const paymentLabel = paymentLabelFor(ride.payment_method);
@@ -2785,13 +2704,6 @@ function RatingScreen({
               </div>
             </div>
 
-            <PaymentConfirmBlock
-              paymentLabel={paymentLabel}
-              confirmedAt={paymentConfirmedAt}
-              loading={paymentConfirming}
-              onConfirm={onConfirmPayment}
-            />
-
 
             {/* Next status */}
             <div className="mt-4 flex items-center gap-3 rounded-[18px] bg-primary/10 p-3.5 ring-1 ring-primary/25 animate-in fade-in slide-in-from-bottom-2 duration-500">
@@ -2820,13 +2732,6 @@ function RatingScreen({
                 <Banknote className="h-3 w-3" /> {paymentLabel}
               </div>
             </div>
-
-            <PaymentConfirmBlock
-              paymentLabel={paymentLabel}
-              confirmedAt={paymentConfirmedAt}
-              loading={paymentConfirming}
-              onConfirm={onConfirmPayment}
-            />
 
             {/* ===== TRIP SUMMARY ===== */}
 
@@ -2865,7 +2770,7 @@ function RatingScreen({
                   <div className="truncate text-[16px] font-semibold leading-tight tracking-tight">{passenger?.name ?? "Passageiro"}</div>
                   <div className="mt-0.5 flex items-center gap-1.5 text-[12px] text-muted-foreground">
                     <CatIcon className="h-3 w-3" strokeWidth={1.75} />
-                    <span>MOVVI {(category?.label ?? "CAR").toUpperCase()}</span>
+                    <span>APOIS {(category?.label ?? "CAR").toUpperCase()}</span>
                   </div>
                 </div>
               </div>
@@ -2929,45 +2834,6 @@ function SummaryRow({ icon, label, value }: { icon: ReactNode; label: string; va
     </div>
   );
 }
-
-function PaymentConfirmBlock({
-  paymentLabel, confirmedAt, loading, onConfirm,
-}: {
-  paymentLabel: string;
-  confirmedAt: string | null;
-  loading: boolean;
-  onConfirm: () => void;
-}) {
-  if (confirmedAt) {
-    return (
-      <div className="mt-3 flex items-center gap-3 rounded-[18px] bg-emerald-500/10 p-3.5 ring-1 ring-emerald-500/30">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-500">
-          <CheckCircle2 className="h-4 w-4" strokeWidth={2} />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="text-[13.5px] font-semibold text-foreground">Pagamento recebido</div>
-          <div className="text-[12px] text-muted-foreground">{paymentLabel} · confirmado por você</div>
-        </div>
-      </div>
-    );
-  }
-  return (
-    <div className="mt-3 rounded-[18px] bg-amber-500/10 p-3.5 ring-1 ring-amber-500/30">
-      <div className="flex items-center gap-2 text-[12px] font-semibold text-amber-600 dark:text-amber-400">
-        <Banknote className="h-3.5 w-3.5" /> Aguardando confirmação — {paymentLabel}
-      </div>
-      <DSButton
-        onClick={onConfirm}
-        disabled={loading}
-        size="sm"
-        className="mt-2 w-full"
-      >
-        {loading ? "Confirmando…" : "Confirmar recebimento"}
-      </DSButton>
-    </div>
-  );
-}
-
 
 /* ============================================================
    TOP FLOATING GLASS STAT (usado na fase "a caminho")
@@ -3068,11 +2934,11 @@ function PickupNavOverlay({
             </a>
           </button>
 
-          <button type="button" disabled={arriveBusy} onClick={handleArrive} className="flex h-12 w-full items-center justify-center gap-2 rounded-[14px] bg-[#76C139] text-[15px] font-bold uppercase tracking-[0.06em] text-[#071008] shadow-[0_10px_22px_-14px_rgba(118,193,57,0.4)] transition active:scale-[0.98] hover:brightness-[1.05] disabled:cursor-not-allowed disabled:opacity-60">
+          <button type="button" disabled={arriveBusy} onClick={handleArrive} className="flex h-12 w-full items-center justify-center gap-2 rounded-[14px] bg-[#F6BE1C] text-[15px] font-bold uppercase tracking-[0.06em] text-black shadow-[0_10px_22px_-14px_rgba(246,190,28,0.45)] transition active:scale-[0.98] hover:brightness-[1.05] disabled:cursor-not-allowed disabled:opacity-60">
             {arriveBusy ? (
-              <><span className="h-4 w-4 rounded-full border-2 border-[#071008]/70 border-t-transparent animate-spin" />Confirmando…</>
+              <><span className="h-4 w-4 rounded-full border-2 border-black/70 border-t-transparent animate-spin" />Confirmando…</>
             ) : (
-              <><CheckCircle2 className="h-5 w-5" strokeWidth={2} />Cheguei ao local</>
+              <><CheckCircle2 className="h-5 w-5" strokeWidth={2} />Cheguei no embarque</>
             )}
           </button>
         </div>
@@ -3236,11 +3102,11 @@ function ActiveTripNavOverlay({
             type="button"
             disabled={busy}
             onClick={handleComplete}
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-[14px] bg-[#76C139] text-[15px] font-bold uppercase tracking-[0.06em] text-[#071008] shadow-[0_10px_22px_-14px_rgba(118,193,57,0.4)] transition active:scale-[0.98] hover:brightness-[1.05] disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-[14px] bg-[#F6BE1C] text-[15px] font-bold uppercase tracking-[0.06em] text-black shadow-[0_10px_22px_-14px_rgba(246,190,28,0.45)] transition active:scale-[0.98] hover:brightness-[1.05] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {busy ? (
               <>
-                <span className="h-4 w-4 rounded-full border-2 border-[#071008]/70 border-t-transparent animate-spin" />
+                <span className="h-4 w-4 rounded-full border-2 border-black/70 border-t-transparent animate-spin" />
                 Finalizando…
               </>
             ) : (
