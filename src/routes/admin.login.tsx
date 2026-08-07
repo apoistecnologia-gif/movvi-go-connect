@@ -7,7 +7,7 @@ import { Loader2, ShieldCheck } from "lucide-react";
 import { DSButton, DSInput, DSLabel } from "@/design-system";
 
 export const Route = createFileRoute("/admin/login")({
-  head: () => ({ meta: [{ title: "Admin — MOVVI DRIVE" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({ meta: [{ title: "Admin — APOIS" }, { name: "robots", content: "noindex" }] }),
   component: AdminLoginPage,
 });
 
@@ -22,43 +22,23 @@ function AdminLoginPage() {
 
   const onSubmit = handle(async (form) => {
     const parsed = schema.parse(Object.fromEntries(form.entries()));
-    const { data, error: e } = await supabase.auth.signInWithPassword(parsed);
-    if (e || !data.user) throw new Error("Credenciais inválidas");
+    const { data, error: authError } = await supabase.auth.signInWithPassword(parsed);
+    if (authError || !data.user || !data.session) throw new Error("Credenciais inválidas");
 
-    const { data: roleRow } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", data.user.id)
-      .eq("role", "admin")
-      .maybeSingle();
-
-    if (!roleRow) {
+    const { data: authorized, error: roleError } = await (supabase as any).rpc("admin_is_authorized");
+    if (roleError || authorized !== true) {
       await supabase.auth.signOut();
       setError("Esta conta não possui acesso administrativo.");
       throw new Error("Acesso restrito a administradores.");
     }
 
-    await supabase.from("admin_login_history").insert({
-      user_id: data.user.id,
-      email: data.user.email ?? parsed.email,
-      user_agent: navigator.userAgent,
-      success: true,
-    });
-    await supabase.from("admin_users_meta").upsert(
-      { user_id: data.user.id, last_login_at: new Date().toISOString() },
-      { onConflict: "user_id" },
-    );
-    navigate({ to: "/admin/dashboard" });
+    navigate({ to: "/admin/dashboard", replace: true });
   });
 
   return (
     <AuthShell
-      title={
-        <span className="flex items-center gap-2">
-          <ShieldCheck className="h-6 w-6 text-primary" /> Painel administrativo
-        </span>
-      }
-      description="Acesso restrito à equipe MOVVI DRIVE."
+      title={<span className="flex items-center gap-2"><ShieldCheck className="h-6 w-6 text-primary" /> Painel administrativo</span>}
+      description="Acesso restrito à equipe APOIS."
     >
       <form onSubmit={onSubmit} className="space-y-4">
         <div className="space-y-2">
@@ -67,19 +47,9 @@ function AdminLoginPage() {
         </div>
         <div className="space-y-2">
           <DSLabel htmlFor="password">Senha</DSLabel>
-          <DSInput
-            id="password"
-            name="password"
-            type="password"
-            required
-            autoComplete="current-password"
-          />
+          <DSInput id="password" name="password" type="password" required autoComplete="current-password" />
         </div>
-        {error && (
-          <Alert variant="destructive">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
+        {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
         <DSButton type="submit" className="w-full" disabled={loading}>
           {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
           Entrar
