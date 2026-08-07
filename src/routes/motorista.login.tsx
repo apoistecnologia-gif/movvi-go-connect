@@ -2,13 +2,14 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/lib/supabaseClient";
+import { loadDriverProfile } from "@/lib/driverProfile";
 import { AuthShell } from "@/components/AuthShell";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
 import { DSButton, DSInput, DSLabel } from "@/design-system";
 
 export const Route = createFileRoute("/motorista/login")({
-  head: () => ({ meta: [{ title: "Entrar — Motorista MOVVI DRIVE" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({ meta: [{ title: "Entrar — APOIS Motorista" }, { name: "robots", content: "noindex" }] }),
   component: DriverLoginPage,
 });
 
@@ -19,7 +20,6 @@ const schema = z.object({
 
 const LOGIN_TIMEOUT_MS = 20_000;
 
-/** Erro sentinela para distinguir timeout/rede de credenciais inválidas. */
 class NetworkTimeoutError extends Error {
   constructor(msg = "Sem resposta do servidor. Verifique sua conexão.") {
     super(msg);
@@ -76,12 +76,8 @@ function DriverLoginPage() {
 
       let signInResult: Awaited<ReturnType<typeof supabase.auth.signInWithPassword>>;
       try {
-        signInResult = await withTimeout(
-          supabase.auth.signInWithPassword(parsed),
-          LOGIN_TIMEOUT_MS,
-        );
+        signInResult = await withTimeout(supabase.auth.signInWithPassword(parsed), LOGIN_TIMEOUT_MS);
       } catch (err) {
-        console.warn("[motorista.login] network/timeout:", (err as Error)?.message);
         setError(
           isNetworkFailure(err)
             ? "Falha de conexão. Verifique sua internet e tente novamente."
@@ -104,62 +100,40 @@ function DriverLoginPage() {
         return;
       }
 
-      // Consulta cadastro de motorista com timeout defensivo.
-      let driverRow: { approval_status: string | null; motivo_reprovacao: string | null } | null =
-        null;
-      try {
-        const res = await withTimeout(
-          Promise.resolve(
-            supabase
-              .from("drivers")
-              .select("approval_status, motivo_reprovacao")
-              .eq("user_id", data.user.id)
-              .maybeSingle(),
-          ),
-          10_000,
-        );
-        if (res.error) throw res.error;
-        driverRow = res.data;
-
-
-      } catch (err) {
-        console.warn("[motorista.login] falha ao consultar cadastro:", (err as Error)?.message);
-        setError(
-          isNetworkFailure(err)
-            ? "Falha de conexão ao consultar cadastro. Tente novamente."
-            : "Falha ao consultar cadastro de motorista.",
-        );
-        return;
-      }
-
-      if (!driverRow) {
-        try { await supabase.auth.signOut(); } catch { /* noop */ }
-        setError("Cadastro de motorista não encontrado.");
-        return;
-      }
-
-      // Confirma persistência da sessão antes de navegar (evita loop no APK).
-      try {
-        const confirmed = await withTimeout(supabase.auth.getSession(), 5_000);
-        if (!confirmed.data.session) {
+      const profileResult = await withTimeout(loadDriverProfile(), 10_000).catch((err) => {
+        throw err;
+      });
+      if (!profileResult.ok) {
+        if (profileResult.reason === "not_found") {
+          setError("Cadastro de motorista não encontrado. Use a opção de cadastro para concluir seu perfil.");
+        } else if (profileResult.reason === "no_session") {
           setError("Sessão não confirmada. Tente novamente.");
-          return;
+        } else {
+          setError(profileResult.message || "Falha ao consultar cadastro de motorista.");
         }
-      } catch {
+        return;
+      }
+
+      const confirmed = await withTimeout(supabase.auth.getSession(), 5_000);
+      if (!confirmed.data.session) {
         setError("Sessão não confirmada. Tente novamente.");
         return;
       }
 
       if (navigated.current) return;
       navigated.current = true;
-      if (driverRow.approval_status === "aprovado") {
+      if (profileResult.profile.approval_status === "aprovado") {
         navigate({ to: "/motorista/app", replace: true });
       } else {
         navigate({ to: "/motorista/status", replace: true });
       }
     } catch (err) {
-      console.error("[motorista.login] erro inesperado:", err);
-      setError("Erro inesperado. Tente novamente.");
+      console.error("[apois.motorista.login] erro:", err);
+      setError(
+        isNetworkFailure(err)
+          ? "Falha de conexão ao consultar cadastro. Tente novamente."
+          : "Erro inesperado. Tente novamente.",
+      );
     } finally {
       setLoading(false);
       inFlight.current = false;
@@ -169,7 +143,7 @@ function DriverLoginPage() {
   return (
     <AuthShell
       title="Entrar como motorista"
-      description="Acesse sua conta MOVVI para começar a rodar."
+      description="Acesse sua conta APOIS para começar a rodar."
       footer={
         <>
           Quer dirigir conosco?{" "}
@@ -186,21 +160,14 @@ function DriverLoginPage() {
         </div>
         <div className="space-y-1.5">
           <DSLabel htmlFor="password" className="text-[13px]">Senha</DSLabel>
-          <DSInput
-            id="password"
-            name="password"
-            type="password"
-            required
-            autoComplete="current-password"
-            className="h-9 text-[14px]"
-          />
+          <DSInput id="password" name="password" type="password" required autoComplete="current-password" className="h-9 text-[14px]" />
         </div>
         {error && (
           <Alert variant="destructive">
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
-        <DSButton type="submit" size="sm" className="w-full h-10" disabled={loading} aria-busy={loading}>
+        <DSButton type="submit" size="sm" className="h-10 w-full" disabled={loading} aria-busy={loading}>
           {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
           Entrar
         </DSButton>
