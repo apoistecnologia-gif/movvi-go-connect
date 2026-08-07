@@ -28,8 +28,8 @@ jobs:
           git config user.email "actions@users.noreply.github.com"
           git add src/routes/motorista.app.tsx
           if git diff --cached --quiet; then
-            echo "Nada para alterar"
+            echo "Runtime já está alinhado"
             exit 0
           fi
-          git commit -m "fix(motorista): usar contratos oficiais no runtime mobile"
+          git commit -m "fix(motorista): finalizar paleta e runtime APOIS"
           git push origin HEAD:feat/apois-motorista-producao-homologacao
