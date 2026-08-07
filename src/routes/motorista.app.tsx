@@ -24,6 +24,7 @@ import {
 import { RIDE_CATEGORIES } from "@/lib/rideCategories";
 import { MovviMap } from "@/components/MovviMap";
 import { DriverSideMenu } from "@/components/DriverSideMenu";
+import { ApoisDriverBottomNav } from "@/components/ApoisDriverBottomNav";
 import { BrandSplash } from "@/components/BrandSplash";
 import { MovviSheet, type MovviSheetHandle } from "@/components/MovviSheet";
 import { PassengerProfessionalProfileDialog } from "@/components/profile/PassengerProfessionalProfileDialog";
@@ -47,16 +48,16 @@ import { isDevelopmentEnvironment } from "@/lib/environment";
 import { computeRoute, type RouteStep } from "@/lib/routes.functions";
 import { primeVoice, resetSpokenCache, speak, tickNavigation, type NavStep } from "@/lib/voiceNav";
 import { startRideRingtone, stopRideRingtone } from "@/lib/rideRingtone";
+import { type RideStatus } from "@/lib/rideLifecycle";
 import {
-  aceitarCorrida,
-  recusarCorrida,
-  informarChegada,
-  iniciarCorrida,
-  finalizarCorrida,
-  cancelarPeloMotorista,
-  avaliarPassageiro,
-  type RideStatus,
-} from "@/lib/rideLifecycle";
+  aceitarCorridaMobile,
+  recusarCorridaMobile,
+  informarChegadaMobile,
+  iniciarCorridaMobile,
+  finalizarCorridaMobile,
+  cancelarPeloMotoristaMobile,
+  avaliarPassageiroMobile,
+} from "@/lib/driverRideLifecycle.mobile";
 import { notifyRideStatus } from "@/lib/rideStatusToast";
 import { toast } from "sonner";
 
@@ -75,7 +76,7 @@ const TEST_DRIVER_LOCATION = {
 const RIDE_OFFER_TIMEOUT_SECONDS = 60;
 
 export const Route = createFileRoute("/motorista/app")({
-  head: () => ({ meta: [{ title: "App do Motorista — MOVVI DRIVE" }] }),
+  head: () => ({ meta: [{ title: "APOIS Motorista" }] }),
   // Auth guard: mesmo padrão do passageiro — sem sessão → login (sem loop).
   beforeLoad: async () => {
     const { redirect } = await import("@tanstack/react-router");
@@ -96,7 +97,7 @@ export const Route = createFileRoute("/motorista/app")({
 function MotoristaAppRoute() {
   return (
     <>
-      <BrandSplash storageKey="movvi:splash:motorista" />
+      <BrandSplash storageKey="apois:splash:motorista" />
       <MotoristaApp />
     </>
   );
@@ -299,16 +300,19 @@ function subscriptionBlockIsPayable(status: string): boolean {
 
 function MotoristaApp() {
   const navigate = useNavigate();
-  const callAccept   = useServerFn(aceitarCorrida);
-  const callReject   = useServerFn(recusarCorrida);
-  const callArrive   = useServerFn(informarChegada);
-  const callStart    = useServerFn(iniciarCorrida);
-  const callComplete = useServerFn(finalizarCorrida);
-  const callCancel   = useServerFn(cancelarPeloMotorista);
-  const callRate     = useServerFn(avaliarPassageiro);
+  const callAccept   = aceitarCorridaMobile;
+  const callReject   = recusarCorridaMobile;
+  const callArrive   = informarChegadaMobile;
+  const callStart    = iniciarCorridaMobile;
+  const callComplete = finalizarCorridaMobile;
+  const callCancel   = cancelarPeloMotoristaMobile;
+  const callRate     = avaliarPassageiroMobile;
   const callRoute    = useServerFn(computeRoute);
 
+  // userId = public.users.id (usado em candidate_driver_ids e drivers.user_id).
+  // driverId = public.drivers.id (usado em rides.driver_id/accepted_driver_id).
   const [userId, setUserId] = useState<string | null>(null);
+  const [driverId, setDriverId] = useState<string | null>(null);
   const [driverName, setDriverName] = useState<string>("");
   const [sideMenuOpen, setSideMenuOpen] = useState(false);
 
@@ -425,13 +429,15 @@ function MotoristaApp() {
     (async () => {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) { navigate({ to: "/motorista/login" }); return; }
-      setUserId(u.user.id);
       const meta = (u.user.user_metadata ?? {}) as Record<string, unknown>;
       setDriverName(((meta.name as string) || (meta.full_name as string) || u.user.email?.split("@")[0] || "").split(" ")[0]);
 
       const result = await loadDriverProfile();
       if (result.ok) {
         const d = result.profile;
+        setUserId(d.user_id);
+        setDriverId(d.id);
+        if (d.name) setDriverName(d.name.trim().split(/\s+/)[0] || d.name);
         if (d.approval_status !== "aprovado") {
           setStatusBlock(
             d.approval_status === "reprovado"
@@ -440,7 +446,7 @@ function MotoristaApp() {
                 ? "Cadastro bloqueado. Entre em contato com o suporte."
                 : "Cadastro em análise.",
           );
-        } else if (d.subscription_status && d.subscription_status !== "active") {
+        } else if (d.subscription_status && !["active", "ativa", "teste"].includes(d.subscription_status)) {
           setStatusBlock(subscriptionBlockMessage(d.subscription_status));
         } else {
           const issues = driverProfileCompletionIssues(d);
@@ -486,7 +492,7 @@ function MotoristaApp() {
             }
             return;
           }
-          if (row.subscription_status && row.subscription_status !== "active") {
+          if (row.subscription_status && !["active", "ativa", "teste"].includes(row.subscription_status)) {
             setStatusBlock(subscriptionBlockMessage(row.subscription_status));
             // Se já há corrida em andamento, NÃO forçar offline imediatamente:
             // deixamos a corrida atual terminar. Apenas impedimos novas ofertas
@@ -525,7 +531,7 @@ function MotoristaApp() {
     const earnings = (data ?? []).reduce((s, r) => s + Number(r.final_price ?? r.estimated_price ?? 0), 0);
     setTodayStats({ rides, earnings });
   }, []);
-  useEffect(() => { if (userId) loadTodayStats(userId); }, [userId, loadTodayStats]);
+  useEffect(() => { if (driverId) loadTodayStats(driverId); }, [driverId, loadTodayStats]);
 
   // ===== GPS =====
   const startWatch = useCallback(() => {
@@ -823,7 +829,7 @@ function MotoristaApp() {
       const expired = computeOfferCountdown(r) <= 0;
 
       if (incomingRef.current?.id === r.id) {
-        if (acceptedDriverId && acceptedDriverId !== userId) {
+        if (acceptedDriverId && acceptedDriverId !== driverId) {
           removeIncomingRequest(r, "accepted_by_other");
           toast.info("Corrida aceita por outro motorista");
           return;
@@ -871,13 +877,13 @@ function MotoristaApp() {
           return;
         }
         const acceptedDriverId = (r as any).accepted_driver_id ?? r.driver_id ?? null;
-        if (acceptedDriverId && acceptedDriverId !== userId) {
+        if (acceptedDriverId && acceptedDriverId !== driverId) {
           removeIncomingRequest(r, "accepted_by_other");
           toast.info("Corrida aceita por outro motorista");
           return;
         }
       }
-      if (r.driver_id !== userId && (r as any).accepted_driver_id !== userId) return;
+      if (!driverId || (r.driver_id !== driverId && (r as any).accepted_driver_id !== driverId)) return;
       if (r.status === "finalizada") {
         setActive(null); setPolyline([]);
         if (ratedRidesRef.current.has(r.id)) {
@@ -891,7 +897,7 @@ function MotoristaApp() {
         }
         loadTodayStats(userId);
       } else if (r.status === "cancelada_passageiro" || r.status === "cancelada_motorista") {
-        const wasActive = activeRef.current?.id === r.id || r.driver_id === userId || (r as any).accepted_driver_id === userId;
+        const wasActive = activeRef.current?.id === r.id || r.driver_id === driverId || (r as any).accepted_driver_id === driverId;
         if (wasActive && r.status === "cancelada_passageiro") {
           const reason = (r.cancel_reason ?? "").trim();
           toast.warning("Passageiro cancelou a corrida", {
@@ -900,7 +906,7 @@ function MotoristaApp() {
           });
           if (navigator.vibrate) navigator.vibrate([220, 90, 220, 90, 220]);
           showPush({
-            title: "MOVVI • Corrida cancelada",
+            title: "APOIS • Corrida cancelada",
             body: reason ? `Motivo: ${reason}` : "O passageiro cancelou a corrida.",
             tag: `movvi-ride-motorista-cancelada_passageiro-${r.id}`,
             url: "/motorista/app",
@@ -934,7 +940,7 @@ function MotoristaApp() {
         if (status !== "SUBSCRIBED") return;
         const ongoing = await supabase
           .from("rides").select("*")
-          .eq("driver_id", userId)
+          .eq("driver_id", driverId)
           .in("status", ["motorista_a_caminho", "motorista_chegou", "em_viagem"])
           .order("created_at", { ascending: false })
           .limit(1).maybeSingle();
@@ -953,7 +959,7 @@ function MotoristaApp() {
       if (document.visibilityState !== "visible") return;
       if (import.meta.env.DEV) console.log("[MOVVI MOTORISTA] aba visível — ressincronizando corrida ativa");
       const ongoing = await supabase
-        .from("rides").select("*").eq("driver_id", userId)
+        .from("rides").select("*").eq("driver_id", driverId)
         .in("status", ["motorista_a_caminho", "motorista_chegou", "em_viagem", "finalizada"])
         .order("created_at", { ascending: false }).limit(1).maybeSingle();
       if (ongoing.data) { applyActive(ongoing.data as RideRow); return; }
@@ -990,7 +996,7 @@ function MotoristaApp() {
       window.removeEventListener("online", onFocus);
       window.clearInterval(poll);
     };
-  }, [userId, loadTodayStats]);
+  }, [userId, driverId, loadTodayStats]);
 
 
 
@@ -998,7 +1004,7 @@ function MotoristaApp() {
   useEffect(() => {
     const pid = active?.passenger_id ?? ratingRide?.passenger_id ?? incoming?.passenger_id;
     if (!pid) { setPassenger(null); return; }
-    supabase.from("users").select("name, phone, avatar_url").eq("auth_user_id", pid).maybeSingle()
+    supabase.from("users").select("name, phone, avatar_url").eq("id", pid).maybeSingle()
       .then(({ data }) => setPassenger(data ?? { name: null, phone: null, avatar_url: null }));
   }, [active?.passenger_id, ratingRide?.passenger_id, incoming?.passenger_id]);
 
@@ -1373,7 +1379,7 @@ function MotoristaApp() {
             <InterpolatedDriverMarker
               position={position}
               heading={position.heading ?? 0}
-              color={online ? "#8DD92B" : "#94a3b8"}
+              color={online ? "#F6BE1C" : "#94a3b8"}
             />
           )}
           {active && (
@@ -1402,7 +1408,7 @@ function MotoristaApp() {
               }} />
               {/* rota — verde MOVVI, encorpado */}
               <Polyline path={polyline} options={{
-                strokeColor: "#8DD92B", strokeOpacity: 1, strokeWeight: 9, geodesic: true, zIndex: 3,
+                strokeColor: "#F6BE1C", strokeOpacity: 1, strokeWeight: 9, geodesic: true, zIndex: 3,
               }} />
             </>
           )}
@@ -1626,7 +1632,7 @@ function MotoristaApp() {
         />
       )}
 
-      {/* Bottom nav removido — todas as opções vivem dentro do menu lateral (hambúrguer). */}
+      <ApoisDriverBottomNav hidden={!!ratingRide} />
     </div>
   );
 }
@@ -1654,7 +1660,7 @@ function IdleBottomPanel({
   canUseTestLocation: boolean;
   onUseTestLocation: () => void;
 }) {
-  const navReserve = "calc(env(safe-area-inset-bottom) + 20px)";
+  const navReserve = "calc(env(safe-area-inset-bottom) + 76px)";
   const firstName = (driverName || "").trim().split(/\s+/)[0] || "Motorista";
 
   return (
@@ -1945,7 +1951,7 @@ function CountdownRing({ seconds, pct }: { seconds: number; pct: number }) {
     <div className={`relative h-12 w-12 ${isLow ? "animate-pulse-soft" : ""}`}>
       <svg viewBox="0 0 44 44" className="h-12 w-12 -rotate-90">
         <circle cx="22" cy="22" r={r} stroke="hsl(var(--border))" strokeWidth="3" fill="none" />
-        <circle cx="22" cy="22" r={r} stroke="#76C139" strokeWidth="3" fill="none"
+        <circle cx="22" cy="22" r={r} stroke="#F6BE1C" strokeWidth="3" fill="none"
           strokeDasharray={c} strokeDashoffset={c - (c * pct) / 100}
           strokeLinecap="round" className="transition-[stroke-dashoffset] duration-700 ease-linear" />
       </svg>
@@ -2501,7 +2507,7 @@ function ActiveRidePanel({
           <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2.5 text-[12.5px] font-semibold text-foreground/90">
             <span className="flex items-center gap-2">
               <AlertTriangle className="h-3.5 w-3.5 text-primary" strokeWidth={2} />
-              Segurança MOVVI
+              Segurança APOIS
             </span>
             <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-90" />
           </summary>
