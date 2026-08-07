@@ -503,11 +503,11 @@ function MotoristaApp() {
   }, [userId]);
 
   // estatísticas do dia
-  const loadTodayStats = useCallback(async (uid: string) => {
+  const loadTodayStats = useCallback(async (driverRecordId: string) => {
     const start = new Date(); start.setHours(0, 0, 0, 0);
     const { data } = await supabase.from("rides")
       .select("final_price, estimated_price")
-      .eq("driver_id", uid).eq("status", "finalizada")
+      .eq("driver_id", driverRecordId).eq("status", "finalizada")
       .gte("completed_at", start.toISOString());
     const rides = data?.length ?? 0;
     const earnings = (data ?? []).reduce((s, r) => s + Number(r.final_price ?? r.estimated_price ?? 0), 0);
