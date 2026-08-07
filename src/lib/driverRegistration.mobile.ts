@@ -4,7 +4,7 @@ const MAX_DOC_BYTES = 8 * 1024 * 1024;
 
 type DriverDocument = {
   bucket: "driver-selfies" | "driver-cnh" | "vehicle-documents";
-  label: "selfie" | "cnh" | "cnh_back" | "veiculo";
+  label: "selfie" | "cnh" | "cnh_back" | "veiculo" | "vehicle_photo";
   fileName: string;
   contentType: string;
   base64: string;
@@ -24,7 +24,7 @@ export type DriverRegistrationInput = {
   vehicle_plate: string;
   vehicle_color: string;
   vehicle_year: number;
-  documents: [DriverDocument, DriverDocument, DriverDocument, DriverDocument];
+  documents: [DriverDocument, DriverDocument, DriverDocument, DriverDocument, DriverDocument];
 };
 
 function cleanExt(fileName: string) {
@@ -61,8 +61,6 @@ async function ensureAuthenticatedAccount(input: DriverRegistrationInput) {
   });
 
   if (signup.error) {
-    // Permite retomar um cadastro interrompido sem criar perfil mínimo nem
-    // exigir intervenção manual no banco.
     if (/already|registered|exists|duplicate/i.test(signup.error.message)) {
       const signIn = await supabase.auth.signInWithPassword({ email, password: input.password });
       if (signIn.error || !signIn.data.session || !signIn.data.user) {
@@ -75,9 +73,6 @@ async function ensureAuthenticatedAccount(input: DriverRegistrationInput) {
 
   if (signup.data.session && signup.data.user) return signup.data.user;
 
-  // Em projetos com confirmação de e-mail desligada, a sessão vem no signUp.
-  // Caso a configuração mude, tentamos a autenticação imediatamente; se o
-  // provedor exigir confirmação, interrompemos sem expor service_role no APK.
   const signIn = await supabase.auth.signInWithPassword({ email, password: input.password });
   if (signIn.error || !signIn.data.session || !signIn.data.user) {
     throw new Error("Conta criada. Confirme seu e-mail e depois entre para concluir o cadastro.");
@@ -117,11 +112,11 @@ export async function cadastrarMotoristaMobile(input: DriverRegistrationInput) {
       }
     }
 
-    if (!paths.selfie || !paths.cnh || !paths.cnh_back || !paths.veiculo) {
-      throw new Error("Os quatro documentos obrigatórios precisam ser enviados.");
+    if (!paths.selfie || !paths.cnh || !paths.cnh_back || !paths.veiculo || !paths.vehicle_photo) {
+      throw new Error("Envie os documentos e a foto do veículo para concluir o cadastro.");
     }
 
-    const { data, error } = await (supabase as any).rpc("driver_complete_registration", {
+    const { data, error } = await (supabase as any).rpc("driver_complete_registration_v2", {
       _name: input.name.trim(),
       _phone: input.phone.trim(),
       _cpf: input.cpf.trim(),
@@ -137,13 +132,14 @@ export async function cadastrarMotoristaMobile(input: DriverRegistrationInput) {
       _cnh_path: paths.cnh,
       _cnh_back_path: paths.cnh_back,
       _vehicle_document_path: paths.veiculo,
+      _vehicle_photo_path: paths.vehicle_photo,
       _photo_path: photoPath,
     });
     if (error) throw new Error(error.message || "Falha ao concluir cadastro de motorista.");
 
     return {
       ok: true as const,
-      message: "Cadastro enviado para análise.",
+      message: "Cadastro enviado com sucesso.",
       status: data?.approval_status ?? "em_analise",
     };
   } catch (error) {
