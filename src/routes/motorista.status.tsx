@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
+  ArrowLeft,
   BadgeCheck,
   CheckCircle2,
   ChevronRight,
@@ -180,8 +181,21 @@ function DriverStatusPage() {
   return (
     <div className="min-h-[100dvh] bg-[#050607] text-white">
       <header className="border-b border-white/5 bg-[#08090A] px-5 pb-5 pt-[calc(env(safe-area-inset-top)+18px)]">
-        <div className="mx-auto flex max-w-xl items-center justify-between gap-4">
-          <MovviLogo size={54} />
+        <div className="mx-auto flex max-w-xl items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              aria-label="Voltar"
+              onClick={() => {
+                if (window.history.length > 1) window.history.back();
+                else void navigate({ to: "/motorista/login" });
+              }}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/8 bg-[#111315] text-white active:scale-95"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+            <MovviLogo size={48} />
+          </div>
           <div className="text-right">
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#F6BE1C]">Cadastro</p>
             <p className="mt-1 text-[12px] font-semibold text-zinc-500">APOIS Motorista</p>
