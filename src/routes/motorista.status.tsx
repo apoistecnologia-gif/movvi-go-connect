@@ -56,7 +56,7 @@ const STATUS_META: Record<DisplayStatus, StatusMeta> = {
   aprovado: {
     label: "Aprovado",
     title: "Cadastro aprovado!",
-    description: "Parabéns! Seu cadastro foi aprovado. Agora falta apenas ativar sua primeira mensalidade para começar a receber corridas.",
+    description: "Parabéns! Seu cadastro foi aprovado. Confira abaixo o status do seu acesso e entre no aplicativo quando estiver liberado.",
     icon: UserRoundCheck,
     tone: "border-emerald-400/25 bg-emerald-400/10 text-emerald-400",
     iconTone: "bg-[#F6BE1C] text-black",
@@ -280,7 +280,21 @@ function DriverStatusPage() {
               </section>
             ) : null}
 
-            {status === "aprovado" ? (
+            {status === "aprovado" && profile?.subscription_status === "teste" ? (
+              <section className="rounded-[24px] border border-[#F6BE1C]/20 bg-[#F6BE1C]/8 p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#F6BE1C] text-black">
+                    <CheckCircle2 className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-[12px] font-black text-white">Período de homologação ativo</p>
+                    <p className="mt-1 text-[10px] font-medium leading-relaxed text-zinc-400">Seu acesso está liberado para o teste real. Nenhum pagamento é necessário nesta etapa.</p>
+                  </div>
+                </div>
+              </section>
+            ) : null}
+
+            {status === "aprovado" && profile?.subscription_status !== "teste" ? (
               <section className="overflow-hidden rounded-[26px] border border-[#F6BE1C]/20 bg-[#0D0F11]">
                 <div className="border-b border-white/5 px-4 py-4">
                   <p className="text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">Sua primeira mensalidade</p>
