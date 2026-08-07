@@ -72,7 +72,7 @@ jobs:
           )
           for page in "${pages[@]}"; do
             test -f "$page"
-            if ! grep -Eq 'MovviHeader|ArrowLeft|aria-label="Voltar|Voltar ao' "$page"; then
+            if ! grep -Eq 'MovviHeader|SettingsPageShell|ArrowLeft|aria-label="Voltar|Voltar ao' "$page"; then
               echo "Tela sem retorno explícito: $page"
               exit 1
             fi
