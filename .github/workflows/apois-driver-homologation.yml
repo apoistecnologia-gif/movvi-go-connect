@@ -36,10 +36,22 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
+      - name: Validar secret Google Maps da APOIS
+        env:
+          VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY: ${{ secrets.APOIS_GOOGLE_MAPS_BROWSER_KEY }}
+        run: |
+          if [ -z "$VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY" ]; then
+            echo "Secret APOIS_GOOGLE_MAPS_BROWSER_KEY não configurado."
+            exit 1
+          fi
+          echo "[maps-key] OK: secret da APOIS disponível para o build."
+
       # IMPORTANTE: usar o pipeline oficial do role motorista.
       # Ele gera o SPA mobile, recria android/ a partir de android-motorista/,
       # aplica capacitor.motorista.config.ts e executa as validações anti-regressão.
       - name: Build e sync oficial do APOIS Motorista
+        env:
+          VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY: ${{ secrets.APOIS_GOOGLE_MAPS_BROWSER_KEY }}
         run: npm run android:motorista
 
       - name: Verificação nativa após sync
