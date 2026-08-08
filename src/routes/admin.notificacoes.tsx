@@ -157,9 +157,9 @@ function AdminNotificacoesPage() {
                 {item.body && <p className="text-xs text-muted-foreground">{item.body}</p>}
                 <div className="flex flex-wrap gap-1.5">
                   <DSBadge variant="success">Enviados {item.sent}</DSBadge>
-                  <DSBadge variant="secondary">Sem token {item.noToken}</DSBadge>
-                  <DSBadge variant="secondary">Suprimidos {item.suppressed}</DSBadge>
-                  {item.failed > 0 && <DSBadge>Falhas {item.failed}</DSBadge>}
+                  <DSBadge variant="muted">Sem token {item.noToken}</DSBadge>
+                  <DSBadge variant="muted">Suprimidos {item.suppressed}</DSBadge>
+                  {item.failed > 0 && <DSBadge variant="danger">Falhas {item.failed}</DSBadge>}
                 </div>
               </DSCardContent>
             </DSCard>
