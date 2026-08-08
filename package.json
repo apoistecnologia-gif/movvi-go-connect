@@ -10,8 +10,8 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "test": "npm run lint && npm run typecheck",
-    "test:unit": "vitest run --passWithNoTests",
+    "test": "bun run lint && bun run typecheck",
+    "test:unit": "bunx vitest run --passWithNoTests",
     "test:e2e": "python3 -m pytest tests/e2e",
     "typecheck": "tsc --noEmit",
     "build:passageiro": "cross-env VITE_APP_ROLE=passageiro node scripts/build-mobile-spa.mjs",
@@ -55,7 +55,7 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
     "jspdf": "^4.2.1",
-    "jspdf-autotable": "^4.0.0",
+    "jspdf-autotable": "^5.0.8",
     "lucide-react": "^0.575.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
@@ -79,14 +79,13 @@
     "eslint": "^9.32.0",
     "eslint-config-prettier": "^10.1.1",
     "eslint-plugin-prettier": "^5.2.6",
-    "eslint-plugin-react-hooks": "^7.0.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^15.15.0",
     "nitro": "3.0.260603-beta",
     "prettier": "^3.7.3",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.56.1",
-    "vite": "^8.0.16",
-    "vitest": "^3.2.4"
+    "vite": "^8.0.16"
   }
 }
