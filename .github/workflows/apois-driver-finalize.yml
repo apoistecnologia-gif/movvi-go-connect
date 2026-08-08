@@ -29,6 +29,19 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
 
+      - name: Ajustar patch à versão atual da oferta
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('.github/scripts/apois-driver-finalize.mjs')
+          s = p.read_text()
+          s = s.replace(
+              'className="shrink-0 border-t border-white/5 bg-[#08090A] px-4 pt-3"',
+              'className="shrink-0 border-t border-border/60 bg-card px-4 pt-3 sm:px-5"',
+          )
+          p.write_text(s)
+          PY
+
       - name: Aplicar correções finais
         run: node .github/scripts/apois-driver-finalize.mjs
 
