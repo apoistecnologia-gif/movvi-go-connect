@@ -7,8 +7,11 @@ on:
     paths:
       - "src/routes/admin.motoristas.tsx"
       - "src/routes/admin.login.tsx"
+      - "src/routes/admin.precos.tsx"
       - "src/lib/adminDrivers.functions.ts"
       - "src/lib/driverDocs.functions.ts"
+      - "src/lib/adminPricing.functions.ts"
+      - "supabase/migrations/20260808112000_admin_canonical_tariff_rpc.sql"
       - ".env"
       - ".github/workflows/apois-admin-validate.yml"
 
@@ -42,5 +45,15 @@ jobs:
           ! grep -F 'activeRides[d.user_id]' src/routes/admin.motoristas.tsx
           ! grep -F '|| !d.vehicle_photo_url' src/routes/admin.motoristas.tsx
           grep -F 'return !d.selfie_url || !d.cnh_url || !d.cnh_back_url || !d.vehicle_document_url;' src/routes/admin.motoristas.tsx
+      - name: Validar contrato canônico de tarifas
+        run: |
+          ! grep -E 'category_key|field_key' src/routes/admin.precos.tsx src/lib/adminPricing.functions.ts
+          grep -F 'category_id' src/routes/admin.precos.tsx
+          grep -F 'base_fare' src/routes/admin.precos.tsx
+          grep -F 'dynamic_multiplier' src/routes/admin.precos.tsx
+          grep -F 'admin_is_authorized' src/lib/adminPricing.functions.ts
+          grep -F 'admin_upsert_tariff_rule' src/lib/adminPricing.functions.ts
+          grep -F "private.has_permission('users.manage')" supabase/migrations/20260808112000_admin_canonical_tariff_rpc.sql
+          ! grep -Ei '^[[:space:]]*(drop|truncate|delete)[[:space:]]' supabase/migrations/20260808112000_admin_canonical_tariff_rpc.sql
       - name: Build do painel
         run: npm run build
