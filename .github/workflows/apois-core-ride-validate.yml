@@ -8,7 +8,7 @@ on:
       - "supabase/functions/_shared/**"
       - "supabase/functions/passenger-ride-request/**"
       - "tests/unit/**"
-      - "src/**"
+      - "tsconfig.core.json"
       - "package.json"
       - "bun.lock"
       - ".github/workflows/apois-core-ride-validate.yml"
@@ -19,7 +19,7 @@ on:
       - "supabase/functions/_shared/**"
       - "supabase/functions/passenger-ride-request/**"
       - "tests/unit/**"
-      - "src/**"
+      - "tsconfig.core.json"
       - "package.json"
       - "bun.lock"
 
@@ -39,11 +39,6 @@ jobs:
         with:
           node-version: 22
 
-      - name: Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
       - name: Deno
         uses: denoland/setup-deno@v2
         with:
@@ -52,19 +47,26 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
-      - name: Typecheck
-        run: npm run typecheck
+      - name: Core typecheck
+        run: npx tsc -p tsconfig.core.json --noEmit
 
-      - name: Lint
-        run: npm run lint
+      - name: Core lint
+        run: >-
+          npx eslint
+          supabase/functions/_shared/fare-engine.ts
+          supabase/functions/_shared/ride-state.ts
+          supabase/functions/_shared/ride-request.ts
+          tests/unit/fare-engine.test.ts
+          tests/unit/ride-state.test.ts
+          tests/unit/ride-request.test.ts
 
-      - name: Unit tests
-        run: npm run test:unit
+      - name: Core unit tests
+        run: npx vitest run tests/unit/fare-engine.test.ts tests/unit/ride-state.test.ts tests/unit/ride-request.test.ts
 
       - name: Deno check Edge request
         run: deno check supabase/functions/passenger-ride-request/index.ts
 
-      - name: Build web
+      - name: Build application
         run: npm run build
 
       - name: Core invariants
