@@ -17,6 +17,7 @@ const finance = read("src/lib/adminFinance.ts");
 const settings = read("src/lib/adminSettings.ts");
 const notificationFns = read("src/lib/adminNotifications.functions.ts");
 const driverDocs = read("src/lib/driverDocs.functions.ts");
+const adminVisual = read("src/lib/adminVisual.ts");
 const layout = read("src/components/admin/AdminLayout.tsx");
 const sidebar = read("src/components/admin/AdminSidebar.tsx");
 const login = read("src/routes/admin.login.tsx");
@@ -28,6 +29,8 @@ const subscriptionsRoute = read("src/routes/admin.assinaturas.tsx");
 const driverFinanceRoute = read("src/routes/admin.financeiro-motoristas.tsx");
 const analyticsRoute = read("src/routes/admin.analytics.tsx");
 const reportsRoute = read("src/routes/admin.relatorios.tsx");
+const operationsRoute = read("src/routes/admin.operacoes.tsx");
+const liveMapRoute = read("src/routes/admin.mapa.tsx");
 const couponsRoute = read("src/routes/admin.cupons.tsx");
 const financeRoute = read("src/routes/admin.financeiro.tsx");
 const paymentsRoute = read("src/routes/admin.pagamentos.tsx");
@@ -106,13 +109,21 @@ excludes(subscriptionsRoute, 'from("subscription_plans")', "Legacy subscription 
 includes(couponsRoute, "Cupons permanecem desativados", "Truthful coupon state");
 excludes(couponsRoute, 'from("coupons")', "Legacy coupon table");
 
-// Analytics and reports derive from canonical entities only.
+// Analytics and reports derive from canonical entities and respect per-dataset permissions.
 includes(analyticsRoute, "getAdminDashboardMetrics", "Canonical analytics metrics");
 includes(analyticsRoute, "getAdminFinanceSummary", "Canonical analytics finance");
+includes(analyticsRoute, 'permissions.includes("finance.read")', "Analytics finance RBAC");
 excludes(analyticsRoute, "admin_analytics_", "Legacy analytics RPC family");
 includes(reportsRoute, 'from("ride_settlements")', "Canonical settlement report");
 includes(reportsRoute, 'from("passenger_support_tickets")', "Canonical support report");
+includes(reportsRoute, "report.permission", "Report dataset RBAC");
+includes(reportsRoute, "access?.permissions", "Report permission context");
 excludes(reportsRoute, 'from("subscriptions")', "Legacy subscriptions report");
+
+// Operations readers may inspect the control center but mutations require operations.manage.
+includes(operationsRoute, 'permissions.includes("operations.manage")', "Operations mutation RBAC");
+includes(operationsRoute, "Somente leitura", "Operations read-only state");
+includes(operationsRoute, "updateAdminSosAlert", "Canonical SOS mutation");
 
 // Payment-provider UI reports backend truth and never edits gateway credentials in the browser.
 includes(paymentsRoute, "getAdminFinanceSummary", "Payment provider source-of-truth");
@@ -157,11 +168,18 @@ includes(sidebar, "permission: \"drivers.read\"", "Driver nav permission");
 includes(sidebar, "permissionSet.has(item.permission)", "Permission filtered navigation");
 includes(sidebar, "APOIS", "APOIS Admin brand");
 
-// Phase 8 rebrand is scoped, so Passenger/Driver themes are not changed accidentally.
+// Phase 8 rebrand is scoped and literal Google Maps colors use APOIS black/gold.
 includes(layout, 'import "@/apois-admin-theme.css"', "Admin theme import");
 includes(layout, "apois-admin-theme", "Admin theme scope");
 includes(login, "apois-admin-theme", "Admin login theme scope");
 includes(theme, "--primary:", "Admin gold semantic primary");
 excludes(theme, "#8DD92B", "Legacy MOVVI green in Admin theme");
+includes(adminVisual, '#E2B544', "Literal Admin gold map token");
+includes(dashboard, "APOIS_ADMIN_MAP.gold", "Dashboard gold map marker");
+includes(liveMapRoute, "APOIS_ADMIN_MAP.gold", "Live map gold marker");
+includes(operationsRoute, "APOIS_ADMIN_MAP.gold", "Operations gold marker");
+excludes(dashboard, "greenPrimary", "Legacy green dashboard marker");
+excludes(liveMapRoute, "greenPrimary", "Legacy green live-map marker");
+excludes(operationsRoute, "greenPrimary", "Legacy green operations marker");
 
 console.log("APOIS_ADMIN_PHASE8_CONTRACT_OK");
