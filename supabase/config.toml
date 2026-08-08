@@ -1,4 +1,6 @@
-project_id = "ekddifjpbieuainvjlbl"
+# APOIS CORRIDAS — Supabase oficial.
+# Este arquivo nunca deve apontar para projetos MOVVI/APOIS legados.
+project_id = "vqtucstyduxrqjgyigfk"
 
 [functions.mercadopago-webhook]
 verify_jwt = false
