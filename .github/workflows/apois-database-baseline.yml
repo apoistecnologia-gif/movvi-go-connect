@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feat/apois-motorista-producao-homologacao
+      - fix/apois-corridas-consolidacao
     paths:
       - "supabase/baseline/**"
       - ".github/workflows/apois-database-baseline.yml"
@@ -51,6 +52,7 @@ jobs:
           psql -v ON_ERROR_STOP=1 -f supabase/baseline/002_functions.sql
           psql -v ON_ERROR_STOP=1 -f supabase/baseline/003_rls.sql
           psql -v ON_ERROR_STOP=1 -f supabase/baseline/004_storage_triggers_seed.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/baseline/005_security_hardening.sql
 
       - name: Validar invariantes do schema
         run: |
@@ -62,6 +64,8 @@ jobs:
           admin_manage=$(psql -Atqc "select count(*) from public.role_permissions where role='administrator'::public.app_role and permission='users.manage'")
           request_key_unique=$(psql -Atqc "select count(*) from pg_constraint where conrelid='public.rides'::regclass and conname='rides_request_key_key'")
           atomic_accept=$(psql -Atqc "select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='driver_accept_ride'")
+          offer_policy=$(psql -Atqc "select count(*) from pg_policies where schemaname='public' and tablename='rides' and policyname='rides_driver_read_relevant' and qual like '%offered_driver_ids%' and qual not like '%candidate_driver_ids%'")
+          webhook_closed=$(psql -Atqc "select count(*) from pg_policies where schemaname='public' and tablename='payment_webhook_receipts' and policyname='payment_webhook_receipts_no_client_access' and qual='false' and with_check='false'")
 
           test "$unprotected" = "0"
           test "$private_buckets" = "4"
@@ -70,6 +74,8 @@ jobs:
           test "$admin_manage" = "1"
           test "$request_key_unique" = "1"
           test "$atomic_accept" = "1"
+          test "$offer_policy" = "1"
+          test "$webhook_closed" = "1"
 
       - name: Smoke test trigger de identidade
         run: |
@@ -100,7 +106,7 @@ jobs:
 
       - name: Confirmar que a baseline não contém operação destrutiva de produção
         run: |
-          if grep -RInE '^[[:space:]]*(drop[[:space:]]+(database|schema|table)|truncate|delete[[:space:]]+from)[[:space:]]' supabase/baseline/00[1-4]_*.sql; then
+          if grep -RInE '^[[:space:]]*(drop[[:space:]]+(database|schema|table)|truncate|delete[[:space:]]+from)[[:space:]]' supabase/baseline/00[1-5]_*.sql; then
             echo "Operação destrutiva encontrada na baseline."
             exit 1
           fi
