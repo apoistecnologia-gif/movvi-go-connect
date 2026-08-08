@@ -1,0 +1,100 @@
+name: APOIS Database — canonical baseline
+
+on:
+  push:
+    branches:
+      - feat/apois-motorista-producao-homologacao
+    paths:
+      - "supabase/baseline/**"
+      - ".github/workflows/apois-database-baseline.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "supabase/baseline/**"
+      - ".github/workflows/apois-database-baseline.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  fresh-database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: apois_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d apois_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGPASSWORD: postgres
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGDATABASE: apois_test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Aplicar baseline em banco vazio
+        run: |
+          set -euo pipefail
+          psql -v ON_ERROR_STOP=1 -f supabase/baseline/000_ci_prelude.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/baseline/001_canonical_schema.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/baseline/002_functions.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/baseline/003_rls.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/baseline/004_storage_triggers_seed.sql
+
+      - name: Validar invariantes do schema
+        run: |
+          set -euo pipefail
+          test "$(psql -Atqc "select count(*) from pg_tables t join pg_class c on c.relname=t.tablename join pg_namespace n on n.oid=c.relnamespace and n.nspname=t.schemaname where t.schemaname='public' and not c.relrowsecurity")" = "0"
+          test "$(psql -Atqc "select count(*) from storage.buckets where id in ('driver-selfies','driver-cnh','vehicle-documents','profile-photos') and public=false")" = "4"
+          test "$(psql -Atqc "select count(*) from public.ride_categories")" = "5"
+          test "$(psql -Atqc "select count(*) from public.payment_methods")" = "5"
+          test "$(psql -Atqc "select count(*) from public.role_permissions where role='administrator'::public.app_role and permission='users.manage')" = "1"
+          test "$(psql -Atqc "select count(*) from pg_constraint where conrelid='public.rides'::regclass and conname='rides_request_key_key')" = "1"
+          test "$(psql -Atqc "select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='driver_accept_ride')" = "1"
+
+      - name: Smoke test trigger de identidade
+        run: |
+          set -euo pipefail
+          PASSENGER_ID=11111111-1111-4111-8111-111111111111
+          psql -v ON_ERROR_STOP=1 <<'SQL'
+          insert into auth.users(id,email,raw_user_meta_data) values(
+            '11111111-1111-4111-8111-111111111111',
+            'passenger@example.test',
+            jsonb_build_object(
+              'role','passenger','name','Passageiro Teste','phone','11999999999',
+              'terms_accepted','true','privacy_accepted','true',
+              'terms_version','ci','privacy_version','ci','legal_acceptance_source','passenger_signup'
+            )
+          );
+          do $$
+          begin
+            if not exists(select 1 from public.users where auth_user_id='11111111-1111-4111-8111-111111111111') then
+              raise exception 'mobility user trigger failed';
+            end if;
+            if not exists(select 1 from public.user_roles ur join public.users u on u.id=ur.user_id where u.auth_user_id='11111111-1111-4111-8111-111111111111' and ur.role='passenger') then
+              raise exception 'passenger role trigger failed';
+            end if;
+            if not exists(select 1 from public.passenger_wallets w join public.users u on u.id=w.passenger_id where u.auth_user_id='11111111-1111-4111-8111-111111111111') then
+              raise exception 'passenger wallet trigger failed';
+            end if;
+          end $$;
+          SQL
+
+      - name: Confirmar que a baseline não contém operação destrutiva de produção
+        run: |
+          if grep -RInE '^[[:space:]]*(drop[[:space:]]+(database|schema|table)|truncate|delete[[:space:]]+from)[[:space:]]' supabase/baseline/00[1-4]_*.sql; then
+            echo "Operação destrutiva encontrada na baseline."
+            exit 1
+          fi
+          echo "APOIS_CANONICAL_BASELINE_OK"
