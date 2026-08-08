@@ -70,14 +70,18 @@ jobs:
           set -euo pipefail
           anon_can_share=$(psql -Atqc "select has_function_privilege('anon','public.get_shared_passenger_ride(text)','EXECUTE')::int")
           anon_can_rate=$(psql -Atqc "select has_function_privilege('anon','public.rate_passenger_ride(uuid,integer,text)','EXECUTE')::int")
+          anon_can_payment_methods=$(psql -Atqc "select has_function_privilege('anon','public.get_passenger_payment_methods()','EXECUTE')::int")
           auth_can_sos=$(psql -Atqc "select has_function_privilege('authenticated','public.passenger_trigger_sos(uuid,numeric,numeric,text,text)','EXECUTE')::int")
+          auth_can_payment_methods=$(psql -Atqc "select has_function_privilege('authenticated','public.get_passenger_payment_methods()','EXECUTE')::int")
           rating_column=$(psql -Atqc "select count(*) from information_schema.columns where table_schema='public' and table_name='rides' and column_name='passenger_driver_rating'")
           expiry_column=$(psql -Atqc "select count(*) from information_schema.columns where table_schema='public' and table_name='rides' and column_name='share_expires_at'")
           sos_ride=$(psql -Atqc "select count(*) from information_schema.columns where table_schema='public' and table_name='sos_alerts' and column_name='ride_id'")
           admin_sos_policy=$(psql -Atqc "select count(*) from pg_policies where schemaname='public' and tablename='sos_alerts' and policyname='sos_alerts_admin_read'")
           test "$anon_can_share" = "1"
           test "$anon_can_rate" = "0"
+          test "$anon_can_payment_methods" = "0"
           test "$auth_can_sos" = "1"
+          test "$auth_can_payment_methods" = "1"
           test "$rating_column" = "1"
           test "$expiry_column" = "1"
           test "$sos_ride" = "1"
