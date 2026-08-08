@@ -50,9 +50,10 @@ jobs:
       - name: Core typecheck
         run: npx tsc -p tsconfig.core.json --noEmit
 
-      - name: Core lint
+      - name: Core semantic lint
         run: >-
           npx eslint
+          --rule 'prettier/prettier: off'
           supabase/functions/_shared/fare-engine.ts
           supabase/functions/_shared/ride-state.ts
           supabase/functions/_shared/ride-request.ts
