@@ -5,14 +5,27 @@ on:
     branches:
       - feat/apois-admin-supabase-oficial-homologacao
     paths:
-      - "src/routes/admin.motoristas.tsx"
-      - "src/routes/admin.login.tsx"
-      - "src/routes/admin.precos.tsx"
-      - "src/lib/adminDrivers.functions.ts"
+      - "src/routes/admin.**"
+      - "src/lib/admin**"
       - "src/lib/driverDocs.functions.ts"
-      - "src/lib/adminPricing.functions.ts"
-      - "supabase/migrations/20260808112000_admin_canonical_tariff_rpc.sql"
-      - ".env"
+      - "src/integrations/supabase/types.ts"
+      - "supabase/config.toml"
+      - "supabase/migrations/**"
+      - ".env.example"
+      - ".gitignore"
+      - ".github/workflows/apois-admin-validate.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "src/routes/admin.**"
+      - "src/lib/admin**"
+      - "src/lib/driverDocs.functions.ts"
+      - "src/integrations/supabase/types.ts"
+      - "supabase/config.toml"
+      - "supabase/migrations/**"
+      - ".env.example"
+      - ".gitignore"
       - ".github/workflows/apois-admin-validate.yml"
 
 permissions:
@@ -21,14 +34,40 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
+    env:
+      # Valores sintéticos apenas para compilar/validar. Deploy real deve fornecer ambiente externo.
+      SUPABASE_PROJECT_ID: ci_validation_project
+      SUPABASE_URL: https://ci-validation.supabase.co
+      SUPABASE_PUBLISHABLE_KEY: ci_validation_publishable_key
+      VITE_SUPABASE_PROJECT_ID: ci_validation_project
+      VITE_SUPABASE_URL: https://ci-validation.supabase.co
+      VITE_SUPABASE_PUBLISHABLE_KEY: ci_validation_publishable_key
+      VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY: ci_validation_maps_key
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+
       - name: Instalar dependências
         run: npm install --no-audit --no-fund
+
+      - name: Validar ambiente canônico APOIS
+        run: |
+          test ! -f .env
+          grep -F 'project_id = "vqtucstyduxrqjgyigfk"' supabase/config.toml
+          grep -F 'PostgrestVersion: "14.15"' src/integrations/supabase/types.ts
+          if grep -RIn --exclude-dir=.git -E 'ekddifjpbieuainvjlbl|wqbtnfbvqtkyywfcqjwa|zjphbuvcapwyuynadgdt' \
+            supabase/config.toml .env.example; then
+            echo 'Referência Supabase legada em configuração ativa do Admin.'
+            exit 1
+          fi
+          if grep -Ei 'sb_secret_|service[_-]?role|BEGIN PRIVATE KEY|MERCADOPAGO_ACCESS_TOKEN=.+[^>]$|ASAAS_API_KEY=.+[^>]$' .env.example; then
+            echo 'Template de ambiente contém possível segredo real.'
+            exit 1
+          fi
+
       - name: Validar aprovação oficial do motorista
         run: |
           ! grep -F 'approve-driver-and-create-mercadopago-subscription' src/routes/admin.motoristas.tsx
@@ -38,6 +77,7 @@ jobs:
           grep -F 'updateApprovalFn({' src/routes/admin.motoristas.tsx
           grep -F 'admin_set_driver_approval' src/lib/adminDrivers.functions.ts
           grep -F 'onSubscription' src/routes/admin.motoristas.tsx
+
       - name: Validar identidade operacional e documentos
         run: |
           grep -F 'activeRides[d.id] ?? null' src/routes/admin.motoristas.tsx
@@ -45,6 +85,7 @@ jobs:
           ! grep -F 'activeRides[d.user_id]' src/routes/admin.motoristas.tsx
           ! grep -F '|| !d.vehicle_photo_url' src/routes/admin.motoristas.tsx
           grep -F 'return !d.selfie_url || !d.cnh_url || !d.cnh_back_url || !d.vehicle_document_url;' src/routes/admin.motoristas.tsx
+
       - name: Validar contrato canônico de tarifas
         run: |
           ! grep -E 'category_key|field_key' src/routes/admin.precos.tsx src/lib/adminPricing.functions.ts
@@ -55,5 +96,9 @@ jobs:
           grep -F 'admin_upsert_tariff_rule' src/lib/adminPricing.functions.ts
           grep -F "private.has_permission('users.manage')" supabase/migrations/20260808112000_admin_canonical_tariff_rpc.sql
           ! grep -Ei '^[[:space:]]*(drop|truncate|delete)[[:space:]]' supabase/migrations/20260808112000_admin_canonical_tariff_rpc.sql
+
+      - name: TypeScript
+        run: npx tsc --noEmit
+
       - name: Build do painel
         run: npm run build
