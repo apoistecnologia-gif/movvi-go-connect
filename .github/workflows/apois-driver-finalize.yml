@@ -42,6 +42,22 @@ jobs:
       - name: Aplicar correções finais
         run: node .github/scripts/apois-driver-finalize.mjs
 
+      - name: Corrigir tipos estritos detectados
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('src/components/MovviHeader.tsx')
+          s = p.read_text()
+          s = s.replace('const meta = (u.user.user_metadata ?? {}) as Record<string, unknown>;', 'const meta = (u.user_metadata ?? {}) as Record<string, unknown>;')
+          p.write_text(s)
+
+          p = Path('src/routes/motorista.app.tsx')
+          s = p.read_text()
+          s = s.replace('.contains("candidate_driver_ids", [userId])', '.contains("candidate_driver_ids", [userId as string])')
+          s = s.replace('maneuver: s.maneuver,', 'maneuver: s.maneuver ?? undefined,')
+          p.write_text(s)
+          PY
+
       - name: Verificar diff
         run: git diff --check
 
