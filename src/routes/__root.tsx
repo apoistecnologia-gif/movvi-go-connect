@@ -118,6 +118,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 function RootShell({ children }: { children: ReactNode }) {
+  // O build mobile já possui <html>, <head> e <body> em index.mobile.html.
+  // A shell documental completa é necessária apenas no build web/SSR.
+  if (APP_ROLE !== "web") return <>{children}</>;
+
   return (
     <html lang="pt-BR" className="dark" style={{ colorScheme: "dark" }}>
       <head>
@@ -159,7 +163,7 @@ function RootComponent() {
       <ThemeProvider>
         <MapThemeProvider>
           <Outlet />
-          <NotificationPermissionPrompt />
+          {APP_ROLE === "web" ? <NotificationPermissionPrompt /> : null}
           <Toaster richColors position="top-right" closeButton />
         </MapThemeProvider>
       </ThemeProvider>
