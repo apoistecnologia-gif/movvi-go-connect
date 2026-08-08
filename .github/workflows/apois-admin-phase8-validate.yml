@@ -108,6 +108,7 @@ jobs:
             "public.admin_update_support_ticket(uuid,text,text)" \
             "public.admin_get_dashboard_metrics()" \
             "public.admin_get_finance_summary(timestamp with time zone,timestamp with time zone)" \
+            "public.admin_get_settings(text[])" \
             "public.admin_update_setting(text,jsonb)"; do
             anon=$(psql -Atqc "select has_function_privilege('anon','$signature','EXECUTE')::int")
             auth=$(psql -Atqc "select has_function_privilege('authenticated','$signature','EXECUTE')::int")
@@ -117,6 +118,9 @@ jobs:
 
           notification_policy=$(psql -Atqc "select count(*) from pg_policies where schemaname='public' and tablename='notification_logs' and policyname='notification_logs_admin_read'")
           test "$notification_policy" = "1"
+
+          direct_settings_policy=$(psql -Atqc "select count(*) from pg_policies where schemaname='public' and tablename='app_settings' and roles::text like '%authenticated%' and (qual is null or qual <> 'false')")
+          test "$direct_settings_policy" = "0"
 
           client_audit_table=$(psql -Atqc "select count(*) from information_schema.tables where table_schema='public' and table_name='admin_audit_logs'")
           test "$client_audit_table" = "0"
@@ -147,30 +151,10 @@ jobs:
       - name: ESLint — Phase 8 Admin surface
         run: |
           npx eslint \
-            src/lib/adminAccess.ts \
-            src/lib/adminControlPlane.ts \
-            src/lib/adminFinance.ts \
-            src/lib/adminAudit.ts \
-            src/lib/adminDrivers.functions.ts \
-            src/lib/adminPassengers.functions.ts \
-            src/lib/adminNotifications.functions.ts \
+            "src/routes/admin.*.tsx" \
+            "src/components/admin/**/*.tsx" \
             src/components/AdminGuard.tsx \
-            src/components/admin/AdminLayout.tsx \
-            src/components/admin/AdminSidebar.tsx \
-            src/routes/admin.login.tsx \
-            src/routes/admin.dashboard.tsx \
-            src/routes/admin.categorias.tsx \
-            src/routes/admin.precos.tsx \
-            src/routes/admin.financeiro.tsx \
-            src/routes/admin.pagamentos.tsx \
-            src/routes/admin.suporte.tsx \
-            src/routes/admin.operacoes.tsx \
-            src/routes/admin.seguranca.tsx \
-            src/routes/admin.administradores.tsx \
-            src/routes/admin.logs.tsx \
-            src/routes/admin.configuracoes.tsx \
-            src/routes/admin.notificacoes.tsx \
-            src/routes/admin.backups.tsx
+            "src/lib/admin*.ts"
 
       - name: Production build
         run: npm run build
