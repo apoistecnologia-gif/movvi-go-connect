@@ -10,7 +10,7 @@ psql -v ON_ERROR_STOP=1 <<SQL
 insert into auth.users(id,email,raw_user_meta_data) values
   ('$DRIVER_AUTH_A','driver-a@example.test','{"role":"driver","name":"Driver A"}'::jsonb),
   ('$DRIVER_AUTH_B','driver-b@example.test','{"role":"driver","name":"Driver B"}'::jsonb),
-  ('$PASSENGER_AUTH','passenger@example.test','{"role":"passenger","name":"Passenger"}'::jsonb);
+  ('$PASSENGER_AUTH','passenger@example.test','{"role":"passenger","name":"Passenger","terms_accepted":"true","privacy_accepted":"true","terms_version":"ci","privacy_version":"ci","legal_acceptance_source":"passenger_signup"}'::jsonb);
 
 insert into public.drivers(user_id,name,category,approval_status,subscription_status,is_online,current_lat,current_lng,last_location_at,documents_status)
 select u.id,'Driver A','carros','aprovado','teste',true,-9.3900,-40.5000,now(),'approved'
