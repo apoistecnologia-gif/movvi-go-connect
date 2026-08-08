@@ -20,8 +20,33 @@ export function isNativeAndroidDriverLocation(): boolean {
   return Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android";
 }
 
+async function ensureForegroundLocationPermission(): Promise<boolean> {
+  const { Geolocation } = await import("@capacitor/geolocation");
+  let permission = await Geolocation.checkPermissions();
+  const alreadyGranted =
+    permission.location === "granted" || permission.coarseLocation === "granted";
+  if (alreadyGranted) return true;
+
+  if (
+    permission.location === "prompt" ||
+    permission.location === "prompt-with-rationale" ||
+    permission.coarseLocation === "prompt" ||
+    permission.coarseLocation === "prompt-with-rationale"
+  ) {
+    permission = await Geolocation.requestPermissions({ permissions: ["location"] });
+  }
+
+  return permission.location === "granted" || permission.coarseLocation === "granted";
+}
+
 export async function startNativeDriverLocation(): Promise<boolean> {
   if (!isNativeAndroidDriverLocation()) return false;
+
+  // Não inicia o Foreground Service enquanto o diálogo de permissão ainda está
+  // pendente. Sem isso, o Android pode encerrar o serviço e o JS acreditar que
+  // o GPS continua ativo.
+  const permissionGranted = await ensureForegroundLocationPermission();
+  if (!permissionGranted) return false;
 
   let { data, error } = await supabase.auth.getSession();
   if (error || !data.session) return false;
