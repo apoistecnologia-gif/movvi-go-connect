@@ -16,6 +16,7 @@ const locationService = read("android-motorista/app/src/main/java/com/apois/moto
 const homologationWorkflow = read(".github/workflows/apois-driver-homologation.yml");
 const driverApp = read("src/routes/motorista.app.tsx");
 const dispatch = read("supabase/functions/dispatch-ride/index.ts");
+const pushSender = read("supabase/functions/send-ride-push/index.ts");
 
 includes(documentsService, 'rpc("driver_update_document"', "KYC RPC");
 includes(documentsService, '"vehicle_photo"', "KYC vehicle photo");
@@ -36,9 +37,7 @@ for (const rpc of [
   "driver_start_ride",
   "driver_finish_ride",
   "driver_rate_passenger",
-]) {
-  includes(lifecycle, rpc, `Driver lifecycle ${rpc}`);
-}
+]) includes(lifecycle, rpc, `Driver lifecycle ${rpc}`);
 
 includes(nativeBridge, "driver_register_push_token", "native push token registration");
 includes(nativeBridge, "PushNotifications.register", "native push registration");
@@ -52,5 +51,10 @@ includes(driverApp, "speak", "Driver voice guidance");
 includes(driverApp, "DriverVoiceToggle", "Driver voice toggle");
 includes(dispatch, "/functions/v1/send-ride-push", "dispatch FCM handoff");
 includes(dispatch, 'title: "APOIS • Nova corrida disponível"', "APOIS push copy");
+includes(pushSender, "FIREBASE_SERVICE_ACCOUNT_B64", "FCM service-account secret contract");
+includes(pushSender, "messaging.googleapis.com/v1/projects", "FCM HTTP v1 delivery");
+includes(pushSender, 'channel_id: "apois_rides"', "Android ride notification channel");
+includes(pushSender, 'event === "driver.new_ride_request"', "ride-request preference routing");
+includes(pushSender, "user_notification_tokens", "canonical notification tokens");
 
 console.log("APOIS_DRIVER_PHASE7_CONTRACT_OK");
