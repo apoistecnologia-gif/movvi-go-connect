@@ -45,7 +45,8 @@ includes(nativeBridge, "PushNotifications.register", "native push registration")
 includes(nativeBridge, "registerDeviceToken", "native push token handoff");
 includes(deviceTokens, 'rpc("register_notification_token"', "canonical notification-token RPC");
 includes(deviceTokens, 'rpc("deactivate_notification_token"', "canonical notification-token deactivation RPC");
-includes(homologationWorkflow, "VITE_ENABLE_NATIVE_PUSH=true", "homologation native push flag");
+includes(homologationWorkflow, "NATIVE_PUSH_READY=true", "homologation Firebase readiness flag");
+includes(homologationWorkflow, 'VITE_ENABLE_NATIVE_PUSH="$NATIVE_PUSH_READY"', "homologation native push build gate");
 includes(locationPlugin, "startForegroundService", "background foreground-service start");
 includes(locationService, "startForeground", "Android foreground location notification");
 includes(locationService, "driver_set_presence", "native background presence RPC");
