@@ -6,6 +6,7 @@ import { AuthShell, useAuthForm } from "@/components/AuthShell";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, ShieldCheck } from "lucide-react";
 import { DSButton, DSInput, DSLabel } from "@/design-system";
+import "@/apois-admin-theme.css";
 
 export const Route = createFileRoute("/admin/login")({
   head: () => ({ meta: [{ title: "Admin — APOIS" }, { name: "robots", content: "noindex" }] }),
@@ -33,46 +34,45 @@ function AdminLoginPage() {
       throw new Error("Acesso restrito à equipe administrativa APOIS.");
     }
 
-    // Login authorization is derived from profiles/role_permissions. Audit of
-    // critical Admin mutations is server-side; we deliberately do not write
-    // best-effort logs to legacy/nonexistent browser tables here.
     await navigate({ to: "/admin/dashboard" });
   });
 
   return (
-    <AuthShell
-      title={
-        <span className="flex items-center gap-2">
-          <ShieldCheck className="h-6 w-6 text-primary" /> Painel administrativo
-        </span>
-      }
-      description="Acesso restrito à equipe APOIS."
-    >
-      <form onSubmit={onSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <DSLabel htmlFor="email">E-mail</DSLabel>
-          <DSInput id="email" name="email" type="email" required autoComplete="email" />
-        </div>
-        <div className="space-y-2">
-          <DSLabel htmlFor="password">Senha</DSLabel>
-          <DSInput
-            id="password"
-            name="password"
-            type="password"
-            required
-            autoComplete="current-password"
-          />
-        </div>
-        {error && (
-          <Alert variant="destructive">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-        <DSButton type="submit" className="w-full" disabled={loading}>
-          {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-          Entrar
-        </DSButton>
-      </form>
-    </AuthShell>
+    <div className="apois-admin-theme min-h-screen bg-background text-foreground">
+      <AuthShell
+        title={
+          <span className="flex items-center gap-2">
+            <ShieldCheck className="h-6 w-6 text-primary" /> Painel administrativo
+          </span>
+        }
+        description="Acesso restrito à equipe APOIS."
+      >
+        <form onSubmit={onSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <DSLabel htmlFor="email">E-mail</DSLabel>
+            <DSInput id="email" name="email" type="email" required autoComplete="email" />
+          </div>
+          <div className="space-y-2">
+            <DSLabel htmlFor="password">Senha</DSLabel>
+            <DSInput
+              id="password"
+              name="password"
+              type="password"
+              required
+              autoComplete="current-password"
+            />
+          </div>
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          <DSButton type="submit" className="w-full" disabled={loading}>
+            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            Entrar
+          </DSButton>
+        </form>
+      </AuthShell>
+    </div>
   );
 }
