@@ -5,7 +5,8 @@ import { MapPin, Radio, RefreshCw } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { MovviMap } from "@/components/MovviMap";
 import { supabase } from "@/integrations/supabase/client";
-import { DSBadge, DSButton, DSCard, DSCardContent, EmptyState, Loading, ds } from "@/design-system";
+import { APOIS_ADMIN_MAP } from "@/lib/adminVisual";
+import { DSBadge, DSButton, DSCard, DSCardContent, EmptyState, Loading } from "@/design-system";
 import { toast } from "sonner";
 
 type DriverPresence = {
@@ -133,9 +134,9 @@ function AdminLiveMapPage() {
                       icon={{
                         path: googleApi.maps.SymbolPath.CIRCLE,
                         scale: ride ? 9 : 7,
-                        fillColor: ds.brand.greenPrimary,
+                        fillColor: ride ? APOIS_ADMIN_MAP.goldStrong : APOIS_ADMIN_MAP.gold,
                         fillOpacity: 1,
-                        strokeColor: ds.brand.black,
+                        strokeColor: APOIS_ADMIN_MAP.black,
                         strokeWeight: 2,
                       }}
                     />
