@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Loader2, Save, Sliders, ShieldCheck } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
+import { getAdminSettings } from "@/lib/adminSettings";
 import { DSBadge, DSButton, DSCard, DSCardContent, DSInput, Loading } from "@/design-system";
 import { toast } from "sonner";
 
@@ -67,33 +68,23 @@ function AdminConfigPage() {
 
   async function load() {
     setLoading(true);
-    const keys = EDITABLE_SETTINGS.map((item) => item.key);
-    const { data, error } = await (supabase as any)
-      .from("app_settings")
-      .select("key,value")
-      .in("key", keys);
-    if (error) {
-      toast.error(error.message);
+    try {
+      const rows = await getAdminSettings(EDITABLE_SETTINGS.map((item) => item.key));
+      const next: Record<string, number> = {};
+      for (const row of rows) {
+        const value = Number(row.value);
+        if (Number.isFinite(value)) next[row.key] = value;
+      }
+      setValues(next);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível carregar as configurações.");
+      setValues({});
+    } finally {
       setLoading(false);
-      return;
     }
-    const next: Record<string, number> = {};
-    for (const row of data ?? []) {
-      const value = Number(row.value);
-      if (Number.isFinite(value)) next[String(row.key)] = value;
-    }
-    setValues(next);
-    setLoading(false);
   }
 
-  useEffect(() => {
-    void load();
-    const channel = supabase
-      .channel("admin-canonical-settings")
-      .on("postgres_changes", { event: "*", schema: "public", table: "app_settings" }, () => void load())
-      .subscribe();
-    return () => { void supabase.removeChannel(channel); };
-  }, []);
+  useEffect(() => { void load(); }, []);
 
   async function save(item: EditableSetting) {
     const value = Number(values[item.key]);
@@ -109,6 +100,7 @@ function AdminConfigPage() {
       });
       if (error) throw error;
       toast.success("Configuração salva e auditada.");
+      await load();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Não foi possível salvar a configuração.");
     } finally {
@@ -135,7 +127,7 @@ function AdminConfigPage() {
           <div>
             <p className="font-semibold text-foreground">Configuração server-side e auditada</p>
             <p className="mt-1">
-              Chaves de Google, Firebase, Mercado Pago, payout e outros secrets não são editadas no navegador. Elas permanecem em secrets/infraestrutura.
+              Chaves de Google, Firebase, Mercado Pago, payout e outros secrets não são editadas nem lidas diretamente pelo navegador. O backend libera somente as chaves operacionais explicitamente permitidas.
             </p>
           </div>
         </DSCardContent>
