@@ -12,7 +12,7 @@ on:
       - "src/apois-admin-theme.css"
       - "supabase/baseline/**"
       - "tests/admin/**"
-      - "tests/database/admin_control_plane.sh"
+      - "tests/database/admin_*.sh"
       - "tsconfig.admin-phase8.json"
       - ".github/workflows/apois-admin-phase8-validate.yml"
   pull_request:
@@ -26,7 +26,7 @@ on:
       - "src/apois-admin-theme.css"
       - "supabase/baseline/**"
       - "tests/admin/**"
-      - "tests/database/admin_control_plane.sh"
+      - "tests/database/admin_*.sh"
       - "tsconfig.admin-phase8.json"
       - ".github/workflows/apois-admin-phase8-validate.yml"
   workflow_dispatch:
@@ -90,6 +90,9 @@ jobs:
 
       - name: Admin control-plane integration tests
         run: bash tests/database/admin_control_plane.sh
+
+      - name: Admin settings integration tests
+        run: bash tests/database/admin_settings.sh
 
       - name: Admin privilege and security invariants
         run: |
