@@ -10,10 +10,11 @@ on:
       - "src/components/AdminGuard.tsx"
       - "src/lib/admin*.ts"
       - "src/apois-admin-theme.css"
+      - "supabase/baseline/004_storage_triggers_seed.sql"
       - "supabase/baseline/011_admin_control_plane.sql"
       - "supabase/baseline/012_admin_staff_provisioning.sql"
       - "supabase/baseline/013_admin_finance.sql"
-      - "supabase/baseline/004_storage_triggers_seed.sql"
+      - "supabase/baseline/014_admin_settings.sql"
       - "tests/admin/**"
       - ".github/workflows/apois-admin-phase8-validate.yml"
   workflow_dispatch:
