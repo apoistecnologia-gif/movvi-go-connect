@@ -15,10 +15,11 @@ import {
   Loading,
   Metric,
   StatusPill,
-  ds,
 } from "@/design-system";
 import { formatDate } from "@/lib/formatters";
+import { loadAdminAccess } from "@/lib/adminAccess";
 import { updateAdminSosAlert } from "@/lib/adminControlPlane";
+import { APOIS_ADMIN_MAP } from "@/lib/adminVisual";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/operacoes")({
@@ -97,6 +98,7 @@ function OpsCenterPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [busyAlert, setBusyAlert] = useState<string | null>(null);
+  const [canManage, setCanManage] = useState(false);
 
   async function loadAll() {
     setLoading(true);
@@ -148,6 +150,7 @@ function OpsCenterPage() {
 
   useEffect(() => {
     void loadAll();
+    void loadAdminAccess().then((access) => setCanManage(Boolean(access?.permissions.includes("operations.manage"))));
     const channel = supabase
       .channel("admin-ops-canonical")
       .on("postgres_changes", { event: "*", schema: "public", table: "drivers" }, () => void loadAll())
@@ -189,6 +192,10 @@ function OpsCenterPage() {
   }, [onlineDrivers, sos]);
 
   async function setSosStatus(alert: Sos, status: "acknowledged" | "resolved") {
+    if (!canManage) {
+      toast.error("Sua função administrativa possui somente leitura operacional.");
+      return;
+    }
     setBusyAlert(alert.id);
     try {
       await updateAdminSosAlert(alert.id, status);
@@ -238,26 +245,30 @@ function OpsCenterPage() {
                     </p>
                     {alert.message && <p className="mt-1 text-sm">{alert.message}</p>}
                   </div>
-                  <div className="flex gap-2">
-                    {alert.status === "open" && (
+                  {canManage ? (
+                    <div className="flex gap-2">
+                      {alert.status === "open" && (
+                        <DSButton
+                          size="sm"
+                          variant="outline"
+                          disabled={busyAlert === alert.id}
+                          onClick={() => void setSosStatus(alert, "acknowledged")}
+                        >
+                          Assumir
+                        </DSButton>
+                      )}
                       <DSButton
                         size="sm"
-                        variant="outline"
                         disabled={busyAlert === alert.id}
-                        onClick={() => void setSosStatus(alert, "acknowledged")}
+                        onClick={() => void setSosStatus(alert, "resolved")}
+                        className="gap-1"
                       >
-                        Assumir
+                        <CheckCircle2 className="h-4 w-4" /> Resolver
                       </DSButton>
-                    )}
-                    <DSButton
-                      size="sm"
-                      disabled={busyAlert === alert.id}
-                      onClick={() => void setSosStatus(alert, "resolved")}
-                      className="gap-1"
-                    >
-                      <CheckCircle2 className="h-4 w-4" /> Resolver
-                    </DSButton>
-                  </div>
+                    </div>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">Somente leitura</span>
+                  )}
                 </DSCardContent>
               </DSCard>
             );
@@ -280,9 +291,9 @@ function OpsCenterPage() {
                           icon={{
                             path: (window as any).google.maps.SymbolPath.CIRCLE,
                             scale: 8,
-                            fillColor: busyDriverIds.has(driver.id) ? "#3b82f6" : ds.brand.greenPrimary,
+                            fillColor: busyDriverIds.has(driver.id) ? APOIS_ADMIN_MAP.goldStrong : APOIS_ADMIN_MAP.gold,
                             fillOpacity: 1,
-                            strokeColor: "#05070D",
+                            strokeColor: APOIS_ADMIN_MAP.black,
                             strokeWeight: 2,
                           }}
                         />
@@ -299,9 +310,9 @@ function OpsCenterPage() {
                           icon={{
                             path: (window as any).google.maps.SymbolPath.CIRCLE,
                             scale: 10,
-                            fillColor: "#ef4444",
+                            fillColor: APOIS_ADMIN_MAP.danger,
                             fillOpacity: 1,
-                            strokeColor: "#ffffff",
+                            strokeColor: APOIS_ADMIN_MAP.white,
                             strokeWeight: 3,
                           }}
                         />
