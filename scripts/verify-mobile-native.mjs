@@ -51,17 +51,10 @@ if (!/android:hardwareAccelerated="true"/.test(manifest)) {
   fail('AndroidManifest.xml precisa declarar android:hardwareAccelerated="true" no <application>.');
 }
 
-// No APOIS Motorista o WebView precisa receber foco inicial para que os campos
-// HTML aceitem toque, cursor e IME/teclado no Android. O passageiro mantém seu
-// contrato nativo atual até uma homologação específica exigir mudança.
-const expectedInitialFocus = role === "motorista" ? true : false;
-const initialFocusPattern = expectedInitialFocus
-  ? /initialFocus:\s*true/
-  : /initialFocus:\s*false/;
-if (!initialFocusPattern.test(config)) {
-  fail(
-    `capacitor.${role}.config.ts precisa declarar android.initialFocus=${expectedInitialFocus}.`,
-  );
+// Contrato estável de WebView/IME: nenhum role deve forçar foco inicial.
+// O foco deve nascer do toque no elemento HTML, não do container WebView.
+if (!/initialFocus:\s*false/.test(config)) {
+  fail(`capacitor.${role}.config.ts precisa declarar android.initialFocus=false.`);
 }
 
 if (!/captureInput:\s*false/.test(config)) {
@@ -87,6 +80,34 @@ for (const pattern of forbiddenMainActivityPatterns) {
   }
 }
 
+// Quando validamos android/ após o Capacitor sync, também conferimos o JSON
+// que será de fato empacotado no APK. Isso evita repetir o erro histórico em
+// que o código-fonte estava correto, mas o workflow usava outra configuração.
+if (checkLiveAndroid) {
+  const packedConfigPath = resolve(androidDir, "app/src/main/assets/capacitor.config.json");
+  const packedConfigRaw = readRequired(packedConfigPath);
+  let packedConfig;
+  try {
+    packedConfig = JSON.parse(packedConfigRaw);
+  } catch {
+    fail("android/app/src/main/assets/capacitor.config.json não contém JSON válido.");
+  }
+
+  if (packedConfig.appId !== (role === "motorista" ? "com.apois.motorista" : packedConfig.appId)) {
+    fail(`appId empacotado do motorista está incorreto: ${packedConfig.appId ?? "ausente"}.`);
+  }
+  if (packedConfig.android?.initialFocus !== false) {
+    fail(
+      `config empacotada precisa ter android.initialFocus=false; recebido: ${packedConfig.android?.initialFocus}.`,
+    );
+  }
+  if (packedConfig.android?.captureInput !== false) {
+    fail(
+      `config empacotada precisa ter android.captureInput=false; recebido: ${packedConfig.android?.captureInput}.`,
+    );
+  }
+}
+
 console.log(
-  `[verify-mobile-native] OK (${role}${checkLiveAndroid ? ", android/" : ", fonte"}): native login/input safe.`,
+  `[verify-mobile-native] OK (${role}${checkLiveAndroid ? ", android/ + config empacotada" : ", fonte"}): native login/input safe.`,
 );
