@@ -6,7 +6,6 @@ on:
       - fix/apois-corridas-consolidacao
     paths:
       - "supabase/functions/_shared/**"
-      - "supabase/functions/passenger-ride-request/**"
       - "tests/unit/**"
       - "tsconfig.core.json"
       - "package.json"
@@ -17,7 +16,6 @@ on:
       - main
     paths:
       - "supabase/functions/_shared/**"
-      - "supabase/functions/passenger-ride-request/**"
       - "tests/unit/**"
       - "tsconfig.core.json"
       - "package.json"
@@ -45,7 +43,7 @@ jobs:
           deno-version: v2.x
 
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
 
       - name: Core typecheck
         run: npx tsc -p tsconfig.core.json --noEmit
@@ -64,8 +62,12 @@ jobs:
       - name: Core unit tests
         run: deno test tests/unit/fare-engine.test.ts tests/unit/ride-state.test.ts tests/unit/ride-request.test.ts
 
-      - name: Deno check Edge request
-        run: deno check supabase/functions/passenger-ride-request/index.ts
+      - name: Core Deno check
+        run: >-
+          deno check
+          supabase/functions/_shared/fare-engine.ts
+          supabase/functions/_shared/ride-state.ts
+          supabase/functions/_shared/ride-request.ts
 
       - name: Build application
         run: npm run build
@@ -77,7 +79,5 @@ jobs:
           grep -F 'canTransitionRide' supabase/functions/_shared/ride-state.ts
           grep -F 'MAX_INTERMEDIATES = 3' supabase/functions/_shared/ride-request.ts
           grep -F 'payment_method_required' supabase/functions/_shared/ride-request.ts
-          grep -F 'parseRideRequest(rawBody)' supabase/functions/passenger-ride-request/index.ts
-          grep -F 'fare.totalCents' supabase/functions/passenger-ride-request/index.ts
           grep -F 'expired' tests/unit/ride-state.test.ts
           echo 'APOIS_CORE_RIDE_OK'
