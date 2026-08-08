@@ -33,6 +33,26 @@ jobs:
           java-version: "21"
           cache: gradle
 
+      - name: Restaurar assinatura estável de homologação
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: apois-motorista-homologacao-signing-v1
+
+      - name: Garantir chave de homologação
+        run: |
+          mkdir -p ~/.android
+          if [ ! -f ~/.android/debug.keystore ]; then
+            keytool -genkeypair -v \
+              -keystore ~/.android/debug.keystore \
+              -storepass android \
+              -alias androiddebugkey \
+              -keypass android \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=APOIS Motorista Homologacao,O=APOIS,C=BR"
+          fi
+          keytool -list -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey | grep -E "SHA256:|Owner:"
+
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
@@ -46,9 +66,6 @@ jobs:
           fi
           echo "[maps-key] OK: secret da APOIS disponível para o build."
 
-      # IMPORTANTE: usar o pipeline oficial do role motorista.
-      # Ele gera o SPA mobile, recria android/ a partir de android-motorista/,
-      # aplica capacitor.motorista.config.ts e executa as validações anti-regressão.
       - name: Build e sync oficial do APOIS Motorista
         env:
           VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY: ${{ secrets.APOIS_GOOGLE_MAPS_BROWSER_KEY }}
