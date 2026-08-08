@@ -1,4 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
 import {
   LayoutDashboard,
   Users,
@@ -25,35 +26,35 @@ import {
 } from "lucide-react";
 import { DSButton } from "@/design-system";
 import { supabase } from "@/integrations/supabase/client";
+import { loadAdminAccess, type AdminAccessContext } from "@/lib/adminAccess";
 
-type Item = { to: string; label: string; icon: LucideIcon };
+type Item = { to: string; label: string; icon: LucideIcon; permission: string };
 
 export const ADMIN_NAV: Item[] = [
-  { to: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/admin/mapa", label: "Mapa ao vivo", icon: MapIcon },
-  { to: "/admin/operacoes", label: "Central de Operações", icon: Radio },
-  { to: "/admin/motoristas", label: "Motoristas", icon: Car },
-  { to: "/admin/passageiros", label: "Passageiros", icon: Users },
-  { to: "/admin/corridas", label: "Corridas", icon: RouteIcon },
-  { to: "/admin/categorias", label: "Categorias", icon: Layers },
-  { to: "/admin/precos", label: "Tarifas", icon: DollarSign },
-  { to: "/admin/cupons", label: "Promoções", icon: Ticket },
-  { to: "/admin/assinaturas", label: "Assinaturas", icon: CreditCard },
-  { to: "/admin/pagamentos", label: "Pagamentos", icon: Wallet },
-  { to: "/admin/financeiro-motoristas", label: "Financeiro motoristas", icon: Wallet },
-  { to: "/admin/financeiro", label: "Financeiro", icon: Wallet },
-  { to: "/admin/relatorios", label: "Relatórios", icon: FileBarChart },
-  { to: "/admin/analytics", label: "Analytics & BI", icon: TrendingUp },
-  { to: "/admin/suporte", label: "Suporte", icon: LifeBuoy },
-  { to: "/admin/notificacoes", label: "Notificações", icon: Bell },
-  { to: "/admin/configuracoes", label: "Configurações", icon: Settings },
-  { to: "/admin/seguranca", label: "Segurança", icon: Lock },
-  { to: "/admin/backups", label: "Backups", icon: Database },
-  { to: "/admin/administradores", label: "Administradores", icon: ShieldCheck },
-  { to: "/admin/logs", label: "Logs", icon: ScrollText },
+  { to: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, permission: "metrics.read" },
+  { to: "/admin/mapa", label: "Mapa ao vivo", icon: MapIcon, permission: "operations.read" },
+  { to: "/admin/operacoes", label: "Central de Operações", icon: Radio, permission: "operations.read" },
+  { to: "/admin/motoristas", label: "Motoristas", icon: Car, permission: "drivers.read" },
+  { to: "/admin/passageiros", label: "Passageiros", icon: Users, permission: "passengers.read" },
+  { to: "/admin/corridas", label: "Corridas", icon: RouteIcon, permission: "rides.read" },
+  { to: "/admin/categorias", label: "Categorias", icon: Layers, permission: "pricing.read" },
+  { to: "/admin/precos", label: "Tarifas", icon: DollarSign, permission: "pricing.read" },
+  { to: "/admin/cupons", label: "Promoções", icon: Ticket, permission: "settings.manage" },
+  { to: "/admin/assinaturas", label: "Assinaturas", icon: CreditCard, permission: "finance.read" },
+  { to: "/admin/pagamentos", label: "Pagamentos", icon: Wallet, permission: "finance.read" },
+  { to: "/admin/financeiro-motoristas", label: "Financeiro motoristas", icon: Wallet, permission: "finance.read" },
+  { to: "/admin/financeiro", label: "Financeiro", icon: Wallet, permission: "finance.read" },
+  { to: "/admin/relatorios", label: "Relatórios", icon: FileBarChart, permission: "metrics.read" },
+  { to: "/admin/analytics", label: "Analytics & BI", icon: TrendingUp, permission: "metrics.read" },
+  { to: "/admin/suporte", label: "Suporte", icon: LifeBuoy, permission: "support.read" },
+  { to: "/admin/notificacoes", label: "Notificações", icon: Bell, permission: "notifications.send" },
+  { to: "/admin/configuracoes", label: "Configurações", icon: Settings, permission: "settings.manage" },
+  { to: "/admin/seguranca", label: "Segurança", icon: Lock, permission: "operations.read" },
+  { to: "/admin/backups", label: "Backups", icon: Database, permission: "settings.manage" },
+  { to: "/admin/administradores", label: "Administradores", icon: ShieldCheck, permission: "roles.manage" },
+  { to: "/admin/logs", label: "Logs", icon: ScrollText, permission: "audit.read" },
 ];
 
-/** Compact, centered APOIS mark used in the sidebar header. */
 function SidebarBrand() {
   return (
     <div className="flex flex-col items-center leading-none">
@@ -84,7 +85,7 @@ function SidebarBrand() {
       </svg>
       <div className="mt-2 flex flex-col items-center leading-[1.05]">
         <span className="font-display text-[15px] font-bold tracking-[0.22em] text-foreground">APOIS</span>
-        <span className="font-display text-[15px] font-bold tracking-[0.22em] text-primary">DRIVE</span>
+        <span className="font-display text-[12px] font-bold tracking-[0.22em] text-primary">ADMIN</span>
       </div>
     </div>
   );
@@ -93,26 +94,40 @@ function SidebarBrand() {
 export function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
+  const [access, setAccess] = useState<AdminAccessContext | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    void loadAdminAccess().then((next) => {
+      if (alive) setAccess(next);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const visibleNav = useMemo(() => {
+    if (!access) return [];
+    const permissionSet = new Set(access.permissions);
+    return ADMIN_NAV.filter((item) => permissionSet.has(item.permission));
+  }, [access]);
 
   return (
     <aside className="flex h-full w-[260px] flex-col bg-card text-card-foreground border-r border-border/60">
-      {/* Brand header */}
       <div className="relative px-5 pt-6 pb-5">
         <span className="absolute right-3 top-3 rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.18em] text-primary">
-          Admin
+          {access?.role ?? "Admin"}
         </span>
         <div className="flex justify-center">
           <SidebarBrand />
         </div>
       </div>
 
-      {/* Subtle separator */}
       <div className="mx-5 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
 
-      {/* Nav */}
       <nav className="flex-1 overflow-y-auto px-3 py-4">
         <ul className="space-y-0.5">
-          {ADMIN_NAV.map(({ to, label, icon: Icon }) => {
+          {visibleNav.map(({ to, label, icon: Icon }) => {
             const active = pathname === to || pathname.startsWith(`${to}/`);
             return (
               <li key={to}>
@@ -144,7 +159,6 @@ export function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
         </ul>
       </nav>
 
-      {/* Footer */}
       <div className="border-t border-border/60 p-3">
         <DSButton
           variant="ghost"
