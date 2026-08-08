@@ -61,7 +61,7 @@ jobs:
           tests/unit/ride-request.test.ts
 
       - name: Core unit tests
-        run: npx vitest run tests/unit/fare-engine.test.ts tests/unit/ride-state.test.ts tests/unit/ride-request.test.ts
+        run: deno test tests/unit/fare-engine.test.ts tests/unit/ride-state.test.ts tests/unit/ride-request.test.ts
 
       - name: Deno check Edge request
         run: deno check supabase/functions/passenger-ride-request/index.ts
