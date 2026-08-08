@@ -8,6 +8,7 @@ const excludes = (source, needle, label) => assert.ok(!source.includes(needle), 
 const baselineAdmin = read("supabase/baseline/011_admin_control_plane.sql");
 const baselineStaff = read("supabase/baseline/012_admin_staff_provisioning.sql");
 const baselineFinance = read("supabase/baseline/013_admin_finance.sql");
+const baselineSettings = read("supabase/baseline/014_admin_settings.sql");
 const seed = read("supabase/baseline/004_storage_triggers_seed.sql");
 const access = read("src/lib/adminAccess.ts");
 const controlPlane = read("src/lib/adminControlPlane.ts");
@@ -17,6 +18,8 @@ const sidebar = read("src/components/admin/AdminSidebar.tsx");
 const login = read("src/routes/admin.login.tsx");
 const dashboard = read("src/routes/admin.dashboard.tsx");
 const financeRoute = read("src/routes/admin.financeiro.tsx");
+const settingsRoute = read("src/routes/admin.configuracoes.tsx");
+const backupsRoute = read("src/routes/admin.backups.tsx");
 const theme = read("src/apois-admin-theme.css");
 
 // RBAC must be server-authoritative and distinct from mobility user_roles.
@@ -53,6 +56,21 @@ includes(baselineFinance, "driver_withdrawals", "Payout-backed finance");
 includes(finance, 'rpc("admin_get_finance_summary"', "Finance RPC client");
 includes(financeRoute, "ride_settlements + ledgers + driver_withdrawals", "Finance source-of-truth disclosure");
 excludes(financeRoute, '.from("rides")', "Admin finance ride arithmetic");
+
+// Settings are allowlisted and audited server-side. Secrets are not browser-editable.
+includes(baselineSettings, "admin_update_setting", "Audited settings RPC");
+includes(baselineSettings, "settings.manage", "Settings permission");
+includes(baselineSettings, "setting_not_admin_editable", "Settings allowlist");
+includes(baselineSettings, "private.admin_audit", "Settings audit");
+includes(settingsRoute, 'rpc("admin_update_setting"', "Settings RPC client");
+excludes(settingsRoute, '.upsert(', "Direct browser settings upsert");
+excludes(settingsRoute, "google.maps_browser_key_name", "Browser-editable Google secret reference");
+excludes(settingsRoute, "firebase.project_id", "Browser-editable Firebase configuration");
+
+// A CSV download is not represented as a database backup or restore operation.
+includes(backupsRoute, "Backup de banco não é CSV do navegador", "Backup truthfulness");
+excludes(backupsRoute, '.from("backups")', "Fake backup ledger");
+excludes(backupsRoute, "downloadCsv", "Fake browser database backup");
 
 // Navigation is permission-filtered, not merely hidden by hardcoded role names.
 includes(sidebar, "permission: \"drivers.read\"", "Driver nav permission");
