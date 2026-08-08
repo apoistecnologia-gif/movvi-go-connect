@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { CreditCard, RefreshCw, Search, ShieldCheck } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
+import { getAdminSettings } from "@/lib/adminSettings";
 import { DSBadge, DSButton, DSCard, DSCardContent, DSInput, EmptyState, Loading } from "@/design-system";
 import { toast } from "sonner";
 
@@ -49,23 +50,20 @@ function AdminAssinaturasPage() {
   async function load() {
     setLoading(true);
     try {
-      const [driversResult, settingResult] = await Promise.all([
+      const [driversResult, settings] = await Promise.all([
         supabase
           .from("drivers")
           .select("id,name,email,phone,city,state,subscription_status,approval_status,is_online,updated_at")
           .order("updated_at", { ascending: false }),
-        supabase
-          .from("app_settings")
-          .select("value")
-          .eq("key", "subscription.default_plan_price")
-          .maybeSingle(),
+        getAdminSettings(["subscription.default_plan_price"]),
       ]);
       if (driversResult.error) throw driversResult.error;
       setRows((driversResult.data ?? []) as DriverSubscriptionRow[]);
-      setMonthlyPrice(settingResult.error ? null : parseMoneySetting(settingResult.data?.value));
+      setMonthlyPrice(parseMoneySetting(settings.find((row) => row.key === "subscription.default_plan_price")?.value));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Não foi possível carregar as assinaturas.");
       setRows([]);
+      setMonthlyPrice(null);
     } finally {
       setLoading(false);
     }
