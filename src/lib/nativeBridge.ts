@@ -12,10 +12,17 @@
 import { registerDeviceToken } from "@/lib/notifications/deviceTokenService";
 
 const ENABLE_NATIVE_PUSH = import.meta.env.VITE_ENABLE_NATIVE_PUSH === "true";
+const APP_ROLE = import.meta.env.VITE_APP_ROLE;
 
 type CapacitorGlobal = {
   getPlatform?: () => string;
   isNativePlatform?: () => boolean;
+};
+
+type PushData = {
+  url?: string;
+  event?: string;
+  ride_id?: string;
 };
 
 export function isNative(): boolean {
@@ -26,6 +33,24 @@ export function isNative(): boolean {
 
 let initStarted = false;
 let postAuthStarted = false;
+
+function resolvePushTarget(data: PushData | undefined): string | null {
+  const rawUrl = typeof data?.url === "string" && data.url.startsWith("/") ? data.url : null;
+
+  // A mesma Edge Function atende Passageiro e Motorista. Eventos de corrida
+  // destinados ao APK do Motorista nunca podem abrir uma rota do Passageiro
+  // como /corrida/:id ou /corridas. O app ressincroniza a oferta/corrida pelo
+  // backend ao abrir /motorista/app.
+  if (APP_ROLE === "motorista") {
+    if (rawUrl?.startsWith("/motorista/")) return rawUrl;
+    const event = typeof data?.event === "string" ? data.event : "";
+    if (event.startsWith("driver.") || event.startsWith("ride.")) return "/motorista/app";
+    if (rawUrl === "/corridas" || rawUrl?.startsWith("/corrida/")) return "/motorista/app";
+    return rawUrl ?? "/motorista/app";
+  }
+
+  return rawUrl;
+}
 
 /**
  * Inicialização passiva — não pede nada ao usuário, não depende de sessão.
@@ -73,10 +98,8 @@ async function attachPushListenersOnly(): Promise<void> {
     console.warn("[native] registrationError", err);
   });
   PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
-    const url = (action.notification?.data as { url?: string } | undefined)?.url;
-    if (typeof url === "string" && url.startsWith("/")) {
-      window.location.assign(url);
-    }
+    const target = resolvePushTarget(action.notification?.data as PushData | undefined);
+    if (target) window.location.assign(target);
   });
 }
 
