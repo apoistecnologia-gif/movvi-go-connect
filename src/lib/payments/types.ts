@@ -80,6 +80,8 @@ export const SUBSCRIPTION_STATUS_UI_LABELS: Record<SubscriptionUiStatus, string>
 export function toUiStatus(db: string | null | undefined): SubscriptionUiStatus {
   switch (db) {
     case "active":
+    case "ativa":
+    case "teste":
       return "active";
     case "pending":
     case "overdue":

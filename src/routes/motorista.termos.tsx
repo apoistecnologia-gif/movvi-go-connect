@@ -44,7 +44,7 @@ function TermosMotoristaPage() {
   }
 
   return (
-    <SettingsPageShell>
+    <SettingsPageShell variant="driver">
       <SettingsHero
         icon={FileText}
         title="Termos de Uso"

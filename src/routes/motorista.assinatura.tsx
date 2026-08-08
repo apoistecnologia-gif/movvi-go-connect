@@ -110,7 +110,7 @@ function DriverSubscriptionPage() {
 
   if (loading && !driver) {
     return (
-      <SettingsPageShell>
+      <SettingsPageShell variant="driver">
         <Loading label="Carregando assinatura…" />
       </SettingsPageShell>
     );
@@ -135,7 +135,7 @@ function DriverSubscriptionPage() {
   const notApprovedYet = driver?.approval_status !== "aprovado";
 
   return (
-    <SettingsPageShell>
+    <SettingsPageShell variant="driver">
       <SettingsHero
         icon={Crown}
         title="Mensalidade"

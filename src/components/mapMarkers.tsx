@@ -367,6 +367,8 @@ export function InterpolatedDriverMarker({
         position={display}
         heading={displayHeading}
         scale={scale}
+        bodyColor={color}
+        outlineColor="#090A0B"
         zBase={10000}
       />
 

@@ -18,6 +18,7 @@ import { NotificationPermissionPrompt } from "../components/notifications/Notifi
 import { APP_ROLE, isForbiddenPath, defaultLandingPath } from "../lib/appRole";
 import { installMobileFetchProxy } from "../lib/mobileFetchProxy";
 import { initNativeBridge } from "../lib/nativeBridge";
+import { DriverPresenceKeeper } from "../components/DriverPresenceKeeper";
 
 // Ativa o proxy de rede quando rodando dentro do APK (Capacitor).
 // No build web isso é no-op. Precisa rodar antes de qualquer serverFn
@@ -162,6 +163,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <MapThemeProvider>
+          {APP_ROLE === "driver" ? <DriverPresenceKeeper /> : null}
           <Outlet />
           {APP_ROLE === "web" ? <NotificationPermissionPrompt /> : null}
           <Toaster richColors position="top-right" closeButton />

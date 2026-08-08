@@ -9,7 +9,7 @@ import { ArrowLeft, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { MovviHeader } from "@/components/MovviHeader";
-import { BottomNav, DRIVER_NAV } from "@/components/BottomNav";
+import { ApoisDriverBottomNav } from "@/components/ApoisDriverBottomNav";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { SettingsToggleRow } from "@/components/settings/SettingsToggleRow";
 import { DSButton, DSCard, HeadingL, BodySmall, Icon } from "@/design-system";
@@ -136,7 +136,7 @@ function RegaliasPage() {
           </BodySmall>
         </div>
       </main>
-      <BottomNav items={DRIVER_NAV} />
+      <ApoisDriverBottomNav />
     </div>
   );
 }

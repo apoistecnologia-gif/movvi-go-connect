@@ -44,7 +44,7 @@ function PrivacidadeMotoristaPage() {
   }
 
   return (
-    <SettingsPageShell>
+    <SettingsPageShell variant="driver">
       <SettingsHero
         icon={ShieldCheck}
         title="Política de Privacidade"

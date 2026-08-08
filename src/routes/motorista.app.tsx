@@ -332,7 +332,22 @@ function MotoristaApp() {
     navigate({ to: "/" });
   }
   const [position, setPosition] = useState<(LatLng & { heading?: number | null; speed?: number | null }) | null>(null);
-  const [online, setOnline] = useState(false);
+  const [online, setOnline] = useState(() => {
+    try {
+      return localStorage.getItem("apois:driver:online") === "1";
+    } catch {
+      return false;
+    }
+  });
+  const setDesiredOnline = useCallback((value: boolean) => {
+    setOnline(value);
+    try {
+      localStorage.setItem("apois:driver:online", value ? "1" : "0");
+      window.dispatchEvent(new CustomEvent("apois:driver-presence-change", { detail: { online: value } }));
+    } catch {
+      // armazenamento indisponível não pode bloquear a operação do motorista
+    }
+  }, []);
   const [statusBlock, setStatusBlock] = useState<string | null>(null);
   type GpsStatus = "prompt" | "loading" | "granted" | "denied" | "timeout" | "unavailable" | "error";
   const [gpsStatus, setGpsStatus] = useState<GpsStatus>("prompt");
@@ -477,7 +492,7 @@ function MotoristaApp() {
                   ? "Sua conta foi bloqueada pelo administrador."
                   : "Cadastro em análise.";
             setStatusBlock(msg);
-            setOnline(false);
+            setDesiredOnline(false);
             return;
           }
           if (row.subscription_status && !["active", "ativa", "teste"].includes(row.subscription_status)) {
@@ -488,7 +503,7 @@ function MotoristaApp() {
             // Após finalizar, o statusBlock permanece e bloqueia voltar a online.
             if (activeRef.current) {
             } else {
-              setOnline(false);
+              setDesiredOnline(false);
             }
             return;
           }
@@ -638,7 +653,7 @@ function MotoristaApp() {
         initialCenteredRef.current = true;
       }
       if (!isTest) startWatch();
-      setOnline(true);
+      setDesiredOnline(true);
       if (import.meta.env.DEV) console.log(`[APOIS MOTORISTA] online: true (${isTest ? "modo teste" : "GPS real"})`);
     },
     [userId, startWatch],
@@ -654,7 +669,7 @@ function MotoristaApp() {
     setGpsStatus("granted");
     setGpsMessage("Modo teste ativo com localização no Brasil.");
     setShowTestLocationButton(false);
-    setOnline(true);
+    setDesiredOnline(true);
 
     if (mapRef.current) {
       smoothPanZoom(mapRef.current, { lat, lng }, 16, 700);
@@ -675,7 +690,7 @@ function MotoristaApp() {
         navigator.geolocation.clearWatch(watchIdRef.current);
         watchIdRef.current = null;
       }
-      setOnline(false);
+      setDesiredOnline(false);
       return;
     }
     // Offline → tentar ficar online
@@ -766,8 +781,8 @@ function MotoristaApp() {
       const candidates: string[] = Array.isArray((r as any).candidate_driver_ids) ? (r as any).candidate_driver_ids : [];
       const rejected: string[] = Array.isArray((r as any).rejected_driver_ids) ? (r as any).rejected_driver_ids : [];
       const acceptedDriverId = (r as any).accepted_driver_id ?? r.driver_id ?? null;
-      const isCandidate = candidates.includes(userId);
-      const didReject = rejected.includes(userId);
+      const isCandidate = candidates.includes(userId as string);
+      const didReject = rejected.includes(userId as string);
       const expired = computeOfferCountdown(r) <= 0;
 
       if (incomingRef.current?.id === r.id) {
@@ -909,7 +924,7 @@ function MotoristaApp() {
     const resyncDriverRides = async () => {
       const ongoing = await supabase
         .from("rides").select("*")
-        .eq("driver_id", driverId)
+        .eq("driver_id", driverId as string)
         .in("status", ["motorista_a_caminho", "motorista_chegou", "em_viagem"])
         .order("created_at", { ascending: false })
         .limit(1).maybeSingle();
@@ -918,7 +933,7 @@ function MotoristaApp() {
 
       const queued = await (supabase.from("rides") as any)
         .select("*")
-        .eq("driver_id", driverId)
+        .eq("driver_id", driverId as string)
         .eq("status", "procurar_motorista")
         .not("queued_after_ride_id", "is", null)
         .order("queued_at", { ascending: true })
@@ -930,7 +945,7 @@ function MotoristaApp() {
       if (!canReceiveNext || ratingRef.current) return;
       const pending = await supabase
         .from("rides").select("*")
-        .contains("candidate_driver_ids", [userId])
+        .contains("candidate_driver_ids", [userId as string])
         .eq("status", "procurar_motorista")
         .is("driver_id", null)
         .order("created_at", { ascending: false })
@@ -1235,7 +1250,7 @@ function MotoristaApp() {
             lat: s.lat, lng: s.lng,
             distanceMeters: s.distanceMeters,
             instruction: s.instruction,
-            maneuver: s.maneuver,
+            maneuver: s.maneuver ?? undefined,
           })),
         );
         resetSpokenCache();
@@ -1843,7 +1858,8 @@ function IncomingOffer({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 animate-in fade-in duration-200"
+      className="fixed inset-x-0 top-0 z-50 flex items-end justify-center bg-black/40 animate-in fade-in duration-200"
+      style={{ bottom: "calc(env(safe-area-inset-bottom) + 68px)" }}
       role="dialog" aria-modal="true"
     >
       <div
@@ -1931,8 +1947,8 @@ function IncomingOffer({
 
         {/* Footer sticky — botões sempre visíveis */}
         <div
-          className="shrink-0 border-t border-border/60 bg-card px-4 pt-3 sm:px-5"
-          style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 20px)" }}
+          className="sticky bottom-0 z-10 shrink-0 border-t border-white/5 bg-[#08090A] px-4 pt-3"
+          style={{ paddingBottom: "16px" }}
         >
           <div className="grid grid-cols-2 gap-3">
             <DSButton type="button" variant="outline" size="lg" onClick={onReject}>

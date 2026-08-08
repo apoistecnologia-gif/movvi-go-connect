@@ -26,7 +26,7 @@ import { ProfileForm } from "@/components/profile/ProfileForm";
 import { DriverProfessionalProfileDialog } from "@/components/profile/DriverProfessionalProfileDialog";
 import { ProfilePhotoUploader } from "@/components/ProfilePhotoUploader";
 import { MovviHeader } from "@/components/MovviHeader";
-import { BottomNav, DRIVER_NAV } from "@/components/BottomNav";
+import { ApoisDriverBottomNav } from "@/components/ApoisDriverBottomNav";
 import { toast } from "sonner";
 import {
   Avatar,
@@ -146,7 +146,7 @@ function DriverProfilePage() {
   const completed = Number(driver?.completed_rides ?? totalRides);
   const totalRatings = Number(driver?.total_ratings ?? 0);
   const subStatus = (driver?.subscription_status ?? "").toLowerCase();
-  const subActive = subStatus === "active" || subStatus === "ativa";
+  const subActive = subStatus === "active" || subStatus === "ativa" || subStatus === "teste";
   const approval = (driver?.approval_status ?? "").toLowerCase();
   const approvalApproved =
     approval === "approved" || approval === "aprovado" || approval === "active";
@@ -412,7 +412,7 @@ function DriverProfilePage() {
         driverUserId={userId}
       />
 
-      <BottomNav items={DRIVER_NAV} />
+      <ApoisDriverBottomNav />
     </div>
   );
 }

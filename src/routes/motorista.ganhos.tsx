@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { MovviHeader } from "@/components/MovviHeader";
-import { BottomNav, DRIVER_NAV } from "@/components/BottomNav";
+import { ApoisDriverBottomNav } from "@/components/ApoisDriverBottomNav";
 import { supabase } from "@/integrations/supabase/client";
 import { loadDriverProfile } from "@/lib/driverProfile";
 import { downloadCsv } from "@/lib/csvExport";
@@ -114,6 +114,7 @@ function DriverEarningsPage() {
   const [available, setAvailable] = useState<number | null>(null);
   const [totals, setTotals] = useState({ today: 0, week: 0, month: 0 });
   const [sub, setSub] = useState<Awaited<ReturnType<typeof getDriverSubscriptionInfo>> | null>(null);
+  const [driverSubscriptionStatus, setDriverSubscriptionStatus] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -123,6 +124,7 @@ function DriverEarningsPage() {
         return;
       }
       setDriverId(profile.profile.id);
+      setDriverSubscriptionStatus(profile.profile.subscription_status ?? null);
     })();
   }, [navigate]);
 
@@ -185,7 +187,7 @@ function DriverEarningsPage() {
 
   const displayedBalance = available ?? totals.month;
 
-  const subUi = sub ? toUiStatus(sub.subscriptionStatus) : "expired";
+  const subUi = toUiStatus(sub?.subscriptionStatus ?? driverSubscriptionStatus);
   const subLabel = SUBSCRIPTION_STATUS_UI_LABELS[subUi];
   const subActive = subUi === "active";
   const subExpires = sub?.nextDueAt
@@ -400,7 +402,7 @@ function DriverEarningsPage() {
           )}
         </div>
       </main>
-      <BottomNav items={DRIVER_NAV} />
+      <ApoisDriverBottomNav />
     </div>
   );
 }

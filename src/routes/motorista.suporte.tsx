@@ -15,7 +15,7 @@ export const Route = createFileRoute("/motorista/suporte")({
 
 function SuporteMotorista() {
   return (
-    <SettingsPageShell>
+    <SettingsPageShell variant="driver">
       <SettingsHero
         icon={LifeBuoy}
         title="Central de ajuda"

@@ -33,7 +33,7 @@ export function MovviHeader({
     supabase.auth.getUser().then(({ data }) => {
       const u = data.user;
       if (!u) return;
-      const meta = (u.user.user_metadata ?? {}) as Record<string, unknown>;
+      const meta = (u.user_metadata ?? {}) as Record<string, unknown>;
       const fullName = (meta.full_name as string) || (meta.name as string) || "";
       setName(fullName || u.email?.split("@")[0] || "Usuário");
     });

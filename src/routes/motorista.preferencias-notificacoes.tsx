@@ -5,7 +5,7 @@ import { NotificationPreferencesPage } from "@/components/notifications/Notifica
 
 function Page() {
   return (
-    <SettingsPageShell>
+    <SettingsPageShell variant="driver">
       <SettingsHero
         icon={BellRing}
         title="Preferências de notificação"

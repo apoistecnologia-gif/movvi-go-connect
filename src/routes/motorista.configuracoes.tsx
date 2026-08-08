@@ -110,7 +110,7 @@ function DriverSettingsPage() {
   }
 
   return (
-    <SettingsPageShell>
+    <SettingsPageShell variant="driver">
       <SettingsHero
         icon={SettingsIcon}
         title="Configurações"
