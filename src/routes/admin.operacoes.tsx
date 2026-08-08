@@ -1,30 +1,35 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Fragment, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Car, Circle, Route as RouteIcon, Search, Users, X } from "lucide-react";
-
+import { useEffect, useMemo, useState } from "react";
+import { AlertTriangle, Car, CheckCircle2, Circle, Route as RouteIcon, Search, Users } from "lucide-react";
+import { Marker } from "@react-google-maps/api";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { MovviMap } from "@/components/MovviMap";
-import { Marker, Polyline } from "@react-google-maps/api";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Caption, DSButton, DSCard, DSCardContent, DSInput, DSSelect, DSSelectContent, DSSelectItem, DSSelectTrigger, DSSelectValue, EmptyState, Metric, StatusPill, dsStatus } from "@/design-system";
-import { formatDistanceToNow } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import {
+  Caption,
+  DSButton,
+  DSCard,
+  DSCardContent,
+  DSInput,
+  EmptyState,
+  Loading,
+  Metric,
+  StatusPill,
+  ds,
+} from "@/design-system";
+import { formatDate } from "@/lib/formatters";
+import { updateAdminSosAlert } from "@/lib/adminControlPlane";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/operacoes")({
   head: () => ({ meta: [{ title: "Central de Operações — Admin APOIS" }] }),
   component: OpsCenterPage,
 });
 
-/* ─── Types ────────────────────────────────────────── */
 type Driver = {
   id: string;
   user_id: string;
   name: string | null;
-  phone: string | null;
-  photo_url: string | null;
   is_online: boolean;
   current_lat: number | null;
   current_lng: number | null;
@@ -34,858 +39,352 @@ type Driver = {
   vehicle_model: string | null;
   vehicle_plate: string | null;
   vehicle_color: string | null;
-  average_rating: number | null;
-  rating: number | null;
-  completed_rides: number | null;
-  subscription_status: string | null;
   approval_status: string | null;
 };
+
 type Ride = {
   id: string;
   status: string;
   category: string | null;
-  passenger_id: string | null;
+  passenger_id: string;
   driver_id: string | null;
   driver_name: string | null;
-  driver_vehicle: string | null;
   origin_name: string | null;
-  origin_lat: number | null;
-  origin_lng: number | null;
   destination_name: string | null;
-  destination_lat: number | null;
-  destination_lng: number | null;
-  driver_lat: number | null;
-  driver_lng: number | null;
   payment_method: string | null;
   created_at: string;
   accepted_at: string | null;
+  driver_arrived_at: string | null;
   started_at: string | null;
   completed_at: string | null;
-  estimated_price: number | null;
-  duration_min: number | null;
-  distance_km: number | null;
 };
+
 type Sos = {
   id: string;
   user_id: string;
+  driver_id: string | null;
   ride_id: string | null;
   lat: number | null;
   lng: number | null;
   message: string | null;
-  resolved_at: string | null;
+  severity: "low" | "medium" | "high" | "critical";
+  status: "open" | "acknowledged" | "resolved" | "cancelled";
   created_at: string;
+  updated_at: string;
 };
-type PassengerLite = {
-  auth_user_id: string;
+
+type Passenger = {
+  id: string;
   name: string | null;
   phone: string | null;
   city: string | null;
-  avatar_url: string | null;
-  average_rating: number | null;
-  completed_rides: number | null;
 };
 
-const ACTIVE_STATUSES = ["procurar_motorista", "motorista_a_caminho", "motorista_chegou", "em_viagem"] as const;
-const ALL = "__all__";
+const ACTIVE_RIDE_STATUSES = ["procurar_motorista", "motorista_a_caminho", "motorista_chegou", "em_viagem"];
 
 const STATUS_LABEL: Record<string, string> = {
   procurar_motorista: "Buscando motorista",
-  motorista_a_caminho: "A caminho",
-  motorista_chegou: "No local",
+  motorista_a_caminho: "Motorista a caminho",
+  motorista_chegou: "Motorista no local",
   em_viagem: "Em viagem",
-  finalizada: "Finalizada",
 };
 
-const STATUS_PILL: Record<string, keyof typeof dsStatus> = {
-  procurar_motorista: "searching",
-  motorista_a_caminho: "driverComing",
-  motorista_chegou: "arrived",
-  em_viagem: "trip",
-  finalizada: "finished",
-};
-
-/* ─── Component ────────────────────────────────────── */
 function OpsCenterPage() {
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [rides, setRides] = useState<Ride[]>([]);
   const [sos, setSos] = useState<Sos[]>([]);
-  const [passengers, setPassengers] = useState<Map<string, PassengerLite>>(new Map());
-  const [today, setToday] = useState<{ completed: number; cancelled: number }>({ completed: 0, cancelled: 0 });
-
+  const [passengers, setPassengers] = useState<Map<string, Passenger>>(new Map());
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [cityFilter, setCityFilter] = useState<string>(ALL);
-  const [categoryFilter, setCategoryFilter] = useState<string>(ALL);
-  const [statusFilter, setStatusFilter] = useState<string>(ALL);
-  const [showOffline, setShowOffline] = useState(false);
-
-  const [selectedRide, setSelectedRide] = useState<Ride | null>(null);
-  const [selectedDriver, setSelectedDriver] = useState<Driver | null>(null);
-  const [selectedPassenger, setSelectedPassenger] = useState<PassengerLite | null>(null);
+  const [busyAlert, setBusyAlert] = useState<string | null>(null);
 
   async function loadAll() {
-    const dayStart = new Date();
-    dayStart.setHours(0, 0, 0, 0);
-    const [dr, ri, so, tc, tx] = await Promise.all([
-      supabase
+    setLoading(true);
+    const db = supabase as any;
+    const [driverResult, rideResult, sosResult] = await Promise.all([
+      db
         .from("drivers")
-        .select(
-          "id,user_id,name,phone,photo_url,is_online,current_lat,current_lng,last_location_at,category,city,vehicle_model,vehicle_plate,vehicle_color,average_rating,rating,completed_rides,subscription_status,approval_status",
-        )
-        .eq("approval_status", "aprovado"),
-      supabase
+        .select("id,user_id,name,is_online,current_lat,current_lng,last_location_at,category,city,vehicle_model,vehicle_plate,vehicle_color,approval_status")
+        .eq("approval_status", "aprovado")
+        .order("is_online", { ascending: false }),
+      db
         .from("rides")
-        .select(
-          "id,status,category,passenger_id,driver_id,driver_name,driver_vehicle,origin_name,origin_lat,origin_lng,destination_name,destination_lat,destination_lng,driver_lat,driver_lng,payment_method,created_at,accepted_at,started_at,completed_at,estimated_price,duration_min,distance_km",
-        )
-        .in("status", ACTIVE_STATUSES)
+        .select("id,status,category,passenger_id,driver_id,driver_name,origin_name,destination_name,payment_method,created_at,accepted_at,driver_arrived_at,started_at,completed_at")
+        .in("status", ACTIVE_RIDE_STATUSES)
         .order("created_at", { ascending: false }),
-      supabase
+      db
         .from("sos_alerts")
-        .select("id,user_id,ride_id,lat,lng,message,resolved_at,created_at")
-        .is("resolved_at", null)
+        .select("id,user_id,driver_id,ride_id,lat,lng,message,severity,status,created_at,updated_at")
+        .in("status", ["open", "acknowledged"])
         .order("created_at", { ascending: false }),
-      supabase
-        .from("rides")
-        .select("id", { count: "exact", head: true })
-        .eq("status", "finalizada")
-        .gte("completed_at", dayStart.toISOString()),
-      supabase
-        .from("rides")
-        .select("id", { count: "exact", head: true })
-        .like("status", "cancelada%")
-        .gte("created_at", dayStart.toISOString()),
     ]);
-    setDrivers((dr.data ?? []) as Driver[]);
-    setRides((ri.data ?? []) as Ride[]);
-    setSos((so.data ?? []) as Sos[]);
-    setToday({ completed: tc.count ?? 0, cancelled: tx.count ?? 0 });
 
-    // Load passengers referenced in rides
-    const ids = Array.from(
-      new Set((ri.data ?? []).map((r) => r.passenger_id).filter(Boolean) as string[]),
-    );
-    if (ids.length > 0) {
-      const { data: pd } = await supabase
-        .from("users")
-        .select("auth_user_id,name,phone,city,avatar_url,average_rating,completed_rides")
-        .in("auth_user_id", ids);
-      const map = new Map<string, PassengerLite>();
-      for (const p of (pd ?? []) as PassengerLite[]) map.set(p.auth_user_id, p);
-      setPassengers(map);
+    if (driverResult.error) toast.error("Motoristas: " + driverResult.error.message);
+    if (rideResult.error) toast.error("Corridas: " + rideResult.error.message);
+    if (sosResult.error) toast.error("SOS: " + sosResult.error.message);
+
+    const nextDrivers = (driverResult.data ?? []) as Driver[];
+    const nextRides = (rideResult.data ?? []) as Ride[];
+    const nextSos = (sosResult.data ?? []) as Sos[];
+    setDrivers(nextDrivers);
+    setRides(nextRides);
+    setSos(nextSos);
+
+    const passengerIds = [...new Set([...nextRides.map((ride) => ride.passenger_id), ...nextSos.map((alert) => alert.user_id)])];
+    if (passengerIds.length) {
+      const passengerResult = await db.from("users").select("id,name,phone,city").in("id", passengerIds);
+      if (!passengerResult.error) {
+        setPassengers(
+          new Map(
+            (passengerResult.data ?? []).map((passenger: Passenger) => [passenger.id, passenger]),
+          ),
+        );
+      }
     } else {
       setPassengers(new Map());
     }
+    setLoading(false);
   }
 
   useEffect(() => {
-    loadAll();
-    const ch = supabase
-      .channel("admin-ops-center")
-      .on("postgres_changes", { event: "*", schema: "public", table: "drivers" }, loadAll)
-      .on("postgres_changes", { event: "*", schema: "public", table: "rides" }, loadAll)
-      .on("postgres_changes", { event: "*", schema: "public", table: "sos_alerts" }, loadAll)
+    void loadAll();
+    const channel = supabase
+      .channel("admin-ops-canonical")
+      .on("postgres_changes", { event: "*", schema: "public", table: "drivers" }, () => void loadAll())
+      .on("postgres_changes", { event: "*", schema: "public", table: "rides" }, () => void loadAll())
+      .on("postgres_changes", { event: "*", schema: "public", table: "sos_alerts" }, () => void loadAll())
       .subscribe();
     return () => {
-      supabase.removeChannel(ch);
+      void supabase.removeChannel(channel);
     };
   }, []);
 
-  /* ─── Derived data ─── */
-  const availableCities = useMemo(() => {
-    const s = new Set<string>();
-    for (const d of drivers) if (d.city) s.add(d.city);
-    return Array.from(s).sort((a, b) => a.localeCompare(b, "pt-BR"));
-  }, [drivers]);
+  const onlineDrivers = useMemo(() => drivers.filter((driver) => driver.is_online), [drivers]);
+  const busyDriverIds = useMemo(
+    () => new Set(rides.map((ride) => ride.driver_id).filter(Boolean) as string[]),
+    [rides],
+  );
+  const availableDrivers = onlineDrivers.filter((driver) => !busyDriverIds.has(driver.id));
+  const searchingRides = rides.filter((ride) => ride.status === "procurar_motorista");
+  const inProgressRides = rides.filter((ride) => ride.status !== "procurar_motorista");
 
-  const availableCategories = useMemo(() => {
-    const s = new Set<string>();
-    for (const d of drivers) if (d.category) s.add(d.category);
-    for (const r of rides) if (r.category) s.add(r.category);
-    return Array.from(s).sort();
-  }, [drivers, rides]);
+  const term = search.trim().toLowerCase();
+  const filteredRides = rides.filter((ride) => {
+    if (!term) return true;
+    const passenger = passengers.get(ride.passenger_id);
+    return [ride.id, ride.driver_name, passenger?.name, passenger?.phone, ride.origin_name, ride.destination_name]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase()
+      .includes(term);
+  });
 
-  const busyDriverIds = useMemo(() => {
-    const s = new Set<string>();
-    for (const r of rides) if (r.driver_id) s.add(r.driver_id);
-    return s;
-  }, [rides]);
+  const mapCenter = useMemo(() => {
+    const alert = sos.find((item) => item.lat != null && item.lng != null);
+    if (alert?.lat != null && alert.lng != null) return { lat: alert.lat, lng: alert.lng };
+    const driver = onlineDrivers.find((item) => item.current_lat != null && item.current_lng != null);
+    return driver?.current_lat != null && driver.current_lng != null
+      ? { lat: driver.current_lat, lng: driver.current_lng }
+      : null;
+  }, [onlineDrivers, sos]);
 
-  const sosRideIds = useMemo(() => new Set(sos.map((s) => s.ride_id).filter(Boolean) as string[]), [sos]);
-
-  const matchesSearch = (text: string | null | undefined) =>
-    !search || (text ?? "").toLowerCase().includes(search.toLowerCase());
-
-  const filteredDrivers = useMemo(() => {
-    return drivers.filter((d) => {
-      if (cityFilter !== ALL && d.city !== cityFilter) return false;
-      if (categoryFilter !== ALL && d.category !== categoryFilter) return false;
-      if (!d.is_online && !showOffline) return false;
-      if (search) {
-        const hay = [d.name, d.phone, d.vehicle_plate].filter(Boolean).join(" ").toLowerCase();
-        if (!hay.includes(search.toLowerCase())) return false;
-      }
-      return true;
-    });
-  }, [drivers, cityFilter, categoryFilter, showOffline, search]);
-
-  const filteredRides = useMemo(() => {
-    return rides.filter((r) => {
-      if (categoryFilter !== ALL && r.category !== categoryFilter) return false;
-      if (statusFilter !== ALL && r.status !== statusFilter) return false;
-      if (cityFilter !== ALL) {
-        const dr = drivers.find((d) => d.id === r.driver_id);
-        const driverCity = dr?.city ?? null;
-        const originHas = r.origin_name?.toLowerCase().includes(cityFilter.toLowerCase());
-        if (driverCity !== cityFilter && !originHas) return false;
-      }
-      if (search) {
-        const passenger = r.passenger_id ? passengers.get(r.passenger_id) : null;
-        const hay = [
-          r.id,
-          r.driver_name,
-          passenger?.name,
-          passenger?.phone,
-          r.origin_name,
-          r.destination_name,
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase();
-        if (!hay.includes(search.toLowerCase())) return false;
-      }
-      return true;
-    });
-  }, [rides, cityFilter, categoryFilter, statusFilter, search, drivers, passengers]);
-
-  /* ─── KPIs ─── */
-  const kpis = useMemo(() => {
-    const online = drivers.filter((d) => d.is_online).length;
-    const busy = drivers.filter((d) => d.is_online && busyDriverIds.has(d.id)).length;
-    const available = online - busy;
-    const waiting = rides.filter((r) => r.status === "procurar_motorista").length;
-    const inProgress = rides.filter((r) => r.status !== "procurar_motorista").length;
-
-    // ETA average (created_at → accepted_at in seconds)
-    const etas = rides
-      .filter((r) => r.accepted_at)
-      .map((r) => (new Date(r.accepted_at!).getTime() - new Date(r.created_at).getTime()) / 1000);
-    const avgEta = etas.length ? Math.round(etas.reduce((a, b) => a + b, 0) / etas.length) : 0;
-
-    return {
-      available,
-      busy,
-      online,
-      waiting,
-      inProgress,
-      completedToday: today.completed,
-      cancelledToday: today.cancelled,
-      avgEta,
-    };
-  }, [drivers, rides, busyDriverIds, today]);
-
-  const activeSos = sos;
-
-  /* ─── Map helpers ─── */
-  const ready = typeof window !== "undefined" && !!(window as { google?: unknown }).google;
-  const symbol = (color: string, scale = 8, stroke = 2) =>
-    ready
-      ? {
-          path: (window as unknown as { google: { maps: { SymbolPath: { CIRCLE: number } } } }).google.maps
-            .SymbolPath.CIRCLE,
-          scale,
-          fillColor: color,
-          fillOpacity: 1,
-          strokeColor: "#05070D",
-          strokeWeight: stroke,
-        }
-      : undefined;
-
-  const driverMarkerColor = (d: Driver): string => {
-    if (!d.is_online) return "#6b7280";
-    return busyDriverIds.has(d.id) ? "#3b82f6" : "#8DD92B";
-  };
+  async function setSosStatus(alert: Sos, status: "acknowledged" | "resolved") {
+    setBusyAlert(alert.id);
+    try {
+      await updateAdminSosAlert(alert.id, status);
+      toast.success(status === "acknowledged" ? "SOS assumido pela operação" : "SOS marcado como resolvido");
+      await loadAll();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Falha ao atualizar SOS.");
+    } finally {
+      setBusyAlert(null);
+    }
+  }
 
   return (
     <AdminLayout
       title="Central de Operações"
-      description="Monitoramento em tempo real — leitura apenas"
+      description="Motoristas, corridas ativas e alertas SOS no schema canônico"
       actions={
-        <div className="hidden md:flex items-center gap-2 text-xs">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2 py-1 text-primary">
-            <Circle className="h-2 w-2 fill-current" /> Ao vivo
-          </span>
-        </div>
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2 py-1 text-xs text-primary">
+          <Circle className="h-2 w-2 fill-current" /> Ao vivo
+        </span>
       }
     >
-      {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-2 mb-3">
-        <Kpi label="Disponíveis" value={kpis.available} tone="green" />
-        <Kpi label="Ocupados" value={kpis.busy} tone="blue" />
-        <Kpi label="Aguardando" value={kpis.waiting} tone="amber" />
-        <Kpi label="Em corrida" value={kpis.inProgress} tone="violet" />
-        <Kpi label="Finalizadas hoje" value={kpis.completedToday} tone="green" />
-        <Kpi label="Canceladas hoje" value={kpis.cancelledToday} tone="red" />
-        <Kpi label="ETA médio" value={`${Math.round(kpis.avgEta)}s`} tone="neutral" />
-        <Kpi label="SOS ativos" value={activeSos.length} tone={activeSos.length > 0 ? "red" : "neutral"} />
+      <div className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-5">
+        <Kpi label="Online" value={onlineDrivers.length} />
+        <Kpi label="Disponíveis" value={availableDrivers.length} />
+        <Kpi label="Buscando" value={searchingRides.length} />
+        <Kpi label="Em atendimento" value={inProgressRides.length} />
+        <Kpi label="SOS ativos" value={sos.length} danger={sos.length > 0} />
       </div>
 
-      {/* SOS banner */}
-      {activeSos.length > 0 && (
-        <DSCard className="mb-3 border-destructive/60 bg-destructive/10">
-          <DSCardContent className="flex items-center gap-3 p-3">
-            <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-destructive">
-                {activeSos.length} alerta{activeSos.length > 1 ? "s" : ""} SOS ativo{activeSos.length > 1 ? "s" : ""}
-              </p>
-              <p className="text-xs text-muted-foreground truncate">
-                Verifique o painel SOS abaixo. Este módulo é somente leitura.
-              </p>
+      {sos.length > 0 && (
+        <div className="mb-4 space-y-2">
+          {sos.map((alert) => {
+            const passenger = passengers.get(alert.user_id);
+            return (
+              <DSCard key={alert.id} className="border-destructive/50 bg-destructive/10">
+                <DSCardContent className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center">
+                  <AlertTriangle className="h-5 w-5 shrink-0 text-destructive" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <strong className="text-sm">SOS {alert.severity.toUpperCase()}</strong>
+                      <StatusPill status={alert.status === "open" ? "cancelled" : "searching"} label={alert.status === "open" ? "Aberto" : "Assumido"} />
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {passenger?.name ?? "Passageiro"} · {formatDate(alert.created_at)}
+                      {alert.ride_id ? ` · corrida ${alert.ride_id.slice(0, 8)}` : ""}
+                    </p>
+                    {alert.message && <p className="mt-1 text-sm">{alert.message}</p>}
+                  </div>
+                  <div className="flex gap-2">
+                    {alert.status === "open" && (
+                      <DSButton
+                        size="sm"
+                        variant="outline"
+                        disabled={busyAlert === alert.id}
+                        onClick={() => void setSosStatus(alert, "acknowledged")}
+                      >
+                        Assumir
+                      </DSButton>
+                    )}
+                    <DSButton
+                      size="sm"
+                      disabled={busyAlert === alert.id}
+                      onClick={() => void setSosStatus(alert, "resolved")}
+                      className="gap-1"
+                    >
+                      <CheckCircle2 className="h-4 w-4" /> Resolver
+                    </DSButton>
+                  </div>
+                </DSCardContent>
+              </DSCard>
+            );
+          })}
+        </div>
+      )}
+
+      <div className="grid gap-4 xl:grid-cols-[1.3fr_1fr]">
+        <DSCard className="overflow-hidden">
+          <DSCardContent className="p-0">
+            <div className="h-[420px] w-full">
+              <MovviMap center={mapCenter}>
+                {typeof window !== "undefined" && (window as any).google?.maps
+                  ? onlineDrivers.map((driver) =>
+                      driver.current_lat != null && driver.current_lng != null ? (
+                        <Marker
+                          key={`driver-${driver.id}`}
+                          position={{ lat: driver.current_lat, lng: driver.current_lng }}
+                          title={driver.name ?? "Motorista APOIS"}
+                          icon={{
+                            path: (window as any).google.maps.SymbolPath.CIRCLE,
+                            scale: 8,
+                            fillColor: busyDriverIds.has(driver.id) ? "#3b82f6" : ds.brand.greenPrimary,
+                            fillOpacity: 1,
+                            strokeColor: "#05070D",
+                            strokeWeight: 2,
+                          }}
+                        />
+                      ) : null,
+                    )
+                  : null}
+                {typeof window !== "undefined" && (window as any).google?.maps
+                  ? sos.map((alert) =>
+                      alert.lat != null && alert.lng != null ? (
+                        <Marker
+                          key={`sos-${alert.id}`}
+                          position={{ lat: alert.lat, lng: alert.lng }}
+                          title="SOS APOIS"
+                          icon={{
+                            path: (window as any).google.maps.SymbolPath.CIRCLE,
+                            scale: 10,
+                            fillColor: "#ef4444",
+                            fillOpacity: 1,
+                            strokeColor: "#ffffff",
+                            strokeWeight: 3,
+                          }}
+                        />
+                      ) : null,
+                    )
+                  : null}
+              </MovviMap>
             </div>
           </DSCardContent>
         </DSCard>
-      )}
 
-      {/* Filters */}
-      <DSCard className="mb-3 border-border bg-card/60">
-        <DSCardContent className="flex flex-wrap items-center gap-2 p-3">
-          <div className="relative flex-1 min-w-[220px]">
-            <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+        <div className="space-y-3">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <DSInput
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar motorista, passageiro, ID, placa, telefone…"
-              className="h-9 pl-8 text-xs"
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Buscar corrida, passageiro, origem ou destino"
+              className="pl-9"
             />
           </div>
-          <DSSelect value={cityFilter} onValueChange={setCityFilter}>
-            <DSSelectTrigger className="h-9 w-44 text-xs"><DSSelectValue placeholder="Cidade" /></DSSelectTrigger>
-            <DSSelectContent>
-              <DSSelectItem value={ALL}>Todas as cidades</DSSelectItem>
-              {availableCities.map((c) => <DSSelectItem key={c} value={c}>{c}</DSSelectItem>)}
-            </DSSelectContent>
-          </DSSelect>
-          <DSSelect value={categoryFilter} onValueChange={setCategoryFilter}>
-            <DSSelectTrigger className="h-9 w-40 text-xs"><DSSelectValue placeholder="Categoria" /></DSSelectTrigger>
-            <DSSelectContent>
-              <DSSelectItem value={ALL}>Todas categorias</DSSelectItem>
-              {availableCategories.map((c) => <DSSelectItem key={c} value={c}>{c}</DSSelectItem>)}
-            </DSSelectContent>
-          </DSSelect>
-          <DSSelect value={statusFilter} onValueChange={setStatusFilter}>
-            <DSSelectTrigger className="h-9 w-44 text-xs"><DSSelectValue placeholder="Status" /></DSSelectTrigger>
-            <DSSelectContent>
-              <DSSelectItem value={ALL}>Todos status</DSSelectItem>
-              {ACTIVE_STATUSES.map((s) => <DSSelectItem key={s} value={s}>{STATUS_LABEL[s] ?? s}</DSSelectItem>)}
-            </DSSelectContent>
-          </DSSelect>
-          <label className="flex items-center gap-2 text-xs text-muted-foreground">
-            <input
-              type="checkbox"
-              checked={showOffline}
-              onChange={(e) => setShowOffline(e.target.checked)}
-              className="h-3.5 w-3.5 accent-primary"
-            />
-            Mostrar offline
-          </label>
-          {(search || cityFilter !== ALL || categoryFilter !== ALL || statusFilter !== ALL) && (
-            <DSButton
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setSearch("");
-                setCityFilter(ALL);
-                setCategoryFilter(ALL);
-                setStatusFilter(ALL);
-              }}
-              className="h-9 text-xs"
-            >
-              Limpar
-            </DSButton>
+
+          {loading ? (
+            <Loading label="Carregando operação..." />
+          ) : filteredRides.length === 0 ? (
+            <EmptyState icon={RouteIcon} title="Sem corridas ativas" description="As corridas em andamento aparecerão aqui." />
+          ) : (
+            <div className="space-y-2">
+              {filteredRides.map((ride) => {
+                const passenger = passengers.get(ride.passenger_id);
+                return (
+                  <DSCard key={ride.id}>
+                    <DSCardContent className="space-y-2 p-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-mono text-[10px] text-primary">{ride.id.slice(0, 8)}</span>
+                        <StatusPill status={ride.status === "procurar_motorista" ? "searching" : "driverComing"} label={STATUS_LABEL[ride.status] ?? ride.status} />
+                      </div>
+                      <p className="truncate text-sm font-semibold">{passenger?.name ?? "Passageiro"} · {ride.category ?? "—"}</p>
+                      <p className="truncate text-xs text-muted-foreground">{ride.origin_name ?? "Origem"} → {ride.destination_name ?? "Destino"}</p>
+                      <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-muted-foreground">
+                        <span>Motorista: {ride.driver_name ?? "Ainda não atribuído"}</span>
+                        <span>Pagamento: {ride.payment_method ?? "—"}</span>
+                        <span>{formatDate(ride.created_at)}</span>
+                      </div>
+                    </DSCardContent>
+                  </DSCard>
+                );
+              })}
+            </div>
           )}
-        </DSCardContent>
-      </DSCard>
-
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-3">
-        {/* Live Map */}
-        <div className="overflow-hidden rounded-xl border border-border h-[calc(100vh-360px)] min-h-[420px]">
-          <MovviMap>
-            {filteredDrivers.map((d) =>
-              d.current_lat && d.current_lng ? (
-                <Marker
-                  key={d.id}
-                  position={{ lat: Number(d.current_lat), lng: Number(d.current_lng) }}
-                  icon={symbol(driverMarkerColor(d), 8, 2)}
-                  onClick={() => setSelectedDriver(d)}
-                  title={`${d.name ?? "Motorista"} · ${d.is_online ? (busyDriverIds.has(d.id) ? "ocupado" : "disponível") : "offline"}`}
-                />
-              ) : null,
-            )}
-            {filteredRides.map((r) => {
-              if (r.origin_lat == null || r.origin_lng == null) return null;
-              const isSos = sosRideIds.has(r.id);
-              const color = isSos
-                ? "#ef4444"
-                : r.status === "procurar_motorista"
-                  ? "#f59e0b"
-                  : r.status === "em_viagem"
-                    ? "#a855f7"
-                    : "#3b82f6";
-              const origin = { lat: Number(r.origin_lat), lng: Number(r.origin_lng) };
-              const dest =
-                r.destination_lat != null && r.destination_lng != null
-                  ? { lat: Number(r.destination_lat), lng: Number(r.destination_lng) }
-                  : null;
-              const driverPos =
-                r.driver_lat != null && r.driver_lng != null
-                  ? { lat: Number(r.driver_lat), lng: Number(r.driver_lng) }
-                  : null;
-              return (
-                <Fragment key={r.id}>
-                  <Marker
-                    position={origin}
-                    icon={symbol(color, isSos ? 13 : 11, 2)}
-                    onClick={() => setSelectedRide(r)}
-                    title={`Corrida ${r.id.slice(0, 6)} · ${STATUS_LABEL[r.status] ?? r.status}`}
-                  />
-                  {dest && (
-                    <Marker
-                      position={dest}
-                      icon={symbol("#05070D", 6, 2)}
-                      title={`Destino · ${r.id.slice(0, 6)}`}
-                    />
-                  )}
-                  {driverPos && (
-                    <Polyline
-                      path={[driverPos, origin, ...(dest ? [dest] : [])]}
-                      options={{ strokeColor: color, strokeOpacity: 0.7, strokeWeight: 3 }}
-                    />
-                  )}
-                </Fragment>
-              );
-            })}
-          </MovviMap>
         </div>
-
-        {/* Side panel */}
-        <DSCard className="border-border bg-card/60 h-[calc(100vh-360px)] min-h-[420px] flex flex-col">
-          <Tabs defaultValue="rides" className="flex flex-col h-full">
-            <TabsList className="mx-3 mt-3 grid grid-cols-4">
-              <TabsTrigger value="rides" className="text-xs"><RouteIcon className="h-3.5 w-3.5 mr-1" />Corridas</TabsTrigger>
-              <TabsTrigger value="drivers" className="text-xs"><Car className="h-3.5 w-3.5 mr-1" />Motoristas</TabsTrigger>
-              <TabsTrigger value="passengers" className="text-xs"><Users className="h-3.5 w-3.5 mr-1" />Passag.</TabsTrigger>
-              <TabsTrigger value="sos" className="text-xs text-destructive"><AlertTriangle className="h-3.5 w-3.5 mr-1" />SOS</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="rides" className="flex-1 overflow-hidden mt-3">
-              <ScrollArea className="h-full px-3 pb-3">
-                {filteredRides.length === 0 && (
-                  <EmptyState icon={RouteIcon} title="Sem corridas ativas" description="Novas corridas aparecerão aqui em tempo real." />
-                )}
-                <div className="space-y-2">
-                  {filteredRides.map((r) => {
-                    const passenger = r.passenger_id ? passengers.get(r.passenger_id) : null;
-                    const isSos = sosRideIds.has(r.id);
-                    return (
-                      <button
-                        key={r.id}
-                        onClick={() => setSelectedRide(r)}
-                        className={`w-full text-left rounded-lg border ${isSos ? "border-destructive/60 bg-destructive/10" : "border-border bg-background/40"} p-2.5 hover:bg-muted/50 transition-colors`}
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-xs font-mono text-muted-foreground">#{r.id.slice(0, 6)}</span>
-                          <StatusPill status={STATUS_PILL[r.status] ?? "searching"} label={STATUS_LABEL[r.status] ?? r.status} pulse={false} />
-                        </div>
-                        <p className="text-xs mt-1 truncate">
-                          <span className="text-muted-foreground">Pax:</span> {passenger?.name ?? "—"}
-                        </p>
-                        <p className="text-xs truncate">
-                          <span className="text-muted-foreground">Mot:</span> {r.driver_name ?? "—"}
-                        </p>
-                        <div className="flex items-center gap-2 mt-1 text-[10px] text-muted-foreground">
-                          <span>{r.category ?? "—"}</span>
-                          <span>·</span>
-                          <span>{r.payment_method ?? "—"}</span>
-                          <span>·</span>
-                          <span>{formatDistanceToNow(new Date(r.created_at), { locale: ptBR, addSuffix: false })}</span>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </ScrollArea>
-            </TabsContent>
-
-            <TabsContent value="drivers" className="flex-1 overflow-hidden mt-3">
-              <ScrollArea className="h-full px-3 pb-3">
-                <div className="space-y-2">
-                  {filteredDrivers.map((d) => (
-                    <button
-                      key={d.id}
-                      onClick={() => setSelectedDriver(d)}
-                      className="w-full text-left rounded-lg border border-border bg-background/40 p-2.5 hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span
-                          className="h-2 w-2 rounded-full shrink-0"
-                          style={{ background: driverMarkerColor(d) }}
-                        />
-                        <span className="text-xs font-medium truncate flex-1">{d.name ?? "—"}</span>
-                        <span className="text-[10px] text-muted-foreground">{d.vehicle_plate ?? ""}</span>
-                      </div>
-                      <p className="text-[10px] text-muted-foreground truncate mt-0.5">
-                        {d.city ?? "—"} · {d.category ?? "—"} · ★ {(d.average_rating ?? d.rating ?? 0).toFixed(1)}
-                      </p>
-                    </button>
-                  ))}
-                </div>
-              </ScrollArea>
-            </TabsContent>
-
-            <TabsContent value="passengers" className="flex-1 overflow-hidden mt-3">
-              <ScrollArea className="h-full px-3 pb-3">
-                <div className="space-y-2">
-                  {Array.from(passengers.values())
-                    .filter((p) => matchesSearch(p.name) || matchesSearch(p.phone))
-                    .map((p) => (
-                      <button
-                        key={p.auth_user_id}
-                        onClick={() => setSelectedPassenger(p)}
-                        className="w-full text-left rounded-lg border border-border bg-background/40 p-2.5 hover:bg-muted/50 transition-colors"
-                      >
-                        <p className="text-xs font-medium truncate">{p.name ?? "—"}</p>
-                        <p className="text-[10px] text-muted-foreground truncate">
-                          {p.city ?? "—"} · ★ {(p.average_rating ?? 0).toFixed(1)} · {p.completed_rides ?? 0} corridas
-                        </p>
-                      </button>
-                    ))}
-                  {passengers.size === 0 && (
-                    <EmptyState icon={Users} title="Sem passageiros" description="Passageiros em corrida aparecerão aqui." />
-                  )}
-                </div>
-              </ScrollArea>
-            </TabsContent>
-
-            <TabsContent value="sos" className="flex-1 overflow-hidden mt-3">
-              <ScrollArea className="h-full px-3 pb-3">
-                {activeSos.length === 0 && (
-                  <EmptyState icon={AlertTriangle} title="Nenhum alerta ativo" description="Alertas SOS pendentes aparecerão aqui." />
-                )}
-                <div className="space-y-2">
-                  {activeSos.map((s) => {
-                    const ride = rides.find((r) => r.id === s.ride_id);
-                    return (
-                      <div
-                        key={s.id}
-                        className="rounded-lg border border-destructive/60 bg-destructive/10 p-2.5"
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-semibold text-destructive">SOS ATIVO</span>
-                          <span className="text-[10px] text-muted-foreground">
-                            {formatDistanceToNow(new Date(s.created_at), { locale: ptBR, addSuffix: true })}
-                          </span>
-                        </div>
-                        {ride && (
-                          <p className="text-[10px] text-muted-foreground mt-1">
-                            Corrida #{ride.id.slice(0, 6)} · {ride.driver_name ?? "—"}
-                          </p>
-                        )}
-                        {s.message && <p className="text-xs mt-1">{s.message}</p>}
-                        {s.lat != null && s.lng != null && (
-                          <p className="text-[10px] text-muted-foreground mt-1 font-mono">
-                            {s.lat.toFixed(5)}, {s.lng.toFixed(5)}
-                          </p>
-                        )}
-                        {ride && (
-                          <DSButton
-                            size="sm"
-                            variant="outline"
-                            className="mt-2 h-7 text-xs"
-                            onClick={() => setSelectedRide(ride)}
-                          >
-                            Abrir corrida
-                          </DSButton>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </ScrollArea>
-            </TabsContent>
-          </Tabs>
-        </DSCard>
       </div>
 
-      {/* Ride details */}
-      <Sheet open={!!selectedRide} onOpenChange={(o) => !o && setSelectedRide(null)}>
-        <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
-          {selectedRide && (
-            <>
-              <SheetHeader>
-                <SheetTitle className="flex items-center gap-2">
-                  Corrida <span className="font-mono text-sm text-muted-foreground">#{selectedRide.id.slice(0, 8)}</span>
-                </SheetTitle>
-              </SheetHeader>
-              <RideDetail
-                ride={selectedRide}
-                passenger={selectedRide.passenger_id ? passengers.get(selectedRide.passenger_id) ?? null : null}
-                driver={drivers.find((d) => d.id === selectedRide.driver_id) ?? null}
-                onOpenDriver={(d) => { setSelectedRide(null); setSelectedDriver(d); }}
-                onOpenPassenger={(p) => { setSelectedRide(null); setSelectedPassenger(p); }}
-              />
-            </>
-          )}
-        </SheetContent>
-      </Sheet>
-
-      {/* Driver details */}
-      <Sheet open={!!selectedDriver} onOpenChange={(o) => !o && setSelectedDriver(null)}>
-        <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
-          {selectedDriver && (
-            <>
-              <SheetHeader>
-                <SheetTitle>{selectedDriver.name ?? "Motorista"}</SheetTitle>
-              </SheetHeader>
-              <DriverDetail
-                driver={selectedDriver}
-                currentRide={rides.find((r) => r.driver_id === selectedDriver.id) ?? null}
-                onOpenRide={(r) => { setSelectedDriver(null); setSelectedRide(r); }}
-              />
-            </>
-          )}
-        </SheetContent>
-      </Sheet>
-
-      {/* Passenger details */}
-      <Sheet open={!!selectedPassenger} onOpenChange={(o) => !o && setSelectedPassenger(null)}>
-        <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
-          {selectedPassenger && (
-            <>
-              <SheetHeader>
-                <SheetTitle>{selectedPassenger.name ?? "Passageiro"}</SheetTitle>
-              </SheetHeader>
-              <PassengerDetail
-                passenger={selectedPassenger}
-                currentRide={rides.find((r) => r.passenger_id === selectedPassenger.auth_user_id) ?? null}
-                onOpenRide={(r) => { setSelectedPassenger(null); setSelectedRide(r); }}
-              />
-            </>
-          )}
-        </SheetContent>
-      </Sheet>
+      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+        <InfoCard icon={Car} title="Motoristas" value={`${onlineDrivers.length} online`} />
+        <InfoCard icon={Users} title="Passageiros ativos" value={`${new Set(rides.map((ride) => ride.passenger_id)).size}`} />
+        <InfoCard icon={RouteIcon} title="Corridas ativas" value={`${rides.length}`} />
+      </div>
     </AdminLayout>
   );
 }
 
-/* ─── Sub-components ───────────────────────────────── */
-
-function Kpi({ label, value, tone }: { label: string; value: number | string; tone: "green" | "blue" | "amber" | "violet" | "red" | "neutral" }) {
-  const toneColor: Record<string, string> = {
-    green: dsStatus.online.color,
-    blue: dsStatus.trip.color,
-    amber: dsStatus.searching.color,
-    violet: dsStatus.trip.color,
-    red: dsStatus.cancelled.color,
-    neutral: "var(--foreground)",
-  };
+function Kpi({ label, value, danger = false }: { label: string; value: number; danger?: boolean }) {
   return (
-    <DSCard className="border-border bg-card/60">
-      <DSCardContent className="p-3 min-h-[76px]">
-        <Caption className="uppercase tracking-wider text-muted-foreground">{label}</Caption>
-        <Metric className="mt-1 block text-xl leading-none" style={{ color: toneColor[tone] }}>
-          {value}
-        </Metric>
+    <DSCard className={danger ? "border-destructive/50 bg-destructive/10" : undefined}>
+      <DSCardContent className="p-3">
+        <Caption>{label}</Caption>
+        <Metric>{value}</Metric>
       </DSCardContent>
     </DSCard>
   );
 }
 
-function Field({ label, value }: { label: string; value: React.ReactNode }) {
+function InfoCard({ icon: Icon, title, value }: { icon: typeof Car; title: string; value: string }) {
   return (
-    <div>
-      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
-      <p className="text-sm mt-0.5">{value ?? "—"}</p>
-    </div>
-  );
-}
-
-function RideDetail({
-  ride,
-  passenger,
-  driver,
-  onOpenDriver,
-  onOpenPassenger,
-}: {
-  ride: Ride;
-  passenger: PassengerLite | null;
-  driver: Driver | null;
-  onOpenDriver: (d: Driver) => void;
-  onOpenPassenger: (p: PassengerLite) => void;
-}) {
-  const elapsed = formatDistanceToNow(new Date(ride.created_at), { locale: ptBR, addSuffix: false });
-  return (
-    <div className="mt-4 space-y-4">
-      <div className="flex items-center gap-2">
-        <StatusPill status={STATUS_PILL[ride.status] ?? "searching"} label={STATUS_LABEL[ride.status] ?? ride.status} />
-        <span className="text-xs text-muted-foreground">há {elapsed}</span>
-      </div>
-
-      {passenger && (
-        <button
-          onClick={() => onOpenPassenger(passenger)}
-          className="w-full rounded-lg border border-border bg-background/40 p-3 text-left hover:bg-muted/50"
-        >
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Passageiro</p>
-          <p className="text-sm font-medium mt-0.5">{passenger.name ?? "—"}</p>
-          <p className="text-xs text-muted-foreground">★ {(passenger.average_rating ?? 0).toFixed(1)} · {passenger.completed_rides ?? 0} corridas</p>
-        </button>
-      )}
-
-      {driver && (
-        <button
-          onClick={() => onOpenDriver(driver)}
-          className="w-full rounded-lg border border-border bg-background/40 p-3 text-left hover:bg-muted/50"
-        >
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Motorista</p>
-          <p className="text-sm font-medium mt-0.5">{driver.name ?? "—"}</p>
-          <p className="text-xs text-muted-foreground">
-            {driver.vehicle_model ?? "—"} · {driver.vehicle_plate ?? "—"} · ★ {(driver.average_rating ?? driver.rating ?? 0).toFixed(1)}
-          </p>
-        </button>
-      )}
-
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Categoria" value={ride.category ?? "—"} />
-        <Field label="Pagamento" value={ride.payment_method ?? "—"} />
-        <Field label="Distância" value={ride.distance_km ? `${ride.distance_km.toFixed(1)} km` : "—"} />
-        <Field label="Duração est." value={ride.duration_min ? `${Math.round(ride.duration_min)} min` : "—"} />
-        <Field label="Preço est." value={ride.estimated_price ? `R$ ${ride.estimated_price.toFixed(2)}` : "—"} />
-        <Field label="Tempo decorrido" value={elapsed} />
-      </div>
-
-      <div className="rounded-lg border border-border bg-background/40 p-3 space-y-2">
-        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Rota</p>
-        <div className="flex items-start gap-2">
-          <span className="mt-1 h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
-          <p className="text-xs">{ride.origin_name ?? "—"}</p>
+    <DSCard>
+      <DSCardContent className="flex items-center gap-3 p-4">
+        <Icon className="h-5 w-5 text-primary" />
+        <div>
+          <p className="text-xs text-muted-foreground">{title}</p>
+          <p className="font-semibold">{value}</p>
         </div>
-        <div className="flex items-start gap-2">
-          <span className="mt-1 h-2 w-2 rounded-full bg-destructive shrink-0" />
-          <p className="text-xs">{ride.destination_name ?? "—"}</p>
-        </div>
-      </div>
-
-      <div className="rounded-lg border border-border bg-background/40 p-3 space-y-1.5">
-        <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Timeline</p>
-        <TimelineRow label="Solicitada" ts={ride.created_at} />
-        <TimelineRow label="Aceita" ts={ride.accepted_at} />
-        <TimelineRow label="Iniciada" ts={ride.started_at} />
-        <TimelineRow label="Concluída" ts={ride.completed_at} />
-      </div>
-    </div>
+      </DSCardContent>
+    </DSCard>
   );
 }
-
-function TimelineRow({ label, ts }: { label: string; ts: string | null }) {
-  return (
-    <div className="flex items-center justify-between text-xs">
-      <span className="text-muted-foreground">{label}</span>
-      <span className={ts ? "" : "text-muted-foreground/50"}>
-        {ts ? new Date(ts).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "—"}
-      </span>
-    </div>
-  );
-}
-
-function DriverDetail({
-  driver,
-  currentRide,
-  onOpenRide,
-}: {
-  driver: Driver;
-  currentRide: Ride | null;
-  onOpenRide: (r: Ride) => void;
-}) {
-  const lastGps = driver.last_location_at
-    ? formatDistanceToNow(new Date(driver.last_location_at), { locale: ptBR, addSuffix: true })
-    : "—";
-  return (
-    <div className="mt-4 space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <StatusPill status={driver.is_online ? "online" : "offline"} />
-        {driver.subscription_status && (
-          <span className="inline-flex items-center rounded-full border border-border bg-muted/40 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            {driver.subscription_status}
-          </span>
-        )}
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Telefone" value={driver.phone ?? "—"} />
-        <Field label="Cidade" value={driver.city ?? "—"} />
-        <Field label="Categoria" value={driver.category ?? "—"} />
-        <Field label="Avaliação" value={`★ ${(driver.average_rating ?? driver.rating ?? 0).toFixed(1)}`} />
-        <Field label="Corridas" value={driver.completed_rides ?? 0} />
-        <Field label="GPS atualizado" value={lastGps} />
-        <Field label="Veículo" value={`${driver.vehicle_model ?? "—"} ${driver.vehicle_color ?? ""}`.trim()} />
-        <Field label="Placa" value={driver.vehicle_plate ?? "—"} />
-      </div>
-
-      {driver.current_lat && driver.current_lng && (
-        <div className="rounded-lg border border-border bg-background/40 p-3">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Localização atual</p>
-          <p className="text-xs font-mono mt-1">
-            {driver.current_lat.toFixed(5)}, {driver.current_lng.toFixed(5)}
-          </p>
-        </div>
-      )}
-
-      {currentRide && (
-        <button
-          onClick={() => onOpenRide(currentRide)}
-          className="w-full rounded-lg border border-border bg-background/40 p-3 text-left hover:bg-muted/50"
-        >
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Corrida atual</p>
-          <p className="text-sm font-medium mt-0.5">#{currentRide.id.slice(0, 8)}</p>
-          <p className="text-xs text-muted-foreground">{STATUS_LABEL[currentRide.status] ?? currentRide.status}</p>
-        </button>
-      )}
-    </div>
-  );
-}
-
-function PassengerDetail({
-  passenger,
-  currentRide,
-  onOpenRide,
-}: {
-  passenger: PassengerLite;
-  currentRide: Ride | null;
-  onOpenRide: (r: Ride) => void;
-}) {
-  return (
-    <div className="mt-4 space-y-4">
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Telefone" value={passenger.phone ?? "—"} />
-        <Field label="Cidade" value={passenger.city ?? "—"} />
-        <Field label="Avaliação" value={`★ ${(passenger.average_rating ?? 0).toFixed(1)}`} />
-        <Field label="Corridas" value={passenger.completed_rides ?? 0} />
-      </div>
-
-      {currentRide && (
-        <button
-          onClick={() => onOpenRide(currentRide)}
-          className="w-full rounded-lg border border-border bg-background/40 p-3 text-left hover:bg-muted/50"
-        >
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Corrida atual</p>
-          <p className="text-sm font-medium mt-0.5">#{currentRide.id.slice(0, 8)}</p>
-          <p className="text-xs text-muted-foreground truncate">{currentRide.origin_name ?? "—"}</p>
-          <p className="text-xs text-muted-foreground truncate">→ {currentRide.destination_name ?? "—"}</p>
-        </button>
-      )}
-    </div>
-  );
-}
-
-// suppress unused import warning
-void X;
