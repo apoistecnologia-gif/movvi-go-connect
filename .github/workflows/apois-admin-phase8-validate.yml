@@ -1,0 +1,51 @@
+name: APOIS Corridas — Admin Phase 8
+
+on:
+  push:
+    branches:
+      - fix/apois-corridas-consolidacao
+    paths:
+      - "src/routes/admin.**"
+      - "src/components/admin/**"
+      - "src/components/AdminGuard.tsx"
+      - "src/lib/admin*.ts"
+      - "src/apois-admin-theme.css"
+      - "supabase/baseline/011_admin_control_plane.sql"
+      - "supabase/baseline/012_admin_staff_provisioning.sql"
+      - "supabase/baseline/013_admin_finance.sql"
+      - "supabase/baseline/004_storage_triggers_seed.sql"
+      - "tests/admin/**"
+      - ".github/workflows/apois-admin-phase8-validate.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: apois-admin-phase8-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Validate Admin Phase 8 contracts
+        run: node tests/admin/phase8-contract.mjs
+
+      - name: TypeScript
+        run: npm run typecheck
+
+      - name: Production build
+        run: npm run build
