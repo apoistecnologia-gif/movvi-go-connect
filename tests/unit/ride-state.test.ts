@@ -1,35 +1,37 @@
-import { describe, expect, it } from "vitest";
-import { canTransitionRide, isTerminalRideStatus } from "../../supabase/functions/_shared/ride-state";
+/* global Deno */
+import { canTransitionRide, isTerminalRideStatus } from "../../supabase/functions/_shared/ride-state.ts";
 
-describe("APOIS canonical ride state machine", () => {
-  it("accepts the valid main lifecycle", () => {
-    expect(canTransitionRide("agendada", "procurar_motorista", "system")).toBe(true);
-    expect(canTransitionRide("procurar_motorista", "motorista_a_caminho", "driver", { hasValidOffer: true })).toBe(true);
-    expect(canTransitionRide("motorista_a_caminho", "motorista_chegou", "driver")).toBe(true);
-    expect(canTransitionRide("motorista_chegou", "em_viagem", "driver", { pinVerified: true })).toBe(true);
-    expect(canTransitionRide("em_viagem", "finalizada", "driver")).toBe(true);
-  });
+function assertEquals(actual: unknown, expected: unknown, label: string): void {
+  if (actual !== expected) throw new Error(`${label}: expected ${expected}, got ${actual}`);
+}
 
-  it("rejects accepting without a valid offer", () => {
-    expect(canTransitionRide("procurar_motorista", "motorista_a_caminho", "driver", { hasValidOffer: false })).toBe(false);
-  });
+Deno.test("ride state: accepts valid main lifecycle", () => {
+  assertEquals(canTransitionRide("agendada", "procurar_motorista", "system"), true, "scheduled search");
+  assertEquals(canTransitionRide("procurar_motorista", "motorista_a_caminho", "driver", { hasValidOffer: true }), true, "accept");
+  assertEquals(canTransitionRide("motorista_a_caminho", "motorista_chegou", "driver"), true, "arrival");
+  assertEquals(canTransitionRide("motorista_chegou", "em_viagem", "driver", { pinVerified: true }), true, "start");
+  assertEquals(canTransitionRide("em_viagem", "finalizada", "driver"), true, "finish");
+});
 
-  it("rejects ride start without verified PIN", () => {
-    expect(canTransitionRide("motorista_chegou", "em_viagem", "driver", { pinVerified: false })).toBe(false);
-  });
+Deno.test("ride state: rejects acceptance without valid offer", () => {
+  assertEquals(canTransitionRide("procurar_motorista", "motorista_a_caminho", "driver", { hasValidOffer: false }), false, "invalid offer");
+});
 
-  it("never treats no-driver timeout as passenger cancellation", () => {
-    expect(canTransitionRide("procurar_motorista", "expired", "system")).toBe(true);
-    expect(canTransitionRide("procurar_motorista", "cancelada_passageiro", "system")).toBe(false);
-  });
+Deno.test("ride state: rejects start without verified PIN", () => {
+  assertEquals(canTransitionRide("motorista_chegou", "em_viagem", "driver", { pinVerified: false }), false, "pin gate");
+});
 
-  it("blocks passenger cancellation after driver arrival", () => {
-    expect(canTransitionRide("motorista_chegou", "cancelada_passageiro", "passenger", { cancellationAllowed: true })).toBe(false);
-    expect(canTransitionRide("em_viagem", "cancelada_passageiro", "passenger", { cancellationAllowed: true })).toBe(false);
-  });
+Deno.test("ride state: no-driver timeout is not passenger cancellation", () => {
+  assertEquals(canTransitionRide("procurar_motorista", "expired", "system"), true, "system expiration");
+  assertEquals(canTransitionRide("procurar_motorista", "cancelada_passageiro", "system"), false, "system cannot impersonate passenger cancellation");
+});
 
-  it("does not transition out of terminal states", () => {
-    expect(isTerminalRideStatus("finalizada")).toBe(true);
-    expect(canTransitionRide("finalizada", "procurar_motorista", "admin")).toBe(false);
-  });
+Deno.test("ride state: blocks passenger cancellation after Driver arrival", () => {
+  assertEquals(canTransitionRide("motorista_chegou", "cancelada_passageiro", "passenger", { cancellationAllowed: true }), false, "after arrival");
+  assertEquals(canTransitionRide("em_viagem", "cancelada_passageiro", "passenger", { cancellationAllowed: true }), false, "in progress");
+});
+
+Deno.test("ride state: terminal states do not transition", () => {
+  assertEquals(isTerminalRideStatus("finalizada"), true, "terminal");
+  assertEquals(canTransitionRide("finalizada", "procurar_motorista", "admin"), false, "no transition after finish");
 });
