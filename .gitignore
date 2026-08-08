@@ -16,6 +16,16 @@ dist-ssr
 .nitro
 *.local
 
+# Environment files are local/runtime configuration.
+.env
+.env.local
+.env.development
+.env.production
+.env.staging
+.env.*.local
+!.env.example
+!.env.mobile
+
 # Wrangler / Cloudflare
 .wrangler/
 .dev.vars
