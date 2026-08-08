@@ -23,6 +23,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { formatBRL, formatNumber, formatDate } from "@/lib/formatters";
 import { getAdminDashboardMetrics, type AdminDashboardMetrics } from "@/lib/adminControlPlane";
+import { APOIS_ADMIN_MAP } from "@/lib/adminVisual";
 import {
   DSCard,
   DSCardContent,
@@ -37,7 +38,6 @@ import {
   StatusPill,
   EmptyState,
   Loading,
-  ds,
 } from "@/design-system";
 
 export const Route = createFileRoute("/admin/dashboard")({
@@ -203,9 +203,9 @@ function AdminDashboardPage() {
                       icon={{
                         path: googleApi.maps.SymbolPath.CIRCLE,
                         scale: 7,
-                        fillColor: ds.brand.greenPrimary,
+                        fillColor: APOIS_ADMIN_MAP.gold,
                         fillOpacity: 1,
-                        strokeColor: ds.brand.black,
+                        strokeColor: APOIS_ADMIN_MAP.black,
                         strokeWeight: 2,
                       }}
                     />
