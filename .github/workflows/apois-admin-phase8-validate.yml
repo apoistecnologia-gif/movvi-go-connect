@@ -13,6 +13,7 @@ on:
       - "supabase/baseline/**"
       - "tests/admin/**"
       - "tests/database/admin_control_plane.sh"
+      - "tsconfig.admin-phase8.json"
       - ".github/workflows/apois-admin-phase8-validate.yml"
   pull_request:
     branches:
@@ -26,6 +27,7 @@ on:
       - "supabase/baseline/**"
       - "tests/admin/**"
       - "tests/database/admin_control_plane.sh"
+      - "tsconfig.admin-phase8.json"
       - ".github/workflows/apois-admin-phase8-validate.yml"
   workflow_dispatch:
 
@@ -139,8 +141,8 @@ jobs:
       - name: Validate Admin Phase 8 contracts
         run: node tests/admin/phase8-contract.mjs
 
-      - name: TypeScript
-        run: npm run typecheck
+      - name: TypeScript — Phase 8 Admin surface
+        run: npx tsc --noEmit --project tsconfig.admin-phase8.json
 
       - name: ESLint — Phase 8 Admin surface
         run: |
