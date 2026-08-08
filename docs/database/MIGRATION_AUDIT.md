@@ -86,6 +86,38 @@ Auditoria somente leitura confirmou:
 
 Há usuário vivo com `public.users.id != public.users.auth_user_id`, portanto migrations que assumam igualdade entre essas identidades são incompatíveis.
 
+### `rides` vivo
+
+A inspeção atual do `information_schema.columns` confirma que o schema oficial já utiliza a geração mais nova para os pares antes considerados divergentes:
+
+- localização operacional: `driver_latitude` / `driver_longitude` / `driver_heading`;
+- polyline: `encoded_polyline`;
+- cancelamento: `cancellation_reason` / `cancelled_by` / `cancelled_at`;
+- PIN: `security_code`.
+
+Não existem atualmente em `public.rides` as colunas antigas `driver_lat`, `driver_lng`, `route_polyline`, `cancel_reason` ou `safety_code`.
+
+O bloqueio de baseline, portanto, **não é duplicidade dessas colunas no banco vivo**; é a necessidade de eliminar contratos locais/types/runtime ainda presos às gerações antigas e provar que todos os componentes usam o schema oficial atual.
+
+### `tariff_rules` vivo
+
+A tabela oficial atual usa a geração estruturada por categoria:
+
+- `category_id`;
+- `city`;
+- `base_fare`;
+- `min_fare`;
+- `per_km`;
+- `per_min`;
+- `stop_fee`;
+- `fixed_fee`;
+- `dynamic_multiplier`;
+- taxas específicas de serviços (`helper1_fee`, `helper2_fee`, `heavy_furniture_fee`, `assembly_fee`, `packing_fee`, `difficult_access_fee`, `stair_fee`, `heavy_vehicle_fee`, `accident_fee`, `platform_fee`, `locked_wheels_fee`, `garage_fee`, `max_weight_kg`, `per_kg`).
+
+Não existem no `tariff_rules` vivo as colunas legadas `category_key`, `field_key` ou `value`.
+
+**Decisão:** a família `base_fare/min_fare/per_km/...` é a candidata canônica para a Fare Engine. Código/types que ainda descrevam `field_key/value` são legados e precisam ser migrados; o banco não deve voltar à geração antiga.
+
 ### Presença/dispatch
 
 Triggers atualmente presentes incluem:
@@ -116,6 +148,17 @@ Existem:
 
 Ainda é necessário comprovar UI + backend + persistência + Admin + erro/loading + testes.
 
+### Storage
+
+Buckets verificados:
+
+- privados: `driver-cnh`, `driver-selfies`, `vehicle-documents`, `profile-photos`, `documents`;
+- público: `public-media`.
+
+Os buckets sensíveis do motorista são privados e as policies atuais limitam os caminhos do próprio usuário por prefixo `auth.uid()`, com leitura administrativa baseada em permissão. Existe policy específica para permitir ao Passageiro visualizar somente a foto de perfil do motorista relacionado à própria corrida em estados autorizados.
+
+A configuração atende a direção `DENY BY DEFAULT`, mas ainda precisa de testes de autorização negativos antes de ser considerada homologada.
+
 ### Notificações
 
 Existe `notifications_delete_own`, além das policies de leitura/atualização próprias. O Notification Engine ainda precisa ser centralizado e auditado para foreground/background/push nativo.
@@ -131,18 +174,15 @@ Motivos:
 3. reaplicar migrations antigas pode reintroduzir contratos de identidade/tarifa/corrida superados;
 4. o objetivo é uma baseline nova e reproduzível, não reproduzir cegamente toda a história.
 
-## Problemas de schema que impedem uma baseline imediata
+## Problemas que ainda impedem uma baseline imediata
 
-O banco vivo ainda contém gerações concorrentes de contrato que precisam ser consolidadas antes de gerar baseline:
-
-- `rides.driver_lat/driver_lng` e `rides.driver_latitude/driver_longitude`;
-- `rides.route_polyline` e `rides.encoded_polyline`;
-- `rides.cancel_reason` e `rides.cancellation_reason`;
-- `rides.safety_code` e `rides.security_code`;
-- `tariff_rules.category_key/field_key/value` coexistindo com `base_fare/min_fare/per_km/per_min/stop_fee/fixed_fee/dynamic_multiplier`;
-- types do Passageiro e Motorista divergem apesar de ambos apontarem para o mesmo Supabase oficial.
-
-Nenhuma coluna será removida antes de mapear todos os leitores/escritores atuais e confirmar qual contrato sobreviverá.
+- types do Passageiro e Motorista divergem apesar de ambos apontarem para o mesmo Supabase oficial;
+- partes do código legado ainda podem referenciar contratos antigos que já não existem no banco vivo;
+- não existe ainda uma state machine única documentada e aplicada server-side;
+- não existe ainda uma Fare Engine única comprovadamente usada por estimate, request, settlement e Admin;
+- settlement/ledger de corrida ainda não foi consolidado;
+- histórico local de migrations não corresponde 1:1 ao histórico registrado no projeto oficial;
+- ainda falta um ambiente separado validado para testar uma fresh install da baseline.
 
 ## Critério para a futura baseline
 
@@ -176,10 +216,10 @@ E deverá refletir, no mínimo:
 
 ## Próximas ações
 
-1. mapear cada query/RPC que ainda usa campos duplicados de `rides`;
-2. comparar as duas gerações de `tariff_rules` com pricing/request/finalização/Admin;
+1. localizar runtime/types que ainda referenciem os contratos antigos já ausentes do banco;
+2. mapear pricing/request/finalização/Admin contra o `tariff_rules` vivo;
 3. definir Ride entity + state machine oficiais;
-4. definir Fare Engine única antes de alterar `tariff_rules`;
+4. definir Fare Engine única antes de qualquer alteração estrutural;
 5. definir settlement/ledger antes de promover wallet como definitivo;
 6. somente então desenhar uma baseline nova, sem executar nada destrutivo no Supabase oficial.
 
