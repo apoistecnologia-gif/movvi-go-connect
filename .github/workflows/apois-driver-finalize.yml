@@ -42,6 +42,12 @@ jobs:
       - name: Aplicar correções finais
         run: node .github/scripts/apois-driver-finalize.mjs
 
+      - name: Preservar workflows no commit de fonte
+        run: |
+          git checkout HEAD -- .github/workflows/apois-driver-homologation.yml
+          git checkout HEAD -- .github/workflows/apois-driver-finalize.yml
+          git checkout HEAD -- .github/scripts/apois-driver-finalize.mjs
+
       - name: Corrigir tipos estritos detectados
         run: |
           python3 - <<'PY'
@@ -61,13 +67,14 @@ jobs:
           p.write_text(s)
           PY
 
-      - name: Verificar trecho e diff
-        run: |
-          nl -ba src/routes/motorista.app.tsx | sed -n '920,935p'
-          git diff --check
+      - name: Verificar diff
+        run: git diff --check
 
       - name: Instalar dependências
         run: npm install --no-audit --no-fund
+
+      - name: Remover lock temporário do npm
+        run: rm -f package-lock.json
 
       - name: Typecheck
         run: npx tsc --noEmit
