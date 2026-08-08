@@ -40,6 +40,7 @@ function AdminLoginPage() {
   return (
     <div className="apois-admin-theme min-h-screen bg-background text-foreground">
       <AuthShell
+        brandLabel="ADMIN"
         title={
           <span className="flex items-center gap-2">
             <ShieldCheck className="h-6 w-6 text-primary" /> Painel administrativo
