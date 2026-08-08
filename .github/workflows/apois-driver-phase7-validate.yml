@@ -7,6 +7,7 @@ on:
     paths:
       - "src/routes/motorista*.tsx"
       - "src/lib/driver*.ts"
+      - "src/lib/notifications/**"
       - "src/lib/nativeBridge.ts"
       - "src/lib/appRole.ts"
       - "src/components/AuthShell.tsx"
@@ -32,6 +33,7 @@ on:
     paths:
       - "src/routes/motorista*.tsx"
       - "src/lib/driver*.ts"
+      - "src/lib/notifications/**"
       - "src/lib/nativeBridge.ts"
       - "src/lib/appRole.ts"
       - "src/components/AuthShell.tsx"
@@ -138,7 +140,7 @@ jobs:
           node-version: 22
 
       - name: Setup Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "21"
@@ -160,6 +162,7 @@ jobs:
             src/lib/driverFinance.mobile.ts \
             src/lib/driverRideLifecycle.mobile.ts \
             src/lib/nativeBridge.ts \
+            src/lib/notifications/deviceTokenService.ts \
             src/routes/motorista.documentos.tsx \
             src/routes/motorista.ganhos.tsx
 
@@ -206,7 +209,9 @@ jobs:
       - name: Native push and background-location gate
         run: |
           set -euo pipefail
-          grep -F 'driver_register_push_token' src/lib/nativeBridge.ts
+          grep -F 'PushNotifications.register' src/lib/nativeBridge.ts
+          grep -F 'registerDeviceToken' src/lib/nativeBridge.ts
+          grep -F 'rpc("register_notification_token"' src/lib/notifications/deviceTokenService.ts
           grep -F 'startForegroundService' android-motorista/app/src/main/java/com/apois/motorista/DriverLocationPlugin.java
           grep -F 'driver_set_presence' android-motorista/app/src/main/java/com/apois/motorista/DriverLocationService.java
           grep -F '/functions/v1/send-ride-push' supabase/functions/dispatch-ride/index.ts
