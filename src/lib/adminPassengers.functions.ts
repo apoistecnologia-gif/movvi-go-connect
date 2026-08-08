@@ -1,8 +1,3 @@
-// Admin-only passenger mutations — moved off the browser so the write only
-// happens after the server verifies the caller is authenticated AND holds the
-// `admin` role. RLS on public.users already restricts these columns to
-// admins, but we add defense in depth + input validation here.
-
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -11,24 +6,19 @@ const uuid = z.string().uuid();
 const reason = z.string().trim().min(1).max(500);
 const optionalReason = z.string().trim().max(500).optional().nullable();
 
-type AuthedCtx = {
-  supabase: {
-    from: (t: string) => {
-      update: (patch: Record<string, unknown>) => { eq: (col: string, val: string) => Promise<{ error: { message: string } | null }> };
-      delete: () => { eq: (col: string, val: string) => Promise<{ error: { message: string } | null }> };
-    };
-    rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>;
-  };
-  userId: string;
-};
-
-async function assertAdmin(ctx: AuthedCtx) {
-  const { data, error } = await ctx.supabase.rpc("has_role", {
-    _user_id: ctx.userId,
-    _role: "admin",
+async function setPassengerStatus(
+  context: { supabase: any },
+  id: string,
+  action: "suspend" | "unsuspend" | "block" | "unblock" | "soft_delete",
+  reasonValue?: string | null,
+) {
+  const { data, error } = await context.supabase.rpc("admin_set_passenger_status", {
+    _passenger_id: id,
+    _action: action,
+    _reason: reasonValue ?? null,
   });
-  if (error) throw new Error("role_check_failed");
-  if (!data) throw new Error("forbidden");
+  if (error) throw new Error(error.message);
+  return data;
 }
 
 export const suspendPassenger = createServerFn({ method: "POST" })
@@ -37,27 +27,16 @@ export const suspendPassenger = createServerFn({ method: "POST" })
     z.object({ id: uuid, reason: optionalReason }).parse(input),
   )
   .handler(async ({ data, context }) => {
-    await assertAdmin(context as unknown as AuthedCtx);
-    const patch = {
-      suspended_at: new Date().toISOString(),
-      block_reason: data.reason ? data.reason.trim() : null,
-    };
-    const { error } = await context.supabase.from("users").update(patch).eq("id", data.id);
-    if (error) throw new Error(error.message);
-    return { ok: true as const };
+    const row = await setPassengerStatus(context as any, data.id, "suspend", data.reason ?? null);
+    return { ok: true as const, passenger: row };
   });
 
 export const unsuspendPassenger = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { id: string }) => z.object({ id: uuid }).parse(input))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context as unknown as AuthedCtx);
-    const { error } = await context.supabase
-      .from("users")
-      .update({ suspended_at: null, block_reason: null })
-      .eq("id", data.id);
-    if (error) throw new Error(error.message);
-    return { ok: true as const };
+    const row = await setPassengerStatus(context as any, data.id, "unsuspend");
+    return { ok: true as const, passenger: row };
   });
 
 export const blockPassenger = createServerFn({ method: "POST" })
@@ -66,34 +45,32 @@ export const blockPassenger = createServerFn({ method: "POST" })
     z.object({ id: uuid, reason }).parse(input),
   )
   .handler(async ({ data, context }) => {
-    await assertAdmin(context as unknown as AuthedCtx);
-    const { error } = await context.supabase
-      .from("users")
-      .update({ blocked_at: new Date().toISOString(), block_reason: data.reason })
-      .eq("id", data.id);
-    if (error) throw new Error(error.message);
-    return { ok: true as const };
+    const row = await setPassengerStatus(context as any, data.id, "block", data.reason);
+    return { ok: true as const, passenger: row };
   });
 
 export const unblockPassenger = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { id: string }) => z.object({ id: uuid }).parse(input))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context as unknown as AuthedCtx);
-    const { error } = await context.supabase
-      .from("users")
-      .update({ blocked_at: null, block_reason: null })
-      .eq("id", data.id);
-    if (error) throw new Error(error.message);
-    return { ok: true as const };
+    const row = await setPassengerStatus(context as any, data.id, "unblock");
+    return { ok: true as const, passenger: row };
   });
 
+/**
+ * Compatibility name retained for the current UI. This is deliberately a
+ * server-audited operational soft delete, not a direct DELETE from public.users
+ * and not a claim that auth.users has been erased.
+ */
 export const deletePassenger = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { id: string }) => z.object({ id: uuid }).parse(input))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context as unknown as AuthedCtx);
-    const { error } = await context.supabase.from("users").delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
-    return { ok: true as const };
+    const row = await setPassengerStatus(
+      context as any,
+      data.id,
+      "soft_delete",
+      "Exclusão operacional solicitada no painel administrativo.",
+    );
+    return { ok: true as const, passenger: row, softDeleted: true as const };
   });
