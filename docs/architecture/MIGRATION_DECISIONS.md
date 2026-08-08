@@ -187,3 +187,63 @@ A decisão comercial de provedor por domínio não está documentada no Prompt M
 
 - `franciel046631/apois-entregas`
 - **REMOVER DO ESCOPO:** nenhum código, branch, migration, Supabase ou conceito de delivery será usado no APOIS Corridas.
+
+## 17. Fase 6 — Passageiro
+
+### Rating
+- A: `rides.passenger_rating`, já usado por `driver_rate_passenger` para **Motorista → Passageiro**.
+- B: UI Passageiro que interpretava `passenger_rating` como se fosse avaliação do motorista.
+- C: campo canônico novo `rides.passenger_driver_rating` para **Passageiro → Motorista**.
+- **MANTER:** A com seu significado original para não quebrar o Motorista.
+- **MIGRAR:** Passageiro para C; média do motorista é recalculada server-side a partir de avaliações Passenger → Driver concluídas.
+- **REMOVER:** qualquer uso de `passenger_rating` como nota dada pelo passageiro ao motorista e qualquer `5.0` hardcoded; sem avaliações, a UI mostra `Novo`.
+
+### Compartilhamento de corrida
+- A: `rides.share_token` legado sem contrato completo de expiração/revogação.
+- B: compartilhamento cliente baseado em ID/token já presente.
+- C: RPCs canônicas `passenger_create_or_refresh_share`, `passenger_revoke_share` e `get_shared_passenger_ride`, com token aleatório, expiração, revogação e resposta pública mínima.
+- **MANTER:** a coluna `share_token` como armazenamento compatível.
+- **MIGRAR:** criação/leitura/revogação para C e adicionar `share_expires_at`/`share_revoked_at` de forma aditiva.
+- **REMOVER:** link público previsível por `ride_id`, token eterno e exposição de PIN, telefone, pagamento ou PII desnecessária.
+
+### Segurança / SOS
+- A: `sos_alerts` e contatos de emergência já existentes.
+- B: botões/fluxos de segurança sem vínculo operacional completo.
+- C: `passenger_trigger_sos` com autenticação, ownership da corrida, janela de status, localização, severidade, `ride_id` e evento em `audit_logs`.
+- **MANTER:** tabelas e contatos existentes tecnicamente compatíveis.
+- **MIGRAR:** botão Segurança/SOS do Passageiro para C.
+- **REMOVER:** qualquer SOS placebo. A UI informa corretamente que o alerta APOIS não substitui 190/192.
+
+### Recibo
+- A: telas de histórico que usavam `final_price/estimated_price` como comprovante.
+- B: ledger/settlement canônico da Fase 5.
+- C: `get_passenger_ride_receipt`, que só retorna recibo quando existe `ride_settlements` da corrida concluída.
+- **MANTER:** detalhes operacionais de histórico para corridas não liquidadas.
+- **MIGRAR:** recibo financeiro para C.
+- **REMOVER:** chamar valor reconstruído no frontend de recibo; sem settlement, mostrar explicitamente `Recibo financeiro ainda não disponível`.
+
+### Perfil e foto
+- A: perfil/contatos/preferências já integrados.
+- B: bucket privado `profile-photos` e RLS de primeiro diretório por `auth.uid()`.
+- **MANTER:** B e as políticas privadas existentes.
+- **MIGRAR:** upload de avatar do Passageiro para o bucket privado, persistindo somente o path e exibindo por signed URL temporária.
+- **REMOVER:** dependência de avatar público ou upload sem validação de MIME/tamanho.
+
+### Termos / privacidade / recuperação
+- **MANTER:** rotas reais `/termos` e `/privacidade`, aceite registrado no cadastro e deep link nativo `apoispassageiro://auth/redefinir-senha` já compatível com o Android Manifest.
+- **MIGRAR:** todas as superfícies de perfil/cadastro para links reais e recuperação nativa segura.
+- **REMOVER:** `window.location.origin` como autoridade de redirect dentro do Capacitor.
+
+### Formas de pagamento do Passageiro
+- A: tabela `payment_methods`, na qual linhas históricas Pix/crédito/débito podem estar `is_active=true` mesmo sem gateway eletrônico configurado.
+- B: frontend que convertia `is_active` diretamente em `enabled`.
+- C: RPC `get_passenger_payment_methods`, que consulta server-side `finance.electronic_payment_provider` e só marca meios eletrônicos como disponíveis quando existe provedor explicitamente configurado; `cash` e `wallet` seguem as regras próprias.
+- **MANTER:** cadastro administrativo dos meios de pagamento.
+- **MIGRAR:** frontend para C e manter os meios ativos porém indisponíveis visíveis com explicação, sem permitir seleção.
+- **REMOVER:** `enabled = is_active` para Pix/cartões e qualquer aparência de checkout eletrônico funcional sem provedor real.
+
+### Estado de validação da Fase 6
+- Backend: baseline efêmera completa + testes de integração + invariantes de segurança passaram no workflow `APOIS Corridas — Passenger backend validation`, run `31274524191`.
+- Passageiro: contract tests, TypeScript, lint da superfície alterada, production build, Capacitor build e gate de placeholders passaram no workflow `APOIS Corridas — Passenger Phase 6`, run `31274624790`.
+- **NÃO PROMOVER AINDA:** `007/008/009` são baseline para banco limpo; a produção oficial ainda não recebeu estas mudanças nesta fase. A promoção deve usar migration aditiva revisada, não execução ad-hoc da baseline.
+- Dívida conhecida: o lint global do repositório Passageiro possui erros preexistentes fora da superfície da Fase 6 e será tratado nas fases de testes/auditoria; não foi mascarado como “resolvido”.
