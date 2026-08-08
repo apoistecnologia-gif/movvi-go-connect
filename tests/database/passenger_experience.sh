@@ -102,4 +102,20 @@ RECEIPT=$(psql -Atqc "begin; set local \"request.jwt.claim.sub\"='$PASSENGER_AUT
 [[ "$RECEIPT" == *'"discount_amount_cents": 200'* || "$RECEIPT" == *'"discount_amount_cents":200'* ]] || { echo "Receipt discount missing"; exit 1; }
 [[ "$RECEIPT" == *'"provider_fee_cents": 85'* || "$RECEIPT" == *'"provider_fee_cents":85'* ]] || { echo "Receipt provider fee missing"; exit 1; }
 
+# Payment methods are server-truthed. Electronic methods stay disabled until a provider is configured.
+PAYMENTS_NO_PROVIDER=$(psql -Atqc "begin; set local \"request.jwt.claim.sub\"='$PASSENGER_AUTH'; select public.get_passenger_payment_methods(); commit;")
+PIX_DISABLED=$(printf '%s' "$PAYMENTS_NO_PROVIDER" | psql -Atqc "select coalesce((('$PAYMENTS_NO_PROVIDER'::jsonb)->'methods' @> '[{\"code\":\"pix\",\"enabled\":false}]'::jsonb),false)::int")
+CREDIT_DISABLED=$(printf '%s' "$PAYMENTS_NO_PROVIDER" | psql -Atqc "select coalesce((('$PAYMENTS_NO_PROVIDER'::jsonb)->'methods' @> '[{\"code\":\"credit\",\"enabled\":false}]'::jsonb),false)::int")
+DEBIT_DISABLED=$(printf '%s' "$PAYMENTS_NO_PROVIDER" | psql -Atqc "select coalesce((('$PAYMENTS_NO_PROVIDER'::jsonb)->'methods' @> '[{\"code\":\"debit\",\"enabled\":false}]'::jsonb),false)::int")
+CASH_ENABLED=$(printf '%s' "$PAYMENTS_NO_PROVIDER" | psql -Atqc "select coalesce((('$PAYMENTS_NO_PROVIDER'::jsonb)->'methods' @> '[{\"code\":\"cash\",\"enabled\":true}]'::jsonb),false)::int")
+WALLET_ENABLED=$(printf '%s' "$PAYMENTS_NO_PROVIDER" | psql -Atqc "select coalesce((('$PAYMENTS_NO_PROVIDER'::jsonb)->'methods' @> '[{\"code\":\"wallet\",\"enabled\":true}]'::jsonb),false)::int")
+[[ "$PIX_DISABLED" == "1" && "$CREDIT_DISABLED" == "1" && "$DEBIT_DISABLED" == "1" && "$CASH_ENABLED" == "1" && "$WALLET_ENABLED" == "1" ]] || { echo "Electronic payment methods were exposed without a provider"; exit 1; }
+
+psql -v ON_ERROR_STOP=1 -c "update public.app_settings set value=to_jsonb('test_provider'::text),updated_at=now() where key='finance.electronic_payment_provider';"
+PAYMENTS_WITH_PROVIDER=$(psql -Atqc "begin; set local \"request.jwt.claim.sub\"='$PASSENGER_AUTH'; select public.get_passenger_payment_methods(); commit;")
+PIX_ENABLED=$(psql -Atqc "select coalesce((('$PAYMENTS_WITH_PROVIDER'::jsonb)->'methods' @> '[{\"code\":\"pix\",\"enabled\":true}]'::jsonb),false)::int")
+CREDIT_ENABLED=$(psql -Atqc "select coalesce((('$PAYMENTS_WITH_PROVIDER'::jsonb)->'methods' @> '[{\"code\":\"credit\",\"enabled\":true}]'::jsonb),false)::int")
+DEBIT_ENABLED=$(psql -Atqc "select coalesce((('$PAYMENTS_WITH_PROVIDER'::jsonb)->'methods' @> '[{\"code\":\"debit\",\"enabled\":true}]'::jsonb),false)::int")
+[[ "$PIX_ENABLED" == "1" && "$CREDIT_ENABLED" == "1" && "$DEBIT_ENABLED" == "1" ]] || { echo "Electronic payment methods did not enable after provider configuration"; exit 1; }
+
 echo "APOIS_PASSENGER_EXPERIENCE_OK"
