@@ -1,294 +1,386 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Save, Trash2, Loader2 } from "lucide-react";
+import { Loader2, Save } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
-import { DSButton as Button, DSCard as Card, DSCardContent as CardContent, DSCardHeader as CardHeader, DSCardTitle as CardTitle, DSInput, Loading } from "@/design-system";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  DSButton as Button,
+  DSCard as Card,
+  DSCardContent as CardContent,
+  DSCardHeader as CardHeader,
+  DSCardTitle as CardTitle,
+  DSInput,
+  Loading,
+} from "@/design-system";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { logAdminAction } from "@/lib/adminAudit";
-import { upsertTariffRules, deleteTariffRule } from "@/lib/adminPricing.functions";
-
-function mapAdminError(msg: string): string {
-  if (msg === "forbidden") return "Ação restrita a administradores.";
-  if (/invalid_|^Required$|uuid/i.test(msg)) return "Dados inválidos.";
-  return msg;
-}
+import { upsertTariffRule } from "@/lib/adminPricing.functions";
 
 export const Route = createFileRoute("/admin/precos")({
-  head: () => ({ meta: [{ title: "Preços — Admin MOVVI" }] }),
+  head: () => ({ meta: [{ title: "Preços — Admin APOIS" }] }),
   component: AdminPrecosPage,
 });
 
-type Rule = { id: string; category_key: string; field_key: string; value: number };
-type Category = { key: string; label: string; enabled: boolean };
+type Category = {
+  id: string;
+  code: string;
+  name: string;
+  is_active: boolean;
+  sort_order: number;
+};
 
-/** Campos canônicos por categoria (admin pode adicionar outros à vontade). */
-const CANONICAL_FIELDS: Record<string, { key: string; label: string; hint?: string }[]> = {
-  carros: [
-    { key: "base_fare", label: "Bandeirada (R$)" },
-    { key: "per_km", label: "Por km (R$)" },
-    { key: "per_min", label: "Por minuto (R$)" },
-    { key: "min_fare", label: "Tarifa mínima (R$)" },
-    { key: "wait_per_min", label: "Espera por minuto (R$)" },
-    { key: "free_waiting_min", label: "Espera grátis (min)" },
-    { key: "peak_multiplier", label: "Multiplicador horário de pico" },
-    { key: "night_multiplier", label: "Multiplicador noturno" },
-    { key: "cancellation_fee", label: "Multa de cancelamento (R$)" },
-    { key: "airport_fee", label: "Taxa aeroporto (R$)" },
-    { key: "toll_fee", label: "Pedágio padrão (R$)" },
-    { key: "extra_stop_fee", label: "Parada extra (R$)" },
-  ],
-  motos: [
-    { key: "base_fare", label: "Bandeirada (R$)" },
-    { key: "per_km", label: "Por km (R$)" },
-    { key: "per_min", label: "Por minuto (R$)" },
-    { key: "min_fare", label: "Tarifa mínima (R$)" },
-    { key: "wait_per_min", label: "Espera por minuto (R$)" },
-    { key: "peak_multiplier", label: "Multiplicador horário de pico" },
-    { key: "cancellation_fee", label: "Multa de cancelamento (R$)" },
-  ],
+type TariffField =
+  | "base_fare"
+  | "min_fare"
+  | "per_km"
+  | "per_min"
+  | "stop_fee"
+  | "fixed_fee"
+  | "dynamic_multiplier"
+  | "helper1_fee"
+  | "helper2_fee"
+  | "heavy_furniture_fee"
+  | "assembly_fee"
+  | "packing_fee"
+  | "difficult_access_fee"
+  | "stair_fee"
+  | "heavy_vehicle_fee"
+  | "accident_fee"
+  | "platform_fee"
+  | "locked_wheels_fee"
+  | "garage_fee"
+  | "max_weight_kg"
+  | "per_kg";
+
+type TariffRule = Record<TariffField, number> & {
+  id: string;
+  category_id: string;
+  city: string;
+  is_active: boolean;
+};
+
+type FieldDefinition = {
+  key: TariffField;
+  label: string;
+  step?: string;
+  hint?: string;
+};
+
+const COMMON_FIELDS: FieldDefinition[] = [
+  { key: "base_fare", label: "Valor base (R$)", step: "0.01" },
+  { key: "min_fare", label: "Tarifa mínima (R$)", step: "0.01" },
+  { key: "per_km", label: "Por km (R$)", step: "0.01" },
+  { key: "per_min", label: "Por minuto (R$)", step: "0.01" },
+  { key: "stop_fee", label: "Parada adicional (R$)", step: "0.01" },
+  { key: "fixed_fee", label: "Taxa fixa (R$)", step: "0.01" },
+  {
+    key: "dynamic_multiplier",
+    label: "Multiplicador de demanda",
+    step: "0.001",
+    hint: "1 = sem ajuste dinâmico",
+  },
+];
+
+const EXTRA_FIELDS: Partial<Record<string, FieldDefinition[]>> = {
   fretes: [
-    { key: "base_fare", label: "Bandeirada (R$)" },
-    { key: "per_km", label: "Por km (R$)" },
-    { key: "per_min", label: "Por minuto (R$)" },
-    { key: "min_fare", label: "Tarifa mínima (R$)" },
-    { key: "wait_per_min", label: "Espera por minuto (R$)" },
-    { key: "extra_stop_fee", label: "Parada extra (R$)" },
-    { key: "max_weight_kg", label: "Peso máximo (kg)" },
+    { key: "helper1_fee", label: "1 ajudante (R$)", step: "0.01" },
+    { key: "helper2_fee", label: "2 ajudantes (R$)", step: "0.01" },
+    { key: "heavy_furniture_fee", label: "Item pesado (R$)", step: "0.01" },
+    { key: "assembly_fee", label: "Montagem/desmontagem (R$)", step: "0.01" },
+    { key: "packing_fee", label: "Embalagem (R$)", step: "0.01" },
+    { key: "difficult_access_fee", label: "Acesso difícil (R$)", step: "0.01" },
+    { key: "stair_fee", label: "Por andar sem elevador (R$)", step: "0.01" },
   ],
   guincho: [
-    { key: "call_out_fee", label: "Chamada (R$)" },
-    { key: "per_km", label: "Por km (R$)" },
-    { key: "heavy_vehicle_fee", label: "Veículo pesado (R$)" },
-    { key: "night_fee", label: "Adicional noturno (R$)" },
-    { key: "difficult_access_fee", label: "Acesso difícil (R$)" },
-    { key: "toll_fee", label: "Pedágio padrão (R$)" },
+    { key: "heavy_vehicle_fee", label: "Veículo pesado (R$)", step: "0.01" },
+    { key: "difficult_access_fee", label: "Acesso difícil (R$)", step: "0.01" },
+    { key: "accident_fee", label: "Veículo acidentado (R$)", step: "0.01" },
+    { key: "platform_fee", label: "Plataforma do guincho (R$)", step: "0.01" },
+    { key: "locked_wheels_fee", label: "Rodas travadas (R$)", step: "0.01" },
+    { key: "garage_fee", label: "Garagem/subsolo (R$)", step: "0.01" },
   ],
   envios: [
-    { key: "base_fare", label: "Bandeirada (R$)" },
-    { key: "per_km", label: "Por km (R$)" },
-    { key: "hourly_rate", label: "Hora trabalhada (R$)" },
-    { key: "helper1_fee", label: "1 ajudante (R$)" },
-    { key: "helper2_fee", label: "2 ajudantes (R$)" },
-    { key: "stair_fee", label: "Por andar sem elevador (R$)" },
-    { key: "heavy_furniture_fee", label: "Móvel pesado (R$)" },
+    { key: "max_weight_kg", label: "Peso máximo (kg)", step: "0.01" },
+    { key: "per_kg", label: "Por kg (R$)", step: "0.01" },
   ],
 };
 
+const TARIFF_SELECT = [
+  "id",
+  "category_id",
+  "city",
+  "is_active",
+  "base_fare",
+  "min_fare",
+  "per_km",
+  "per_min",
+  "stop_fee",
+  "fixed_fee",
+  "dynamic_multiplier",
+  "helper1_fee",
+  "helper2_fee",
+  "heavy_furniture_fee",
+  "assembly_fee",
+  "packing_fee",
+  "difficult_access_fee",
+  "stair_fee",
+  "heavy_vehicle_fee",
+  "accident_fee",
+  "platform_fee",
+  "locked_wheels_fee",
+  "garage_fee",
+  "max_weight_kg",
+  "per_kg",
+].join(",");
+
+const NUMERIC_FIELDS: TariffField[] = [
+  "base_fare",
+  "min_fare",
+  "per_km",
+  "per_min",
+  "stop_fee",
+  "fixed_fee",
+  "dynamic_multiplier",
+  "helper1_fee",
+  "helper2_fee",
+  "heavy_furniture_fee",
+  "assembly_fee",
+  "packing_fee",
+  "difficult_access_fee",
+  "stair_fee",
+  "heavy_vehicle_fee",
+  "accident_fee",
+  "platform_fee",
+  "locked_wheels_fee",
+  "garage_fee",
+  "max_weight_kg",
+  "per_kg",
+];
+
+function normalizeRule(raw: Record<string, unknown>): TariffRule {
+  const normalized = {
+    id: String(raw.id ?? ""),
+    category_id: String(raw.category_id ?? ""),
+    city: String(raw.city ?? "default"),
+    is_active: raw.is_active !== false,
+  } as TariffRule;
+
+  for (const field of NUMERIC_FIELDS) {
+    const value = Number(raw[field] ?? (field === "dynamic_multiplier" ? 1 : 0));
+    normalized[field] = Number.isFinite(value) ? value : field === "dynamic_multiplier" ? 1 : 0;
+  }
+  return normalized;
+}
+
+function emptyRule(categoryId: string): TariffRule {
+  return normalizeRule({ id: "", category_id: categoryId, city: "default", is_active: true });
+}
+
+function mapAdminError(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  if (message === "forbidden") return "Ação restrita a administradores autorizados.";
+  if (message === "admin_authorization_failed") return "Não foi possível validar a permissão administrativa.";
+  if (message === "pricing_backend_not_deployed") {
+    return "O contrato canônico de tarifas ainda não está publicado neste ambiente. Nenhuma tarifa foi alterada.";
+  }
+  if (/invalid_|check constraint|numeric/i.test(message)) return "Há um valor de tarifa inválido.";
+  return message;
+}
+
 function AdminPrecosPage() {
-  const upsertFn = useServerFn(upsertTariffRules);
-  const deleteFn = useServerFn(deleteTariffRule);
-  const [cats, setCats] = useState<Category[]>([]);
-  const [rules, setRules] = useState<Rule[]>([]);
+  const saveFn = useServerFn(upsertTariffRule);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [rules, setRules] = useState<TariffRule[]>([]);
   const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState(false);
-  const [activeCat, setActiveCat] = useState<string>("");
+  const [busyCategoryId, setBusyCategoryId] = useState<string | null>(null);
+  const [activeCategoryId, setActiveCategoryId] = useState("");
 
   useEffect(() => {
     let alive = true;
+    const db = supabase as any;
+
     const refresh = async () => {
-      const [cRes, rRes] = await Promise.all([
-        supabase.from("ride_categories").select("key,label,enabled").order("sort_order"),
-        supabase.from("tariff_rules").select("id,category_key,field_key,value"),
+      const [categoryResult, tariffResult] = await Promise.all([
+        db
+          .from("ride_categories")
+          .select("id,code,name,is_active,sort_order")
+          .eq("is_active", true)
+          .order("sort_order", { ascending: true }),
+        db
+          .from("tariff_rules")
+          .select(TARIFF_SELECT)
+          .eq("city", "default")
+          .eq("is_active", true),
       ]);
+
       if (!alive) return;
-      if (cRes.error) toast.error("Categorias: " + cRes.error.message);
-      if (rRes.error) toast.error("Regras: " + rRes.error.message);
-      const categories = (cRes.data ?? []) as Category[];
-      setCats(categories);
-      setRules(((rRes.data ?? []) as Rule[]).map((r) => ({ ...r, value: Number(r.value) })));
-      setActiveCat((prev) => prev || categories[0]?.key || "");
+      if (categoryResult.error) toast.error("Categorias: " + categoryResult.error.message);
+      if (tariffResult.error) toast.error("Tarifas: " + tariffResult.error.message);
+
+      const nextCategories = ((categoryResult.data ?? []) as Category[]).filter(Boolean);
+      const nextRules = ((tariffResult.data ?? []) as Record<string, unknown>[]).map(normalizeRule);
+      setCategories(nextCategories);
+      setRules(nextRules);
+      setActiveCategoryId((current) => current || nextCategories[0]?.id || "");
       setLoading(false);
     };
+
     refresh();
     const channel = supabase
-      .channel("admin-tariffs")
+      .channel("admin-canonical-tariffs")
       .on("postgres_changes", { event: "*", schema: "public", table: "tariff_rules" }, refresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "ride_categories" }, refresh)
       .subscribe();
+
     return () => {
       alive = false;
       supabase.removeChannel(channel);
     };
   }, []);
 
-  const ruleMap = useMemo(() => {
-    const m: Record<string, Record<string, Rule>> = {};
-    for (const r of rules) {
-      (m[r.category_key] ??= {})[r.field_key] = r;
-    }
-    return m;
+  const ruleByCategory = useMemo(() => {
+    const map = new Map<string, TariffRule>();
+    for (const rule of rules) map.set(rule.category_id, rule);
+    return map;
   }, [rules]);
 
-  function setLocalValue(category: string, field: string, value: number) {
-    setRules((rs) => {
-      const idx = rs.findIndex((r) => r.category_key === category && r.field_key === field);
-      if (idx >= 0) {
-        const copy = [...rs];
-        copy[idx] = { ...copy[idx], value };
-        return copy;
+  function updateLocal(categoryId: string, field: TariffField, value: number) {
+    setRules((current) => {
+      const index = current.findIndex((rule) => rule.category_id === categoryId);
+      if (index < 0) {
+        const created = emptyRule(categoryId);
+        created[field] = value;
+        return [...current, created];
       }
-      return [...rs, { id: `new-${category}-${field}`, category_key: category, field_key: field, value }];
+      const copy = [...current];
+      copy[index] = { ...copy[index], [field]: value };
+      return copy;
     });
   }
 
-  async function saveCategory(category: string) {
-    setBusy(true);
-    const dirty = rules.filter((r) => r.category_key === category);
-    const payload = dirty.map((r) => ({
-      category_key: r.category_key,
-      field_key: r.field_key,
-      value: Number(r.value) || 0,
-    }));
+  async function saveCategory(category: Category) {
+    const rule = ruleByCategory.get(category.id) ?? emptyRule(category.id);
+    const fields = [...COMMON_FIELDS, ...(EXTRA_FIELDS[category.code] ?? [])];
+    const patch = Object.fromEntries(fields.map(({ key }) => [key, rule[key]]));
+
+    if (Number(patch.dynamic_multiplier) <= 0) {
+      toast.error("O multiplicador de demanda precisa ser maior que zero.");
+      return;
+    }
+
+    setBusyCategoryId(category.id);
     try {
-      await upsertFn({ data: { rows: payload } });
-      await logAdminAction({
-        action: "tariff_rules.upsert",
-        entity: "tariff_rules",
-        after: { category, count: payload.length },
+      const result = await saveFn({
+        data: {
+          category_id: category.id,
+          city: "default",
+          patch,
+        },
       });
-      toast.success(`Tarifas de "${category}" salvas — refletindo no app em tempo real`);
-    } catch (e) {
-      toast.error(
-        "Erro ao salvar: " + (e instanceof Error ? mapAdminError(e.message) : String(e)),
-      );
+      const saved = result?.rule;
+      if (saved && typeof saved === "object") {
+        const normalized = normalizeRule(saved as Record<string, unknown>);
+        setRules((current) => [
+          ...current.filter((item) => item.category_id !== category.id),
+          normalized,
+        ]);
+      }
+      toast.success(`Tarifas de ${category.name} salvas com auditoria server-side.`);
+    } catch (error) {
+      toast.error(mapAdminError(error));
     } finally {
-      setBusy(false);
-    }
-  }
-
-  async function deleteRule(rule: Rule) {
-    if (rule.id.startsWith("new-")) {
-      setRules((rs) => rs.filter((r) => r !== rule));
-      return;
-    }
-    if (!confirm(`Excluir o campo "${rule.field_key}"?`)) return;
-    try {
-      await deleteFn({ data: { id: rule.id } });
-      await logAdminAction({
-        action: "tariff_rules.delete",
-        entity: "tariff_rules",
-        entity_id: rule.id,
-      });
-    } catch (e) {
-      toast.error(e instanceof Error ? mapAdminError(e.message) : String(e));
-    }
-  }
-
-  async function addCustomField(category: string) {
-    const key = prompt("Nome técnico do campo (ex: holiday_surcharge):")?.trim();
-    if (!key) return;
-    const valStr = prompt("Valor numérico:");
-    const value = Number(valStr);
-    if (!Number.isFinite(value)) {
-      toast.error("Valor inválido");
-      return;
-    }
-    try {
-      await upsertFn({
-        data: { rows: [{ category_key: category, field_key: key, value }] },
-      });
-      await logAdminAction({
-        action: "tariff_rules.add_field",
-        entity: "tariff_rules",
-        after: { category, field: key },
-      });
-      toast.success("Campo adicionado");
-    } catch (e) {
-      toast.error(e instanceof Error ? mapAdminError(e.message) : String(e));
+      setBusyCategoryId(null);
     }
   }
 
   return (
     <AdminLayout
       title="Preços e Tarifas"
-      description="Defina todas as regras de precificação por categoria. Alterações refletem no app do passageiro instantaneamente."
+      description="Edite a tarifa canônica usada pelo backend do APOIS Corridas."
     >
       {loading ? (
         <Loading label="Carregando preços..." />
+      ) : categories.length === 0 ? (
+        <Card className="border-border bg-card/60">
+          <CardContent className="py-8 text-sm text-muted-foreground">
+            Nenhuma categoria ativa foi encontrada no Supabase oficial.
+          </CardContent>
+        </Card>
       ) : (
-        <Tabs value={activeCat} onValueChange={setActiveCat} className="space-y-4">
-          <TabsList className="flex flex-wrap gap-1">
-            {cats.map((c) => (
-              <TabsTrigger key={c.key} value={c.key} className="capitalize">
-                {c.label}
-                {!c.enabled && <span className="ml-1 text-[10px] text-muted-foreground">(off)</span>}
-              </TabsTrigger>
-            ))}
-          </TabsList>
+        <div className="space-y-4">
+          <Card className="border-border bg-card/60">
+            <CardContent className="py-4 text-sm text-muted-foreground">
+              Esta tela trabalha somente com o contrato vigente de <code>tariff_rules</code> e com a região
+              <code className="mx-1">default</code>, que é a tarifa de fallback atualmente usada na solicitação de corrida.
+              Campos arbitrários do modelo antigo não são mais gravados.
+            </CardContent>
+          </Card>
 
-          {cats.map((c) => {
-            const canonical = CANONICAL_FIELDS[c.key] ?? [];
-            const dbRules = ruleMap[c.key] ?? {};
-            const canonicalKeys = new Set(canonical.map((f) => f.key));
-            const extras = Object.values(dbRules).filter((r) => !canonicalKeys.has(r.field_key));
+          <Tabs value={activeCategoryId} onValueChange={setActiveCategoryId} className="space-y-4">
+            <TabsList className="flex flex-wrap gap-1">
+              {categories.map((category) => (
+                <TabsTrigger key={category.id} value={category.id}>
+                  {category.name}
+                </TabsTrigger>
+              ))}
+            </TabsList>
 
-            return (
-              <TabsContent key={c.key} value={c.key} className="space-y-4">
-                <Card className="border-border bg-card/60">
-                  <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle className="text-base">Regras canônicas</CardTitle>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm" onClick={() => addCustomField(c.key)} className="gap-1">
-                        <Plus className="h-3 w-3" /> Campo
-                      </Button>
-                      <Button size="sm" onClick={() => saveCategory(c.key)} disabled={busy} className="gap-1">
-                        {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
-                        Salvar tudo
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    {canonical.map((f) => {
-                      const rule = dbRules[f.key];
-                      const value = rule?.value ?? 0;
-                      return (
-                        <label key={f.key} className="flex flex-col gap-1">
-                          <span className="text-[11px] font-semibold text-muted-foreground">{f.label}</span>
-                          <DSInput
-                            type="number"
-                            step="0.01"
-                            value={value}
-                            onChange={(e) => setLocalValue(c.key, f.key, Number(e.target.value) || 0)}
-                          />
-                          <span className="text-[10px] text-muted-foreground/70">{f.key}</span>
-                        </label>
-                      );
-                    })}
-                  </CardContent>
-                </Card>
+            {categories.map((category) => {
+              const rule = ruleByCategory.get(category.id) ?? emptyRule(category.id);
+              const fields = [...COMMON_FIELDS, ...(EXTRA_FIELDS[category.code] ?? [])];
+              const saving = busyCategoryId === category.id;
 
-                {extras.length > 0 && (
+              return (
+                <TabsContent key={category.id} value={category.id} className="space-y-4">
                   <Card className="border-border bg-card/60">
-                    <CardHeader>
-                      <CardTitle className="text-base">Campos personalizados</CardTitle>
+                    <CardHeader className="flex flex-row items-center justify-between gap-3">
+                      <div>
+                        <CardTitle className="text-base">{category.name}</CardTitle>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Código: {category.code} • Região: default
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        className="gap-1"
+                        disabled={saving || busyCategoryId !== null}
+                        onClick={() => saveCategory(category)}
+                      >
+                        {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+                        Salvar
+                      </Button>
                     </CardHeader>
                     <CardContent className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                      {extras.map((r) => (
-                        <div key={r.field_key} className="flex flex-col gap-1">
-                          <span className="text-[11px] font-semibold text-muted-foreground">{r.field_key}</span>
-                          <div className="flex gap-1">
-                            <DSInput
-                              type="number"
-                              step="0.01"
-                              value={r.value}
-                              onChange={(e) => setLocalValue(c.key, r.field_key, Number(e.target.value) || 0)}
-                            />
-                            <Button size="icon" variant="ghost" onClick={() => deleteRule(r)} aria-label="Remover regra" className="text-destructive">
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        </div>
+                      {fields.map((field) => (
+                        <label key={field.key} className="flex flex-col gap-1">
+                          <span className="text-[11px] font-semibold text-muted-foreground">{field.label}</span>
+                          <DSInput
+                            type="number"
+                            min={field.key === "dynamic_multiplier" ? "0.001" : "0"}
+                            step={field.step ?? "0.01"}
+                            value={rule[field.key]}
+                            onChange={(event) => {
+                              const parsed = Number(event.target.value);
+                              updateLocal(
+                                category.id,
+                                field.key,
+                                Number.isFinite(parsed) ? Math.max(0, parsed) : 0,
+                              );
+                            }}
+                          />
+                          <span className="text-[10px] text-muted-foreground/70">
+                            {field.key}{field.hint ? ` • ${field.hint}` : ""}
+                          </span>
+                        </label>
                       ))}
                     </CardContent>
                   </Card>
-                )}
-              </TabsContent>
-            );
-          })}
-        </Tabs>
+                </TabsContent>
+              );
+            })}
+          </Tabs>
+        </div>
       )}
     </AdminLayout>
   );
