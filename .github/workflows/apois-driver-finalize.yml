@@ -26,9 +26,6 @@ jobs:
         with:
           node-version: 22
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-
       - name: Ajustar patch à versão atual da oferta
         run: |
           python3 - <<'PY'
@@ -52,7 +49,7 @@ jobs:
         run: npm install --no-audit --no-fund
 
       - name: Typecheck
-        run: bun run typecheck
+        run: npx tsc --noEmit
 
       - name: Build mobile motorista
         env:
