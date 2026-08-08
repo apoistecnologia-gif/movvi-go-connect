@@ -81,7 +81,8 @@ jobs:
             supabase/baseline/011_admin_control_plane.sql \
             supabase/baseline/012_admin_staff_provisioning.sql \
             supabase/baseline/013_admin_finance.sql \
-            supabase/baseline/014_admin_settings.sql; do
+            supabase/baseline/014_admin_settings.sql \
+            supabase/baseline/015_admin_notifications.sql; do
             psql -v ON_ERROR_STOP=1 -f "$file"
           done
 
@@ -111,6 +112,9 @@ jobs:
             test "$anon" = "0"
             test "$auth" = "1"
           done
+
+          notification_policy=$(psql -Atqc "select count(*) from pg_policies where schemaname='public' and tablename='notification_logs' and policyname='notification_logs_admin_read'")
+          test "$notification_policy" = "1"
 
           client_audit_table=$(psql -Atqc "select count(*) from information_schema.tables where table_schema='public' and table_name='admin_audit_logs'")
           test "$client_audit_table" = "0"
@@ -147,6 +151,7 @@ jobs:
             src/lib/adminAudit.ts \
             src/lib/adminDrivers.functions.ts \
             src/lib/adminPassengers.functions.ts \
+            src/lib/adminNotifications.functions.ts \
             src/components/AdminGuard.tsx \
             src/components/admin/AdminLayout.tsx \
             src/components/admin/AdminSidebar.tsx \
@@ -155,12 +160,15 @@ jobs:
             src/routes/admin.categorias.tsx \
             src/routes/admin.precos.tsx \
             src/routes/admin.financeiro.tsx \
+            src/routes/admin.pagamentos.tsx \
             src/routes/admin.suporte.tsx \
             src/routes/admin.operacoes.tsx \
             src/routes/admin.seguranca.tsx \
             src/routes/admin.administradores.tsx \
             src/routes/admin.logs.tsx \
-            src/routes/admin.configuracoes.tsx
+            src/routes/admin.configuracoes.tsx \
+            src/routes/admin.notificacoes.tsx \
+            src/routes/admin.backups.tsx
 
       - name: Production build
         run: npm run build
