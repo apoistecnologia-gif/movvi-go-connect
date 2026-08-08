@@ -9,10 +9,12 @@ const baselineAdmin = read("supabase/baseline/011_admin_control_plane.sql");
 const baselineStaff = read("supabase/baseline/012_admin_staff_provisioning.sql");
 const baselineFinance = read("supabase/baseline/013_admin_finance.sql");
 const baselineSettings = read("supabase/baseline/014_admin_settings.sql");
+const baselineNotifications = read("supabase/baseline/015_admin_notifications.sql");
 const seed = read("supabase/baseline/004_storage_triggers_seed.sql");
 const access = read("src/lib/adminAccess.ts");
 const controlPlane = read("src/lib/adminControlPlane.ts");
 const finance = read("src/lib/adminFinance.ts");
+const notificationFns = read("src/lib/adminNotifications.functions.ts");
 const layout = read("src/components/admin/AdminLayout.tsx");
 const sidebar = read("src/components/admin/AdminSidebar.tsx");
 const login = read("src/routes/admin.login.tsx");
@@ -21,6 +23,7 @@ const financeRoute = read("src/routes/admin.financeiro.tsx");
 const paymentsRoute = read("src/routes/admin.pagamentos.tsx");
 const settingsRoute = read("src/routes/admin.configuracoes.tsx");
 const backupsRoute = read("src/routes/admin.backups.tsx");
+const notificationsRoute = read("src/routes/admin.notificacoes.tsx");
 const theme = read("src/apois-admin-theme.css");
 
 // RBAC must be server-authoritative and distinct from mobility user_roles.
@@ -75,6 +78,17 @@ includes(settingsRoute, 'rpc("admin_update_setting"', "Settings RPC client");
 excludes(settingsRoute, '.upsert(', "Direct browser settings upsert");
 excludes(settingsRoute, "google.maps_browser_key_name", "Browser-editable Google secret reference");
 excludes(settingsRoute, "firebase.project_id", "Browser-editable Firebase configuration");
+
+// Notification broadcasts must use canonical profile IDs and real FCM delivery logs.
+includes(notificationFns, '"notifications.send"', "Notification permission");
+includes(notificationFns, 'functions.invoke("send-ride-push"', "Canonical FCM handoff");
+includes(notificationFns, 'event: "admin.broadcast"', "Admin broadcast event");
+includes(notificationFns, '.from("notification_logs")', "Canonical delivery history");
+excludes(notificationFns, 'rpc("has_role"', "Legacy mobility-role Admin check");
+excludes(notificationFns, '.from("notifications_broadcast")', "Fake broadcast history table");
+includes(baselineNotifications, "notification_logs_admin_read", "Admin notification log RLS");
+includes(notificationsRoute, "push aceito pelo Firebase", "Truthful delivery label");
+excludes(notificationsRoute, "notifications_broadcast", "Legacy broadcast history UI");
 
 // A CSV download is not represented as a database backup or restore operation.
 includes(backupsRoute, "Backup de banco não é CSV do navegador", "Backup truthfulness");
