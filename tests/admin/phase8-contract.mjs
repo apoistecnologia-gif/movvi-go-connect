@@ -15,10 +15,19 @@ const access = read("src/lib/adminAccess.ts");
 const controlPlane = read("src/lib/adminControlPlane.ts");
 const finance = read("src/lib/adminFinance.ts");
 const notificationFns = read("src/lib/adminNotifications.functions.ts");
+const driverDocs = read("src/lib/driverDocs.functions.ts");
 const layout = read("src/components/admin/AdminLayout.tsx");
 const sidebar = read("src/components/admin/AdminSidebar.tsx");
 const login = read("src/routes/admin.login.tsx");
 const dashboard = read("src/routes/admin.dashboard.tsx");
+const driversRoute = read("src/routes/admin.motoristas.tsx");
+const passengersRoute = read("src/routes/admin.passageiros.tsx");
+const ridesRoute = read("src/routes/admin.corridas.tsx");
+const subscriptionsRoute = read("src/routes/admin.assinaturas.tsx");
+const driverFinanceRoute = read("src/routes/admin.financeiro-motoristas.tsx");
+const analyticsRoute = read("src/routes/admin.analytics.tsx");
+const reportsRoute = read("src/routes/admin.relatorios.tsx");
+const couponsRoute = read("src/routes/admin.cupons.tsx");
 const financeRoute = read("src/routes/admin.financeiro.tsx");
 const paymentsRoute = read("src/routes/admin.pagamentos.tsx");
 const settingsRoute = read("src/routes/admin.configuracoes.tsx");
@@ -51,6 +60,29 @@ for (const rpc of [
 includes(baselineAdmin, "private.admin_audit", "Atomic admin audit primitive");
 includes(baselineStaff, "admin_provision_staff", "Explicit staff provisioning");
 
+// Driver KYC reads are permission-gated before service-role signed URLs are created.
+includes(driverDocs, '"drivers.read"', "Driver document permission");
+includes(driverDocs, 'rpc(', "Driver document RPC permission check");
+excludes(driverDocs, '.from("user_roles")', "Legacy driver-document admin check");
+includes(driversRoute, "setAdminDriverApproval", "Canonical driver moderation");
+includes(driversRoute, "getDriverDocumentUrls", "Private document access");
+excludes(driversRoute, "approve-driver-and-create-mercadopago-subscription", "Approval/payment coupling");
+excludes(driversRoute, '.from("subscriptions")', "Legacy subscription table in driver moderation");
+
+// Passenger moderation must be canonical and operational delete must not masquerade as Auth deletion.
+includes(passengersRoute, 'from("user_roles")', "Passenger-role resolution");
+includes(passengersRoute, "setAdminPassengerStatus", "Canonical passenger moderation");
+includes(passengersRoute, "soft delete operacional", "Operational deletion disclosure");
+excludes(passengersRoute, 'from("ride_ratings")', "Legacy passenger rating table");
+excludes(passengersRoute, 'from("incident_reports")', "Legacy incident table");
+excludes(passengersRoute, 'from("support_tickets")', "Legacy support table");
+
+// Rides are read from the single canonical entity; state mutations stay backend-authoritative.
+includes(ridesRoute, 'from("rides")', "Canonical rides source");
+includes(ridesRoute, "backend autoritativo", "Authoritative ride lifecycle disclosure");
+excludes(ridesRoute, 'from("incident_reports")', "Parallel incident model in rides");
+excludes(ridesRoute, 'from("support_tickets")', "Parallel support model in rides");
+
 // Dashboard/finance must use canonical metrics and settlements, never label a ride-price sum as platform revenue.
 includes(controlPlane, 'rpc<AdminDashboardMetrics>("admin_get_dashboard_metrics")', "Canonical dashboard metrics");
 includes(dashboard, "getAdminDashboardMetrics", "Dashboard metrics client");
@@ -60,6 +92,24 @@ includes(baselineFinance, "driver_withdrawals", "Payout-backed finance");
 includes(finance, 'rpc("admin_get_finance_summary"', "Finance RPC client");
 includes(financeRoute, "ride_settlements + ledgers + driver_withdrawals", "Finance source-of-truth disclosure");
 excludes(financeRoute, '.from("rides")', "Admin finance ride arithmetic");
+includes(driverFinanceRoute, 'from("driver_wallets")', "Canonical driver wallet");
+includes(driverFinanceRoute, 'from("driver_withdrawals")', "Canonical driver withdrawals");
+excludes(driverFinanceRoute, "driver_payment_events", "Legacy driver payment event model");
+
+// Subscription/admin commercial surfaces cannot manufacture parallel payment truth.
+includes(subscriptionsRoute, "drivers.subscription_status", "Canonical subscription-state disclosure");
+excludes(subscriptionsRoute, 'from("subscriptions")', "Legacy subscriptions table");
+excludes(subscriptionsRoute, 'from("subscription_plans")', "Legacy subscription plans");
+includes(couponsRoute, "Cupons permanecem desativados", "Truthful coupon state");
+excludes(couponsRoute, 'from("coupons")', "Legacy coupon table");
+
+// Analytics and reports derive from canonical entities only.
+includes(analyticsRoute, "getAdminDashboardMetrics", "Canonical analytics metrics");
+includes(analyticsRoute, "getAdminFinanceSummary", "Canonical analytics finance");
+excludes(analyticsRoute, "admin_analytics_", "Legacy analytics RPC family");
+includes(reportsRoute, 'from("ride_settlements")', "Canonical settlement report");
+includes(reportsRoute, 'from("passenger_support_tickets")', "Canonical support report");
+excludes(reportsRoute, 'from("subscriptions")', "Legacy subscriptions report");
 
 // Payment-provider UI reports backend truth and never edits gateway credentials in the browser.
 includes(paymentsRoute, "getAdminFinanceSummary", "Payment provider source-of-truth");
