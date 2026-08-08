@@ -1,9 +1,13 @@
 /* global Deno */
-import { findEligibleDriversForRide } from "../../supabase/functions/_shared/dispatch-engine.ts";
+import {
+  findEligibleDriversForRide,
+  type DispatchDriver,
+  type DispatchRide,
+} from "../../supabase/functions/_shared/dispatch-engine.ts";
 
 const NOW = Date.parse("2026-08-08T17:00:00Z");
 
-function driver(overrides: Record<string, unknown> = {}) {
+function driver(overrides: Partial<DispatchDriver> = {}): DispatchDriver {
   return {
     id: crypto.randomUUID(),
     user_id: crypto.randomUUID(),
@@ -15,10 +19,10 @@ function driver(overrides: Record<string, unknown> = {}) {
     current_lng: -40.50,
     last_location_at: new Date(NOW - 30_000).toISOString(),
     ...overrides,
-  } as const;
+  };
 }
 
-function ride(overrides: Record<string, unknown> = {}) {
+function ride(overrides: Partial<DispatchRide> = {}): DispatchRide {
   return {
     id: crypto.randomUUID(),
     category: "carros",
@@ -28,7 +32,7 @@ function ride(overrides: Record<string, unknown> = {}) {
     offered_driver_ids: [],
     rejected_driver_ids: [],
     ...overrides,
-  } as const;
+  };
 }
 
 function assert(condition: boolean, label: string): void {
