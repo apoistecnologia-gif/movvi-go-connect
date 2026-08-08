@@ -23,49 +23,53 @@ type ReportDef = {
 
 function AdminRelatoriosPage() {
   const [busy, setBusy] = useState<ReportKey | null>(null);
+  // The canonical baseline already contains ride_settlements, but the checked-in
+  // generated Supabase type snapshot predates that baseline. Keep this bridge
+  // local to the report reader until types are regenerated from the canonical DB.
+  const db = supabase as any;
 
   const reports: ReportDef[] = [
     {
       key: "drivers",
       label: "Motoristas",
       description: "Cadastro, aprovação, assinatura, presença e avaliação.",
-      load: async () => supabase.from("drivers").select("id,user_id,name,email,phone,city,state,category,approval_status,documents_status,subscription_status,is_online,rating,total_ratings,created_at,updated_at").limit(10000),
+      load: async () => db.from("drivers").select("id,user_id,name,email,phone,city,state,category,approval_status,documents_status,subscription_status,is_online,rating,total_ratings,created_at,updated_at").limit(10000),
     },
     {
       key: "passengers",
       label: "Passageiros",
       description: "Cadastro e estado operacional canônico.",
-      load: async () => supabase.from("users").select("id,auth_user_id,name,email,phone,city,average_rating,total_ratings,completed_rides,blocked_at,block_reason,suspended_at,deleted_at,created_at,updated_at").limit(10000),
+      load: async () => db.from("users").select("id,auth_user_id,name,email,phone,city,average_rating,total_ratings,completed_rides,blocked_at,block_reason,suspended_at,deleted_at,created_at,updated_at").limit(10000),
     },
     {
       key: "rides",
       label: "Corridas",
       description: "Ciclo de vida, rota, preço e pagamento declarado.",
-      load: async () => supabase.from("rides").select("id,passenger_id,driver_id,category,status,origin_name,destination_name,distance_km,duration_min,estimated_price,final_price,payment_method,dispatch_attempts,accepted_at,driver_arrived_at,started_at,completed_at,cancelled_at,created_at").limit(10000),
+      load: async () => db.from("rides").select("id,passenger_id,driver_id,category,status,origin_name,destination_name,distance_km,duration_min,estimated_price,final_price,payment_method,dispatch_attempts,accepted_at,driver_arrived_at,started_at,completed_at,cancelled_at,created_at").limit(10000),
     },
     {
       key: "settlements",
       label: "Settlements",
       description: "GMV, ganhos do motorista, receita APOIS, taxas e estornos.",
-      load: async () => supabase.from("ride_settlements").select("id,ride_id,passenger_id,driver_id,passenger_charge_cents,driver_earning_cents,platform_fee_cents,payment_provider_fee_cents,refunded_amount_cents,payment_method,payment_status,status,created_at,settled_at").limit(10000),
+      load: async () => db.from("ride_settlements").select("id,ride_id,passenger_id,driver_id,passenger_charge_cents,driver_earning_cents,platform_fee_cents,payment_provider_fee_cents,refunded_amount_cents,payment_method,payment_status,status,created_at,settled_at").limit(10000),
     },
     {
       key: "withdrawals",
       label: "Saques de motoristas",
       description: "Solicitações, processamento e resultado de payout.",
-      load: async () => supabase.from("driver_withdrawals").select("id,driver_id,amount,status,provider,provider_transfer_id,failure_reason,requested_at,processed_at,updated_at").limit(10000),
+      load: async () => db.from("driver_withdrawals").select("id,driver_id,amount,status,provider,provider_transfer_id,failure_reason,requested_at,processed_at,updated_at").limit(10000),
     },
     {
       key: "categories",
       label: "Categorias",
       description: "Domínio comercial oficial das categorias de corrida.",
-      load: async () => supabase.from("ride_categories").select("id,code,name,description,capacity_label,eta_label,sort_order,is_active,created_at,updated_at").limit(1000),
+      load: async () => db.from("ride_categories").select("id,code,name,description,capacity_label,eta_label,sort_order,is_active,created_at,updated_at").limit(1000),
     },
     {
       key: "support",
       label: "Suporte passageiro",
       description: "Tickets reais da entidade passenger_support_tickets.",
-      load: async () => supabase.from("passenger_support_tickets").select("id,protocol,passenger_id,ride_id,category,subject,status,priority,created_at,updated_at").limit(10000),
+      load: async () => db.from("passenger_support_tickets").select("id,protocol,passenger_id,ride_id,category,subject,status,priority,created_at,updated_at").limit(10000),
     },
   ];
 
