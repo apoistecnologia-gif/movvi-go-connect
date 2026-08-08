@@ -14,6 +14,7 @@ const seed = read("supabase/baseline/004_storage_triggers_seed.sql");
 const access = read("src/lib/adminAccess.ts");
 const controlPlane = read("src/lib/adminControlPlane.ts");
 const finance = read("src/lib/adminFinance.ts");
+const settings = read("src/lib/adminSettings.ts");
 const notificationFns = read("src/lib/adminNotifications.functions.ts");
 const driverDocs = read("src/lib/driverDocs.functions.ts");
 const layout = read("src/components/admin/AdminLayout.tsx");
@@ -98,6 +99,8 @@ excludes(driverFinanceRoute, "driver_payment_events", "Legacy driver payment eve
 
 // Subscription/admin commercial surfaces cannot manufacture parallel payment truth.
 includes(subscriptionsRoute, "drivers.subscription_status", "Canonical subscription-state disclosure");
+includes(subscriptionsRoute, "getAdminSettings", "Subscription price through allowlisted settings RPC");
+excludes(subscriptionsRoute, 'from("app_settings")', "Direct subscription settings read");
 excludes(subscriptionsRoute, 'from("subscriptions")', "Legacy subscriptions table");
 excludes(subscriptionsRoute, 'from("subscription_plans")', "Legacy subscription plans");
 includes(couponsRoute, "Cupons permanecem desativados", "Truthful coupon state");
@@ -119,12 +122,16 @@ excludes(paymentsRoute, 'from("payment_gateways")', "Legacy gateway table as pay
 excludes(paymentsRoute, "api_key_secret_name", "Browser-editable API secret reference");
 excludes(paymentsRoute, "pix_key", "Browser-editable PIX key");
 
-// Settings are allowlisted and audited server-side. Secrets are not browser-editable.
+// Settings are allowlisted and audited server-side. Secrets are not browser-readable/editable.
+includes(baselineSettings, "admin_get_settings", "Allowlisted settings reader");
 includes(baselineSettings, "admin_update_setting", "Audited settings RPC");
 includes(baselineSettings, "settings.manage", "Settings permission");
-includes(baselineSettings, "setting_not_admin_editable", "Settings allowlist");
+includes(baselineSettings, "setting_not_admin_editable", "Settings mutation allowlist");
 includes(baselineSettings, "private.admin_audit", "Settings audit");
-includes(settingsRoute, 'rpc("admin_update_setting"', "Settings RPC client");
+includes(settings, 'rpc("admin_get_settings"', "Settings read client");
+includes(settingsRoute, "getAdminSettings", "Settings route server reader");
+includes(settingsRoute, 'rpc("admin_update_setting"', "Settings mutation client");
+excludes(settingsRoute, 'from("app_settings")', "Direct browser settings read");
 excludes(settingsRoute, '.upsert(', "Direct browser settings upsert");
 excludes(settingsRoute, "google.maps_browser_key_name", "Browser-editable Google secret reference");
 excludes(settingsRoute, "firebase.project_id", "Browser-editable Firebase configuration");
