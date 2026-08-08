@@ -135,3 +135,89 @@ Conforme `IDENTITY_MODEL.md` e o schema vivo:
 7. Frontend nunca é autoridade de preço final, pagamento, role ou status de corrida.
 8. Feature não é pronta apenas porque build passou ou botão apareceu.
 9. Divergências são registradas em `MIGRATION_DECISIONS.md` como MANTER/MIGRAR/REMOVER.
+
+## Consolidação em execução
+
+O trabalho de consolidação é desenvolvido em branches `fix/apois-corridas-consolidacao` sem alterar antecipadamente as branches de homologação/PRs DRAFT. As branches de homologação continuam sendo a referência de E2E físico até promoção revisada da consolidação.
+
+## Fases 1–5 concluídas na consolidação
+
+- **Fase 1 — Inventário:** repositórios, ambientes, legados e Supabase mapeados.
+- **Fase 2 — Banco:** identidade, schema canônico, baseline, RLS, Storage e hardening consolidados para validação em banco limpo.
+- **Fase 3 — Core Ride:** entidade, state machine, request contract, intermediários e Fare Engine centralizados.
+- **Fase 4 — Dispatch:** elegibilidade, redispatch, aceite atômico, timeout e no-driver status cobertos por contratos/testes.
+- **Fase 5 — Financeiro:** settlement, payment truth, ledgers, wallet, payout e reversões modelados server-side. Regra comercial corrente preservada como configuração explícita; provedor eletrônico/payout não é inventado.
+
+As baselines financeiras `007/008` foram validadas em Postgres efêmero, mas **não foram aplicadas ad-hoc ao Supabase oficial**.
+
+## Fase 6 — Passageiro — estado validado em código
+
+### Core integrado
+
+O Passageiro na branch `fix/apois-corridas-consolidacao` usa os contratos canônicos para corrida ativa/histórico sem transformar o frontend em autoridade de preço, status ou pagamento.
+
+### Rating
+
+Direções estão explicitamente separadas:
+- `rides.passenger_rating` = avaliação feita pelo **Motorista sobre o Passageiro**, preservada por compatibilidade;
+- `rides.passenger_driver_rating` = avaliação feita pelo **Passageiro sobre o Motorista**, adicionada na baseline da Fase 6.
+
+A RPC `rate_passenger_ride` exige passageiro autenticado/dono, corrida concluída, motorista vinculado e bloqueia avaliação duplicada. A média do motorista é recalculada server-side. Usuário/motorista sem avaliações aparece como `Novo`, não `5.0` falso.
+
+### Segurança
+
+A RPC `passenger_trigger_sos` registra evento de segurança vinculado a `ride_id`, passageiro, motorista quando existente, localização, severidade, status e timestamp, e cria evento operacional em `audit_logs`. A UI obtém localização real pelo Capacitor Geolocation. O app deixa claro que o alerta APOIS não substitui os serviços públicos 190/192.
+
+### Compartilhamento
+
+O Passageiro cria link via `passenger_create_or_refresh_share`; o token é aleatório, expira e pode ser revogado. A página pública lê apenas `get_shared_passenger_ride` e recebe os campos mínimos do acompanhamento; PIN, telefone, dados de pagamento, passageiro e `ride_id` não são expostos.
+
+Em build nativo, um link público só é gerado quando `VITE_PUBLIC_APP_URL` estiver configurado ou houver origem HTTP pública real. Nenhum domínio foi inventado.
+
+### Recibo
+
+`get_passenger_ride_receipt` só produz recibo para corrida `finalizada` com `ride_settlements` canônico. Valor bruto, desconto, taxa APOIS, taxa do provedor, total, método/status de pagamento e settlement vêm do backend. Sem settlement, a interface informa que o recibo financeiro ainda não está disponível em vez de reconstruir um comprovante no cliente.
+
+### Perfil
+
+Perfil inclui dados pessoais, telefone, e-mail, foto, notificações/preferências, contatos de emergência, segurança, suporte, documentos legais e exclusão de conta. Fotos usam o bucket privado `profile-photos`, validação JPG/PNG/WebP até 10 MB, path sob `auth.uid()` e signed URL temporária.
+
+### Termos, privacidade e recuperação
+
+Cadastro aponta para documentos reais `/termos` e `/privacidade` e registra aceite conforme o fluxo atual. A recuperação mobile usa deep link `apoispassageiro://auth/redefinir-senha` e Android intent filter compatível; não depende de `window.location.origin` como redirect nativo.
+
+### Pagamentos do Passageiro
+
+O schema vivo oficial possuía linhas `pix`, `credit`, `debit`, `cash` e `wallet` marcadas ativas, porém não havia configuração canônica `finance.electronic_payment_provider`. Para não apresentar feature falsa:
+
+- a baseline adiciona `get_passenger_payment_methods()`;
+- a RPC consulta a configuração do provedor apenas server-side;
+- Pix/crédito/débito ficam `enabled=false` enquanto o provedor eletrônico não estiver explicitamente configurado;
+- o frontend mantém o meio visível como `Indisponível`, explica a causa e impede seleção;
+- `cash` e `wallet` permanecem sujeitos às próprias regras;
+- o frontend não converte mais `is_active` diretamente em “funciona”.
+
+### Validações realmente executadas da Fase 6
+
+**Backend — `movvi-go-connect`:** workflow `APOIS Corridas — Passenger backend validation`, run `31274524191`, conclusão **success**. Passaram:
+- criação da baseline completa em PostgreSQL efêmero;
+- testes de rating Passageiro → Motorista e duplicidade;
+- token público, ausência de vazamento e revogação;
+- SOS operacional;
+- recibo vindo de settlement;
+- disponibilidade de meios eletrônicos com/sem provedor configurado;
+- privilégios/invariantes de segurança.
+
+**Frontend — `say-hello-buddy-23-84b5dcbf`:** workflow `APOIS Corridas — Passenger Phase 6`, run `31274624790`, conclusão **success**. Passaram:
+- contract tests da Fase 6;
+- TypeScript completo;
+- ESLint da superfície alterada na Fase 6;
+- production build;
+- Capacitor Passenger build;
+- gate contra placeholders/contratos falsos da Fase 6.
+
+### Dívida conhecida e limite de conclusão
+
+O lint global do repositório Passageiro ainda possui erros preexistentes fora da superfície da Fase 6. Essa dívida não foi declarada resolvida e será tratada nas fases de testes/auditoria final.
+
+A Fase 6 está **concluída e validada em código/banco efêmero**, mas **não está promovida ao Supabase oficial**. As baselines `007/008/009` são de banco limpo e não serão executadas ad-hoc em produção. A promoção futura exige migration aditiva revisada e E2E físico.
