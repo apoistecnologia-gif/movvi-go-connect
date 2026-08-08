@@ -1,5 +1,6 @@
-// APOIS — registro canônico de tokens de notificação.
-// user_notification_tokens.user_id referencia public.users.id (não auth.users.id).
+// APOIS — registro canônico de tokens de notificação do Motorista.
+// O backend resolve a sessão para public.users.id dentro das RPCs oficiais,
+// evitando misturar auth.users.id com o ID operacional usado pelo dispatch.
 
 import { supabase } from "@/integrations/supabase/client";
 
@@ -14,6 +15,7 @@ export type DeviceToken = {
 
 const TOKEN_STORAGE_KEY = "apois.notification.device_token";
 const PLATFORM_STORAGE_KEY = "apois.notification.device_platform";
+const DEVICE_ID_KEY = "apois.notification.device_id";
 
 function detectPlatform(): DevicePlatform {
   if (typeof window === "undefined") return "web";
@@ -24,22 +26,16 @@ function detectPlatform(): DevicePlatform {
   return "web";
 }
 
-async function resolveOperationalUserId(): Promise<string | null> {
-  // A própria função usada pelas policies devolve public.users.id para a
-  // sessão atual. Usá-la aqui evita misturar auth.users.id com o ID operacional.
-  const { data, error } = await (supabase as any).rpc("mobility_user_id");
-  if (!error && typeof data === "string" && data.length > 0) return data;
-
-  // Fallback compatível com bases antigas durante homologação.
-  const { data: auth } = await supabase.auth.getUser();
-  const authUserId = auth?.user?.id;
-  if (!authUserId) return null;
-  const { data: profile } = await supabase
-    .from("users")
-    .select("id")
-    .eq("auth_user_id", authUserId)
-    .maybeSingle();
-  return profile?.id ?? null;
+function getDeviceId(): string {
+  try {
+    const existing = localStorage.getItem(DEVICE_ID_KEY);
+    if (existing) return existing;
+    const generated = crypto.randomUUID();
+    localStorage.setItem(DEVICE_ID_KEY, generated);
+    return generated;
+  } catch {
+    return `driver-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  }
 }
 
 function rememberDeviceToken(token: string, platform: DevicePlatform): void {
@@ -72,14 +68,14 @@ function forgetRememberedToken(): void {
 }
 
 export async function registerDeviceToken(input?: Partial<DeviceToken>): Promise<void> {
-  const userId = await resolveOperationalUserId();
-  if (!userId) return;
+  const { data: sessionData } = await supabase.auth.getSession();
+  if (!sessionData.session) return;
 
   const platform = input?.platform ?? detectPlatform();
   let token = input?.token?.trim() ?? "";
 
-  // Web não usa FCM neste fluxo; o pseudo-token existe somente para manter a
-  // API compatível e nunca deve ser confundido com um token nativo FCM.
+  // O fluxo real de FCM só usa Android/iOS. Mantemos web como fallback
+  // compatível sem tratar esse identificador como token FCM no APK.
   if (!token && platform === "web") {
     try {
       token = localStorage.getItem(TOKEN_STORAGE_KEY) ?? "";
@@ -90,20 +86,13 @@ export async function registerDeviceToken(input?: Partial<DeviceToken>): Promise
   }
   if (!token) return;
 
-  const now = new Date().toISOString();
-  const { error } = await supabase.from("user_notification_tokens").upsert(
-    {
-      user_id: userId,
-      token,
-      platform,
-      device_id: input?.device_id ?? null,
-      permission_status: input?.permission_status ?? "granted",
-      is_active: true,
-      last_used_at: now,
-      updated_at: now,
-    },
-    { onConflict: "user_id,token" },
-  );
+  const permissionStatus = input?.permission_status ?? "granted";
+  const { error } = await (supabase as any).rpc("register_notification_token", {
+    _token: token,
+    _platform: platform,
+    _device_id: input?.device_id ?? getDeviceId(),
+    _permission_status: permissionStatus,
+  });
 
   if (error) throw error;
   rememberDeviceToken(token, platform);
@@ -112,15 +101,13 @@ export async function registerDeviceToken(input?: Partial<DeviceToken>): Promise
 export async function unregisterCurrentDevice(): Promise<void> {
   const remembered = readRememberedToken();
   if (!remembered) return;
-  const userId = await resolveOperationalUserId();
-  if (!userId) return;
 
-  const { error } = await supabase
-    .from("user_notification_tokens")
-    .update({ is_active: false, permission_status: "denied", updated_at: new Date().toISOString() })
-    .eq("user_id", userId)
-    .eq("token", remembered.token);
+  const { data: sessionData } = await supabase.auth.getSession();
+  if (!sessionData.session) return;
 
+  const { error } = await (supabase as any).rpc("deactivate_notification_token", {
+    _token: remembered.token,
+  });
   if (error) throw error;
   forgetRememberedToken();
 }
@@ -128,18 +115,16 @@ export async function unregisterCurrentDevice(): Promise<void> {
 export async function touchCurrentDevice(): Promise<void> {
   const remembered = readRememberedToken();
   if (!remembered) return;
-  const userId = await resolveOperationalUserId();
-  if (!userId) return;
 
-  const { error } = await supabase
-    .from("user_notification_tokens")
-    .update({
-      is_active: true,
-      last_used_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    })
-    .eq("user_id", userId)
-    .eq("token", remembered.token);
+  const { data: sessionData } = await supabase.auth.getSession();
+  if (!sessionData.session) return;
 
+  // A RPC é idempotente e atualiza last_used_at/updated_at do token existente.
+  const { error } = await (supabase as any).rpc("register_notification_token", {
+    _token: remembered.token,
+    _platform: remembered.platform,
+    _device_id: getDeviceId(),
+    _permission_status: "granted",
+  });
   if (error) throw error;
 }
