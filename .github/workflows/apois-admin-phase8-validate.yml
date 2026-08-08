@@ -8,6 +8,8 @@ on:
       - "src/routes/admin.**"
       - "src/components/admin/**"
       - "src/components/AdminGuard.tsx"
+      - "src/components/AuthShell.tsx"
+      - "src/components/MovviLogo.tsx"
       - "src/lib/admin*.ts"
       - "src/apois-admin-theme.css"
       - "supabase/baseline/**"
@@ -22,6 +24,8 @@ on:
       - "src/routes/admin.**"
       - "src/components/admin/**"
       - "src/components/AdminGuard.tsx"
+      - "src/components/AuthShell.tsx"
+      - "src/components/MovviLogo.tsx"
       - "src/lib/admin*.ts"
       - "src/apois-admin-theme.css"
       - "supabase/baseline/**"
@@ -157,6 +161,8 @@ jobs:
             "src/routes/admin.*.tsx" \
             "src/components/admin/**/*.tsx" \
             src/components/AdminGuard.tsx \
+            src/components/AuthShell.tsx \
+            src/components/MovviLogo.tsx \
             "src/lib/admin*.ts"
 
       - name: Production build
