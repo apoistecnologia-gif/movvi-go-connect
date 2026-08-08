@@ -2,6 +2,35 @@
 -- Phase 8 settings hardening. Fresh-database baseline only.
 -- Do not execute ad-hoc on production.
 
+-- Browser clients never receive unrestricted SELECT access to app_settings.
+-- Staff may read only explicitly allowlisted non-secret operational keys.
+create or replace function public.admin_get_settings(_keys text[] default null)
+returns table(key text,value jsonb,description text,updated_at timestamptz)
+language sql
+stable
+security definer
+set search_path to ''
+as $$
+  select s.key,s.value,s.description,s.updated_at
+  from public.app_settings s
+  where auth.uid() is not null
+    and private.has_permission('settings.manage')
+    and s.key in (
+      'ride.cancellation_fee_amount',
+      'ride.cancellation_free_minutes',
+      'ride.next_offer_max_distance_km',
+      'finance.platform_fee_percent',
+      'finance.electronic_payment_provider',
+      'finance.payout_provider',
+      'subscription.default_plan_price'
+    )
+    and (_keys is null or s.key=any(_keys))
+  order by s.key;
+$$;
+
+revoke all on function public.admin_get_settings(text[]) from public,anon;
+grant execute on function public.admin_get_settings(text[]) to authenticated;
+
 create or replace function public.admin_update_setting(
   _key text,
   _value jsonb
