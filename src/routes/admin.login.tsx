@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabase } from "@/lib/supabaseClient";
+import { loadAdminAccess } from "@/lib/adminAccess";
 import { AuthShell, useAuthForm } from "@/components/AuthShell";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, ShieldCheck } from "lucide-react";
@@ -22,33 +23,20 @@ function AdminLoginPage() {
 
   const onSubmit = handle(async (form) => {
     const parsed = schema.parse(Object.fromEntries(form.entries()));
-    const { data, error: e } = await supabase.auth.signInWithPassword(parsed);
-    if (e || !data.user) throw new Error("Credenciais inválidas");
+    const { data, error: signInError } = await supabase.auth.signInWithPassword(parsed);
+    if (signInError || !data.user) throw new Error("Credenciais inválidas");
 
-    const { data: roleRow } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", data.user.id)
-      .eq("role", "admin")
-      .maybeSingle();
-
-    if (!roleRow) {
+    const access = await loadAdminAccess();
+    if (!access?.authorized) {
       await supabase.auth.signOut();
-      setError("Esta conta não possui acesso administrativo.");
-      throw new Error("Acesso restrito a administradores.");
+      setError("Esta conta não possui acesso administrativo ativo.");
+      throw new Error("Acesso restrito à equipe administrativa APOIS.");
     }
 
-    await supabase.from("admin_login_history").insert({
-      user_id: data.user.id,
-      email: data.user.email ?? parsed.email,
-      user_agent: navigator.userAgent,
-      success: true,
-    });
-    await supabase.from("admin_users_meta").upsert(
-      { user_id: data.user.id, last_login_at: new Date().toISOString() },
-      { onConflict: "user_id" },
-    );
-    navigate({ to: "/admin/dashboard" });
+    // Login authorization is derived from profiles/role_permissions. Audit of
+    // critical Admin mutations is server-side; we deliberately do not write
+    // best-effort logs to legacy/nonexistent browser tables here.
+    await navigate({ to: "/admin/dashboard" });
   });
 
   return (
