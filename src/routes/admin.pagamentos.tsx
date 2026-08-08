@@ -113,7 +113,7 @@ function ProviderCard({
             <p className="font-semibold">{title}</p>
             <p className="mt-1 text-xs leading-5 text-muted-foreground">{description}</p>
           </div>
-          <DSBadge variant={configured ? "success" : "secondary"}>{configured ? "Configurado" : "Indisponível"}</DSBadge>
+          <DSBadge variant={configured ? "success" : "muted"}>{configured ? "Configurado" : "Indisponível"}</DSBadge>
         </div>
         <div className="rounded-lg border border-border bg-background/40 p-3">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Provedor canônico</p>
