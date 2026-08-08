@@ -1,0 +1,116 @@
+name: APOIS Corridas — Financial validation
+
+on:
+  push:
+    branches:
+      - fix/apois-corridas-consolidacao
+    paths:
+      - "supabase/baseline/007_financial_settlement.sql"
+      - "supabase/functions/_shared/payment-provider.ts"
+      - "tests/database/financial_settlement.sh"
+      - "docs/architecture/PAYMENT_PROVIDER_MAP.md"
+      - ".github/workflows/apois-financial-validate.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "supabase/baseline/007_financial_settlement.sql"
+      - "supabase/functions/_shared/payment-provider.ts"
+      - "tests/database/financial_settlement.sh"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-financial:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: apois_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d apois_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGPASSWORD: postgres
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGDATABASE: apois_test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Payment provider contract check
+        run: deno check supabase/functions/_shared/payment-provider.ts
+
+      - name: Payment provider semantic lint
+        run: npx eslint --rule 'prettier/prettier: off' supabase/functions/_shared/payment-provider.ts
+
+      - name: Apply canonical baseline through Phase 5
+        run: |
+          set -euo pipefail
+          for file in \
+            supabase/baseline/000_ci_prelude.sql \
+            supabase/baseline/001_canonical_schema.sql \
+            supabase/baseline/002_functions.sql \
+            supabase/baseline/003_rls.sql \
+            supabase/baseline/004_storage_triggers_seed.sql \
+            supabase/baseline/005_security_hardening.sql \
+            supabase/baseline/006_dispatch_atomic_accept.sql \
+            supabase/baseline/007_financial_settlement.sql; do
+            psql -v ON_ERROR_STOP=1 -f "$file"
+          done
+
+      - name: Financial integration tests
+        run: bash tests/database/financial_settlement.sh
+
+      - name: Financial security and schema invariants
+        run: |
+          set -euo pipefail
+          rls_missing=$(psql -Atqc "select count(*) from (values ('ride_settlements'),('ride_payments'),('passenger_wallet_transactions'),('driver_ledger_entries'),('platform_ledger_entries')) v(name) join pg_class c on c.relname=v.name join pg_namespace n on n.oid=c.relnamespace and n.nspname='public' where not c.relrowsecurity")
+          platform_fee=$(psql -Atqc "select value #>> '{}' from public.app_settings where key='finance.platform_fee_percent'")
+          auth_can_settle=$(psql -Atqc "select has_function_privilege('authenticated','public.settle_ride_electronic_payment(uuid,text,text,bigint,bigint,text)','EXECUTE')::int")
+          service_can_settle=$(psql -Atqc "select has_function_privilege('service_role','public.settle_ride_electronic_payment(uuid,text,text,bigint,bigint,text)','EXECUTE')::int")
+          request_unique=$(psql -Atqc "select count(*) from pg_indexes where schemaname='public' and indexname='driver_withdrawals_idempotency_uidx'")
+          settlement_unique=$(psql -Atqc "select count(*) from pg_constraint where conrelid='public.ride_settlements'::regclass and contype='u' and pg_get_constraintdef(oid) like '%ride_id%'")
+          test "$rls_missing" = "0"
+          test "$platform_fee" = "0"
+          test "$auth_can_settle" = "0"
+          test "$service_can_settle" = "1"
+          test "$request_unique" = "1"
+          test "$settlement_unique" = "1"
+
+      - name: Build application
+        run: npm run build
+
+      - name: Financial invariants
+        run: |
+          set -euo pipefail
+          grep -F 'ride_settlements' supabase/baseline/007_financial_settlement.sql
+          grep -F 'driver_ledger_entries' supabase/baseline/007_financial_settlement.sql
+          grep -F 'platform_ledger_entries' supabase/baseline/007_financial_settlement.sql
+          grep -F 'settle_ride_electronic_payment' supabase/baseline/007_financial_settlement.sql
+          grep -F 'driver_request_withdrawal' supabase/baseline/007_financial_settlement.sql
+          grep -F 'reverse_cancellation_fee_settlement' supabase/baseline/007_financial_settlement.sql
+          echo 'APOIS_FINANCIAL_PHASE_OK'
