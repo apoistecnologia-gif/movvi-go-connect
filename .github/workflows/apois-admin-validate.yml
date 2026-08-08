@@ -8,6 +8,10 @@ on:
       - "src/routes/admin.**"
       - "src/lib/admin**"
       - "src/lib/driverDocs.functions.ts"
+      - "src/lib/safety/**"
+      - "src/components/profile/**"
+      - "src/components/support/**"
+      - "src/components/safety/**"
       - "src/integrations/supabase/types.ts"
       - "supabase/config.toml"
       - "supabase/migrations/**"
@@ -21,6 +25,10 @@ on:
       - "src/routes/admin.**"
       - "src/lib/admin**"
       - "src/lib/driverDocs.functions.ts"
+      - "src/lib/safety/**"
+      - "src/components/profile/**"
+      - "src/components/support/**"
+      - "src/components/safety/**"
       - "src/integrations/supabase/types.ts"
       - "supabase/config.toml"
       - "supabase/migrations/**"
@@ -55,28 +63,16 @@ jobs:
       - name: Validar ambiente canônico APOIS
         run: |
           set -euo pipefail
-          if [ -f .env ]; then
-            echo '.env não pode ser versionado no Admin.'
-            exit 1
-          fi
+          if [ -f .env ]; then echo '.env não pode ser versionado no Admin.'; exit 1; fi
           grep -qF 'project_id = "vqtucstyduxrqjgyigfk"' supabase/config.toml
           grep -qF 'PostgrestVersion: "14.15"' src/integrations/supabase/types.ts
-
-          if grep -qE 'ekddifjpbieuainvjlbl|wqbtnfbvqtkyywfcqjwa|zjphbuvcapwyuynadgdt' supabase/config.toml .env.example; then
-            echo 'Referência Supabase legada em configuração ativa do Admin.'
-            exit 1
-          fi
-
+          if grep -qE 'ekddifjpbieuainvjlbl|wqbtnfbvqtkyywfcqjwa|zjphbuvcapwyuynadgdt' supabase/config.toml .env.example; then echo 'Referência Supabase legada em configuração ativa do Admin.'; exit 1; fi
           grep -qF 'MERCADOPAGO_ACCESS_TOKEN=<SERVER_ONLY_SECRET>' .env.example
           grep -qF 'MERCADOPAGO_WEBHOOK_SECRET=<SERVER_ONLY_SECRET>' .env.example
           grep -qF 'ASAAS_API_KEY=<SERVER_ONLY_SECRET>' .env.example
           grep -qF 'ASAAS_WEBHOOK_TOKEN=<SERVER_ONLY_SECRET>' .env.example
           grep -qF 'FIREBASE_SERVICE_ACCOUNT_JSON=<SERVER_ONLY_SECRET>' .env.example
-
-          if grep -qE 'sb_secret_[A-Za-z0-9_-]+|eyJ[A-Za-z0-9_-]{20,}|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----' .env.example; then
-            echo 'Template de ambiente contém possível segredo real.'
-            exit 1
-          fi
+          if grep -qE 'sb_secret_[A-Za-z0-9_-]+|eyJ[A-Za-z0-9_-]{20,}|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----' .env.example; then echo 'Template de ambiente contém possível segredo real.'; exit 1; fi
           echo 'APOIS_ADMIN_ENV_OK'
 
       - name: Validar aprovação oficial do motorista
@@ -101,25 +97,14 @@ jobs:
         run: |
           node --input-type=module <<'NODE'
           import { readFileSync } from 'node:fs';
-
-          const route = readFileSync('src/routes/admin.precos.tsx', 'utf8');
-          const service = readFileSync('src/lib/adminPricing.functions.ts', 'utf8');
-          const migration = readFileSync('supabase/migrations/20260808112000_admin_canonical_tariff_rpc.sql', 'utf8');
+          const route = readFileSync('src/routes/admin.precos.tsx','utf8');
+          const service = readFileSync('src/lib/adminPricing.functions.ts','utf8');
+          const migration = readFileSync('supabase/migrations/20260808112000_admin_canonical_tariff_rpc.sql','utf8');
           const combined = `${route}\n${service}`;
-
-          const requiredRuntime = ['category_id', 'base_fare', 'dynamic_multiplier', 'admin_is_authorized', 'admin_upsert_tariff_rule'];
-          for (const token of requiredRuntime) {
-            if (!combined.includes(token)) throw new Error(`Contrato de tarifas sem ${token}`);
-          }
-          if (/category_key|field_key/.test(combined)) {
-            throw new Error('Modelo legado category_key/field_key ainda está no runtime do Admin.');
-          }
-          if (!migration.includes("private.has_permission('users.manage')")) {
-            throw new Error('RPC de tarifas não aplica autorização server-side users.manage.');
-          }
-          if (/^\s*(drop\s+(database|schema|table)|truncate|delete\s+from)\b/im.test(migration)) {
-            throw new Error('Migration de tarifa contém operação destrutiva proibida.');
-          }
+          for (const token of ['category_id','base_fare','dynamic_multiplier','admin_is_authorized','admin_upsert_tariff_rule']) if (!combined.includes(token)) throw new Error(`Contrato de tarifas sem ${token}`);
+          if (/category_key|field_key/.test(combined)) throw new Error('Modelo legado category_key/field_key ainda está no runtime do Admin.');
+          if (!migration.includes("private.has_permission('users.manage')")) throw new Error('RPC de tarifas não aplica autorização server-side users.manage.');
+          if (/^\s*(drop\s+(database|schema|table)|truncate|delete\s+from)\b/im.test(migration)) throw new Error('Migration de tarifa contém operação destrutiva proibida.');
           console.log('APOIS_ADMIN_TARIFF_CONTRACT_OK');
           NODE
 
