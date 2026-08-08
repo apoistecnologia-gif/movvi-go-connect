@@ -12,6 +12,9 @@ on:
       - "vite.mobile.config.ts"
       - "index.mobile.html"
       - ".env.mobile"
+      - ".env.example"
+      - ".gitignore"
+      - "supabase/config.toml"
       - "capacitor.motorista.config.ts"
       - ".github/workflows/apois-motorista-validate.yml"
 
@@ -33,6 +36,22 @@ jobs:
 
       - name: Instalar dependências
         run: npm install --no-audit --no-fund
+
+      - name: Validar ambiente canônico APOIS
+        run: |
+          test ! -f .env
+          grep -F 'project_id = "vqtucstyduxrqjgyigfk"' supabase/config.toml
+          grep -F 'VITE_SUPABASE_URL=https://vqtucstyduxrqjgyigfk.supabase.co' .env.mobile
+          grep -F 'VITE_SUPABASE_PROJECT_ID=vqtucstyduxrqjgyigfk' .env.mobile
+          if grep -RIn --exclude-dir=.git -E 'ekddifjpbieuainvjlbl|wqbtnfbvqtkyywfcqjwa|zjphbuvcapwyuynadgdt' \
+            .env.mobile supabase/config.toml .env.example; then
+            echo 'Referência de Supabase legado encontrada em configuração ativa.'
+            exit 1
+          fi
+          if grep -Ei 'service_role|SUPABASE_SERVICE_ROLE' .env.mobile; then
+            echo 'Credencial server-side proibida no arquivo mobile.'
+            exit 1
+          fi
 
       - name: Garantir que a marca antiga não ficou no código do app
         run: |
