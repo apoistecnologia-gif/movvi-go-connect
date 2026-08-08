@@ -12,9 +12,10 @@ interface AuthShellProps {
   description: ReactNode;
   children: ReactNode;
   footer?: ReactNode;
+  brandLabel?: string;
 }
 
-export function AuthShell({ title, description, children, footer }: AuthShellProps) {
+export function AuthShell({ title, description, children, footer, brandLabel }: AuthShellProps) {
   const router = useRouter();
   const navigate = useNavigate();
   // No APK (Capacitor) ou em builds de aplicativo (passageiro/motorista) não
@@ -49,7 +50,7 @@ export function AuthShell({ title, description, children, footer }: AuthShellPro
 
         <div className="flex w-full flex-col space-y-6">
           <div className="flex justify-center">
-            <MovviLogo size={56} />
+            <MovviLogo size={56} productLabel={brandLabel} />
           </div>
           <DSCard>
             <DSCardHeader>
