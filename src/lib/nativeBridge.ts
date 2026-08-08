@@ -32,7 +32,7 @@ export function isNative(): boolean {
 }
 
 let initStarted = false;
-let postAuthStarted = false;
+let postAuthInFlight: Promise<void> | null = null;
 
 function resolvePushTarget(data: PushData | undefined): string | null {
   const rawUrl = typeof data?.url === "string" && data.url.startsWith("/") ? data.url : null;
@@ -72,19 +72,31 @@ export function initNativeBridge(): void {
 }
 
 /**
- * Pede permissões nativas — DEVE ser chamado só depois da autenticação e
- * com a UI já visível. Falhas nunca quebram o app.
+ * Pede/sincroniza permissões nativas somente depois da autenticação e com a UI
+ * já visível. Pode ser chamado novamente depois de troca/restauração de sessão:
+ * PushNotifications.register() devolve o token atual e a RPC canônica reassocia
+ * esse token ao public.users.id correto. Chamadas concorrentes são colapsadas.
  */
 export function requestPostAuthPermissions(): void {
-  if (postAuthStarted) return;
-  postAuthStarted = true;
-  if (!isNative()) return;
-  void setupGeolocation().catch((err) =>
-    console.warn("[native] geolocation warmup falhou", err),
-  );
-  if (ENABLE_NATIVE_PUSH) {
-    void setupPush().catch((err) => console.warn("[native] push setup falhou", err));
-  }
+  if (!isNative() || postAuthInFlight) return;
+
+  postAuthInFlight = (async () => {
+    try {
+      await setupGeolocation();
+    } catch (err) {
+      console.warn("[native] geolocation warmup falhou", err);
+    }
+
+    if (ENABLE_NATIVE_PUSH) {
+      try {
+        await setupPush();
+      } catch (err) {
+        console.warn("[native] push setup falhou", err);
+      }
+    }
+  })().finally(() => {
+    postAuthInFlight = null;
+  });
 }
 
 async function attachPushListenersOnly(): Promise<void> {
