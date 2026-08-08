@@ -4,6 +4,7 @@ import { Activity, BarChart3, RefreshCw, WalletCards } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { getAdminDashboardMetrics, type AdminDashboardMetrics } from "@/lib/adminControlPlane";
 import { getAdminFinanceSummary, type AdminFinanceSummary } from "@/lib/adminFinance";
+import { loadAdminAccess, type AdminAccessContext } from "@/lib/adminAccess";
 import { supabase } from "@/integrations/supabase/client";
 import { DSBadge, DSButton, DSCard, DSCardContent, EmptyState, Loading } from "@/design-system";
 import { toast } from "sonner";
@@ -34,26 +35,40 @@ const money = (cents: number) =>
 
 function AdminAnalyticsPage() {
   const [period, setPeriod] = useState<Period>("30d");
+  const [access, setAccess] = useState<AdminAccessContext | null>(null);
   const [dashboard, setDashboard] = useState<AdminDashboardMetrics | null>(null);
   const [finance, setFinance] = useState<AdminFinanceSummary | null>(null);
   const [rides, setRides] = useState<RideSlice[]>([]);
   const [loading, setLoading] = useState(true);
 
   const range = useMemo(() => periodRange(period), [period]);
+  const canReadFinance = Boolean(access?.permissions.includes("finance.read"));
 
   async function load() {
     setLoading(true);
     try {
+      const nextAccess = access ?? await loadAdminAccess();
+      setAccess(nextAccess);
+      if (!nextAccess?.permissions.includes("metrics.read")) throw new Error("forbidden");
+
+      const dashboardPromise = getAdminDashboardMetrics();
+      const ridesPromise = nextAccess.permissions.includes("rides.read")
+        ? supabase
+            .from("rides")
+            .select("category,status,created_at")
+            .gte("created_at", range.from.toISOString())
+            .lte("created_at", range.to.toISOString())
+            .order("created_at", { ascending: false })
+            .limit(5000)
+        : Promise.resolve({ data: [], error: null });
+      const financePromise = nextAccess.permissions.includes("finance.read")
+        ? getAdminFinanceSummary(range.from, range.to)
+        : Promise.resolve(null);
+
       const [dashboardData, financeData, rideResult] = await Promise.all([
-        getAdminDashboardMetrics(),
-        getAdminFinanceSummary(range.from, range.to),
-        supabase
-          .from("rides")
-          .select("category,status,created_at")
-          .gte("created_at", range.from.toISOString())
-          .lte("created_at", range.to.toISOString())
-          .order("created_at", { ascending: false })
-          .limit(5000),
+        dashboardPromise,
+        financePromise,
+        ridesPromise,
       ]);
       if (rideResult.error) throw rideResult.error;
       setDashboard(dashboardData);
@@ -100,7 +115,7 @@ function AdminAnalyticsPage() {
     >
       <DSCard className="mb-4 border-primary/20 bg-primary/5">
         <DSCardContent className="p-4 text-sm text-muted-foreground">
-          Analytics legado baseado em RPCs paralelos de MRR, assinaturas e receita foi removido. Receita APOIS nesta tela vem de <strong>ride_settlements.platform_fee_cents</strong>; GMV e ganhos do motorista permanecem conceitos separados.
+          Analytics legado baseado em RPCs paralelos de MRR, assinaturas e receita foi removido. Métricas financeiras detalhadas só aparecem para funções com <strong>finance.read</strong> e usam settlements canônicos.
         </DSCardContent>
       </DSCard>
 
@@ -114,8 +129,8 @@ function AdminAnalyticsPage() {
 
       {loading ? (
         <Loading label="Calculando indicadores..." />
-      ) : !dashboard || !finance ? (
-        <EmptyState icon={BarChart3} title="Analytics indisponível" description="As RPCs canônicas de métricas e financeiro precisam estar disponíveis no ambiente." />
+      ) : !dashboard ? (
+        <EmptyState icon={BarChart3} title="Analytics indisponível" description="A função administrativa atual não conseguiu consultar as métricas canônicas." />
       ) : (
         <>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -125,13 +140,21 @@ function AdminAnalyticsPage() {
             <Metric label="Corridas no período" value={String(rides.length)} />
             <Metric label="Taxa de conclusão" value={`${completionRate.toFixed(1)}%`} />
             <Metric label="Taxa de cancelamento" value={`${cancellationRate.toFixed(1)}%`} />
-            <Metric label="GMV liquidado" value={money(finance.settlements.gmv_cents)} />
-            <Metric label="Receita APOIS" value={money(finance.settlements.platform_revenue_cents)} emphasis />
-            <Metric label="Ganhos motoristas" value={money(finance.settlements.driver_earnings_cents)} />
-            <Metric label="Taxas de provedor" value={money(finance.settlements.provider_fees_cents)} />
-            <Metric label="Estornos" value={money(finance.settlements.refunds_cents)} />
-            <Metric label="Saques pendentes" value={money(finance.withdrawals.pending_cents)} />
+            {canReadFinance && finance && (
+              <>
+                <Metric label="GMV liquidado" value={money(finance.settlements.gmv_cents)} />
+                <Metric label="Receita APOIS" value={money(finance.settlements.platform_revenue_cents)} emphasis />
+                <Metric label="Ganhos motoristas" value={money(finance.settlements.driver_earnings_cents)} />
+                <Metric label="Taxas de provedor" value={money(finance.settlements.provider_fees_cents)} />
+                <Metric label="Estornos" value={money(finance.settlements.refunds_cents)} />
+                <Metric label="Saques pendentes" value={money(finance.withdrawals.pending_cents)} />
+              </>
+            )}
           </div>
+
+          {!canReadFinance && (
+            <p className="mt-3 text-xs text-muted-foreground">Indicadores financeiros detalhados foram ocultados porque sua função não possui finance.read.</p>
+          )}
 
           <div className="mt-5 grid gap-4 lg:grid-cols-2">
             <Breakdown icon={Activity} title="Corridas por status" rows={byStatus} />
