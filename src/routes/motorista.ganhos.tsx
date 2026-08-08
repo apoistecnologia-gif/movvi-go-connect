@@ -1,511 +1,193 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  ArrowLeft,
   ArrowUpRight,
   CalendarDays,
-  CheckCircle2,
-  Clock,
-  CreditCard,
-  Download,
-  FileText,
-  MapPin,
+  CircleDollarSign,
+  Clock3,
+  Loader2,
+  RefreshCw,
+  Route as RouteIcon,
   ShieldAlert,
-  Tag,
   TrendingUp,
   Wallet,
 } from "lucide-react";
 import { toast } from "sonner";
-import { MovviHeader } from "@/components/MovviHeader";
 import { ApoisDriverBottomNav } from "@/components/ApoisDriverBottomNav";
-import { supabase } from "@/integrations/supabase/client";
-import { loadDriverProfile } from "@/lib/driverProfile";
-import { downloadCsv } from "@/lib/csvExport";
-import { getDriverSubscriptionInfo } from "@/lib/payments/subscription.functions";
-import { SUBSCRIPTION_STATUS_UI_LABELS, toUiStatus } from "@/lib/payments/types";
 import {
-  Body,
-  BodySmall,
-  Caption,
-  DSButton,
-  DSCard,
-  EmptyState,
-  HeadingM,
-  HeadingXL,
-  Icon,
-  Label,
-  Loading,
-  Metric,
-  StatusPill,
-} from "@/design-system";
-import { cn } from "@/lib/utils";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+  loadDriverFinancialDashboard,
+  requestDriverWithdrawal,
+  type DriverFinancialDashboard,
+} from "@/lib/driverFinance.mobile";
+import { loadDriverProfile } from "@/lib/driverProfile";
 
 export const Route = createFileRoute("/motorista/ganhos")({
-  head: () => ({ meta: [{ title: "Financeiro — APOIS" }] }),
+  head: () => ({ meta: [{ title: "Financeiro — APOIS Motorista" }] }),
   component: DriverEarningsPage,
 });
 
 type Filter = "today" | "week" | "month" | "custom";
 
-type Ride = {
-  id: string;
-  created_at: string;
-  completed_at: string | null;
-  origin_name: string;
-  destination_name: string;
-  distance_km: number | null;
-  duration_min: number | null;
-  final_price: number | null;
-  estimated_price: number | null;
-  payment_method: string | null;
-  category: string | null;
-};
-
-function brl(v: number) {
-  return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+function cents(value: number): string {
+  return (value / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-function startOf(kind: "day" | "week" | "month"): Date {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  if (kind === "week") d.setDate(d.getDate() - 6);
-  if (kind === "month") d.setDate(1);
-  return d;
+function startOf(filter: Exclude<Filter, "custom">): Date {
+  const date = new Date();
+  date.setHours(0, 0, 0, 0);
+  if (filter === "week") date.setDate(date.getDate() - 6);
+  if (filter === "month") date.setDate(1);
+  return date;
 }
 
 function endOfToday(): Date {
-  const d = new Date();
-  d.setHours(23, 59, 59, 999);
-  return d;
+  const date = new Date();
+  date.setHours(23, 59, 59, 999);
+  return date;
 }
 
-function range(filter: Filter, customFrom: string, customTo: string): [Date, Date] {
-  const end = endOfToday();
-  if (filter === "today") return [startOf("day"), end];
-  if (filter === "week") return [startOf("week"), end];
-  if (filter === "month") return [startOf("month"), end];
-  return [
-    customFrom ? new Date(customFrom + "T00:00:00") : startOf("day"),
-    customTo ? new Date(customTo + "T23:59:59") : end,
-  ];
+function period(filter: Filter, customFrom: string, customTo: string): [Date, Date] {
+  if (filter !== "custom") return [startOf(filter), endOfToday()];
+  const from = customFrom ? new Date(`${customFrom}T00:00:00`) : startOf("today");
+  const to = customTo ? new Date(`${customTo}T23:59:59`) : endOfToday();
+  return [from, to];
 }
 
-function formatPayment(method: string | null): string {
-  if (!method) return "—";
-  const m = method.toLowerCase();
-  if (m.includes("pix")) return "Pix";
-  if (m.includes("credit") || m.includes("credito")) return "Crédito";
-  if (m.includes("debit") || m.includes("debito")) return "Débito";
-  if (m.includes("cash") || m.includes("dinheiro")) return "Dinheiro";
-  return method;
+function formatDate(value: string): string {
+  const date = new Date(value);
+  return Number.isFinite(date.getTime())
+    ? new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(date)
+    : "—";
+}
+
+function paymentLabel(value: string): string {
+  const normalized = value.toLowerCase();
+  if (normalized === "cash") return "Dinheiro";
+  if (normalized === "wallet") return "Carteira APOIS";
+  if (normalized === "pix") return "PIX";
+  if (normalized.includes("credit")) return "Crédito";
+  if (normalized.includes("debit")) return "Débito";
+  return value;
 }
 
 function DriverEarningsPage() {
   const navigate = useNavigate();
-  const loadSubscription = useServerFn(getDriverSubscriptionInfo);
-  const [driverId, setDriverId] = useState<string | null>(null);
+  const [dashboard, setDashboard] = useState<DriverFinancialDashboard | null>(null);
   const [filter, setFilter] = useState<Filter>("week");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
-  const [rides, setRides] = useState<Ride[]>([]);
   const [loading, setLoading] = useState(true);
-  const [available, setAvailable] = useState<number | null>(null);
-  const [totals, setTotals] = useState({ today: 0, week: 0, month: 0 });
-  const [sub, setSub] = useState<Awaited<ReturnType<typeof getDriverSubscriptionInfo>> | null>(null);
-  const [driverSubscriptionStatus, setDriverSubscriptionStatus] = useState<string | null>(null);
+  const [withdrawing, setWithdrawing] = useState(false);
+  const [withdrawalAmount, setWithdrawalAmount] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    (async () => {
+  const range = useMemo(() => period(filter, customFrom, customTo), [filter, customFrom, customTo]);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
       const profile = await loadDriverProfile();
       if (!profile.ok) {
-        navigate({ to: profile.reason === "no_session" ? "/motorista/login" : "/motorista/status" });
+        await navigate({ to: profile.reason === "no_session" ? "/motorista/login" : "/motorista/status", replace: true });
         return;
       }
-      setDriverId(profile.profile.id);
-      setDriverSubscriptionStatus(profile.profile.subscription_status ?? null);
-    })();
-  }, [navigate]);
-
-  useEffect(() => {
-    if (!driverId) return;
-    (async () => {
-      try {
-        const [walletResult, subInfo] = await Promise.all([
-          (supabase as any).from("driver_wallets").select("available_balance").eq("driver_id", driverId).maybeSingle(),
-          loadSubscription({}).catch(() => null),
-        ]);
-        if (walletResult?.data) setAvailable(Number(walletResult.data.available_balance ?? 0));
-        if (subInfo) setSub(subInfo);
-      } catch {
-        /* silent */
-      }
-    })();
-  }, [driverId, loadSubscription]);
-
-  useEffect(() => {
-    if (!driverId) return;
-    setLoading(true);
-    (async () => {
-      const [from, to] = range(filter, customFrom, customTo);
-      const { data } = await supabase
-        .from("rides")
-        .select("id,created_at,completed_at,origin_name,destination_name,distance_km,duration_min,final_price,estimated_price,payment_method,category")
-        .eq("driver_id", driverId).eq("status", "finalizada")
-        .gte("completed_at", from.toISOString())
-        .lte("completed_at", to.toISOString())
-        .order("completed_at", { ascending: false });
-      setRides((data ?? []) as Ride[]);
-
-      // KPI totals (independent of active filter)
-      const todayStart = startOf("day");
-      const weekStart = startOf("week");
-      const monthStart = startOf("month");
-      const { data: monthRows } = await supabase
-        .from("rides")
-        .select("final_price,estimated_price,completed_at")
-        .eq("driver_id", driverId).eq("status", "finalizada")
-        .gte("completed_at", monthStart.toISOString());
-      let t = 0, w = 0, m = 0;
-      (monthRows ?? []).forEach((r) => {
-        const v = Number(r.final_price ?? r.estimated_price ?? 0);
-        const at = new Date(r.completed_at ?? new Date());
-        m += v;
-        if (at >= weekStart) w += v;
-        if (at >= todayStart) t += v;
-      });
-      setTotals({ today: t, week: w, month: m });
+      setDashboard(await loadDriverFinancialDashboard(range[0], range[1]));
+    } catch (caughtError: unknown) {
+      console.error("[APOIS Driver Finance] load failed", caughtError);
+      setError(caughtError instanceof Error ? caughtError.message : "Não foi possível carregar o financeiro agora.");
+    } finally {
       setLoading(false);
-    })();
-  }, [driverId, filter, customFrom, customTo]);
+    }
+  }, [navigate, range]);
 
-  const periodStats = useMemo(() => {
-    const earnings = rides.reduce((s, r) => s + Number(r.final_price ?? r.estimated_price ?? 0), 0);
-    return { earnings, trips: rides.length };
-  }, [rides]);
+  useEffect(() => { void load(); }, [load]);
 
-  const displayedBalance = available ?? totals.month;
+  const submitWithdrawal = async (): Promise<void> => {
+    if (!dashboard?.payoutEnabled || withdrawing) return;
+    const parsed = Number(withdrawalAmount.replace(",", "."));
+    const amountCents = Math.round(parsed * 100);
+    if (!Number.isFinite(parsed) || amountCents <= 0) {
+      toast.error("Informe um valor de saque válido.");
+      return;
+    }
+    if (amountCents > dashboard.wallet.availableBalanceCents) {
+      toast.error("Saldo disponível insuficiente.");
+      return;
+    }
 
-  const subUi = toUiStatus(sub?.subscriptionStatus ?? driverSubscriptionStatus);
-  const subLabel = SUBSCRIPTION_STATUS_UI_LABELS[subUi];
-  const subActive = subUi === "active";
-  const subExpires = sub?.nextDueAt
-    ? new Date(sub.nextDueAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })
-    : null;
-
-  function exportCsv() {
-    downloadCsv(
-      `apois-ganhos-${filter}`,
-      rides.map((r) => ({
-        id: r.id,
-        data: new Date(r.completed_at ?? r.created_at).toLocaleString("pt-BR"),
-        origem: r.origin_name,
-        destino: r.destination_name,
-        categoria: r.category ?? "",
-        pagamento: r.payment_method ?? "",
-        km: Number(r.distance_km ?? 0).toFixed(2),
-        min: Math.round(Number(r.duration_min ?? 0)),
-        valor: Number(r.final_price ?? r.estimated_price ?? 0).toFixed(2),
-      })),
-    );
-  }
-
-  function exportPdf() {
-    const doc = new jsPDF();
-    doc.setFontSize(16);
-    doc.text("APOIS — Extrato de Ganhos", 14, 16);
-    doc.setFontSize(10);
-    doc.text(`Período: ${filter} · Gerado em ${new Date().toLocaleString("pt-BR")}`, 14, 23);
-    doc.text(`Total: ${brl(periodStats.earnings)} · ${periodStats.trips} corridas`, 14, 30);
-    autoTable(doc, {
-      startY: 36,
-      head: [["Data", "Origem → Destino", "KM", "Min", "Pagto", "Valor"]],
-      body: rides.map((r) => [
-        new Date(r.completed_at ?? r.created_at).toLocaleString("pt-BR"),
-        `${r.origin_name} → ${r.destination_name}`,
-        Number(r.distance_km ?? 0).toFixed(1),
-        String(Math.round(Number(r.duration_min ?? 0))),
-        r.payment_method ?? "—",
-        brl(Number(r.final_price ?? r.estimated_price ?? 0)),
-      ]),
-      styles: { fontSize: 8 },
-      headStyles: { fillColor: [18, 24, 38] },
-    });
-    doc.save(`apois-extrato-${filter}.pdf`);
-  }
+    setWithdrawing(true);
+    try {
+      await requestDriverWithdrawal(amountCents);
+      setWithdrawalAmount("");
+      toast.success("Saque solicitado. O valor foi reservado até o processamento.");
+      await load();
+    } catch (caughtError: unknown) {
+      toast.error(caughtError instanceof Error ? caughtError.message : "Não foi possível solicitar o saque.");
+    } finally {
+      setWithdrawing(false);
+    }
+  };
 
   return (
-    <div className="flex min-h-dvh flex-col bg-background">
-      <MovviHeader logoutRedirect="/" />
-      <main className="flex-1 px-4 pt-4 pb-28 sm:px-5">
-        <div className="mx-auto flex w-full max-w-2xl flex-col gap-5">
-          {/* HEADER */}
-          <header className="animate-in fade-in slide-in-from-top-2 duration-500">
-            <HeadingXL>Financeiro</HeadingXL>
-            <Body className="mt-1 text-muted-foreground">Gerencie seus ganhos</Body>
-          </header>
-
-          {/* MAIN BALANCE */}
-          <DSCard className="relative overflow-hidden p-5 sm:p-6 animate-in fade-in zoom-in-[0.98] duration-500">
-            <div
-              aria-hidden
-              className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-primary/10 blur-2xl"
-            />
-            <div className="relative flex flex-col gap-4">
-              <div className="flex items-center gap-2">
-                <span className="grid h-9 w-9 place-items-center rounded-full bg-primary/12 text-primary">
-                  <Icon as={Wallet} size="md" />
-                </span>
-                <Caption>Saldo disponível</Caption>
-              </div>
-
-              <Metric className="text-[clamp(28px,9vw,36px)] leading-none">
-                {brl(displayedBalance)}
-              </Metric>
-
-              <div>
-                <StatusPill status="online" label="Disponível para saque" />
-              </div>
-
-              <DSButton
-                size="lg"
-                className="w-full"
-                onClick={() => toast.info("Saque em breve — em desenvolvimento")}
-              >
-                <Icon as={ArrowUpRight} size="md" />
-                Solicitar saque
-              </DSButton>
-            </div>
-          </DSCard>
-
-          {/* KPI ROW */}
-          <section className="grid grid-cols-3 gap-2 sm:gap-3 animate-in fade-in slide-in-from-bottom-2 duration-500">
-            <KpiCard icon={CalendarDays} label="Hoje"   value={brl(totals.today)} />
-            <KpiCard icon={TrendingUp}   label="Semana" value={brl(totals.week)} />
-            <KpiCard icon={TrendingUp}   label="Mês"    value={brl(totals.month)} />
-          </section>
-
-          {/* SUBSCRIPTION */}
-          <DSCard
-            role="button"
-            tabIndex={0}
-            onClick={() => navigate({ to: "/motorista/assinatura" })}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                navigate({ to: "/motorista/assinatura" });
-              }
-            }}
-            className="press-scale flex cursor-pointer items-center gap-3 p-4 outline-none focus-visible:ring-2 focus-visible:ring-ring animate-in fade-in slide-in-from-bottom-2 duration-500"
-          >
-            <span
-              className={cn(
-                "grid h-11 w-11 shrink-0 place-items-center rounded-full",
-                subActive ? "bg-primary/12 text-primary" : "bg-destructive/10 text-destructive",
-              )}
-            >
-              <Icon as={subActive ? CheckCircle2 : ShieldAlert} size="lg" />
-            </span>
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <Body className="font-semibold">APOIS Premium</Body>
-                <StatusPill
-                  status={subActive ? "accepted" : "cancelled"}
-                  label={subLabel}
-                  pulse={subActive}
-                />
-              </div>
-              <Caption className="mt-0.5 block">
-                {subExpires ? `Expira em ${subExpires}` : "Toque para ver detalhes"}
-              </Caption>
-            </div>
-            <Icon as={ArrowUpRight} size="md" className="rotate-45 text-muted-foreground" />
-          </DSCard>
-
-          {/* HISTORY */}
-          <section className="flex flex-col gap-3">
-            <div className="flex items-center justify-between gap-2">
-              <HeadingM>Histórico</HeadingM>
-              <div className="flex gap-1.5">
-                <DSButton
-                  variant="ghost"
-                  size="icon"
-                  onClick={exportCsv}
-                  aria-label="Exportar CSV"
-                  disabled={rides.length === 0}
-                >
-                  <Icon as={Download} size="md" />
-                </DSButton>
-                <DSButton
-                  variant="ghost"
-                  size="icon"
-                  onClick={exportPdf}
-                  aria-label="Exportar PDF"
-                  disabled={rides.length === 0}
-                >
-                  <Icon as={FileText} size="md" />
-                </DSButton>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-1.5">
-              <FilterPill active={filter === "today"}  onClick={() => setFilter("today")}>Hoje</FilterPill>
-              <FilterPill active={filter === "week"}   onClick={() => setFilter("week")}>Semana</FilterPill>
-              <FilterPill active={filter === "month"}  onClick={() => setFilter("month")}>Mês</FilterPill>
-              <FilterPill active={filter === "custom"} onClick={() => setFilter("custom")}>Personalizado</FilterPill>
-            </div>
-
-            {filter === "custom" && (
-              <div className="grid grid-cols-2 gap-2">
-                <input
-                  type="date"
-                  value={customFrom}
-                  onChange={(e) => setCustomFrom(e.target.value)}
-                  className="h-11 rounded-[14px] border border-border/60 bg-card px-3 text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                />
-                <input
-                  type="date"
-                  value={customTo}
-                  onChange={(e) => setCustomTo(e.target.value)}
-                  className="h-11 rounded-[14px] border border-border/60 bg-card px-3 text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                />
-              </div>
-            )}
-          </section>
-
-          {/* LIST */}
-          {loading ? (
-            <Loading label="Carregando ganhos…" />
-          ) : rides.length === 0 ? (
-            <EmptyState
-              icon={Wallet}
-              title="Nenhum ganho ainda"
-              description="Suas corridas finalizadas aparecerão aqui assim que forem concluídas."
-            />
-          ) : (
-            <ul className="flex flex-col gap-2">
-              {rides.map((r, i) => (
-                <li
-                  key={r.id}
-                  className="animate-in fade-in slide-in-from-bottom-1"
-                  style={{
-                    animationDelay: `${Math.min(i, 8) * 40}ms`,
-                    animationDuration: "300ms",
-                    animationFillMode: "backwards",
-                  }}
-                >
-                  <RideCard ride={r} />
-                </li>
-              ))}
-            </ul>
-          )}
+    <div className="min-h-[100dvh] bg-[#050607] text-white">
+      <header className="sticky top-0 z-30 border-b border-white/5 bg-[#08090A]/95 px-4 pb-4 pt-[calc(env(safe-area-inset-top)+12px)] backdrop-blur-xl">
+        <div className="mx-auto flex max-w-xl items-center gap-3">
+          <button type="button" aria-label="Voltar" onClick={() => void navigate({ to: "/motorista/app" })} className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/8 bg-[#111315]"><ArrowLeft className="h-5 w-5" /></button>
+          <div className="min-w-0 flex-1"><p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#F6BE1C]">Carteira e corridas</p><h1 className="text-xl font-black">Financeiro</h1></div>
+          <button type="button" aria-label="Atualizar financeiro" disabled={loading} onClick={() => void load()} className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/8 bg-[#111315] text-[#F6BE1C] disabled:opacity-50"><RefreshCw className={loading ? "h-4 w-4 animate-spin" : "h-4 w-4"} /></button>
         </div>
+      </header>
+
+      <main className="mx-auto w-full max-w-xl space-y-5 px-4 py-5 pb-28">
+        {error ? <section className="rounded-2xl border border-red-500/20 bg-red-500/8 p-4 text-xs font-bold text-red-300">{error}</section> : null}
+
+        {loading && !dashboard ? (
+          <div className="flex min-h-[55vh] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-[#F6BE1C]" /></div>
+        ) : dashboard ? (
+          <>
+            <section className="rounded-[28px] border border-[#F6BE1C]/20 bg-gradient-to-br from-[#2A2108] via-[#121416] to-[#090A0B] p-5">
+              <div className="flex items-center gap-3"><div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#F6BE1C] text-black"><Wallet className="h-5 w-5" /></div><div><p className="text-[9px] font-black uppercase tracking-[0.17em] text-zinc-500">Saldo disponível</p><p className="mt-1 text-3xl font-black tracking-tight">{cents(dashboard.wallet.availableBalanceCents)}</p></div></div>
+              <div className="mt-5 grid grid-cols-2 gap-2 text-xs"><Metric label="Pendente" value={cents(dashboard.wallet.pendingBalanceCents)} /><Metric label="Pendência" value={cents(dashboard.wallet.debtBalanceCents)} danger={dashboard.wallet.debtBalanceCents > 0} /></div>
+
+              {dashboard.payoutEnabled ? (
+                <div className="mt-4 rounded-2xl border border-white/8 bg-black/25 p-3">
+                  <label className="text-[9px] font-black uppercase tracking-[0.15em] text-zinc-500" htmlFor="withdrawal-amount">Solicitar saque</label>
+                  <div className="mt-2 flex gap-2"><input id="withdrawal-amount" value={withdrawalAmount} onChange={(event) => setWithdrawalAmount(event.target.value)} inputMode="decimal" placeholder="0,00" className="min-w-0 flex-1 rounded-xl border border-white/8 bg-[#101214] px-4 text-sm font-black outline-none focus:border-[#F6BE1C]/60" /><button type="button" disabled={withdrawing || dashboard.wallet.availableBalanceCents <= 0} onClick={() => void submitWithdrawal()} className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#F6BE1C] px-4 text-xs font-black text-black disabled:bg-zinc-800 disabled:text-zinc-600">{withdrawing ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowUpRight className="h-4 w-4" />}Sacar</button></div>
+                </div>
+              ) : (
+                <div className="mt-4 flex gap-3 rounded-2xl border border-amber-400/15 bg-amber-400/8 p-4"><ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber-300" /><div><p className="text-xs font-black text-amber-100">Saques ainda não liberados</p><p className="mt-1 text-[10px] leading-4 text-amber-100/55">O provedor de transferência precisa ser configurado pela APOIS. Nenhum valor será reservado enquanto essa integração não estiver ativa.</p></div></div>
+              )}
+            </section>
+
+            <section className="grid grid-cols-3 gap-2"><Kpi icon={CalendarDays} label="Hoje" value={cents(dashboard.kpis.todayCents)} /><Kpi icon={TrendingUp} label="7 dias" value={cents(dashboard.kpis.last7DaysCents)} /><Kpi icon={CircleDollarSign} label="Mês" value={cents(dashboard.kpis.monthCents)} /></section>
+
+            <section className="space-y-3">
+              <div><p className="text-[9px] font-black uppercase tracking-[0.18em] text-[#F6BE1C]">Período</p><h2 className="mt-1 text-lg font-black">Ganhos liquidados</h2></div>
+              <div className="flex flex-wrap gap-2">{(["today", "week", "month", "custom"] as Filter[]).map((item) => <button key={item} type="button" onClick={() => setFilter(item)} className={`rounded-full px-3 py-2 text-[10px] font-black ${filter === item ? "bg-[#F6BE1C] text-black" : "border border-white/8 bg-[#111315] text-zinc-400"}`}>{item === "today" ? "Hoje" : item === "week" ? "7 dias" : item === "month" ? "Mês" : "Personalizado"}</button>)}</div>
+              {filter === "custom" ? <div className="grid grid-cols-2 gap-2"><input type="date" value={customFrom} onChange={(event) => setCustomFrom(event.target.value)} className="rounded-xl border border-white/8 bg-[#111315] p-3 text-xs [color-scheme:dark]" /><input type="date" value={customTo} onChange={(event) => setCustomTo(event.target.value)} className="rounded-xl border border-white/8 bg-[#111315] p-3 text-xs [color-scheme:dark]" /></div> : null}
+              <div className="flex items-end justify-between rounded-2xl border border-white/6 bg-[#0D0F11] p-4"><div><p className="text-[9px] font-black uppercase tracking-[0.15em] text-zinc-600">Total do período</p><p className="mt-1 text-2xl font-black">{cents(dashboard.period.settledEarningsCents)}</p></div><p className="text-xs font-bold text-zinc-500">{dashboard.period.settledRides} corridas</p></div>
+            </section>
+
+            <section className="space-y-3">
+              <div><p className="text-[9px] font-black uppercase tracking-[0.18em] text-[#F6BE1C]">Origem financeira real</p><h2 className="mt-1 text-lg font-black">Liquidações de corridas</h2></div>
+              {dashboard.settlements.length === 0 ? <div className="rounded-2xl border border-white/6 bg-[#0D0F11] p-6 text-center text-xs font-bold text-zinc-600">Nenhuma liquidação neste período.</div> : dashboard.settlements.map((item) => <article key={item.settlementId} className="rounded-[22px] border border-white/6 bg-[#0D0F11] p-4"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="truncate text-xs font-black">{item.originName} → {item.destinationName}</p><p className="mt-1 text-[10px] text-zinc-600">{formatDate(item.settledAt ?? item.createdAt)} · {paymentLabel(item.paymentMethod)}</p></div><p className="shrink-0 text-sm font-black text-[#F6BE1C]">{cents(item.driverEarningCents)}</p></div><div className="mt-3 flex gap-3 text-[10px] font-bold text-zinc-600"><span className="flex items-center gap-1"><RouteIcon className="h-3 w-3" />{item.distanceKm === null ? "—" : `${item.distanceKm.toFixed(1)} km`}</span><span className="flex items-center gap-1"><Clock3 className="h-3 w-3" />{item.durationMin === null ? "—" : `${Math.round(item.durationMin)} min`}</span><span>{item.settlementStatus}</span></div></article>)}
+            </section>
+
+            {dashboard.withdrawals.length > 0 ? <section className="space-y-3"><div><p className="text-[9px] font-black uppercase tracking-[0.18em] text-[#F6BE1C]">Transferências</p><h2 className="mt-1 text-lg font-black">Solicitações de saque</h2></div>{dashboard.withdrawals.map((item) => <article key={item.id} className="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-[#0D0F11] p-4"><div><p className="text-xs font-black">{cents(item.amountCents)}</p><p className="mt-1 text-[10px] text-zinc-600">{formatDate(item.requestedAt)}</p></div><span className="rounded-full bg-white/5 px-3 py-1.5 text-[9px] font-black uppercase text-zinc-400">{item.status}</span></article>)}</section> : null}
+          </>
+        ) : null}
       </main>
       <ApoisDriverBottomNav />
     </div>
   );
 }
 
-/* ---------------- Sub-components (thin wrappers over DS) ---------------- */
-
-function KpiCard({
-  icon: IconCmp,
-  label,
-  value,
-}: {
-  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
-  label: string;
-  value: string;
-}) {
-  return (
-    <DSCard className="flex flex-col gap-2 p-3 sm:p-4">
-      <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary/12 text-primary">
-        <Icon as={IconCmp} size="md" />
-      </span>
-      <Metric className="text-[clamp(15px,4.6vw,18px)] leading-none">{value}</Metric>
-      <Label>{label}</Label>
-    </DSCard>
-  );
+function Metric({ label, value, danger = false }: { label: string; value: string; danger?: boolean }) {
+  return <div className="rounded-2xl border border-white/6 bg-black/20 p-3"><p className="text-[9px] font-black uppercase tracking-[0.14em] text-zinc-600">{label}</p><p className={`mt-1 font-black ${danger ? "text-red-400" : "text-zinc-200"}`}>{value}</p></div>;
 }
 
-function FilterPill({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <DSButton
-      variant={active ? "default" : "outline"}
-      size="sm"
-      onClick={onClick}
-      className={cn(
-        "rounded-full px-4",
-        !active && "bg-card text-muted-foreground hover:text-foreground",
-      )}
-    >
-      {children}
-    </DSButton>
-  );
-}
-
-function RideCard({ ride: r }: { ride: Ride }) {
-  const when = new Date(r.completed_at ?? r.created_at);
-  const dateStr = when.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
-  const timeStr = when.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-  const value = Number(r.final_price ?? r.estimated_price ?? 0);
-
-  return (
-    <DSCard className="flex flex-col gap-3 p-3 sm:p-4">
-      <div className="flex items-start gap-3">
-        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
-          <Icon as={MapPin} size="md" />
-        </span>
-
-        <div className="min-w-0 flex-1">
-          <Body className="truncate font-semibold text-foreground">
-            {r.destination_name || r.origin_name}
-          </Body>
-          {r.origin_name && r.destination_name && (
-            <BodySmall className="truncate text-muted-foreground">
-              de {r.origin_name}
-            </BodySmall>
-          )}
-        </div>
-
-        <div className="shrink-0 text-right">
-          <Metric className="text-[clamp(14px,4.4vw,16px)] leading-none text-primary">
-            {brl(value)}
-          </Metric>
-        </div>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-muted-foreground">
-        <span className="inline-flex items-center gap-1">
-          <Icon as={Clock} size="sm" />
-          <Caption>{dateStr} · {timeStr}</Caption>
-        </span>
-        {r.distance_km != null && (
-          <Caption>{Number(r.distance_km).toFixed(1)} km</Caption>
-        )}
-        {r.category && (
-          <span className="inline-flex items-center gap-1">
-            <Icon as={Tag} size="sm" />
-            <Caption className="capitalize">{r.category}</Caption>
-          </span>
-        )}
-        <span className="inline-flex items-center gap-1">
-          <Icon as={CreditCard} size="sm" />
-          <Caption>{formatPayment(r.payment_method)}</Caption>
-        </span>
-        <span className="ml-auto">
-          <StatusPill status="finished" label="Concluída" pulse={false} />
-        </span>
-      </div>
-    </DSCard>
-  );
+function Kpi({ icon: Icon, label, value }: { icon: typeof CalendarDays; label: string; value: string }) {
+  return <div className="rounded-2xl border border-white/6 bg-[#0D0F11] p-3"><Icon className="h-4 w-4 text-[#F6BE1C]" /><p className="mt-3 text-[9px] font-black uppercase tracking-[0.12em] text-zinc-600">{label}</p><p className="mt-1 text-xs font-black">{value}</p></div>;
 }
