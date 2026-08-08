@@ -11,7 +11,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "test": "bun run lint && bun run typecheck",
-    "test:unit": "bunx vitest run --passWithNoTests",
+    "test:unit": "vitest run --passWithNoTests",
     "test:e2e": "python3 -m pytest tests/e2e",
     "typecheck": "tsc --noEmit",
     "build:passageiro": "cross-env VITE_APP_ROLE=passageiro node scripts/build-mobile-spa.mjs",
@@ -86,6 +86,7 @@
     "prettier": "^3.7.3",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.56.1",
-    "vite": "^8.0.16"
+    "vite": "^8.0.16",
+    "vitest": "^3.2.4"
   }
 }
