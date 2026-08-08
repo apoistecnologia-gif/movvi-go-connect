@@ -65,7 +65,9 @@ jobs:
         run: deno check supabase/functions/_shared/payment-provider.ts
 
       - name: Payment provider semantic lint
-        run: npx eslint --rule 'prettier/prettier: off' supabase/functions/_shared/payment-provider.ts
+        run: >-
+          npx eslint --rule 'prettier/prettier: off'
+          supabase/functions/_shared/payment-provider.ts
 
       - name: Apply canonical baseline through Phase 5
         run: |
