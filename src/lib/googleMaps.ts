@@ -1,6 +1,10 @@
-// Chave do Google Maps fornecida pelo conector Lovable (referrer-restricted: *.lovable.app).
+// Chave própria da APOIS para os APKs/mobile. O conector Lovable permanece
+// apenas como fallback para o preview/site legado e não deve ser a credencial
+// principal do app publicado.
 export const GOOGLE_MAPS_API_KEY =
-  (import.meta.env.VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY as string | undefined) ?? "";
+  (import.meta.env.VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY as string | undefined) ??
+  (import.meta.env.VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY as string | undefined) ??
+  "";
 
 // Bibliotecas que usamos no app inteiro. Manter referência estável para evitar reload do script.
 export const GOOGLE_MAPS_LIBRARIES = ["places", "routes", "geometry", "marker", "visualization"] as unknown as (
@@ -128,8 +132,6 @@ export const APOIS_LIGHT_MAP_STYLE: google.maps.MapTypeStyle[] = [
   { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#4a7ea6" }] },
 ];
 
-
-
 export function getMapStyleForTheme(
   theme: "light" | "dark",
 ): google.maps.MapTypeStyle[] {
@@ -139,8 +141,6 @@ export function getMapStyleForTheme(
 export function getMapBackgroundForTheme(theme: "light" | "dark"): string {
   return theme === "light" ? "#f8f9fa" : "#0f1a2c";
 }
-
-
 
 // ─── Helpers seguros para uso ANTES de o SDK terminar de carregar ─────────
 // O JSX pai de <MovviMap> é avaliado em todo render, mesmo enquanto
