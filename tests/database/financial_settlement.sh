@@ -29,22 +29,6 @@ insert into public.rides(
 select '$PIX_RIDE',p.id,d.id,d.id,'carros','em_viagem','{"lat":-9.39,"lng":-40.50}'::jsonb,'{"lat":-9.40,"lng":-40.49}'::jsonb,
   'Origem Pix','Destino Pix',-9.39,-40.50,-9.40,-40.49,30.00,'pix','94000000-0000-4000-8000-000000000001',now()
 from public.users p, public.drivers d where p.auth_user_id='$PASSENGER_AUTH' and d.user_id=(select id from public.users where auth_user_id='$DRIVER_AUTH');
-
-insert into public.rides(
-  id,passenger_id,driver_id,accepted_driver_id,category,status,origin,destination,origin_name,destination_name,
-  origin_lat,origin_lng,destination_lat,destination_lng,estimated_price,payment_method,request_key,started_at
-)
-select '$CASH_RIDE',p.id,d.id,d.id,'carros','em_viagem','{"lat":-9.39,"lng":-40.50}'::jsonb,'{"lat":-9.40,"lng":-40.49}'::jsonb,
-  'Origem Cash','Destino Cash',-9.39,-40.50,-9.40,-40.49,20.00,'cash','94000000-0000-4000-8000-000000000002',now()
-from public.users p, public.drivers d where p.auth_user_id='$PASSENGER_AUTH' and d.user_id=(select id from public.users where auth_user_id='$DRIVER_AUTH');
-
-insert into public.rides(
-  id,passenger_id,driver_id,accepted_driver_id,category,status,origin,destination,origin_name,destination_name,
-  origin_lat,origin_lng,destination_lat,destination_lng,estimated_price,payment_method,request_key,started_at
-)
-select '$WALLET_RIDE',p.id,d.id,d.id,'carros','em_viagem','{"lat":-9.39,"lng":-40.50}'::jsonb,'{"lat":-9.40,"lng":-40.49}'::jsonb,
-  'Origem Wallet','Destino Wallet',-9.39,-40.50,-9.40,-40.49,10.00,'wallet','94000000-0000-4000-8000-000000000003',now()
-from public.users p, public.drivers d where p.auth_user_id='$PASSENGER_AUTH' and d.user_id=(select id from public.users where auth_user_id='$DRIVER_AUTH');
 SQL
 
 # Finish PIX ride: creates pending settlement, no unilateral payment confirmation.
@@ -81,6 +65,17 @@ PENDING=$(psql -Atqc "select pending_balance from public.driver_wallets w join p
 [[ "$PIX_PROVIDER_FEE" == "1" ]] || { echo "Provider fee ledger missing"; exit 1; }
 [[ "$AVAILABLE" == "30.00" && "$PENDING" == "0.00" ]] || { echo "Driver wallet wrong after PIX settle: available=$AVAILABLE pending=$PENDING"; exit 1; }
 
+# Create next ride only after the prior ride is terminal, preserving one-active-ride-per-Passenger.
+psql -v ON_ERROR_STOP=1 <<SQL
+insert into public.rides(
+  id,passenger_id,driver_id,accepted_driver_id,category,status,origin,destination,origin_name,destination_name,
+  origin_lat,origin_lng,destination_lat,destination_lng,estimated_price,payment_method,request_key,started_at
+)
+select '$CASH_RIDE',p.id,d.id,d.id,'carros','em_viagem','{"lat":-9.39,"lng":-40.50}'::jsonb,'{"lat":-9.40,"lng":-40.49}'::jsonb,
+  'Origem Cash','Destino Cash',-9.39,-40.50,-9.40,-40.49,20.00,'cash','94000000-0000-4000-8000-000000000002',now()
+from public.users p, public.drivers d where p.auth_user_id='$PASSENGER_AUTH' and d.user_id=(select id from public.users where auth_user_id='$DRIVER_AUTH');
+SQL
+
 # Cash is confirmed only by assigned Driver and records earnings, not withdrawable platform wallet.
 psql -v ON_ERROR_STOP=1 <<SQL
 begin;
@@ -94,6 +89,16 @@ CASH_LEDGER=$(psql -Atqc "select count(*) from public.driver_ledger_entries wher
 AVAILABLE_AFTER_CASH=$(psql -Atqc "select available_balance from public.driver_wallets w join public.drivers d on d.id=w.driver_id join public.users u on u.id=d.user_id where u.auth_user_id='$DRIVER_AUTH'")
 [[ "$CASH_SETTLED" == "1" && "$CASH_LEDGER" == "1" ]] || { echo "Cash settlement missing"; exit 1; }
 [[ "$AVAILABLE_AFTER_CASH" == "30.00" ]] || { echo "Cash must not be added to withdrawable wallet"; exit 1; }
+
+psql -v ON_ERROR_STOP=1 <<SQL
+insert into public.rides(
+  id,passenger_id,driver_id,accepted_driver_id,category,status,origin,destination,origin_name,destination_name,
+  origin_lat,origin_lng,destination_lat,destination_lng,estimated_price,payment_method,request_key,started_at
+)
+select '$WALLET_RIDE',p.id,d.id,d.id,'carros','em_viagem','{"lat":-9.39,"lng":-40.50}'::jsonb,'{"lat":-9.40,"lng":-40.49}'::jsonb,
+  'Origem Wallet','Destino Wallet',-9.39,-40.50,-9.40,-40.49,10.00,'wallet','94000000-0000-4000-8000-000000000003',now()
+from public.users p, public.drivers d where p.auth_user_id='$PASSENGER_AUTH' and d.user_id=(select id from public.users where auth_user_id='$DRIVER_AUTH');
+SQL
 
 # Internal wallet is debited server-side and immediately settles the Driver platform wallet.
 psql -v ON_ERROR_STOP=1 <<SQL
