@@ -36,7 +36,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      # Valores sintéticos apenas para compilar/validar. Deploy real deve fornecer ambiente externo.
       SUPABASE_PROJECT_ID: ci_validation_project
       SUPABASE_URL: https://ci-validation.supabase.co
       SUPABASE_PUBLISHABLE_KEY: ci_validation_publishable_key
@@ -55,18 +54,30 @@ jobs:
 
       - name: Validar ambiente canônico APOIS
         run: |
-          test ! -f .env
-          grep -F 'project_id = "vqtucstyduxrqjgyigfk"' supabase/config.toml
-          grep -F 'PostgrestVersion: "14.15"' src/integrations/supabase/types.ts
-          if grep -RIn --exclude-dir=.git -E 'ekddifjpbieuainvjlbl|wqbtnfbvqtkyywfcqjwa|zjphbuvcapwyuynadgdt' \
-            supabase/config.toml .env.example; then
+          set -euo pipefail
+          if [ -f .env ]; then
+            echo '.env não pode ser versionado no Admin.'
+            exit 1
+          fi
+          grep -qF 'project_id = "vqtucstyduxrqjgyigfk"' supabase/config.toml
+          grep -qF 'PostgrestVersion: "14.15"' src/integrations/supabase/types.ts
+
+          if grep -qE 'ekddifjpbieuainvjlbl|wqbtnfbvqtkyywfcqjwa|zjphbuvcapwyuynadgdt' supabase/config.toml .env.example; then
             echo 'Referência Supabase legada em configuração ativa do Admin.'
             exit 1
           fi
-          if grep -Ei 'sb_secret_|service[_-]?role|BEGIN PRIVATE KEY|MERCADOPAGO_ACCESS_TOKEN=.+[^>]$|ASAAS_API_KEY=.+[^>]$' .env.example; then
+
+          grep -qF 'MERCADOPAGO_ACCESS_TOKEN=<SERVER_ONLY_SECRET>' .env.example
+          grep -qF 'MERCADOPAGO_WEBHOOK_SECRET=<SERVER_ONLY_SECRET>' .env.example
+          grep -qF 'ASAAS_API_KEY=<SERVER_ONLY_SECRET>' .env.example
+          grep -qF 'ASAAS_WEBHOOK_TOKEN=<SERVER_ONLY_SECRET>' .env.example
+          grep -qF 'FIREBASE_SERVICE_ACCOUNT_JSON=<SERVER_ONLY_SECRET>' .env.example
+
+          if grep -qE 'sb_secret_[A-Za-z0-9_-]+|eyJ[A-Za-z0-9_-]{20,}|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----' .env.example; then
             echo 'Template de ambiente contém possível segredo real.'
             exit 1
           fi
+          echo 'APOIS_ADMIN_ENV_OK'
 
       - name: Validar aprovação oficial do motorista
         run: |
