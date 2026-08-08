@@ -2,15 +2,12 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "noEmit": true,
-    "types": ["node", "vite/client", "vitest/globals"]
+    "types": ["node", "vite/client"]
   },
   "include": [
     "supabase/functions/_shared/fare-engine.ts",
     "supabase/functions/_shared/ride-state.ts",
-    "supabase/functions/_shared/ride-request.ts",
-    "tests/unit/fare-engine.test.ts",
-    "tests/unit/ride-state.test.ts",
-    "tests/unit/ride-request.test.ts"
+    "supabase/functions/_shared/ride-request.ts"
   ],
   "exclude": []
 }
