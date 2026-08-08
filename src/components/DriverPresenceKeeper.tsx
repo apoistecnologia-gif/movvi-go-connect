@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { isBrazilCoordinate } from "@/lib/googleMaps";
+import { requestPostAuthPermissions } from "@/lib/nativeBridge";
 import {
   isNativeAndroidDriverLocation,
   startNativeDriverLocation,
@@ -61,6 +62,11 @@ export function DriverPresenceKeeper() {
     if (runningRef.current || !readDesiredOnline()) return;
     const { data } = await supabase.auth.getSession();
     if (!data.session || !readDesiredOnline()) return;
+
+    // O clique em FICAR ONLINE é o ponto correto para pedir permissões nativas:
+    // já existe sessão válida e a UI está montada. Push fica registrado antes
+    // de o motorista começar a receber ofertas.
+    requestPostAuthPermissions();
 
     if (isNativeAndroidDriverLocation()) {
       try {
