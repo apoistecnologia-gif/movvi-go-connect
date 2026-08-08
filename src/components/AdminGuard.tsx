@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { ShieldAlert } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { loadAdminAccess } from "@/lib/adminAccess";
 import { DSButton, Loading } from "@/design-system";
 
 type State = "loading" | "ok" | "no-session" | "no-admin";
@@ -12,29 +13,19 @@ export function AdminGuard({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
-    (async () => {
-      const { data: u, error: userError } = await supabase.auth.getUser();
-      if (userError) {
-        if (mounted) setState("no-session");
-        return;
-      }
-      if (!u.user) {
-        if (mounted) setState("no-session");
-        return;
-      }
-      const { data: role, error: roleError } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", u.user.id)
-        .eq("role", "admin")
-        .maybeSingle();
+    void (async () => {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (!mounted) return;
-      if (roleError) {
-        setState("no-admin");
+      if (sessionError || !sessionData.session) {
+        setState("no-session");
         return;
       }
-      setState(role ? "ok" : "no-admin");
+
+      const access = await loadAdminAccess();
+      if (!mounted) return;
+      setState(access?.authorized ? "ok" : "no-admin");
     })();
+
     return () => {
       mounted = false;
     };
@@ -64,7 +55,7 @@ export function AdminGuard({ children }: { children: ReactNode }) {
         <ShieldAlert className="h-10 w-10 text-destructive" />
         <h2 className="font-display text-xl">Acesso restrito</h2>
         <p className="max-w-sm text-sm text-muted-foreground">
-          Você não tem permissão para acessar o painel administrativo.
+          Sua conta não possui uma função administrativa ativa no APOIS.
         </p>
         <DSButton
           variant="secondary"
@@ -73,7 +64,7 @@ export function AdminGuard({ children }: { children: ReactNode }) {
             navigate({ to: "/admin/login" });
           }}
         >
-          Sair e entrar como admin
+          Sair e entrar com outra conta
         </DSButton>
       </div>
     );
