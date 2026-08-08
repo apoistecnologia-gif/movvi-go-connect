@@ -56,12 +56,15 @@ jobs:
           s = s.replace('candidates.includes(userId)', 'candidates.includes(userId as string)')
           s = s.replace('rejected.includes(userId)', 'rejected.includes(userId as string)')
           s = s.replace('.contains("candidate_driver_ids", [userId])', '.contains("candidate_driver_ids", [userId as string])')
+          s = s.replace('.eq("driver_id", driverId)', '.eq("driver_id", driverId as string)')
           s = s.replace('maneuver: s.maneuver,', 'maneuver: s.maneuver ?? undefined,')
           p.write_text(s)
           PY
 
-      - name: Verificar diff
-        run: git diff --check
+      - name: Verificar trecho e diff
+        run: |
+          nl -ba src/routes/motorista.app.tsx | sed -n '920,935p'
+          git diff --check
 
       - name: Instalar dependências
         run: npm install --no-audit --no-fund
