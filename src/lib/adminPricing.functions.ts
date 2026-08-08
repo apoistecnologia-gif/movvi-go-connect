@@ -1,55 +1,76 @@
-// Admin-only tariff/pricing mutations. Server verifies admin role.
+// APOIS CORRIDAS — Admin pricing mutations aligned with the canonical live schema.
+// The database write is performed by a SECURITY DEFINER RPC that validates the
+// authenticated admin and records the audit entry in the same transaction.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const uuid = z.string().uuid();
-const keySchema = z
-  .string()
-  .trim()
-  .min(1)
-  .max(64)
-  .regex(/^[a-z0-9_]+$/, "invalid_key");
-const valueSchema = z.number().finite().min(0).max(1_000_000);
+const citySchema = z.string().trim().min(1).max(120).default("default");
+const money = z.number().finite().min(0).max(1_000_000);
+const multiplier = z.number().finite().gt(0).max(100);
 
-async function assertAdmin(ctx: { supabase: any; userId: string }) {
-  const { data, error } = await ctx.supabase.rpc("has_role", {
-    _user_id: ctx.userId,
-    _role: "admin",
-  });
-  if (error) throw new Error("role_check_failed");
+const canonicalTariffPatch = z
+  .object({
+    base_fare: money.optional(),
+    min_fare: money.optional(),
+    per_km: money.optional(),
+    per_min: money.optional(),
+    stop_fee: money.optional(),
+    fixed_fee: money.optional(),
+    dynamic_multiplier: multiplier.optional(),
+    helper1_fee: money.optional(),
+    helper2_fee: money.optional(),
+    heavy_furniture_fee: money.optional(),
+    assembly_fee: money.optional(),
+    packing_fee: money.optional(),
+    difficult_access_fee: money.optional(),
+    stair_fee: money.optional(),
+    heavy_vehicle_fee: money.optional(),
+    accident_fee: money.optional(),
+    platform_fee: money.optional(),
+    locked_wheels_fee: money.optional(),
+    garage_fee: money.optional(),
+    max_weight_kg: money.optional(),
+    per_kg: money.optional(),
+  })
+  .strict()
+  .refine((value) => Object.keys(value).length > 0, "empty_patch");
+
+const upsertInput = z.object({
+  category_id: uuid,
+  city: citySchema,
+  patch: canonicalTariffPatch,
+});
+
+async function assertAdmin(ctx: { supabase: any }) {
+  const { data, error } = await ctx.supabase.rpc("admin_is_authorized");
+  if (error) throw new Error("admin_authorization_failed");
   if (!data) throw new Error("forbidden");
 }
 
-const tariffRow = z.object({
-  category_key: keySchema,
-  field_key: keySchema,
-  value: valueSchema,
-});
-
-export const upsertTariffRules = createServerFn({ method: "POST" })
+export const upsertTariffRule = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { rows: { category_key: string; field_key: string; value: number }[] }) =>
-    z.object({ rows: z.array(tariffRow).min(1).max(200) }).parse(input),
-  )
+  .inputValidator((input: z.input<typeof upsertInput>) => upsertInput.parse(input))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context as any);
-    const { error } = await (context as any).supabase
-      .from("tariff_rules")
-      .upsert(data.rows, { onConflict: "category_key,field_key" });
-    if (error) throw new Error(error.message);
-    return { ok: true as const, count: data.rows.length };
-  });
+    const ctx = context as { supabase: any };
+    await assertAdmin(ctx);
 
-export const deleteTariffRule = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: { id: string }) => z.object({ id: uuid }).parse(input))
-  .handler(async ({ data, context }) => {
-    await assertAdmin(context as any);
-    const { error } = await (context as any).supabase
-      .from("tariff_rules")
-      .delete()
-      .eq("id", data.id);
-    if (error) throw new Error(error.message);
-    return { ok: true as const };
+    const { data: saved, error } = await ctx.supabase.rpc("admin_upsert_tariff_rule", {
+      _category_id: data.category_id,
+      _city: data.city,
+      _patch: data.patch,
+    });
+
+    if (error) {
+      // During consolidation the RPC is intentionally introduced by a reviewed
+      // migration. Surface a deterministic error instead of falling back to a
+      // client-side/RLS-bypassing write.
+      if (error.code === "PGRST202" || /admin_upsert_tariff_rule/i.test(error.message ?? "")) {
+        throw new Error("pricing_backend_not_deployed");
+      }
+      throw new Error(error.message || "pricing_update_failed");
+    }
+
+    return { ok: true as const, rule: saved };
   });
