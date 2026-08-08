@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { isBrazilCoordinate } from "@/lib/googleMaps";
+import {
+  isNativeAndroidDriverLocation,
+  startNativeDriverLocation,
+  stopNativeDriverLocation,
+} from "@/lib/driverNativeLocation";
 
 const STORAGE_KEY = "apois:driver:online";
 const PRESENCE_EVENT = "apois:driver-presence-change";
@@ -32,9 +37,16 @@ export function DriverPresenceKeeper() {
   const watchRef = useRef<number | null>(null);
   const timerRef = useRef<number | null>(null);
   const runningRef = useRef(false);
+  const nativeRef = useRef(false);
 
   const stopTracking = useCallback(() => {
     runningRef.current = false;
+    if (nativeRef.current) {
+      nativeRef.current = false;
+      void stopNativeDriverLocation().catch((error) =>
+        console.warn("[APOIS MOTORISTA] falha ao parar localização nativa:", error),
+      );
+    }
     if (watchRef.current != null && "geolocation" in navigator) {
       navigator.geolocation.clearWatch(watchRef.current);
       watchRef.current = null;
@@ -46,9 +58,24 @@ export function DriverPresenceKeeper() {
   }, []);
 
   const startTracking = useCallback(async () => {
-    if (runningRef.current || !readDesiredOnline() || !("geolocation" in navigator)) return;
+    if (runningRef.current || !readDesiredOnline()) return;
     const { data } = await supabase.auth.getSession();
     if (!data.session || !readDesiredOnline()) return;
+
+    if (isNativeAndroidDriverLocation()) {
+      try {
+        const started = await startNativeDriverLocation();
+        if (started && readDesiredOnline()) {
+          nativeRef.current = true;
+          runningRef.current = true;
+          return;
+        }
+      } catch (error) {
+        console.warn("[APOIS MOTORISTA] localização nativa indisponível; usando fallback em primeiro plano:", error);
+      }
+    }
+
+    if (!("geolocation" in navigator)) return;
     runningRef.current = true;
 
     const onPosition = (pos: GeolocationPosition) => {
