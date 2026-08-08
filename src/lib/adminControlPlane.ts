@@ -151,9 +151,11 @@ export async function setAdminPassengerStatus(
   });
 }
 
+export type CanonicalStaffRole = "administrator" | "editor" | "marketing" | "support" | "reader";
+
 export async function setAdminStaffProfile(input: {
   authUserId: string;
-  role: "administrator" | "editor" | "marketing" | "support" | "reader";
+  role: CanonicalStaffRole;
   active: boolean;
   displayName?: string | null;
 }) {
@@ -161,6 +163,18 @@ export async function setAdminStaffProfile(input: {
     _auth_user_id: input.authUserId,
     _role: input.role,
     _active: input.active,
+    _display_name: input.displayName ?? null,
+  });
+}
+
+export async function provisionAdminStaff(input: {
+  authUserId: string;
+  role: CanonicalStaffRole;
+  displayName?: string | null;
+}) {
+  return rpc<Record<string, unknown>>("admin_provision_staff", {
+    _auth_user_id: input.authUserId,
+    _role: input.role,
     _display_name: input.displayName ?? null,
   });
 }
