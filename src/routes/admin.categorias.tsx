@@ -1,28 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { Plus, Save, Trash2, GripVertical, Loader2 } from "lucide-react";
+import { Loader2, Save, ShieldCheck } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
-import { DSButton as Button, DSCard as Card, DSCardContent as CardContent, DSInput, Loading } from "@/design-system";
-import { Switch } from "@/components/ui/switch";
-
-import { toast } from "sonner";
-import { logAdminAction } from "@/lib/adminAudit";
-import { ICON_REGISTRY } from "@/lib/uiCategories";
 import {
-  createRideCategory,
-  updateRideCategory,
-  setRideCategoryEnabled,
-  deleteRideCategory,
-  reorderRideCategories,
-} from "@/lib/adminCategories.functions";
-
-function mapAdminError(msg: string): string {
-  if (msg === "forbidden") return "Ação restrita a administradores.";
-  if (/invalid_|^Required$|uuid/i.test(msg)) return "Dados inválidos.";
-  return msg;
-}
+  DSButton as Button,
+  DSCard as Card,
+  DSCardContent as CardContent,
+  DSInput,
+  Loading,
+} from "@/design-system";
+import { Switch } from "@/components/ui/switch";
+import { toast } from "sonner";
+import { ICON_REGISTRY } from "@/lib/uiCategories";
+import { updateAdminRideCategory } from "@/lib/adminControlPlane";
 
 export const Route = createFileRoute("/admin/categorias")({
   head: () => ({ meta: [{ title: "Categorias — Admin APOIS" }] }),
@@ -31,22 +22,20 @@ export const Route = createFileRoute("/admin/categorias")({
 
 type Row = {
   id: string;
-  key: string;
-  label: string;
-  icon: string;
-  color: string;
-  enabled: boolean;
+  code: "carros" | "motos" | "fretes" | "guincho" | "envios";
+  name: string;
+  description: string | null;
+  icon: string | null;
+  image_url: string | null;
+  capacity_label: string | null;
+  eta_label: string | null;
   sort_order: number;
+  is_active: boolean;
 };
 
 const ICON_NAMES = Object.keys(ICON_REGISTRY);
 
 function AdminCategoriasPage() {
-  const createFn = useServerFn(createRideCategory);
-  const updateFn = useServerFn(updateRideCategory);
-  const toggleFn = useServerFn(setRideCategoryEnabled);
-  const deleteFn = useServerFn(deleteRideCategory);
-  const reorderFn = useServerFn(reorderRideCategories);
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -54,9 +43,9 @@ function AdminCategoriasPage() {
   useEffect(() => {
     let alive = true;
     const refresh = async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("ride_categories")
-        .select("id,key,label,icon,color,enabled,sort_order")
+        .select("id,code,name,description,icon,image_url,capacity_label,eta_label,sort_order,is_active")
         .order("sort_order", { ascending: true });
       if (!alive) return;
       if (error) {
@@ -67,215 +56,124 @@ function AdminCategoriasPage() {
       setRows((data ?? []) as Row[]);
       setLoading(false);
     };
-    refresh();
+    void refresh();
     const channel = supabase
-      .channel("admin-ride-categories")
-      .on("postgres_changes", { event: "*", schema: "public", table: "ride_categories" }, refresh)
+      .channel("admin-ride-categories-canonical")
+      .on("postgres_changes", { event: "*", schema: "public", table: "ride_categories" }, () => void refresh())
       .subscribe();
     return () => {
       alive = false;
-      supabase.removeChannel(channel);
+      void supabase.removeChannel(channel);
     };
   }, []);
 
-  function patch(id: string, p: Partial<Row>) {
-    setRows((rs) => rs.map((r) => (r.id === id ? { ...r, ...p } : r)));
+  function patch(id: string, next: Partial<Row>) {
+    setRows((current) => current.map((row) => (row.id === id ? { ...row, ...next } : row)));
   }
 
-  async function saveRow(row: Row) {
+  async function save(row: Row) {
     setSavingId(row.id);
     try {
-      await updateFn({
-        data: {
-          id: row.id,
-          label: row.label,
-          icon: row.icon,
-          color: row.color,
-          enabled: row.enabled,
-          sort_order: row.sort_order,
-        },
+      await updateAdminRideCategory({
+        id: row.id,
+        name: row.name,
+        description: row.description,
+        icon: row.icon,
+        imageUrl: row.image_url,
+        capacityLabel: row.capacity_label,
+        etaLabel: row.eta_label,
+        sortOrder: row.sort_order,
+        isActive: row.is_active,
       });
-      await logAdminAction({
-        action: "ride_category.update",
-        entity: "ride_categories",
-        entity_id: row.id,
-        after: { key: row.key },
-      });
-      toast.success(`"${row.label}" atualizada`);
-    } catch (e) {
-      toast.error("Erro ao salvar: " + (e instanceof Error ? mapAdminError(e.message) : String(e)));
+      toast.success(`${row.name} atualizada`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível salvar a categoria.");
     } finally {
       setSavingId(null);
-    }
-  }
-
-  async function toggleEnabled(row: Row, enabled: boolean) {
-    patch(row.id, { enabled });
-    try {
-      await toggleFn({ data: { id: row.id, enabled } });
-      await logAdminAction({
-        action: enabled ? "ride_category.enable" : "ride_category.disable",
-        entity: "ride_categories",
-        entity_id: row.id,
-      });
-      toast.success(`${row.label} ${enabled ? "habilitada" : "desabilitada"}`);
-    } catch (e) {
-      patch(row.id, { enabled: !enabled });
-      toast.error(
-        "Falha ao alternar: " + (e instanceof Error ? mapAdminError(e.message) : String(e)),
-      );
-    }
-  }
-
-  async function deleteRow(row: Row) {
-    if (!confirm(`Excluir categoria "${row.label}"? Esta ação não pode ser desfeita.`)) return;
-    try {
-      await deleteFn({ data: { id: row.id } });
-      await logAdminAction({
-        action: "ride_category.delete",
-        entity: "ride_categories",
-        entity_id: row.id,
-        before: { key: row.key },
-      });
-      toast.success("Categoria excluída");
-    } catch (e) {
-      toast.error("Erro ao excluir: " + (e instanceof Error ? mapAdminError(e.message) : String(e)));
-    }
-  }
-
-  async function createNew() {
-    const key = prompt("Chave única (ex: carros, motos, fretes, guincho, envios):")?.trim().toLowerCase();
-    if (!key) return;
-    const label = prompt("Nome exibido:")?.trim();
-    if (!label) return;
-    const sort = (rows.at(-1)?.sort_order ?? 0) + 1;
-    try {
-      await createFn({ data: { key, label, sort_order: sort } });
-      await logAdminAction({
-        action: "ride_category.create",
-        entity: "ride_categories",
-        after: { key, label },
-      });
-      toast.success("Categoria criada");
-    } catch (e) {
-      toast.error("Erro ao criar: " + (e instanceof Error ? mapAdminError(e.message) : String(e)));
-    }
-  }
-
-  async function reorder(row: Row, dir: -1 | 1) {
-    const idx = rows.findIndex((r) => r.id === row.id);
-    const swap = rows[idx + dir];
-    if (!swap) return;
-    try {
-      await reorderFn({
-        data: {
-          updates: [
-            { id: row.id, sort_order: swap.sort_order },
-            { id: swap.id, sort_order: row.sort_order },
-          ],
-        },
-      });
-    } catch (e) {
-      toast.error(e instanceof Error ? mapAdminError(e.message) : String(e));
     }
   }
 
   return (
     <AdminLayout
       title="Categorias de Corrida"
-      description="Habilite, renomeie, defina ícone e cor de cada categoria — mudanças aparecem no app em tempo real."
-      actions={
-        <Button onClick={createNew} className="gap-2">
-          <Plus className="h-4 w-4" /> Nova
-        </Button>
-      }
+      description="Edite somente as cinco categorias canônicas usadas pelo Fare Engine e pelo Dispatch."
     >
       {loading ? (
         <Loading label="Carregando categorias..." />
       ) : (
-        <div className="grid gap-3">
-          {rows.map((row, idx) => (
-            <Card key={row.id} className="border-border bg-card/60">
-              <CardContent className="flex flex-col gap-4 p-4 md:flex-row md:items-center">
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    title="Mover para cima"
-                    disabled={idx === 0}
-                    onClick={() => reorder(row, -1)}
-                    className="rounded p-1 text-muted-foreground hover:bg-accent/40 disabled:opacity-30"
-                  >
-                    <GripVertical className="h-4 w-4" />
-                  </button>
-                  <span
-                    className="grid h-12 w-12 place-items-center rounded-xl text-white shadow"
-                    style={{ backgroundColor: row.color }}
-                  >
-                    <span className="text-xs font-bold">{row.icon.slice(0, 2)}</span>
-                  </span>
-                </div>
+        <div className="space-y-4">
+          <div className="flex items-start gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm text-muted-foreground">
+            <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+            <p>
+              Os códigos <strong>carros, motos, fretes, guincho e envios</strong> fazem parte do contrato da corrida.
+              Por segurança, o painel não cria nem exclui códigos arbitrários; ele controla apresentação, ordem e disponibilidade.
+            </p>
+          </div>
 
-                <div className="grid flex-1 grid-cols-1 gap-3 md:grid-cols-4">
-                  <Field label="Chave">
-                    <DSInput value={row.key} disabled />
-                  </Field>
-                  <Field label="Nome">
-                    <DSInput value={row.label} onChange={(e) => patch(row.id, { label: e.target.value })} />
-                  </Field>
-                  <Field label="Ícone">
-                    <select
-                      value={row.icon}
-                      onChange={(e) => patch(row.id, { icon: e.target.value })}
-                      className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-                    >
-                      {ICON_NAMES.map((n) => (
-                        <option key={n} value={n}>{n}</option>
-                      ))}
-                    </select>
-                  </Field>
-                  <Field label="Cor">
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="color"
-                        value={row.color}
-                        onChange={(e) => patch(row.id, { color: e.target.value })}
-                        className="h-9 w-12 cursor-pointer rounded border border-input bg-background"
-                      />
-                      <DSInput
-                        value={row.color}
-                        onChange={(e) => patch(row.id, { color: e.target.value })}
-                        className="flex-1"
-                      />
+          <div className="grid gap-3">
+            {rows.map((row) => (
+              <Card key={row.id} className="border-border bg-card/60">
+                <CardContent className="space-y-4 p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Código canônico</p>
+                      <p className="font-mono text-sm font-semibold text-primary">{row.code}</p>
                     </div>
-                  </Field>
-                </div>
+                    <label className="flex items-center gap-2 text-xs font-medium">
+                      <Switch
+                        checked={row.is_active}
+                        onCheckedChange={(value) => patch(row.id, { is_active: value })}
+                      />
+                      {row.is_active ? "Ativa" : "Desativada"}
+                    </label>
+                  </div>
 
-                <div className="flex items-center gap-3 md:flex-col md:items-end">
-                  <label className="flex items-center gap-2 text-xs">
-                    <Switch
-                      checked={row.enabled}
-                      onCheckedChange={(v) => toggleEnabled(row, v)}
-                    />
-                    {row.enabled ? "Ativa" : "Desativada"}
-                  </label>
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      onClick={() => saveRow(row)}
-                      disabled={savingId === row.id}
-                      className="gap-1"
-                    >
-                      {savingId === row.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
-                      Salvar
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => deleteRow(row)} className="text-destructive gap-1">
-                      <Trash2 className="h-3 w-3" />
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+                    <Field label="Nome">
+                      <DSInput value={row.name} onChange={(e) => patch(row.id, { name: e.target.value })} />
+                    </Field>
+                    <Field label="Descrição">
+                      <DSInput value={row.description ?? ""} onChange={(e) => patch(row.id, { description: e.target.value || null })} />
+                    </Field>
+                    <Field label="Ícone">
+                      <select
+                        value={row.icon ?? ICON_NAMES[0] ?? "Car"}
+                        onChange={(e) => patch(row.id, { icon: e.target.value })}
+                        className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                      >
+                        {ICON_NAMES.map((name) => <option key={name} value={name}>{name}</option>)}
+                      </select>
+                    </Field>
+                    <Field label="Capacidade">
+                      <DSInput value={row.capacity_label ?? ""} onChange={(e) => patch(row.id, { capacity_label: e.target.value || null })} />
+                    </Field>
+                    <Field label="ETA exibido">
+                      <DSInput value={row.eta_label ?? ""} onChange={(e) => patch(row.id, { eta_label: e.target.value || null })} />
+                    </Field>
+                    <Field label="Ordem">
+                      <DSInput
+                        type="number"
+                        min={0}
+                        max={9999}
+                        value={row.sort_order}
+                        onChange={(e) => patch(row.id, { sort_order: Number(e.target.value) || 0 })}
+                      />
+                    </Field>
+                    <Field label="Imagem (URL/path)">
+                      <DSInput value={row.image_url ?? ""} onChange={(e) => patch(row.id, { image_url: e.target.value || null })} />
+                    </Field>
+                  </div>
+
+                  <div className="flex justify-end">
+                    <Button onClick={() => void save(row)} disabled={savingId === row.id} className="gap-2">
+                      {savingId === row.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                      Salvar categoria
                     </Button>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
       )}
     </AdminLayout>
