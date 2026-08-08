@@ -1,0 +1,85 @@
+name: APOIS Corridas — Passenger backend validation
+
+on:
+  push:
+    branches:
+      - fix/apois-corridas-consolidacao
+    paths:
+      - "supabase/baseline/009_passenger_experience.sql"
+      - "tests/database/passenger_experience.sh"
+      - ".github/workflows/apois-passenger-backend-validate.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "supabase/baseline/009_passenger_experience.sql"
+      - "tests/database/passenger_experience.sh"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-passenger-backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: apois_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d apois_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGPASSWORD: postgres
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGDATABASE: apois_test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Apply canonical baseline through Phase 6 backend
+        run: |
+          set -euo pipefail
+          for file in \
+            supabase/baseline/000_ci_prelude.sql \
+            supabase/baseline/001_canonical_schema.sql \
+            supabase/baseline/002_functions.sql \
+            supabase/baseline/003_rls.sql \
+            supabase/baseline/004_storage_triggers_seed.sql \
+            supabase/baseline/005_security_hardening.sql \
+            supabase/baseline/006_dispatch_atomic_accept.sql \
+            supabase/baseline/007_financial_settlement.sql \
+            supabase/baseline/008_financial_hardening.sql \
+            supabase/baseline/009_passenger_experience.sql; do
+            psql -v ON_ERROR_STOP=1 -f "$file"
+          done
+
+      - name: Passenger backend integration tests
+        run: bash tests/database/passenger_experience.sh
+
+      - name: Security and contract invariants
+        run: |
+          set -euo pipefail
+          anon_can_share=$(psql -Atqc "select has_function_privilege('anon','public.get_shared_passenger_ride(text)','EXECUTE')::int")
+          anon_can_rate=$(psql -Atqc "select has_function_privilege('anon','public.rate_passenger_ride(uuid,integer,text)','EXECUTE')::int")
+          auth_can_sos=$(psql -Atqc "select has_function_privilege('authenticated','public.passenger_trigger_sos(uuid,numeric,numeric,text,text)','EXECUTE')::int")
+          rating_column=$(psql -Atqc "select count(*) from information_schema.columns where table_schema='public' and table_name='rides' and column_name='passenger_driver_rating'")
+          expiry_column=$(psql -Atqc "select count(*) from information_schema.columns where table_schema='public' and table_name='rides' and column_name='share_expires_at'")
+          sos_ride=$(psql -Atqc "select count(*) from information_schema.columns where table_schema='public' and table_name='sos_alerts' and column_name='ride_id'")
+          admin_sos_policy=$(psql -Atqc "select count(*) from pg_policies where schemaname='public' and tablename='sos_alerts' and policyname='sos_alerts_admin_read'")
+          test "$anon_can_share" = "1"
+          test "$anon_can_rate" = "0"
+          test "$auth_can_sos" = "1"
+          test "$rating_column" = "1"
+          test "$expiry_column" = "1"
+          test "$sos_ride" = "1"
+          test "$admin_sos_policy" = "1"
+          echo 'APOIS_PASSENGER_BACKEND_PHASE_OK'
