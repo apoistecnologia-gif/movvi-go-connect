@@ -154,7 +154,7 @@ function AdminConfigPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <h2 className="font-semibold">{item.label}</h2>
-                      <DSBadge variant="secondary">{item.key}</DSBadge>
+                      <DSBadge variant="muted">{item.key}</DSBadge>
                     </div>
                     <p className="mt-1 text-xs leading-5 text-muted-foreground">{item.description}</p>
                   </div>
