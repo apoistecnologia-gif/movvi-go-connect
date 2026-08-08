@@ -11,6 +11,7 @@ const financeService = read("src/lib/driverFinance.mobile.ts");
 const financeRoute = read("src/routes/motorista.ganhos.tsx");
 const lifecycle = read("src/lib/driverRideLifecycle.mobile.ts");
 const nativeBridge = read("src/lib/nativeBridge.ts");
+const deviceTokens = read("src/lib/notifications/deviceTokenService.ts");
 const locationPlugin = read("android-motorista/app/src/main/java/com/apois/motorista/DriverLocationPlugin.java");
 const locationService = read("android-motorista/app/src/main/java/com/apois/motorista/DriverLocationService.java");
 const homologationWorkflow = read(".github/workflows/apois-driver-homologation.yml");
@@ -40,8 +41,10 @@ for (const rpc of [
   "driver_rate_passenger",
 ]) includes(lifecycle, rpc, `Driver lifecycle ${rpc}`);
 
-includes(nativeBridge, "driver_register_push_token", "native push token registration");
 includes(nativeBridge, "PushNotifications.register", "native push registration");
+includes(nativeBridge, "registerDeviceToken", "native push token handoff");
+includes(deviceTokens, 'rpc("register_notification_token"', "canonical notification-token RPC");
+includes(deviceTokens, 'rpc("deactivate_notification_token"', "canonical notification-token deactivation RPC");
 includes(homologationWorkflow, "VITE_ENABLE_NATIVE_PUSH=true", "homologation native push flag");
 includes(locationPlugin, "startForegroundService", "background foreground-service start");
 includes(locationService, "startForeground", "Android foreground location notification");
