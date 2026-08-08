@@ -1,0 +1,55 @@
+name: Finalizar APOIS Motorista
+
+on:
+  push:
+    branches:
+      - feat/apois-motorista-producao-homologacao
+    paths:
+      - .github/workflows/apois-driver-finalize.yml
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: feat/apois-motorista-producao-homologacao
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Aplicar correções finais
+        run: node .github/scripts/apois-driver-finalize.mjs
+
+      - name: Verificar diff
+        run: git diff --check
+
+      - name: Instalar dependências
+        run: npm install --no-audit --no-fund
+
+      - name: Typecheck
+        run: bun run typecheck
+
+      - name: Build mobile motorista
+        env:
+          VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY: ${{ secrets.APOIS_GOOGLE_MAPS_BROWSER_KEY }}
+        run: npm run build:motorista
+
+      - name: Commitar consolidação
+        run: |
+          git config user.name "APOIS Homologation Bot"
+          git config user.email "apois-homologation@users.noreply.github.com"
+          git add -A
+          git commit -m "fix(motorista): consolidar homologação visual e funcional APOIS"
+          git push origin HEAD:feat/apois-motorista-producao-homologacao
