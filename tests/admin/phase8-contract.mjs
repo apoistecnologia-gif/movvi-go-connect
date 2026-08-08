@@ -18,6 +18,7 @@ const sidebar = read("src/components/admin/AdminSidebar.tsx");
 const login = read("src/routes/admin.login.tsx");
 const dashboard = read("src/routes/admin.dashboard.tsx");
 const financeRoute = read("src/routes/admin.financeiro.tsx");
+const paymentsRoute = read("src/routes/admin.pagamentos.tsx");
 const settingsRoute = read("src/routes/admin.configuracoes.tsx");
 const backupsRoute = read("src/routes/admin.backups.tsx");
 const theme = read("src/apois-admin-theme.css");
@@ -56,6 +57,14 @@ includes(baselineFinance, "driver_withdrawals", "Payout-backed finance");
 includes(finance, 'rpc("admin_get_finance_summary"', "Finance RPC client");
 includes(financeRoute, "ride_settlements + ledgers + driver_withdrawals", "Finance source-of-truth disclosure");
 excludes(financeRoute, '.from("rides")', "Admin finance ride arithmetic");
+
+// Payment-provider UI reports backend truth and never edits gateway credentials in the browser.
+includes(paymentsRoute, "getAdminFinanceSummary", "Payment provider source-of-truth");
+includes(paymentsRoute, "electronic_payment_provider", "Electronic provider state");
+includes(paymentsRoute, "payout_provider", "Payout provider state");
+excludes(paymentsRoute, 'from("payment_gateways")', "Legacy gateway table as payment truth");
+excludes(paymentsRoute, "api_key_secret_name", "Browser-editable API secret reference");
+excludes(paymentsRoute, "pix_key", "Browser-editable PIX key");
 
 // Settings are allowlisted and audited server-side. Secrets are not browser-editable.
 includes(baselineSettings, "admin_update_setting", "Audited settings RPC");
