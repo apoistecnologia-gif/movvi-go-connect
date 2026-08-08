@@ -1,4 +1,5 @@
-# APOIS CORRIDAS — Supabase oficial.
+# APOIS CORRIDAS — Supabase oficial vqtucstyduxrqjgyigfk.
+# Não usar project refs MOVVI/APOIS legados nesta branch.
 project_id = "vqtucstyduxrqjgyigfk"
 
 [functions.mercadopago-webhook]
