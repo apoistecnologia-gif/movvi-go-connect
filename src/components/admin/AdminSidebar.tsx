@@ -6,21 +6,13 @@ import {
   Car,
   Route as RouteIcon,
   DollarSign,
-  Ticket,
   LifeBuoy,
-  Bell,
-  Settings,
-  FileBarChart,
-  Map as MapIcon,
   Radio,
-  TrendingUp,
   ShieldCheck,
   LogOut,
   Layers,
-  CreditCard,
   Wallet,
   ScrollText,
-  Database,
   Lock,
   type LucideIcon,
 } from "lucide-react";
@@ -30,29 +22,25 @@ import { loadAdminAccess, type AdminAccessContext } from "@/lib/adminAccess";
 
 type Item = { to: string; label: string; icon: LucideIcon; permission: string };
 
+/**
+ * Only Phase-8 audited modules are exposed here. Historical routes remain in
+ * the source tree until the final migration/dead-code pass, but are not offered
+ * as operational Admin features while they still depend on legacy schemas or
+ * unverified payment/provider contracts.
+ */
 export const ADMIN_NAV: Item[] = [
   { to: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, permission: "metrics.read" },
-  { to: "/admin/mapa", label: "Mapa ao vivo", icon: MapIcon, permission: "operations.read" },
   { to: "/admin/operacoes", label: "Central de Operações", icon: Radio, permission: "operations.read" },
   { to: "/admin/motoristas", label: "Motoristas", icon: Car, permission: "drivers.read" },
   { to: "/admin/passageiros", label: "Passageiros", icon: Users, permission: "passengers.read" },
   { to: "/admin/corridas", label: "Corridas", icon: RouteIcon, permission: "rides.read" },
   { to: "/admin/categorias", label: "Categorias", icon: Layers, permission: "pricing.read" },
   { to: "/admin/precos", label: "Tarifas", icon: DollarSign, permission: "pricing.read" },
-  { to: "/admin/cupons", label: "Promoções", icon: Ticket, permission: "settings.manage" },
-  { to: "/admin/assinaturas", label: "Assinaturas", icon: CreditCard, permission: "finance.read" },
-  { to: "/admin/pagamentos", label: "Pagamentos", icon: Wallet, permission: "finance.read" },
-  { to: "/admin/financeiro-motoristas", label: "Financeiro motoristas", icon: Wallet, permission: "finance.read" },
   { to: "/admin/financeiro", label: "Financeiro", icon: Wallet, permission: "finance.read" },
-  { to: "/admin/relatorios", label: "Relatórios", icon: FileBarChart, permission: "metrics.read" },
-  { to: "/admin/analytics", label: "Analytics & BI", icon: TrendingUp, permission: "metrics.read" },
   { to: "/admin/suporte", label: "Suporte", icon: LifeBuoy, permission: "support.read" },
-  { to: "/admin/notificacoes", label: "Notificações", icon: Bell, permission: "notifications.send" },
-  { to: "/admin/configuracoes", label: "Configurações", icon: Settings, permission: "settings.manage" },
   { to: "/admin/seguranca", label: "Segurança", icon: Lock, permission: "operations.read" },
-  { to: "/admin/backups", label: "Backups", icon: Database, permission: "settings.manage" },
-  { to: "/admin/administradores", label: "Administradores", icon: ShieldCheck, permission: "roles.manage" },
-  { to: "/admin/logs", label: "Logs", icon: ScrollText, permission: "audit.read" },
+  { to: "/admin/administradores", label: "Equipe administrativa", icon: ShieldCheck, permission: "roles.manage" },
+  { to: "/admin/logs", label: "Auditoria", icon: ScrollText, permission: "audit.read" },
 ];
 
 function SidebarBrand() {
