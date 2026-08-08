@@ -1,184 +1,64 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { Loader2, Database, Download, Plus, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { Database, ShieldCheck, TriangleAlert } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { logAdminAction } from "@/lib/adminAudit";
-import { downloadCsv } from "@/lib/csvExport";
-import { formatDate } from "@/lib/formatters";
-import { DSBadge, DSButton, DSCard, DSCardContent, DSCardDescription, DSCardHeader, DSCardTitle } from "@/design-system";
+import { DSBadge, DSCard, DSCardContent, DSCardHeader, DSCardTitle } from "@/design-system";
 
 export const Route = createFileRoute("/admin/backups")({
   head: () => ({ meta: [{ title: "Backups — Admin APOIS" }] }),
   component: AdminBackupsPage,
 });
 
-type Backup = {
-  id: string;
-  type: "manual" | "auto";
-  status: "pending" | "running" | "success" | "failed";
-  size_bytes: number | null;
-  tables: string[] | null;
-  error: string | null;
-  created_at: string;
-  completed_at: string | null;
-};
-
-const BACKUP_TABLES = ["users", "drivers", "rides", "subscriptions", "ride_categories", "tariff_rules", "coupons", "app_settings"] as const;
-
 function AdminBackupsPage() {
-  const [rows, setRows] = useState<Backup[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState(false);
-
-  async function refresh() {
-    const { data, error } = await supabase
-      .from("backups")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(50);
-    if (error) toast.error(error.message);
-    setRows((data ?? []) as Backup[]);
-    setLoading(false);
-  }
-
-  useEffect(() => {
-    refresh();
-    const ch = supabase
-      .channel("admin-backups")
-      .on("postgres_changes", { event: "*", schema: "public", table: "backups" }, refresh)
-      .subscribe();
-    return () => {
-      supabase.removeChannel(ch);
-    };
-  }, []);
-
-  async function createManualBackup() {
-    setBusy(true);
-    const { data: u } = await supabase.auth.getUser();
-    const { data: inserted, error } = await supabase
-      .from("backups")
-      .insert({
-        type: "manual",
-        status: "running",
-        tables: BACKUP_TABLES as unknown as never,
-        created_by: u?.user?.id ?? null,
-      })
-      .select()
-      .single();
-    if (error || !inserted) {
-      setBusy(false);
-      return toast.error(error?.message ?? "Falha ao iniciar backup");
-    }
-
-    // Snapshot to CSV (per table) and trigger download
-    let totalSize = 0;
-    const errors: string[] = [];
-    for (const t of BACKUP_TABLES) {
-      const { data, error: e } = await supabase.from(t as never).select("*").limit(50000);
-      if (e) {
-        errors.push(`${t}: ${e.message}`);
-        continue;
-      }
-      const rowsArr = (data ?? []) as Record<string, unknown>[];
-      if (rowsArr.length > 0) {
-        const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
-        downloadCsv(`backup-${stamp}-${t}`, rowsArr);
-        totalSize += JSON.stringify(rowsArr).length;
-      }
-    }
-
-    const status: Backup["status"] = errors.length > 0 ? "failed" : "success";
-    await supabase
-      .from("backups")
-      .update({
-        status,
-        size_bytes: totalSize,
-        error: errors.length ? errors.join("; ") : null,
-        completed_at: new Date().toISOString(),
-      })
-      .eq("id", inserted.id);
-
-    await logAdminAction({ action: "backup.manual", entity: "backups", entity_id: inserted.id, after: { tables: BACKUP_TABLES.length, status } });
-    setBusy(false);
-    if (status === "success") toast.success("Backup gerado e baixado em CSV");
-    else toast.error("Backup com erros — confira os detalhes");
-  }
-
-  function statusBadge(s: Backup["status"]) {
-    if (s === "success") return <DSBadge variant="primary" className="gap-1"><CheckCircle2 className="h-3 w-3" />Sucesso</DSBadge>;
-    if (s === "failed") return <DSBadge className="gap-1"><XCircle className="h-3 w-3" />Falhou</DSBadge>;
-    if (s === "running") return <DSBadge className="gap-1"><Loader2 className="h-3 w-3 animate-spin" />Em execução</DSBadge>;
-    return <DSBadge className="gap-1"><Clock className="h-3 w-3" />Pendente</DSBadge>;
-  }
-
   return (
     <AdminLayout
       title="Backups"
-      description="Snapshots manuais das tabelas críticas. Cada backup gera um CSV por tabela e registra no histórico."
-      actions={
-        <DSButton onClick={createManualBackup} disabled={busy} size="sm" className="gap-1">
-          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
-          Backup agora
-        </DSButton>
-      }
+      description="Estado da proteção de dados do APOIS Corridas"
     >
-      <DSCard className="border-border bg-card/60">
-        <DSCardHeader>
-          <DSCardTitle className="flex items-center gap-2 text-base">
-            <Database className="h-4 w-4 text-primary" />
-            Histórico
-          </DSCardTitle>
-          <DSCardDescription className="text-xs">Últimos 50 backups. Tabelas incluídas: {BACKUP_TABLES.join(", ")}.</DSCardDescription>
-        </DSCardHeader>
-        <DSCardContent>
-          {loading ? (
-            <div className="grid place-items-center py-12 text-muted-foreground">
-              <Loader2 className="h-6 w-6 animate-spin" />
-            </div>
-          ) : rows.length === 0 ? (
-            <div className="grid place-items-center gap-2 py-12 text-center">
-              <Database className="h-8 w-8 text-muted-foreground/50" />
-              <p className="text-sm text-muted-foreground">Nenhum backup ainda. Clique em "Backup agora" para gerar o primeiro.</p>
-            </div>
-          ) : (
-            <div className="overflow-hidden rounded-lg border border-border">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/40 text-[10px] uppercase tracking-wider text-muted-foreground">
-                  <tr>
-                    <th className="px-3 py-2 text-left">Data</th>
-                    <th className="px-3 py-2 text-left">Tipo</th>
-                    <th className="px-3 py-2 text-left">Status</th>
-                    <th className="px-3 py-2 text-left">Tamanho</th>
-                    <th className="px-3 py-2 text-left">Concluído</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((b) => (
-                    <tr key={b.id} className="border-t border-border/60">
-                      <td className="px-3 py-2">{formatDate(b.created_at)}</td>
-                      <td className="px-3 py-2">
-                        <DSBadge className="text-[10px]">{b.type}</DSBadge>
-                      </td>
-                      <td className="px-3 py-2">{statusBadge(b.status)}</td>
-                      <td className="px-3 py-2 text-muted-foreground">
-                        {b.size_bytes ? `${(b.size_bytes / 1024).toFixed(1)} KB` : "—"}
-                      </td>
-                      <td className="px-3 py-2 text-muted-foreground">{b.completed_at ? formatDate(b.completed_at) : "—"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <DSCard className="border-primary/20 bg-primary/5">
+          <DSCardHeader>
+            <DSCardTitle className="flex items-center gap-2 text-base">
+              <ShieldCheck className="h-4 w-4 text-primary" />
+              Backup de banco não é CSV do navegador
+            </DSCardTitle>
+          </DSCardHeader>
+          <DSCardContent className="space-y-3 text-sm text-muted-foreground">
+            <p>
+              O painel não exporta tabelas inteiras para o computador e não registra isso como se fosse um backup restaurável.
+              Esse comportamento antigo foi removido porque não protegia Auth, Storage, funções, configurações nem garantia consistência transacional.
+            </p>
+            <DSBadge variant="success">Fluxo falso removido</DSBadge>
+          </DSCardContent>
+        </DSCard>
+
+        <DSCard>
+          <DSCardHeader>
+            <DSCardTitle className="flex items-center gap-2 text-base">
+              <Database className="h-4 w-4 text-primary" />
+              Fonte correta
+            </DSCardTitle>
+          </DSCardHeader>
+          <DSCardContent className="space-y-3 text-sm text-muted-foreground">
+            <p>
+              Backups e restauração do Supabase oficial devem ser tratados no plano de infraestrutura, com mecanismo próprio do provedor e procedimento testado de restore.
+              O Admin da aplicação não possui credencial de Management API e não tenta simular essa capacidade.
+            </p>
+            <DSBadge variant="secondary">Operação de infraestrutura</DSBadge>
+          </DSCardContent>
+        </DSCard>
+      </div>
+
+      <DSCard className="mt-4 border-amber-500/20 bg-amber-500/5">
+        <DSCardContent className="flex gap-3 p-4 text-sm text-muted-foreground">
+          <TriangleAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" />
+          <div>
+            <p className="font-semibold text-foreground">Não há botão de restaurar dentro do aplicativo.</p>
+            <p className="mt-1">
+              Isso é intencional. Restore de banco é uma operação privilegiada e potencialmente destrutiva; só será exposto quando existir um processo de infraestrutura autenticado, auditável e testado fora do cliente web.
+            </p>
+          </div>
         </DSCardContent>
       </DSCard>
-
-      <p className="mt-4 text-xs text-muted-foreground">
-        <Download className="mr-1 inline h-3 w-3" />
-        Os arquivos CSV são baixados localmente no momento do backup. Para restauração, importe os CSVs manualmente — operação restrita a super_admin.
-      </p>
     </AdminLayout>
   );
 }
