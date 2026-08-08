@@ -53,6 +53,8 @@ jobs:
 
           p = Path('src/routes/motorista.app.tsx')
           s = p.read_text()
+          s = s.replace('candidates.includes(userId)', 'candidates.includes(userId as string)')
+          s = s.replace('rejected.includes(userId)', 'rejected.includes(userId as string)')
           s = s.replace('.contains("candidate_driver_ids", [userId])', '.contains("candidate_driver_ids", [userId as string])')
           s = s.replace('maneuver: s.maneuver,', 'maneuver: s.maneuver ?? undefined,')
           p.write_text(s)
