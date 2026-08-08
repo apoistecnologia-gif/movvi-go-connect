@@ -1,6 +1,7 @@
 {
   "extends": "./tsconfig.json",
   "include": [
+    "tests/admin/admin-route-types.d.ts",
     "src/routes/admin.*.tsx",
     "src/components/admin/**/*.tsx",
     "src/components/AdminGuard.tsx",
