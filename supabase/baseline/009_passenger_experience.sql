@@ -372,3 +372,54 @@ $$;
 
 revoke all on function public.get_passenger_ride_receipt(uuid) from public,anon;
 grant execute on function public.get_passenger_ride_receipt(uuid) to authenticated;
+
+-- -----------------------------------------------------------------------------
+-- Payment methods exposed to Passenger.
+-- The DB may contain historical active rows for Pix/cards while no electronic
+-- provider is configured. Do not present those methods as usable until the
+-- canonical finance setting explicitly names a provider.
+-- -----------------------------------------------------------------------------
+create or replace function public.get_passenger_payment_methods()
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path to 'public'
+as $$
+declare
+  v_provider text;
+  v_methods jsonb;
+begin
+  if auth.uid() is null then raise exception 'authentication_required' using errcode='42501'; end if;
+
+  select nullif(lower(btrim(value #>> '{}')),'')
+  into v_provider
+  from public.app_settings
+  where key='finance.electronic_payment_provider'
+  limit 1;
+
+  select coalesce(jsonb_agg(
+    jsonb_build_object(
+      'id',pm.id,
+      'code',pm.code,
+      'name',pm.name,
+      'description',pm.description,
+      'icon',pm.icon,
+      'sort_order',coalesce(pm.sort_order,0),
+      'requires_balance',coalesce(pm.requires_balance,false),
+      'enabled',case
+        when lower(pm.code) in ('pix','credit','credit_card','debit','debit_card') then v_provider is not null and v_provider<>'null'
+        else true
+      end
+    ) order by coalesce(pm.sort_order,0),pm.code
+  ),'[]'::jsonb)
+  into v_methods
+  from public.payment_methods pm
+  where pm.is_active=true;
+
+  return jsonb_build_object('ok',true,'methods',v_methods);
+end;
+$$;
+
+revoke all on function public.get_passenger_payment_methods() from public,anon;
+grant execute on function public.get_passenger_payment_methods() to authenticated;
