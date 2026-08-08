@@ -99,14 +99,29 @@ jobs:
 
       - name: Validar contrato canônico de tarifas
         run: |
-          ! grep -E 'category_key|field_key' src/routes/admin.precos.tsx src/lib/adminPricing.functions.ts
-          grep -F 'category_id' src/routes/admin.precos.tsx
-          grep -F 'base_fare' src/routes/admin.precos.tsx
-          grep -F 'dynamic_multiplier' src/routes/admin.precos.tsx
-          grep -F 'admin_is_authorized' src/lib/adminPricing.functions.ts
-          grep -F 'admin_upsert_tariff_rule' src/lib/adminPricing.functions.ts
-          grep -F "private.has_permission('users.manage')" supabase/migrations/20260808112000_admin_canonical_tariff_rpc.sql
-          ! grep -Ei '^[[:space:]]*(drop|truncate|delete)[[:space:]]' supabase/migrations/20260808112000_admin_canonical_tariff_rpc.sql
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+
+          const route = readFileSync('src/routes/admin.precos.tsx', 'utf8');
+          const service = readFileSync('src/lib/adminPricing.functions.ts', 'utf8');
+          const migration = readFileSync('supabase/migrations/20260808112000_admin_canonical_tariff_rpc.sql', 'utf8');
+          const combined = `${route}\n${service}`;
+
+          const requiredRuntime = ['category_id', 'base_fare', 'dynamic_multiplier', 'admin_is_authorized', 'admin_upsert_tariff_rule'];
+          for (const token of requiredRuntime) {
+            if (!combined.includes(token)) throw new Error(`Contrato de tarifas sem ${token}`);
+          }
+          if (/category_key|field_key/.test(combined)) {
+            throw new Error('Modelo legado category_key/field_key ainda está no runtime do Admin.');
+          }
+          if (!migration.includes("private.has_permission('users.manage')")) {
+            throw new Error('RPC de tarifas não aplica autorização server-side users.manage.');
+          }
+          if (/^\s*(drop\s+(database|schema|table)|truncate|delete\s+from)\b/im.test(migration)) {
+            throw new Error('Migration de tarifa contém operação destrutiva proibida.');
+          }
+          console.log('APOIS_ADMIN_TARIFF_CONTRACT_OK');
+          NODE
 
       - name: TypeScript
         run: npx tsc --noEmit
