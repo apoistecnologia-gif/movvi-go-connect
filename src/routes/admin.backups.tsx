@@ -43,7 +43,7 @@ function AdminBackupsPage() {
               Backups e restauração do Supabase oficial devem ser tratados no plano de infraestrutura, com mecanismo próprio do provedor e procedimento testado de restore.
               O Admin da aplicação não possui credencial de Management API e não tenta simular essa capacidade.
             </p>
-            <DSBadge variant="secondary">Operação de infraestrutura</DSBadge>
+            <DSBadge variant="muted">Operação de infraestrutura</DSBadge>
           </DSCardContent>
         </DSCard>
       </div>
