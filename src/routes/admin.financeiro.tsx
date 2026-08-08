@@ -194,7 +194,7 @@ function AdminFinanceiroPage() {
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="font-mono text-primary">{row.ride_id.slice(0, 8)}</span>
                           <DSBadge>{row.status}</DSBadge>
-                          <DSBadge variant="secondary">{row.payment_method}</DSBadge>
+                          <DSBadge variant="muted">{row.payment_method}</DSBadge>
                           <span className="ml-auto text-muted-foreground">{formatDate(row.settled_at ?? row.created_at)}</span>
                         </div>
                         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -253,7 +253,7 @@ function ProviderLine({ label, value }: { label: string; value: string | null })
   return (
     <div className="flex items-center justify-between gap-3 rounded-lg border border-border p-3 text-sm">
       <span>{label}</span>
-      <DSBadge variant={value ? "success" : "secondary"}>{value || "Não configurado"}</DSBadge>
+      <DSBadge variant={value ? "success" : "muted"}>{value || "Não configurado"}</DSBadge>
     </div>
   );
 }
