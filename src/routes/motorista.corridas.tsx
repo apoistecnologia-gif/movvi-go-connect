@@ -123,7 +123,6 @@ function RideCard({ ride, index }: { ride: RideRow; index: number }) {
       style={{ animationDelay: `${Math.min(index, 10) * 40}ms`, animationDuration: "320ms" }}
     >
       <DSCard className="press-scale flex flex-col gap-3 p-3 transition hover:-translate-y-[1px] sm:p-4">
-        {/* header row: passenger + status + price */}
         <div className="flex items-start gap-3">
           <Avatar src={ride.passenger_photo_url} name={passengerName} size={40} />
           <div className="min-w-0 flex-1">
@@ -142,11 +141,11 @@ function RideCard({ ride, index }: { ride: RideRow; index: number }) {
                 {brl(Number(price))}
               </Metric>
             )}
+            <Caption className="mt-1 block">valor da corrida</Caption>
             <Icon as={ChevronRight} size="sm" className="ml-auto mt-1 text-muted-foreground/60" />
           </div>
         </div>
 
-        {/* addresses */}
         <div className="flex flex-col gap-1.5 rounded-2xl bg-muted/40 p-2.5">
           <div className="flex items-start gap-2">
             <Icon as={MapPin} size="sm" className="mt-0.5 text-primary" />
@@ -160,7 +159,6 @@ function RideCard({ ride, index }: { ride: RideRow; index: number }) {
           </div>
         </div>
 
-        {/* meta row */}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground">
           {ride.distance_km != null && <Caption>{Number(ride.distance_km).toFixed(1)} km</Caption>}
           {ride.duration_min != null && (
@@ -193,7 +191,7 @@ function DriverRidesPage() {
 
   useEffect(() => {
     let active = true;
-    (async () => {
+    void (async () => {
       const profile = await loadDriverProfile();
       if (!profile.ok) {
         if (active) setRides([]);
@@ -216,7 +214,9 @@ function DriverRidesPage() {
       }
 
       const baseRides = (data ?? []) as RideRow[];
-      const passengerIds = Array.from(new Set(baseRides.map((ride) => ride.passenger_id).filter(Boolean))) as string[];
+      const passengerIds = Array.from(
+        new Set(baseRides.map((ride) => ride.passenger_id).filter(Boolean)),
+      ) as string[];
       let passengerMap = new Map<string, { name: string | null; avatar_url: string | null }>();
 
       if (passengerIds.length > 0) {
@@ -289,12 +289,14 @@ function DriverRidesPage() {
     const list = filtered ?? [];
     const finished = list.filter((r) => r.status === "finalizada");
     const total = list.length;
-    const revenue = finished.reduce(
-      (s, r) => s + Number(r.final_price ?? r.estimated_price ?? 0),
+    // Isto é volume bruto das corridas, não saldo nem valor recebido pelo
+    // motorista. Ganhos/saques são lidos exclusivamente do ledger da carteira.
+    const grossVolume = finished.reduce(
+      (sum, ride) => sum + Number(ride.final_price ?? ride.estimated_price ?? 0),
       0,
     );
-    const avg = finished.length ? revenue / finished.length : 0;
-    return { total, revenue, avg };
+    const avgFare = finished.length ? grossVolume / finished.length : 0;
+    return { total, grossVolume, avgFare };
   }, [filtered]);
 
   return (
@@ -302,26 +304,26 @@ function DriverRidesPage() {
       <MovviHeader logoutRedirect="/" />
       <main className="flex-1 px-4 pt-4 pb-28 sm:px-5">
         <div className="mx-auto flex w-full max-w-2xl flex-col gap-5">
-          {/* HEADER */}
           <header className="animate-in fade-in slide-in-from-top-2 duration-500">
             <HeadingXL>Histórico</HeadingXL>
             <Body className="mt-1 text-muted-foreground">Revise suas viagens realizadas</Body>
           </header>
 
-          {/* SUMMARY */}
           <section
             aria-label="Resumo do período"
             className="flex flex-col gap-2 animate-in fade-in slide-in-from-bottom-2 duration-500"
           >
             <div className="grid grid-cols-3 gap-2 sm:gap-3">
               <SummaryCard label="Corridas" value={String(summary.total)} />
-              <SummaryCard label="Recebido" value={brl(summary.revenue)} tone="primary" />
-              <SummaryCard label="Ticket médio" value={brl(summary.avg)} />
+              <SummaryCard label="Valor das corridas" value={brl(summary.grossVolume)} tone="primary" />
+              <SummaryCard label="Tarifa média" value={brl(summary.avgFare)} />
             </div>
             <Caption className="pl-1">Período: {FILTER_LABEL[filter]}</Caption>
+            <Caption className="pl-1">
+              Este resumo mostra o valor bruto das viagens. Seu saldo e valores realmente creditados ficam em Carteira.
+            </Caption>
           </section>
 
-          {/* SEARCH */}
           <div className="relative animate-in fade-in duration-500">
             <label htmlFor="ride-search" className="sr-only">
               Buscar por endereço ou categoria
@@ -341,7 +343,6 @@ function DriverRidesPage() {
             />
           </div>
 
-          {/* FILTERS */}
           <section className="flex flex-col gap-3">
             <div
               role="tablist"
@@ -393,10 +394,8 @@ function DriverRidesPage() {
             </DSCard>
           )}
 
-          {/* LOADING */}
           {rides === null && <Loading label="Carregando corridas…" />}
 
-          {/* EMPTY */}
           {rides && filtered && filtered.length === 0 && (
             <EmptyState
               icon={ClipboardList}
@@ -412,12 +411,11 @@ function DriverRidesPage() {
             />
           )}
 
-          {/* LIST */}
           {filtered && filtered.length > 0 && (
             <ul className="flex flex-col gap-2.5">
-              {filtered.map((r, i) => (
-                <li key={r.id}>
-                  <RideCard ride={r} index={i} />
+              {filtered.map((ride, index) => (
+                <li key={ride.id}>
+                  <RideCard ride={ride} index={index} />
                 </li>
               ))}
             </ul>
@@ -428,8 +426,6 @@ function DriverRidesPage() {
     </div>
   );
 }
-
-/* ---------------- Sub-components ---------------- */
 
 function SummaryCard({
   label,
