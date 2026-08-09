@@ -57,7 +57,7 @@ includes(driverApp, "DriverVoiceToggle", "Driver voice toggle");
 includes(dispatch, "/functions/v1/send-ride-push", "dispatch FCM handoff");
 includes(dispatch, 'title: "APOIS • Nova corrida disponível"', "APOIS push copy");
 includes(pushSender, "FIREBASE_SERVICE_ACCOUNT_B64", "FCM service-account secret contract");
-includes(pushSender, "messaging.googleapis.com/v1/projects", "FCM HTTP v1 delivery");
+includes(pushSender, "fcm.googleapis.com/v1/projects", "FCM HTTP v1 delivery");
 includes(pushSender, 'channel_id: "apois_rides"', "Android ride notification channel");
 includes(pushSender, 'event === "driver.new_ride_request"', "ride-request preference routing");
 includes(pushSender, "user_notification_tokens", "canonical notification tokens");
