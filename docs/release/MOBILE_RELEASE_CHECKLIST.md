@@ -11,7 +11,7 @@
 
 ## Estado objetivo da Fase 9
 
-A configuração Android e os builds técnicos dos dois aplicativos já passaram pelos contratos dedicados da Fase 9. O P0 visual nativo do Passageiro também foi corrigido e validado no APK canônico: launcher/splash padrão do Capacitor foram removidos e substituídos pela identidade APOIS. **A Fase 9 ainda não está concluída para publicação**, porque os AABs gerados até agora são não assinados e os segredos de chave de upload ainda não estão configurados nos repositórios. O Passageiro também precisa de uma URL pública HTTPS real para o fluxo de compartilhamento; o placeholder `.example` foi removido do workflow de release.
+A configuração Android e os builds técnicos dos dois aplicativos já passaram pelos contratos dedicados da Fase 9. O P0 visual nativo do Passageiro também foi corrigido e validado no APK canônico: launcher/splash padrão do Capacitor foram removidos e substituídos pela identidade APOIS. O Motorista agora também possui o ciclo de vida online conectado ao `DriverLocationService` nativo, com validação técnica de build/empacotamento concluída. **A Fase 9 ainda não está concluída para publicação**, porque a continuidade real de localização/push em aparelho físico ainda precisa ser homologada, os AABs gerados até agora são não assinados e os segredos de chave de upload ainda não estão configurados nos repositórios. O Passageiro também precisa de uma URL pública HTTPS real para o fluxo de compartilhamento; o placeholder `.example` foi removido do workflow de release.
 
 A partir de agora os workflows de release são deliberadamente **fail-closed**: não publicam artefato AAB como release quando não há chave de upload real e verificável.
 
@@ -21,7 +21,11 @@ A partir de agora os workflows de release são deliberadamente **fail-closed**: 
 - workflow técnico anterior: `APOIS Corridas — Driver Phase 9 Release`, run `31286334420`, `success`;
 - revalidação do código/runtime do HEAD de consolidação `04da883cc54387ca54a4b049f57d983ffe48ffd3`: run `31289455062`, `success`;
 - inspeção do AAB produzido nessa revalidação: `jarsigner` informou **`jar is unsigned`**;
-- gate de entradas externas após endurecimento do release: run `31289946329`, falhou somente por ausência dos quatro segredos de assinatura listados abaixo. A chave Google Maps do Motorista está presente.
+- gate de entradas externas após endurecimento do release: run `31289946329`, falhou somente por ausência dos quatro segredos de assinatura listados abaixo. A chave Google Maps do Motorista está presente;
+- auditoria do background encontrou um gap real: `DriverLocationService`/`DriverLocationPlugin` existiam no Android nativo, porém o ciclo de vida online da tela operacional ainda publicava presença somente pela WebView e não iniciava o plugin nativo;
+- wiring do ciclo online/offline para o Foreground Service nativo: commits `1804c22bd547eb309cfbacaa4e075d1a3fd010a7` e `5e107aaf74a6c1b46346e97c33235c30cc875354`;
+- gate isolado `APOIS Corridas — Driver Background Location Gate`, run `31313727541`, `success`: contrato Fase 9, TypeScript, ESLint, Firebase Driver, build mobile de produção, `cap sync`, verificação nativa, hard gate de wiring, `assembleDebug` e upload do APK passaram;
+- inspeção do APK desse gate confirmou `DriverLocationPlugin`, `DriverLocationService`, ação `START_LOCATION` e `driver_set_presence` no DEX, além do bridge `DriverLocation` no bundle JavaScript. Isso comprova o empacotamento técnico; **não substitui o teste físico com tela bloqueada/background**.
 
 **Passageiro**
 - workflow técnico anterior: `APOIS Corridas — Passenger Phase 9 Release`, run `31286532212`, `success`;
@@ -42,6 +46,10 @@ A partir de agora os workflows de release são deliberadamente **fail-closed**: 
 - [x] Permissão Android 13+ de notificações declarada.
 - [x] Foreground Service de localização declarado.
 - [x] `ACCESS_BACKGROUND_LOCATION` declarado para rastreamento durante corrida/online em segundo plano.
+- [x] Ciclo de vida online/offline da tela operacional conecta o APK ao `DriverLocationPlugin`/`DriverLocationService` nativo.
+- [x] Serviço nativo publica presença/GPS pelo RPC canônico `driver_set_presence`, sem depender da WebView para cada atualização.
+- [x] O início/reidratação do Foreground Service é limitado à Activity visível no bridge web, compatível com a restrição de início de FGS de localização do Android 14+.
+- [ ] Continuidade real de GPS confirmada em aparelho físico com app em background e tela bloqueada.
 - [x] Cleartext desabilitado.
 - [x] `allowBackup=false` no manifest de release.
 - [x] Canal Android `apois_rides` criado/configurado no cliente para corresponder ao FCM backend.
