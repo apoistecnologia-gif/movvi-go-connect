@@ -1,26 +1,6 @@
 name: APOIS Corridas — Driver Phase 9 Release
 
 on:
-  push:
-    branches:
-      - fix/apois-corridas-consolidacao
-    paths:
-      - ".github/workflows/apois-driver-phase9-release.yml"
-  pull_request:
-    branches:
-      - main
-    paths:
-      - "src/routes/motorista.login.tsx"
-      - "src/routes/motorista.recuperar-senha.tsx"
-      - "src/routes/motorista.redefinir-senha.tsx"
-      - "src/lib/auth/driverPasswordRecovery.ts"
-      - "src/components/DriverPasswordRecoveryBridge.tsx"
-      - "src/lib/nativeBridge.ts"
-      - "android-motorista/**"
-      - "capacitor.motorista.config.ts"
-      - "package.json"
-      - "tests/mobile/driver-phase9-contract.mjs"
-      - ".github/workflows/apois-driver-phase9-release.yml"
   workflow_dispatch:
 
 permissions:
