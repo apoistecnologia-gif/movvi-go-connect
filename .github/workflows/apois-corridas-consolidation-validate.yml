@@ -29,25 +29,20 @@ jobs:
         with:
           node-version: 22
 
-      - name: Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: npm install --no-audit --no-fund --package-lock=false
 
       - name: TypeScript
-        run: bun run typecheck
+        run: npm run typecheck
 
       - name: Lint
-        run: bun run lint
+        run: npm run lint
 
       - name: Web build
-        run: bun run build
+        run: npm run build
 
       - name: Motorista SPA build
-        run: bun run build:motorista
+        run: npm run build:motorista
 
       - name: Guard — CI must not modify tracked source
         run: |
