@@ -7,6 +7,14 @@ type DriverRidePushEvent =
   | "ride.completed"
   | "ride.cancelled";
 
+type RpcError = { message: string };
+type RpcResult = { data: unknown; error: RpcError | null };
+type DynamicRpcClient = {
+  rpc: (name: string, args: Record<string, unknown>) => PromiseLike<RpcResult>;
+};
+
+const rpcClient = supabase as unknown as DynamicRpcClient;
+
 function readableDriverRpcError(message: string) {
   const raw = String(message ?? "");
   if (/ride_offer_unavailable/i.test(raw)) return "Esta corrida não está mais disponível.";
@@ -21,7 +29,7 @@ function readableDriverRpcError(message: string) {
 }
 
 async function callRpc<T = unknown>(name: string, args: Record<string, unknown>) {
-  const { data, error } = await (supabase as any).rpc(name, args);
+  const { data, error } = await rpcClient.rpc(name, args);
   if (error) throw new Error(readableDriverRpcError(error.message));
   return data as T;
 }
