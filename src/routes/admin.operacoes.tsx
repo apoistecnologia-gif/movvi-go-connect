@@ -1,6 +1,15 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Temporary Phase 8 bridge until generated Supabase types include canonical admin RPCs. */
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Car, CheckCircle2, Circle, Route as RouteIcon, Search, Users } from "lucide-react";
+import {
+  AlertTriangle,
+  Car,
+  CheckCircle2,
+  Circle,
+  Route as RouteIcon,
+  Search,
+  Users,
+} from "lucide-react";
 import { Marker } from "@react-google-maps/api";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
@@ -81,7 +90,12 @@ type Passenger = {
   city: string | null;
 };
 
-const ACTIVE_RIDE_STATUSES = ["procurar_motorista", "motorista_a_caminho", "motorista_chegou", "em_viagem"];
+const ACTIVE_RIDE_STATUSES = [
+  "procurar_motorista",
+  "motorista_a_caminho",
+  "motorista_chegou",
+  "em_viagem",
+];
 
 const STATUS_LABEL: Record<string, string> = {
   procurar_motorista: "Buscando motorista",
@@ -106,17 +120,23 @@ function OpsCenterPage() {
     const [driverResult, rideResult, sosResult] = await Promise.all([
       db
         .from("drivers")
-        .select("id,user_id,name,is_online,current_lat,current_lng,last_location_at,category,city,vehicle_model,vehicle_plate,vehicle_color,approval_status")
+        .select(
+          "id,user_id,name,is_online,current_lat,current_lng,last_location_at,category,city,vehicle_model,vehicle_plate,vehicle_color,approval_status",
+        )
         .eq("approval_status", "aprovado")
         .order("is_online", { ascending: false }),
       db
         .from("rides")
-        .select("id,status,category,passenger_id,driver_id,driver_name,origin_name,destination_name,payment_method,created_at,accepted_at,driver_arrived_at,started_at,completed_at")
+        .select(
+          "id,status,category,passenger_id,driver_id,driver_name,origin_name,destination_name,payment_method,created_at,accepted_at,driver_arrived_at,started_at,completed_at",
+        )
         .in("status", ACTIVE_RIDE_STATUSES)
         .order("created_at", { ascending: false }),
       db
         .from("sos_alerts")
-        .select("id,user_id,driver_id,ride_id,lat,lng,message,severity,status,created_at,updated_at")
+        .select(
+          "id,user_id,driver_id,ride_id,lat,lng,message,severity,status,created_at,updated_at",
+        )
         .in("status", ["open", "acknowledged"])
         .order("created_at", { ascending: false }),
     ]);
@@ -132,9 +152,17 @@ function OpsCenterPage() {
     setRides(nextRides);
     setSos(nextSos);
 
-    const passengerIds = [...new Set([...nextRides.map((ride) => ride.passenger_id), ...nextSos.map((alert) => alert.user_id)])];
+    const passengerIds = [
+      ...new Set([
+        ...nextRides.map((ride) => ride.passenger_id),
+        ...nextSos.map((alert) => alert.user_id),
+      ]),
+    ];
     if (passengerIds.length) {
-      const passengerResult = await db.from("users").select("id,name,phone,city").in("id", passengerIds);
+      const passengerResult = await db
+        .from("users")
+        .select("id,name,phone,city")
+        .in("id", passengerIds);
       if (!passengerResult.error) {
         setPassengers(
           new Map(
@@ -150,12 +178,26 @@ function OpsCenterPage() {
 
   useEffect(() => {
     void loadAll();
-    void loadAdminAccess().then((access) => setCanManage(Boolean(access?.permissions.includes("operations.manage"))));
+    void loadAdminAccess().then((access) =>
+      setCanManage(Boolean(access?.permissions.includes("operations.manage"))),
+    );
     const channel = supabase
       .channel("admin-ops-canonical")
-      .on("postgres_changes", { event: "*", schema: "public", table: "drivers" }, () => void loadAll())
-      .on("postgres_changes", { event: "*", schema: "public", table: "rides" }, () => void loadAll())
-      .on("postgres_changes", { event: "*", schema: "public", table: "sos_alerts" }, () => void loadAll())
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "drivers" },
+        () => void loadAll(),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "rides" },
+        () => void loadAll(),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "sos_alerts" },
+        () => void loadAll(),
+      )
       .subscribe();
     return () => {
       void supabase.removeChannel(channel);
@@ -175,7 +217,14 @@ function OpsCenterPage() {
   const filteredRides = rides.filter((ride) => {
     if (!term) return true;
     const passenger = passengers.get(ride.passenger_id);
-    return [ride.id, ride.driver_name, passenger?.name, passenger?.phone, ride.origin_name, ride.destination_name]
+    return [
+      ride.id,
+      ride.driver_name,
+      passenger?.name,
+      passenger?.phone,
+      ride.origin_name,
+      ride.destination_name,
+    ]
       .filter(Boolean)
       .join(" ")
       .toLowerCase()
@@ -185,7 +234,9 @@ function OpsCenterPage() {
   const mapCenter = useMemo(() => {
     const alert = sos.find((item) => item.lat != null && item.lng != null);
     if (alert?.lat != null && alert.lng != null) return { lat: alert.lat, lng: alert.lng };
-    const driver = onlineDrivers.find((item) => item.current_lat != null && item.current_lng != null);
+    const driver = onlineDrivers.find(
+      (item) => item.current_lat != null && item.current_lng != null,
+    );
     return driver?.current_lat != null && driver.current_lng != null
       ? { lat: driver.current_lat, lng: driver.current_lng }
       : null;
@@ -199,7 +250,9 @@ function OpsCenterPage() {
     setBusyAlert(alert.id);
     try {
       await updateAdminSosAlert(alert.id, status);
-      toast.success(status === "acknowledged" ? "SOS assumido pela operação" : "SOS marcado como resolvido");
+      toast.success(
+        status === "acknowledged" ? "SOS assumido pela operação" : "SOS marcado como resolvido",
+      );
       await loadAll();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Falha ao atualizar SOS.");
@@ -237,7 +290,10 @@ function OpsCenterPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <strong className="text-sm">SOS {alert.severity.toUpperCase()}</strong>
-                      <StatusPill status={alert.status === "open" ? "cancelled" : "searching"} label={alert.status === "open" ? "Aberto" : "Assumido"} />
+                      <StatusPill
+                        status={alert.status === "open" ? "cancelled" : "searching"}
+                        label={alert.status === "open" ? "Aberto" : "Assumido"}
+                      />
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">
                       {passenger?.name ?? "Passageiro"} · {formatDate(alert.created_at)}
@@ -291,7 +347,9 @@ function OpsCenterPage() {
                           icon={{
                             path: (window as any).google.maps.SymbolPath.CIRCLE,
                             scale: 8,
-                            fillColor: busyDriverIds.has(driver.id) ? APOIS_ADMIN_MAP.goldStrong : APOIS_ADMIN_MAP.gold,
+                            fillColor: busyDriverIds.has(driver.id)
+                              ? APOIS_ADMIN_MAP.goldStrong
+                              : APOIS_ADMIN_MAP.gold,
                             fillOpacity: 1,
                             strokeColor: APOIS_ADMIN_MAP.black,
                             strokeWeight: 2,
@@ -338,7 +396,11 @@ function OpsCenterPage() {
           {loading ? (
             <Loading label="Carregando operação..." />
           ) : filteredRides.length === 0 ? (
-            <EmptyState icon={RouteIcon} title="Sem corridas ativas" description="As corridas em andamento aparecerão aqui." />
+            <EmptyState
+              icon={RouteIcon}
+              title="Sem corridas ativas"
+              description="As corridas em andamento aparecerão aqui."
+            />
           ) : (
             <div className="space-y-2">
               {filteredRides.map((ride) => {
@@ -347,11 +409,22 @@ function OpsCenterPage() {
                   <DSCard key={ride.id}>
                     <DSCardContent className="space-y-2 p-3">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="font-mono text-[10px] text-primary">{ride.id.slice(0, 8)}</span>
-                        <StatusPill status={ride.status === "procurar_motorista" ? "searching" : "driverComing"} label={STATUS_LABEL[ride.status] ?? ride.status} />
+                        <span className="font-mono text-[10px] text-primary">
+                          {ride.id.slice(0, 8)}
+                        </span>
+                        <StatusPill
+                          status={
+                            ride.status === "procurar_motorista" ? "searching" : "driverComing"
+                          }
+                          label={STATUS_LABEL[ride.status] ?? ride.status}
+                        />
                       </div>
-                      <p className="truncate text-sm font-semibold">{passenger?.name ?? "Passageiro"} · {ride.category ?? "—"}</p>
-                      <p className="truncate text-xs text-muted-foreground">{ride.origin_name ?? "Origem"} → {ride.destination_name ?? "Destino"}</p>
+                      <p className="truncate text-sm font-semibold">
+                        {passenger?.name ?? "Passageiro"} · {ride.category ?? "—"}
+                      </p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {ride.origin_name ?? "Origem"} → {ride.destination_name ?? "Destino"}
+                      </p>
                       <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-muted-foreground">
                         <span>Motorista: {ride.driver_name ?? "Ainda não atribuído"}</span>
                         <span>Pagamento: {ride.payment_method ?? "—"}</span>
@@ -368,7 +441,11 @@ function OpsCenterPage() {
 
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
         <InfoCard icon={Car} title="Motoristas" value={`${onlineDrivers.length} online`} />
-        <InfoCard icon={Users} title="Passageiros ativos" value={`${new Set(rides.map((ride) => ride.passenger_id)).size}`} />
+        <InfoCard
+          icon={Users}
+          title="Passageiros ativos"
+          value={`${new Set(rides.map((ride) => ride.passenger_id)).size}`}
+        />
         <InfoCard icon={RouteIcon} title="Corridas ativas" value={`${rides.length}`} />
       </div>
     </AdminLayout>
@@ -386,7 +463,15 @@ function Kpi({ label, value, danger = false }: { label: string; value: number; d
   );
 }
 
-function InfoCard({ icon: Icon, title, value }: { icon: typeof Car; title: string; value: string }) {
+function InfoCard({
+  icon: Icon,
+  title,
+  value,
+}: {
+  icon: typeof Car;
+  title: string;
+  value: string;
+}) {
   return (
     <DSCard>
       <DSCardContent className="flex items-center gap-3 p-4">

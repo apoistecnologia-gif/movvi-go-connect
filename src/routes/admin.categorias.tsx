@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Temporary Phase 8 bridge until generated Supabase types include canonical admin RPCs. */
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Loader2, Save, ShieldCheck } from "lucide-react";
@@ -45,7 +46,9 @@ function AdminCategoriasPage() {
     const refresh = async () => {
       const { data, error } = await (supabase as any)
         .from("ride_categories")
-        .select("id,code,name,description,icon,image_url,capacity_label,eta_label,sort_order,is_active")
+        .select(
+          "id,code,name,description,icon,image_url,capacity_label,eta_label,sort_order,is_active",
+        )
         .order("sort_order", { ascending: true });
       if (!alive) return;
       if (error) {
@@ -59,7 +62,11 @@ function AdminCategoriasPage() {
     void refresh();
     const channel = supabase
       .channel("admin-ride-categories-canonical")
-      .on("postgres_changes", { event: "*", schema: "public", table: "ride_categories" }, () => void refresh())
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "ride_categories" },
+        () => void refresh(),
+      )
       .subscribe();
     return () => {
       alive = false;
@@ -105,8 +112,9 @@ function AdminCategoriasPage() {
           <div className="flex items-start gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm text-muted-foreground">
             <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
             <p>
-              Os códigos <strong>carros, motos, fretes, guincho e envios</strong> fazem parte do contrato da corrida.
-              Por segurança, o painel não cria nem exclui códigos arbitrários; ele controla apresentação, ordem e disponibilidade.
+              Os códigos <strong>carros, motos, fretes, guincho e envios</strong> fazem parte do
+              contrato da corrida. Por segurança, o painel não cria nem exclui códigos arbitrários;
+              ele controla apresentação, ordem e disponibilidade.
             </p>
           </div>
 
@@ -116,7 +124,9 @@ function AdminCategoriasPage() {
                 <CardContent className="space-y-4 p-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                      <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Código canônico</p>
+                      <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                        Código canônico
+                      </p>
                       <p className="font-mono text-sm font-semibold text-primary">{row.code}</p>
                     </div>
                     <label className="flex items-center gap-2 text-xs font-medium">
@@ -130,10 +140,16 @@ function AdminCategoriasPage() {
 
                   <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
                     <Field label="Nome">
-                      <DSInput value={row.name} onChange={(e) => patch(row.id, { name: e.target.value })} />
+                      <DSInput
+                        value={row.name}
+                        onChange={(e) => patch(row.id, { name: e.target.value })}
+                      />
                     </Field>
                     <Field label="Descrição">
-                      <DSInput value={row.description ?? ""} onChange={(e) => patch(row.id, { description: e.target.value || null })} />
+                      <DSInput
+                        value={row.description ?? ""}
+                        onChange={(e) => patch(row.id, { description: e.target.value || null })}
+                      />
                     </Field>
                     <Field label="Ícone">
                       <select
@@ -141,14 +157,24 @@ function AdminCategoriasPage() {
                         onChange={(e) => patch(row.id, { icon: e.target.value })}
                         className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
                       >
-                        {ICON_NAMES.map((name) => <option key={name} value={name}>{name}</option>)}
+                        {ICON_NAMES.map((name) => (
+                          <option key={name} value={name}>
+                            {name}
+                          </option>
+                        ))}
                       </select>
                     </Field>
                     <Field label="Capacidade">
-                      <DSInput value={row.capacity_label ?? ""} onChange={(e) => patch(row.id, { capacity_label: e.target.value || null })} />
+                      <DSInput
+                        value={row.capacity_label ?? ""}
+                        onChange={(e) => patch(row.id, { capacity_label: e.target.value || null })}
+                      />
                     </Field>
                     <Field label="ETA exibido">
-                      <DSInput value={row.eta_label ?? ""} onChange={(e) => patch(row.id, { eta_label: e.target.value || null })} />
+                      <DSInput
+                        value={row.eta_label ?? ""}
+                        onChange={(e) => patch(row.id, { eta_label: e.target.value || null })}
+                      />
                     </Field>
                     <Field label="Ordem">
                       <DSInput
@@ -160,13 +186,24 @@ function AdminCategoriasPage() {
                       />
                     </Field>
                     <Field label="Imagem (URL/path)">
-                      <DSInput value={row.image_url ?? ""} onChange={(e) => patch(row.id, { image_url: e.target.value || null })} />
+                      <DSInput
+                        value={row.image_url ?? ""}
+                        onChange={(e) => patch(row.id, { image_url: e.target.value || null })}
+                      />
                     </Field>
                   </div>
 
                   <div className="flex justify-end">
-                    <Button onClick={() => void save(row)} disabled={savingId === row.id} className="gap-2">
-                      {savingId === row.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    <Button
+                      onClick={() => void save(row)}
+                      disabled={savingId === row.id}
+                      className="gap-2"
+                    >
+                      {savingId === row.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Save className="h-4 w-4" />
+                      )}
                       Salvar categoria
                     </Button>
                   </div>
@@ -183,7 +220,9 @@ function AdminCategoriasPage() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="flex flex-col gap-1">
-      <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{label}</span>
+      <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+        {label}
+      </span>
       {children}
     </label>
   );

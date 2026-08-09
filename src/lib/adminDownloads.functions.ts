@@ -12,7 +12,10 @@ export const getMovviSourceSignedUrl = createServerFn({ method: "POST" })
     const { userId, supabase } = context;
     const { data: isAdmin, error: roleErr } = await (
       supabase as unknown as {
-        rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: boolean | null; error: unknown }>;
+        rpc: (
+          fn: string,
+          args: Record<string, unknown>,
+        ) => Promise<{ data: boolean | null; error: unknown }>;
       }
     ).rpc("has_role", { _user_id: userId, _role: "admin" });
     if (roleErr) throw new Error("role_check_failed");

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Temporary Phase 8 bridge until generated Supabase types include canonical admin RPCs. */
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Download, Loader2, Search, ScrollText } from "lucide-react";
@@ -51,7 +52,11 @@ function AdminLogsPage() {
     void refresh();
     const channel = supabase
       .channel("admin-audit-canonical")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "audit_logs" }, () => void refresh())
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "audit_logs" },
+        () => void refresh(),
+      )
       .subscribe();
     return () => {
       void supabase.removeChannel(channel);
@@ -88,7 +93,8 @@ function AdminLogsPage() {
       }
     >
       <div className="mb-3 rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm text-muted-foreground">
-        A fonte de verdade é <strong>public.audit_logs</strong>. Eventos críticos são gravados pelo backend/RPC no mesmo fluxo da ação administrativa; não existem logs fictícios de navegador.
+        A fonte de verdade é <strong>public.audit_logs</strong>. Eventos críticos são gravados pelo
+        backend/RPC no mesmo fluxo da ação administrativa; não existem logs fictícios de navegador.
       </div>
 
       <div className="relative mb-3">
@@ -118,9 +124,13 @@ function AdminLogsPage() {
                   <DSBadge className="font-mono">{audit.action}</DSBadge>
                   <span className="text-muted-foreground">{audit.entity_type}</span>
                   {audit.entity_id && (
-                    <span className="font-mono text-[10px] text-muted-foreground">{audit.entity_id}</span>
+                    <span className="font-mono text-[10px] text-muted-foreground">
+                      {audit.entity_id}
+                    </span>
                   )}
-                  <span className="ml-auto text-[10px] text-muted-foreground">{formatDate(audit.created_at)}</span>
+                  <span className="ml-auto text-[10px] text-muted-foreground">
+                    {formatDate(audit.created_at)}
+                  </span>
                 </div>
                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-muted-foreground">
                   <span>ator: {audit.actor_id ?? "sistema"}</span>

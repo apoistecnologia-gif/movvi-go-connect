@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Temporary Phase 8 bridge until generated Supabase types include canonical admin RPCs. */
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { KeyRound, Lock, ScrollText, Shield, ShieldAlert, Users } from "lucide-react";
@@ -38,7 +39,7 @@ function AdminSecurityPage() {
       if (!alive) return;
       setAccess(nextAccess);
       setMetrics(nextMetrics);
-      setAuditCount(auditResult.error ? null : auditResult.count ?? 0);
+      setAuditCount(auditResult.error ? null : (auditResult.count ?? 0));
       setLoading(false);
     })();
     return () => {
@@ -60,7 +61,9 @@ function AdminSecurityPage() {
       description="Estado real de autorização, auditoria e incidentes do APOIS Corridas."
     >
       <div className="mb-4 rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm text-muted-foreground">
-        Esta tela não expõe configurações fictícias de senha, 2FA ou timeout. Políticas do Supabase Auth só devem ser alteradas no backend/console autorizado. O painel mostra e opera apenas controles que existem no sistema.
+        Esta tela não expõe configurações fictícias de senha, 2FA ou timeout. Políticas do Supabase
+        Auth só devem ser alteradas no backend/console autorizado. O painel mostra e opera apenas
+        controles que existem no sistema.
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -71,8 +74,12 @@ function AdminSecurityPage() {
           status={access?.authorized ? "Ativo" : "Indisponível"}
           ok={Boolean(access?.authorized)}
         >
-          <p className="text-xs text-muted-foreground">Função atual: <strong>{access?.role ?? "—"}</strong></p>
-          <p className="text-xs text-muted-foreground">Permissões: {access?.permissions.length ?? 0}</p>
+          <p className="text-xs text-muted-foreground">
+            Função atual: <strong>{access?.role ?? "—"}</strong>
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Permissões: {access?.permissions.length ?? 0}
+          </p>
           <DSButton asChild variant="outline" size="sm">
             <Link to="/admin/administradores">Gerenciar equipe</Link>
           </DSButton>
@@ -98,7 +105,9 @@ function AdminSecurityPage() {
           status={(metrics?.operations.open_sos ?? 0) > 0 ? "Atenção" : "Sem alertas abertos"}
           ok={(metrics?.operations.open_sos ?? 0) === 0}
         >
-          <p className="text-xs text-muted-foreground">SOS abertos/ack: {metrics?.operations.open_sos ?? 0}</p>
+          <p className="text-xs text-muted-foreground">
+            SOS abertos/ack: {metrics?.operations.open_sos ?? 0}
+          </p>
           <DSButton asChild variant="outline" size="sm">
             <Link to="/admin/operacoes">Central de Operações</Link>
           </DSButton>

@@ -31,7 +31,9 @@ function periodRange(period: Period) {
 }
 
 const money = (cents: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(cents || 0) / 100);
+  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
+    Number(cents || 0) / 100,
+  );
 
 function AdminAnalyticsPage() {
   const [period, setPeriod] = useState<Period>("30d");
@@ -47,7 +49,7 @@ function AdminAnalyticsPage() {
   async function load() {
     setLoading(true);
     try {
-      const nextAccess = access ?? await loadAdminAccess();
+      const nextAccess = access ?? (await loadAdminAccess());
       setAccess(nextAccess);
       if (!nextAccess?.permissions.includes("metrics.read")) throw new Error("forbidden");
 
@@ -84,7 +86,9 @@ function AdminAnalyticsPage() {
     }
   }
 
-  useEffect(() => { void load(); }, [period]);
+  useEffect(() => {
+    void load();
+  }, [period]);
 
   const byStatus = useMemo(() => {
     const map = new Map<string, number>();
@@ -99,7 +103,9 @@ function AdminAnalyticsPage() {
   }, [rides]);
 
   const completed = rides.filter((ride) => ride.status === "finalizada").length;
-  const cancelled = rides.filter((ride) => ride.status.startsWith("cancelada") || ride.status === "expired").length;
+  const cancelled = rides.filter(
+    (ride) => ride.status.startsWith("cancelada") || ride.status === "expired",
+  ).length;
   const completionRate = rides.length ? (completed / rides.length) * 100 : 0;
   const cancellationRate = rides.length ? (cancelled / rides.length) * 100 : 0;
 
@@ -108,21 +114,40 @@ function AdminAnalyticsPage() {
       title="Analytics & BI"
       description="Indicadores derivados apenas de métricas, corridas e settlements canônicos"
       actions={
-        <DSButton variant="outline" size="sm" onClick={() => void load()} disabled={loading} className="gap-1">
+        <DSButton
+          variant="outline"
+          size="sm"
+          onClick={() => void load()}
+          disabled={loading}
+          className="gap-1"
+        >
           <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Atualizar
         </DSButton>
       }
     >
       <DSCard className="mb-4 border-primary/20 bg-primary/5">
         <DSCardContent className="p-4 text-sm text-muted-foreground">
-          Analytics legado baseado em RPCs paralelos de MRR, assinaturas e receita foi removido. Métricas financeiras detalhadas só aparecem para funções com <strong>finance.read</strong> e usam settlements canônicos.
+          Analytics legado baseado em RPCs paralelos de MRR, assinaturas e receita foi removido.
+          Métricas financeiras detalhadas só aparecem para funções com <strong>finance.read</strong>{" "}
+          e usam settlements canônicos.
         </DSCardContent>
       </DSCard>
 
       <div className="mb-4 flex flex-wrap gap-2">
         {(["today", "7d", "30d", "month"] as Period[]).map((value) => (
-          <button key={value} type="button" onClick={() => setPeriod(value)} className={`rounded-full border px-3 py-1 text-xs ${period === value ? "border-primary bg-primary/15 text-primary" : "border-border text-muted-foreground"}`}>
-            {value === "today" ? "Hoje" : value === "7d" ? "7 dias" : value === "30d" ? "30 dias" : "Este mês"}
+          <button
+            key={value}
+            type="button"
+            onClick={() => setPeriod(value)}
+            className={`rounded-full border px-3 py-1 text-xs ${period === value ? "border-primary bg-primary/15 text-primary" : "border-border text-muted-foreground"}`}
+          >
+            {value === "today"
+              ? "Hoje"
+              : value === "7d"
+                ? "7 dias"
+                : value === "30d"
+                  ? "30 dias"
+                  : "Este mês"}
           </button>
         ))}
       </div>
@@ -130,7 +155,11 @@ function AdminAnalyticsPage() {
       {loading ? (
         <Loading label="Calculando indicadores..." />
       ) : !dashboard ? (
-        <EmptyState icon={BarChart3} title="Analytics indisponível" description="A função administrativa atual não conseguiu consultar as métricas canônicas." />
+        <EmptyState
+          icon={BarChart3}
+          title="Analytics indisponível"
+          description="A função administrativa atual não conseguiu consultar as métricas canônicas."
+        />
       ) : (
         <>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -143,9 +172,19 @@ function AdminAnalyticsPage() {
             {canReadFinance && finance && (
               <>
                 <Metric label="GMV liquidado" value={money(finance.settlements.gmv_cents)} />
-                <Metric label="Receita APOIS" value={money(finance.settlements.platform_revenue_cents)} emphasis />
-                <Metric label="Ganhos motoristas" value={money(finance.settlements.driver_earnings_cents)} />
-                <Metric label="Taxas de provedor" value={money(finance.settlements.provider_fees_cents)} />
+                <Metric
+                  label="Receita APOIS"
+                  value={money(finance.settlements.platform_revenue_cents)}
+                  emphasis
+                />
+                <Metric
+                  label="Ganhos motoristas"
+                  value={money(finance.settlements.driver_earnings_cents)}
+                />
+                <Metric
+                  label="Taxas de provedor"
+                  value={money(finance.settlements.provider_fees_cents)}
+                />
                 <Metric label="Estornos" value={money(finance.settlements.refunds_cents)} />
                 <Metric label="Saques pendentes" value={money(finance.withdrawals.pending_cents)} />
               </>
@@ -153,7 +192,10 @@ function AdminAnalyticsPage() {
           </div>
 
           {!canReadFinance && (
-            <p className="mt-3 text-xs text-muted-foreground">Indicadores financeiros detalhados foram ocultados porque sua função não possui finance.read.</p>
+            <p className="mt-3 text-xs text-muted-foreground">
+              Indicadores financeiros detalhados foram ocultados porque sua função não possui
+              finance.read.
+            </p>
           )}
 
           <div className="mt-5 grid gap-4 lg:grid-cols-2">
@@ -166,7 +208,15 @@ function AdminAnalyticsPage() {
   );
 }
 
-function Metric({ label, value, emphasis = false }: { label: string; value: string; emphasis?: boolean }) {
+function Metric({
+  label,
+  value,
+  emphasis = false,
+}: {
+  label: string;
+  value: string;
+  emphasis?: boolean;
+}) {
   return (
     <DSCard className={emphasis ? "border-primary/30 bg-primary/5" : undefined}>
       <DSCardContent className="p-4">
@@ -177,16 +227,34 @@ function Metric({ label, value, emphasis = false }: { label: string; value: stri
   );
 }
 
-function Breakdown({ icon: Icon, title, rows }: { icon: typeof Activity; title: string; rows: Array<[string, number]> }) {
+function Breakdown({
+  icon: Icon,
+  title,
+  rows,
+}: {
+  icon: typeof Activity;
+  title: string;
+  rows: Array<[string, number]>;
+}) {
   return (
     <DSCard>
       <DSCardContent className="space-y-3 p-4">
-        <h2 className="flex items-center gap-2 font-semibold"><Icon className="h-4 w-4 text-primary" /> {title}</h2>
-        {rows.length === 0 ? <p className="text-sm text-muted-foreground">Sem dados no período.</p> : rows.map(([label, value]) => (
-          <div key={label} className="flex items-center justify-between gap-3 rounded-lg border border-border p-3 text-sm">
-            <span>{label}</span><DSBadge variant="muted">{value}</DSBadge>
-          </div>
-        ))}
+        <h2 className="flex items-center gap-2 font-semibold">
+          <Icon className="h-4 w-4 text-primary" /> {title}
+        </h2>
+        {rows.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Sem dados no período.</p>
+        ) : (
+          rows.map(([label, value]) => (
+            <div
+              key={label}
+              className="flex items-center justify-between gap-3 rounded-lg border border-border p-3 text-sm"
+            >
+              <span>{label}</span>
+              <DSBadge variant="muted">{value}</DSBadge>
+            </div>
+          ))
+        )}
       </DSCardContent>
     </DSCard>
   );

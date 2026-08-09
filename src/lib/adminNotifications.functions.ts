@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Temporary Phase 8 bridge until generated Supabase types include canonical admin RPCs. */
 // APOIS CORRIDAS — Admin notification broadcast.
 // Audience resolution uses canonical public.users.id and delivery is delegated
 // to the FCM notification engine (send-ride-push). The UI never claims an
@@ -6,7 +7,15 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const AUDIENCES = ["all", "drivers", "passengers", "city", "category", "driver", "passenger"] as const;
+const AUDIENCES = [
+  "all",
+  "drivers",
+  "passengers",
+  "city",
+  "category",
+  "driver",
+  "passenger",
+] as const;
 type Audience = (typeof AUDIENCES)[number];
 
 const MAX_RECIPIENTS = 50_000;
@@ -16,7 +25,9 @@ const bodySchema = z.string().trim().min(1).max(500);
 const filterSchema = z.string().trim().max(120).optional().nullable();
 
 async function assertPermission(ctx: { supabase: any }, permission: string) {
-  const { data, error } = await ctx.supabase.rpc("admin_has_permission", { _permission: permission });
+  const { data, error } = await ctx.supabase.rpc("admin_has_permission", {
+    _permission: permission,
+  });
   if (error) throw new Error("permission_check_failed");
   if (data !== true) throw new Error("forbidden");
 }
@@ -46,7 +57,11 @@ async function resolveSpecificProfileId(supabase: any, rawId: string): Promise<s
   return driverMatch?.user_id ? String(driverMatch.user_id) : null;
 }
 
-async function resolveRecipients(supabase: any, audience: Audience, filter: string | null): Promise<string[]> {
+async function resolveRecipients(
+  supabase: any,
+  audience: Audience,
+  filter: string | null,
+): Promise<string[]> {
   const needsFilter = ["city", "category", "driver", "passenger"].includes(audience);
   if (needsFilter && !filter) throw new Error("missing_filter");
 
@@ -58,13 +73,20 @@ async function resolveRecipients(supabase: any, audience: Audience, filter: stri
   if (audience === "drivers") {
     const { data, error } = await supabase.from("drivers").select("user_id");
     if (error) throw new Error(error.message);
-    return (data ?? []).map((row: { user_id?: unknown }) => String(row.user_id ?? "")).filter(Boolean);
+    return (data ?? [])
+      .map((row: { user_id?: unknown }) => String(row.user_id ?? ""))
+      .filter(Boolean);
   }
 
   if (audience === "passengers") {
-    const { data, error } = await supabase.from("user_roles").select("user_id").eq("role", "passenger");
+    const { data, error } = await supabase
+      .from("user_roles")
+      .select("user_id")
+      .eq("role", "passenger");
     if (error) throw new Error(error.message);
-    return (data ?? []).map((row: { user_id?: unknown }) => String(row.user_id ?? "")).filter(Boolean);
+    return (data ?? [])
+      .map((row: { user_id?: unknown }) => String(row.user_id ?? ""))
+      .filter(Boolean);
   }
 
   if (audience === "city") {
@@ -78,23 +100,33 @@ async function resolveRecipients(supabase: any, audience: Audience, filter: stri
   }
 
   if (audience === "category") {
-    const { data, error } = await supabase.from("drivers").select("user_id").eq("category", filter!);
+    const { data, error } = await supabase
+      .from("drivers")
+      .select("user_id")
+      .eq("category", filter!);
     if (error) throw new Error(error.message);
-    return (data ?? []).map((row: { user_id?: unknown }) => String(row.user_id ?? "")).filter(Boolean);
+    return (data ?? [])
+      .map((row: { user_id?: unknown }) => String(row.user_id ?? ""))
+      .filter(Boolean);
   }
 
-  const { data, error } = await supabase
-    .from("users")
-    .select("id")
-    .is("deleted_at", null);
+  const { data, error } = await supabase.from("users").select("id").is("deleted_at", null);
   if (error) throw new Error(error.message);
   return (data ?? []).map((row: { id?: unknown }) => String(row.id ?? "")).filter(Boolean);
 }
 
 export const sendAdminBroadcast = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { title: string; body: string; audience: Audience; filter: string | null }) =>
-    z.object({ title: titleSchema, body: bodySchema, audience: audienceSchema, filter: filterSchema }).parse(input),
+  .inputValidator(
+    (input: { title: string; body: string; audience: Audience; filter: string | null }) =>
+      z
+        .object({
+          title: titleSchema,
+          body: bodySchema,
+          audience: audienceSchema,
+          filter: filterSchema,
+        })
+        .parse(input),
   )
   .handler(async ({ data, context }) => {
     await assertPermission(context as any, "notifications.send");

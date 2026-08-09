@@ -12,7 +12,12 @@ interface MovviLogoProps {
  * porém toda a apresentação visível agora usa a identidade oficial APOIS.
  * `productLabel` evita reutilizar o rótulo MOTORISTA em superfícies como Admin.
  */
-export function MovviLogo({ size = 64, showTagline = false, className, productLabel = "MOTORISTA" }: MovviLogoProps) {
+export function MovviLogo({
+  size = 64,
+  showTagline = false,
+  className,
+  productLabel = "MOTORISTA",
+}: MovviLogoProps) {
   const label = productLabel.trim();
   return (
     <div className={`flex flex-col items-center gap-2 ${className ?? ""}`}>
@@ -32,7 +37,13 @@ export function MovviLogo({ size = 64, showTagline = false, className, productLa
 
       <div className="text-center">
         <div className="font-display text-xl font-black tracking-[0.08em] text-white">
-          APOIS{label ? <> <span className="text-[#F6BE1C]">{label}</span></> : null}
+          APOIS
+          {label ? (
+            <>
+              {" "}
+              <span className="text-[#F6BE1C]">{label}</span>
+            </>
+          ) : null}
         </div>
         {showTagline ? (
           <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.28em] text-[#F6BE1C]">

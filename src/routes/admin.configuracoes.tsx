@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Temporary Phase 8 bridge until generated Supabase types include canonical admin RPCs. */
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Loader2, Save, Sliders, ShieldCheck } from "lucide-react";
@@ -13,7 +14,11 @@ export const Route = createFileRoute("/admin/configuracoes")({
 });
 
 type EditableSetting = {
-  key: "ride.cancellation_fee_amount" | "ride.cancellation_free_minutes" | "ride.next_offer_max_distance_km" | "finance.platform_fee_percent";
+  key:
+    | "ride.cancellation_fee_amount"
+    | "ride.cancellation_free_minutes"
+    | "ride.next_offer_max_distance_km"
+    | "finance.platform_fee_percent";
   label: string;
   description: string;
   min: number;
@@ -35,7 +40,8 @@ const EDITABLE_SETTINGS: EditableSetting[] = [
   {
     key: "ride.cancellation_free_minutes",
     label: "Janela sem multa",
-    description: "Minutos iniciais em que o cancelamento pode permanecer isento conforme o lifecycle.",
+    description:
+      "Minutos iniciais em que o cancelamento pode permanecer isento conforme o lifecycle.",
     min: 0,
     max: 60,
     step: 1,
@@ -44,7 +50,8 @@ const EDITABLE_SETTINGS: EditableSetting[] = [
   {
     key: "ride.next_offer_max_distance_km",
     label: "Raio da próxima corrida",
-    description: "Distância máxima para oferecer nova corrida a motorista elegível próximo do fim da atual.",
+    description:
+      "Distância máxima para oferecer nova corrida a motorista elegível próximo do fim da atual.",
     min: 0.5,
     max: 20,
     step: 0.5,
@@ -77,14 +84,18 @@ function AdminConfigPage() {
       }
       setValues(next);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Não foi possível carregar as configurações.");
+      toast.error(
+        error instanceof Error ? error.message : "Não foi possível carregar as configurações.",
+      );
       setValues({});
     } finally {
       setLoading(false);
     }
   }
 
-  useEffect(() => { void load(); }, []);
+  useEffect(() => {
+    void load();
+  }, []);
 
   async function save(item: EditableSetting) {
     const value = Number(values[item.key]);
@@ -102,7 +113,9 @@ function AdminConfigPage() {
       toast.success("Configuração salva e auditada.");
       await load();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Não foi possível salvar a configuração.");
+      toast.error(
+        error instanceof Error ? error.message : "Não foi possível salvar a configuração.",
+      );
     } finally {
       setSaving(null);
     }
@@ -127,7 +140,9 @@ function AdminConfigPage() {
           <div>
             <p className="font-semibold text-foreground">Configuração server-side e auditada</p>
             <p className="mt-1">
-              Chaves de Google, Firebase, Mercado Pago, payout e outros secrets não são editadas nem lidas diretamente pelo navegador. O backend libera somente as chaves operacionais explicitamente permitidas.
+              Chaves de Google, Firebase, Mercado Pago, payout e outros secrets não são editadas nem
+              lidas diretamente pelo navegador. O backend libera somente as chaves operacionais
+              explicitamente permitidas.
             </p>
           </div>
         </DSCardContent>
@@ -148,7 +163,9 @@ function AdminConfigPage() {
                       <h2 className="font-semibold">{item.label}</h2>
                       <DSBadge variant="muted">{item.key}</DSBadge>
                     </div>
-                    <p className="mt-1 text-xs leading-5 text-muted-foreground">{item.description}</p>
+                    <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                      {item.description}
+                    </p>
                   </div>
                 </div>
 
@@ -159,11 +176,22 @@ function AdminConfigPage() {
                     max={item.max}
                     step={item.step}
                     value={value}
-                    onChange={(event) => setValues((current) => ({ ...current, [item.key]: Number(event.target.value) }))}
+                    onChange={(event) =>
+                      setValues((current) => ({
+                        ...current,
+                        [item.key]: Number(event.target.value),
+                      }))
+                    }
                   />
-                  <span className="min-w-10 text-xs font-semibold text-muted-foreground">{item.suffix}</span>
+                  <span className="min-w-10 text-xs font-semibold text-muted-foreground">
+                    {item.suffix}
+                  </span>
                   <DSButton onClick={() => void save(item)} disabled={saving === item.key}>
-                    {saving === item.key ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    {saving === item.key ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="h-4 w-4" />
+                    )}
                     Salvar
                   </DSButton>
                 </div>

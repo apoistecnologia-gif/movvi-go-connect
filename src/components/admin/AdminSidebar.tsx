@@ -30,7 +30,12 @@ type Item = { to: string; label: string; icon: LucideIcon; permission: string };
  */
 export const ADMIN_NAV: Item[] = [
   { to: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, permission: "metrics.read" },
-  { to: "/admin/operacoes", label: "Central de Operações", icon: Radio, permission: "operations.read" },
+  {
+    to: "/admin/operacoes",
+    label: "Central de Operações",
+    icon: Radio,
+    permission: "operations.read",
+  },
   { to: "/admin/motoristas", label: "Motoristas", icon: Car, permission: "drivers.read" },
   { to: "/admin/passageiros", label: "Passageiros", icon: Users, permission: "passengers.read" },
   { to: "/admin/corridas", label: "Corridas", icon: RouteIcon, permission: "rides.read" },
@@ -39,7 +44,12 @@ export const ADMIN_NAV: Item[] = [
   { to: "/admin/financeiro", label: "Financeiro", icon: Wallet, permission: "finance.read" },
   { to: "/admin/suporte", label: "Suporte", icon: LifeBuoy, permission: "support.read" },
   { to: "/admin/seguranca", label: "Segurança", icon: Lock, permission: "operations.read" },
-  { to: "/admin/administradores", label: "Equipe administrativa", icon: ShieldCheck, permission: "roles.manage" },
+  {
+    to: "/admin/administradores",
+    label: "Equipe administrativa",
+    icon: ShieldCheck,
+    permission: "roles.manage",
+  },
   { to: "/admin/logs", label: "Auditoria", icon: ScrollText, permission: "audit.read" },
 ];
 
@@ -55,13 +65,23 @@ function SidebarBrand() {
         aria-label="APOIS"
         className="drop-shadow-[0_0_12px_color-mix(in_oklab,var(--color-primary)_35%,transparent)]"
       >
-        <path d="M18 100 L18 28 L40 28 L60 70 L60 100 Z" fill="currentColor" className="text-foreground" />
+        <path
+          d="M18 100 L18 28 L40 28 L60 70 L60 100 Z"
+          fill="currentColor"
+          className="text-foreground"
+        />
         <path
           d="M60 28 Q100 28 100 64 Q100 100 60 100 L60 78 Q82 78 82 64 Q82 50 60 50 Z"
           fill="currentColor"
           className="text-primary"
         />
-        <path d="M28 82 Q60 60 95 82" stroke="hsl(220 30% 8%)" strokeWidth="8" strokeLinecap="round" fill="none" />
+        <path
+          d="M28 82 Q60 60 95 82"
+          stroke="hsl(220 30% 8%)"
+          strokeWidth="8"
+          strokeLinecap="round"
+          fill="none"
+        />
         <path
           d="M28 82 Q60 60 95 82"
           stroke="currentColor"
@@ -72,8 +92,12 @@ function SidebarBrand() {
         />
       </svg>
       <div className="mt-2 flex flex-col items-center leading-[1.05]">
-        <span className="font-display text-[15px] font-bold tracking-[0.22em] text-foreground">APOIS</span>
-        <span className="font-display text-[12px] font-bold tracking-[0.22em] text-primary">ADMIN</span>
+        <span className="font-display text-[15px] font-bold tracking-[0.22em] text-foreground">
+          APOIS
+        </span>
+        <span className="font-display text-[12px] font-bold tracking-[0.22em] text-primary">
+          ADMIN
+        </span>
       </div>
     </div>
   );

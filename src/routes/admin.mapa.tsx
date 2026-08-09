@@ -36,7 +36,12 @@ export const Route = createFileRoute("/admin/mapa")({
   component: AdminLiveMapPage,
 });
 
-const ACTIVE_STATUSES = ["procurar_motorista", "motorista_a_caminho", "motorista_chegou", "em_viagem"];
+const ACTIVE_STATUSES = [
+  "procurar_motorista",
+  "motorista_a_caminho",
+  "motorista_chegou",
+  "em_viagem",
+];
 
 function AdminLiveMapPage() {
   const [drivers, setDrivers] = useState<DriverPresence[]>([]);
@@ -49,14 +54,18 @@ function AdminLiveMapPage() {
       const [driverResult, rideResult] = await Promise.all([
         supabase
           .from("drivers")
-          .select("id,name,category,current_lat,current_lng,current_heading,last_location_at,is_online,approval_status")
+          .select(
+            "id,name,category,current_lat,current_lng,current_heading,last_location_at,is_online,approval_status",
+          )
           .eq("is_online", true)
           .not("current_lat", "is", null)
           .not("current_lng", "is", null)
           .limit(500),
         supabase
           .from("rides")
-          .select("id,driver_id,status,origin_name,destination_name,driver_latitude,driver_longitude")
+          .select(
+            "id,driver_id,status,origin_name,destination_name,driver_latitude,driver_longitude",
+          )
           .in("status", ACTIVE_STATUSES as never[])
           .limit(500),
       ]);
@@ -67,7 +76,9 @@ function AdminLiveMapPage() {
     } catch (error) {
       setDrivers([]);
       setRides([]);
-      toast.error(error instanceof Error ? error.message : "Não foi possível carregar o mapa operacional.");
+      toast.error(
+        error instanceof Error ? error.message : "Não foi possível carregar o mapa operacional.",
+      );
     } finally {
       setLoading(false);
     }
@@ -77,17 +88,26 @@ function AdminLiveMapPage() {
     void load();
     const channel = supabase
       .channel("admin-live-map-canonical")
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "drivers" }, () => void load())
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "drivers" },
+        () => void load(),
+      )
       .on("postgres_changes", { event: "*", schema: "public", table: "rides" }, () => void load())
       .subscribe();
-    return () => { void supabase.removeChannel(channel); };
+    return () => {
+      void supabase.removeChannel(channel);
+    };
   }, []);
 
   const center = useMemo(() => {
     const driver = drivers.find((row) => row.current_lat != null && row.current_lng != null);
-    if (driver?.current_lat != null && driver.current_lng != null) return { lat: driver.current_lat, lng: driver.current_lng };
+    if (driver?.current_lat != null && driver.current_lng != null)
+      return { lat: driver.current_lat, lng: driver.current_lng };
     const ride = rides.find((row) => row.driver_latitude != null && row.driver_longitude != null);
-    return ride?.driver_latitude != null && ride.driver_longitude != null ? { lat: ride.driver_latitude, lng: ride.driver_longitude } : null;
+    return ride?.driver_latitude != null && ride.driver_longitude != null
+      ? { lat: ride.driver_latitude, lng: ride.driver_longitude }
+      : null;
   }, [drivers, rides]);
 
   const activeByDriver = useMemo(() => {
@@ -101,7 +121,13 @@ function AdminLiveMapPage() {
       title="Mapa ao vivo"
       description="Presença do motorista e corridas ativas a partir das entidades canônicas"
       actions={
-        <DSButton variant="outline" size="sm" onClick={() => void load()} disabled={loading} className="gap-1">
+        <DSButton
+          variant="outline"
+          size="sm"
+          onClick={() => void load()}
+          disabled={loading}
+          className="gap-1"
+        >
           <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Atualizar
         </DSButton>
       }
@@ -115,7 +141,11 @@ function AdminLiveMapPage() {
       {loading ? (
         <Loading label="Carregando posições..." />
       ) : !center ? (
-        <EmptyState icon={MapPin} title="Sem posição disponível" description="Nenhum motorista online ou corrida ativa possui coordenadas válidas agora." />
+        <EmptyState
+          icon={MapPin}
+          title="Sem posição disponível"
+          description="Nenhum motorista online ou corrida ativa possui coordenadas válidas agora."
+        />
       ) : (
         <DSCard className="overflow-hidden">
           <DSCardContent className="p-0">
@@ -123,7 +153,10 @@ function AdminLiveMapPage() {
               <MovviMap center={center}>
                 {drivers.map((driver) => {
                   if (driver.current_lat == null || driver.current_lng == null) return null;
-                  const googleApi = typeof window !== "undefined" ? (window as unknown as { google?: typeof google }).google : undefined;
+                  const googleApi =
+                    typeof window !== "undefined"
+                      ? (window as unknown as { google?: typeof google }).google
+                      : undefined;
                   if (!googleApi?.maps) return null;
                   const ride = activeByDriver.get(driver.id);
                   return (
@@ -157,9 +190,17 @@ function AdminLiveMapPage() {
                 <Radio className="h-4 w-4 text-primary" />
                 <strong>{driver.name || driver.id.slice(0, 8)}</strong>
                 <DSBadge variant="primary">Online</DSBadge>
-                <DSBadge variant={ride ? "warning" : "success"}>{ride ? ride.status : "Disponível"}</DSBadge>
-                <span className="text-muted-foreground">{driver.category || "categoria não informada"}</span>
-                {ride && <span className="ml-auto text-muted-foreground">{ride.origin_name} → {ride.destination_name}</span>}
+                <DSBadge variant={ride ? "warning" : "success"}>
+                  {ride ? ride.status : "Disponível"}
+                </DSBadge>
+                <span className="text-muted-foreground">
+                  {driver.category || "categoria não informada"}
+                </span>
+                {ride && (
+                  <span className="ml-auto text-muted-foreground">
+                    {ride.origin_name} → {ride.destination_name}
+                  </span>
+                )}
               </DSCardContent>
             </DSCard>
           );

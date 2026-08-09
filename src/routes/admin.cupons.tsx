@@ -10,7 +10,10 @@ export const Route = createFileRoute("/admin/cupons")({
 
 function AdminPromocoesPage() {
   return (
-    <AdminLayout title="Promoções" description="Módulo comercial controlado — sem modelo paralelo de cupom">
+    <AdminLayout
+      title="Promoções"
+      description="Módulo comercial controlado — sem modelo paralelo de cupom"
+    >
       <DSCard className="mb-4 border-warning/30 bg-warning/5">
         <DSCardContent className="flex gap-3 p-4 text-sm text-muted-foreground">
           <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-warning" />
@@ -20,7 +23,9 @@ function AdminPromocoesPage() {
               <DSBadge variant="warning">Indisponível</DSBadge>
             </div>
             <p>
-              O schema canônico atual do APOIS Corridas não possui entidade coupons. A implementação antiga dependia de uma tabela legada fora da fonte de verdade e foi retirada deste painel para evitar descontos fictícios ou divergência de preço.
+              O schema canônico atual do APOIS Corridas não possui entidade coupons. A implementação
+              antiga dependia de uma tabela legada fora da fonte de verdade e foi retirada deste
+              painel para evitar descontos fictícios ou divergência de preço.
             </p>
           </div>
         </DSCardContent>

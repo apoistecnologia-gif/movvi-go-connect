@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Temporary Phase 8 bridge until generated Supabase types include canonical admin RPCs. */
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Loader2, Save, ShieldCheck } from "lucide-react";
@@ -168,7 +169,10 @@ function AdminPrecosPage() {
     const refresh = async () => {
       const db = supabase as any;
       const [categoryResult, tariffResult] = await Promise.all([
-        db.from("ride_categories").select("id,code,name,is_active").order("sort_order", { ascending: true }),
+        db
+          .from("ride_categories")
+          .select("id,code,name,is_active")
+          .order("sort_order", { ascending: true }),
         db.from("tariff_rules").select("*").order("city", { ascending: true }),
       ]);
       if (!alive) return;
@@ -187,7 +191,8 @@ function AdminPrecosPage() {
       const byCategory: Record<string, TariffRow> = {};
       for (const category of nextCategories) {
         const existing = (tariffResult.data ?? []).find(
-          (row: Record<string, unknown>) => row.category_id === category.id && String(row.city ?? "default") === "default",
+          (row: Record<string, unknown>) =>
+            row.category_id === category.id && String(row.city ?? "default") === "default",
         );
         byCategory[category.code] = existing
           ? normalizeTariff(existing as Record<string, unknown>, category.id)
@@ -202,7 +207,11 @@ function AdminPrecosPage() {
     void refresh();
     const channel = supabase
       .channel("admin-tariffs-canonical")
-      .on("postgres_changes", { event: "*", schema: "public", table: "tariff_rules" }, () => void refresh())
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "tariff_rules" },
+        () => void refresh(),
+      )
       .subscribe();
     return () => {
       alive = false;
@@ -274,7 +283,8 @@ function AdminPrecosPage() {
           <div className="flex items-start gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm text-muted-foreground">
             <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
             <p>
-              O valor exibido ao passageiro continua sendo calculado pelo backend. Esta tela apenas administra os parâmetros tipados da tarifa; não existem campos livres de preço.
+              O valor exibido ao passageiro continua sendo calculado pelo backend. Esta tela apenas
+              administra os parâmetros tipados da tarifa; não existem campos livres de preço.
             </p>
           </div>
 
@@ -282,7 +292,8 @@ function AdminPrecosPage() {
             <TabsList className="flex flex-wrap gap-1">
               {categories.map((category) => (
                 <TabsTrigger key={category.code} value={category.code}>
-                  {category.name}{!category.is_active ? " (categoria off)" : ""}
+                  {category.name}
+                  {!category.is_active ? " (categoria off)" : ""}
                 </TabsTrigger>
               ))}
             </TabsList>
@@ -297,10 +308,15 @@ function AdminPrecosPage() {
                     <CardHeader className="flex flex-row items-center justify-between gap-3">
                       <div>
                         <CardTitle className="text-base">{category.name}</CardTitle>
-                        <p className="mt-1 text-xs text-muted-foreground">Regra: {category.code} · cidade: {row.city}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Regra: {category.code} · cidade: {row.city}
+                        </p>
                       </div>
                       <label className="flex items-center gap-2 text-xs font-medium">
-                        <Switch checked={row.is_active} onCheckedChange={(value) => patch(category.code, { is_active: value })} />
+                        <Switch
+                          checked={row.is_active}
+                          onCheckedChange={(value) => patch(category.code, { is_active: value })}
+                        />
                         {row.is_active ? "Tarifa ativa" : "Tarifa desativada"}
                       </label>
                     </CardHeader>
@@ -313,15 +329,29 @@ function AdminPrecosPage() {
                               min={key === "dynamic_multiplier" ? 0.001 : 0}
                               step={key === "dynamic_multiplier" ? 0.01 : 0.01}
                               value={row[key]}
-                              onChange={(event) => patch(category.code, { [key]: Number(event.target.value) || (key === "dynamic_multiplier" ? 1 : 0) } as Partial<TariffRow>)}
+                              onChange={(event) =>
+                                patch(category.code, {
+                                  [key]:
+                                    Number(event.target.value) ||
+                                    (key === "dynamic_multiplier" ? 1 : 0),
+                                } as Partial<TariffRow>)
+                              }
                             />
                           </Field>
                         ))}
                       </div>
 
                       <div className="flex justify-end">
-                        <Button onClick={() => void save(category.code)} disabled={savingCode === category.code} className="gap-2">
-                          {savingCode === category.code ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                        <Button
+                          onClick={() => void save(category.code)}
+                          disabled={savingCode === category.code}
+                          className="gap-2"
+                        >
+                          {savingCode === category.code ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Save className="h-4 w-4" />
+                          )}
                           Salvar tarifa
                         </Button>
                       </div>
@@ -337,7 +367,15 @@ function AdminPrecosPage() {
   );
 }
 
-function Field({ label, technical, children }: { label: string; technical: string; children: React.ReactNode }) {
+function Field({
+  label,
+  technical,
+  children,
+}: {
+  label: string;
+  technical: string;
+  children: React.ReactNode;
+}) {
   return (
     <label className="flex flex-col gap-1">
       <span className="text-[11px] font-semibold text-muted-foreground">{label}</span>

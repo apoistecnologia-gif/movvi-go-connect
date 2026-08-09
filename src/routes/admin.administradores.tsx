@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Temporary Phase 8 bridge until generated Supabase types include canonical admin RPCs. */
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Plus, Save, ShieldCheck, UserX } from "lucide-react";
@@ -69,7 +70,11 @@ function AdminUsersPage() {
     void refresh();
     const channel = supabase
       .channel("admin-staff-profiles")
-      .on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, () => void refresh())
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "profiles" },
+        () => void refresh(),
+      )
       .subscribe();
     return () => {
       void supabase.removeChannel(channel);
@@ -114,7 +119,9 @@ function AdminUsersPage() {
       toast.success("Acesso administrativo provisionado");
       await refresh();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Não foi possível provisionar o acesso.");
+      toast.error(
+        error instanceof Error ? error.message : "Não foi possível provisionar o acesso.",
+      );
     }
   }
 
@@ -129,7 +136,8 @@ function AdminUsersPage() {
       }
     >
       <div className="mb-4 rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm text-muted-foreground">
-        O acesso do painel usa <strong>profiles.role → role_permissions</strong>. Perfis de passageiro/motorista em
+        O acesso do painel usa <strong>profiles.role → role_permissions</strong>. Perfis de
+        passageiro/motorista em
         <strong> user_roles</strong> não concedem privilégios administrativos.
       </div>
 
@@ -173,11 +181,15 @@ function AdminUsersPage() {
                     <DSLabel>Função</DSLabel>
                     <select
                       value={row.role}
-                      onChange={(event) => patch(row.user_id, { role: event.target.value as CanonicalStaffRole })}
+                      onChange={(event) =>
+                        patch(row.user_id, { role: event.target.value as CanonicalStaffRole })
+                      }
                       className="h-9 rounded-md border border-input bg-background px-3 text-sm"
                     >
                       {ROLES.map((role) => (
-                        <option key={role.value} value={role.value}>{role.label}</option>
+                        <option key={role.value} value={role.value}>
+                          {role.label}
+                        </option>
                       ))}
                     </select>
                   </label>
@@ -200,7 +212,11 @@ function AdminUsersPage() {
                     disabled={savingId === row.user_id}
                     className="gap-1"
                   >
-                    {savingId === row.user_id ? <UserX className="h-3 w-3 animate-pulse" /> : <Save className="h-3 w-3" />}
+                    {savingId === row.user_id ? (
+                      <UserX className="h-3 w-3 animate-pulse" />
+                    ) : (
+                      <Save className="h-3 w-3" />
+                    )}
                     Salvar
                   </DSButton>
                 </div>
