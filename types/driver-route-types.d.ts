@@ -1,0 +1,8 @@
+import "@tanstack/react-router";
+
+declare module "@tanstack/react-router" {
+  interface FileRoutesByPath {
+    "/motorista/documentos": any;
+    "/motorista/ganhos": any;
+  }
+}
