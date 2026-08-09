@@ -9,6 +9,7 @@ const pkg = JSON.parse(read("package.json"));
 const capacitor = read("capacitor.motorista.config.ts");
 const manifest = read("android-motorista/app/src/main/AndroidManifest.xml");
 const strings = read("android-motorista/app/src/main/res/values/strings.xml");
+const notificationIcon = read("android-motorista/app/src/main/res/drawable/ic_stat_apois_notification.xml");
 const gradle = read("android-motorista/app/build.gradle");
 const workflow = read(".github/workflows/apois-driver-phase9-release.yml");
 const nativeBridge = read("src/lib/nativeBridge.ts");
@@ -34,6 +35,10 @@ includes(manifest, 'android.permission.POST_NOTIFICATIONS', "Notification permis
 includes(manifest, 'android:name=".DriverLocationService"', "Driver foreground location service declaration");
 includes(manifest, 'android:foregroundServiceType="location"', "Driver foreground service type");
 includes(manifest, 'com.google.firebase.messaging.default_notification_channel_id', "Firebase default channel metadata");
+includes(manifest, 'com.google.firebase.messaging.default_notification_icon', "Firebase default small icon metadata");
+includes(manifest, 'android:resource="@drawable/ic_stat_apois_notification"', "APOIS Firebase small icon resource");
+includes(notificationIcon, 'android:fillColor="#FFFFFFFF"', "Notification icon monochrome white mask");
+includes(notificationIcon, 'android:viewportWidth="108"', "Notification icon APOIS vector viewport");
 includes(manifest, 'android:scheme="@string/password_recovery_scheme"', "Driver recovery intent filter");
 includes(manifest, 'android:pathPrefix="/redefinir-senha"', "Driver recovery path");
 includes(strings, '<string name="password_recovery_scheme">apoismotorista</string>', "Driver recovery scheme");
