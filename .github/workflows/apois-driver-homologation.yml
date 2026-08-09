@@ -13,12 +13,15 @@ on:
       - "src/lib/driverProfile.ts"
       - "src/lib/profilePhoto.ts"
       - "src/lib/driverRoutes.mobile.ts"
+      - "src/lib/googleMaps.ts"
+      - "src/lib/voiceNav.ts"
       - "src/components/DriverActiveRideRecovery.tsx"
       - "src/components/ApoisDriverBottomNav.tsx"
       - "src/components/MovviMap.tsx"
       - "src/components/ProfilePhotoUploader.tsx"
       - "src/hooks/useDriverBroadcast.ts"
       - "tests/mobile/driver-phase9-contract.mjs"
+      - "tests/mobile/driver-navigation-contract.mjs"
       - "scripts/verify-mobile-native.mjs"
       - "tsconfig.driver-phase7.json"
       - ".github/workflows/apois-driver-homologation.yml"
@@ -76,6 +79,9 @@ jobs:
 
       - name: Validar contrato Phase 9 do Motorista
         run: node tests/mobile/driver-phase9-contract.mjs
+
+      - name: Validar mapa e voz curva a curva
+        run: node tests/mobile/driver-navigation-contract.mjs
 
       - name: TypeScript — superfície crítica do Motorista
         run: npx tsc --noEmit --project tsconfig.driver-phase7.json
@@ -144,6 +150,27 @@ jobs:
         env:
           VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY: ${{ secrets.APOIS_GOOGLE_MAPS_BROWSER_KEY }}
         run: VITE_ENABLE_NATIVE_PUSH="$NATIVE_PUSH_READY" npm run android:motorista
+
+      - name: Gate nativo do mapa e voz de navegação
+        run: |
+          set -euo pipefail
+          source_voice=android-motorista/app/src/main/java/com/apois/motorista/DriverVoicePlugin.java
+          synced_voice=android/app/src/main/java/com/apois/motorista/DriverVoicePlugin.java
+          source_activity=android-motorista/app/src/main/java/com/apois/motorista/MainActivity.java
+          synced_activity=android/app/src/main/java/com/apois/motorista/MainActivity.java
+          source_manifest=android-motorista/app/src/main/AndroidManifest.xml
+          synced_manifest=android/app/src/main/AndroidManifest.xml
+          test -f "$synced_voice"
+          cmp "$source_voice" "$synced_voice"
+          grep -F 'registerPlugin(DriverVoicePlugin.class)' "$source_activity"
+          grep -F 'registerPlugin(DriverVoicePlugin.class)' "$synced_activity"
+          grep -F 'GOOGLE_TTS_ENGINE = "com.google.android.tts"' "$synced_voice"
+          grep -F 'USAGE_ASSISTANCE_NAVIGATION_GUIDANCE' "$synced_voice"
+          grep -F 'android:name="android.intent.action.TTS_SERVICE"' "$source_manifest"
+          grep -F 'android:name="android.intent.action.TTS_SERVICE"' "$synced_manifest"
+          grep -F 'visibility: "on"' src/lib/googleMaps.ts
+          grep -F 'Array.isArray(result.steps)' src/lib/driverRoutes.mobile.ts
+          echo 'APOIS_DRIVER_MAP_AND_NATIVE_VOICE_OK'
 
       - name: Gate canônico do buffer de localização offline
         run: |
