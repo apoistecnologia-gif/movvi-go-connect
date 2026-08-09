@@ -88,9 +88,9 @@ jobs:
 
       - name: Deno check dispatch Edge Functions
         run: |
-          deno check supabase/functions/dispatch-ride/index.ts
-          deno check supabase/functions/process-ride-dispatch/index.ts
-          deno check supabase/functions/send-ride-push/index.ts
+          deno check --node-modules-dir=auto supabase/functions/dispatch-ride/index.ts
+          deno check --node-modules-dir=auto supabase/functions/process-ride-dispatch/index.ts
+          deno check --node-modules-dir=auto supabase/functions/send-ride-push/index.ts
 
       - name: Apply canonical baseline through Phase 4
         run: |
