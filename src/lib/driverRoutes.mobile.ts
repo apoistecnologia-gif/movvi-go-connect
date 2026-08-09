@@ -18,6 +18,7 @@ type DriverRouteResponse = {
   durationMinutes: number;
   encodedPolyline: string;
   provider: string;
+  steps?: DriverRouteStep[];
 };
 
 function routeErrorMessage(error: unknown) {
@@ -47,13 +48,26 @@ export async function computeDriverRoute({
     throw new Error(routeErrorMessage(error ?? new Error("route_not_found")));
   }
 
+  const steps = Array.isArray(result.steps)
+    ? result.steps.filter(
+        (step) =>
+          Number.isFinite(Number(step.lat)) &&
+          Number.isFinite(Number(step.lng)) &&
+          typeof step.instruction === "string" &&
+          step.instruction.trim().length > 0,
+      )
+    : [];
+
   return {
     encodedPolyline: result.encodedPolyline,
     distanceMeters: Number(result.distanceMeters),
     durationSeconds: Number(result.durationSeconds),
-    // A Edge Function oficial retorna a geometria, distância e duração. As
-    // instruções curva-a-curva não fazem parte desse contrato; a navegação
-    // visual continua funcionando normalmente e a lista fica vazia.
-    steps: [] as DriverRouteStep[],
+    steps: steps.map((step) => ({
+      lat: Number(step.lat),
+      lng: Number(step.lng),
+      distanceMeters: Number(step.distanceMeters ?? 0),
+      instruction: step.instruction.trim(),
+      maneuver: step.maneuver ?? null,
+    })) as DriverRouteStep[],
   };
 }
