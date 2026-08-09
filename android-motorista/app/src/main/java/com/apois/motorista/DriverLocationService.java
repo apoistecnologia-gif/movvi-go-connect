@@ -7,6 +7,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.pm.ServiceInfo;
 import android.location.Location;
@@ -50,6 +51,16 @@ public class DriverLocationService extends Service {
     private static final String CHANNEL_ID = "apois_driver_location";
     private static final int NOTIFICATION_ID = 41021;
     private static final long HEARTBEAT_MS = 15_000L;
+    private static final long MAX_PENDING_LOCATION_AGE_MS = 120_000L;
+    private static final String LOCATION_PREFS = "apois_driver_location_buffer";
+    private static final String PREF_LAT = "lat";
+    private static final String PREF_LNG = "lng";
+    private static final String PREF_CAPTURED_AT = "captured_at";
+    private static final String PREF_ACCURACY = "accuracy";
+    private static final String PREF_HAS_BEARING = "has_bearing";
+    private static final String PREF_BEARING = "bearing";
+    private static final String PREF_HAS_SPEED = "has_speed";
+    private static final String PREF_SPEED = "speed";
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private final ExecutorService networkExecutor = Executors.newSingleThreadExecutor();
@@ -85,6 +96,7 @@ public class DriverLocationService extends Service {
                 Location location = result.getLastLocation();
                 if (location == null) return;
                 latestLocation = location;
+                rememberPendingLocation(location);
                 queuePresenceSync(true, location);
             }
         };
@@ -113,6 +125,11 @@ public class DriverLocationService extends Service {
         }
 
         startAsForeground();
+        Location pending = readPendingLocation();
+        if (pending != null) {
+            latestLocation = pending;
+            queuePresenceSync(true, pending);
+        }
         startLocationUpdates();
         return START_NOT_STICKY;
     }
@@ -191,6 +208,74 @@ public class DriverLocationService extends Service {
         }
     }
 
+    private void rememberPendingLocation(Location location) {
+        if (location == null) return;
+        long capturedAt = location.getTime() > 0 ? location.getTime() : System.currentTimeMillis();
+        SharedPreferences.Editor editor = getSharedPreferences(LOCATION_PREFS, MODE_PRIVATE)
+            .edit()
+            .putString(PREF_LAT, Double.toString(location.getLatitude()))
+            .putString(PREF_LNG, Double.toString(location.getLongitude()))
+            .putLong(PREF_CAPTURED_AT, capturedAt)
+            .putFloat(PREF_ACCURACY, location.hasAccuracy() ? location.getAccuracy() : -1f)
+            .putBoolean(PREF_HAS_BEARING, location.hasBearing())
+            .putFloat(PREF_BEARING, location.hasBearing() ? location.getBearing() : 0f)
+            .putBoolean(PREF_HAS_SPEED, location.hasSpeed())
+            .putFloat(PREF_SPEED, location.hasSpeed() ? location.getSpeed() : 0f);
+        editor.apply();
+    }
+
+    @Nullable
+    private Location readPendingLocation() {
+        SharedPreferences prefs = getSharedPreferences(LOCATION_PREFS, MODE_PRIVATE);
+        String latRaw = prefs.getString(PREF_LAT, null);
+        String lngRaw = prefs.getString(PREF_LNG, null);
+        long capturedAt = prefs.getLong(PREF_CAPTURED_AT, 0L);
+        if (latRaw == null || lngRaw == null || capturedAt <= 0L) return null;
+
+        long age = Math.max(0L, System.currentTimeMillis() - capturedAt);
+        if (age > MAX_PENDING_LOCATION_AGE_MS) {
+            clearPendingLocation();
+            return null;
+        }
+
+        try {
+            double lat = Double.parseDouble(latRaw);
+            double lng = Double.parseDouble(lngRaw);
+            if (lat < -90d || lat > 90d || lng < -180d || lng > 180d) {
+                clearPendingLocation();
+                return null;
+            }
+            Location pending = new Location("apois-buffer");
+            pending.setLatitude(lat);
+            pending.setLongitude(lng);
+            pending.setTime(capturedAt);
+            float accuracy = prefs.getFloat(PREF_ACCURACY, -1f);
+            if (accuracy >= 0f) pending.setAccuracy(accuracy);
+            if (prefs.getBoolean(PREF_HAS_BEARING, false)) {
+                pending.setBearing(prefs.getFloat(PREF_BEARING, 0f));
+            }
+            if (prefs.getBoolean(PREF_HAS_SPEED, false)) {
+                pending.setSpeed(prefs.getFloat(PREF_SPEED, 0f));
+            }
+            return pending;
+        } catch (NumberFormatException invalidBuffer) {
+            clearPendingLocation();
+            return null;
+        }
+    }
+
+    private void clearPendingLocationIfSynced(long syncedCapturedAt) {
+        SharedPreferences prefs = getSharedPreferences(LOCATION_PREFS, MODE_PRIVATE);
+        long pendingCapturedAt = prefs.getLong(PREF_CAPTURED_AT, 0L);
+        if (pendingCapturedAt > 0L && pendingCapturedAt <= syncedCapturedAt) {
+            clearPendingLocation();
+        }
+    }
+
+    private void clearPendingLocation() {
+        getSharedPreferences(LOCATION_PREFS, MODE_PRIVATE).edit().clear().apply();
+    }
+
     private void stopFromDriverAction() {
         tracking = false;
         mainHandler.removeCallbacks(heartbeat);
@@ -266,7 +351,13 @@ public class DriverLocationService extends Service {
 
             int status = connection.getResponseCode();
             consumeResponse(connection, status);
-            if (status >= 200 && status < 300) return true;
+            if (status >= 200 && status < 300) {
+                if (online && location != null) {
+                    long capturedAt = location.getTime() > 0 ? location.getTime() : System.currentTimeMillis();
+                    clearPendingLocationIfSynced(capturedAt);
+                }
+                return true;
+            }
             if ((status == 401 || status == 403) && allowRefresh && refreshSession()) {
                 return syncPresence(online, location, false);
             }
