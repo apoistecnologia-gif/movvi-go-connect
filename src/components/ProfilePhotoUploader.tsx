@@ -48,6 +48,9 @@ export function ProfilePhotoUploader({
       const compressed = await compressImageToSquare(file, { size: 512, quality: 0.85 });
       const res = await uploadProfilePhoto(userId, compressed);
       await onUploaded(res);
+      // Android WebView can invalidate a revoked object URL before React receives
+      // the parent update. Switch to the signed URL before revoking the local one.
+      setPreview(res.signedUrl);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Falha ao enviar a foto.");
       setPreview(null);
