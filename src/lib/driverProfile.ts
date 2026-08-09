@@ -20,6 +20,11 @@ export type DriverProfileRow = {
   vehicle_document_url: string | null;
   vehicle_photo_url: string | null;
   documents_status: "pending_upload" | "pending_review" | "approved" | "rejected" | null;
+  current_lat: number | string | null;
+  current_lng: number | string | null;
+  current_heading: number | string | null;
+  current_speed: number | string | null;
+  last_location_at: string | null;
 };
 
 export async function loadDriverProfile(): Promise<
