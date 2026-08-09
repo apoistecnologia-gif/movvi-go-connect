@@ -1,0 +1,21 @@
+name: APOIS tooling — source export
+
+on:
+  push:
+    branches:
+      - tooling/apois-driver-source-export
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apois-driver-source-export
+          path: src/routes/motorista.app.tsx
+          if-no-files-found: error
+          retention-days: 1
