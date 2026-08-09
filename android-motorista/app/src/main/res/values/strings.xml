@@ -4,4 +4,6 @@
     <string name="title_activity_main">APOIS Motorista</string>
     <string name="package_name">com.apois.motorista</string>
     <string name="custom_url_scheme">com.apois.motorista</string>
+    <string name="password_recovery_scheme">apoismotorista</string>
+    <string name="default_notification_channel_id">apois_rides</string>
 </resources>
