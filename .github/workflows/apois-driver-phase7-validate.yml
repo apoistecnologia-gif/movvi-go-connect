@@ -1,32 +1,6 @@
 name: APOIS Corridas — Driver Phase 7
 
 on:
-  push:
-    branches:
-      - fix/apois-corridas-consolidacao
-    paths:
-      - "src/routes/motorista*.tsx"
-      - "src/lib/driver*.ts"
-      - "src/lib/notifications/**"
-      - "src/lib/nativeBridge.ts"
-      - "src/lib/appRole.ts"
-      - "src/components/AuthShell.tsx"
-      - "src/components/MovviLogo.tsx"
-      - "src/assets/apoisLogoData.ts"
-      - "android/**"
-      - "android-motorista/**"
-      - "capacitor.config*.ts"
-      - "vite.mobile.config.ts"
-      - "scripts/verify-mobile-native.mjs"
-      - "supabase/baseline/00[0-9]_*.sql"
-      - "supabase/baseline/010_*.sql"
-      - "supabase/functions/dispatch-ride/**"
-      - "supabase/functions/send-ride-push/**"
-      - "tests/driver/**"
-      - "tests/database/driver_experience.sh"
-      - "tsconfig.driver-phase7.json"
-      - "package.json"
-      - ".github/workflows/apois-driver-phase7-validate.yml"
   pull_request:
     branches:
       - main
