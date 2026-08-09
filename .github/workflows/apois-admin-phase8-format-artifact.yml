@@ -1,0 +1,52 @@
+name: APOIS Corridas — Admin Phase 8 Format Artifact
+
+on:
+  push:
+    branches:
+      - fix/apois-corridas-consolidacao
+    paths:
+      - ".github/workflows/apois-admin-phase8-format-artifact.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  format-artifact:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Format Phase 8 Admin surface in ephemeral checkout
+        run: |
+          npx prettier --write \
+            "src/routes/admin.*.tsx" \
+            "src/components/admin/**/*.tsx" \
+            src/components/AdminGuard.tsx \
+            src/components/AuthShell.tsx \
+            src/components/MovviLogo.tsx \
+            "src/lib/admin*.ts"
+
+      - name: Upload formatted source artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: apois-admin-phase8-formatted
+          path: |
+            src/routes/admin.*.tsx
+            src/components/admin/**/*.tsx
+            src/components/AdminGuard.tsx
+            src/components/AuthShell.tsx
+            src/components/MovviLogo.tsx
+            src/lib/admin*.ts
+          if-no-files-found: error
+          retention-days: 1
