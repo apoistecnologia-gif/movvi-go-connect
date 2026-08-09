@@ -26,7 +26,6 @@ on:
       - "tests/database/driver_experience.sh"
       - "tsconfig.driver-phase7.json"
       - "package.json"
-      - "package-lock.json"
       - ".github/workflows/apois-driver-phase7-validate.yml"
   pull_request:
     branches:
@@ -53,7 +52,6 @@ on:
       - "tests/database/driver_experience.sh"
       - "tsconfig.driver-phase7.json"
       - "package.json"
-      - "package-lock.json"
       - ".github/workflows/apois-driver-phase7-validate.yml"
   workflow_dispatch:
 
@@ -140,7 +138,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
 
       - name: Setup Java
         uses: actions/setup-java@v5
