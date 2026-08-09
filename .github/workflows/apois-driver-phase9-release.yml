@@ -1,0 +1,126 @@
+name: APOIS Corridas — Driver Phase 9 Release
+
+on:
+  push:
+    branches:
+      - fix/apois-corridas-consolidacao
+    paths:
+      - ".github/workflows/apois-driver-phase9-release.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "src/routes/motorista.login.tsx"
+      - "src/routes/motorista.recuperar-senha.tsx"
+      - "src/routes/motorista.redefinir-senha.tsx"
+      - "src/lib/auth/driverPasswordRecovery.ts"
+      - "src/components/DriverPasswordRecoveryBridge.tsx"
+      - "src/lib/nativeBridge.ts"
+      - "android-motorista/**"
+      - "capacitor.motorista.config.ts"
+      - "package.json"
+      - "tests/mobile/driver-phase9-contract.mjs"
+      - ".github/workflows/apois-driver-phase9-release.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: apois-driver-phase9-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android-release-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Phase 9 Driver release contract
+        run: node tests/mobile/driver-phase9-contract.mjs
+
+      - name: Reject committed signing secrets
+        run: |
+          set -euo pipefail
+          if git ls-files | grep -E '\.(jks|keystore)$'; then
+            echo 'Keystore/signing material must never be committed.'
+            exit 1
+          fi
+          if git grep -nE 'APOIS_UPLOAD_(STORE_PASSWORD|KEY_PASSWORD)\s*[=:]\s*[^$]' -- ':!*.md' ':!.github/workflows/**'; then
+            echo 'Potential hardcoded upload-key password detected.'
+            exit 1
+          fi
+          echo 'APOIS_SIGNING_SECRETS_NOT_COMMITTED_OK'
+
+      - name: Validate Firebase Driver client
+        run: |
+          set -euo pipefail
+          test -f android-motorista/app/google-services.json
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          const config = JSON.parse(readFileSync('android-motorista/app/google-services.json', 'utf8'));
+          const packages = (config?.client ?? []).map((client) => String(client?.client_info?.android_client_info?.package_name ?? '').trim());
+          if (!packages.includes('com.apois.motorista')) throw new Error(`Firebase client missing com.apois.motorista: ${packages.join(', ')}`);
+          console.log('APOIS_DRIVER_FIREBASE_PACKAGE_OK');
+          NODE
+
+      - name: Build and sync Driver native project
+        env:
+          VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY: ${{ secrets.APOIS_GOOGLE_MAPS_BROWSER_KEY }}
+          VITE_ENABLE_NATIVE_PUSH: "true"
+        run: |
+          set -euo pipefail
+          test -n "$VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY"
+          npm run android:motorista
+          node scripts/verify-mobile-native.mjs motorista --live
+
+      - name: Verify synced release manifest
+        run: |
+          set -euo pipefail
+          grep -F 'android:allowBackup="false"' android/app/src/main/AndroidManifest.xml
+          grep -F 'android:usesCleartextTraffic="false"' android/app/src/main/AndroidManifest.xml
+          grep -F 'android.permission.ACCESS_BACKGROUND_LOCATION' android/app/src/main/AndroidManifest.xml
+          grep -F 'com.google.firebase.messaging.default_notification_channel_id' android/app/src/main/AndroidManifest.xml
+          grep -F 'password_recovery_scheme' android/app/src/main/AndroidManifest.xml
+          grep -F '<string name="default_notification_channel_id">apois_rides</string>' android/app/src/main/res/values/strings.xml
+          echo 'APOIS_DRIVER_SYNCED_MANIFEST_OK'
+
+      - name: Build release AAB and homologation APK
+        working-directory: android
+        env:
+          APOIS_VERSION_CODE: "1000001"
+          APOIS_VERSION_NAME: "1.0.0-phase9"
+        run: |
+          set -euo pipefail
+          chmod +x gradlew
+          ./gradlew bundleRelease assembleDebug --no-daemon --stacktrace
+          test -s app/build/outputs/bundle/release/app-release.aab
+          test -s app/build/outputs/apk/debug/app-debug.apk
+          echo 'APOIS_DRIVER_AAB_AND_APK_OK'
+
+      - name: Upload Phase 9 artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: APOIS-Driver-Phase9-Android
+          if-no-files-found: error
+          retention-days: 7
+          path: |
+            android/app/build/outputs/bundle/release/app-release.aab
+            android/app/build/outputs/apk/debug/app-debug.apk
