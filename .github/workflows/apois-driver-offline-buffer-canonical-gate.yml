@@ -1,0 +1,112 @@
+name: APOIS Corridas — Canonical Driver Offline Buffer Gate
+
+on:
+  push:
+    branches:
+      - tooling/apois-driver-offline-buffer-canonical-gate
+
+permissions:
+  contents: read
+
+jobs:
+  validate-canonical-driver-offline-buffer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Phase 9 Driver contract
+        run: node tests/mobile/driver-phase9-contract.mjs
+
+      - name: TypeScript — Driver surface
+        run: npx tsc --noEmit --project tsconfig.driver-phase7.json
+
+      - name: Source offline-buffer hard gate
+        run: |
+          set -euo pipefail
+          service=android-motorista/app/src/main/java/com/apois/motorista/DriverLocationService.java
+          grep -F 'SharedPreferences' "$service"
+          grep -F 'apois_driver_location_buffer' "$service"
+          grep -F 'MAX_PENDING_LOCATION_AGE_MS = 120_000L' "$service"
+          grep -F 'rememberPendingLocation(location)' "$service"
+          grep -F 'readPendingLocation()' "$service"
+          grep -F 'location.getTime()' "$service"
+          grep -F 'location.getAccuracy()' "$service"
+          grep -F '.putLong(PREF_CAPTURED_AT, capturedAt)' "$service"
+          grep -F '.putFloat(PREF_ACCURACY' "$service"
+          grep -F 'if (age > MAX_PENDING_LOCATION_AGE_MS)' "$service"
+          grep -F 'clearPendingLocationIfSynced' "$service"
+          grep -F '.setSmallIcon(R.drawable.ic_stat_apois_notification)' "$service"
+          ! grep -F 'putString("accessToken"' "$service"
+          ! grep -F 'putString("refreshToken"' "$service"
+          ! grep -F 'putString(EXTRA_ACCESS_TOKEN' "$service"
+          ! grep -F 'putString(EXTRA_REFRESH_TOKEN' "$service"
+          echo 'APOIS_DRIVER_OFFLINE_BUFFER_SOURCE_OK'
+
+      - name: Prepare Firebase Driver client
+        env:
+          FIREBASE_CONFIG_B64: ${{ secrets.APOIS_MOTORISTA_GOOGLE_SERVICES_JSON_BASE64 }}
+        run: |
+          set -euo pipefail
+          if [ -f android-motorista/app/google-services.json ]; then
+            echo '[firebase] using checked-in APOIS Driver config'
+          elif [ -n "$FIREBASE_CONFIG_B64" ]; then
+            printf '%s' "$FIREBASE_CONFIG_B64" | base64 --decode > android-motorista/app/google-services.json
+          else
+            echo 'Firebase client for com.apois.motorista is required.'
+            exit 1
+          fi
+
+      - name: Build and sync APOIS Driver
+        env:
+          VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY: ${{ secrets.APOIS_GOOGLE_MAPS_BROWSER_KEY }}
+          VITE_ENABLE_NATIVE_PUSH: "true"
+        run: |
+          set -euo pipefail
+          test -n "$VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY"
+          npm run android:motorista
+
+      - name: Generated Android offline-buffer gate
+        run: |
+          set -euo pipefail
+          service=android/app/src/main/java/com/apois/motorista/DriverLocationService.java
+          grep -F 'SharedPreferences' "$service"
+          grep -F 'MAX_PENDING_LOCATION_AGE_MS = 120_000L' "$service"
+          grep -F 'location.getTime()' "$service"
+          grep -F 'location.getAccuracy()' "$service"
+          grep -F 'clearPendingLocationIfSynced' "$service"
+          ! grep -F 'putString("accessToken"' "$service"
+          ! grep -F 'putString("refreshToken"' "$service"
+          echo 'APOIS_DRIVER_OFFLINE_BUFFER_GENERATED_OK'
+
+      - name: Verify native Driver shell
+        run: node scripts/verify-mobile-native.mjs motorista --live
+
+      - name: Build Driver debug APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - name: Upload validation APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: APOIS-Driver-Canonical-Offline-Buffer-Debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
