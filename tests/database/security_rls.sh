@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PASSENGER_A_AUTH="31000000-0000-4000-8000-000000000001"
-PASSENGER_B_AUTH="31000000-0000-4000-8000-000000000002"
-DRIVER_A_AUTH="31000000-0000-4000-8000-000000000003"
-DRIVER_B_AUTH="31000000-0000-4000-8000-000000000004"
-RIDE_ID="31000000-0000-4000-8000-000000000101"
+PASSENGER_A_AUTH="51000000-0000-4000-8000-000000000001"
+PASSENGER_B_AUTH="51000000-0000-4000-8000-000000000002"
+DRIVER_A_AUTH="51000000-0000-4000-8000-000000000003"
+DRIVER_B_AUTH="51000000-0000-4000-8000-000000000004"
+RIDE_ID="51000000-0000-4000-8000-000000000101"
+REQUEST_KEY="51000000-0000-4000-8000-000000000102"
 
 psql -v ON_ERROR_STOP=1 <<SQL
 insert into auth.users(id,email,raw_user_meta_data) values
@@ -37,7 +38,7 @@ select
   '$RIDE_ID',p.id,d.id,d.id,'carros','motorista_a_caminho',
   '{"lat":-9.39,"lng":-40.50}'::jsonb,'{"lat":-9.40,"lng":-40.49}'::jsonb,
   'Origem segurança','Destino segurança',-9.39,-40.50,-9.40,-40.49,
-  25.00,'cash','31000000-0000-4000-8000-000000000102'
+  25.00,'cash','$REQUEST_KEY'
 from public.users p, public.drivers d
 where p.auth_user_id='$PASSENGER_B_AUTH'
   and d.user_id=(select id from public.users where auth_user_id='$DRIVER_B_AUTH');
