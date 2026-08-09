@@ -1,4 +1,4 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { importPKCS8, SignJWT } from "npm:jose@5.9.6";
 import { getCorsHeaders } from "../_shared/cors.ts";
 
@@ -17,7 +17,7 @@ const ALLOWED_STATIC_PATHS = new Set([
   "/motorista/app",
 ]);
 
-type AdminClient = ReturnType<typeof createClient>;
+type AdminClient = SupabaseClient<any, "public", any>;
 
 type ServiceAccount = {
   project_id: string;
