@@ -52,6 +52,8 @@ includes(driverLocationPlugin, '@CapacitorPlugin(name = "DriverLocation")', "Dri
 includes(driverLocationPlugin, "ContextCompat.startForegroundService", "Driver location foreground service launch");
 includes(driverLocationService, "FusedLocationProviderClient", "Native fused location provider");
 includes(driverLocationService, "FOREGROUND_SERVICE_TYPE_LOCATION", "Native location foreground type");
+includes(driverLocationService, ".setSmallIcon(R.drawable.ic_stat_apois_notification)", "Foreground service APOIS small icon");
+excludes(driverLocationService, ".setSmallIcon(R.mipmap.ic_launcher)", "Foreground service launcher icon regression");
 includes(driverLocationService, '"/rest/v1/rpc/driver_set_presence"', "Native canonical presence RPC");
 includes(driverLocationService, "HEARTBEAT_MS = 15_000L", "Native presence heartbeat");
 includes(driverLocationNative, 'registerPlugin<DriverLocationPlugin>("DriverLocation")', "Web-to-native DriverLocation bridge");
