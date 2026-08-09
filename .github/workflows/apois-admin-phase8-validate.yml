@@ -88,12 +88,16 @@ jobs:
             supabase/baseline/012_admin_staff_provisioning.sql \
             supabase/baseline/013_admin_finance.sql \
             supabase/baseline/014_admin_settings.sql \
-            supabase/baseline/015_admin_notifications.sql; do
+            supabase/baseline/015_admin_notifications.sql \
+            supabase/baseline/016_driver_payout_control.sql; do
             psql -v ON_ERROR_STOP=1 -f "$file"
           done
 
       - name: Admin control-plane integration tests
         run: bash tests/database/admin_control_plane.sh
+
+      - name: Admin payout control integration tests
+        run: bash tests/database/admin_payout_control.sh
 
       - name: Admin settings integration tests
         run: bash tests/database/admin_settings.sh
@@ -115,12 +119,27 @@ jobs:
             "public.admin_update_support_ticket(uuid,text,text)" \
             "public.admin_get_dashboard_metrics()" \
             "public.admin_get_finance_summary(timestamp with time zone,timestamp with time zone)" \
+            "public.admin_approve_driver_withdrawal(uuid)" \
+            "public.admin_reject_driver_withdrawal(uuid,text)" \
             "public.admin_get_settings(text[])" \
             "public.admin_update_setting(text,jsonb)"; do
             anon=$(psql -Atqc "select has_function_privilege('anon','$signature','EXECUTE')::int")
             auth=$(psql -Atqc "select has_function_privilege('authenticated','$signature','EXECUTE')::int")
             test "$anon" = "0"
             test "$auth" = "1"
+          done
+
+          for signature in \
+            "public.begin_driver_withdrawal_processing(uuid,text)" \
+            "public.complete_driver_withdrawal(uuid,text,text)" \
+            "public.fail_driver_withdrawal(uuid,text,text)" \
+            "public.reverse_driver_withdrawal(uuid,text,text,text)"; do
+            anon=$(psql -Atqc "select has_function_privilege('anon','$signature','EXECUTE')::int")
+            auth=$(psql -Atqc "select has_function_privilege('authenticated','$signature','EXECUTE')::int")
+            service=$(psql -Atqc "select has_function_privilege('service_role','$signature','EXECUTE')::int")
+            test "$anon" = "0"
+            test "$auth" = "0"
+            test "$service" = "1"
           done
 
           notification_policy=$(psql -Atqc "select count(*) from pg_policies where schemaname='public' and tablename='notification_logs' and policyname='notification_logs_admin_read'")
