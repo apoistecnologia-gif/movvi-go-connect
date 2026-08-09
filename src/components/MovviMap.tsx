@@ -23,6 +23,8 @@ interface MovviMapProps {
   themeOverride?: "light" | "dark";
 }
 
+type ApoisMapWindow = Window & { __apoisMovviMap?: google.maps.Map | null };
+
 /**
  * Componente central de mapa do APOIS.
  *
@@ -31,6 +33,9 @@ interface MovviMapProps {
  * - Estilo claro/escuro reativo ao tema global. A troca é aplicada
  *   imperativamente via `map.setOptions({ styles })` para que o mapa
  *   atualize SEM remontar (evita perder centro/GPS/marcadores).
+ * - Expõe somente a instância efêmera do Google Map na janela enquanto montado.
+ *   Isso permite que a camada de recuperação do Motorista redesenhe a rota
+ *   quando a WebView for recriada enquanto o serviço nativo continua online.
  */
 export function MovviMap({
   center,
@@ -59,7 +64,6 @@ export function MovviMap({
   const isValid = !!center && isBrazilCoordinate(center.lat, center.lng);
   const effectiveCenter = isValid ? center! : BRAZIL_CENTER;
   const effectiveZoom = isValid ? (zoom ?? 14) : BRAZIL_ZOOM;
-  // Key estável — não inclui tema, para evitar remontar a cada troca.
   const mapKey = isValid ? "valid" : "fallback";
 
   const containerStyle = useMemo(
@@ -75,10 +79,8 @@ export function MovviMap({
 
   const mapRef = useRef<google.maps.Map | null>(null);
 
-  // Aplica o estilo imperativamente sempre que o tema mudar.
   useEffect(() => {
     if (!mapRef.current) return;
-    // eslint-disable-next-line no-console
     if (import.meta.env.DEV) console.log("[MovviMap] applying theme", theme, "→", styles.length, "rules");
     mapRef.current.setOptions({ styles, backgroundColor: bgColor });
   }, [theme, styles, bgColor]);
@@ -86,13 +88,19 @@ export function MovviMap({
   const handleLoad = useCallback(
     (map: google.maps.Map) => {
       mapRef.current = map;
-      // eslint-disable-next-line no-console
+      (window as ApoisMapWindow).__apoisMovviMap = map;
       if (import.meta.env.DEV) console.log("[MovviMap] map loaded — initial theme:", theme);
       map.setOptions({ styles, backgroundColor: bgColor });
       onLoad?.(map);
     },
     [onLoad, styles, bgColor, theme],
   );
+
+  const handleUnmount = useCallback((map: google.maps.Map) => {
+    const appWindow = window as ApoisMapWindow;
+    if (appWindow.__apoisMovviMap === map) appWindow.__apoisMovviMap = null;
+    if (mapRef.current === map) mapRef.current = null;
+  }, []);
 
   if (!GOOGLE_MAPS_API_KEY) {
     return (
@@ -144,6 +152,7 @@ export function MovviMap({
         center={effectiveCenter}
         zoom={effectiveZoom}
         onLoad={handleLoad}
+        onUnmount={handleUnmount}
         options={{
           styles,
           disableDefaultUI: true,
