@@ -14,7 +14,7 @@ export function ApoisDriverBottomNav({ hidden = false }: { hidden?: boolean }) {
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-[55] border-t border-white/5 bg-[#08090A]/98 px-2 backdrop-blur-xl"
+      className="fixed inset-x-0 bottom-0 z-[35] border-t border-white/5 bg-[#08090A]/98 px-2 backdrop-blur-xl"
       style={{ paddingBottom: "max(env(safe-area-inset-bottom), 6px)" }}
       aria-label="Navegação principal do motorista"
     >
