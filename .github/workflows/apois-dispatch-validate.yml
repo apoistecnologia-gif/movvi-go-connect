@@ -8,8 +8,10 @@ on:
       - "supabase/functions/_shared/dispatch-engine.ts"
       - "supabase/functions/dispatch-ride/**"
       - "supabase/functions/process-ride-dispatch/**"
+      - "supabase/functions/send-ride-push/**"
       - "supabase/baseline/006_dispatch_atomic_accept.sql"
       - "tests/unit/dispatch-engine.test.ts"
+      - "tests/unit/driver-mobile-push-contract.test.ts"
       - "tests/database/dispatch_concurrency.sh"
       - "tsconfig.dispatch.json"
       - ".github/workflows/apois-dispatch-validate.yml"
@@ -20,8 +22,10 @@ on:
       - "supabase/functions/_shared/dispatch-engine.ts"
       - "supabase/functions/dispatch-ride/**"
       - "supabase/functions/process-ride-dispatch/**"
+      - "supabase/functions/send-ride-push/**"
       - "supabase/baseline/006_dispatch_atomic_accept.sql"
       - "tests/unit/dispatch-engine.test.ts"
+      - "tests/unit/driver-mobile-push-contract.test.ts"
       - "tests/database/dispatch_concurrency.sh"
       - "tsconfig.dispatch.json"
 
@@ -77,14 +81,16 @@ jobs:
           --rule 'prettier/prettier: off'
           supabase/functions/_shared/dispatch-engine.ts
           tests/unit/dispatch-engine.test.ts
+          tests/unit/driver-mobile-push-contract.test.ts
 
       - name: Dispatch unit tests
-        run: deno test tests/unit/dispatch-engine.test.ts
+        run: deno test tests/unit/dispatch-engine.test.ts tests/unit/driver-mobile-push-contract.test.ts
 
       - name: Deno check dispatch Edge Functions
         run: |
           deno check supabase/functions/dispatch-ride/index.ts
           deno check supabase/functions/process-ride-dispatch/index.ts
+          deno check supabase/functions/send-ride-push/index.ts
 
       - name: Apply canonical baseline through Phase 4
         run: |
@@ -119,5 +125,7 @@ jobs:
           grep -F 'findEligibleDriversForRide' supabase/functions/_shared/dispatch-engine.ts
           grep -F 'remainingCandidateUserIds' supabase/functions/_shared/dispatch-engine.ts
           grep -F 'status: "expired"' supabase/functions/dispatch-ride/index.ts
+          grep -F 'const OFFER_SECONDS = 30;' supabase/functions/dispatch-ride/index.ts
+          grep -F '"/motorista/app",' supabase/functions/send-ride-push/index.ts
           grep -F '/functions/v1/dispatch-ride' supabase/functions/process-ride-dispatch/index.ts
           echo 'APOIS_DISPATCH_PHASE_OK'
