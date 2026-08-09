@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { validateSettlementAmounts } from "@/lib/finance/settlementValidation";
 
 export type AdminFinanceSettlement = {
   id: string;
@@ -60,5 +61,10 @@ export async function getAdminFinanceSummary(from: Date, to: Date): Promise<Admi
     _to: to.toISOString(),
   });
   if (error) throw new Error(error.message || "admin_finance_summary_failed");
-  return data as AdminFinanceSummary;
+
+  const summary = data as AdminFinanceSummary;
+  for (const settlement of summary.recent_settlements ?? []) {
+    validateSettlementAmounts(settlement);
+  }
+  return summary;
 }
