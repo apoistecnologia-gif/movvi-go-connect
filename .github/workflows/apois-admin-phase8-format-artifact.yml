@@ -1,4 +1,4 @@
-name: APOIS Corridas — Admin Phase 8 Format Artifact
+name: APOIS Corridas — Admin Phase 8 One-time Formatter
 
 on:
   push:
@@ -6,18 +6,24 @@ on:
       - fix/apois-corridas-consolidacao
     paths:
       - ".github/workflows/apois-admin-phase8-format-artifact.yml"
-  workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: apois-admin-phase8-one-time-formatter
+  cancel-in-progress: false
 
 jobs:
-  format-artifact:
+  format-and-retire:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - name: Checkout
+      - name: Checkout consolidation branch
         uses: actions/checkout@v4
+        with:
+          ref: fix/apois-corridas-consolidacao
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -27,7 +33,7 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
-      - name: Format Phase 8 Admin surface in ephemeral checkout
+      - name: Format only the Phase 8 Admin surface
         run: |
           npx prettier --write \
             "src/routes/admin.*.tsx" \
@@ -37,16 +43,25 @@ jobs:
             src/components/MovviLogo.tsx \
             "src/lib/admin*.ts"
 
-      - name: Upload formatted source artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: apois-admin-phase8-formatted
-          path: |
-            src/routes/admin.*.tsx
-            src/components/admin/**/*.tsx
-            src/components/AdminGuard.tsx
-            src/components/AuthShell.tsx
-            src/components/MovviLogo.tsx
-            src/lib/admin*.ts
-          if-no-files-found: error
-          retention-days: 1
+      - name: Retire one-time maintenance workflow
+        run: rm .github/workflows/apois-admin-phase8-format-artifact.yml
+
+      - name: Commit deterministic formatting only
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            "src/routes/admin."*.tsx \
+            src/components/admin \
+            src/components/AdminGuard.tsx \
+            src/components/AuthShell.tsx \
+            src/components/MovviLogo.tsx \
+            src/lib/admin*.ts \
+            .github/workflows/apois-admin-phase8-format-artifact.yml
+          if git diff --cached --quiet; then
+            echo "No formatting changes required."
+            exit 0
+          fi
+          git commit -m "style(admin): normalize Phase 8 source formatting"
+          git push origin HEAD:fix/apois-corridas-consolidacao
