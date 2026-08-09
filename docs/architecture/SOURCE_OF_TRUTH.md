@@ -20,7 +20,8 @@ Este documento pertence ao **APOIS CORRIDAS**.
 ## Motorista
 
 - **Repositório canônico:** `franciel046631/movvi-go-connect`
-- **Branch:** `feat/apois-motorista-producao-homologacao`
+- **Branch de homologação anterior:** `feat/apois-motorista-producao-homologacao`
+- **Branch de consolidação atual:** `fix/apois-corridas-consolidacao`
 - **PR:** #1 — DRAFT; não mesclar antes do E2E físico Passageiro ↔ Motorista.
 - **Stack:** React 19, Vite, TanStack Router/Start, TypeScript, Capacitor 8, Supabase JS, FCM/Push Notifications, Geolocation e Android Foreground Service.
 - **Package:** `com.apois.motorista`.
@@ -43,11 +44,13 @@ Nenhum `service_role`, webhook secret ou segredo de gateway é permitido no bund
 
 ## Admin
 
-- **Repositório:** `franciel046631/movvi-go-connect`
-- **Branch:** `feat/apois-admin-supabase-oficial-homologacao`
-- **PR:** #2 — DRAFT; não mesclar antes do E2E físico.
+- **Repositório canônico:** `franciel046631/movvi-go-connect`
+- **Branch de homologação anterior:** `feat/apois-admin-supabase-oficial-homologacao`
+- **Branch de consolidação atual:** `fix/apois-corridas-consolidacao`
+- **PR:** #2 — permanece sem merge.
+- **Supabase configurado no repositório:** `vqtucstyduxrqjgyigfk` em `supabase/config.toml`.
 - **Decisão:** preservar o Admin legado útil, rebrandear e migrar cada operação para contratos server-side compatíveis com o Supabase oficial.
-- **Pendência de consolidação:** a branch Admin ainda deve eliminar a referência antiga de `supabase/config.toml`; o runtime `.env` já aponta para `vqtucstyduxrqjgyigfk`. Essa correção será feita e validada na fase do Admin sem merge antecipado.
+- **Estado:** Fase 8 validada no mesmo HEAD em PostgreSQL efêmero + contratos frontend + TypeScript + production build + ESLint. Isso não equivale a promoção de migration em produção nem a homologação física completa.
 
 ## Backend
 
@@ -128,7 +131,7 @@ Conforme `IDENTITY_MODEL.md` e o schema vivo:
 
 1. PR #1 Motorista permanece DRAFT.
 2. PR #7 Passageiro permanece DRAFT.
-3. PR #2 Admin permanece DRAFT.
+3. PR #2 Admin permanece sem merge.
 4. Nenhum merge até E2E físico e quality gates.
 5. `franciel046631/apois-entregas` não será alterado.
 6. Nenhuma migration destrutiva em produção.
@@ -138,7 +141,7 @@ Conforme `IDENTITY_MODEL.md` e o schema vivo:
 
 ## Consolidação em execução
 
-O trabalho de consolidação é desenvolvido em branches `fix/apois-corridas-consolidacao` sem alterar antecipadamente as branches de homologação/PRs DRAFT. As branches de homologação continuam sendo a referência de E2E físico até promoção revisada da consolidação.
+O trabalho de consolidação é desenvolvido em `fix/apois-corridas-consolidacao` sem alterar antecipadamente as branches de homologação/PRs DRAFT. As branches de homologação continuam sendo a referência de E2E físico até promoção revisada da consolidação.
 
 ## Fases 1–5 concluídas na consolidação
 
@@ -221,3 +224,71 @@ O schema vivo oficial possuía linhas `pix`, `credit`, `debit`, `cash` e `wallet
 O lint global do repositório Passageiro ainda possui erros preexistentes fora da superfície da Fase 6. Essa dívida não foi declarada resolvida e será tratada nas fases de testes/auditoria final.
 
 A Fase 6 está **concluída e validada em código/banco efêmero**, mas **não está promovida ao Supabase oficial**. As baselines `007/008/009` são de banco limpo e não serão executadas ad-hoc em produção. A promoção futura exige migration aditiva revisada e E2E físico.
+
+## Fase 7 — Motorista — validação canônica concluída em CI
+
+A Fase 7 foi validada na branch de consolidação antes da Fase 8. O último run verde da validação dedicada foi:
+
+- **Workflow:** `APOIS Corridas — Driver Phase 7`
+- **Run:** `31285737531`
+- **HEAD validado:** `5575f78d1a7ee36a9f49218040dae49425d59d2e`
+- **Conclusão:** `success`
+
+Passaram no mesmo run:
+
+**Backend:**
+- aplicação da baseline canônica até a Fase 7 em PostgreSQL efêmero;
+- testes de integração do backend do Motorista;
+- invariantes de segurança do Motorista.
+
+**Mobile:**
+- contratos da Fase 7;
+- TypeScript da superfície do Motorista;
+- ESLint semântico da superfície do Motorista;
+- varredura de dívida de formatação sem transformar dívida de Fase 12 em falso bloqueio da Fase 7;
+- preparação do cliente Firebase do Motorista;
+- build e sync do APOIS Motorista;
+- verificação do shell nativo;
+- build do APK;
+- gate de push nativo e localização em background.
+
+Essa aprovação de CI comprova os contratos e o shell/build nativo previstos na Fase 7, mas **não substitui os testes físicos obrigatórios** de push em foreground/background/app encerrado, localização com tela bloqueada, bateria, navegação, PIN, SOS e ciclo Passageiro ↔ Motorista.
+
+## Fase 8 — Admin — concluída no gate SAME-HEAD
+
+O Admin foi consolidado para as entidades e contratos canônicos, mantendo operações críticas no backend autoritativo. Entre os itens validados estão RBAC administrativo, moderação de motoristas/passageiros, `public.rides`, presença/mapa operacional, categorias/tarifas, settlements/ledgers, equipe administrativa, SOS, suporte, auditoria e notificações. Controles falsos/legados foram removidos ou neutralizados, documentos privados usam URLs assinadas temporárias e a UI de Admin não altera status de corrida diretamente no navegador.
+
+O gate final da Fase 8 passou integralmente no **mesmo HEAD**:
+
+- **HEAD:** `863a79c28c35c41da429837c74608a65a897af0e`
+- **Workflow:** `.github/workflows/apois-admin-phase8-validate.yml`
+- **Run:** `31289197569`
+- **Conclusão geral:** `success`
+
+**Job `admin-backend`:**
+- baseline canônica aplicada até a Fase 8 em PostgreSQL efêmero;
+- testes de integração do control-plane Admin;
+- testes de configurações Admin;
+- invariantes de privilégio e segurança.
+
+**Job `admin-frontend`:**
+- contratos da Fase 8;
+- TypeScript da superfície Admin;
+- production build;
+- ESLint da superfície Admin.
+
+Portanto, a **Fase 8 está formalmente concluída no nível de código + banco efêmero + CI SAME-HEAD**. Não houve `db reset`, `db push`, `migration repair`, operação destrutiva ou promoção ad-hoc dessas baselines ao Supabase oficial para obter esse resultado.
+
+### Limite da conclusão da Fase 8
+
+A conclusão da Fase 8 **não** significa:
+- merge dos PRs;
+- promoção automática de migrations para produção;
+- homologação E2E física concluída;
+- liberação para Play Store.
+
+Esses gates permanecem posteriores conforme o Prompt Mestre.
+
+## Próxima fase autorizada — Fase 9 Mobile Release
+
+Com a Fase 8 verde no mesmo HEAD, a sequência autorizada é a **Fase 9 — MOBILE RELEASE**. O trabalho deve partir do estado consolidado, diagnosticar antes de alterar e validar assets, splash, ícones, package IDs, Firebase, Maps, deep links e AAB sem inventar credenciais ou considerar build isolado como homologação final.
