@@ -14,6 +14,7 @@ const ALLOWED_STATIC_PATHS = new Set([
   "/carteira",
   "/perfil",
   "/notificacoes",
+  "/motorista/app",
 ]);
 
 type AdminClient = ReturnType<typeof createClient>;
