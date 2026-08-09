@@ -11,7 +11,7 @@
 
 ## Estado objetivo da Fase 9
 
-A configuração Android e os builds técnicos dos dois aplicativos já passaram pelos contratos dedicados da Fase 9. **A Fase 9 ainda não está concluída para publicação**, porque os AABs gerados até agora são não assinados e os segredos de chave de upload ainda não estão configurados nos repositórios. O Passageiro também precisa de uma URL pública HTTPS real para o fluxo de compartilhamento; o placeholder `.example` foi removido do workflow de release.
+A configuração Android e os builds técnicos dos dois aplicativos já passaram pelos contratos dedicados da Fase 9. O P0 visual nativo do Passageiro também foi corrigido e validado no APK canônico: launcher/splash padrão do Capacitor foram removidos e substituídos pela identidade APOIS. **A Fase 9 ainda não está concluída para publicação**, porque os AABs gerados até agora são não assinados e os segredos de chave de upload ainda não estão configurados nos repositórios. O Passageiro também precisa de uma URL pública HTTPS real para o fluxo de compartilhamento; o placeholder `.example` foi removido do workflow de release.
 
 A partir de agora os workflows de release são deliberadamente **fail-closed**: não publicam artefato AAB como release quando não há chave de upload real e verificável.
 
@@ -21,12 +21,16 @@ A partir de agora os workflows de release são deliberadamente **fail-closed**: 
 - workflow técnico anterior: `APOIS Corridas — Driver Phase 9 Release`, run `31286334420`, `success`;
 - revalidação do código/runtime do HEAD de consolidação `04da883cc54387ca54a4b049f57d983ffe48ffd3`: run `31289455062`, `success`;
 - inspeção do AAB produzido nessa revalidação: `jarsigner` informou **`jar is unsigned`**;
-- gate de entradas externas após endurecimento do release: run `31289752878`, falhou somente por ausência dos quatro segredos de assinatura listados abaixo. A chave Google Maps do Motorista está presente.
+- gate de entradas externas após endurecimento do release: run `31289946329`, falhou somente por ausência dos quatro segredos de assinatura listados abaixo. A chave Google Maps do Motorista está presente.
 
 **Passageiro**
 - workflow técnico anterior: `APOIS Corridas — Passenger Phase 9 Release`, run `31286532212`, `success`;
 - inspeção do AAB desse run: **não assinado**;
-- gate de entradas externas após endurecimento do release: run `31289771141`; as duas chaves Google Maps estão presentes, mas faltam a URL pública e os quatro segredos de assinatura.
+- gate de entradas externas após endurecimento do release: run `31290025340`; as duas chaves Google Maps estão presentes, mas faltam a URL pública e os quatro segredos de assinatura;
+- correção P0 de launcher/splash/ícone de notificação: commit `3753087cf5cfd81bfe08521bbf69e01fd10b8251`;
+- validação isolada de empacotamento do P0: run `31293700335`, `success`;
+- validação canônica do PR #7 após a correção: run `31293968209`, `success`;
+- o APK canônico desse run foi extraído e inspecionado: a marca APOIS esperada está presente e os bitmaps antigos `ic_launcher*.png`/`splash.png` do Capacitor não estão mais empacotados.
 
 ## Contrato de publicação Android
 
@@ -58,6 +62,9 @@ A partir de agora os workflows de release são deliberadamente **fail-closed**: 
 - [x] Cleartext desabilitado.
 - [x] Firebase Android client oficial para `com.apois.passageiro`.
 - [x] Canal Android padrão `apois_rides` configurado.
+- [x] Launcher adaptativo/fallback Android usa identidade oficial APOIS e não os bitmaps padrão do Capacitor.
+- [x] Splash nativo Android usa identidade APOIS/preto e não o splash padrão do Capacitor.
+- [x] Ícone pequeno de notificação FCM usa recurso monocromático dedicado `ic_stat_apois_notification`.
 - [x] Recuperação de senha nativa registrada por `apoispassageiro://auth/redefinir-senha`.
 - [x] Rotas públicas de Termos e Privacidade existem no app.
 - [x] `versionCode`/`versionName` parametrizáveis por release.
@@ -73,7 +80,7 @@ A partir de agora os workflows de release são deliberadamente **fail-closed**: 
 
 ### Motorista — GitHub Actions secrets
 
-O gate `31289752878` confirmou que `APOIS_GOOGLE_MAPS_BROWSER_KEY` existe, mas faltam:
+O gate `31289946329` confirmou que `APOIS_GOOGLE_MAPS_BROWSER_KEY` existe, mas faltam:
 
 - `APOIS_UPLOAD_KEYSTORE_BASE64`
 - `APOIS_UPLOAD_KEY_ALIAS`
@@ -82,7 +89,7 @@ O gate `31289752878` confirmou que `APOIS_GOOGLE_MAPS_BROWSER_KEY` existe, mas f
 
 ### Passageiro — GitHub Actions/Variables
 
-O gate `31289771141` confirmou que `GOOGLE_MAPS_WEB_API_KEY` e `GOOGLE_MAPS_ANDROID_API_KEY` existem, mas faltam:
+O gate `31290025340` confirmou que `GOOGLE_MAPS_WEB_API_KEY` e `GOOGLE_MAPS_ANDROID_API_KEY` existem, mas faltam:
 
 - repository variable `APOIS_PASSENGER_PUBLIC_URL`
 - secret `APOIS_UPLOAD_KEYSTORE_BASE64`
