@@ -1,19 +1,21 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Loader2, Camera, Trash2 } from "lucide-react";
 import { Avatar } from "./Avatar";
-import { uploadProfilePhoto, validateProfilePhotoFile } from "@/lib/profilePhoto";
+import {
+  loadOwnProfilePhotoUrl,
+  refreshProfilePhotoUrl,
+  uploadProfilePhoto,
+  validateProfilePhotoFile,
+} from "@/lib/profilePhoto";
 import { compressImageToSquare } from "@/lib/imageCompress";
 
 type Props = {
   userId: string;
   name?: string | null;
   currentUrl: string | null;
-  /** Called with `{ signedUrl, path }` after a successful upload. */
   onUploaded: (result: { signedUrl: string; path: string }) => void | Promise<void>;
-  /** Optional — when provided, a "remove" button appears while a photo exists. */
   onRemove?: () => void | Promise<void>;
   size?: number;
-  /** When true, renders a "obrigatória" hint. */
   required?: boolean;
   label?: string;
 };
@@ -33,12 +35,34 @@ export function ProfilePhotoUploader({
   const [removing, setRemoving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [resolvedCurrentUrl, setResolvedCurrentUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    void (async () => {
+      try {
+        let resolved: string | null = null;
+        if (currentUrl) {
+          resolved = /^https?:\/\//i.test(currentUrl)
+            ? currentUrl
+            : await refreshProfilePhotoUrl(currentUrl);
+        }
+        if (!resolved) resolved = await loadOwnProfilePhotoUrl();
+        if (alive) setResolvedCurrentUrl(resolved);
+      } catch {
+        if (alive) setResolvedCurrentUrl(null);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [currentUrl, userId]);
 
   async function handleFile(file: File) {
     setError(null);
-    const v = validateProfilePhotoFile(file);
-    if (v) {
-      setError(v);
+    const validation = validateProfilePhotoFile(file);
+    if (validation) {
+      setError(validation);
       return;
     }
     setUploading(true);
@@ -46,11 +70,10 @@ export function ProfilePhotoUploader({
     setPreview(localPreview);
     try {
       const compressed = await compressImageToSquare(file, { size: 512, quality: 0.85 });
-      const res = await uploadProfilePhoto(userId, compressed);
-      await onUploaded(res);
-      // Android WebView can invalidate a revoked object URL before React receives
-      // the parent update. Switch to the signed URL before revoking the local one.
-      setPreview(res.signedUrl);
+      const result = await uploadProfilePhoto(userId, compressed);
+      await onUploaded(result);
+      setResolvedCurrentUrl(result.signedUrl);
+      setPreview(result.signedUrl);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Falha ao enviar a foto.");
       setPreview(null);
@@ -61,7 +84,7 @@ export function ProfilePhotoUploader({
     }
   }
 
-  const shown = preview ?? currentUrl;
+  const shown = preview ?? resolvedCurrentUrl;
 
   return (
     <div className="flex flex-col items-center gap-2">
@@ -88,8 +111,8 @@ export function ProfilePhotoUploader({
         type="file"
         accept="image/jpeg,image/jpg,image/png,image/webp"
         className="hidden"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
+        onChange={(event) => {
+          const file = event.target.files?.[0];
           if (file) void handleFile(file);
         }}
       />
@@ -102,7 +125,7 @@ export function ProfilePhotoUploader({
         <p className="text-[10px] text-muted-foreground">JPG, PNG ou WEBP · até 5 MB</p>
       </div>
 
-      {onRemove && currentUrl && !preview && (
+      {onRemove && (currentUrl || resolvedCurrentUrl) && !preview && (
         <button
           type="button"
           disabled={uploading || removing}
@@ -111,6 +134,7 @@ export function ProfilePhotoUploader({
             setRemoving(true);
             try {
               await onRemove();
+              setResolvedCurrentUrl(null);
             } catch (err) {
               setError(err instanceof Error ? err.message : "Falha ao remover.");
             } finally {
