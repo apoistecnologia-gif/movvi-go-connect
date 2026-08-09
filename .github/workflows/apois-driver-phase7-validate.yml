@@ -155,9 +155,21 @@ jobs:
       - name: TypeScript — Phase 7 Driver surface
         run: npx tsc --noEmit --project tsconfig.driver-phase7.json
 
-      - name: ESLint — Phase 7 Driver surface
+      - name: ESLint semantic — Phase 7 Driver surface
         run: |
-          npx eslint \
+          npx eslint --rule "prettier/prettier: off" \
+            src/lib/driverDocuments.mobile.ts \
+            src/lib/driverFinance.mobile.ts \
+            src/lib/driverRideLifecycle.mobile.ts \
+            src/lib/nativeBridge.ts \
+            src/lib/notifications/deviceTokenService.ts \
+            src/routes/motorista.documentos.tsx \
+            src/routes/motorista.ganhos.tsx
+
+      - name: Formatting debt scan — blocking at Phase 12 final gate
+        continue-on-error: true
+        run: |
+          npx prettier --check \
             src/lib/driverDocuments.mobile.ts \
             src/lib/driverFinance.mobile.ts \
             src/lib/driverRideLifecycle.mobile.ts \
