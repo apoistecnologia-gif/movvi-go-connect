@@ -79,7 +79,11 @@ export async function iniciarCorridaMobile({ data }: { data: { rideId: string; s
   return ride;
 }
 
-export async function finalizarCorridaMobile({ data }: { data: { rideId: string; final_price?: number } }) {
+/**
+ * O motorista apenas sinaliza que a viagem terminou. O backend canônico é o
+ * único responsável por definir final_price, settlement e efeitos financeiros.
+ */
+export async function finalizarCorridaMobile({ data }: { data: { rideId: string } }) {
   const ride = await callRpc("driver_finish_ride", { _ride_id: data.rideId });
   notifyPassenger(data.rideId, "ride.completed");
   return ride;
