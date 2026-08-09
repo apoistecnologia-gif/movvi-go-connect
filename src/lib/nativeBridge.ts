@@ -13,6 +13,7 @@ import { registerDeviceToken } from "@/lib/notifications/deviceTokenService";
 
 const ENABLE_NATIVE_PUSH = import.meta.env.VITE_ENABLE_NATIVE_PUSH === "true";
 const APP_ROLE = import.meta.env.VITE_APP_ROLE;
+const DRIVER_RIDE_CHANNEL_ID = "apois_rides";
 
 type CapacitorGlobal = {
   getPlatform?: () => string;
@@ -31,6 +32,12 @@ export function isNative(): boolean {
   return cap?.isNativePlatform?.() === true;
 }
 
+function nativePlatform(): string {
+  if (typeof window === "undefined") return "web";
+  const cap = (window as unknown as { Capacitor?: CapacitorGlobal }).Capacitor;
+  return cap?.getPlatform?.() ?? "web";
+}
+
 let initStarted = false;
 let postAuthInFlight: Promise<void> | null = null;
 
@@ -41,7 +48,7 @@ function resolvePushTarget(data: PushData | undefined): string | null {
   // destinados ao APK do Motorista nunca podem abrir uma rota do Passageiro
   // como /corrida/:id ou /corridas. O app ressincroniza a oferta/corrida pelo
   // backend ao abrir /motorista/app.
-  if (APP_ROLE === "motorista") {
+  if (APP_ROLE === "motorista" || APP_ROLE === "driver") {
     if (rawUrl?.startsWith("/motorista/")) return rawUrl;
     const event = typeof data?.event === "string" ? data.event : "";
     if (event.startsWith("driver.") || event.startsWith("ride.")) return "/motorista/app";
@@ -115,6 +122,21 @@ async function attachPushListenersOnly(): Promise<void> {
   });
 }
 
+async function ensureDriverRideChannel(): Promise<void> {
+  if (nativePlatform() !== "android") return;
+  if (APP_ROLE !== "motorista" && APP_ROLE !== "driver") return;
+
+  const { PushNotifications } = await import("@capacitor/push-notifications");
+  await PushNotifications.createChannel({
+    id: DRIVER_RIDE_CHANNEL_ID,
+    name: "Novas corridas",
+    description: "Ofertas e eventos importantes de corridas APOIS.",
+    importance: 5,
+    vibration: true,
+    visibility: 1,
+  });
+}
+
 async function setupPush(): Promise<void> {
   const { PushNotifications } = await import("@capacitor/push-notifications");
   let perm = await PushNotifications.checkPermissions();
@@ -122,6 +144,9 @@ async function setupPush(): Promise<void> {
     perm = await PushNotifications.requestPermissions();
   }
   if (perm.receive !== "granted") return;
+
+  await ensureDriverRideChannel();
+
   try {
     await PushNotifications.register();
   } catch (err) {
