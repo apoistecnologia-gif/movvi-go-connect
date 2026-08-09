@@ -9,6 +9,25 @@
 - Passageiro: `franciel046631/say-hello-buddy-23-84b5dcbf`, branch `feat/apois-passageiro-completo`.
 - Supabase oficial de Corridas: `vqtucstyduxrqjgyigfk`.
 
+## Estado objetivo da Fase 9
+
+A configuração Android e os builds técnicos dos dois aplicativos já passaram pelos contratos dedicados da Fase 9. **A Fase 9 ainda não está concluída para publicação**, porque os AABs gerados até agora são não assinados e os segredos de chave de upload ainda não estão configurados nos repositórios. O Passageiro também precisa de uma URL pública HTTPS real para o fluxo de compartilhamento; o placeholder `.example` foi removido do workflow de release.
+
+A partir de agora os workflows de release são deliberadamente **fail-closed**: não publicam artefato AAB como release quando não há chave de upload real e verificável.
+
+### Evidências de CI
+
+**Motorista**
+- workflow técnico anterior: `APOIS Corridas — Driver Phase 9 Release`, run `31286334420`, `success`;
+- revalidação do código/runtime do HEAD de consolidação `04da883cc54387ca54a4b049f57d983ffe48ffd3`: run `31289455062`, `success`;
+- inspeção do AAB produzido nessa revalidação: `jarsigner` informou **`jar is unsigned`**;
+- gate de entradas externas após endurecimento do release: run `31289752878`, falhou somente por ausência dos quatro segredos de assinatura listados abaixo. A chave Google Maps do Motorista está presente.
+
+**Passageiro**
+- workflow técnico anterior: `APOIS Corridas — Passenger Phase 9 Release`, run `31286532212`, `success`;
+- inspeção do AAB desse run: **não assinado**;
+- gate de entradas externas após endurecimento do release: run `31289771141`; as duas chaves Google Maps estão presentes, mas faltam a URL pública e os quatro segredos de assinatura.
+
 ## Contrato de publicação Android
 
 ### Motorista
@@ -20,13 +39,14 @@
 - [x] Foreground Service de localização declarado.
 - [x] `ACCESS_BACKGROUND_LOCATION` declarado para rastreamento durante corrida/online em segundo plano.
 - [x] Cleartext desabilitado.
-- [ ] `allowBackup=false` no manifest de release.
-- [ ] Canal Android `apois_rides` criado/configurado no cliente para corresponder ao FCM backend.
-- [ ] Recuperação de senha com deep link nativo testável.
-- [ ] `versionCode`/`versionName` parametrizáveis por release.
-- [ ] Configuração de assinatura de upload via secrets/arquivo externo, sem keystore ou senha no Git.
-- [ ] `bundleRelease` produz AAB de release.
-- [ ] AAB assinado com chave de upload real.
+- [x] `allowBackup=false` no manifest de release.
+- [x] Canal Android `apois_rides` criado/configurado no cliente para corresponder ao FCM backend.
+- [x] Recuperação de senha com deep link nativo implementada e coberta pelo contrato de release.
+- [x] `versionCode`/`versionName` parametrizáveis por release.
+- [x] Gradle preparado para assinatura de upload via secrets/arquivo externo, sem keystore ou senha no Git.
+- [x] `bundleRelease` produz AAB de release técnico.
+- [x] Workflow endurecido para exigir chave de upload e validar a assinatura com `jarsigner` antes do upload do artefato.
+- [ ] AAB assinado com chave de upload real e verificado em CI.
 - [ ] Play App Signing configurado no Play Console.
 - [ ] SHA-1/SHA-256 da chave de upload/Play registrados onde forem exigidos por Firebase/Google APIs.
 
@@ -40,12 +60,37 @@
 - [x] Canal Android padrão `apois_rides` configurado.
 - [x] Recuperação de senha nativa registrada por `apoispassageiro://auth/redefinir-senha`.
 - [x] Rotas públicas de Termos e Privacidade existem no app.
-- [ ] `versionCode`/`versionName` parametrizáveis por release.
-- [ ] Configuração de assinatura de upload via secrets/arquivo externo.
-- [ ] `bundleRelease` produz AAB de release.
-- [ ] AAB assinado com chave de upload real.
+- [x] `versionCode`/`versionName` parametrizáveis por release.
+- [x] Gradle preparado para assinatura de upload via secrets/arquivo externo.
+- [x] `bundleRelease` produz AAB de release técnico.
+- [x] Workflow endurecido para rejeitar URL pública falsa/localhost e validar assinatura do AAB antes do upload.
+- [ ] `APOIS_PASSENGER_PUBLIC_URL` configurada com domínio HTTPS público real.
+- [ ] AAB assinado com chave de upload real e verificado em CI.
 - [ ] Play App Signing configurado no Play Console.
 - [ ] SHA-1/SHA-256 da chave de upload/Play registrados onde forem exigidos por Firebase/Google APIs.
+
+## Entradas externas ainda ausentes
+
+### Motorista — GitHub Actions secrets
+
+O gate `31289752878` confirmou que `APOIS_GOOGLE_MAPS_BROWSER_KEY` existe, mas faltam:
+
+- `APOIS_UPLOAD_KEYSTORE_BASE64`
+- `APOIS_UPLOAD_KEY_ALIAS`
+- `APOIS_UPLOAD_STORE_PASSWORD`
+- `APOIS_UPLOAD_KEY_PASSWORD`
+
+### Passageiro — GitHub Actions/Variables
+
+O gate `31289771141` confirmou que `GOOGLE_MAPS_WEB_API_KEY` e `GOOGLE_MAPS_ANDROID_API_KEY` existem, mas faltam:
+
+- repository variable `APOIS_PASSENGER_PUBLIC_URL`
+- secret `APOIS_UPLOAD_KEYSTORE_BASE64`
+- secret `APOIS_UPLOAD_KEY_ALIAS`
+- secret `APOIS_UPLOAD_STORE_PASSWORD`
+- secret `APOIS_UPLOAD_KEY_PASSWORD`
+
+A URL deve ser HTTPS real. `.example`, `localhost`, `127.0.0.1` e `0.0.0.0` são rejeitados pelo workflow de release.
 
 ## Itens externos do Play Console
 
@@ -90,3 +135,4 @@ Nenhum AAB deve ser tratado como homologado sem executar em aparelho físico, no
 - Nunca usar segredo do Google/Firebase/Mercado Pago em código cliente além de identificadores/chaves públicas próprias para cliente.
 - CI valida e produz artefatos; CI não deve editar, reparar, commitar ou fazer push de código-fonte.
 - Build bem-sucedido sozinho não significa "pronto para produção".
+- AAB não assinado não é artefato de publicação.
