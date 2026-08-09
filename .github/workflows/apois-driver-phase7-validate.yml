@@ -24,6 +24,7 @@ on:
       - "supabase/functions/send-ride-push/**"
       - "tests/driver/**"
       - "tests/database/driver_experience.sh"
+      - "tsconfig.driver-phase7.json"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/apois-driver-phase7-validate.yml"
@@ -50,6 +51,7 @@ on:
       - "supabase/functions/send-ride-push/**"
       - "tests/driver/**"
       - "tests/database/driver_experience.sh"
+      - "tsconfig.driver-phase7.json"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/apois-driver-phase7-validate.yml"
@@ -138,6 +140,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
 
       - name: Setup Java
         uses: actions/setup-java@v5
@@ -152,8 +155,8 @@ jobs:
       - name: Phase 7 contract tests
         run: node tests/driver/phase7-contract.mjs
 
-      - name: TypeScript
-        run: npm run typecheck
+      - name: TypeScript — Phase 7 Driver surface
+        run: npx tsc --noEmit --project tsconfig.driver-phase7.json
 
       - name: ESLint — Phase 7 Driver surface
         run: |
