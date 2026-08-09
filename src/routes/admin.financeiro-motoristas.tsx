@@ -1,8 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { RefreshCw, Search, Wallet, WalletCards } from "lucide-react";
+import { CheckCircle2, RefreshCw, Search, Wallet, WalletCards, XCircle } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  approveAdminDriverWithdrawal,
+  rejectAdminDriverWithdrawal,
+} from "@/lib/adminControlPlane";
 import {
   DSBadge,
   DSButton,
@@ -52,9 +56,33 @@ const money = (value: number) =>
 
 function withdrawalVariant(status: string): "success" | "warning" | "danger" | "muted" {
   if (status === "paid") return "success";
-  if (status === "pending" || status === "processing") return "warning";
+  if (status === "pending" || status === "approved" || status === "processing") return "warning";
   if (status === "failed") return "danger";
   return "muted";
+}
+
+function withdrawalLabel(status: string) {
+  const labels: Record<string, string> = {
+    pending: "Pendente",
+    approved: "Aprovado",
+    processing: "Processando",
+    paid: "Pago",
+    failed: "Falhou",
+    reversed: "Revertido",
+    cancelled: "Cancelado",
+  };
+  return labels[status] ?? status;
+}
+
+function payoutError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+  if (/payout_provider_not_configured/i.test(message)) {
+    return "Configure o provedor de saque antes de aprovar transferências.";
+  }
+  if (/invalid_withdrawal_status/i.test(message)) {
+    return "Esse saque já mudou de estado. Atualize a tela e confira novamente.";
+  }
+  return message || "Não foi possível atualizar o saque.";
 }
 
 function AdminDriverFinancePage() {
@@ -63,6 +91,7 @@ function AdminDriverFinancePage() {
   const [withdrawals, setWithdrawals] = useState<WithdrawalRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
+  const [busyWithdrawalId, setBusyWithdrawalId] = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
@@ -121,6 +150,34 @@ function AdminDriverFinancePage() {
     };
   }, []);
 
+  async function approveWithdrawal(row: WithdrawalRow) {
+    setBusyWithdrawalId(row.id);
+    try {
+      await approveAdminDriverWithdrawal(row.id);
+      toast.success("Saque aprovado. A transferência só seguirá pelo worker do provedor configurado.");
+      await load();
+    } catch (error) {
+      toast.error(payoutError(error));
+    } finally {
+      setBusyWithdrawalId(null);
+    }
+  }
+
+  async function rejectWithdrawal(row: WithdrawalRow) {
+    const reason = window.prompt("Informe o motivo da reprovação do saque:")?.trim();
+    if (!reason) return;
+    setBusyWithdrawalId(row.id);
+    try {
+      await rejectAdminDriverWithdrawal(row.id, reason);
+      toast.success("Saque reprovado e valor reservado devolvido à carteira.");
+      await load();
+    } catch (error) {
+      toast.error(payoutError(error));
+    } finally {
+      setBusyWithdrawalId(null);
+    }
+  }
+
   const driverById = useMemo(
     () => new Map(drivers.map((driver) => [driver.id, driver])),
     [drivers],
@@ -145,7 +202,7 @@ function AdminDriverFinancePage() {
       balance: wallets.reduce((sum, row) => sum + Number(row.balance || 0), 0),
       available: wallets.reduce((sum, row) => sum + Number(row.available_balance || 0), 0),
       pending: withdrawals
-        .filter((row) => row.status === "pending" || row.status === "processing")
+        .filter((row) => ["pending", "approved", "processing"].includes(row.status))
         .reduce((sum, row) => sum + Number(row.amount || 0), 0),
     }),
     [wallets, withdrawals],
@@ -154,7 +211,7 @@ function AdminDriverFinancePage() {
   return (
     <AdminLayout
       title="Financeiro motoristas"
-      description="Carteira e saques apoiados exclusivamente nos ledgers canônicos"
+      description="Carteira, aprovação de saques e acompanhamento do payout pelos ledgers canônicos"
       actions={
         <DSButton
           variant="outline"
@@ -170,15 +227,16 @@ function AdminDriverFinancePage() {
       <DSCard className="mb-4 border-primary/20 bg-primary/5">
         <DSCardContent className="p-4 text-sm text-muted-foreground">
           Fonte de verdade: <strong>driver_wallets</strong>,{" "}
-          <strong>driver_wallet_transactions</strong> e <strong>driver_withdrawals</strong>. Campos
-          financeiros legados gravados diretamente em drivers não são usados nesta tela.
+          <strong>driver_wallet_transactions</strong> e <strong>driver_withdrawals</strong>. Aprovar
+          um saque não envia dinheiro pelo navegador: somente o serviço autenticado do provedor pode
+          mover o estado para processamento e confirmar pagamento.
         </DSCardContent>
       </DSCard>
 
       <div className="mb-4 grid gap-3 sm:grid-cols-3">
         <Metric label="Saldo contábil" value={money(totals.balance)} />
         <Metric label="Disponível para saque" value={money(totals.available)} />
-        <Metric label="Saques pendentes" value={money(totals.pending)} />
+        <Metric label="Saques em aberto" value={money(totals.pending)} />
       </div>
 
       <div className="relative mb-4">
@@ -247,11 +305,12 @@ function AdminDriverFinancePage() {
           <div className="space-y-2">
             {withdrawals.map((row) => {
               const driver = driverById.get(row.driver_id);
+              const busy = busyWithdrawalId === row.id;
               return (
                 <DSCard key={row.id}>
                   <DSCardContent className="flex flex-wrap items-center gap-2 p-3 text-xs">
                     <strong>{driver?.name || row.driver_id.slice(0, 8)}</strong>
-                    <DSBadge variant={withdrawalVariant(row.status)}>{row.status}</DSBadge>
+                    <DSBadge variant={withdrawalVariant(row.status)}>{withdrawalLabel(row.status)}</DSBadge>
                     <span>{money(row.amount)}</span>
                     <span className="text-muted-foreground">
                       {row.provider || "provedor ainda não atribuído"}
@@ -259,6 +318,37 @@ function AdminDriverFinancePage() {
                     <span className="ml-auto text-muted-foreground">
                       {formatDate(row.processed_at ?? row.requested_at)}
                     </span>
+                    {row.status === "pending" && (
+                      <div className="flex w-full flex-wrap gap-2 border-t pt-2">
+                        <DSButton
+                          size="sm"
+                          className="gap-1"
+                          disabled={busy}
+                          onClick={() => void approveWithdrawal(row)}
+                        >
+                          <CheckCircle2 className="h-4 w-4" /> Aprovar saque
+                        </DSButton>
+                        <DSButton
+                          variant="outline"
+                          size="sm"
+                          className="gap-1"
+                          disabled={busy}
+                          onClick={() => void rejectWithdrawal(row)}
+                        >
+                          <XCircle className="h-4 w-4" /> Reprovar
+                        </DSButton>
+                      </div>
+                    )}
+                    {row.status === "approved" && (
+                      <p className="w-full text-muted-foreground">
+                        Aprovado. Aguardando o serviço seguro do provedor iniciar a transferência.
+                      </p>
+                    )}
+                    {row.provider_transfer_id && (
+                      <p className="w-full text-muted-foreground">
+                        Transferência: {row.provider_transfer_id}
+                      </p>
+                    )}
                     {row.failure_reason && (
                       <p className="w-full text-destructive">{row.failure_reason}</p>
                     )}
