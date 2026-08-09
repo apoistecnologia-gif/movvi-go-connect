@@ -61,13 +61,7 @@ type Docs = {
 };
 
 type Filter =
-  | "todos"
-  | "em_analise"
-  | "aprovado"
-  | "reprovado"
-  | "bloqueado"
-  | "online"
-  | "suspenso";
+  "todos" | "em_analise" | "aprovado" | "reprovado" | "bloqueado" | "online" | "suspenso";
 
 export const Route = createFileRoute("/admin/motoristas")({
   head: () => ({ meta: [{ title: "Motoristas — Admin APOIS" }] }),

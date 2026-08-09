@@ -201,7 +201,7 @@ function AdminNotificacoesPage() {
             )}
           </div>
           <DSButton onClick={() => void send()} disabled={sending} className="gap-2">
-            {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} {" "}
+            {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}{" "}
             Enviar
           </DSButton>
           <p className="text-xs text-muted-foreground">

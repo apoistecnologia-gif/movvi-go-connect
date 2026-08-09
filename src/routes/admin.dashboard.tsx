@@ -86,13 +86,7 @@ const EMPTY_METRICS: AdminDashboardMetrics = {
 };
 
 type StatusKey =
-  | "searching"
-  | "driverComing"
-  | "arrived"
-  | "trip"
-  | "finished"
-  | "cancelled"
-  | "offline";
+  "searching" | "driverComing" | "arrived" | "trip" | "finished" | "cancelled" | "offline";
 
 function mapRideStatus(status: string): { key: StatusKey; label: string } {
   if (status === "procurar_motorista") return { key: "searching", label: "Buscando" };

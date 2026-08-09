@@ -23,13 +23,7 @@ export const Route = createFileRoute("/admin/relatorios")({
 });
 
 type ReportKey =
-  | "drivers"
-  | "passengers"
-  | "rides"
-  | "settlements"
-  | "withdrawals"
-  | "categories"
-  | "support";
+  "drivers" | "passengers" | "rides" | "settlements" | "withdrawals" | "categories" | "support";
 
 type ReportDef = {
   key: ReportKey;
