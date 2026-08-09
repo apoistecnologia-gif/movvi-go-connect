@@ -3,10 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { CheckCircle2, RefreshCw, Search, Wallet, WalletCards, XCircle } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  approveAdminDriverWithdrawal,
-  rejectAdminDriverWithdrawal,
-} from "@/lib/adminControlPlane";
+import { approveAdminDriverWithdrawal, rejectAdminDriverWithdrawal } from "@/lib/adminControlPlane";
 import {
   DSBadge,
   DSButton,
@@ -154,7 +151,9 @@ function AdminDriverFinancePage() {
     setBusyWithdrawalId(row.id);
     try {
       await approveAdminDriverWithdrawal(row.id);
-      toast.success("Saque aprovado. A transferência só seguirá pelo worker do provedor configurado.");
+      toast.success(
+        "Saque aprovado. A transferência só seguirá pelo worker do provedor configurado.",
+      );
       await load();
     } catch (error) {
       toast.error(payoutError(error));
@@ -310,7 +309,9 @@ function AdminDriverFinancePage() {
                 <DSCard key={row.id}>
                   <DSCardContent className="flex flex-wrap items-center gap-2 p-3 text-xs">
                     <strong>{driver?.name || row.driver_id.slice(0, 8)}</strong>
-                    <DSBadge variant={withdrawalVariant(row.status)}>{withdrawalLabel(row.status)}</DSBadge>
+                    <DSBadge variant={withdrawalVariant(row.status)}>
+                      {withdrawalLabel(row.status)}
+                    </DSBadge>
                     <span>{money(row.amount)}</span>
                     <span className="text-muted-foreground">
                       {row.provider || "provedor ainda não atribuído"}
