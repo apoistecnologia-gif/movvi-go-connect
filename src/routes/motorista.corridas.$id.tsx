@@ -67,6 +67,40 @@ type PassengerSummary = {
   avatar_url: string | null;
 };
 
+type RpcError = { message: string };
+type RpcResult = { data: unknown; error: RpcError | null };
+type DynamicRpcClient = {
+  rpc: (name: string, args: Record<string, unknown>) => PromiseLike<RpcResult>;
+};
+
+const rpcClient = supabase as unknown as DynamicRpcClient;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function normalizeSettlement(value: unknown): SettlementRow | null {
+  if (!isRecord(value)) return null;
+  const passengerCharge = Number(value.passenger_charge);
+  if (!Number.isFinite(passengerCharge) || passengerCharge <= 0) return null;
+
+  const driverEarningRaw = value.driver_earning;
+  const driverEarning =
+    driverEarningRaw === null || driverEarningRaw === undefined
+      ? null
+      : Number(driverEarningRaw);
+
+  return {
+    passenger_charge: passengerCharge,
+    driver_earning: driverEarning !== null && Number.isFinite(driverEarning) ? driverEarning : null,
+    payment_method: typeof value.payment_method === "string" ? value.payment_method : "",
+    payment_status: typeof value.payment_status === "string" ? value.payment_status : "",
+    status: typeof value.status === "string" ? value.status : "",
+    currency: typeof value.currency === "string" ? value.currency : "BRL",
+    settled_at: typeof value.settled_at === "string" ? value.settled_at : null,
+  };
+}
+
 function brl(v: number | null | undefined) {
   return Number(v ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
@@ -156,21 +190,29 @@ function RideDetailsPage() {
         if (active) setPassenger(passengerData ?? null);
       }
 
-      // O settlement é a fonte financeira canônica. Em corridas antigas ou
-      // ainda não concluídas ele pode não existir; nesse caso a UI não inventa
-      // confirmação de pagamento nem ganho do motorista.
-      const { data: settlementData, error: settlementError } = await supabase
-        .from("ride_settlements")
-        .select(
-          "passenger_charge,driver_earning,payment_method,payment_status,status,currency,settled_at",
-        )
-        .eq("ride_id", id)
-        .maybeSingle();
+      // Leitura financeira via RPC SECURITY DEFINER que valida o motorista
+      // atribuído à corrida. Não dependemos de tipos locais atrasados nem
+      // consultamos diretamente uma tabela financeira nova.
+      const { data: settlementResponse, error: settlementError } = await rpcClient.rpc(
+        "get_driver_ride_settlement",
+        { _ride_id: id },
+      );
+
       if (settlementError) {
         console.warn("[DriverRideDetails] Settlement unavailable", settlementError.message);
       }
+
+      let nextSettlement: SettlementRow | null = null;
+      if (
+        isRecord(settlementResponse) &&
+        settlementResponse.ok === true &&
+        isRecord(settlementResponse.settlement)
+      ) {
+        nextSettlement = normalizeSettlement(settlementResponse.settlement);
+      }
+
       if (active) {
-        setSettlement((settlementData as SettlementRow | null) ?? null);
+        setSettlement(nextSettlement);
         setLoading(false);
       }
     })();
@@ -182,9 +224,11 @@ function RideDetailsPage() {
 
   const driverVehicle = useMemo(() => {
     if (!ride) return null;
-    return [ride.driver_vehicle_model, ride.driver_vehicle_color, ride.driver_vehicle_plate]
-      .filter((value): value is string => Boolean(value?.trim()))
-      .join(" • ") || null;
+    return (
+      [ride.driver_vehicle_model, ride.driver_vehicle_color, ride.driver_vehicle_plate]
+        .filter((value): value is string => Boolean(value?.trim()))
+        .join(" • ") || null
+    );
   }, [ride]);
 
   if (loading) {
@@ -266,11 +310,15 @@ function RideDetailsPage() {
               <div className="grid grid-cols-3 gap-2 text-center">
                 <Mini
                   label="Distância"
-                  value={ride.distance_km != null ? `${Number(ride.distance_km).toFixed(1)} km` : "—"}
+                  value={
+                    ride.distance_km != null ? `${Number(ride.distance_km).toFixed(1)} km` : "—"
+                  }
                 />
                 <Mini
                   label="Tempo"
-                  value={ride.duration_min != null ? `${Math.round(Number(ride.duration_min))} min` : "—"}
+                  value={
+                    ride.duration_min != null ? `${Math.round(Number(ride.duration_min))} min` : "—"
+                  }
                 />
                 <Mini label="Valor da corrida" value={brl(rideValue)} highlight />
               </div>
@@ -283,7 +331,9 @@ function RideDetailsPage() {
                   {timeline.map((item) => (
                     <li key={item.label} className="flex items-center gap-3 text-xs">
                       <Clock
-                        className={`h-3.5 w-3.5 ${item.at ? "text-primary" : "text-muted-foreground/40"}`}
+                        className={`h-3.5 w-3.5 ${
+                          item.at ? "text-primary" : "text-muted-foreground/40"
+                        }`}
                       />
                       <span className="w-20 text-muted-foreground">{item.label}</span>
                       <span className={item.at ? "font-medium" : "text-muted-foreground/60"}>
@@ -295,7 +345,10 @@ function RideDetailsPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-2 text-xs">
-                <Info label="Pagamento" value={settlement?.payment_method ?? ride.payment_method ?? "—"} />
+                <Info
+                  label="Pagamento"
+                  value={settlement?.payment_method ?? ride.payment_method ?? "—"}
+                />
                 <Info label="PIN segurança" value={ride.security_code ?? "—"} />
               </div>
 
@@ -309,7 +362,8 @@ function RideDetailsPage() {
                   </p>
                   {settlement?.driver_earning != null ? (
                     <p className="mt-2 text-muted-foreground">
-                      Repasse do motorista: <strong className="text-foreground">{brl(settlement.driver_earning)}</strong>
+                      Repasse do motorista:{" "}
+                      <strong className="text-foreground">{brl(settlement.driver_earning)}</strong>
                     </p>
                   ) : (
                     <p className="mt-2 leading-5 text-muted-foreground">
@@ -323,7 +377,9 @@ function RideDetailsPage() {
                 <Info label="Motivo do cancelamento" value={ride.cancellation_reason} />
               ) : null}
 
-              {ride.status === "finalizada" && ride.driver_rated_at && ride.passenger_rating != null ? (
+              {ride.status === "finalizada" &&
+              ride.driver_rated_at &&
+              ride.passenger_rating != null ? (
                 <div className="space-y-2 rounded-lg border border-border bg-card/40 p-3">
                   <RatingLine
                     label="Sua avaliação do passageiro"
