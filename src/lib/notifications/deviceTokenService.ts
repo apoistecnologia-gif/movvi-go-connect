@@ -13,6 +13,14 @@ export type DeviceToken = {
   permission_status?: "granted" | "provisional" | "denied";
 };
 
+type RpcError = { message: string };
+type RpcResult = { data: unknown; error: RpcError | null };
+type DynamicRpcClient = {
+  rpc: (name: string, args: Record<string, unknown>) => PromiseLike<RpcResult>;
+};
+
+const rpcClient = supabase as unknown as DynamicRpcClient;
+
 const TOKEN_STORAGE_KEY = "apois.notification.device_token";
 const PLATFORM_STORAGE_KEY = "apois.notification.device_platform";
 const DEVICE_ID_KEY = "apois.notification.device_id";
@@ -87,7 +95,7 @@ export async function registerDeviceToken(input?: Partial<DeviceToken>): Promise
   if (!token) return;
 
   const permissionStatus = input?.permission_status ?? "granted";
-  const { error } = await (supabase as any).rpc("register_notification_token", {
+  const { error } = await rpcClient.rpc("register_notification_token", {
     _token: token,
     _platform: platform,
     _device_id: input?.device_id ?? getDeviceId(),
@@ -105,7 +113,7 @@ export async function unregisterCurrentDevice(): Promise<void> {
   const { data: sessionData } = await supabase.auth.getSession();
   if (!sessionData.session) return;
 
-  const { error } = await (supabase as any).rpc("deactivate_notification_token", {
+  const { error } = await rpcClient.rpc("deactivate_notification_token", {
     _token: remembered.token,
   });
   if (error) throw error;
@@ -120,7 +128,7 @@ export async function touchCurrentDevice(): Promise<void> {
   if (!sessionData.session) return;
 
   // A RPC é idempotente e atualiza last_used_at/updated_at do token existente.
-  const { error } = await (supabase as any).rpc("register_notification_token", {
+  const { error } = await rpcClient.rpc("register_notification_token", {
     _token: remembered.token,
     _platform: remembered.platform,
     _device_id: getDeviceId(),
