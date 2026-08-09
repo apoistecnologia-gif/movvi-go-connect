@@ -8,6 +8,8 @@
     "src/lib/driverRoutes.mobile.ts",
     "src/lib/driverProfile.ts",
     "src/lib/profilePhoto.ts",
+    "src/lib/googleMaps.ts",
+    "src/lib/voiceNav.ts",
     "src/lib/nativeBridge.ts",
     "src/lib/notifications/deviceTokenService.ts",
     "src/components/DriverActiveRideRecovery.tsx",
