@@ -158,8 +158,7 @@ jobs:
       - name: Production build
         run: npm run build
 
-      - name: ESLint debt scan — blocking only at Phase 12 final gate
-        continue-on-error: true
+      - name: ESLint — Phase 8 Admin surface
         run: |
           npx eslint \
             "src/routes/admin.*.tsx" \
