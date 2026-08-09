@@ -20,6 +20,7 @@ import { installMobileFetchProxy } from "../lib/mobileFetchProxy";
 import { initNativeBridge } from "../lib/nativeBridge";
 import { DriverPresenceKeeper } from "../components/DriverPresenceKeeper";
 import { DriverNativePermissionsSync } from "../components/DriverNativePermissionsSync";
+import { DriverPasswordRecoveryBridge } from "../components/DriverPasswordRecoveryBridge";
 
 // Ativa o proxy de rede quando rodando dentro do APK (Capacitor).
 // No build web isso é no-op. Precisa rodar antes de qualquer serverFn
@@ -166,6 +167,7 @@ function RootComponent() {
         <MapThemeProvider>
           {APP_ROLE === "driver" ? <DriverNativePermissionsSync /> : null}
           {APP_ROLE === "driver" ? <DriverPresenceKeeper /> : null}
+          {APP_ROLE === "driver" ? <DriverPasswordRecoveryBridge /> : null}
           <Outlet />
           {APP_ROLE === "web" ? <NotificationPermissionPrompt /> : null}
           <Toaster richColors position="top-right" closeButton />
@@ -174,4 +176,3 @@ function RootComponent() {
     </QueryClientProvider>
   );
 }
-
