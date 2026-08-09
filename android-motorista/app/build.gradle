@@ -1,14 +1,36 @@
 apply plugin: 'com.android.application'
 
+def apoisVersionCode = (project.findProperty('APOIS_VERSION_CODE') ?: System.getenv('APOIS_VERSION_CODE') ?: '1').toString().toInteger()
+def apoisVersionName = (project.findProperty('APOIS_VERSION_NAME') ?: System.getenv('APOIS_VERSION_NAME') ?: '1.0').toString()
+def uploadStoreFilePath = project.findProperty('APOIS_UPLOAD_KEYSTORE_PATH') ?: System.getenv('APOIS_UPLOAD_KEYSTORE_PATH')
+def uploadKeyAlias = project.findProperty('APOIS_UPLOAD_KEY_ALIAS') ?: System.getenv('APOIS_UPLOAD_KEY_ALIAS')
+def uploadStorePassword = project.findProperty('APOIS_UPLOAD_STORE_PASSWORD') ?: System.getenv('APOIS_UPLOAD_STORE_PASSWORD')
+def uploadKeyPassword = project.findProperty('APOIS_UPLOAD_KEY_PASSWORD') ?: System.getenv('APOIS_UPLOAD_KEY_PASSWORD')
+def uploadSigningReady = [uploadStoreFilePath, uploadKeyAlias, uploadStorePassword, uploadKeyPassword].every {
+    it != null && !it.toString().trim().isEmpty()
+}
+
 android {
     namespace = "com.apois.motorista"
     compileSdk = rootProject.ext.compileSdkVersion
+
+    signingConfigs {
+        if (uploadSigningReady) {
+            release {
+                storeFile file(uploadStoreFilePath.toString())
+                storePassword uploadStorePassword.toString()
+                keyAlias uploadKeyAlias.toString()
+                keyPassword uploadKeyPassword.toString()
+            }
+        }
+    }
+
     defaultConfig {
         applicationId "com.apois.motorista"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode apoisVersionCode
+        versionName apoisVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
@@ -18,6 +40,9 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (uploadSigningReady) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 }
