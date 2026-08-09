@@ -12,6 +12,11 @@ const strings = read("android-motorista/app/src/main/res/values/strings.xml");
 const gradle = read("android-motorista/app/build.gradle");
 const workflow = read(".github/workflows/apois-driver-phase9-release.yml");
 const nativeBridge = read("src/lib/nativeBridge.ts");
+const driverLocationNative = read("src/lib/driverBackgroundLocation.ts");
+const driverBroadcast = read("src/hooks/useDriverBroadcast.ts");
+const driverLocationService = read("android-motorista/app/src/main/java/com/apois/motorista/DriverLocationService.java");
+const driverLocationPlugin = read("android-motorista/app/src/main/java/com/apois/motorista/DriverLocationPlugin.java");
+const mainActivity = read("android-motorista/app/src/main/java/com/apois/motorista/MainActivity.java");
 const recovery = read("src/lib/auth/driverPasswordRecovery.ts");
 const recoveryRoute = read("src/routes/motorista.recuperar-senha.tsx");
 const resetRoute = read("src/routes/motorista.redefinir-senha.tsx");
@@ -24,7 +29,10 @@ includes(capacitor, 'appName: "APOIS Motorista"', "Driver app name");
 includes(manifest, 'android:allowBackup="false"', "Android backup hardening");
 includes(manifest, 'android:usesCleartextTraffic="false"', "Android cleartext hardening");
 includes(manifest, 'android.permission.ACCESS_BACKGROUND_LOCATION', "Background location permission");
+includes(manifest, 'android.permission.FOREGROUND_SERVICE_LOCATION', "Foreground location service permission");
 includes(manifest, 'android.permission.POST_NOTIFICATIONS', "Notification permission");
+includes(manifest, 'android:name=".DriverLocationService"', "Driver foreground location service declaration");
+includes(manifest, 'android:foregroundServiceType="location"', "Driver foreground service type");
 includes(manifest, 'com.google.firebase.messaging.default_notification_channel_id', "Firebase default channel metadata");
 includes(manifest, 'android:scheme="@string/password_recovery_scheme"', "Driver recovery intent filter");
 includes(manifest, 'android:pathPrefix="/redefinir-senha"', "Driver recovery path");
@@ -33,6 +41,24 @@ includes(strings, '<string name="default_notification_channel_id">apois_rides</s
 
 includes(nativeBridge, "PushNotifications.createChannel", "Native notification channel creation");
 includes(nativeBridge, 'id: DRIVER_RIDE_CHANNEL_ID', "Canonical ride channel id");
+
+includes(mainActivity, "registerPlugin(DriverLocationPlugin.class)", "Driver location Capacitor plugin registration");
+includes(driverLocationPlugin, '@CapacitorPlugin(name = "DriverLocation")', "Driver location plugin name");
+includes(driverLocationPlugin, "ContextCompat.startForegroundService", "Driver location foreground service launch");
+includes(driverLocationService, "FusedLocationProviderClient", "Native fused location provider");
+includes(driverLocationService, "FOREGROUND_SERVICE_TYPE_LOCATION", "Native location foreground type");
+includes(driverLocationService, '"/rest/v1/rpc/driver_set_presence"', "Native canonical presence RPC");
+includes(driverLocationService, "HEARTBEAT_MS = 15_000L", "Native presence heartbeat");
+includes(driverLocationNative, 'registerPlugin<DriverLocationPlugin>("DriverLocation")', "Web-to-native DriverLocation bridge");
+includes(driverLocationNative, "supabase.auth.getSession()", "Native bridge obtains current authenticated session");
+includes(driverLocationNative, "accessToken: data.session.access_token", "Native bridge passes access token without persistence");
+includes(driverLocationNative, "refreshToken: data.session.refresh_token", "Native bridge passes refresh token for long-running service");
+includes(driverLocationNative, 'event !== "SIGNED_OUT"', "Native service logout guard");
+includes(driverBroadcast, "startDriverBackgroundLocation()", "Production online lifecycle starts native location service");
+includes(driverBroadcast, "stopDriverBackgroundLocation()", "Production offline lifecycle stops native location service");
+includes(driverBroadcast, 'document.visibilityState !== "visible"', "Android 14 visible-activity start guard");
+includes(driverBroadcast, 'document.addEventListener("visibilitychange"', "Native service foreground rehydration");
+
 includes(recovery, 'DRIVER_PASSWORD_RECOVERY_REDIRECT = "apoismotorista://auth/redefinir-senha"', "Native recovery redirect");
 includes(recovery, 'App.addListener("appUrlOpen"', "Native app URL listener");
 includes(recovery, "App.getLaunchUrl", "Cold-start recovery link");

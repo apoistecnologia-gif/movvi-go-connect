@@ -1,6 +1,11 @@
 import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { isBrazilCoordinate } from "@/lib/googleMaps";
+import {
+  ensureDriverBackgroundLocationAuthGuard,
+  startDriverBackgroundLocation,
+  stopDriverBackgroundLocation,
+} from "@/lib/driverBackgroundLocation";
 
 export type DriverTelemetry = {
   lat: number;
@@ -72,6 +77,54 @@ export function useDriverBroadcast(
     if (current && isBrazilCoordinate(current.lat, current.lng)) {
       void setPresence(true, current);
     }
+  }, [userId, online]);
+
+  // No APK do Motorista, espelha o estado online no Foreground Service nativo.
+  // O serviço continua publicando GPS diretamente no RPC oficial quando a
+  // WebView é suspensa por tela bloqueada/background. Reiniciamos/reidratamos
+  // apenas com a Activity visível, atendendo às restrições do Android 14+.
+  useEffect(() => {
+    if (!userId) return;
+
+    ensureDriverBackgroundLocationAuthGuard();
+    let cancelled = false;
+
+    const syncNativeService = async () => {
+      try {
+        if (online) {
+          if (typeof document !== "undefined" && document.visibilityState !== "visible") return;
+          const started = await startDriverBackgroundLocation();
+          if (!started && !cancelled) {
+            console.warn("[APOIS MOTORISTA] foreground service de localização não iniciou");
+          }
+          return;
+        }
+        await stopDriverBackgroundLocation();
+      } catch (err) {
+        if (!cancelled) {
+          console.warn("[APOIS MOTORISTA] sincronização do serviço nativo de localização falhou", err);
+        }
+      }
+    };
+
+    void syncNativeService();
+
+    const onVisibilityChange = () => {
+      if (online && document.visibilityState === "visible") {
+        void syncNativeService();
+      }
+    };
+
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", onVisibilityChange);
+    }
+
+    return () => {
+      cancelled = true;
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", onVisibilityChange);
+      }
+    };
   }, [userId, online]);
 
   useEffect(() => {
