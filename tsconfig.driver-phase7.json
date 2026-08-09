@@ -1,6 +1,7 @@
 {
   "extends": "./tsconfig.json",
   "include": [
+    "types/driver-route-types.d.ts",
     "src/lib/driverDocuments.mobile.ts",
     "src/lib/driverFinance.mobile.ts",
     "src/lib/driverRideLifecycle.mobile.ts",
