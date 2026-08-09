@@ -141,7 +141,7 @@ public class DriverLocationService extends Service {
         );
 
         return new NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(R.drawable.ic_stat_apois_notification)
             .setContentTitle("APOIS Motorista online")
             .setContentText("Sua localização está sendo compartilhada enquanto você está online.")
             .setOngoing(true)
