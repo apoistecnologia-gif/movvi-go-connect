@@ -1,5 +1,7 @@
 import { Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { Bell, CarFront, House, UserRound, WalletCards } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const ITEMS = [
   { to: "/motorista/app", label: "Início", icon: House },
@@ -9,8 +11,55 @@ const ITEMS = [
   { to: "/motorista/perfil", label: "Perfil", icon: UserRound },
 ] as const;
 
+const ACTIVE_RIDE_STATUSES = ["motorista_a_caminho", "motorista_chegou", "em_viagem"] as const;
+
+/**
+ * The parent hides navigation while a ride is active. This canonical-state
+ * guard is deliberately redundant: after Android recreates the WebView, a
+ * stale React render must never let the bottom navigation cover operational
+ * actions such as CHEGUEI, INICIAR CORRIDA or FINALIZAR CORRIDA.
+ */
 export function ApoisDriverBottomNav({ hidden = false }: { hidden?: boolean }) {
-  if (hidden) return null;
+  const [rideActive, setRideActive] = useState(false);
+
+  useEffect(() => {
+    if (hidden) {
+      setRideActive(false);
+      return;
+    }
+
+    let alive = true;
+
+    const refresh = async () => {
+      const { data: profile, error: profileError } = await (supabase as any).rpc("driver_get_profile");
+      if (!alive || profileError || !profile?.id) return;
+      const { data, error } = await supabase
+        .from("rides")
+        .select("id")
+        .eq("driver_id", String(profile.id))
+        .in("status", [...ACTIVE_RIDE_STATUSES])
+        .limit(1);
+      if (!alive || error) return;
+      setRideActive((data?.length ?? 0) > 0);
+    };
+
+    void refresh();
+    const channel = supabase
+      .channel("driver-bottom-nav-active-ride")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "rides" },
+        () => void refresh(),
+      )
+      .subscribe();
+
+    return () => {
+      alive = false;
+      void supabase.removeChannel(channel);
+    };
+  }, [hidden]);
+
+  if (hidden || rideActive) return null;
 
   return (
     <nav
