@@ -84,7 +84,7 @@ jobs:
           tests/unit/driver-mobile-push-contract.test.ts
 
       - name: Dispatch unit tests
-        run: deno test tests/unit/dispatch-engine.test.ts tests/unit/driver-mobile-push-contract.test.ts
+        run: deno test --allow-read tests/unit/dispatch-engine.test.ts tests/unit/driver-mobile-push-contract.test.ts
 
       - name: Deno check dispatch Edge Functions
         run: |
@@ -111,7 +111,7 @@ jobs:
           set -euo pipefail
           offered_guard=$(psql -Atqc "select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='driver_accept_ride' and pg_get_functiondef(p.oid) like '%offered_driver_ids%'")
           category_guard=$(psql -Atqc "select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='driver_accept_ride' and pg_get_functiondef(p.oid) like '%driver_category_mismatch%'")
-          gps_guard=$(psql -Atqc "select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='driver_accept_ride' and pg_get_functiondef(p.oid) like '%driver_location_stale%'")
+          gps_guard=$(psql -Atqc "select count(*) from pg_proc p join pg_namespace n on n.oid=p.proname='driver_accept_ride' and pg_get_functiondef(p.oid) like '%driver_location_stale%'")
           test "$offered_guard" = "1"
           test "$category_guard" = "1"
           test "$gps_guard" = "1"
