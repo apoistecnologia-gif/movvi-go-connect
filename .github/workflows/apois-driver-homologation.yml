@@ -10,9 +10,17 @@ on:
       - "capacitor.motorista.config.ts"
       - "src/lib/driverBackgroundLocation.ts"
       - "src/lib/nativeBridge.ts"
+      - "src/lib/driverProfile.ts"
+      - "src/lib/profilePhoto.ts"
+      - "src/lib/driverRoutes.mobile.ts"
+      - "src/components/DriverActiveRideRecovery.tsx"
+      - "src/components/ApoisDriverBottomNav.tsx"
+      - "src/components/MovviMap.tsx"
+      - "src/components/ProfilePhotoUploader.tsx"
       - "src/hooks/useDriverBroadcast.ts"
       - "tests/mobile/driver-phase9-contract.mjs"
       - "scripts/verify-mobile-native.mjs"
+      - "tsconfig.driver-phase7.json"
       - ".github/workflows/apois-driver-homologation.yml"
   workflow_dispatch:
 
@@ -68,6 +76,23 @@ jobs:
 
       - name: Validar contrato Phase 9 do Motorista
         run: node tests/mobile/driver-phase9-contract.mjs
+
+      - name: TypeScript — superfície crítica do Motorista
+        run: npx tsc --noEmit --project tsconfig.driver-phase7.json
+
+      - name: Gate da corrida ativa e foto privada
+        run: |
+          set -euo pipefail
+          grep -F 'DriverActiveRideRecovery' src/components/ApoisDriverBottomNav.tsx
+          grep -F 'motorista_a_caminho' src/components/ApoisDriverBottomNav.tsx
+          grep -F 'driver_get_profile' src/components/DriverActiveRideRecovery.tsx
+          grep -F 'computeDriverRoute' src/components/DriverActiveRideRecovery.tsx
+          grep -F 'new google.maps.Polyline' src/components/DriverActiveRideRecovery.tsx
+          grep -F '__apoisMovviMap' src/components/MovviMap.tsx
+          grep -F 'const authUserId = await currentAuthUserId()' src/lib/profilePhoto.ts
+          grep -F 'const path = `${authUserId}/avatar-${Date.now()}.${ext}`' src/lib/profilePhoto.ts
+          grep -F 'refreshProfilePhotoUrl' src/components/ProfilePhotoUploader.tsx
+          echo 'APOIS_DRIVER_ACTIVE_RIDE_AND_PROFILE_PHOTO_OK'
 
       - name: Validar secret Google Maps da APOIS
         env:
