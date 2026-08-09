@@ -14,6 +14,21 @@ export type DriverTelemetry = {
   speed?: number | null;
 };
 
+type DriverPresenceRpcArgs = {
+  _online: boolean;
+  _lat: number | null;
+  _lng: number | null;
+  _heading: number | null;
+  _speed: number | null;
+};
+
+type DriverPresenceRpcClient = {
+  rpc: (
+    name: "driver_set_presence",
+    args: DriverPresenceRpcArgs,
+  ) => Promise<{ error: { message: string } | null }>;
+};
+
 const MIN_MOVEMENT_METERS = 10;
 const MIN_INTERVAL_MS = 3500;
 const HEARTBEAT_MS = 15000;
@@ -33,7 +48,7 @@ async function setPresence(
   online: boolean,
   position?: DriverTelemetry | null,
 ) {
-  const { error } = await (supabase as any).rpc("driver_set_presence", {
+  const { error } = await (supabase as unknown as DriverPresenceRpcClient).rpc("driver_set_presence", {
     _online: online,
     _lat: online ? position?.lat ?? null : null,
     _lng: online ? position?.lng ?? null : null,
