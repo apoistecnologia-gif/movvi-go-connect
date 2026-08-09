@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "src/lib/driverDocuments.mobile.ts",
+    "src/lib/driverFinance.mobile.ts",
+    "src/lib/driverRideLifecycle.mobile.ts",
+    "src/lib/nativeBridge.ts",
+    "src/lib/notifications/deviceTokenService.ts",
+    "src/routes/motorista.documentos.tsx",
+    "src/routes/motorista.ganhos.tsx"
+  ],
+  "exclude": [
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx"
+  ]
+}
