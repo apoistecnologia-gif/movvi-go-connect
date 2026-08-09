@@ -4,6 +4,16 @@ on:
   push:
     branches:
       - feat/apois-motorista-producao-homologacao
+      - fix/apois-corridas-consolidacao
+    paths:
+      - "android-motorista/**"
+      - "capacitor.motorista.config.ts"
+      - "src/lib/driverBackgroundLocation.ts"
+      - "src/lib/nativeBridge.ts"
+      - "src/hooks/useDriverBroadcast.ts"
+      - "tests/mobile/driver-phase9-contract.mjs"
+      - "scripts/verify-mobile-native.mjs"
+      - ".github/workflows/apois-driver-homologation.yml"
   workflow_dispatch:
 
 permissions:
@@ -56,6 +66,9 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
+      - name: Validar contrato Phase 9 do Motorista
+        run: node tests/mobile/driver-phase9-contract.mjs
+
       - name: Validar secret Google Maps da APOIS
         env:
           VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY: ${{ secrets.APOIS_GOOGLE_MAPS_BROWSER_KEY }}
@@ -106,6 +119,28 @@ jobs:
         env:
           VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY: ${{ secrets.APOIS_GOOGLE_MAPS_BROWSER_KEY }}
         run: VITE_ENABLE_NATIVE_PUSH="$NATIVE_PUSH_READY" npm run android:motorista
+
+      - name: Gate canônico do buffer de localização offline
+        run: |
+          set -euo pipefail
+          source_service=android-motorista/app/src/main/java/com/apois/motorista/DriverLocationService.java
+          synced_service=android/app/src/main/java/com/apois/motorista/DriverLocationService.java
+          for service in "$source_service" "$synced_service"; do
+            grep -F 'SharedPreferences' "$service"
+            grep -F 'LOCATION_PREFS = "apois_driver_location_buffer"' "$service"
+            grep -F 'MAX_PENDING_LOCATION_AGE_MS = 120_000L' "$service"
+            grep -F 'rememberPendingLocation(location)' "$service"
+            grep -F 'readPendingLocation()' "$service"
+            grep -F 'location.getTime()' "$service"
+            grep -F 'location.getAccuracy()' "$service"
+            grep -F 'clearPendingLocationIfSynced' "$service"
+            if grep -E 'put(String|Long|Float|Boolean)\([^\n]*(accessToken|refreshToken|EXTRA_ACCESS_TOKEN|EXTRA_REFRESH_TOKEN)' "$service"; then
+              echo "Token de autenticação persistido indevidamente no buffer: $service"
+              exit 1
+            fi
+          done
+          cmp "$source_service" "$synced_service"
+          echo 'APOIS_DRIVER_OFFLINE_BUFFER_HOMOLOGATION_OK'
 
       - name: Verificação nativa após sync
         run: node scripts/verify-mobile-native.mjs motorista --live
