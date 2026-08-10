@@ -1,14 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import type { LucideIcon } from "lucide-react";
-import {
-  Home,
-  ClipboardList,
-  Heart,
-  User,
-  DollarSign,
-  Settings,
-  LayoutGrid,
-} from "lucide-react";
+import { Home, ClipboardList, Heart, User, DollarSign, Settings, LayoutGrid } from "lucide-react";
 
 type NavItem = {
   to: string;
@@ -69,15 +61,15 @@ export function BottomNav({
     theme === "dark"
       ? "bg-[#0B0F17]/95 ring-white/[0.08]"
       : theme === "light"
-      ? "bg-white/95 ring-black/5"
-      : "bg-card/95 ring-border";
+        ? "bg-white/95 ring-black/5"
+        : "bg-card/95 ring-border";
 
   const solidBg =
     theme === "dark"
       ? "bg-[#0B0F17]/95 border-white/[0.08]"
       : theme === "light"
-      ? "bg-white/95 border-black/5"
-      : "bg-background/95 border-border";
+        ? "bg-white/95 border-black/5"
+        : "bg-background/95 border-border";
 
   return (
     <nav
@@ -98,7 +90,6 @@ export function BottomNav({
       }
       aria-label="Navegação principal"
     >
-
       <ul
         className={
           floating
@@ -123,8 +114,8 @@ export function BottomNav({
               ? "bg-primary text-primary-foreground shadow-[0_8px_20px_-10px_color-mix(in_oklab,var(--color-primary)_60%,transparent)]"
               : "text-primary"
             : floating
-            ? "text-foreground/70 hover:text-foreground"
-            : "text-muted-foreground hover:text-foreground";
+              ? "text-foreground/70 hover:text-foreground"
+              : "text-muted-foreground hover:text-foreground";
 
           return (
             <li key={item.to} className="flex-1">
@@ -167,7 +158,6 @@ export function BottomNav({
               </Link>
             </li>
           );
-
         })}
       </ul>
     </nav>
