@@ -26,14 +26,9 @@ try {
   process.exit(1);
 }
 
-const apkPath = resolve(
-  androidDir,
-  "app/build/outputs/apk/debug/app-debug.apk",
-);
+const apkPath = resolve(androidDir, "app/build/outputs/apk/debug/app-debug.apk");
 if (existsSync(apkPath)) {
   console.log(`\n[build-apk] APK gerado em: ${apkPath}`);
 } else {
-  console.warn(
-    "\n[build-apk] gradle terminou, mas app-debug.apk não foi encontrado.",
-  );
+  console.warn("\n[build-apk] gradle terminou, mas app-debug.apk não foi encontrado.");
 }
