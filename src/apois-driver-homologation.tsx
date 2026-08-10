@@ -198,11 +198,7 @@ function App() {
 
     const channel = supabase
       .channel(`apois-driver-homologation-${profile.user_id}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "rides" },
-        reload,
-      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "rides" }, reload)
       .subscribe();
 
     const interval = window.setInterval(reload, 10_000);
@@ -259,8 +255,7 @@ function App() {
     setError(null);
     try {
       await stopLocationWatch();
-      if (profile?.is_online)
-        await supabase.rpc("driver_set_presence", { _online: false });
+      if (profile?.is_online) await supabase.rpc("driver_set_presence", { _online: false });
       await supabase.auth.signOut();
     } catch (caught) {
       setError(normalizeRpcError(caught));
@@ -275,20 +270,15 @@ function App() {
     setError(null);
     setInfo(null);
     try {
-      const { error: rpcError } = await supabase.rpc(
-        "driver_bootstrap_profile",
-        {
-          _category: category,
-          _vehicle_model: vehicleModel,
-          _vehicle_plate: vehiclePlate,
-          _vehicle_color: vehicleColor,
-        },
-      );
+      const { error: rpcError } = await supabase.rpc("driver_bootstrap_profile", {
+        _category: category,
+        _vehicle_model: vehicleModel,
+        _vehicle_plate: vehiclePlate,
+        _vehicle_color: vehicleColor,
+      });
       if (rpcError) throw rpcError;
       await loadProfile();
-      setInfo(
-        "Cadastro de motorista criado. Agora ele precisa ser aprovado para ficar online.",
-      );
+      setInfo("Cadastro de motorista criado. Agora ele precisa ser aprovado para ficar online.");
     } catch (caught) {
       setError(normalizeRpcError(caught));
     } finally {
@@ -312,9 +302,7 @@ function App() {
     return {
       lat: current.coords.latitude,
       lng: current.coords.longitude,
-      heading: Number.isFinite(current.coords.heading)
-        ? current.coords.heading
-        : null,
+      heading: Number.isFinite(current.coords.heading) ? current.coords.heading : null,
       speed: Number.isFinite(current.coords.speed)
         ? current.coords.speed
         : null,
