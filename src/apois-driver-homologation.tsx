@@ -5,11 +5,8 @@ import { Geolocation } from "@capacitor/geolocation";
 import "./apois-driver-homologation.css";
 
 const supabaseUrl = String(import.meta.env.VITE_SUPABASE_URL ?? "").trim();
-const supabaseKey = String(
-  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? "",
-).trim();
-if (!supabaseUrl || !supabaseKey)
-  throw new Error("APOIS_DRIVER_CONFIGURATION_MISSING");
+const supabaseKey = String(import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? "").trim();
+if (!supabaseUrl || !supabaseKey) throw new Error("APOIS_DRIVER_CONFIGURATION_MISSING");
 
 const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: {
@@ -66,22 +63,17 @@ function money(value: number | string | null | undefined) {
 function messageOf(error: unknown) {
   if (error instanceof Error) return error.message;
   if (error && typeof error === "object" && "message" in error)
-    return String(
-      (error as { message?: unknown }).message ?? "Erro inesperado",
-    );
+    return String((error as { message?: unknown }).message ?? "Erro inesperado");
   return String(error ?? "Erro inesperado");
 }
 
 function normalizeRpcError(error: unknown) {
   const raw = messageOf(error);
-  if (raw.includes("driver_not_approved"))
-    return "Seu cadastro ainda não foi aprovado.";
+  if (raw.includes("driver_not_approved")) return "Seu cadastro ainda não foi aprovado.";
   if (raw.includes("driver_subscription_inactive"))
     return "Sua mensalidade não permite ficar online.";
-  if (raw.includes("driver_profile_missing"))
-    return "Cadastro de motorista não encontrado.";
-  if (raw.includes("ride_offer_unavailable"))
-    return "Essa oferta não está mais disponível.";
+  if (raw.includes("driver_profile_missing")) return "Cadastro de motorista não encontrado.";
+  if (raw.includes("ride_offer_unavailable")) return "Essa oferta não está mais disponível.";
   if (raw.includes("invalid_security_code_or_transition"))
     return "PIN incorreto ou status da corrida mudou.";
   if (raw.includes("invalid_ride_transition"))
@@ -169,18 +161,16 @@ function App() {
       setSession(data.session);
       setAuthLoading(false);
     });
-    const { data: subscription } = supabase.auth.onAuthStateChange(
-      (_event, nextSession) => {
-        if (!mounted) return;
-        setSession(nextSession);
-        if (!nextSession) {
-          setProfile(null);
-          setProfileLoaded(false);
-          setOffer(null);
-          setActiveRide(null);
-        }
-      },
-    );
+    const { data: subscription } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      if (!mounted) return;
+      setSession(nextSession);
+      if (!nextSession) {
+        setProfile(null);
+        setProfileLoaded(false);
+        setOffer(null);
+        setActiveRide(null);
+      }
+    });
     return () => {
       mounted = false;
       subscription.subscription.unsubscribe();
