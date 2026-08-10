@@ -102,11 +102,9 @@ export function BottomNav({
             pathname === item.to ||
             (item.to !== "/" && pathname.startsWith(item.to)) ||
             (item.to === "/passageiro/servicos" &&
-              [
-                "/passageiro/envios",
-                "/passageiro/guincho",
-                "/passageiro/mudancas",
-              ].some((prefix) => pathname.startsWith(prefix)));
+              ["/passageiro/envios", "/passageiro/guincho", "/passageiro/mudancas"].some((prefix) =>
+                pathname.startsWith(prefix),
+              ));
           const Icon = item.icon;
 
           const activeCls = active
@@ -146,11 +144,7 @@ export function BottomNav({
                       <span className="absolute -top-0.5 h-0.5 w-6 rounded-full bg-primary shadow-[0_0_8px_rgba(141,217,43,0.7)]" />
                     )}
                     <Icon
-                      className={`h-[18px] w-[18px] transition-transform duration-300 ${
-                        active
-                          ? "scale-110 drop-shadow-[0_0_8px_rgba(141,217,43,0.55)]"
-                          : ""
-                      }`}
+                      className={`h-[18px] w-[18px] transition-transform duration-300 ${active ? "scale-110 drop-shadow-[0_0_8px_rgba(141,217,43,0.55)]" : ""}`}
                     />
                     <span className="leading-none">{item.label}</span>
                   </>
