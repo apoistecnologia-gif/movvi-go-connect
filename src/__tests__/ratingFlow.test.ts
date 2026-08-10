@@ -55,15 +55,25 @@ describe("canSubmitRating", () => {
   });
 
   it("bloqueia após submissão bem-sucedida", () => {
-    expect(canSubmitRating({
-      rideId: "r1", submitting: false, submitted: true, ratedLocal: new Set(),
-    })).toBe(false);
+    expect(
+      canSubmitRating({
+        rideId: "r1",
+        submitting: false,
+        submitted: true,
+        ratedLocal: new Set(),
+      }),
+    ).toBe(false);
   });
 
   it("bloqueia se a corrida já consta no cache local de avaliadas", () => {
-    expect(canSubmitRating({
-      rideId: "r1", submitting: false, submitted: false, ratedLocal: new Set(["r1"]),
-    })).toBe(false);
+    expect(
+      canSubmitRating({
+        rideId: "r1",
+        submitting: false,
+        submitted: false,
+        ratedLocal: new Set(["r1"]),
+      }),
+    ).toBe(false);
   });
 });
 
@@ -106,7 +116,9 @@ describe("fluxo completo do RatingScreen (simulação)", () => {
 
     // Confirmação fecha a tela e não permite reabertura.
     const ride: MinimalRide = {
-      id: rideId, status: "finalizada", driver_rated_at: new Date().toISOString(),
+      id: rideId,
+      status: "finalizada",
+      driver_rated_at: new Date().toISOString(),
     };
     expect(shouldShowRating(ride, "driver", ratedLocal)).toBe(false);
   });
