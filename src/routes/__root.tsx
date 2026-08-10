@@ -21,6 +21,7 @@ import { initNativeBridge } from "../lib/nativeBridge";
 import { DriverPresenceKeeper } from "../components/DriverPresenceKeeper";
 import { DriverNativePermissionsSync } from "../components/DriverNativePermissionsSync";
 import { DriverPasswordRecoveryBridge } from "../components/DriverPasswordRecoveryBridge";
+import { supabase } from "../integrations/supabase/client";
 
 // Ativa o proxy de rede quando rodando dentro do APK (Capacitor).
 // No build web isso é no-op. Precisa rodar antes de qualquer serverFn
@@ -159,6 +160,40 @@ function RootComponent() {
       router.navigate({ to: defaultLandingPath(), replace: true });
     }
     return () => unsub();
+  }, [router]);
+
+  // O Supabase persiste a sessão no localStorage. No APK do Motorista,
+  // restaura a navegação a partir da sessão real em vez de depender da
+  // landing visual. Também reage a INITIAL_SESSION/SIGNED_IN após cold start.
+  useEffect(() => {
+    if (APP_ROLE !== "driver") return;
+    let cancelled = false;
+
+    const enterDriverAppWhenAuthenticated = (hasSession: boolean) => {
+      if (!hasSession || cancelled) return;
+      const pathname = router.state.location.pathname;
+      if (pathname === "/" || pathname === "/motorista/login") {
+        void router.navigate({ to: "/motorista/app", replace: true });
+      }
+    };
+
+    void supabase.auth.getSession().then(({ data, error }) => {
+      if (cancelled) return;
+      if (error) {
+        console.warn("[APOIS MOTORISTA] não foi possível restaurar a sessão:", error.message);
+        return;
+      }
+      enterDriverAppWhenAuthenticated(Boolean(data.session));
+    });
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      enterDriverAppWhenAuthenticated(Boolean(session));
+    });
+
+    return () => {
+      cancelled = true;
+      authListener.subscription.unsubscribe();
+    };
   }, [router]);
 
   return (

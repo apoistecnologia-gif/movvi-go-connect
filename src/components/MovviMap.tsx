@@ -11,6 +11,7 @@ import {
   purgeForeignMapCache,
 } from "@/lib/googleMaps";
 import { useMapTheme } from "@/lib/mapTheme";
+import { APP_ROLE } from "@/lib/appRole";
 
 interface MovviMapProps {
   center?: { lat: number; lng: number } | null;
@@ -30,7 +31,8 @@ type ApoisMapWindow = Window & { __apoisMovviMap?: google.maps.Map | null };
  *
  * - Mapa SEMPRE inicia dentro do Brasil. Coordenadas estrangeiras são ignoradas.
  * - Sem GPS → mostra o Brasil inteiro (zoom 5).
- * - Estilo claro/escuro reativo ao tema global. A troca é aplicada
+ * - O APK do Motorista usa mapa escuro canônico independentemente do tema do SO.
+ * - Estilo claro/escuro reativo nos demais bundles. A troca é aplicada
  *   imperativamente via `map.setOptions({ styles })` para que o mapa
  *   atualize SEM remontar (evita perder centro/GPS/marcadores).
  * - Expõe somente a instância efêmera do Google Map na janela enquanto montado.
@@ -51,7 +53,7 @@ export function MovviMap({
   }, []);
 
   const { resolved } = useMapTheme();
-  const theme: "light" | "dark" = themeOverride ?? resolved;
+  const theme: "light" | "dark" = themeOverride ?? (APP_ROLE === "driver" ? "dark" : resolved);
 
   const { isLoaded, loadError } = useJsApiLoader({
     id: "movvi-google-maps",
@@ -156,7 +158,7 @@ export function MovviMap({
         options={{
           styles,
           disableDefaultUI: true,
-          zoomControl: true,
+          zoomControl: APP_ROLE !== "driver",
           gestureHandling: "greedy",
           clickableIcons: false,
           backgroundColor: bgColor,
