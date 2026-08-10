@@ -198,12 +198,12 @@ function DriverLoginPage() {
           </label>
 
           <div className="flex justify-end">
-            <a
-              href="/motorista/recuperar-senha"
+            <Link
+              to="/motorista/recuperar-senha"
               className="min-h-11 px-1 py-2 text-[11px] font-black text-[#F6BE1C]"
             >
               Esqueci minha senha
-            </a>
+            </Link>
           </div>
 
           {error ? (
