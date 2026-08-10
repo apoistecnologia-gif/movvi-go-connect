@@ -8,11 +8,22 @@ const BUCKETS = {
   vehicle_document_url: "vehicle-documents",
 } as const;
 
+type PermissionRpcClient = {
+  rpc: (
+    fn: "admin_has_permission",
+    args: { _permission: string },
+  ) => PromiseLike<{
+    data: boolean | null;
+    error: { message: string } | null;
+  }>;
+};
+
 export const getDriverDocumentUrls = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ driverId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
-    const { data: allowed, error: permissionError } = await (context.supabase as any).rpc(
+    const permissionClient = context.supabase as unknown as PermissionRpcClient;
+    const { data: allowed, error: permissionError } = await permissionClient.rpc(
       "admin_has_permission",
       { _permission: "drivers.read" },
     );
@@ -33,13 +44,15 @@ export const getDriverDocumentUrls = createServerFn({ method: "POST" })
     };
 
     await Promise.all(
-      (Object.entries(BUCKETS) as Array<[keyof typeof BUCKETS, string]>).map(async ([field, bucket]) => {
-        const path = driver.data?.[field];
-        if (!path) return;
-        const signed = await supabaseAdmin.storage.from(bucket).createSignedUrl(path, 600);
-        if (signed.error) throw new Error(`signed_url_failed:${field}`);
-        out[field] = signed.data?.signedUrl ?? null;
-      }),
+      (Object.entries(BUCKETS) as Array<[keyof typeof BUCKETS, string]>).map(
+        async ([field, bucket]) => {
+          const path = driver.data?.[field];
+          if (!path) return;
+          const signed = await supabaseAdmin.storage.from(bucket).createSignedUrl(path, 600);
+          if (signed.error) throw new Error(`signed_url_failed:${field}`);
+          out[field] = signed.data?.signedUrl ?? null;
+        },
+      ),
     );
 
     return out;
