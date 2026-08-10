@@ -21,13 +21,7 @@
 // Uso: node scripts/cap-sync.mjs <passageiro|motorista>
 
 import { execFileSync } from "node:child_process";
-import {
-  cpSync,
-  existsSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { cpSync, existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const role = process.argv[2];
@@ -57,9 +51,7 @@ if (!existsSync(androidRole)) {
 }
 
 // 1. Preserva apenas a configuração local do SDK Android.
-const preservedLocalProperties = existsSync(localProperties)
-  ? readFileSync(localProperties)
-  : null;
+const preservedLocalProperties = existsSync(localProperties) ? readFileSync(localProperties) : null;
 
 // Preserva capacitor.config.ts prévio.
 const previousConfig = existsSync(dst) ? readFileSync(dst) : null;
@@ -101,8 +93,16 @@ try {
 } finally {
   // 8. Restaura capacitor.config.ts anterior.
   if (previousConfig !== null) {
-    try { writeFileSync(dst, previousConfig); } catch { /* noop */ }
+    try {
+      writeFileSync(dst, previousConfig);
+    } catch {
+      /* noop */
+    }
   } else {
-    try { rmSync(dst); } catch { /* noop */ }
+    try {
+      rmSync(dst);
+    } catch {
+      /* noop */
+    }
   }
 }
