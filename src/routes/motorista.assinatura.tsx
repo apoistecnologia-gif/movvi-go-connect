@@ -1,29 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import {
-  Crown,
-  CalendarDays,
-  Wallet,
-  CreditCard,
-  ExternalLink,
-  LifeBuoy,
-  Sparkles,
-  Loader2,
-} from "lucide-react";
+import { Crown, LifeBuoy, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { SettingsPageShell, SettingsHero } from "@/components/settings";
-import {
-  Typography,
-  DSButton,
-  DSCard,
-  StatusPill,
-  Loading,
-  Icon,
-  HeadingS,
-  Body,
-  BodySmall,
-  Caption,
-} from "@/design-system";
+import { DSButton, DSCard, StatusPill, Loading, Icon, HeadingS, Body, BodySmall, Caption, Typography } from "@/design-system";
 import { supabase } from "@/integrations/supabase/client";
 import { APOIS_MONTHLY_FEE_BRL } from "@/lib/payments/types";
 import { formatCurrency } from "@/lib/finance/financeSettings";
@@ -33,293 +13,128 @@ export const Route = createFileRoute("/motorista/assinatura")({
   component: DriverSubscriptionPage,
 });
 
-type FinancialStatus = "inactive" | "pending" | "active" | "overdue" | "cancelled";
-
 type DriverInfo = {
-  mercadopago_init_point: string | null;
-  mercadopago_preapproval_id: string | null;
-  financial_status: FinancialStatus | null;
-  subscription_status: string | null;
-  subscription_value: number | null;
-  subscription_expires_at: string | null;
-  next_due_date: string | null;
-  last_payment_status: string | null;
-  approval_status: string | null;
+  approval_status: string;
+  subscription_status: string;
 };
-
-const FIN_LABEL: Record<FinancialStatus, string> = {
-  active: "Ativo",
-  pending: "Pendente",
-  overdue: "Inadimplente",
-  cancelled: "Cancelado",
-  inactive: "Inativo",
-};
-
-function pillFor(status: FinancialStatus) {
-  const label = FIN_LABEL[status];
-  switch (status) {
-    case "active":
-      return <StatusPill status="finished" label={label} pulse={false} />;
-    case "pending":
-      return <StatusPill status="searching" label={label} />;
-    case "overdue":
-    case "cancelled":
-      return <StatusPill status="cancelled" label={label} pulse={false} />;
-    default:
-      return <StatusPill status="offline" label={label} pulse={false} />;
-  }
-}
 
 const BENEFITS = [
   "Corridas ilimitadas na plataforma",
   "Repasse integral das corridas ao motorista",
-  "Suporte prioritário 7 dias por semana",
+  "Suporte durante a operação",
   "Ferramentas de ganhos, histórico e relatórios",
 ];
 
 function DriverSubscriptionPage() {
   const [driver, setDriver] = useState<DriverInfo | null>(null);
   const [loading, setLoading] = useState(true);
-  const [generating, setGenerating] = useState(false);
 
   async function refresh() {
     setLoading(true);
     try {
-      const { data: u } = await supabase.auth.getUser();
-      if (!u.user) throw new Error("not_authenticated");
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user) throw new Error("not_authenticated");
+
+      const { data: profile, error: profileError } = await supabase
+        .from("users")
+        .select("id")
+        .eq("auth_user_id", auth.user.id)
+        .maybeSingle();
+      if (profileError || !profile) throw profileError ?? new Error("profile_missing");
+
       const { data, error } = await supabase
         .from("drivers")
-        .select(
-          "mercadopago_init_point,mercadopago_preapproval_id,financial_status,subscription_status,subscription_value,subscription_expires_at,next_due_date,last_payment_status,approval_status",
-        )
-        .eq("user_id", u.user.id)
+        .select("approval_status,subscription_status")
+        .eq("user_id", profile.id)
         .maybeSingle();
       if (error) throw error;
-      setDriver((data as DriverInfo) ?? null);
-    } catch (e) {
-      console.error(e);
-      toast.error("Não foi possível carregar a assinatura.");
+      setDriver(data ?? null);
+    } catch (error) {
+      console.error(error);
+      toast.error("Não foi possível carregar a mensalidade.");
     } finally {
       setLoading(false);
     }
   }
 
-  useEffect(() => {
-    void refresh();
-  }, []);
+  useEffect(() => { void refresh(); }, []);
 
   if (loading && !driver) {
-    return (
-      <SettingsPageShell variant="driver">
-        <Loading label="Carregando assinatura…" />
-      </SettingsPageShell>
-    );
+    return <SettingsPageShell variant="driver"><Loading label="Carregando mensalidade…" /></SettingsPageShell>;
   }
 
-  const subActive =
-    (driver?.subscription_status ?? "").toLowerCase() === "active" ||
-    (driver?.subscription_status ?? "").toLowerCase() === "ativa";
-  const expiresAt = driver?.subscription_expires_at
-    ? new Date(driver.subscription_expires_at)
-    : null;
-  const notExpired = expiresAt ? expiresAt.getTime() > Date.now() : false;
-  const derivedActive = subActive && notExpired;
-  const financial: FinancialStatus = derivedActive
-    ? "active"
-    : ((driver?.financial_status ?? "inactive") as FinancialStatus);
-  const isActive = financial === "active";
-  const dueDate = driver?.next_due_date
-    ? new Date(driver.next_due_date)
-    : expiresAt;
-  const initPoint = driver?.mercadopago_init_point ?? null;
-  const notApprovedYet = driver?.approval_status !== "aprovado";
+  const approval = (driver?.approval_status ?? "pendente").toLowerCase();
+  const subscription = (driver?.subscription_status ?? "inactive").toLowerCase();
+  const operational = ["active", "ativa", "teste"].includes(subscription);
+  const approved = approval === "aprovado";
 
   return (
     <SettingsPageShell variant="driver">
       <SettingsHero
         icon={Crown}
         title="Mensalidade"
-        subtitle="Plano Motorista APOIS Premium"
-        action={pillFor(financial)}
+        subtitle="Plano Motorista APOIS"
+        action={<StatusPill status={operational ? "finished" : "offline"} label={operational ? (subscription === "teste" ? "Homologação" : "Ativa") : "Inativa"} pulse={false} />}
       />
 
       <DSCard className="p-5 space-y-4">
         <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 space-y-1">
+          <div className="space-y-1">
             <HeadingS>Plano Motorista APOIS</HeadingS>
-            <BodySmall className="text-muted-foreground">
-              Acesso completo à plataforma APOIS.
-            </BodySmall>
+            <BodySmall className="text-muted-foreground">Acesso à operação da plataforma conforme o status oficial da sua conta.</BodySmall>
           </div>
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
             <Icon as={Sparkles} size="lg" />
           </div>
         </div>
-
-        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-          <Typography
-            variant="metric"
-            className="text-[clamp(28px,9vw,36px)] text-foreground"
-          >
-            {formatCurrency(Number(driver?.subscription_value ?? APOIS_MONTHLY_FEE_BRL))}
+        <div className="flex flex-wrap items-baseline gap-2">
+          <Typography variant="metric" className="text-[clamp(28px,9vw,36px)] text-foreground">
+            {formatCurrency(APOIS_MONTHLY_FEE_BRL)}
           </Typography>
           <Caption>por mês</Caption>
-        </div>
-
-        <div className="grid gap-2 sm:grid-cols-2">
-          <div className="flex items-center gap-2 rounded-xl bg-muted/40 px-3 py-2">
-            <Icon as={CalendarDays} size="md" className="text-muted-foreground" />
-            <div className="min-w-0">
-              <Caption className="block">Próximo vencimento</Caption>
-              <BodySmall className="truncate font-semibold text-foreground">
-                {dueDate ? dueDate.toLocaleDateString("pt-BR") : "—"}
-              </BodySmall>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 rounded-xl bg-muted/40 px-3 py-2">
-            <Icon as={Wallet} size="md" className="text-muted-foreground" />
-            <div className="min-w-0">
-              <Caption className="block">Pagamento</Caption>
-              <BodySmall className="truncate font-semibold text-foreground">
-                Mercado Pago
-              </BodySmall>
-            </div>
-          </div>
         </div>
       </DSCard>
 
       <DSCard className="p-5 space-y-3">
         <HeadingS>Benefícios do plano</HeadingS>
         <ul className="space-y-2">
-          {BENEFITS.map((b) => (
-            <li key={b} className="flex items-start gap-2">
-              <span
-                aria-hidden="true"
-                className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary"
-              />
-              <Body className="text-foreground">{b}</Body>
+          {BENEFITS.map((benefit) => (
+            <li key={benefit} className="flex items-start gap-2">
+              <span aria-hidden="true" className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary" />
+              <Body>{benefit}</Body>
             </li>
           ))}
         </ul>
       </DSCard>
 
-      {notApprovedYet ? (
+      {!approved ? (
         <DSCard className="p-5 space-y-2">
           <HeadingS>Aguardando aprovação</HeadingS>
-          <BodySmall className="text-muted-foreground">
-            Seu cadastro está em análise. Assim que for aprovado, o link para
-            pagar a primeira mensalidade aparecerá aqui.
-          </BodySmall>
+          <BodySmall className="text-muted-foreground">Seu cadastro precisa ser aprovado antes da liberação operacional.</BodySmall>
         </DSCard>
-      ) : !isActive && initPoint ? (
-        <DSCard className="p-5 space-y-3">
-          <div className="space-y-1">
-            <HeadingS>
-              {financial === "overdue" || financial === "cancelled"
-                ? "Regularizar mensalidade"
-                : "Pagar mensalidade"}
-            </HeadingS>
-            <BodySmall className="text-muted-foreground">
-              Você será direcionado ao Mercado Pago para concluir o pagamento
-              com PIX, cartão ou saldo.
-            </BodySmall>
-          </div>
-          <DSButton
-            className="w-full"
-            size="lg"
-            onClick={() => window.open(initPoint, "_blank", "noopener")}
-            aria-label="Pagar mensalidade no Mercado Pago"
-          >
-            <Icon as={CreditCard} size="sm" className="mr-2" />
-            Pagar mensalidade
-          </DSButton>
-          <BodySmall className="text-muted-foreground">
-            Após confirmar o pagamento, esta tela é atualizada automaticamente
-            em alguns instantes.
-          </BodySmall>
-        </DSCard>
-      ) : !isActive ? (
-        <DSCard className="p-5 space-y-3">
-          <div className="space-y-1">
-            <HeadingS>Gerar link de pagamento</HeadingS>
-            <BodySmall className="text-muted-foreground">
-              Sua conta foi aprovada. Gere seu link individual e pague a
-              primeira mensalidade para começar a receber corridas.
-            </BodySmall>
-          </div>
-          <DSButton
-            className="w-full"
-            size="lg"
-            disabled={generating}
-            onClick={async () => {
-              setGenerating(true);
-              try {
-                const { data, error } = await supabase.functions.invoke(
-                  "create-my-mercadopago-subscription",
-                  { body: {} },
-                );
-                if (error) throw error;
-                const link = (data as { initPoint?: string } | null)?.initPoint;
-                if (!link) throw new Error("no_init_point");
-                window.open(link, "_blank", "noopener");
-                await refresh();
-              } catch (e) {
-                console.error(e);
-                toast.error("Não foi possível gerar o link. Tente novamente.");
-              } finally {
-                setGenerating(false);
-              }
-            }}
-          >
-            {generating ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Icon as={CreditCard} size="sm" className="mr-2" />
-            )}
-            {generating ? "Gerando…" : "Gerar link e pagar mensalidade"}
-          </DSButton>
-        </DSCard>
-      ) : null}
-
-
-      {driver?.last_payment_status ? (
+      ) : subscription === "teste" ? (
         <DSCard className="p-5 space-y-2">
-          <HeadingS>Último pagamento</HeadingS>
+          <HeadingS>Conta em homologação</HeadingS>
           <BodySmall className="text-muted-foreground">
-            Status: <span className="font-semibold text-foreground">{driver.last_payment_status}</span>
+            O backend oficial mantém esta conta no modo de homologação. Nenhuma cobrança é gerada por esta tela enquanto o checkout de mensalidade não estiver homologado.
           </BodySmall>
-          {initPoint ? (
-            <DSButton variant="outline" size="sm" asChild>
-              <a href={initPoint} target="_blank" rel="noreferrer">
-                <Icon as={ExternalLink} size="sm" className="mr-1.5" />
-                Abrir Mercado Pago
-              </a>
-            </DSButton>
-          ) : null}
+        </DSCard>
+      ) : !operational ? (
+        <DSCard className="p-5 space-y-2">
+          <HeadingS>Mensalidade ainda indisponível</HeadingS>
+          <BodySmall className="text-muted-foreground">
+            O checkout de mensalidade ainda não está habilitado no backend oficial. O aplicativo não exibirá link falso nem cobrança de provedor legado.
+          </BodySmall>
         </DSCard>
       ) : null}
 
       <DSCard className="flex flex-wrap items-center justify-between gap-3 p-5">
-        <div className="flex min-w-0 items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
-            <Icon as={LifeBuoy} size="lg" />
-          </div>
-          <div className="min-w-0">
-            <HeadingS>Precisa de ajuda?</HeadingS>
-            <Caption className="block">Fale com nossa equipe sobre sua assinatura.</Caption>
-          </div>
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-muted text-muted-foreground"><Icon as={LifeBuoy} size="lg" /></div>
+          <div><HeadingS>Precisa de ajuda?</HeadingS><Caption className="block">Fale com nossa equipe sobre sua conta.</Caption></div>
         </div>
-        <DSButton variant="outline" size="sm" asChild>
-          <Link to="/motorista/suporte">Falar com suporte</Link>
-        </DSButton>
+        <DSButton variant="outline" size="sm" asChild><Link to="/motorista/suporte">Falar com suporte</Link></DSButton>
       </DSCard>
-
-      {loading ? (
-        <div className="flex justify-center py-2">
-          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-        </div>
-      ) : null}
     </SettingsPageShell>
   );
 }
-
