@@ -20,6 +20,8 @@ import { Route as MotoristaNotificacoesRouteImport } from './routes/motorista.no
 import { Route as MotoristaPerfilRouteImport } from './routes/motorista.perfil'
 import { Route as MotoristaPreferenciasNotificacoesRouteImport } from './routes/motorista.preferencias-notificacoes'
 import { Route as MotoristaPrivacidadeRouteImport } from './routes/motorista.privacidade'
+import { Route as MotoristaRecuperarSenhaRouteImport } from './routes/motorista.recuperar-senha'
+import { Route as MotoristaRedefinirSenhaRouteImport } from './routes/motorista.redefinir-senha'
 import { Route as MotoristaRegaliasRouteImport } from './routes/motorista.regalias'
 import { Route as MotoristaSegurancaRouteImport } from './routes/motorista.seguranca'
 import { Route as MotoristaStatusRouteImport } from './routes/motorista.status'
@@ -43,6 +45,8 @@ const MotoristaNotificacoesRoute = MotoristaNotificacoesRouteImport.update({ id:
 const MotoristaPerfilRoute = MotoristaPerfilRouteImport.update({ id: '/motorista/perfil', path: '/motorista/perfil', getParentRoute: () => rootRouteImport } as any)
 const MotoristaPreferenciasNotificacoesRoute = MotoristaPreferenciasNotificacoesRouteImport.update({ id: '/motorista/preferencias-notificacoes', path: '/motorista/preferencias-notificacoes', getParentRoute: () => rootRouteImport } as any)
 const MotoristaPrivacidadeRoute = MotoristaPrivacidadeRouteImport.update({ id: '/motorista/privacidade', path: '/motorista/privacidade', getParentRoute: () => rootRouteImport } as any)
+const MotoristaRecuperarSenhaRoute = MotoristaRecuperarSenhaRouteImport.update({ id: '/motorista/recuperar-senha', path: '/motorista/recuperar-senha', getParentRoute: () => rootRouteImport } as any)
+const MotoristaRedefinirSenhaRoute = MotoristaRedefinirSenhaRouteImport.update({ id: '/motorista/redefinir-senha', path: '/motorista/redefinir-senha', getParentRoute: () => rootRouteImport } as any)
 const MotoristaRegaliasRoute = MotoristaRegaliasRouteImport.update({ id: '/motorista/regalias', path: '/motorista/regalias', getParentRoute: () => rootRouteImport } as any)
 const MotoristaSegurancaRoute = MotoristaSegurancaRouteImport.update({ id: '/motorista/seguranca', path: '/motorista/seguranca', getParentRoute: () => rootRouteImport } as any)
 const MotoristaStatusRoute = MotoristaStatusRouteImport.update({ id: '/motorista/status', path: '/motorista/status', getParentRoute: () => rootRouteImport } as any)
@@ -67,6 +71,8 @@ export const routeTree = rootRouteImport._addFileChildren({
   MotoristaPerfilRoute,
   MotoristaPreferenciasNotificacoesRoute,
   MotoristaPrivacidadeRoute,
+  MotoristaRecuperarSenhaRoute,
+  MotoristaRedefinirSenhaRoute,
   MotoristaRegaliasRoute,
   MotoristaSegurancaRoute,
   MotoristaStatusRoute,

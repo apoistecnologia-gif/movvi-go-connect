@@ -93,10 +93,9 @@ async function callCanonicalRpc(
   supabase: unknown,
   name: string,
   args: Record<string, unknown>,
-): Promise<unknown> {
-  const { data, error } = await (supabase as DynamicRpcClient).rpc(name, args);
+): Promise<void> {
+  const { error } = await (supabase as DynamicRpcClient).rpc(name, args);
   if (error) throw new Error(error.message);
-  return data;
 }
 
 // Retired dispatch helper: no direct access to private drivers and no mutation
@@ -116,7 +115,6 @@ export const redispatchRide = createServerFn({ method: "POST" })
   .inputValidator((value) => RideIdInput.parse(value))
   .handler(async () => {
     throw retiredPassengerSurface("redispatchRide");
-    return { ok: false as const, skipped: "retired", status: null as string | null, driver: null as string | null, candidates: 0 };
   });
 
 export const diagnoseDispatch = createServerFn({ method: "POST" })
@@ -124,12 +122,6 @@ export const diagnoseDispatch = createServerFn({ method: "POST" })
   .inputValidator((value) => RideIdInput.parse(value))
   .handler(async () => {
     throw retiredPassengerSurface("diagnoseDispatch");
-    return {
-      ride: null as null,
-      totals: { total: 0, online: 0, aprovados: 0, com_gps: 0, categoria_match: 0, elegiveis: 0 },
-      drivers: [] as Array<Record<string, unknown>>,
-      radii: [] as Array<{ km: number; count: number }>,
-    };
   });
 
 export const criarCorrida = createServerFn({ method: "POST" })
@@ -137,7 +129,6 @@ export const criarCorrida = createServerFn({ method: "POST" })
   .inputValidator((value) => LegacyPassengerInput.parse(value))
   .handler(async () => {
     throw retiredPassengerSurface("criarCorrida");
-    return { rideId: "" };
   });
 
 // Driver compatibility functions delegate to the canonical production RPCs.
@@ -145,45 +136,57 @@ export const criarCorrida = createServerFn({ method: "POST" })
 export const aceitarCorrida = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((value) => RideIdInput.parse(value))
-  .handler(async ({ data, context }) => callCanonicalRpc(context.supabase, "driver_accept_ride", { _ride_id: data.rideId }));
+  .handler(async ({ data, context }) => {
+    await callCanonicalRpc(context.supabase, "driver_accept_ride", { _ride_id: data.rideId });
+    return { ok: true as const };
+  });
 
 export const recusarCorrida = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((value) => RideIdInput.parse(value))
-  .handler(async ({ data, context }) => callCanonicalRpc(context.supabase, "driver_reject_ride", { _ride_id: data.rideId }));
+  .handler(async ({ data, context }) => {
+    await callCanonicalRpc(context.supabase, "driver_reject_ride", { _ride_id: data.rideId });
+    return { ok: true as const };
+  });
 
 export const informarChegada = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((value) => RideIdInput.parse(value))
-  .handler(async ({ data, context }) => callCanonicalRpc(context.supabase, "driver_mark_arrived", { _ride_id: data.rideId }));
+  .handler(async ({ data, context }) => {
+    await callCanonicalRpc(context.supabase, "driver_mark_arrived", { _ride_id: data.rideId });
+    return { ok: true as const };
+  });
 
 export const iniciarCorrida = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((value) => DriverStartInput.parse(value))
-  .handler(async ({ data, context }) =>
-    callCanonicalRpc(context.supabase, "driver_start_ride", {
+  .handler(async ({ data, context }) => {
+    await callCanonicalRpc(context.supabase, "driver_start_ride", {
       _ride_id: data.rideId,
       _security_code: data.safety_code,
-    }),
-  );
+    });
+    return { ok: true as const };
+  });
 
 export const finalizarCorrida = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((value) => DriverFinishInput.parse(value))
-  .handler(async ({ data, context }) =>
+  .handler(async ({ data, context }) => {
     // final_price is intentionally ignored: driver_finish_ride owns settlement.
-    callCanonicalRpc(context.supabase, "driver_finish_ride", { _ride_id: data.rideId }),
-  );
+    await callCanonicalRpc(context.supabase, "driver_finish_ride", { _ride_id: data.rideId });
+    return { ok: true as const };
+  });
 
 export const cancelarPeloMotorista = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((value) => CancelInput.parse(value))
-  .handler(async ({ data, context }) =>
-    callCanonicalRpc(context.supabase, "driver_cancel_ride", {
+  .handler(async ({ data, context }) => {
+    await callCanonicalRpc(context.supabase, "driver_cancel_ride", {
       _ride_id: data.rideId,
       _reason: data.motivo ?? null,
-    }),
-  );
+    });
+    return { ok: true as const };
+  });
 
 export const avaliarPassageiro = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -203,7 +206,6 @@ export const cancelarPeloPassageiro = createServerFn({ method: "POST" })
   .inputValidator((value) => CancelInput.parse(value))
   .handler(async () => {
     throw retiredPassengerSurface("cancelarPeloPassageiro");
-    return { ok: false as const };
   });
 
 export const avaliarMotorista = createServerFn({ method: "POST" })
@@ -211,7 +213,6 @@ export const avaliarMotorista = createServerFn({ method: "POST" })
   .inputValidator((value) => RatingInput.parse(value))
   .handler(async () => {
     throw retiredPassengerSurface("avaliarMotorista");
-    return { ok: false as const };
   });
 
 export const agendarCorrida = createServerFn({ method: "POST" })
@@ -219,7 +220,6 @@ export const agendarCorrida = createServerFn({ method: "POST" })
   .inputValidator((value) => LegacyPassengerInput.parse(value))
   .handler(async () => {
     throw retiredPassengerSurface("agendarCorrida");
-    return { rideId: "", scheduledFor: "", estimatedPrice: null as number | null };
   });
 
 export const cancelarAgendamento = createServerFn({ method: "POST" })
@@ -227,7 +227,6 @@ export const cancelarAgendamento = createServerFn({ method: "POST" })
   .inputValidator((value) => RideIdInput.parse(value))
   .handler(async () => {
     throw retiredPassengerSurface("cancelarAgendamento");
-    return { ok: false as const };
   });
 
 export const acceptRide = aceitarCorrida;
