@@ -2,6 +2,8 @@ import { useEffect } from "react";
 import { useRouter } from "@tanstack/react-router";
 import { registerDriverPasswordRecoveryHandler } from "@/lib/auth/driverPasswordRecovery";
 
+const DRIVER_PASSWORD_RESET_PATH = "/motorista/redefinir-senha";
+
 export function DriverPasswordRecoveryBridge() {
   const router = useRouter();
 
@@ -9,15 +11,23 @@ export function DriverPasswordRecoveryBridge() {
     let dispose: (() => Promise<void>) | null = null;
     let alive = true;
 
+    const openResetScreen = () => {
+      if (!alive) return;
+      // File-based route generation happens during the production build. Using
+      // the history layer here avoids coupling the native deep-link bridge to a
+      // potentially stale checked-in routeTree.gen.ts during the pre-build
+      // typecheck, while still letting TanStack Router handle the location.
+      router.history.push(DRIVER_PASSWORD_RESET_PATH);
+    };
+
     void registerDriverPasswordRecoveryHandler({
       onReady: async () => {
-        if (!alive) return;
-        await router.navigate({ to: "/motorista/redefinir-senha" });
+        openResetScreen();
       },
       onError: async (reason) => {
         if (!alive) return;
         console.warn("[APOIS MOTORISTA] link de recuperação rejeitado", { reason });
-        await router.navigate({ to: "/motorista/redefinir-senha" });
+        openResetScreen();
       },
     })
       .then((cleanup) => {
