@@ -32,12 +32,21 @@ export function ApoisDriverBottomNav({ hidden = false }: { hidden?: boolean }) {
     let alive = true;
 
     const refresh = async () => {
-      const { data: profile, error: profileError } = await (supabase as any).rpc("driver_get_profile");
-      if (!alive || profileError || !profile?.id) return;
+      const { data: profile, error: profileError } = await supabase.rpc(
+        "driver_get_profile",
+      );
+      const profileId =
+        profile &&
+        typeof profile === "object" &&
+        !Array.isArray(profile) &&
+        typeof profile.id === "string"
+          ? profile.id
+          : null;
+      if (!alive || profileError || !profileId) return;
       const { data, error } = await supabase
         .from("rides")
         .select("id")
-        .eq("driver_id", String(profile.id))
+        .eq("driver_id", profileId)
         .in("status", [...ACTIVE_RIDE_STATUSES])
         .limit(1);
       if (!alive || error) return;
