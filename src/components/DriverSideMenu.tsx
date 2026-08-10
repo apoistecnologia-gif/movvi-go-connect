@@ -35,33 +35,90 @@ type Props = {
 };
 
 const NAV_LINKS = [
-  { to: "/motorista/app", label: "Início", description: "Mapa e novas corridas", icon: Home },
+  {
+    to: "/motorista/app",
+    label: "Início",
+    description: "Mapa e novas corridas",
+    icon: Home,
+  },
   {
     to: "/motorista/corridas",
     label: "Corridas",
     description: "Histórico e detalhes",
     icon: ClipboardList,
   },
-  { to: "/motorista/carteira", label: "Carteira", description: "Saldo e movimentações", icon: Coins },
-  { to: "/motorista/ganhos", label: "Financeiro", description: "Ganhos e repasses", icon: Wallet },
-  { to: "/motorista/notificacoes", label: "Avisos", description: "Notificações da APOIS", icon: Bell },
-  { to: "/motorista/perfil", label: "Perfil", description: "Conta, veículo e documentos", icon: UserIcon },
-  { to: "/motorista/seguranca", label: "Segurança", description: "SOS e recursos da corrida", icon: ShieldAlert },
-  { to: "/motorista/status", label: "Status do cadastro", description: "Acompanhe sua análise", icon: ShieldCheck },
-  { to: "/motorista/suporte", label: "Ajuda", description: "Fale com a APOIS", icon: LifeBuoy },
-  { to: "/motorista/configuracoes", label: "Configurações", description: "Preferências do aplicativo", icon: Settings },
+  {
+    to: "/motorista/carteira",
+    label: "Carteira",
+    description: "Saldo e movimentações",
+    icon: Coins,
+  },
+  {
+    to: "/motorista/ganhos",
+    label: "Financeiro",
+    description: "Ganhos e repasses",
+    icon: Wallet,
+  },
+  {
+    to: "/motorista/notificacoes",
+    label: "Avisos",
+    description: "Notificações da APOIS",
+    icon: Bell,
+  },
+  {
+    to: "/motorista/perfil",
+    label: "Perfil",
+    description: "Conta, veículo e documentos",
+    icon: UserIcon,
+  },
+  {
+    to: "/motorista/seguranca",
+    label: "Segurança",
+    description: "SOS e recursos da corrida",
+    icon: ShieldAlert,
+  },
+  {
+    to: "/motorista/status",
+    label: "Status do cadastro",
+    description: "Acompanhe sua análise",
+    icon: ShieldCheck,
+  },
+  {
+    to: "/motorista/suporte",
+    label: "Ajuda",
+    description: "Fale com a APOIS",
+    icon: LifeBuoy,
+  },
+  {
+    to: "/motorista/configuracoes",
+    label: "Configurações",
+    description: "Preferências do aplicativo",
+    icon: Settings,
+  },
 ] as const;
 
 function approvalLabel(status: DriverProfileRow["approval_status"] | undefined) {
   switch (status) {
     case "aprovado":
-      return { text: "Cadastro aprovado", className: "text-emerald-400 border-emerald-400/20 bg-emerald-400/10" };
+      return {
+        text: "Cadastro aprovado",
+        className: "text-emerald-400 border-emerald-400/20 bg-emerald-400/10",
+      };
     case "reprovado":
-      return { text: "Cadastro reprovado", className: "text-red-400 border-red-400/20 bg-red-400/10" };
+      return {
+        text: "Cadastro reprovado",
+        className: "text-red-400 border-red-400/20 bg-red-400/10",
+      };
     case "bloqueado":
-      return { text: "Cadastro bloqueado", className: "text-red-400 border-red-400/20 bg-red-400/10" };
+      return {
+        text: "Cadastro bloqueado",
+        className: "text-red-400 border-red-400/20 bg-red-400/10",
+      };
     default:
-      return { text: "Cadastro em análise", className: "text-[#F6BE1C] border-[#F6BE1C]/20 bg-[#F6BE1C]/10" };
+      return {
+        text: "Cadastro em análise",
+        className: "text-[#F6BE1C] border-[#F6BE1C]/20 bg-[#F6BE1C]/10",
+      };
   }
 }
 
@@ -86,7 +143,8 @@ export function DriverSideMenu({ open, onOpenChange, onLogout }: Props) {
       setEmail(authData.user?.email ?? "");
       if (profileResult.ok) {
         setProfile(profileResult.profile);
-        const storedPhoto = profileResult.profile.photo_url ?? profileResult.profile.selfie_url;
+        const storedPhoto =
+          profileResult.profile.photo_url ?? profileResult.profile.selfie_url;
         if (storedPhoto) {
           if (/^https?:\/\//i.test(storedPhoto)) setPhotoUrl(storedPhoto);
           else setPhotoUrl((await refreshProfilePhotoUrl(storedPhoto)) ?? null);
