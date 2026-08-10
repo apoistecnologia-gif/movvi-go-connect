@@ -32,9 +32,7 @@ export function ApoisDriverBottomNav({ hidden = false }: { hidden?: boolean }) {
     let alive = true;
 
     const refresh = async () => {
-      const { data: profile, error: profileError } = await supabase.rpc(
-        "driver_get_profile",
-      );
+      const { data: profile, error: profileError } = await supabase.rpc("driver_get_profile");
       const profileId =
         profile &&
         typeof profile === "object" &&
