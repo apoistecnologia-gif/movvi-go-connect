@@ -341,14 +341,10 @@ function App() {
             heading: Number.isFinite(next.coords.heading) ? next.coords.heading : null,
             speed: Number.isFinite(next.coords.speed) ? next.coords.speed : null,
           };
-          void publishPresence(point, true).catch((caught) =>
-            setError(normalizeRpcError(caught)),
-          );
+          void publishPresence(point, true).catch((caught) => setError(normalizeRpcError(caught)));
         },
       );
-      setInfo(
-        "Você está online. Novas corridas elegíveis aparecerão automaticamente.",
-      );
+      setInfo("Você está online. Novas corridas elegíveis aparecerão automaticamente.");
       if (profile?.user_id) await refreshRides(profile.user_id);
     } catch (caught) {
       setError(normalizeRpcError(caught));
@@ -363,10 +359,9 @@ function App() {
     setInfo(null);
     try {
       await stopLocationWatch();
-      const { data, error: rpcError } = await supabase.rpc(
-        "driver_set_presence",
-        { _online: false },
-      );
+      const { data, error: rpcError } = await supabase.rpc("driver_set_presence", {
+        _online: false,
+      });
       if (rpcError) throw rpcError;
       if (data) setProfile(data as DriverProfile);
       setOffer(null);
@@ -412,9 +407,7 @@ function App() {
         <Card>
           <div className="eyebrow">Homologação técnica</div>
           <h1 className="title">Entrar como motorista</h1>
-          <p className="subtitle">
-            Este APK está ligado diretamente ao Supabase oficial da APOIS.
-          </p>
+          <p className="subtitle">Este APK está ligado diretamente ao Supabase oficial da APOIS.</p>
           <form onSubmit={login}>
             <Field label="E-mail">
               <input
@@ -461,15 +454,12 @@ function App() {
           <div className="eyebrow">Primeiro acesso</div>
           <h1 className="title">Criar perfil de motorista</h1>
           <p className="subtitle">
-            Informe somente os dados mínimos para a homologação. O cadastro será
-            criado como pendente e não ficará online sem aprovação.
+            Informe somente os dados mínimos para a homologação. O cadastro será criado como
+            pendente e não ficará online sem aprovação.
           </p>
           <form onSubmit={bootstrap}>
             <Field label="Categoria">
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-              >
+              <select value={category} onChange={(e) => setCategory(e.target.value)}>
                 <option value="carros">Carros</option>
                 <option value="motos">Motos</option>
                 <option value="fretes">Fretes e mudanças</option>
@@ -524,8 +514,7 @@ function App() {
               {profile.name || "APOIS"}
             </h1>
             <div className="muted">
-              {profile.vehicle_model || "Veículo"} •{" "}
-              {profile.vehicle_plate || "sem placa"}
+              {profile.vehicle_model || "Veículo"} • {profile.vehicle_plate || "sem placa"}
             </div>
           </div>
           <span
@@ -595,10 +584,7 @@ function App() {
               </Button>
             )}
             {online ? (
-              <p
-                className="muted"
-                style={{ textAlign: "center", marginTop: 12 }}
-              >
+              <p className="muted" style={{ textAlign: "center", marginTop: 12 }}>
                 Buscando corridas elegíveis automaticamente…
               </p>
             ) : null}
