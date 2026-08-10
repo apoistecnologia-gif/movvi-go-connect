@@ -73,9 +73,7 @@ const forbiddenMainActivityPatterns = [
 
 for (const pattern of forbiddenMainActivityPatterns) {
   if (mainActivity.includes(pattern)) {
-    fail(
-      `MainActivity.java contém '${pattern}'. A Activity não pode interferir no IME/WebView.`,
-    );
+    fail(`MainActivity.java contém '${pattern}'. A Activity não pode interferir no IME/WebView.`);
   }
 }
 
@@ -88,13 +86,14 @@ if (role === "motorista") {
   );
 
   const requiredManifestFragments = [
-    'android.permission.ACCESS_BACKGROUND_LOCATION',
-    'android.permission.FOREGROUND_SERVICE_LOCATION',
+    "android.permission.ACCESS_BACKGROUND_LOCATION",
+    "android.permission.FOREGROUND_SERVICE_LOCATION",
     'android:name=".DriverLocationService"',
     'android:foregroundServiceType="location"',
   ];
   for (const fragment of requiredManifestFragments) {
-    if (!manifest.includes(fragment)) fail(`contrato de localização nativa ausente no Manifest: ${fragment}`);
+    if (!manifest.includes(fragment))
+      fail(`contrato de localização nativa ausente no Manifest: ${fragment}`);
   }
 
   if (!appGradle.includes("com.google.android.gms:play-services-location")) {
@@ -118,7 +117,7 @@ if (role === "motorista") {
 
   const nativeBridge = readRequired(resolve(root, "src/lib/nativeBridge.ts"));
   const packageJson = readRequired(resolve(root, "package.json"));
-  if (!nativeBridge.includes('@capacitor/push-notifications')) {
+  if (!nativeBridge.includes("@capacitor/push-notifications")) {
     fail("bridge nativa do motorista precisa integrar @capacitor/push-notifications.");
   }
   if (!packageJson.includes('"@capacitor/push-notifications"')) {
