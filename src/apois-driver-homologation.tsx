@@ -53,17 +53,20 @@ function money(value: number | string | null | undefined) {
 
 function messageOf(error: unknown) {
   if (error instanceof Error) return error.message;
-  if (error && typeof error === "object" && "message" in error) return String((error as { message?: unknown }).message ?? "Erro inesperado");
+  if (error && typeof error === "object" && "message" in error)
+    return String((error as { message?: unknown }).message ?? "Erro inesperado");
   return String(error ?? "Erro inesperado");
 }
 
 function normalizeRpcError(error: unknown) {
   const raw = messageOf(error);
   if (raw.includes("driver_not_approved")) return "Seu cadastro ainda não foi aprovado.";
-  if (raw.includes("driver_subscription_inactive")) return "Sua mensalidade não permite ficar online.";
+  if (raw.includes("driver_subscription_inactive"))
+    return "Sua mensalidade não permite ficar online.";
   if (raw.includes("driver_profile_missing")) return "Cadastro de motorista não encontrado.";
   if (raw.includes("ride_offer_unavailable")) return "Essa oferta não está mais disponível.";
-  if (raw.includes("invalid_security_code_or_transition")) return "PIN incorreto ou status da corrida mudou.";
+  if (raw.includes("invalid_security_code_or_transition"))
+    return "PIN incorreto ou status da corrida mudou.";
   if (raw.includes("invalid_ride_transition")) return "Essa ação não está disponível no status atual da corrida.";
   return raw;
 }
