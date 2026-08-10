@@ -114,15 +114,12 @@ export function AddressAutocomplete({
     }
   };
 
-  const showEmpty =
-    focused && !loading && q.trim().length > 2 && suggestions.length === 0;
+  const showEmpty = focused && !loading && q.trim().length > 2 && suggestions.length === 0;
 
   return (
     <div className="space-y-1.5">
       <label className="block space-y-1.5">
-        <span className="text-[12.5px] font-semibold text-foreground">
-          {label}
-        </span>
+        <span className="text-[12.5px] font-semibold text-foreground">{label}</span>
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
@@ -161,8 +158,7 @@ export function AddressAutocomplete({
       )}
       {showEmpty && (
         <p className="px-1 text-[11.5px] text-muted-foreground">
-          Nenhum endereço encontrado. Continue digitando ou tente ser mais
-          específico.
+          Nenhum endereço encontrado. Continue digitando ou tente ser mais específico.
         </p>
       )}
     </div>
