@@ -107,12 +107,12 @@ function DriverPasswordResetPage() {
             <p className="mt-3 text-sm leading-6 text-zinc-500">
               Por segurança, solicite um novo link para redefinir sua senha.
             </p>
-            <Link
-              to="/motorista/recuperar-senha"
+            <a
+              href="/motorista/recuperar-senha"
               className="mt-6 inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-[#F6BE1C] px-5 text-sm font-black text-black"
             >
               Solicitar novo link
-            </Link>
+            </a>
           </section>
         </div>
       </main>
