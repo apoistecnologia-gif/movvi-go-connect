@@ -878,7 +878,7 @@ function MotoristaApp() {
         }
         const wasActive = activeRef.current?.id === r.id || r.driver_id === driverId || (r as any).accepted_driver_id === driverId;
         if (wasActive && r.status === "cancelada_passageiro") {
-          const reason = (r.cancel_reason ?? "").trim();
+          const reason = (r.cancellation_reason ?? "").trim();
           toast.warning("Passageiro cancelou a corrida", {
             description: reason ? `Motivo: ${reason}` : "Você está disponível para novas ofertas.",
             duration: 7000,
