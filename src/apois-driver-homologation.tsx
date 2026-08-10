@@ -517,14 +517,8 @@ function App() {
               {profile.vehicle_model || "Veículo"} • {profile.vehicle_plate || "sem placa"}
             </div>
           </div>
-          <span
-            className={`status ${approved ? (online ? "ok" : "off") : "warn"}`}
-          >
-            {approved
-              ? online
-                ? "Online"
-                : "Offline"
-              : profile.approval_status}
+          <span className={`status ${approved ? (online ? "ok" : "off") : "warn"}`}>
+            {approved ? (online ? "Online" : "Offline") : profile.approval_status}
           </span>
         </div>
         {error ? <Alert error>{error}</Alert> : null}
@@ -532,14 +526,10 @@ function App() {
         {!approved ? (
           <>
             <p className="subtitle" style={{ marginTop: 16 }}>
-              Seu cadastro existe no banco oficial, mas ainda precisa ser
-              aprovado antes de receber corridas.
+              Seu cadastro existe no banco oficial, mas ainda precisa ser aprovado antes de receber
+              corridas.
             </p>
-            <button
-              className="button secondary"
-              onClick={() => void loadProfile()}
-              disabled={busy}
-            >
+            <button className="button secondary" onClick={() => void loadProfile()} disabled={busy}>
               Verificar novamente
             </button>
           </>
@@ -571,11 +561,7 @@ function App() {
             </div>
             <div style={{ height: 12 }} />
             {online ? (
-              <button
-                className="button secondary"
-                onClick={goOffline}
-                disabled={busy}
-              >
+              <button className="button secondary" onClick={goOffline} disabled={busy}>
                 Ficar offline
               </button>
             ) : (
@@ -596,8 +582,7 @@ function App() {
         </button>
       </Card>
       <p className="muted" style={{ textAlign: "center" }}>
-        Build técnico de homologação • não é a interface visual final do
-        motorista.
+        Build técnico de homologação • não é a interface visual final do motorista.
       </p>
     </Screen>
   );
@@ -624,13 +609,7 @@ function Brand() {
 function Card({ children }: { children: React.ReactNode }) {
   return <section className="card">{children}</section>;
 }
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="field">
       <label>{label}</label>
@@ -638,13 +617,7 @@ function Field({
     </div>
   );
 }
-function Alert({
-  children,
-  error = false,
-}: {
-  children: React.ReactNode;
-  error?: boolean;
-}) {
+function Alert({ children, error = false }: { children: React.ReactNode; error?: boolean }) {
   return <div className={`alert ${error ? "error" : "info"}`}>{children}</div>;
 }
 function Button({
@@ -697,10 +670,7 @@ function OfferCard({
 }: {
   ride: Ride;
   busy: boolean;
-  action: (
-    name: string,
-    params: Record<string, unknown>,
-  ) => Promise<Ride | null>;
+  action: (name: string, params: Record<string, unknown>) => Promise<Ride | null>;
 }) {
   return (
     <div style={{ marginTop: 18 }}>
@@ -723,9 +693,7 @@ function OfferCard({
         <button
           className="button"
           disabled={busy}
-          onClick={() =>
-            void action("driver_accept_ride", { _ride_id: ride.id })
-          }
+          onClick={() => void action("driver_accept_ride", { _ride_id: ride.id })}
         >
           Aceitar corrida
         </button>
