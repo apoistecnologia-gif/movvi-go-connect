@@ -12,7 +12,7 @@ import { BottomNav, PASSENGER_NAV, DRIVER_NAV } from "@/components/BottomNav";
 import { ProfilePhotoUploader } from "@/components/ProfilePhotoUploader";
 import { refreshProfilePhotoUrl } from "@/lib/profilePhoto";
 import {
-  Loader2, Save, Lock, MailCheck, PhoneCall, ShieldAlert, Trash2, BadgeCheck, X,
+  Loader2, Save, Lock, MailCheck, ShieldAlert, Trash2, BadgeCheck, X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { DSButton, DSCard, DSCardContent, DSCardDescription, DSCardHeader, DSCardTitle, DSInput, DSLabel } from "@/design-system";
@@ -60,7 +60,6 @@ export function ProfileForm({
 
   const [email, setEmail] = useState("");
   const [emailVerifiedAt, setEmailVerifiedAt] = useState<string | null>(null);
-  const [phoneVerifiedAt, setPhoneVerifiedAt] = useState<string | null>(null);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
@@ -70,8 +69,6 @@ export function ProfileForm({
   const [birthDate, setBirthDate] = useState("");
   const [phone, setPhone] = useState("");
   const [gender, setGender] = useState("");
-  const [emergencyName, setEmergencyName] = useState("");
-  const [emergencyPhone, setEmergencyPhone] = useState("");
   const [city, setCity] = useState("");
 
   // Original snapshot to support "Cancel changes".
@@ -80,28 +77,37 @@ export function ProfileForm({
   useEffect(() => {
     let alive = true;
     (async () => {
-      const { data } = await supabase.auth.getUser();
+      const { data, error: authError } = await supabase.auth.getUser();
       const u = data.user;
-      if (!u) { if (alive) setLoading(false); return; }
+      if (authError || !u) {
+        if (alive) setLoading(false);
+        return;
+      }
       if (!alive) return;
       setUserId(u.id);
       setEmail(u.email ?? "");
+      setEmailVerifiedAt(u.email_confirmed_at ?? null);
 
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from("users")
-        .select("avatar_url, name, phone, cpf, birth_date, gender, emergency_contact_name, emergency_contact_phone, city, email_verified_at, phone_verified_at")
+        .select("avatar_url, name, phone, cpf, birth_date, gender, city")
         .eq("auth_user_id", u.id)
         .maybeSingle();
 
       if (!alive) return;
+      if (profileError) {
+        console.error("[APOIS Perfil] falha ao carregar perfil", profileError);
+        toast.error("Não foi possível carregar seu perfil agora.");
+        setLoading(false);
+        return;
+      }
+
       const snap = {
         fullName: profile?.name ?? "",
         phone: profile?.phone ?? "",
         cpf: profile?.cpf ?? "",
         birthDate: profile?.birth_date ?? "",
         gender: profile?.gender ?? "",
-        emergencyName: profile?.emergency_contact_name ?? "",
-        emergencyPhone: profile?.emergency_contact_phone ?? "",
         city: profile?.city ?? "",
       };
       setPhotoUrl(await resolveStoredPhoto(profile?.avatar_url));
@@ -110,11 +116,7 @@ export function ProfileForm({
       setCpf(snap.cpf);
       setBirthDate(snap.birthDate);
       setGender(snap.gender);
-      setEmergencyName(snap.emergencyName);
-      setEmergencyPhone(snap.emergencyPhone);
       setCity(snap.city);
-      setEmailVerifiedAt(profile?.email_verified_at ?? null);
-      setPhoneVerifiedAt(profile?.phone_verified_at ?? null);
       setSnapshot(snap);
       setLoading(false);
       onLoaded?.({ userId: u.id });
@@ -131,8 +133,6 @@ export function ProfileForm({
     setCpf(snapshot.cpf);
     setBirthDate(snapshot.birthDate);
     setGender(snapshot.gender);
-    setEmergencyName(snapshot.emergencyName);
-    setEmergencyPhone(snapshot.emergencyPhone);
     setCity(snapshot.city);
     setNewPassword("");
     setConfirmPassword("");
@@ -144,13 +144,9 @@ export function ProfileForm({
     e.preventDefault();
     if (!userId) return;
 
-    // Validation
     if (!fullName.trim()) { toast.error("Informe seu nome completo."); return; }
     if (!phone.trim() || !isValidPhone(phone)) { toast.error("Telefone inválido."); return; }
     if (email && !isValidEmail(email)) { toast.error("E-mail inválido."); return; }
-    if (emergencyPhone && !isValidPhone(emergencyPhone)) {
-      toast.error("Telefone do contato de emergência inválido."); return;
-    }
     if (newPassword && newPassword !== confirmPassword) { toast.error("As senhas não coincidem."); return; }
     if (newPassword && newPassword.length < 6) { toast.error("Senha precisa ter pelo menos 6 caracteres."); return; }
 
@@ -164,8 +160,6 @@ export function ProfileForm({
           cpf: cpf || null,
           birth_date: birthDate || null,
           gender: gender || null,
-          emergency_contact_name: emergencyName || null,
-          emergency_contact_phone: emergencyPhone || null,
           city: city || null,
         })
         .eq("auth_user_id", userId);
@@ -174,7 +168,11 @@ export function ProfileForm({
       // Keep driver display fields in sync for driver-side name display only —
       // does NOT touch dispatch, GPS or ride tables.
       if (role === "driver") {
-        await supabase.from("drivers").update({ name: fullName.trim(), phone: phone.trim(), city: city || undefined }).eq("user_id", userId);
+        const { error: driverError } = await supabase
+          .from("drivers")
+          .update({ name: fullName.trim(), phone: phone.trim(), city: city || null })
+          .eq("user_id", userId);
+        if (driverError) throw driverError;
       }
 
       const authUpdate: { data?: Record<string, string>; password?: string } = {
@@ -184,9 +182,7 @@ export function ProfileForm({
       const { error: authErr } = await supabase.auth.updateUser(authUpdate);
       if (authErr) throw authErr;
 
-      setSnapshot({
-        fullName, phone, cpf, birthDate, gender, emergencyName, emergencyPhone, city,
-      });
+      setSnapshot({ fullName, phone, cpf, birthDate, gender, city });
       setNewPassword("");
       setConfirmPassword("");
       setDirty(false);
@@ -206,9 +202,11 @@ export function ProfileForm({
       const { error } = await supabase.from("users").update({ avatar_url: result.path }).eq("auth_user_id", userId);
       if (error) throw error;
       if (role === "driver") {
-        await supabase.from("drivers").update({ photo_url: result.path }).eq("user_id", userId);
+        const { error: driverError } = await supabase.from("drivers").update({ photo_url: result.path }).eq("user_id", userId);
+        if (driverError) throw driverError;
       }
-      await supabase.auth.updateUser({ data: { avatar_url: result.path } });
+      const { error: authError } = await supabase.auth.updateUser({ data: { avatar_url: result.path } });
+      if (authError) throw authError;
       toast.success("Foto atualizada!");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Falha ao salvar a foto.");
@@ -221,9 +219,11 @@ export function ProfileForm({
       const { error } = await supabase.from("users").update({ avatar_url: null }).eq("auth_user_id", userId);
       if (error) throw error;
       if (role === "driver") {
-        await supabase.from("drivers").update({ photo_url: null }).eq("user_id", userId);
+        const { error: driverError } = await supabase.from("drivers").update({ photo_url: null }).eq("user_id", userId);
+        if (driverError) throw driverError;
       }
-      await supabase.auth.updateUser({ data: { avatar_url: "" } });
+      const { error: authError } = await supabase.auth.updateUser({ data: { avatar_url: "" } });
+      if (authError) throw authError;
       setPhotoUrl(null);
       toast.success("Foto removida.");
     } catch (err) {
@@ -232,7 +232,7 @@ export function ProfileForm({
   }
 
   async function handleVerifyEmail() {
-    if (!email) return;
+    if (!email || emailVerifiedAt) return;
     try {
       const { error } = await supabase.auth.resend({ type: "signup", email });
       if (error) throw error;
@@ -242,17 +242,16 @@ export function ProfileForm({
     }
   }
 
-  async function handleVerifyPhone() {
-    if (!phone) { toast.error("Preencha o telefone antes de verificar."); return; }
-    toast.info("Verificação por SMS em breve. Seu número foi marcado como pendente.");
-  }
-
   async function handleDeleteAccount() {
     if (!userId) return;
     const ok = window.confirm("Tem certeza? Sua conta será marcada para exclusão e você será desconectado.");
     if (!ok) return;
     try {
-      await supabase.from("users").update({ deleted_at: new Date().toISOString() }).eq("auth_user_id", userId);
+      const { error: deleteError } = await supabase
+        .from("users")
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("auth_user_id", userId);
+      if (deleteError) throw deleteError;
       await supabase.auth.signOut();
       toast.success("Conta marcada para exclusão.");
       navigate({ to: "/" });
@@ -343,7 +342,13 @@ export function ProfileForm({
                       <DSLabel>E-mail *</DSLabel>
                       <div className="flex gap-2">
                         <DSInput value={email} disabled />
-                        <DSButton type="button" variant="outline" size="sm" onClick={handleVerifyEmail}>
+                        <DSButton
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleVerifyEmail}
+                          disabled={Boolean(emailVerifiedAt)}
+                        >
                           {emailVerifiedAt ? (
                             <><BadgeCheck className="mr-1 h-4 w-4 text-primary" /> Verificado</>
                           ) : (
@@ -354,35 +359,19 @@ export function ProfileForm({
                     </div>
                     <div className="space-y-1.5">
                       <DSLabel htmlFor="phone">Telefone *</DSLabel>
-                      <div className="flex gap-2">
-                        <DSInput id="phone" required inputMode="tel" value={phone}
-                          onChange={(e) => { setPhone(e.target.value); markDirty(); }}
-                          placeholder="(11) 99999-9999" />
-                        <DSButton type="button" variant="outline" size="sm" onClick={handleVerifyPhone}>
-                          {phoneVerifiedAt ? (
-                            <><BadgeCheck className="mr-1 h-4 w-4 text-primary" /> Verificado</>
-                          ) : (
-                            <><PhoneCall className="mr-1 h-4 w-4" /> Verificar</>
-                          )}
-                        </DSButton>
-                      </div>
+                      <DSInput id="phone" required inputMode="tel" value={phone}
+                        onChange={(e) => { setPhone(e.target.value); markDirty(); }}
+                        placeholder="(11) 99999-9999" />
+                      <p className="text-xs text-muted-foreground">
+                        A verificação por SMS só será exibida quando o fluxo OTP estiver habilitado no backend.
+                      </p>
                     </div>
 
-                    <SectionTitle>Contato de emergência</SectionTitle>
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="space-y-1.5">
-                        <DSLabel htmlFor="emerg_name">Nome</DSLabel>
-                        <DSInput id="emerg_name" value={emergencyName}
-                          onChange={(e) => { setEmergencyName(e.target.value); markDirty(); }}
-                          placeholder="Ex: Maria" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <DSLabel htmlFor="emerg_phone">Telefone</DSLabel>
-                        <DSInput id="emerg_phone" inputMode="tel" value={emergencyPhone}
-                          onChange={(e) => { setEmergencyPhone(e.target.value); markDirty(); }}
-                          placeholder="(11) 99999-9999" />
-                      </div>
-                    </div>
+                    {role === "driver" ? (
+                      <p className="rounded-md border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                        Contatos de emergência são gerenciados em Segurança, onde ficam armazenados no cadastro protegido do motorista.
+                      </p>
+                    ) : null}
 
                     <SectionTitle>Segurança</SectionTitle>
                     <div className="grid gap-4 sm:grid-cols-2">
