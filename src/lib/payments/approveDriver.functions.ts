@@ -21,7 +21,6 @@ export const approveDriverAndCreateSubscription = createServerFn({ method: "POST
     const { data: approved, error } = await supabase.rpc("admin_set_driver_approval", {
       _driver_id: data.driverId,
       _status: "aprovado",
-      _reason: null,
     });
     if (error) {
       if (error.message.toLowerCase().includes("forbidden")) throw new Error("forbidden");
