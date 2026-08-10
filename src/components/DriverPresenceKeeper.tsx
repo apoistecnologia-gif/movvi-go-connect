@@ -23,13 +23,17 @@ function readDesiredOnline() {
 }
 
 async function syncPresence(online: boolean, position: Telemetry | null) {
-  const { error } = await (supabase as any).rpc("driver_set_presence", {
-    _online: online,
-    _lat: online ? position?.lat ?? null : null,
-    _lng: online ? position?.lng ?? null : null,
-    _heading: online ? position?.heading ?? null : null,
-    _speed: online ? position?.speed ?? null : null,
-  });
+  const params =
+    online && position
+      ? {
+          _online: true,
+          _lat: position.lat,
+          _lng: position.lng,
+          ...(position.heading != null ? { _heading: position.heading } : {}),
+          ...(position.speed != null ? { _speed: position.speed } : {}),
+        }
+      : { _online: false };
+  const { error } = await supabase.rpc("driver_set_presence", params);
   if (error) console.warn("[APOIS MOTORISTA] keeper de presença:", error.message);
 }
 
@@ -77,7 +81,10 @@ export function DriverPresenceKeeper() {
           return;
         }
       } catch (error) {
-        console.warn("[APOIS MOTORISTA] localização nativa indisponível; usando fallback em primeiro plano:", error);
+        console.warn(
+          "[APOIS MOTORISTA] localização nativa indisponível; usando fallback em primeiro plano:",
+          error,
+        );
       }
     }
 
@@ -91,19 +98,25 @@ export function DriverPresenceKeeper() {
       const telemetry: Telemetry = {
         lat,
         lng,
-        heading: Number.isFinite(pos.coords.heading as number) ? (pos.coords.heading as number) : null,
-        speed: Number.isFinite(pos.coords.speed as number) ? (pos.coords.speed as number) : null,
+        heading:
+          typeof pos.coords.heading === "number" && Number.isFinite(pos.coords.heading)
+            ? pos.coords.heading
+            : null,
+        speed:
+          typeof pos.coords.speed === "number" && Number.isFinite(pos.coords.speed)
+            ? pos.coords.speed
+            : null,
       };
       latestRef.current = telemetry;
       void syncPresence(true, telemetry);
     };
 
-    navigator.geolocation.getCurrentPosition(onPosition, () => {}, {
+    navigator.geolocation.getCurrentPosition(onPosition, () => undefined, {
       enableHighAccuracy: false,
       timeout: 15000,
       maximumAge: 120000,
     });
-    watchRef.current = navigator.geolocation.watchPosition(onPosition, () => {}, {
+    watchRef.current = navigator.geolocation.watchPosition(onPosition, () => undefined, {
       enableHighAccuracy: true,
       timeout: 20000,
       maximumAge: 5000,
@@ -137,7 +150,11 @@ export function DriverPresenceKeeper() {
     document.addEventListener("visibilitychange", onVisibility);
     const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_OUT") {
-        try { localStorage.setItem(STORAGE_KEY, "0"); } catch {}
+        try {
+          localStorage.setItem(STORAGE_KEY, "0");
+        } catch {
+          // Local storage can be unavailable in hardened/private WebViews.
+        }
         stopTracking();
         latestRef.current = null;
       } else if (readDesiredOnline()) {
