@@ -33,15 +33,25 @@ describe("shouldShowRating", () => {
 
 describe("canSubmitRating", () => {
   it("permite primeiro envio", () => {
-    expect(canSubmitRating({
-      rideId: "r1", submitting: false, submitted: false, ratedLocal: new Set(),
-    })).toBe(true);
+    expect(
+      canSubmitRating({
+        rideId: "r1",
+        submitting: false,
+        submitted: false,
+        ratedLocal: new Set(),
+      }),
+    ).toBe(true);
   });
 
   it("bloqueia enquanto envia", () => {
-    expect(canSubmitRating({
-      rideId: "r1", submitting: true, submitted: false, ratedLocal: new Set(),
-    })).toBe(false);
+    expect(
+      canSubmitRating({
+        rideId: "r1",
+        submitting: true,
+        submitted: false,
+        ratedLocal: new Set(),
+      }),
+    ).toBe(false);
   });
 
   it("bloqueia após submissão bem-sucedida", () => {
