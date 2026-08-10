@@ -1,9 +1,9 @@
-import type { Database } from "@/integrations/supabase/types";
+export type RideCategory = "carros" | "motos" | "fretes" | "guincho" | "envios";
 
 export type NearbyDriver = {
   user_id: string;
   name: string;
-  category: Database["public"]["Enums"]["ride_category"];
+  category: RideCategory;
   current_lat: number;
   current_lng: number;
   vehicle_model: string;
@@ -12,7 +12,7 @@ export type NearbyDriver = {
 };
 
 type Filter = {
-  category?: Database["public"]["Enums"]["ride_category"];
+  category?: RideCategory;
 };
 
 const NO_PUBLIC_DRIVERS: NearbyDriver[] = [];
