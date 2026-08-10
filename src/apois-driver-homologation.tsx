@@ -303,23 +303,18 @@ function App() {
       lat: current.coords.latitude,
       lng: current.coords.longitude,
       heading: Number.isFinite(current.coords.heading) ? current.coords.heading : null,
-      speed: Number.isFinite(current.coords.speed)
-        ? current.coords.speed
-        : null,
+      speed: Number.isFinite(current.coords.speed) ? current.coords.speed : null,
     };
   }
 
   async function publishPresence(next: Position, online = true) {
-    const { data, error: rpcError } = await supabase.rpc(
-      "driver_set_presence",
-      {
-        _online: online,
-        _lat: next.lat,
-        _lng: next.lng,
-        _heading: next.heading,
-        _speed: next.speed,
-      },
-    );
+    const { data, error: rpcError } = await supabase.rpc("driver_set_presence", {
+      _online: online,
+      _lat: next.lat,
+      _lng: next.lng,
+      _heading: next.heading,
+      _speed: next.speed,
+    });
     if (rpcError) throw rpcError;
     setPosition(next);
     if (data) setProfile(data as DriverProfile);
@@ -343,12 +338,8 @@ function App() {
           const point: Position = {
             lat: next.coords.latitude,
             lng: next.coords.longitude,
-            heading: Number.isFinite(next.coords.heading)
-              ? next.coords.heading
-              : null,
-            speed: Number.isFinite(next.coords.speed)
-              ? next.coords.speed
-              : null,
+            heading: Number.isFinite(next.coords.heading) ? next.coords.heading : null,
+            speed: Number.isFinite(next.coords.speed) ? next.coords.speed : null,
           };
           void publishPresence(point, true).catch((caught) =>
             setError(normalizeRpcError(caught)),
