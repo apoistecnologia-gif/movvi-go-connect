@@ -15,7 +15,9 @@ const outputServer = resolve(root, ".output/server");
 const viteBin = resolve(root, "node_modules/vite/bin/vite.js");
 
 if (!existsSync(viteBin)) {
-  console.error("[mobile-spa] node_modules/vite/bin/vite.js não encontrado. Rode `npm install` primeiro.");
+  console.error(
+    "[mobile-spa] node_modules/vite/bin/vite.js não encontrado. Rode `npm install` primeiro.",
+  );
   process.exit(1);
 }
 
@@ -49,8 +51,12 @@ if (!assets.some((name) => name.endsWith(".js")) || !assets.some((name) => name.
   process.exit(1);
 }
 if (existsSync(outputServer)) {
-  console.error("[mobile-spa] Falha: .output/server foi criado, o build mobile deve ser client-only.");
+  console.error(
+    "[mobile-spa] Falha: .output/server foi criado, o build mobile deve ser client-only.",
+  );
   process.exit(1);
 }
 
-console.log(`[mobile-spa] OK (${role}): dist/client/index.html + assets gerados sem .output/server.`);
+console.log(
+  `[mobile-spa] OK (${role}): dist/client/index.html + assets gerados sem .output/server.`,
+);
