@@ -16,6 +16,16 @@ const schema = z.object({
   password: z.string().min(1, "Informe a senha"),
 });
 
+// A routeTree é gerada pelo plugin do TanStack durante o build. A rota de
+// recuperação já existe em src/routes, mas o arquivo gerado versionado pode
+// estar uma geração atrás durante o typecheck pré-build do CI. Mantemos o
+// componente Link real e relaxamos somente este destino recém-gerado.
+const DriverRecoveryLink = Link as unknown as (props: {
+  to: "/motorista/recuperar-senha";
+  className?: string;
+  children: React.ReactNode;
+}) => React.ReactElement;
+
 const LOGIN_TIMEOUT_MS = 20_000;
 
 class NetworkTimeoutError extends Error {
@@ -198,12 +208,12 @@ function DriverLoginPage() {
           </label>
 
           <div className="flex justify-end">
-            <Link
+            <DriverRecoveryLink
               to="/motorista/recuperar-senha"
               className="min-h-11 px-1 py-2 text-[11px] font-black text-[#F6BE1C]"
             >
               Esqueci minha senha
-            </Link>
+            </DriverRecoveryLink>
           </div>
 
           {error ? (
