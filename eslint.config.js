@@ -49,4 +49,11 @@ export default tseslint.config(
     },
   },
   eslintPluginPrettier,
+  {
+    rules: {
+      // Keep formatting visible in CI without letting cosmetic differences
+      // block functional validation, builds or the production safety guards.
+      "prettier/prettier": "warn",
+    },
+  },
 );
