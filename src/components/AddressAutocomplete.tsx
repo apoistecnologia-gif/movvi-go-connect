@@ -40,9 +40,7 @@ export function AddressAutocomplete({
   });
 
   const [q, setQ] = useState(value);
-  const [suggestions, setSuggestions] = useState<
-    Array<{ placeId: string; text: string }>
-  >([]);
+  const [suggestions, setSuggestions] = useState<Array<{ placeId: string; text: string }>>([]);
   const [loading, setLoading] = useState(false);
   const [focused, setFocused] = useState(false);
   const tokenRef = useRef<google.maps.places.AutocompleteSessionToken | null>(null);
@@ -68,9 +66,7 @@ export function AddressAutocomplete({
     debRef.current = window.setTimeout(async () => {
       try {
         const { AutocompleteSuggestion, AutocompleteSessionToken } =
-          (await google.maps.importLibrary(
-            "places",
-          )) as google.maps.PlacesLibrary;
+          (await google.maps.importLibrary("places")) as google.maps.PlacesLibrary;
         if (!tokenRef.current) tokenRef.current = new AutocompleteSessionToken();
         const res = await AutocompleteSuggestion.fetchAutocompleteSuggestions({
           input: query,
@@ -101,9 +97,7 @@ export function AddressAutocomplete({
 
   const choose = async (placeId: string, text: string) => {
     try {
-      const { Place } = (await google.maps.importLibrary(
-        "places",
-      )) as google.maps.PlacesLibrary;
+      const { Place } = (await google.maps.importLibrary("places")) as google.maps.PlacesLibrary;
       const place = new Place({ id: placeId });
       await place.fetchFields({ fields: ["location", "formattedAddress"] });
       const loc = place.location;
