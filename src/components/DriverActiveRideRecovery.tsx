@@ -94,13 +94,23 @@ export function DriverActiveRideRecovery() {
     let alive = true;
 
     const load = async () => {
-      const { data: profile, error: profileError } = await (supabase as any).rpc("driver_get_profile");
-      if (!alive || profileError || !profile?.id) return;
-      const nextDriverId = String(profile.id);
+      const { data: profile, error: profileError } = await supabase.rpc("driver_get_profile");
+      const profileRecord =
+        profile && typeof profile === "object" && !Array.isArray(profile)
+          ? (profile as Record<string, unknown>)
+          : null;
+      const nextDriverId = typeof profileRecord?.id === "string" ? profileRecord.id : null;
+      if (!alive || profileError || !nextDriverId || !profileRecord) return;
       setDriverId(nextDriverId);
-      setPosition(usablePoint(profile.current_lat, profile.current_lng, profile.last_location_at));
+      setPosition(
+        usablePoint(
+          profileRecord.current_lat,
+          profileRecord.current_lng,
+          profileRecord.last_location_at,
+        ),
+      );
 
-      const { data: rideRows, error: rideError } = await (supabase as any)
+      const { data: rideRows, error: rideError } = await supabase
         .from("rides")
         .select("id,status,origin_lat,origin_lng,destination_lat,destination_lng")
         .eq("driver_id", nextDriverId)
@@ -216,7 +226,9 @@ export function DriverActiveRideRecovery() {
     >
       <div className="mx-auto flex items-center justify-center gap-4 rounded-2xl border border-white/70 bg-white/92 px-4 py-2 text-black shadow-xl backdrop-blur-md">
         {routeUnavailable ? (
-          <span className="text-xs font-semibold text-red-700">Rota indisponível — mantenha o GPS e a internet ativos</span>
+          <span className="text-xs font-semibold text-red-700">
+            Rota indisponível — mantenha o GPS e a internet ativos
+          </span>
         ) : (
           <>
             <span className="inline-flex items-center gap-1.5 text-xs font-bold">
