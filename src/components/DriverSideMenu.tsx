@@ -36,7 +36,12 @@ type Props = {
 
 const NAV_LINKS = [
   { to: "/motorista/app", label: "Início", description: "Mapa e novas corridas", icon: Home },
-  { to: "/motorista/corridas", label: "Corridas", description: "Histórico e detalhes", icon: ClipboardList },
+  {
+    to: "/motorista/corridas",
+    label: "Corridas",
+    description: "Histórico e detalhes",
+    icon: ClipboardList,
+  },
   { to: "/motorista/carteira", label: "Carteira", description: "Saldo e movimentações", icon: Coins },
   { to: "/motorista/ganhos", label: "Financeiro", description: "Ganhos e repasses", icon: Wallet },
   { to: "/motorista/notificacoes", label: "Avisos", description: "Notificações da APOIS", icon: Bell },
