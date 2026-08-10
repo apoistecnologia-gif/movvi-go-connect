@@ -1,5 +1,3 @@
-// User notification preferences: read/upsert helpers. RLS scopes rows to auth.uid().
-
 import { supabase } from "@/integrations/supabase/client";
 
 export type NotificationPreferences = {
@@ -20,24 +18,72 @@ export const DEFAULT_PREFERENCES: NotificationPreferences = {
   vibration: true,
 };
 
+const LOCAL_PREFIX = "apois:notification-local:";
+
+type LocalPreferences = Pick<NotificationPreferences, "sound" | "vibration">;
+
+function readLocal(userId: string): LocalPreferences {
+  try {
+    const raw = localStorage.getItem(`${LOCAL_PREFIX}${userId}`);
+    if (!raw) return { sound: DEFAULT_PREFERENCES.sound, vibration: DEFAULT_PREFERENCES.vibration };
+    const parsed = JSON.parse(raw) as Partial<LocalPreferences>;
+    return {
+      sound: typeof parsed.sound === "boolean" ? parsed.sound : DEFAULT_PREFERENCES.sound,
+      vibration: typeof parsed.vibration === "boolean" ? parsed.vibration : DEFAULT_PREFERENCES.vibration,
+    };
+  } catch {
+    return { sound: DEFAULT_PREFERENCES.sound, vibration: DEFAULT_PREFERENCES.vibration };
+  }
+}
+
+function writeLocal(userId: string, prefs: LocalPreferences) {
+  localStorage.setItem(`${LOCAL_PREFIX}${userId}`, JSON.stringify(prefs));
+}
+
+/**
+ * O schema oficial persiste apenas preferências que o backend consegue aplicar.
+ * Som e vibração são características do aparelho e ficam locais.
+ */
 export async function fetchPreferences(): Promise<NotificationPreferences> {
   const { data: auth } = await supabase.auth.getUser();
-  const uid = auth?.user?.id;
-  if (!uid) return DEFAULT_PREFERENCES;
-  const { data } = await supabase
+  const userId = auth?.user?.id;
+  if (!userId) return DEFAULT_PREFERENCES;
+
+  const local = readLocal(userId);
+  const { data, error } = await supabase
     .from("user_notification_preferences")
-    .select("ride_updates,ride_requests,payment_reminders,promotions,sound,vibration")
-    .eq("user_id", uid)
+    .select("ride_updates,ride_requests,payment_updates,promotions")
+    .eq("user_id", userId)
     .maybeSingle();
-  return { ...DEFAULT_PREFERENCES, ...(data ?? {}) };
+
+  if (error || !data) return { ...DEFAULT_PREFERENCES, ...local };
+  return {
+    ride_updates: data.ride_updates,
+    ride_requests: data.ride_requests,
+    payment_reminders: data.payment_updates,
+    promotions: data.promotions,
+    ...local,
+  };
 }
 
 export async function savePreferences(prefs: Partial<NotificationPreferences>): Promise<void> {
   const { data: auth } = await supabase.auth.getUser();
-  const uid = auth?.user?.id;
-  if (!uid) return;
-  const merged = { ...DEFAULT_PREFERENCES, ...prefs, user_id: uid };
-  await supabase
+  const userId = auth?.user?.id;
+  if (!userId) return;
+
+  const current = await fetchPreferences();
+  const merged = { ...current, ...prefs };
+  writeLocal(userId, { sound: merged.sound, vibration: merged.vibration });
+
+  const { error } = await supabase
     .from("user_notification_preferences")
-    .upsert(merged, { onConflict: "user_id" });
+    .upsert({
+      user_id: userId,
+      ride_updates: merged.ride_updates,
+      ride_requests: merged.ride_requests,
+      payment_updates: merged.payment_reminders,
+      promotions: merged.promotions,
+    }, { onConflict: "user_id" });
+
+  if (error) throw error;
 }
