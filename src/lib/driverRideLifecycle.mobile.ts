@@ -112,11 +112,15 @@ export async function iniciarCorridaMobile({ data }: { data: { rideId: string; s
 
 /**
  * O motorista apenas sinaliza que a viagem terminou. O backend canônico é o
- * único responsável por definir final_price, settlement e efeitos financeiros.
+ * único responsável por definir preço final, settlement e efeitos financeiros.
+ *
+ * O generic preserva compatibilidade com telas antigas que ainda montam campos
+ * extras no objeto local; somente rideId cruza esta fronteira e chega ao RPC.
  */
-export async function finalizarCorridaMobile({ data }: { data: { rideId: string } }) {
-  const ride = await callRpc("driver_finish_ride", { _ride_id: data.rideId });
-  notifyPassenger(data.rideId, "ride.completed");
+export async function finalizarCorridaMobile<T extends { rideId: string }>({ data }: { data: T }) {
+  const rideId = data.rideId;
+  const ride = await callRpc("driver_finish_ride", { _ride_id: rideId });
+  notifyPassenger(rideId, "ride.completed");
   return ride;
 }
 
