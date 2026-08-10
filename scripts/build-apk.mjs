@@ -12,9 +12,7 @@ import { resolve } from "node:path";
 const root = process.cwd();
 const androidDir = resolve(root, "android");
 if (!existsSync(androidDir)) {
-  console.error(
-    "[build-apk] pasta 'android/' não existe. Rode `npm run android:<role>` primeiro.",
-  );
+  console.error("[build-apk] pasta 'android/' não existe. Rode `npm run android:<role>` primeiro.");
   process.exit(1);
 }
 
