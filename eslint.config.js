@@ -6,7 +6,19 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist", ".output", ".vinxi", "diagnostics-backup/**"] },
+  {
+    ignores: [
+      "dist",
+      ".output",
+      ".vinxi",
+      "diagnostics-backup/**",
+      // Generated/offline identity payload: linting the embedded data URL adds no signal.
+      "src/assets/apoisLogoData.ts",
+      // Legacy technical homologation harness; the production driver bundle uses
+      // src/routes/motorista.app.tsx via src/mobile-route-tree.motorista.ts.
+      "src/apois-driver-homologation.tsx",
+    ],
+  },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],
