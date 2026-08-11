@@ -27,6 +27,26 @@ export type DriverProfileRow = {
   last_location_at: string | null;
 };
 
+let asaasSubaccountProvisioningAttempted = false;
+
+async function ensureApprovedDriverAsaasSubaccount(profile: DriverProfileRow): Promise<void> {
+  if (profile.approval_status !== "aprovado" || asaasSubaccountProvisioningAttempted) return;
+
+  asaasSubaccountProvisioningAttempted = true;
+  try {
+    const { data, error } = await supabase.functions.invoke("asaas-create-driver-subaccount", {
+      body: {},
+    });
+    if (error) throw error;
+    if (data?.error) throw new Error(String(data.error));
+  } catch (error) {
+    // Não bloquear login/uso do app por indisponibilidade temporária do provedor.
+    // Permite nova tentativa no próximo carregamento de perfil durante a mesma sessão.
+    asaasSubaccountProvisioningAttempted = false;
+    console.error("[APOIS MOTORISTA] falha ao provisionar subconta Asaas", error);
+  }
+}
+
 export async function loadDriverProfile(): Promise<
   | { ok: true; profile: DriverProfileRow }
   | { ok: false; reason: "no_session" | "not_found" | "error"; message?: string }
@@ -43,7 +63,10 @@ export async function loadDriverProfile(): Promise<
     return { ok: false, reason: "error", message: error.message };
   }
   if (!data) return { ok: false, reason: "not_found" };
-  return { ok: true, profile: data as DriverProfileRow };
+
+  const profile = data as DriverProfileRow;
+  await ensureApprovedDriverAsaasSubaccount(profile);
+  return { ok: true, profile };
 }
 
 export function driverProfileCompletionIssues(p: DriverProfileRow): {
