@@ -1,184 +1,234 @@
-// Edge Function: motorista autenticado solicita saque Pix.
-//
-// Fluxo:
-// 1. Chama public.request_driver_withdrawal(amount) → cria pedido (status pending)
-//    e já debita o saldo disponível na carteira (atômico).
-// 2. Tenta enviar Pix via Mercado Pago (Money Out / Pix Transfers).
-// 3. Sucesso → mark_driver_withdrawal_paid; falha → mark_driver_withdrawal_failed
-//    (que faz estorno automático do saldo).
-//
-// Observação: a API de saída Pix do MP ("Money Out" / Pagos") exige habilitação
-// específica na conta. Se o token não estiver autorizado, a chamada retorna erro
-// e o saldo é estornado — o admin pode processar manualmente.
-//
-// Secrets: MERCADOPAGO_ACCESS_TOKEN, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY,
-// SUPABASE_ANON_KEY.
+// Edge Function: authenticated APOIS driver requests an Asaas Pix payout.
+// The wallet debit/withdrawal creation is atomic in driver_request_withdrawal.
+// Transfer completion is authoritative only when Asaas returns/announces DONE.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+import { asaasFetch, centsToBrl } from "../_shared/asaas.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
-const MP_TOKEN = Deno.env.get("MERCADOPAGO_ACCESS_TOKEN")?.trim() ?? "";
-const MP_BASE_URL = (Deno.env.get("MERCADOPAGO_BASE_URL")?.trim() ||
-  "https://api.mercadopago.com").replace(/\/+$/, "");
 
 const cors: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
-const json = (b: unknown, s = 200) =>
-  new Response(JSON.stringify(b), {
-    status: s,
+
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
     headers: { ...cors, "content-type": "application/json" },
   });
+
+type PayoutRequest = {
+  amountCents?: number;
+  idempotencyKey?: string;
+};
 
 type Withdrawal = {
   id: string;
   driver_id: string;
   amount: number;
-  pix_key: string;
-  pix_key_type: "cpf" | "cnpj" | "email" | "phone" | "random";
-  pix_holder_name: string | null;
+  status: string;
+  provider_transfer_id: string | null;
+  pix_key: string | null;
+  pix_key_type: "CPF" | "CNPJ" | "EMAIL" | "PHONE" | "EVP" | null;
 };
 
-Deno.serve(async (req) => {
-  try {
-    if (req.method === "OPTIONS") return new Response(null, { headers: cors });
-    if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
+type AsaasTransfer = {
+  id?: string;
+  status?: string;
+  endToEndIdentifier?: string | null;
+  externalReference?: string | null;
+  failReason?: string | null;
+};
 
-    const auth = req.headers.get("Authorization") ?? "";
-    if (!auth.startsWith("Bearer ")) return json({ error: "unauthorized" }, 401);
+function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: cors });
+  if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
+
+  try {
+    const authorization = req.headers.get("Authorization") ?? "";
+    if (!authorization.startsWith("Bearer ")) return json({ error: "unauthorized" }, 401);
 
     const userClient = createClient(SUPABASE_URL, ANON_KEY, {
-      global: { headers: { Authorization: auth } },
+      global: { headers: { Authorization: authorization } },
       auth: { persistSession: false, autoRefreshToken: false },
     });
-    const { data: uRes, error: uErr } = await userClient.auth.getUser();
-    const userId = uRes?.user?.id;
-    if (uErr || !userId) return json({ error: "unauthorized" }, 401);
+    const { data: authResult, error: authError } = await userClient.auth.getUser();
+    if (authError || !authResult.user) return json({ error: "unauthorized" }, 401);
 
-    let payload: { amount?: number } = {};
+    let payload: PayoutRequest;
     try {
       payload = await req.json();
-    } catch { /* ignore */ }
-    const amount = Number(payload.amount ?? 0);
-    if (!amount || amount < 20)
-      return json({ error: "min_withdrawal_amount", detail: "Valor mínimo R$ 20,00" }, 422);
-
-    // 1. Cria pedido + debita saldo (RPC valida chave e saldo)
-    const { data: wid, error: rpcErr } = await userClient.rpc(
-      "request_driver_withdrawal",
-      { _amount: amount },
-    );
-    if (rpcErr || !wid) {
-      return json(
-        { error: "withdrawal_request_failed", detail: rpcErr?.message ?? "erro" },
-        422,
-      );
+    } catch {
+      return json({ error: "invalid_json" }, 400);
     }
+
+    const amountCents = Number(payload.amountCents ?? 0);
+    const idempotencyKey = String(payload.idempotencyKey ?? "").trim();
+    if (!Number.isSafeInteger(amountCents) || amountCents <= 0) {
+      return json({ error: "invalid_withdrawal_amount" }, 422);
+    }
+    if (!isUuid(idempotencyKey)) {
+      return json({ error: "idempotency_key_required" }, 422);
+    }
+
+    const { data: requestResult, error: requestError } = await userClient.rpc(
+      "driver_request_withdrawal",
+      { _amount_cents: amountCents, _idempotency_key: idempotencyKey },
+    );
+    if (requestError || !requestResult) {
+      return json({
+        error: "withdrawal_request_failed",
+        detail: requestError?.message ?? "unknown",
+      }, 422);
+    }
+
+    const requestData = requestResult as {
+      withdrawalId?: string;
+      status?: string;
+      idempotent?: boolean;
+    };
+    const withdrawalId = String(requestData.withdrawalId ?? "");
+    if (!isUuid(withdrawalId)) return json({ error: "withdrawal_id_invalid" }, 500);
 
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
-    const { data: wRow, error: wErr } = await admin
-      .from("driver_withdrawals")
-      .select("id,driver_id,amount,pix_key,pix_key_type,pix_holder_name")
-      .eq("id", wid)
-      .maybeSingle();
-    if (wErr || !wRow) return json({ error: "withdrawal_not_found" }, 500);
-    const w = wRow as Withdrawal;
 
-    // 2. Tenta chamar MP Pix Transfer (Money Out).
-    // Endpoint: /v1/money_transfers (requer conta habilitada). Se falhar, estorna.
-    if (!MP_TOKEN) {
+    const { data: withdrawalRow, error: withdrawalError } = await admin
+      .from("driver_withdrawals")
+      .select("id,driver_id,amount,status,provider_transfer_id,pix_key,pix_key_type")
+      .eq("id", withdrawalId)
+      .maybeSingle();
+    if (withdrawalError || !withdrawalRow) return json({ error: "withdrawal_not_found" }, 500);
+
+    const withdrawal = withdrawalRow as Withdrawal;
+    if (withdrawal.status === "paid") {
+      return json({ ok: true, withdrawalId, status: "paid", transferId: withdrawal.provider_transfer_id });
+    }
+    if (withdrawal.status === "failed" || withdrawal.status === "cancelled") {
+      return json({ error: "withdrawal_closed", withdrawalId, status: withdrawal.status }, 409);
+    }
+    if (withdrawal.provider_transfer_id) {
+      return json({
+        ok: true,
+        withdrawalId,
+        status: withdrawal.status,
+        transferId: withdrawal.provider_transfer_id,
+        idempotent: true,
+      }, 202);
+    }
+    if (!withdrawal.pix_key || !withdrawal.pix_key_type) {
       await admin.rpc("mark_driver_withdrawal_failed", {
-        _withdrawal_id: w.id,
-        _reason: "MERCADOPAGO_ACCESS_TOKEN ausente",
+        _withdrawal_id: withdrawal.id,
+        _reason: "pix_payout_destination_missing",
         _response: null,
       });
-      return json({ error: "mp_token_missing", withdrawalId: w.id }, 502);
+      return json({ error: "pix_payout_destination_missing", withdrawalId }, 422);
     }
 
-    // Marca como processing
-    await admin
-      .from("driver_withdrawals")
-      .update({ status: "processing", processed_at: new Date().toISOString() })
-      .eq("id", w.id);
-
-    const pixKeyTypeMap: Record<Withdrawal["pix_key_type"], string> = {
-      cpf: "CPF",
-      cnpj: "CNPJ",
-      email: "EMAIL",
-      phone: "PHONE",
-      random: "EVP",
-    };
-
-    const body = {
-      amount: Number(w.amount),
-      description: `Saque MOVVI — motorista ${w.driver_id.slice(0, 8)}`,
-      external_reference: `payout:${w.id}`,
-      receiver: {
-        pix_key: w.pix_key,
-        pix_key_type: pixKeyTypeMap[w.pix_key_type],
-        name: w.pix_holder_name ?? undefined,
-      },
-    };
-
-    let mpOk = false;
-    let mpJson: unknown = null;
-    let mpErrText = "";
-    let transferId: string | null = null;
-    let e2eId: string | null = null;
-
-    try {
-      const res = await fetch(`${MP_BASE_URL}/v1/money_transfers`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${MP_TOKEN}`,
-          "X-Idempotency-Key": `payout-${w.id}`,
-        },
-        body: JSON.stringify(body),
-      });
-      const text = await res.text();
-      try { mpJson = JSON.parse(text); } catch { mpJson = { raw: text }; }
-      if (res.ok) {
-        mpOk = true;
-        const j = mpJson as { id?: string | number; end_to_end_id?: string };
-        transferId = j.id ? String(j.id) : null;
-        e2eId = j.end_to_end_id ?? null;
-      } else {
-        mpErrText = `HTTP ${res.status}: ${text.slice(0, 400)}`;
-      }
-    } catch (e) {
-      mpErrText = String(e).slice(0, 400);
-    }
-
-    if (mpOk) {
-      await admin.rpc("mark_driver_withdrawal_paid", {
-        _withdrawal_id: w.id,
-        _transfer_id: transferId,
-        _end_to_end_id: e2eId,
-        _response: mpJson as never,
-      });
-      return json({ ok: true, withdrawalId: w.id, transferId, endToEndId: e2eId });
-    }
-
-    // Falha → estorna
-    await admin.rpc("mark_driver_withdrawal_failed", {
-      _withdrawal_id: w.id,
-      _reason: mpErrText || "Falha ao enviar Pix",
-      _response: mpJson as never,
-    });
-    return json(
-      { error: "mp_transfer_failed", withdrawalId: w.id, detail: mpErrText },
-      502,
+    const { data: subaccountApiKey, error: secretError } = await admin.rpc(
+      "get_asaas_subaccount_secret",
+      { _driver_id: withdrawal.driver_id },
     );
-  } catch (e) {
-    console.error("[request-driver-payout] unexpected", e);
-    return json({ error: "unexpected", detail: String(e).slice(0, 300) }, 500);
+    if (secretError || typeof subaccountApiKey !== "string" || subaccountApiKey.length < 20) {
+      await admin.rpc("mark_driver_withdrawal_failed", {
+        _withdrawal_id: withdrawal.id,
+        _reason: "asaas_subaccount_secret_missing",
+        _response: null,
+      });
+      return json({ error: "asaas_subaccount_secret_missing", withdrawalId }, 503);
+    }
+
+    const { error: processingError } = await admin.rpc("mark_driver_withdrawal_processing", {
+      _withdrawal_id: withdrawal.id,
+    });
+    if (processingError) throw processingError;
+
+    let transfer: AsaasTransfer;
+    try {
+      transfer = await asaasFetch<AsaasTransfer>("/transfers", {
+        method: "POST",
+        body: JSON.stringify({
+          value: centsToBrl(amountCents),
+          operationType: "PIX",
+          pixAddressKey: withdrawal.pix_key,
+          pixAddressKeyType: withdrawal.pix_key_type,
+          description: "Saque motorista APOIS",
+          externalReference: `payout:${withdrawal.id}`,
+        }),
+      }, subaccountApiKey);
+    } catch (error) {
+      const detail = String(error).slice(0, 500);
+      const explicitRejectedRequest = /^Error: ASAAS_HTTP_(400|401|403|404|422):/.test(detail);
+
+      if (explicitRejectedRequest) {
+        await admin.rpc("mark_driver_withdrawal_failed", {
+          _withdrawal_id: withdrawal.id,
+          _reason: detail,
+          _response: { error: detail },
+        });
+        return json({ error: "asaas_transfer_rejected", withdrawalId, detail }, 502);
+      }
+
+      // HTTP 409 or transport ambiguity can mean Asaas already accepted an identical
+      // transfer. Keep funds reserved and require reconciliation instead of risking
+      // an incorrect refund followed by a real outbound Pix.
+      await admin.from("driver_withdrawals").update({
+        failure_reason: `reconciliation_required:${detail}`,
+        updated_at: new Date().toISOString(),
+      }).eq("id", withdrawal.id);
+      return json({ error: "asaas_transfer_reconciliation_required", withdrawalId }, 202);
+    }
+
+    const transferId = transfer.id ? String(transfer.id) : null;
+    const transferStatus = String(transfer.status ?? "PENDING").toUpperCase();
+
+    await admin.from("driver_withdrawals").update({
+      provider: "asaas",
+      provider_transfer_id: transferId,
+      provider_end_to_end_id: transfer.endToEndIdentifier ?? null,
+      provider_response: transfer,
+      failure_reason: null,
+      updated_at: new Date().toISOString(),
+    }).eq("id", withdrawal.id);
+
+    if (transferStatus === "DONE") {
+      await admin.rpc("mark_driver_withdrawal_paid", {
+        _withdrawal_id: withdrawal.id,
+        _transfer_id: transferId,
+        _end_to_end_id: transfer.endToEndIdentifier ?? null,
+        _response: transfer,
+      });
+      return json({ ok: true, withdrawalId, status: "paid", transferId });
+    }
+
+    if (transferStatus === "FAILED" || transferStatus === "CANCELLED") {
+      await admin.rpc("mark_driver_withdrawal_failed", {
+        _withdrawal_id: withdrawal.id,
+        _reason: transfer.failReason ?? `asaas_transfer_${transferStatus.toLowerCase()}`,
+        _response: transfer,
+      });
+      return json({ error: "asaas_transfer_failed", withdrawalId, status: transferStatus }, 502);
+    }
+
+    return json({
+      ok: true,
+      withdrawalId,
+      status: "processing",
+      providerStatus: transferStatus,
+      transferId,
+      idempotent: Boolean(requestData.idempotent),
+    }, 202);
+  } catch (error) {
+    console.error("[request-driver-payout]", error);
+    return json({ error: "unexpected", detail: String(error).slice(0, 300) }, 500);
   }
 });
