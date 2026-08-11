@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
     }
 
     const externalReference = `apois-driver-${driver.id}`;
-    let { data: account } = await admin
+    const { data: account } = await admin
       .from("driver_asaas_accounts")
       .select("root_customer_id")
       .eq("driver_id", driver.id)
@@ -113,7 +113,7 @@ Deno.serve(async (req) => {
       if (accountUpsertError) throw accountUpsertError;
     }
 
-    let { data: membership } = await admin
+    const { data: membership } = await admin
       .from("driver_memberships")
       .select("provider_subscription_id,status,paid_through")
       .eq("driver_id", driver.id)
