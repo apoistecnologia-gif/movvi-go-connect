@@ -16,3 +16,9 @@ verify_jwt = true
 
 [functions.request-driver-payout]
 verify_jwt = true
+
+[functions.asaas-create-driver-membership]
+verify_jwt = true
+
+[functions.asaas-webhook]
+verify_jwt = false
