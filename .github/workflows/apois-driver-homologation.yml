@@ -8,6 +8,7 @@ on:
     paths:
       - "android-motorista/**"
       - "capacitor.motorista.config.ts"
+      - "src/routes/motorista*.tsx"
       - "src/lib/driverBackgroundLocation.ts"
       - "src/lib/nativeBridge.ts"
       - "src/lib/driverProfile.ts"
