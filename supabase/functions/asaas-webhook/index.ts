@@ -21,6 +21,14 @@ function paidThroughForDueDate(dueDate: unknown): string {
   return date.toISOString();
 }
 
+function mapAccountApprovalStatus(value: unknown): "approved" | "pending" | "rejected" | null {
+  const status = String(value ?? "").trim().toUpperCase();
+  if (status === "APPROVED") return "approved";
+  if (status === "REJECTED") return "rejected";
+  if (status === "PENDING" || status === "AWAITING_APPROVAL") return "pending";
+  return null;
+}
+
 Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
   if (!WEBHOOK_TOKEN) return json({ error: "webhook_not_configured" }, 503);
@@ -40,6 +48,8 @@ Deno.serve(async (req) => {
   const paymentId = String(payment?.id ?? "").trim();
   const transfer = payload?.transfer ?? null;
   const transferId = String(transfer?.id ?? "").trim();
+  const account = payload?.account ?? null;
+  const accountId = String(account?.id ?? "").trim();
   if (!eventId || !eventType) return json({ error: "invalid_event" }, 400);
 
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE, {
@@ -58,7 +68,7 @@ Deno.serve(async (req) => {
   const { error: eventWriteError } = await admin.from("asaas_webhook_events").upsert({
     event_id: eventId,
     event_type: eventType,
-    provider_payment_id: paymentId || transferId || null,
+    provider_payment_id: paymentId || transferId || accountId || null,
     payload,
     status: "received",
     error: null,
@@ -67,6 +77,45 @@ Deno.serve(async (req) => {
   if (eventWriteError) return json({ error: "event_persist_failed" }, 500);
 
   try {
+    if (eventType.startsWith("ACCOUNT_STATUS_")) {
+      if (!accountId) throw new Error("asaas_account_id_missing");
+
+      const generalStatus = mapAccountApprovalStatus(payload?.accountStatus?.general);
+      const { data: driverAccount } = await admin
+        .from("driver_asaas_accounts")
+        .select("driver_id,status")
+        .eq("subaccount_id", accountId)
+        .maybeSingle();
+
+      if (!driverAccount) {
+        await admin.from("asaas_webhook_events").update({
+          status: "ignored",
+          processed_at: new Date().toISOString(),
+        }).eq("event_id", eventId);
+        return json({ ok: true, ignored: true, kind: "account_status" });
+      }
+
+      const nowIso = new Date().toISOString();
+      const rejected = generalStatus === "rejected" || eventType.endsWith("_REJECTED");
+      const updatePayload: Record<string, unknown> = {
+        updated_at: nowIso,
+        last_error: rejected ? `asaas_account_status:${eventType}` : null,
+      };
+      if (generalStatus) updatePayload.status = generalStatus;
+
+      const { error: accountUpdateError } = await admin
+        .from("driver_asaas_accounts")
+        .update(updatePayload)
+        .eq("driver_id", driverAccount.driver_id);
+      if (accountUpdateError) throw accountUpdateError;
+
+      await admin.from("asaas_webhook_events").update({
+        status: "processed",
+        processed_at: nowIso,
+      }).eq("event_id", eventId);
+      return json({ ok: true, kind: "driver_account_status", status: generalStatus ?? driverAccount.status });
+    }
+
     const transferEvents = new Set([
       "TRANSFER_CREATED",
       "TRANSFER_PENDING",
