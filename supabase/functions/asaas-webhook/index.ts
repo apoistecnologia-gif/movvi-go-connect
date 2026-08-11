@@ -38,6 +38,8 @@ Deno.serve(async (req) => {
   const eventType = String(payload?.event ?? "").trim().toUpperCase();
   const payment = payload?.payment ?? null;
   const paymentId = String(payment?.id ?? "").trim();
+  const transfer = payload?.transfer ?? null;
+  const transferId = String(transfer?.id ?? "").trim();
   if (!eventId || !eventType) return json({ error: "invalid_event" }, 400);
 
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE, {
@@ -56,7 +58,7 @@ Deno.serve(async (req) => {
   const { error: eventWriteError } = await admin.from("asaas_webhook_events").upsert({
     event_id: eventId,
     event_type: eventType,
-    provider_payment_id: paymentId || null,
+    provider_payment_id: paymentId || transferId || null,
     payload,
     status: "received",
     error: null,
@@ -65,6 +67,75 @@ Deno.serve(async (req) => {
   if (eventWriteError) return json({ error: "event_persist_failed" }, 500);
 
   try {
+    const transferEvents = new Set([
+      "TRANSFER_CREATED",
+      "TRANSFER_PENDING",
+      "TRANSFER_IN_BANK_PROCESSING",
+      "TRANSFER_BLOCKED",
+      "TRANSFER_DONE",
+      "TRANSFER_FAILED",
+      "TRANSFER_CANCELLED",
+    ]);
+
+    if (transferEvents.has(eventType)) {
+      if (!transferId) throw new Error("asaas_transfer_id_missing");
+
+      const { data: withdrawal } = await admin
+        .from("driver_withdrawals")
+        .select("id,status,provider_transfer_id")
+        .eq("provider", "asaas")
+        .eq("provider_transfer_id", transferId)
+        .maybeSingle();
+
+      if (!withdrawal) {
+        await admin.from("asaas_webhook_events").update({
+          status: "ignored",
+          processed_at: new Date().toISOString(),
+        }).eq("event_id", eventId);
+        return json({ ok: true, ignored: true, kind: "transfer" });
+      }
+
+      const nowIso = new Date().toISOString();
+      const endToEndId = transfer?.endToEndIdentifier
+        ? String(transfer.endToEndIdentifier)
+        : null;
+
+      if (eventType === "TRANSFER_DONE") {
+        const { error } = await admin.rpc("mark_driver_withdrawal_paid", {
+          _withdrawal_id: withdrawal.id,
+          _transfer_id: transferId,
+          _end_to_end_id: endToEndId,
+          _response: transfer,
+        });
+        if (error) throw error;
+      } else if (eventType === "TRANSFER_FAILED" || eventType === "TRANSFER_CANCELLED") {
+        const reason = String(
+          transfer?.failReason ?? `asaas_${eventType.toLowerCase()}`,
+        ).slice(0, 1000);
+        const { error } = await admin.rpc("mark_driver_withdrawal_failed", {
+          _withdrawal_id: withdrawal.id,
+          _reason: reason,
+          _response: transfer,
+        });
+        if (error) throw error;
+      } else {
+        await admin.from("driver_withdrawals").update({
+          status: "processing",
+          provider_end_to_end_id: endToEndId,
+          provider_response: transfer,
+          failure_reason: eventType === "TRANSFER_BLOCKED" ? "asaas_transfer_blocked" : null,
+          processed_at: nowIso,
+          updated_at: nowIso,
+        }).eq("id", withdrawal.id).in("status", ["pending", "processing"]);
+      }
+
+      await admin.from("asaas_webhook_events").update({
+        status: "processed",
+        processed_at: nowIso,
+      }).eq("event_id", eventId);
+      return json({ ok: true, kind: "driver_payout", transferId });
+    }
+
     const paymentEvents = new Set([
       "PAYMENT_CREATED",
       "PAYMENT_CONFIRMED",
@@ -187,9 +258,6 @@ Deno.serve(async (req) => {
         });
         if (settlementError) throw settlementError;
       } else if (eventType === "PAYMENT_REFUNDED") {
-        // Do not fabricate a client-side reversal. The refund is persisted and
-        // remains blocked from automatic re-credit; a dedicated atomic reversal
-        // primitive handles wallet/debt reconciliation in the next finance gate.
         await admin.from("ride_settlements").update({
           payment_status: "refunded",
           status: "refunded",
