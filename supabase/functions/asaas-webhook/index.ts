@@ -175,15 +175,21 @@ Deno.serve(async (req) => {
       }).eq("id", ridePayment.id);
 
       if (eventType === "PAYMENT_RECEIVED") {
-        await admin.from("ride_settlements").update({
-          payment_provider: "asaas",
-          provider_payment_id: paymentId,
-          payment_status: "paid",
-          status: "settled",
-          settled_at: nowIso,
-          updated_at: nowIso,
-        }).eq("ride_id", ridePayment.ride_id);
+        const gross = Number(payment?.value ?? 0);
+        const net = Number(payment?.netValue ?? gross);
+        const providerFee = Math.max(0, Number((gross - net).toFixed(2)));
+        if (!Number.isFinite(net) || net <= 0) throw new Error("asaas_payment_net_value_invalid");
+        const { error: settlementError } = await admin.rpc("settle_asaas_ride_payment", {
+          _ride_id: ridePayment.ride_id,
+          _provider_payment_id: paymentId,
+          _net_amount: Number(net.toFixed(2)),
+          _provider_fee: providerFee,
+        });
+        if (settlementError) throw settlementError;
       } else if (eventType === "PAYMENT_REFUNDED") {
+        // Do not fabricate a client-side reversal. The refund is persisted and
+        // remains blocked from automatic re-credit; a dedicated atomic reversal
+        // primitive handles wallet/debt reconciliation in the next finance gate.
         await admin.from("ride_settlements").update({
           payment_status: "refunded",
           status: "refunded",
