@@ -32,6 +32,7 @@ function DriverSettingsPage() {
   const [prefs, setPrefs] = useState<DriverPrefs>(DEFAULT_DRIVER_PREFS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [notifState, setNotifState] = useState<NotificationPermission | "unsupported" | null>(null);
   const [locState, setLocState] = useState<PermissionState | "unsupported" | null>(null);
 
@@ -110,6 +111,54 @@ function DriverSettingsPage() {
     navigate({ to: "/motorista/login" });
   }
 
+  async function handleDeleteAccount() {
+    if (deleting) return;
+    const confirmed = window.confirm(
+      "Excluir sua conta APOIS Motorista permanentemente? Seus dados pessoais e documentos serão removidos. Corridas e registros que precisam ser preservados por segurança, auditoria ou obrigação legal poderão permanecer anonimizados. Se houver uma corrida ativa, a exclusão será bloqueada até ela ser finalizada ou cancelada.",
+    );
+    if (!confirmed) return;
+
+    const phrase = window.prompt('Para confirmar a exclusão permanente, digite "EXCLUIR".');
+    if (phrase?.trim().toUpperCase() !== "EXCLUIR") {
+      toast.error("Exclusão cancelada: confirmação incorreta.");
+      return;
+    }
+
+    setDeleting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("delete-my-account", { body: {} });
+      if (error) {
+        let message = "Não foi possível excluir sua conta agora.";
+        const response = (error as { context?: Response }).context;
+        if (response && typeof response.json === "function") {
+          try {
+            const body = await response.json() as { message?: string };
+            if (body?.message) message = body.message;
+          } catch {
+            // resposta sem JSON; mantém a mensagem segura acima
+          }
+        }
+        throw new Error(message);
+      }
+      if (!data?.ok) throw new Error(data?.message ?? "Não foi possível excluir sua conta agora.");
+
+      try {
+        Object.keys(localStorage)
+          .filter((key) => key.startsWith("apois:") || key.startsWith("movvi:"))
+          .forEach((key) => localStorage.removeItem(key));
+      } catch {
+        // limpeza local é best effort; a exclusão server-side já foi concluída
+      }
+      try { await supabase.auth.signOut({ scope: "local" }); } catch { /* sessão pode já ter sido invalidada */ }
+      toast.success("Conta excluída com sucesso.");
+      navigate({ to: "/motorista/login", replace: true });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Não foi possível excluir sua conta agora.");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   return (
     <SettingsPageShell variant="driver">
       <SettingsHero
@@ -128,7 +177,13 @@ function DriverSettingsPage() {
             <SettingsLinkRow icon={User} title="Perfil" hint="Foto, nome e dados pessoais" to="/motorista/perfil" />
             <SettingsLinkRow icon={Smartphone} title="Telefone e e-mail" hint="Atualize seus contatos" to="/motorista/perfil" />
             <SettingsLinkRow icon={LogOut} title="Sair" onClick={handleLogout} />
-            <SettingsLinkRow icon={Trash2} title="Excluir conta" hint="Em breve" destructive onClick={() => toast.message("Exclusão de conta em breve.")} />
+            <SettingsLinkRow
+              icon={deleting ? Loader2 : Trash2}
+              title={deleting ? "Excluindo conta..." : "Excluir conta"}
+              hint="Exclusão permanente dos dados pessoais e documentos"
+              destructive
+              onClick={() => void handleDeleteAccount()}
+            />
           </SettingsSection>
 
           <SettingsSection icon={ShieldCheck} title="Segurança">
