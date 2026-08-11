@@ -1,0 +1,92 @@
+name: APOIS Driver — Exact Homologation 163e9758
+
+on:
+  push:
+    branches:
+      - homologacao-exact-163e9758
+    paths:
+      - ".github/workflows/homologacao-exact-163e9758.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: 163e9758a8084325f5f4da8d6a0b9f3ee672b77b
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Validate exact source, Supabase and package
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "163e9758a8084325f5f4da8d6a0b9f3ee672b77b"
+          grep -F 'VITE_SUPABASE_PROJECT_ID=vqtucstyduxrqjgyigfk' .env.mobile
+          grep -F 'VITE_SUPABASE_URL=https://vqtucstyduxrqjgyigfk.supabase.co' .env.mobile
+          grep -F 'appId: "com.apois.motorista"' capacitor.config.ts
+          test -f android-motorista/app/google-services.json
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          const cfg = JSON.parse(readFileSync('android-motorista/app/google-services.json','utf8'));
+          const packages = (cfg.client ?? []).map(c => c?.client_info?.android_client_info?.package_name).filter(Boolean);
+          if (!packages.includes('com.apois.motorista')) throw new Error(`Firebase client missing com.apois.motorista: ${packages.join(', ')}`);
+          console.log('FIREBASE_DRIVER_PACKAGE_OK');
+          NODE
+
+      - name: Build and sync Driver
+        env:
+          VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY: ${{ secrets.APOIS_GOOGLE_MAPS_BROWSER_KEY }}
+          VITE_ENABLE_NATIVE_PUSH: "true"
+        run: |
+          set -euo pipefail
+          test -n "$VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY"
+          npm run android:motorista
+          node scripts/verify-mobile-native.mjs motorista --live
+
+      - name: Validate synced Android permissions
+        run: |
+          set -euo pipefail
+          M=android/app/src/main/AndroidManifest.xml
+          grep -F 'android.permission.ACCESS_FINE_LOCATION' "$M"
+          grep -F 'android.permission.ACCESS_COARSE_LOCATION' "$M"
+          grep -F 'android.permission.ACCESS_BACKGROUND_LOCATION' "$M"
+          grep -F 'android.permission.FOREGROUND_SERVICE' "$M"
+          grep -F 'android.permission.FOREGROUND_SERVICE_LOCATION' "$M"
+          grep -F 'com.google.firebase.messaging.default_notification_channel_id' "$M"
+
+      - name: Build debug APK
+        working-directory: android
+        run: |
+          set -euo pipefail
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon --stacktrace
+          test -s app/build/outputs/apk/debug/app-debug.apk
+          cp app/build/outputs/apk/debug/app-debug.apk ../APOIS-Motorista-Homologacao-163e9758.apk
+          sha256sum ../APOIS-Motorista-Homologacao-163e9758.apk
+          ls -lh ../APOIS-Motorista-Homologacao-163e9758.apk
+
+      - name: Upload exact APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: APOIS-Motorista-Homologacao-163e9758
+          path: APOIS-Motorista-Homologacao-163e9758.apk
+          if-no-files-found: error
+          retention-days: 7
