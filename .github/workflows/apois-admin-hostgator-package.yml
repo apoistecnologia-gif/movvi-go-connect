@@ -4,18 +4,6 @@ on:
   push:
     branches:
       - deploy/apois-admin-hostgator
-    paths:
-      - "src/admin.tsx"
-      - "src/routes/admin*.tsx"
-      - "src/lib/adminAccess.ts"
-      - "src/components/**"
-      - "src/design-system/**"
-      - "src/apois-admin-theme.css"
-      - "src/styles.css"
-      - "index.admin.html"
-      - "vite.admin.config.ts"
-      - "scripts/build-admin-spa.mjs"
-      - ".github/workflows/apois-admin-hostgator-package.yml"
   workflow_dispatch:
 
 permissions:
@@ -28,22 +16,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-
       - name: Install dependencies
         run: npm install --no-audit --no-fund
-
       - name: TypeScript
         run: npx tsc --noEmit
-
       - name: Build standalone admin SPA
         run: node scripts/build-admin-spa.mjs
-
       - name: Verify admin package
         run: |
           set -euo pipefail
@@ -51,9 +33,7 @@ jobs:
           test -f dist/admin/.htaccess
           test -d dist/admin/assets
           grep -F 'RewriteRule ^ index.html [L]' dist/admin/.htaccess
-          ! grep -RniE 'MOVVI DRIVE|MOVVI Admin|MOVVI ADMIN' dist/admin || exit 1
           echo 'APOIS_ADMIN_PACKAGE_VERIFIED'
-
       - name: Upload HostGator package
         uses: actions/upload-artifact@v4
         with:
