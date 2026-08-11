@@ -8,6 +8,18 @@ import { asaasFetch, centsToBrl } from "../_shared/asaas.ts";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+const WEBHOOK_TOKEN = Deno.env.get("ASAAS_WEBHOOK_TOKEN")?.trim() ?? "";
+const WEBHOOK_EMAIL = Deno.env.get("ASAAS_WEBHOOK_EMAIL")?.trim() || "apoistecnologia@gmail.com";
+const PAYOUT_WEBHOOK_URL = `${SUPABASE_URL}/functions/v1/asaas-webhook`;
+const PAYOUT_EVENTS = [
+  "TRANSFER_CREATED",
+  "TRANSFER_PENDING",
+  "TRANSFER_IN_BANK_PROCESSING",
+  "TRANSFER_BLOCKED",
+  "TRANSFER_DONE",
+  "TRANSFER_FAILED",
+  "TRANSFER_CANCELLED",
+] as const;
 
 const cors: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -44,8 +56,71 @@ type AsaasTransfer = {
   failReason?: string | null;
 };
 
+type AsaasWebhook = {
+  id?: string;
+  name?: string;
+  url?: string;
+  enabled?: boolean;
+  interrupted?: boolean;
+  events?: string[];
+};
+
+type AsaasWebhookList = {
+  data?: AsaasWebhook[];
+};
+
 function isUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
+async function ensurePayoutWebhook(subaccountApiKey: string): Promise<void> {
+  if (WEBHOOK_TOKEN.length < 32 || WEBHOOK_TOKEN.length > 255) {
+    throw new Error("asaas_webhook_token_invalid");
+  }
+
+  const listed = await asaasFetch<AsaasWebhookList>(
+    "/webhooks?offset=0&limit=100",
+    { method: "GET" },
+    subaccountApiKey,
+  );
+  const webhooks = listed.data ?? [];
+  const existing = webhooks.find((item) => String(item.url ?? "").trim() === PAYOUT_WEBHOOK_URL);
+  const requiredEvents = [...PAYOUT_EVENTS];
+
+  if (!existing?.id) {
+    await asaasFetch<AsaasWebhook>("/webhooks", {
+      method: "POST",
+      body: JSON.stringify({
+        name: "APOIS transferências motorista",
+        url: PAYOUT_WEBHOOK_URL,
+        email: WEBHOOK_EMAIL,
+        enabled: true,
+        interrupted: false,
+        apiVersion: 3,
+        authToken: WEBHOOK_TOKEN,
+        sendType: "SEQUENTIALLY",
+        events: requiredEvents,
+      }),
+    }, subaccountApiKey);
+    return;
+  }
+
+  const currentEvents = new Set((existing.events ?? []).map((event) => String(event).toUpperCase()));
+  const missingEvent = requiredEvents.some((event) => !currentEvents.has(event));
+  if (!missingEvent && existing.enabled === true && existing.interrupted !== true) return;
+
+  await asaasFetch<AsaasWebhook>(`/webhooks/${encodeURIComponent(existing.id)}`, {
+    method: "PUT",
+    body: JSON.stringify({
+      name: existing.name || "APOIS transferências motorista",
+      url: PAYOUT_WEBHOOK_URL,
+      enabled: true,
+      interrupted: false,
+      authToken: WEBHOOK_TOKEN,
+      sendType: "SEQUENTIALLY",
+      events: requiredEvents,
+    }),
+  }, subaccountApiKey);
 }
 
 Deno.serve(async (req) => {
@@ -145,6 +220,18 @@ Deno.serve(async (req) => {
         _response: null,
       });
       return json({ error: "asaas_subaccount_secret_missing", withdrawalId }, 503);
+    }
+
+    try {
+      await ensurePayoutWebhook(subaccountApiKey);
+    } catch (error) {
+      const detail = String(error).slice(0, 500);
+      await admin.rpc("mark_driver_withdrawal_failed", {
+        _withdrawal_id: withdrawal.id,
+        _reason: `asaas_payout_webhook_not_ready:${detail}`,
+        _response: { error: detail },
+      });
+      return json({ error: "asaas_payout_webhook_not_ready", withdrawalId }, 503);
     }
 
     const { error: processingError } = await admin.rpc("mark_driver_withdrawal_processing", {
