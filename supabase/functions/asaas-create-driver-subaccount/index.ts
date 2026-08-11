@@ -4,6 +4,27 @@ import { ASAAS_ENVIRONMENT, asaasConfigured, asaasFetch, onlyDigits } from "../_
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+const WEBHOOK_TOKEN = Deno.env.get("ASAAS_WEBHOOK_TOKEN")?.trim() ?? "";
+const WEBHOOK_EMAIL = Deno.env.get("ASAAS_WEBHOOK_EMAIL")?.trim() || "apoistecnologia@gmail.com";
+const ACCOUNT_STATUS_WEBHOOK_URL = `${SUPABASE_URL}/functions/v1/asaas-webhook`;
+const ACCOUNT_STATUS_EVENTS = [
+  "ACCOUNT_STATUS_BANK_ACCOUNT_INFO_APPROVED",
+  "ACCOUNT_STATUS_BANK_ACCOUNT_INFO_AWAITING_APPROVAL",
+  "ACCOUNT_STATUS_BANK_ACCOUNT_INFO_PENDING",
+  "ACCOUNT_STATUS_BANK_ACCOUNT_INFO_REJECTED",
+  "ACCOUNT_STATUS_COMMERCIAL_INFO_APPROVED",
+  "ACCOUNT_STATUS_COMMERCIAL_INFO_AWAITING_APPROVAL",
+  "ACCOUNT_STATUS_COMMERCIAL_INFO_PENDING",
+  "ACCOUNT_STATUS_COMMERCIAL_INFO_REJECTED",
+  "ACCOUNT_STATUS_DOCUMENT_APPROVED",
+  "ACCOUNT_STATUS_DOCUMENT_AWAITING_APPROVAL",
+  "ACCOUNT_STATUS_DOCUMENT_PENDING",
+  "ACCOUNT_STATUS_DOCUMENT_REJECTED",
+  "ACCOUNT_STATUS_GENERAL_APPROVAL_APPROVED",
+  "ACCOUNT_STATUS_GENERAL_APPROVAL_AWAITING_APPROVAL",
+  "ACCOUNT_STATUS_GENERAL_APPROVAL_PENDING",
+  "ACCOUNT_STATUS_GENERAL_APPROVAL_REJECTED",
+] as const;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -28,6 +49,67 @@ type CreateSubaccountResponse = {
   walletId?: string;
   apiKey?: string;
 };
+
+type AsaasWebhook = {
+  id?: string;
+  url?: string;
+  enabled?: boolean;
+  interrupted?: boolean;
+  events?: string[];
+};
+
+type AsaasWebhookList = { data?: AsaasWebhook[] };
+
+async function ensureAccountStatusWebhook(apiKey: string): Promise<void> {
+  if (WEBHOOK_TOKEN.length < 32 || WEBHOOK_TOKEN.length > 255) {
+    throw new Error("asaas_webhook_token_invalid");
+  }
+
+  const listed = await asaasFetch<AsaasWebhookList>(
+    "/webhooks?offset=0&limit=100",
+    { method: "GET" },
+    apiKey,
+  );
+  const requiredEvents = [...ACCOUNT_STATUS_EVENTS];
+  const existing = (listed.data ?? []).find(
+    (item) => String(item.url ?? "").trim() === ACCOUNT_STATUS_WEBHOOK_URL,
+  );
+
+  if (!existing?.id) {
+    await asaasFetch<AsaasWebhook>("/webhooks", {
+      method: "POST",
+      body: JSON.stringify({
+        name: "APOIS status cadastral motorista",
+        url: ACCOUNT_STATUS_WEBHOOK_URL,
+        email: WEBHOOK_EMAIL,
+        enabled: true,
+        interrupted: false,
+        apiVersion: 3,
+        authToken: WEBHOOK_TOKEN,
+        sendType: "SEQUENTIALLY",
+        events: requiredEvents,
+      }),
+    }, apiKey);
+    return;
+  }
+
+  const currentEvents = new Set((existing.events ?? []).map((event) => String(event).toUpperCase()));
+  const missingEvent = requiredEvents.some((event) => !currentEvents.has(event));
+  if (!missingEvent && existing.enabled === true && existing.interrupted !== true) return;
+
+  await asaasFetch<AsaasWebhook>(`/webhooks/${encodeURIComponent(existing.id)}`, {
+    method: "PUT",
+    body: JSON.stringify({
+      name: "APOIS status cadastral motorista",
+      url: ACCOUNT_STATUS_WEBHOOK_URL,
+      enabled: true,
+      interrupted: false,
+      authToken: WEBHOOK_TOKEN,
+      sendType: "SEQUENTIALLY",
+      events: requiredEvents,
+    }),
+  }, apiKey);
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -65,6 +147,10 @@ Deno.serve(async (req) => {
       .eq("driver_id", driver.id)
       .maybeSingle();
     if (existing?.subaccount_id && existing?.wallet_id) {
+      const { data: existingApiKey } = await admin.rpc("get_asaas_subaccount_secret", { _driver_id: driver.id });
+      if (typeof existingApiKey === "string" && existingApiKey.length >= 20) {
+        await ensureAccountStatusWebhook(existingApiKey);
+      }
       return json({ ok: true, reused: true, provider: "asaas", environment: ASAAS_ENVIRONMENT, status: existing.status, subaccountId: existing.subaccount_id, walletId: existing.wallet_id });
     }
 
@@ -165,6 +251,20 @@ Deno.serve(async (req) => {
         updated_at: new Date().toISOString(),
       }, { onConflict: "driver_id" });
       throw new Error(`subaccount_secret_storage_failed:${secretError.message}`);
+    }
+
+    try {
+      await ensureAccountStatusWebhook(created.apiKey);
+    } catch (error) {
+      await admin.from("driver_asaas_accounts").upsert({
+        driver_id: driver.id,
+        subaccount_id: created.id ?? null,
+        wallet_id: created.walletId,
+        status: "error",
+        last_error: `asaas_account_status_webhook_failed:${String(error).slice(0, 400)}`,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "driver_id" });
+      throw error;
     }
 
     const { error: accountError } = await admin.from("driver_asaas_accounts").upsert({
