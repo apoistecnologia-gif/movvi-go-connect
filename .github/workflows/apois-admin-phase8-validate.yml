@@ -89,7 +89,8 @@ jobs:
             supabase/baseline/013_admin_finance.sql \
             supabase/baseline/014_admin_settings.sql \
             supabase/baseline/015_admin_notifications.sql \
-            supabase/baseline/016_driver_payout_control.sql; do
+            supabase/baseline/016_driver_payout_control.sql \
+            supabase/baseline/017_admin_private_rpc_boundary.sql; do
             psql -v ON_ERROR_STOP=1 -f "$file"
           done
 
@@ -140,6 +141,23 @@ jobs:
             test "$anon" = "0"
             test "$auth" = "0"
             test "$service" = "1"
+          done
+
+          for name in \
+            admin_set_driver_suspension \
+            admin_set_passenger_status \
+            admin_update_ride_category \
+            admin_upsert_tariff_rule \
+            admin_set_staff_profile \
+            admin_provision_staff \
+            admin_update_sos_alert \
+            admin_update_support_ticket \
+            admin_get_dashboard_metrics \
+            admin_get_finance_summary; do
+            public_definer=$(psql -Atqc "select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='$name' and p.prosecdef")
+            private_definer=$(psql -Atqc "select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='apois_rpc_private' and p.proname='$name' and p.prosecdef")
+            test "$public_definer" = "0"
+            test "$private_definer" -ge "1"
           done
 
           notification_policy=$(psql -Atqc "select count(*) from pg_policies where schemaname='public' and tablename='notification_logs' and policyname='notification_logs_admin_read'")
