@@ -19,6 +19,12 @@ export type DriverRegistrationInput = {
   birth_date?: string | null;
   city: string;
   state: string;
+  address: string;
+  address_number: string;
+  address_complement?: string | null;
+  province: string;
+  postal_code: string;
+  declared_monthly_income: number;
   category: "carros" | "motos" | "fretes" | "guincho" | "envios";
   vehicle_model: string;
   vehicle_plate: string;
@@ -116,13 +122,19 @@ export async function cadastrarMotoristaMobile(input: DriverRegistrationInput) {
       throw new Error("Envie os documentos e a foto do veículo para concluir o cadastro.");
     }
 
-    const { data, error } = await (supabase as any).rpc("driver_complete_registration_v2", {
+    const { data, error } = await (supabase as any).rpc("driver_complete_registration_v3", {
       _name: input.name.trim(),
       _phone: input.phone.trim(),
       _cpf: input.cpf.trim(),
       _birth_date: input.birth_date || null,
       _city: input.city.trim(),
       _state: input.state.trim().toUpperCase(),
+      _address: input.address.trim(),
+      _address_number: input.address_number.trim(),
+      _address_complement: input.address_complement?.trim() || null,
+      _province: input.province.trim(),
+      _postal_code: input.postal_code.replace(/\D/g, ""),
+      _declared_monthly_income: Number(input.declared_monthly_income),
       _category: input.category,
       _vehicle_model: input.vehicle_model.trim(),
       _vehicle_plate: input.vehicle_plate.trim().toUpperCase(),
