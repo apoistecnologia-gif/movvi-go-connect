@@ -48,11 +48,14 @@ export async function startNativeDriverLocation(): Promise<boolean> {
   const permissionGranted = await ensureForegroundLocationPermission();
   if (!permissionGranted) return false;
 
-  let { data, error } = await supabase.auth.getSession();
+  const sessionResult = await supabase.auth.getSession();
+  let data = sessionResult.data;
+  const error = sessionResult.error;
   if (error || !data.session) return false;
 
   const expiresSoon =
-    typeof data.session.expires_at === "number" && data.session.expires_at * 1000 < Date.now() + 120_000;
+    typeof data.session.expires_at === "number" &&
+    data.session.expires_at * 1000 < Date.now() + 120_000;
   if (expiresSoon) {
     const refreshed = await supabase.auth.refreshSession();
     if (refreshed.error || !refreshed.data.session) return false;
