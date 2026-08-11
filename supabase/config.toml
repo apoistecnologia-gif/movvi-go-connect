@@ -22,3 +22,9 @@ verify_jwt = true
 
 [functions.asaas-webhook]
 verify_jwt = false
+
+[functions.asaas-create-driver-subaccount]
+verify_jwt = true
+
+[functions.asaas-create-ride-pix]
+verify_jwt = true
