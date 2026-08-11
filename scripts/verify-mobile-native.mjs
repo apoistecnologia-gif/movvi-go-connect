@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Validação anti-regressão do APK Android.
-// Impede compilar novamente um pacote com MainActivity antiga, target SDK 35/36
+// Impede compilar novamente um pacote com MainActivity antiga, target SDK incorreto
 // ou configuração Capacitor que quebra entrada de texto no WebView.
 
 import { existsSync, readFileSync } from "node:fs";
@@ -40,8 +40,10 @@ const mainActivity = readRequired(
 const appGradle = readRequired(resolve(androidDir, "app/build.gradle"));
 const config = readRequired(configFile);
 
-if (!/targetSdkVersion\s*=\s*34\b/.test(variables)) {
-  fail("targetSdkVersion precisa permanecer 34 enquanto validamos a digitação no APK.");
+const expectedTargetSdk = role === "motorista" ? 36 : 34;
+const targetSdkPattern = new RegExp(`targetSdkVersion\\s*=\\s*${expectedTargetSdk}\\b`);
+if (!targetSdkPattern.test(variables)) {
+  fail(`targetSdkVersion do ${role} precisa ser ${expectedTargetSdk}.`);
 }
 
 if (!/android:windowSoftInputMode="adjustResize"/.test(manifest)) {
