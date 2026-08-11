@@ -114,8 +114,10 @@ type Passenger = {
 };
 
 function passengerRatingText(passenger: Passenger | null, digits = 1) {
-  const value = passenger?.average_rating == null ? 5 : Number(passenger.average_rating);
-  return (Number.isFinite(value) ? value : 5).toFixed(digits);
+  const total = Number(passenger?.total_ratings ?? 0);
+  if (!passenger || !Number.isFinite(total) || total <= 0) return "Novo";
+  const value = Number(passenger.average_rating);
+  return Number.isFinite(value) ? value.toFixed(digits) : "Novo";
 }
 
 const EMPTY_ROUTE: LatLng[] = [];
@@ -1000,7 +1002,7 @@ function MotoristaApp() {
     const pid = incoming?.passenger_id ?? active?.passenger_id ?? ratingRide?.passenger_id;
     if (!pid) { setPassenger(null); return; }
     supabase.from("users").select("name, phone, avatar_url, average_rating, total_ratings").eq("id", pid).maybeSingle()
-      .then(({ data }) => setPassenger(data ?? { name: null, phone: null, avatar_url: null, average_rating: 5, total_ratings: 0 }));
+      .then(({ data }) => setPassenger(data ?? { name: null, phone: null, avatar_url: null, average_rating: null, total_ratings: 0 }));
   }, [active?.passenger_id, ratingRide?.passenger_id, incoming?.passenger_id]);
 
   // countdown da oferta
