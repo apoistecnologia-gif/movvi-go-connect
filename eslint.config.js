@@ -51,6 +51,10 @@ export default tseslint.config(
       // TypeScript remains a hard gate; explicit-any remains visible in CI as
       // technical debt instead of hiding functional build and safety failures.
       "@typescript-eslint/no-explicit-any": "warn",
+      // Several platform/storage fallbacks intentionally ignore best-effort
+      // failures. Empty catch blocks are therefore allowed, while other empty
+      // blocks remain errors.
+      "no-empty": ["error", { allowEmptyCatch: true }],
     },
   },
   eslintPluginPrettier,
