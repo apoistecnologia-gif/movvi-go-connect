@@ -131,7 +131,11 @@ public class DriverLocationService extends Service {
             queuePresenceSync(true, pending);
         }
         startLocationUpdates();
-        return START_NOT_STICKY;
+        // If Android kills the process while the driver is still online, ask the
+        // system to recreate the foreground service and redeliver this START
+        // intent, including the current authenticated Supabase session. This
+        // keeps GPS recovery independent from the WebView lifecycle.
+        return START_REDELIVER_INTENT;
     }
 
     private void startAsForeground() {
