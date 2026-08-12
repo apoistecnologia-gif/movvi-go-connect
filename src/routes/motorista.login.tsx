@@ -153,28 +153,38 @@ function DriverLoginPage() {
   }
 
   return (
-    <main className="relative min-h-[100dvh] overflow-hidden bg-[#030405] text-white">
+    <main className="relative min-h-[100dvh] overflow-hidden bg-[#020304] text-white">
+      {/* Fundo exclusivamente visual: preto, grafite e brilho dourado APOIS. */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(circle at 50% 14%, rgba(246,190,28,0.18) 0%, rgba(246,190,28,0.035) 24%, transparent 48%), linear-gradient(180deg,#090a0c 0%,#030405 54%,#000 100%)",
+            "radial-gradient(circle at 50% 18%, rgba(246,190,28,0.17) 0%, rgba(246,190,28,0.045) 21%, transparent 43%), radial-gradient(circle at 92% 33%, rgba(246,190,28,0.055), transparent 31%), linear-gradient(180deg,#090b0d 0%,#030405 58%,#000 100%)",
         }}
       />
-      <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-[36vh] opacity-25" style={{ background: "linear-gradient(180deg,transparent,rgba(246,190,28,.06))" }} />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-[21vh] h-[42vh] opacity-40"
+        style={{
+          background:
+            "linear-gradient(112deg, transparent 0 36%, rgba(246,190,28,.08) 36.2% 36.55%, transparent 36.8% 100%), linear-gradient(68deg, transparent 0 61%, rgba(255,255,255,.025) 61.2% 61.45%, transparent 61.7% 100%)",
+        }}
+      />
 
-      <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-md flex-col overflow-y-auto px-5 pb-[calc(env(safe-area-inset-bottom)+24px)] pt-[calc(env(safe-area-inset-top)+20px)]">
-        <header className="flex justify-center pt-1">
-          <MovviLogo size={112} showTagline productLabel="" />
+      <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-md flex-col overflow-y-auto px-5 pb-[calc(env(safe-area-inset-bottom)+22px)] pt-[calc(env(safe-area-inset-top)+16px)]">
+        <header className="flex justify-center pt-2">
+          <div className="rounded-full bg-black/20 p-1 drop-shadow-[0_14px_30px_rgba(246,190,28,.14)]">
+            <MovviLogo size={122} showTagline productLabel="" />
+          </div>
         </header>
 
         <section className="mt-5">
-          <h1 className="text-[31px] font-black leading-[1.08] tracking-[-0.04em]">
+          <h1 className="text-[32px] font-black leading-[1.08] tracking-[-0.04em]">
             Bem-vindo(a) à<br />
             <span className="text-[#F6BE1C]">APOIS</span> Motorista
           </h1>
-          <p className="mt-3 text-[13px] font-medium leading-5 text-zinc-500">
+          <p className="mt-3 text-[13px] font-medium leading-5 text-zinc-400">
             Faça login para começar a receber corridas.
           </p>
         </section>
@@ -184,7 +194,7 @@ function DriverLoginPage() {
             <span className="mb-2 block text-[11px] font-black uppercase tracking-[0.12em] text-zinc-400">
               E-mail
             </span>
-            <div className="flex h-[58px] items-center gap-3 rounded-[17px] border border-white/12 bg-[#101214]/95 px-4 shadow-[inset_0_1px_0_rgba(255,255,255,.025)] focus-within:border-[#F6BE1C]/55 focus-within:ring-1 focus-within:ring-[#F6BE1C]/20">
+            <div className="flex h-[58px] items-center gap-3 rounded-[17px] border border-white/[0.13] bg-[#0D0F11]/95 px-4 shadow-[inset_0_1px_0_rgba(255,255,255,.025),0_12px_36px_-28px_rgba(0,0,0,.95)] transition focus-within:border-[#F6BE1C]/60 focus-within:ring-1 focus-within:ring-[#F6BE1C]/20">
               <Mail className="h-[20px] w-[20px] shrink-0 text-[#F6BE1C]" strokeWidth={1.9} />
               <input
                 name="email"
@@ -202,7 +212,7 @@ function DriverLoginPage() {
             <span className="mb-2 block text-[11px] font-black uppercase tracking-[0.12em] text-zinc-400">
               Senha
             </span>
-            <div className="flex h-[58px] items-center gap-3 rounded-[17px] border border-white/12 bg-[#101214]/95 px-4 shadow-[inset_0_1px_0_rgba(255,255,255,.025)] focus-within:border-[#F6BE1C]/55 focus-within:ring-1 focus-within:ring-[#F6BE1C]/20">
+            <div className="flex h-[58px] items-center gap-3 rounded-[17px] border border-white/[0.13] bg-[#0D0F11]/95 px-4 shadow-[inset_0_1px_0_rgba(255,255,255,.025),0_12px_36px_-28px_rgba(0,0,0,.95)] transition focus-within:border-[#F6BE1C]/60 focus-within:ring-1 focus-within:ring-[#F6BE1C]/20">
               <LockKeyhole className="h-[20px] w-[20px] shrink-0 text-[#F6BE1C]" strokeWidth={1.9} />
               <input
                 name="password"
@@ -243,7 +253,7 @@ function DriverLoginPage() {
             type="submit"
             disabled={loading}
             aria-busy={loading}
-            className="flex h-[58px] w-full items-center justify-center gap-2 rounded-[17px] bg-[#F6BE1C] text-[16px] font-black text-black shadow-[0_20px_44px_-26px_rgba(246,190,28,0.9)] transition active:scale-[0.99] disabled:opacity-60"
+            className="press-scale flex h-[58px] w-full items-center justify-center gap-2 rounded-[17px] border border-[#FFD24A]/35 bg-[#F6BE1C] text-[16px] font-black text-black shadow-[0_20px_46px_-24px_rgba(246,190,28,0.78)] transition hover:brightness-105 active:scale-[0.99] disabled:opacity-60"
           >
             {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
             {loading ? "Entrando..." : "Entrar"}
@@ -262,14 +272,17 @@ function DriverLoginPage() {
           </Link>
         </div>
 
-        <div className="mt-4 flex items-start gap-3 rounded-[20px] border border-white/8 bg-[#0D0F11]/95 px-4 py-3.5">
-          <ShieldCheck className="mt-0.5 h-6 w-6 shrink-0 text-[#F6BE1C]" />
-          <div>
+        <div className="mt-4 flex items-center gap-3 rounded-[20px] border border-white/[0.085] bg-[#0B0D0F]/96 px-4 py-3.5 shadow-[0_18px_44px_-28px_rgba(0,0,0,.95)]">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] border border-[#F6BE1C]/30 bg-[#F6BE1C]/8">
+            <ShieldCheck className="h-6 w-6 text-[#F6BE1C]" />
+          </div>
+          <div className="min-w-0 flex-1">
             <p className="text-[12px] font-black text-white">Sua segurança é prioridade</p>
             <p className="mt-1 text-[10.5px] font-medium leading-relaxed text-zinc-500">
               PIN no embarque e recursos de segurança durante a corrida.
             </p>
           </div>
+          <ChevronRight className="h-5 w-5 shrink-0 text-zinc-600" />
         </div>
       </div>
     </main>
