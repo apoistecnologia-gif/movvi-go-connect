@@ -1,7 +1,16 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { z } from "zod";
-import { AlertTriangle, ChevronRight, Loader2, LockKeyhole, Mail, ShieldCheck } from "lucide-react";
+import {
+  AlertTriangle,
+  ChevronRight,
+  Eye,
+  EyeOff,
+  Loader2,
+  LockKeyhole,
+  Mail,
+  ShieldCheck,
+} from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { loadDriverProfile } from "@/lib/driverProfile";
 import { MovviLogo } from "@/components/MovviLogo";
@@ -16,10 +25,6 @@ const schema = z.object({
   password: z.string().min(1, "Informe a senha"),
 });
 
-// A routeTree é gerada pelo plugin do TanStack durante o build. A rota de
-// recuperação já existe em src/routes, mas o arquivo gerado versionado pode
-// estar uma geração atrás durante o typecheck pré-build do CI. Mantemos o
-// componente Link real e relaxamos somente este destino recém-gerado.
 const DriverRecoveryLink = Link as unknown as (props: {
   to: "/motorista/recuperar-senha";
   className?: string;
@@ -62,6 +67,7 @@ function DriverLoginPage() {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const inFlight = useRef(false);
   const navigated = useRef(false);
 
@@ -147,37 +153,39 @@ function DriverLoginPage() {
   }
 
   return (
-    <main className="relative min-h-[100dvh] overflow-hidden bg-[#050607] text-white">
+    <main className="relative min-h-[100dvh] overflow-hidden bg-[#030405] text-white">
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-[42vh]"
+        className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(circle at 50% 28%, rgba(246,190,28,0.15) 0%, rgba(246,190,28,0.03) 34%, transparent 68%)",
+            "radial-gradient(circle at 50% 14%, rgba(246,190,28,0.18) 0%, rgba(246,190,28,0.035) 24%, transparent 48%), linear-gradient(180deg,#090a0c 0%,#030405 54%,#000 100%)",
         }}
       />
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-[36vh] opacity-25" style={{ background: "linear-gradient(180deg,transparent,rgba(246,190,28,.06))" }} />
 
-      <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-md flex-col px-5 pb-[calc(env(safe-area-inset-bottom)+22px)] pt-[calc(env(safe-area-inset-top)+26px)]">
-        <header className="flex justify-center">
-          <MovviLogo size={92} showTagline />
+      <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-md flex-col overflow-y-auto px-5 pb-[calc(env(safe-area-inset-bottom)+24px)] pt-[calc(env(safe-area-inset-top)+20px)]">
+        <header className="flex justify-center pt-1">
+          <MovviLogo size={112} showTagline productLabel="" />
         </header>
 
-        <section className="mt-7 text-center">
-          <h1 className="text-[26px] font-black leading-tight tracking-tight">
-            Bem-vindo(a) à <span className="text-[#F6BE1C]">APOIS</span>
+        <section className="mt-5">
+          <h1 className="text-[31px] font-black leading-[1.08] tracking-[-0.04em]">
+            Bem-vindo(a) à<br />
+            <span className="text-[#F6BE1C]">APOIS</span> Motorista
           </h1>
-          <p className="mt-2 text-[12.5px] font-medium text-zinc-500">
-            Faça login para continuar sua jornada como motorista parceiro.
+          <p className="mt-3 text-[13px] font-medium leading-5 text-zinc-500">
+            Faça login para começar a receber corridas.
           </p>
         </section>
 
-        <form onSubmit={onSubmit} className="mt-7 space-y-4">
+        <form onSubmit={onSubmit} className="mt-6 space-y-4">
           <label className="block">
-            <span className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.16em] text-zinc-500">
+            <span className="mb-2 block text-[11px] font-black uppercase tracking-[0.12em] text-zinc-400">
               E-mail
             </span>
-            <div className="flex h-13 items-center gap-3 rounded-[16px] border border-white/8 bg-[#101214] px-4 focus-within:border-[#F6BE1C]/50">
-              <Mail className="h-[17px] w-[17px] shrink-0 text-[#F6BE1C]" strokeWidth={1.9} />
+            <div className="flex h-[58px] items-center gap-3 rounded-[17px] border border-white/12 bg-[#101214]/95 px-4 shadow-[inset_0_1px_0_rgba(255,255,255,.025)] focus-within:border-[#F6BE1C]/55 focus-within:ring-1 focus-within:ring-[#F6BE1C]/20">
+              <Mail className="h-[20px] w-[20px] shrink-0 text-[#F6BE1C]" strokeWidth={1.9} />
               <input
                 name="email"
                 type="email"
@@ -185,32 +193,40 @@ function DriverLoginPage() {
                 autoComplete="email"
                 inputMode="email"
                 placeholder="Digite seu e-mail"
-                className="h-full min-w-0 flex-1 bg-transparent text-[13px] font-semibold text-white outline-none placeholder:text-zinc-700"
+                className="h-full min-w-0 flex-1 bg-transparent text-[14px] font-semibold text-white outline-none placeholder:text-zinc-600"
               />
             </div>
           </label>
 
           <label className="block">
-            <span className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.16em] text-zinc-500">
+            <span className="mb-2 block text-[11px] font-black uppercase tracking-[0.12em] text-zinc-400">
               Senha
             </span>
-            <div className="flex h-13 items-center gap-3 rounded-[16px] border border-white/8 bg-[#101214] px-4 focus-within:border-[#F6BE1C]/50">
-              <LockKeyhole className="h-[17px] w-[17px] shrink-0 text-[#F6BE1C]" strokeWidth={1.9} />
+            <div className="flex h-[58px] items-center gap-3 rounded-[17px] border border-white/12 bg-[#101214]/95 px-4 shadow-[inset_0_1px_0_rgba(255,255,255,.025)] focus-within:border-[#F6BE1C]/55 focus-within:ring-1 focus-within:ring-[#F6BE1C]/20">
+              <LockKeyhole className="h-[20px] w-[20px] shrink-0 text-[#F6BE1C]" strokeWidth={1.9} />
               <input
                 name="password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 required
                 autoComplete="current-password"
                 placeholder="Digite sua senha"
-                className="h-full min-w-0 flex-1 bg-transparent text-[13px] font-semibold text-white outline-none placeholder:text-zinc-700"
+                className="h-full min-w-0 flex-1 bg-transparent text-[14px] font-semibold text-white outline-none placeholder:text-zinc-600"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword((value) => !value)}
+                aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-zinc-500 transition active:scale-95 hover:bg-white/5 hover:text-white"
+              >
+                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              </button>
             </div>
           </label>
 
           <div className="flex justify-end">
             <DriverRecoveryLink
               to="/motorista/recuperar-senha"
-              className="min-h-11 px-1 py-2 text-[11px] font-black text-[#F6BE1C]"
+              className="min-h-11 px-1 py-2 text-[12px] font-black text-[#F6BE1C]"
             >
               Esqueci minha senha
             </DriverRecoveryLink>
@@ -227,33 +243,33 @@ function DriverLoginPage() {
             type="submit"
             disabled={loading}
             aria-busy={loading}
-            className="flex h-14 w-full items-center justify-center gap-2 rounded-[18px] bg-[#F6BE1C] text-[13px] font-black text-black shadow-[0_18px_38px_-24px_rgba(246,190,28,0.8)] transition active:scale-[0.99] disabled:opacity-60"
+            className="flex h-[58px] w-full items-center justify-center gap-2 rounded-[17px] bg-[#F6BE1C] text-[16px] font-black text-black shadow-[0_20px_44px_-26px_rgba(246,190,28,0.9)] transition active:scale-[0.99] disabled:opacity-60"
           >
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
             {loading ? "Entrando..." : "Entrar"}
-            {!loading ? <ChevronRight className="h-4 w-4" /> : null}
+            {!loading ? <ChevronRight className="h-5 w-5" strokeWidth={2.7} /> : null}
           </button>
         </form>
 
-        <div className="mt-5 flex items-start gap-3 rounded-[20px] border border-white/5 bg-[#0D0F11] px-4 py-3">
-          <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-[#F6BE1C]" />
-          <div>
-            <p className="text-[11px] font-black text-white">Sua segurança é nossa prioridade</p>
-            <p className="mt-1 text-[10px] font-medium leading-relaxed text-zinc-600">
-              Viagens protegidas, PIN no embarque e recursos de segurança durante a corrida.
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-auto pt-7 text-center">
-          <p className="text-[11px] font-semibold text-zinc-600">Ainda não tem uma conta?</p>
+        <div className="mt-5 text-center">
+          <p className="text-[12px] font-semibold text-zinc-500">Ainda não tem uma conta?</p>
           <Link
             to="/motorista/cadastro"
-            className="mt-2 inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[16px] border border-[#F6BE1C]/25 px-5 text-[11px] font-black text-[#F6BE1C]"
+            className="mt-1 inline-flex min-h-10 items-center justify-center gap-1.5 px-3 text-[13px] font-black text-[#F6BE1C]"
           >
-            Criar conta
-            <ChevronRight className="h-3.5 w-3.5" />
+            Cadastrar como motorista
+            <ChevronRight className="h-4 w-4" />
           </Link>
+        </div>
+
+        <div className="mt-4 flex items-start gap-3 rounded-[20px] border border-white/8 bg-[#0D0F11]/95 px-4 py-3.5">
+          <ShieldCheck className="mt-0.5 h-6 w-6 shrink-0 text-[#F6BE1C]" />
+          <div>
+            <p className="text-[12px] font-black text-white">Sua segurança é prioridade</p>
+            <p className="mt-1 text-[10.5px] font-medium leading-relaxed text-zinc-500">
+              PIN no embarque e recursos de segurança durante a corrida.
+            </p>
+          </div>
         </div>
       </div>
     </main>
