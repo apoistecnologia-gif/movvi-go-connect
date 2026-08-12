@@ -1,12 +1,25 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Check, Copy, Crown, LifeBuoy, Loader2, QrCode, Sparkles } from "lucide-react";
+import {
+  Check,
+  CheckCircle2,
+  Copy,
+  Crown,
+  LifeBuoy,
+  Loader2,
+  QrCode,
+  ShieldCheck,
+  Sparkles,
+  Star,
+  WalletCards,
+} from "lucide-react";
 import { toast } from "sonner";
-import { SettingsPageShell, SettingsHero } from "@/components/settings";
-import { DSButton, DSCard, StatusPill, Loading, Icon, HeadingS, Body, BodySmall, Caption, Typography } from "@/design-system";
+import { SettingsPageShell } from "@/components/settings";
+import { DSButton, DSCard, Loading } from "@/design-system";
 import { supabase } from "@/integrations/supabase/client";
 import { APOIS_MONTHLY_FEE_BRL } from "@/lib/payments/types";
 import { formatCurrency } from "@/lib/finance/financeSettings";
+import { MovviLogo } from "@/components/MovviLogo";
 
 export const Route = createFileRoute("/motorista/assinatura")({
   head: () => ({ meta: [{ title: "Mensalidade — Motorista APOIS" }] }),
@@ -37,8 +50,8 @@ type AsaasMembershipResult = {
 const BENEFITS = [
   "Corridas ilimitadas na plataforma",
   "Repasse integral das corridas ao motorista",
+  "Sem taxa por corrida da APOIS",
   "Suporte durante a operação",
-  "Ferramentas de ganhos, histórico e relatórios",
 ];
 
 function DriverSubscriptionPage() {
@@ -139,108 +152,145 @@ function DriverSubscriptionPage() {
 
   return (
     <SettingsPageShell variant="driver">
-      <SettingsHero
-        icon={Crown}
-        title="Mensalidade"
-        subtitle="Plano Motorista APOIS"
-        action={<StatusPill status={operational ? "finished" : "offline"} label={paidActive ? "Ativa" : subscription === "teste" ? "Homologação" : subscription === "pending" ? "Pagamento pendente" : "Inativa"} pulse={false} />}
-      />
+      <div className="space-y-4 pb-4">
+        <section className="relative overflow-hidden rounded-[28px] border border-[#F6BE1C]/18 bg-[#080A0C] px-5 pb-5 pt-5 text-center shadow-[0_24px_70px_-42px_rgba(246,190,28,.65)]">
+          <div aria-hidden className="absolute inset-x-0 top-0 h-32 bg-[radial-gradient(circle_at_50%_0%,rgba(246,190,28,.18),transparent_68%)]" />
+          <div className="relative flex justify-center">
+            <MovviLogo size={66} showTagline productLabel="" />
+          </div>
+          <div className={`relative mx-auto mt-4 flex h-16 w-16 items-center justify-center rounded-full border ${approved ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-400" : "border-[#F6BE1C]/30 bg-[#F6BE1C]/10 text-[#F6BE1C]"}`}>
+            {approved ? <CheckCircle2 className="h-8 w-8" /> : <Crown className="h-8 w-8" />}
+          </div>
+          <p className="relative mt-4 text-[10px] font-black uppercase tracking-[0.22em] text-[#F6BE1C]">
+            {approved ? "Cadastro aprovado" : "Plano Motorista APOIS"}
+          </p>
+          <h1 className="relative mt-1 text-[25px] font-black tracking-[-0.03em] text-white">
+            {approved ? "Sua conta está pronta para a mensalidade" : "Mensalidade do motorista"}
+          </h1>
+          <p className="relative mx-auto mt-2 max-w-sm text-[12px] font-medium leading-5 text-zinc-500">
+            {approved
+              ? "O pagamento só é iniciado quando você confirmar a geração do Pix abaixo."
+              : "Seu cadastro precisa ser aprovado antes de liberar a cobrança."}
+          </p>
+          <div className="relative mt-4 inline-flex items-center gap-2 rounded-full border border-white/8 bg-black/35 px-3 py-1.5 text-[10px] font-black text-zinc-300">
+            <span className={`h-2 w-2 rounded-full ${operational ? "bg-emerald-400" : "bg-zinc-600"}`} />
+            {paidActive ? "Mensalidade ativa" : subscription === "teste" ? "Homologação ativa" : subscription === "pending" ? "Pagamento pendente" : "Mensalidade inativa"}
+          </div>
+        </section>
 
-      <DSCard className="p-5 space-y-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="space-y-1">
-            <HeadingS>Plano Motorista APOIS</HeadingS>
-            <BodySmall className="text-muted-foreground">Acesso à operação da plataforma conforme o status oficial da sua conta.</BodySmall>
-          </div>
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-            <Icon as={Sparkles} size="lg" />
-          </div>
-        </div>
-        <div className="flex flex-wrap items-baseline gap-2">
-          <Typography variant="metric" className="text-[clamp(28px,9vw,36px)] text-foreground">
-            {formatCurrency(APOIS_MONTHLY_FEE_BRL)}
-          </Typography>
-          <Caption>por mês</Caption>
-        </div>
-      </DSCard>
-
-      <DSCard className="p-5 space-y-3">
-        <HeadingS>Benefícios do plano</HeadingS>
-        <ul className="space-y-2">
-          {BENEFITS.map((benefit) => (
-            <li key={benefit} className="flex items-start gap-2">
-              <span aria-hidden="true" className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary" />
-              <Body>{benefit}</Body>
-            </li>
-          ))}
-        </ul>
-      </DSCard>
-
-      {!approved ? (
-        <DSCard className="p-5 space-y-2">
-          <HeadingS>Aguardando aprovação</HeadingS>
-          <BodySmall className="text-muted-foreground">Seu cadastro precisa ser aprovado antes da liberação da mensalidade.</BodySmall>
-        </DSCard>
-      ) : paidActive ? (
-        <DSCard className="p-5 space-y-2">
-          <HeadingS>Mensalidade ativa</HeadingS>
-          <BodySmall className="text-muted-foreground">Seu plano está ativo. A renovação é acompanhada automaticamente pelo Asaas.</BodySmall>
-        </DSCard>
-      ) : (
-        <DSCard className="p-5 space-y-4">
-          <div className="space-y-2">
-            <HeadingS>{subscription === "pending" ? "Pagamento pendente" : "Ativar mensalidade"}</HeadingS>
-            <BodySmall className="text-muted-foreground">
-              A cobrança é processada pelo Asaas. O Pix só é criado depois que você confirmar no botão abaixo; esta tela nunca gera cobrança automaticamente.
-            </BodySmall>
-          </div>
-          <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
-            <Caption className="block">Valor da cobrança</Caption>
-            <Typography variant="metric" className="mt-1 text-2xl text-foreground">{formatCurrency(APOIS_MONTHLY_FEE_BRL)}</Typography>
-          </div>
-          <DSButton className="w-full" onClick={() => void generateMembershipPix()} disabled={checkoutLoading}>
-            {checkoutLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <QrCode className="mr-2 h-4 w-4" />}
-            {subscription === "pending" ? "Consultar / gerar Pix" : "Gerar Pix da mensalidade"}
-          </DSButton>
-        </DSCard>
-      )}
-
-      {checkout?.pixPayload ? (
-        <DSCard className="p-5 space-y-4">
-          <div className="space-y-1">
-            <HeadingS>Pix pronto para pagamento</HeadingS>
-            <BodySmall className="text-muted-foreground">
-              Copie o código abaixo e pague no aplicativo do seu banco. A confirmação do pagamento é automática pelo webhook do Asaas.
-            </BodySmall>
-          </div>
-          {checkout.pixQrCodeBase64 ? (
-            <div className="mx-auto w-fit rounded-2xl bg-white p-3">
-              <img
-                src={`data:image/png;base64,${checkout.pixQrCodeBase64}`}
-                alt="QR Code Pix da mensalidade APOIS"
-                className="h-48 w-48"
-              />
+        <DSCard className="overflow-hidden border-white/8 bg-[#0D0F11] p-0">
+          <div className="flex items-start justify-between gap-4 px-5 pb-4 pt-5">
+            <div className="min-w-0">
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">Plano Motorista Parceiro</p>
+              <p className="mt-1 text-[13px] font-semibold leading-5 text-zinc-400">Acesso completo à operação APOIS conforme o status oficial da conta.</p>
             </div>
-          ) : null}
-          <div className="rounded-2xl bg-muted p-3">
-            <Caption className="block">Pix copia e cola</Caption>
-            <p className="mt-2 break-all font-mono text-xs text-foreground">{checkout.pixPayload}</p>
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#F6BE1C]/20 bg-[#F6BE1C]/10 text-[#F6BE1C]">
+              <Star className="h-5 w-5" />
+            </div>
           </div>
-          <DSButton variant="outline" className="w-full" onClick={() => void copyPix()}>
-            {copied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
-            {copied ? "Código copiado" : "Copiar código Pix"}
-          </DSButton>
-          {checkout.dueDate ? <Caption className="block text-center">Vencimento: {checkout.dueDate}</Caption> : null}
-        </DSCard>
-      ) : null}
 
-      <DSCard className="flex flex-wrap items-center justify-between gap-3 p-5">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-muted text-muted-foreground"><Icon as={LifeBuoy} size="lg" /></div>
-          <div><HeadingS>Precisa de ajuda?</HeadingS><Caption className="block">Fale com nossa equipe sobre sua conta.</Caption></div>
-        </div>
-        <DSButton variant="outline" size="sm" asChild><Link to="/motorista/suporte">Falar com suporte</Link></DSButton>
-      </DSCard>
+          <div className="border-y border-white/6 bg-black/25 px-5 py-4">
+            <div className="flex items-baseline justify-between gap-3">
+              <span className="text-[11px] font-black uppercase tracking-[0.14em] text-zinc-500">Mensalidade</span>
+              <div className="text-right">
+                <span className="text-[30px] font-black tracking-[-0.04em] text-[#F6BE1C]">{formatCurrency(APOIS_MONTHLY_FEE_BRL)}</span>
+                <span className="ml-1 text-[11px] font-semibold text-zinc-500">/ mês</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 p-4">
+            {BENEFITS.map((benefit) => (
+              <div key={benefit} className="flex min-h-16 items-start gap-2 rounded-2xl border border-white/6 bg-[#111315] px-3 py-3">
+                <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#F6BE1C]" />
+                <span className="text-[10.5px] font-semibold leading-4 text-zinc-300">{benefit}</span>
+              </div>
+            ))}
+          </div>
+        </DSCard>
+
+        {!approved ? (
+          <DSCard className="border-white/8 bg-[#0D0F11] p-5">
+            <p className="text-sm font-black text-white">Aguardando aprovação</p>
+            <p className="mt-2 text-xs leading-5 text-zinc-500">Seu cadastro precisa ser aprovado antes da liberação da mensalidade.</p>
+          </DSCard>
+        ) : paidActive ? (
+          <DSCard className="border-emerald-400/20 bg-emerald-400/8 p-5">
+            <div className="flex items-start gap-3">
+              <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-400" />
+              <div>
+                <p className="text-sm font-black text-white">Mensalidade ativa</p>
+                <p className="mt-2 text-xs leading-5 text-zinc-400">Seu plano está ativo. A renovação é acompanhada automaticamente pelo Asaas.</p>
+              </div>
+            </div>
+          </DSCard>
+        ) : subscription === "teste" ? (
+          <DSCard className="border-[#F6BE1C]/20 bg-[#F6BE1C]/8 p-5">
+            <div className="flex items-start gap-3">
+              <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-[#F6BE1C]" />
+              <div>
+                <p className="text-sm font-black text-white">Homologação ativa</p>
+                <p className="mt-2 text-xs leading-5 text-zinc-400">Seu acesso de homologação está liberado. Nenhuma cobrança é criada nesta condição.</p>
+              </div>
+            </div>
+          </DSCard>
+        ) : (
+          <DSCard className="border-[#F6BE1C]/25 bg-[#0D0F11] p-5">
+            <div className="flex items-start gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#F6BE1C]/20 bg-[#F6BE1C]/10 text-[#F6BE1C]">
+                <WalletCards className="h-5 w-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[14px] font-black text-white">Pague com Pix</p>
+                <p className="mt-1 text-[10.5px] font-medium leading-4 text-zinc-500">Cobrança real processada pelo Asaas somente após sua confirmação.</p>
+              </div>
+              <p className="shrink-0 text-[20px] font-black text-[#F6BE1C]">{formatCurrency(APOIS_MONTHLY_FEE_BRL)}</p>
+            </div>
+            <DSButton className="mt-4 h-14 w-full bg-[#F6BE1C] text-[14px] font-black text-black hover:bg-[#F6BE1C]/95" onClick={() => void generateMembershipPix()} disabled={checkoutLoading}>
+              {checkoutLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <QrCode className="mr-2 h-4 w-4" />}
+              {subscription === "pending" ? "Consultar / gerar Pix" : "Gerar Pix da mensalidade"}
+            </DSButton>
+            <div className="mt-3 flex items-center justify-center gap-2 text-[10px] font-semibold text-zinc-600">
+              <ShieldCheck className="h-3.5 w-3.5" />
+              Nenhuma cobrança automática ao abrir esta tela
+            </div>
+          </DSCard>
+        )}
+
+        {checkout?.pixPayload ? (
+          <DSCard className="border-[#F6BE1C]/20 bg-[#0D0F11] p-5">
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#F6BE1C]">Pix pronto</p>
+            <h2 className="mt-1 text-lg font-black text-white">Pague a mensalidade</h2>
+            <p className="mt-2 text-xs leading-5 text-zinc-500">A confirmação do pagamento é automática pelo webhook do Asaas.</p>
+            {checkout.pixQrCodeBase64 ? (
+              <div className="mx-auto mt-4 w-fit rounded-2xl bg-white p-3">
+                <img
+                  src={`data:image/png;base64,${checkout.pixQrCodeBase64}`}
+                  alt="QR Code Pix da mensalidade APOIS"
+                  className="h-48 w-48"
+                />
+              </div>
+            ) : null}
+            <div className="mt-4 rounded-2xl border border-white/8 bg-black/35 p-3">
+              <p className="text-[10px] font-black uppercase tracking-[0.14em] text-zinc-500">Pix copia e cola</p>
+              <p className="mt-2 break-all font-mono text-xs leading-5 text-zinc-300">{checkout.pixPayload}</p>
+            </div>
+            <DSButton variant="outline" className="mt-3 w-full border-white/10" onClick={() => void copyPix()}>
+              {copied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
+              {copied ? "Código copiado" : "Copiar código Pix"}
+            </DSButton>
+            {checkout.dueDate ? <p className="mt-3 text-center text-[10px] font-semibold text-zinc-600">Vencimento: {checkout.dueDate}</p> : null}
+          </DSCard>
+        ) : null}
+
+        <DSCard className="flex items-center justify-between gap-3 border-white/8 bg-[#0D0F11] p-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/5 text-[#F6BE1C]"><LifeBuoy className="h-5 w-5" /></div>
+            <div className="min-w-0"><p className="text-xs font-black text-white">Precisa de ajuda?</p><p className="mt-0.5 truncate text-[10px] text-zinc-500">Fale com nossa equipe sobre sua conta.</p></div>
+          </div>
+          <DSButton variant="outline" size="sm" asChild><Link to="/motorista/suporte">Suporte</Link></DSButton>
+        </DSCard>
+      </div>
     </SettingsPageShell>
   );
 }
