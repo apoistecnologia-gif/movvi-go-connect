@@ -1,53 +1,74 @@
 /*
  * APOIS Motorista — identidade visual oficial para o bundle mobile do motorista.
- * O escopo por data-app-role impede que a paleta altere outros papéis do monorepo.
+ *
+ * IMPORTANTE: este arquivo é estritamente visual. O escopo por data-app-role
+ * impede que a paleta altere Passageiro/Admin e não toca rotas, Supabase,
+ * lifecycle de corridas, mapas, pagamentos ou callbacks existentes.
  */
 html[data-app-role="motorista"],
 html[data-app-role="motorista"].dark {
-  --background: #050607;
+  --background: #030405;
   --foreground: #f8fafc;
-  --surface: #0d0f11;
-  --surface-2: #15181b;
+  --surface: #0a0c0e;
+  --surface-2: #111418;
 
-  --card: #101214;
+  --card: #0d0f11;
   --card-foreground: #f8fafc;
-  --popover: #101214;
+  --popover: #0d0f11;
   --popover-foreground: #f8fafc;
 
   --primary: #f6be1c;
-  --primary-foreground: #090a0b;
+  --primary-foreground: #08090a;
   --primary-glow: #ffd34f;
 
   --secondary: #c88f00;
-  --secondary-foreground: #090a0b;
+  --secondary-foreground: #08090a;
 
-  --muted: #1b1e21;
-  --muted-foreground: #9ca3af;
+  --muted: #181b1e;
+  --muted-foreground: #969da6;
   --accent: #f6be1c;
-  --accent-foreground: #090a0b;
+  --accent-foreground: #08090a;
 
-  --success: #38c172;
+  --success: #12c985;
   --warning: #f6be1c;
-  --border: #292d31;
-  --input: #171a1d;
+  --border: #282c30;
+  --input: #121519;
   --ring: #f6be1c;
 
-  --sidebar: #0b0d0f;
+  --sidebar: #080a0c;
   --sidebar-foreground: #f8fafc;
   --sidebar-primary: #f6be1c;
-  --sidebar-primary-foreground: #090a0b;
-  --sidebar-accent: #171a1d;
+  --sidebar-primary-foreground: #08090a;
+  --sidebar-accent: #15181b;
   --sidebar-accent-foreground: #f8fafc;
-  --sidebar-border: #292d31;
+  --sidebar-border: #282c30;
   --sidebar-ring: #f6be1c;
 
   --color-status-inride: #f6be1c;
-  --color-status-arrived: #f6be1c;
+  --color-status-arrived: #12c985;
+
+  /* Tokens visuais específicos do app Motorista. */
+  --apois-gold: #f6be1c;
+  --apois-gold-strong: #ffbd00;
+  --apois-gold-soft: rgba(246, 190, 28, 0.13);
+  --apois-green: #12c985;
+  --apois-black: #030405;
+  --apois-panel: rgba(11, 13, 15, 0.96);
+  --apois-panel-strong: #0b0d0f;
+  --apois-line: rgba(255, 255, 255, 0.09);
+  --apois-line-gold: rgba(246, 190, 28, 0.34);
+  --apois-shadow: 0 18px 48px -24px rgba(0, 0, 0, 0.92);
+  --apois-radius-card: 20px;
+  --apois-radius-sheet: 28px;
+
   color-scheme: dark;
 }
 
 html[data-app-role="motorista"] body {
-  background: #050607;
+  background: #030405;
+  color: #f8fafc;
+  overscroll-behavior-y: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 html[data-app-role="motorista"] ::selection {
@@ -57,12 +78,71 @@ html[data-app-role="motorista"] ::selection {
 
 /* Acabamento dos cartões/sheets do motorista, alinhado aos mockups APOIS. */
 html[data-app-role="motorista"] .surface-card {
-  background: #101214;
-  border-color: #292d31;
+  background: linear-gradient(180deg, rgba(18, 21, 24, 0.98), rgba(10, 12, 14, 0.98));
+  border-color: rgba(255, 255, 255, 0.09);
+  box-shadow: var(--apois-shadow);
+}
+
+html[data-app-role="motorista"] input,
+html[data-app-role="motorista"] textarea,
+html[data-app-role="motorista"] select,
+html[data-app-role="motorista"] button {
+  font: inherit;
 }
 
 html[data-app-role="motorista"] input:focus,
 html[data-app-role="motorista"] textarea:focus,
 html[data-app-role="motorista"] select:focus {
   outline-color: #f6be1c;
+}
+
+html[data-app-role="motorista"] input::placeholder,
+html[data-app-role="motorista"] textarea::placeholder {
+  color: #666d76;
+}
+
+/* Scrollbars discretas nos sheets sem alterar comportamento de rolagem. */
+html[data-app-role="motorista"] * {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(246, 190, 28, 0.22) transparent;
+}
+
+html[data-app-role="motorista"] *::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+html[data-app-role="motorista"] *::-webkit-scrollbar-thumb {
+  background: rgba(246, 190, 28, 0.22);
+  border-radius: 999px;
+}
+
+/* Mantém feedback de toque consistente nos CTAs sem interferir nos handlers. */
+html[data-app-role="motorista"] .press-scale {
+  transform: translateZ(0);
+  transition-property: transform, filter, background-color, border-color, color, opacity;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
+}
+
+html[data-app-role="motorista"] .press-scale:active {
+  transform: scale(0.975);
+}
+
+/* Google Maps: controles nativos mais discretos no mapa escuro. */
+html[data-app-role="motorista"] .gm-style .gm-style-cc,
+html[data-app-role="motorista"] .gm-style a[href^="https://maps.google.com/maps"] {
+  opacity: 0.58;
+}
+
+/* Respeita usuários com redução de movimento. */
+@media (prefers-reduced-motion: reduce) {
+  html[data-app-role="motorista"] *,
+  html[data-app-role="motorista"] *::before,
+  html[data-app-role="motorista"] *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
