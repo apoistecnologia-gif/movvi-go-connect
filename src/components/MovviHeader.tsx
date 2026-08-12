@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, Home, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { APOIS_LOGO_DATA_URL } from "@/assets/apoisLogoData";
+import "@/apois-driver-secondary.css";
 
 interface MovviHeaderProps {
   /** "floating" para overlay sobre mapas, "solid" para telas normais */
