@@ -1,0 +1,99 @@
+/* APOIS Motorista — acabamento das telas secundárias.
+ * Estritamente visual e escopado ao role motorista. Nenhum seletor altera
+ * display, navegação, handlers, Supabase ou ciclo de corrida.
+ */
+html[data-app-role="motorista"] main:has(#ride-search) {
+  background:
+    radial-gradient(circle at 88% 2%, rgba(246,190,28,.06), transparent 30%),
+    linear-gradient(180deg,#050607,#030405);
+}
+
+html[data-app-role="motorista"] main:has(#ride-search) > div > header {
+  padding: 2px 2px 4px;
+}
+
+html[data-app-role="motorista"] main:has(#ride-search) section[aria-label="Resumo do período"] > .grid > * {
+  background: linear-gradient(145deg,rgba(17,20,24,.98),rgba(8,10,12,.98));
+  border-color: rgba(255,255,255,.075);
+  box-shadow: 0 18px 42px -32px rgba(0,0,0,.98), inset 0 1px 0 rgba(255,255,255,.025);
+}
+
+html[data-app-role="motorista"] main:has(#ride-search) section[aria-label="Resumo do período"] > .grid > *:nth-child(2) {
+  background: linear-gradient(145deg,rgba(246,190,28,.09),rgba(9,11,13,.98));
+  border-color: rgba(246,190,28,.20);
+}
+
+html[data-app-role="motorista"] #ride-search,
+html[data-app-role="motorista"] #ride-from,
+html[data-app-role="motorista"] #ride-to {
+  background: rgba(10,12,14,.96) !important;
+  border-color: rgba(255,255,255,.085) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.02), 0 12px 34px -28px rgba(0,0,0,.95);
+}
+
+html[data-app-role="motorista"] #ride-search:focus,
+html[data-app-role="motorista"] #ride-from:focus,
+html[data-app-role="motorista"] #ride-to:focus {
+  border-color: rgba(246,190,28,.55) !important;
+  box-shadow: 0 0 0 3px rgba(246,190,28,.10) !important;
+}
+
+html[data-app-role="motorista"] main:has(#ride-search) [data-testid="ride-card"] > * {
+  background: linear-gradient(155deg,rgba(16,19,22,.98),rgba(7,9,11,.99));
+  border-color: rgba(255,255,255,.075);
+  box-shadow: 0 20px 48px -34px rgba(0,0,0,.98);
+}
+
+html[data-app-role="motorista"] main:has(#ride-search) [data-testid="ride-card"] > *:hover {
+  border-color: rgba(246,190,28,.18);
+}
+
+/* Perfil — ancorado no CTA exclusivo da assinatura do motorista. */
+html[data-app-role="motorista"] main:has(a[aria-label="Abrir minha assinatura"]) {
+  background:
+    radial-gradient(circle at 85% 0%,rgba(246,190,28,.055),transparent 30%),
+    linear-gradient(180deg,#050607,#030405);
+}
+
+html[data-app-role="motorista"] main:has(a[aria-label="Abrir minha assinatura"]) > div > section:first-of-type {
+  border-color: rgba(246,190,28,.15);
+  background:
+    radial-gradient(circle at 75% 0%,rgba(246,190,28,.10),transparent 36%),
+    linear-gradient(160deg,#111418,#080a0c);
+  box-shadow: 0 24px 56px -36px rgba(0,0,0,.98);
+}
+
+html[data-app-role="motorista"] main:has(a[aria-label="Abrir minha assinatura"]) a[aria-label="Abrir minha assinatura"] > * {
+  border-color: rgba(246,190,28,.18);
+  background: linear-gradient(145deg,rgba(246,190,28,.075),rgba(10,12,14,.98));
+  box-shadow: 0 18px 42px -32px rgba(246,190,28,.28);
+}
+
+html[data-app-role="motorista"] main:has(a[aria-label="Abrir minha assinatura"]) section[aria-label="Resumo do perfil"] > * {
+  background: linear-gradient(145deg,rgba(16,19,22,.98),rgba(8,10,12,.98));
+  border-color: rgba(255,255,255,.075);
+}
+
+/* Notificações — cartões reais, mantendo markRead/remove/realtime intactos. */
+html[data-app-role="motorista"] main:has(button[aria-label="Excluir notificação"]) > section:first-child {
+  background:
+    radial-gradient(circle at 82% 0%,rgba(246,190,28,.09),transparent 34%),
+    linear-gradient(145deg,#111418,#080a0c) !important;
+  border-color: rgba(246,190,28,.14) !important;
+  box-shadow: 0 22px 52px -36px rgba(0,0,0,.98);
+}
+
+html[data-app-role="motorista"] main:has(button[aria-label="Excluir notificação"]) li {
+  box-shadow: 0 16px 38px -30px rgba(0,0,0,.98);
+}
+
+html[data-app-role="motorista"] main:has(button[aria-label="Excluir notificação"]) li:not(:has(.bg-zinc-700)) {
+  background: linear-gradient(145deg,rgba(246,190,28,.075),rgba(11,13,15,.98)) !important;
+  border-color: rgba(246,190,28,.20) !important;
+}
+
+@media (max-width: 390px) {
+  html[data-app-role="motorista"] main:has(#ride-search) section[aria-label="Resumo do período"] > .grid {
+    gap: 6px;
+  }
+}
