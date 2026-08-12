@@ -20,10 +20,23 @@ export function DriverVoiceToggle({ visible = true }: { visible?: boolean }) {
       aria-pressed={enabled}
       aria-label={enabled ? "Desativar voz da navegação" : "Ativar voz da navegação"}
       title={enabled ? "Desativar voz" : "Ativar voz"}
-      className="fixed right-4 z-[46] flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-[#0D0F11]/92 text-[#F6BE1C] shadow-[0_14px_32px_-18px_rgba(0,0,0,0.9)] backdrop-blur-md active:scale-95"
-      style={{ top: "calc(env(safe-area-inset-top) + 78px)" }}
+      className={`press-scale fixed right-4 z-[46] flex h-[50px] items-center gap-2 rounded-full border px-3 shadow-[0_16px_38px_-20px_rgba(0,0,0,0.95)] backdrop-blur-xl transition ${
+        enabled
+          ? "border-[#F6BE1C]/35 bg-[#0B0D0F]/94 text-[#F6BE1C]"
+          : "border-white/10 bg-[#0B0D0F]/90 text-zinc-400"
+      }`}
+      style={{ top: "calc(env(safe-area-inset-top) + 76px)" }}
     >
-      {enabled ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5 text-zinc-400" />}
+      <span
+        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
+          enabled ? "bg-[#F6BE1C]/12" : "bg-white/5"
+        }`}
+      >
+        {enabled ? <Volume2 className="h-[18px] w-[18px]" /> : <VolumeX className="h-[18px] w-[18px]" />}
+      </span>
+      <span className="pr-1 text-[10px] font-black uppercase tracking-[0.13em]">
+        {enabled ? "Voz ativa" : "Voz off"}
+      </span>
     </button>
   );
 }
