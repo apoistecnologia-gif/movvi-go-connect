@@ -92,6 +92,72 @@ html[data-app-role="motorista"] main:has(button[aria-label="Excluir notificaçã
   border-color: rgba(246,190,28,.20) !important;
 }
 
+/* Segurança — ancorada no atalho real para a polícia. */
+html[data-app-role="motorista"] main:has(a[href="tel:190"]) {
+  background:
+    radial-gradient(circle at 82% 2%,rgba(239,68,68,.055),transparent 28%),
+    radial-gradient(circle at 12% 20%,rgba(246,190,28,.04),transparent 30%),
+    linear-gradient(180deg,#050607,#030405);
+}
+
+html[data-app-role="motorista"] main:has(a[href="tel:190"]) > section:first-child {
+  background:
+    radial-gradient(circle at 85% 0%,rgba(239,68,68,.09),transparent 34%),
+    linear-gradient(150deg,#141214,#090a0c) !important;
+  border-color: rgba(239,68,68,.22) !important;
+  box-shadow: 0 24px 56px -38px rgba(239,68,68,.36);
+}
+
+html[data-app-role="motorista"] main:has(a[href="tel:190"]) > section:not(:first-child) {
+  box-shadow: 0 20px 48px -36px rgba(0,0,0,.98);
+}
+
+html[data-app-role="motorista"] main:has(a[href="tel:190"]) input:focus {
+  box-shadow: 0 0 0 3px rgba(246,190,28,.09);
+}
+
+/* Documentos — ancorado nos inputs de upload exclusivos da tela. */
+html[data-app-role="motorista"] main:has(input[type="file"]) {
+  background:
+    radial-gradient(circle at 88% 1%,rgba(246,190,28,.055),transparent 30%),
+    linear-gradient(180deg,#050607,#030405);
+}
+
+html[data-app-role="motorista"] main:has(input[type="file"]) > section:first-child {
+  box-shadow: 0 26px 58px -38px rgba(246,190,28,.30);
+}
+
+html[data-app-role="motorista"] main:has(input[type="file"]) article {
+  background: linear-gradient(150deg,rgba(16,19,22,.99),rgba(8,10,12,.99)) !important;
+  border-color: rgba(255,255,255,.075) !important;
+  box-shadow: 0 18px 44px -34px rgba(0,0,0,.98);
+}
+
+html[data-app-role="motorista"] main:has(input[type="file"]) article:has(.text-emerald-400) {
+  border-color: rgba(52,211,153,.14) !important;
+}
+
+/* Detalhes da corrida — ancorado no retorno direto ao histórico. */
+html[data-app-role="motorista"] main:has(> div > a[href="/motorista/corridas"]) {
+  background:
+    radial-gradient(circle at 88% 0%,rgba(246,190,28,.055),transparent 30%),
+    linear-gradient(180deg,#050607,#030405);
+}
+
+html[data-app-role="motorista"] main:has(> div > a[href="/motorista/corridas"]) > div > div {
+  background: linear-gradient(155deg,rgba(16,19,22,.99),rgba(7,9,11,.99));
+  border-color: rgba(255,255,255,.075);
+  box-shadow: 0 26px 60px -40px rgba(0,0,0,.98);
+}
+
+html[data-app-role="motorista"] main:has(> div > a[href="/motorista/corridas"]) .text-primary {
+  color: #F6BE1C !important;
+}
+
+html[data-app-role="motorista"] main:has(> div > a[href="/motorista/corridas"]) .bg-primary\/15 {
+  background-color: rgba(246,190,28,.12) !important;
+}
+
 @media (max-width: 390px) {
   html[data-app-role="motorista"] main:has(#ride-search) section[aria-label="Resumo do período"] > .grid {
     gap: 6px;
