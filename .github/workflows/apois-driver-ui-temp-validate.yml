@@ -1,0 +1,47 @@
+name: TEMP APOIS Motorista UI Validate
+
+on:
+  push:
+    branches:
+      - feat/apois-driver-ui-refresh
+    paths:
+      - "src/**"
+      - "package.json"
+      - "package-lock.json"
+      - "tests/mobile/**"
+      - "tsconfig.driver-phase7.json"
+      - ".github/workflows/apois-driver-ui-temp-validate.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Driver Phase 9 contract
+        run: node tests/mobile/driver-phase9-contract.mjs
+
+      - name: Driver navigation contract
+        run: node tests/mobile/driver-navigation-contract.mjs
+
+      - name: Driver critical TypeScript
+        run: npx tsc --noEmit --project tsconfig.driver-phase7.json
+
+      - name: Build Motorista SPA
+        run: npm run build:motorista
+
+      - name: General production build
+        run: npm run build
