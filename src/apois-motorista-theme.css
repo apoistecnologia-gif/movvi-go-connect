@@ -11,30 +11,24 @@ html[data-app-role="motorista"].dark {
   --foreground: #f8fafc;
   --surface: #0a0c0e;
   --surface-2: #111418;
-
   --card: #0d0f11;
   --card-foreground: #f8fafc;
   --popover: #0d0f11;
   --popover-foreground: #f8fafc;
-
   --primary: #f6be1c;
   --primary-foreground: #08090a;
   --primary-glow: #ffd34f;
-
   --secondary: #c88f00;
   --secondary-foreground: #08090a;
-
   --muted: #181b1e;
   --muted-foreground: #969da6;
   --accent: #f6be1c;
   --accent-foreground: #08090a;
-
   --success: #12c985;
   --warning: #f6be1c;
   --border: #282c30;
   --input: #121519;
   --ring: #f6be1c;
-
   --sidebar: #080a0c;
   --sidebar-foreground: #f8fafc;
   --sidebar-primary: #f6be1c;
@@ -43,11 +37,8 @@ html[data-app-role="motorista"].dark {
   --sidebar-accent-foreground: #f8fafc;
   --sidebar-border: #282c30;
   --sidebar-ring: #f6be1c;
-
   --color-status-inride: #f6be1c;
   --color-status-arrived: #12c985;
-
-  /* Tokens visuais específicos do app Motorista. */
   --apois-gold: #f6be1c;
   --apois-gold-strong: #ffbd00;
   --apois-gold-soft: rgba(246, 190, 28, 0.13);
@@ -61,7 +52,6 @@ html[data-app-role="motorista"].dark {
   --apois-shadow-gold: 0 18px 42px -26px rgba(246, 190, 28, 0.72);
   --apois-radius-card: 20px;
   --apois-radius-sheet: 28px;
-
   color-scheme: dark;
 }
 
@@ -72,211 +62,134 @@ html[data-app-role="motorista"] body {
   -webkit-tap-highlight-color: transparent;
   text-rendering: optimizeLegibility;
 }
-
-html[data-app-role="motorista"] ::selection {
-  background: rgba(246, 190, 28, 0.28);
-  color: #ffffff;
-}
-
-/* Acabamento dos cartões/sheets do motorista, alinhado aos mockups APOIS. */
-html[data-app-role="motorista"] .surface-card {
-  background: linear-gradient(180deg, rgba(18, 21, 24, 0.98), rgba(10, 12, 14, 0.98));
-  border-color: rgba(255, 255, 255, 0.09);
-  box-shadow: var(--apois-shadow);
-}
-
+html[data-app-role="motorista"] ::selection { background: rgba(246,190,28,.28); color:#fff; }
+html[data-app-role="motorista"] .surface-card { background:linear-gradient(180deg,rgba(18,21,24,.98),rgba(10,12,14,.98)); border-color:rgba(255,255,255,.09); box-shadow:var(--apois-shadow); }
 html[data-app-role="motorista"] input,
 html[data-app-role="motorista"] textarea,
 html[data-app-role="motorista"] select,
-html[data-app-role="motorista"] button {
-  font: inherit;
-}
-
+html[data-app-role="motorista"] button { font:inherit; }
 html[data-app-role="motorista"] input,
 html[data-app-role="motorista"] textarea,
-html[data-app-role="motorista"] select {
-  caret-color: var(--apois-gold);
-}
-
+html[data-app-role="motorista"] select { caret-color:var(--apois-gold); }
 html[data-app-role="motorista"] input:focus,
 html[data-app-role="motorista"] textarea:focus,
-html[data-app-role="motorista"] select:focus {
-  outline-color: #f6be1c;
-}
-
+html[data-app-role="motorista"] select:focus { outline-color:#f6be1c; }
 html[data-app-role="motorista"] input::placeholder,
-html[data-app-role="motorista"] textarea::placeholder {
-  color: #666d76;
-}
-
+html[data-app-role="motorista"] textarea::placeholder { color:#666d76; }
 html[data-app-role="motorista"] button:focus-visible,
-html[data-app-role="motorista"] a:focus-visible {
-  outline: 2px solid rgba(246, 190, 28, 0.72);
-  outline-offset: 2px;
-}
-
-/* Scrollbars discretas nos sheets sem alterar comportamento de rolagem. */
-html[data-app-role="motorista"] * {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(246, 190, 28, 0.22) transparent;
-}
-
-html[data-app-role="motorista"] *::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
-}
-
-html[data-app-role="motorista"] *::-webkit-scrollbar-thumb {
-  background: rgba(246, 190, 28, 0.22);
-  border-radius: 999px;
-}
-
-/* Mantém feedback de toque consistente nos CTAs sem interferir nos handlers. */
-html[data-app-role="motorista"] .press-scale {
-  transform: translateZ(0);
-  transition-property: transform, filter, background-color, border-color, color, opacity;
-  transition-duration: 150ms;
-  transition-timing-function: ease-out;
-  will-change: transform;
-}
-
-html[data-app-role="motorista"] .press-scale:active {
-  transform: scale(0.975);
-}
-
+html[data-app-role="motorista"] a:focus-visible { outline:2px solid rgba(246,190,28,.72); outline-offset:2px; }
+html[data-app-role="motorista"] * { scrollbar-width:thin; scrollbar-color:rgba(246,190,28,.22) transparent; }
+html[data-app-role="motorista"] *::-webkit-scrollbar { width:4px; height:4px; }
+html[data-app-role="motorista"] *::-webkit-scrollbar-thumb { background:rgba(246,190,28,.22); border-radius:999px; }
+html[data-app-role="motorista"] .press-scale { transform:translateZ(0); transition-property:transform,filter,background-color,border-color,color,opacity; transition-duration:150ms; transition-timing-function:ease-out; will-change:transform; }
+html[data-app-role="motorista"] .press-scale:active { transform:scale(.975); }
 html[data-app-role="motorista"] button:disabled,
-html[data-app-role="motorista"] [aria-disabled="true"] {
-  cursor: not-allowed;
-}
+html[data-app-role="motorista"] [aria-disabled="true"] { cursor:not-allowed; }
 
-/* Google Maps: acabamento dos controles nativos no mapa escuro do Motorista. */
 html[data-app-role="motorista"] .gm-style .gm-style-cc,
-html[data-app-role="motorista"] .gm-style a[href^="https://maps.google.com/maps"] {
-  opacity: 0.58;
-}
-
+html[data-app-role="motorista"] .gm-style a[href^="https://maps.google.com/maps"] { opacity:.58; }
 html[data-app-role="motorista"] .gm-style .gm-control-active,
-html[data-app-role="motorista"] .gm-style button.gm-control-active {
-  border-radius: 14px !important;
-  overflow: hidden;
-  box-shadow: 0 12px 30px -18px rgba(0, 0, 0, 0.9) !important;
-}
-
+html[data-app-role="motorista"] .gm-style button.gm-control-active { border-radius:14px!important; overflow:hidden; box-shadow:0 12px 30px -18px rgba(0,0,0,.9)!important; }
 html[data-app-role="motorista"] .gm-style .gm-svpc,
-html[data-app-role="motorista"] .gm-style .gmnoprint > div {
-  border-radius: 14px !important;
-}
-
-/* Evita flash claro dos controles sobre o mapa enquanto carregam. */
+html[data-app-role="motorista"] .gm-style .gmnoprint > div { border-radius:14px!important; }
 html[data-app-role="motorista"] .gm-style .gmnoprint button,
-html[data-app-role="motorista"] .gm-style .gm-fullscreen-control {
-  background-color: rgba(11, 13, 15, 0.94) !important;
-}
-
+html[data-app-role="motorista"] .gm-style .gm-fullscreen-control { background-color:rgba(11,13,15,.94)!important; }
 html[data-app-role="motorista"] .gm-style .gmnoprint button img,
-html[data-app-role="motorista"] .gm-style .gm-fullscreen-control img {
-  filter: invert(1) brightness(1.18);
-}
+html[data-app-role="motorista"] .gm-style .gm-fullscreen-control img { filter:invert(1) brightness(1.18); }
+html[data-app-role="motorista"] [role="dialog"] { -webkit-font-smoothing:antialiased; }
 
-/* Contraste de popovers/sheets no mapa, sem alterar posicionamento ou eventos. */
-html[data-app-role="motorista"] [role="dialog"] {
-  -webkit-font-smoothing: antialiased;
-}
-
-/* ============================================================
- * HOME / MAPA EM ESPERA
- * Estilização deliberadamente baseada somente na árvore visual existente.
- * Não há display:none, pointer-events:none, reposicionamento do mapa nem
- * alteração de callbacks. O objetivo é deixar o estado idle com aparência
- * de central operacional enquanto o mesmo dispatch continua por baixo.
- * ============================================================ */
-
-/* Barra superior do mapa: mais sólida e legível sob ruas/labels. */
+/* HOME / MAPA EM ESPERA */
 html[data-app-role="motorista"] .absolute.inset-x-0.top-0.z-40 > div {
-  background:
-    linear-gradient(180deg, rgba(12, 14, 17, 0.94), rgba(7, 9, 11, 0.88)) !important;
-  border-color: rgba(255, 255, 255, 0.10) !important;
-  box-shadow:
-    0 20px 48px -30px rgba(0, 0, 0, 0.96),
-    inset 0 1px 0 rgba(255, 255, 255, 0.035) !important;
-  backdrop-filter: blur(16px) saturate(140%) !important;
+  background:linear-gradient(180deg,rgba(12,14,17,.94),rgba(7,9,11,.88))!important;
+  border-color:rgba(255,255,255,.10)!important;
+  box-shadow:0 20px 48px -30px rgba(0,0,0,.96),inset 0 1px 0 rgba(255,255,255,.035)!important;
+  backdrop-filter:blur(16px) saturate(140%)!important;
 }
-
-/* Halo discreto no botão de centralização para encontrá-lo rapidamente. */
 html[data-app-role="motorista"] button[aria-label="Centralizar mapa"] {
-  background: rgba(10, 12, 15, 0.94) !important;
-  border-color: rgba(246, 190, 28, 0.26) !important;
-  color: #f6be1c !important;
-  box-shadow:
-    0 16px 34px -22px rgba(0, 0, 0, 0.98),
-    0 0 0 1px rgba(246, 190, 28, 0.05) !important;
+  background:rgba(10,12,15,.94)!important;
+  border-color:rgba(246,190,28,.26)!important;
+  color:#f6be1c!important;
+  box-shadow:0 16px 34px -22px rgba(0,0,0,.98),0 0 0 1px rgba(246,190,28,.05)!important;
 }
-
-/* Painel idle: mesma estrutura/handlers, acabamento inspirado nos mockups. */
 html[data-app-role="motorista"] div.absolute.inset-x-0.z-30.rounded-t-\[28px\] {
-  background:
-    radial-gradient(circle at 86% 0%, rgba(246, 190, 28, 0.075), transparent 31%),
-    linear-gradient(180deg, rgba(17, 20, 24, 0.985), rgba(7, 9, 11, 0.995)) !important;
-  border-top: 1px solid rgba(255, 255, 255, 0.095) !important;
-  box-shadow:
-    0 -24px 64px -38px rgba(0, 0, 0, 0.98),
-    inset 0 1px 0 rgba(255, 255, 255, 0.025) !important;
-  backdrop-filter: blur(18px) saturate(125%);
+  background:radial-gradient(circle at 86% 0%,rgba(246,190,28,.075),transparent 31%),linear-gradient(180deg,rgba(17,20,24,.985),rgba(7,9,11,.995))!important;
+  border-top:1px solid rgba(255,255,255,.095)!important;
+  box-shadow:0 -24px 64px -38px rgba(0,0,0,.98),inset 0 1px 0 rgba(255,255,255,.025)!important;
+  backdrop-filter:blur(18px) saturate(125%);
+}
+html[data-app-role="motorista"] div.absolute.inset-x-0.z-30.rounded-t-\[28px\] > div:first-child { background:linear-gradient(90deg,rgba(255,255,255,.08),rgba(246,190,28,.34),rgba(255,255,255,.08))!important; box-shadow:0 0 14px rgba(246,190,28,.10); }
+html[data-app-role="motorista"] div.absolute.inset-x-0.z-30.rounded-t-\[28px\] .grid.grid-cols-2 > div { background:linear-gradient(145deg,rgba(255,255,255,.045),rgba(255,255,255,.012))!important; border-color:rgba(255,255,255,.085)!important; box-shadow:inset 0 1px 0 rgba(255,255,255,.025); }
+html[data-app-role="motorista"] div.absolute.inset-x-0.z-30.rounded-t-\[28px\] .grid.grid-cols-2 > div:last-child { border-color:rgba(246,190,28,.18)!important; background:linear-gradient(145deg,rgba(246,190,28,.075),rgba(255,255,255,.012))!important; }
+html[data-app-role="motorista"] div.absolute.inset-x-0.z-30.rounded-t-\[28px\] button.h-14 { min-height:56px; font-weight:800; letter-spacing:.015em; box-shadow:0 18px 42px -26px rgba(246,190,28,.78),inset 0 1px 0 rgba(255,255,255,.20); }
+html[data-app-role="motorista"] div.absolute.inset-x-0.z-30.rounded-t-\[28px\] button.h-14:not([class*="bg-primary"]) { border-color:rgba(255,255,255,.12)!important; box-shadow:0 16px 36px -28px rgba(0,0,0,.96),inset 0 1px 0 rgba(255,255,255,.025); }
+html[data-app-role="motorista"] .gm-style { -webkit-font-smoothing:antialiased; }
+
+/* OFERTA DE CORRIDA — mantém onAccept/onReject/countdown intactos. */
+html[data-app-role="motorista"] [role="dialog"] > .relative.flex.w-full.max-w-md {
+  background:radial-gradient(circle at 72% 0%,rgba(246,190,28,.09),transparent 32%),linear-gradient(180deg,#111418 0%,#080a0c 100%)!important;
+  border-color:rgba(246,190,28,.18)!important;
+  box-shadow:0 -28px 72px -28px rgba(0,0,0,.98),0 0 0 1px rgba(246,190,28,.04)!important;
+}
+html[data-app-role="motorista"] [role="dialog"] .grid.grid-cols-4 > div {
+  background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.015))!important;
+  border-color:rgba(255,255,255,.085)!important;
+}
+html[data-app-role="motorista"] [role="dialog"] button[aria-label="Ver perfil do passageiro"] {
+  background:rgba(255,255,255,.028)!important;
+  border-color:rgba(255,255,255,.09)!important;
+}
+html[data-app-role="motorista"] [role="dialog"] .sticky.bottom-0 {
+  background:linear-gradient(180deg,rgba(7,9,11,.88),#050607 34%)!important;
+  border-color:rgba(255,255,255,.08)!important;
+  box-shadow:0 -20px 40px -30px rgba(0,0,0,.96);
+}
+html[data-app-role="motorista"] [role="dialog"] .sticky.bottom-0 button:last-child {
+  box-shadow:0 18px 40px -24px rgba(246,190,28,.72);
 }
 
-/* Alça do painel com assinatura dourada bem sutil. */
-html[data-app-role="motorista"] div.absolute.inset-x-0.z-30.rounded-t-\[28px\] > div:first-child {
-  background: linear-gradient(90deg, rgba(255,255,255,.08), rgba(246,190,28,.34), rgba(255,255,255,.08)) !important;
-  box-shadow: 0 0 14px rgba(246, 190, 28, 0.10);
+/* EMBARQUE / EM VIAGEM — substitui cartões brancos por glass escuro APOIS. */
+html[data-app-role="motorista"] [class*="bg-white/90"],
+html[data-app-role="motorista"] [class*="bg-white/85"] {
+  background:linear-gradient(180deg,rgba(15,18,22,.95),rgba(7,9,11,.94))!important;
+  border-color:rgba(246,190,28,.20)!important;
+  color:#f8fafc!important;
+  box-shadow:0 18px 44px -24px rgba(0,0,0,.96),inset 0 1px 0 rgba(255,255,255,.035)!important;
+}
+html[data-app-role="motorista"] [class*="bg-white/90"] [class*="text-black"],
+html[data-app-role="motorista"] [class*="bg-white/85"] [class*="text-black"] { color:#d9dde3!important; }
+html[data-app-role="motorista"] [class*="bg-white/90"] [class*="bg-black/10"],
+html[data-app-role="motorista"] [class*="bg-white/85"] [class*="bg-black/10"] { background:rgba(255,255,255,.10)!important; }
+html[data-app-role="motorista"] .fixed.inset-x-0.bottom-0.z-40 {
+  background:linear-gradient(180deg,rgba(11,14,18,.965),rgba(4,6,8,.99))!important;
+  border-color:rgba(255,255,255,.085)!important;
+  box-shadow:0 -22px 56px -34px rgba(0,0,0,.98)!important;
+}
+html[data-app-role="motorista"] .fixed.inset-x-0.bottom-0.z-40 button[class*="bg-[#F6BE1C]"] {
+  border:1px solid rgba(255,214,82,.30);
+  box-shadow:0 18px 42px -24px rgba(246,190,28,.72)!important;
 }
 
-/* Cards “Corridas hoje / Ganhos hoje”. */
-html[data-app-role="motorista"] div.absolute.inset-x-0.z-30.rounded-t-\[28px\] .grid.grid-cols-2 > div {
-  background:
-    linear-gradient(145deg, rgba(255,255,255,.045), rgba(255,255,255,.012)) !important;
-  border-color: rgba(255, 255, 255, 0.085) !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.025);
+/* PIN — somente aparência; validação continua /^\d{4}$/ e mesmo onStart. */
+html[data-app-role="motorista"] input[inputmode="numeric"],
+html[data-app-role="motorista"] input[maxlength="4"] {
+  background:#080a0c!important;
+  border-color:rgba(246,190,28,.24)!important;
+  color:#fff!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025);
+}
+html[data-app-role="motorista"] input[inputmode="numeric"]:focus,
+html[data-app-role="motorista"] input[maxlength="4"]:focus {
+  border-color:rgba(246,190,28,.70)!important;
+  box-shadow:0 0 0 3px rgba(246,190,28,.12)!important;
 }
 
-/* O card de ganhos ganha um detalhe dourado sem alterar conteúdo. */
-html[data-app-role="motorista"] div.absolute.inset-x-0.z-30.rounded-t-\[28px\] .grid.grid-cols-2 > div:last-child {
-  border-color: rgba(246, 190, 28, 0.18) !important;
-  background:
-    linear-gradient(145deg, rgba(246,190,28,.075), rgba(255,255,255,.012)) !important;
-}
-
-/* Botão online/offline já contém o callback oficial; só ganha presença visual. */
-html[data-app-role="motorista"] div.absolute.inset-x-0.z-30.rounded-t-\[28px\] button.h-14 {
-  min-height: 56px;
-  font-weight: 800;
-  letter-spacing: 0.015em;
-  box-shadow:
-    0 18px 42px -26px rgba(246, 190, 28, 0.78),
-    inset 0 1px 0 rgba(255, 255, 255, 0.20);
-}
-
-/* Em estado online o CTA escuro fica com contorno mais perceptível. */
-html[data-app-role="motorista"] div.absolute.inset-x-0.z-30.rounded-t-\[28px\] button.h-14:not([class*="bg-primary"]) {
-  border-color: rgba(255, 255, 255, 0.12) !important;
-  box-shadow:
-    0 16px 36px -28px rgba(0, 0, 0, 0.96),
-    inset 0 1px 0 rgba(255,255,255,.025);
-}
-
-/* O marcador do Google Maps permanece operacional; somente reduzimos ruído
-   visual em labels secundários para destacar motorista/rota. */
-html[data-app-role="motorista"] .gm-style {
-  -webkit-font-smoothing: antialiased;
-}
-
-/* Respeita usuários com redução de movimento. */
 @media (prefers-reduced-motion: reduce) {
   html[data-app-role="motorista"] *,
   html[data-app-role="motorista"] *::before,
   html[data-app-role="motorista"] *::after {
-    scroll-behavior: auto !important;
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+    scroll-behavior:auto!important;
+    animation-duration:.01ms!important;
+    animation-iteration-count:1!important;
+    transition-duration:.01ms!important;
   }
 }
