@@ -183,6 +183,92 @@ html[data-app-role="motorista"] [role="dialog"] {
   -webkit-font-smoothing: antialiased;
 }
 
+/* ============================================================
+ * HOME / MAPA EM ESPERA
+ * Estilização deliberadamente baseada somente na árvore visual existente.
+ * Não há display:none, pointer-events:none, reposicionamento do mapa nem
+ * alteração de callbacks. O objetivo é deixar o estado idle com aparência
+ * de central operacional enquanto o mesmo dispatch continua por baixo.
+ * ============================================================ */
+
+/* Barra superior do mapa: mais sólida e legível sob ruas/labels. */
+html[data-app-role="motorista"] .absolute.inset-x-0.top-0.z-40 > div {
+  background:
+    linear-gradient(180deg, rgba(12, 14, 17, 0.94), rgba(7, 9, 11, 0.88)) !important;
+  border-color: rgba(255, 255, 255, 0.10) !important;
+  box-shadow:
+    0 20px 48px -30px rgba(0, 0, 0, 0.96),
+    inset 0 1px 0 rgba(255, 255, 255, 0.035) !important;
+  backdrop-filter: blur(16px) saturate(140%) !important;
+}
+
+/* Halo discreto no botão de centralização para encontrá-lo rapidamente. */
+html[data-app-role="motorista"] button[aria-label="Centralizar mapa"] {
+  background: rgba(10, 12, 15, 0.94) !important;
+  border-color: rgba(246, 190, 28, 0.26) !important;
+  color: #f6be1c !important;
+  box-shadow:
+    0 16px 34px -22px rgba(0, 0, 0, 0.98),
+    0 0 0 1px rgba(246, 190, 28, 0.05) !important;
+}
+
+/* Painel idle: mesma estrutura/handlers, acabamento inspirado nos mockups. */
+html[data-app-role="motorista"] div.absolute.inset-x-0.z-30.rounded-t-\[28px\] {
+  background:
+    radial-gradient(circle at 86% 0%, rgba(246, 190, 28, 0.075), transparent 31%),
+    linear-gradient(180deg, rgba(17, 20, 24, 0.985), rgba(7, 9, 11, 0.995)) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.095) !important;
+  box-shadow:
+    0 -24px 64px -38px rgba(0, 0, 0, 0.98),
+    inset 0 1px 0 rgba(255, 255, 255, 0.025) !important;
+  backdrop-filter: blur(18px) saturate(125%);
+}
+
+/* Alça do painel com assinatura dourada bem sutil. */
+html[data-app-role="motorista"] div.absolute.inset-x-0.z-30.rounded-t-\[28px\] > div:first-child {
+  background: linear-gradient(90deg, rgba(255,255,255,.08), rgba(246,190,28,.34), rgba(255,255,255,.08)) !important;
+  box-shadow: 0 0 14px rgba(246, 190, 28, 0.10);
+}
+
+/* Cards “Corridas hoje / Ganhos hoje”. */
+html[data-app-role="motorista"] div.absolute.inset-x-0.z-30.rounded-t-\[28px\] .grid.grid-cols-2 > div {
+  background:
+    linear-gradient(145deg, rgba(255,255,255,.045), rgba(255,255,255,.012)) !important;
+  border-color: rgba(255, 255, 255, 0.085) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.025);
+}
+
+/* O card de ganhos ganha um detalhe dourado sem alterar conteúdo. */
+html[data-app-role="motorista"] div.absolute.inset-x-0.z-30.rounded-t-\[28px\] .grid.grid-cols-2 > div:last-child {
+  border-color: rgba(246, 190, 28, 0.18) !important;
+  background:
+    linear-gradient(145deg, rgba(246,190,28,.075), rgba(255,255,255,.012)) !important;
+}
+
+/* Botão online/offline já contém o callback oficial; só ganha presença visual. */
+html[data-app-role="motorista"] div.absolute.inset-x-0.z-30.rounded-t-\[28px\] button.h-14 {
+  min-height: 56px;
+  font-weight: 800;
+  letter-spacing: 0.015em;
+  box-shadow:
+    0 18px 42px -26px rgba(246, 190, 28, 0.78),
+    inset 0 1px 0 rgba(255, 255, 255, 0.20);
+}
+
+/* Em estado online o CTA escuro fica com contorno mais perceptível. */
+html[data-app-role="motorista"] div.absolute.inset-x-0.z-30.rounded-t-\[28px\] button.h-14:not([class*="bg-primary"]) {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  box-shadow:
+    0 16px 36px -28px rgba(0, 0, 0, 0.96),
+    inset 0 1px 0 rgba(255,255,255,.025);
+}
+
+/* O marcador do Google Maps permanece operacional; somente reduzimos ruído
+   visual em labels secundários para destacar motorista/rota. */
+html[data-app-role="motorista"] .gm-style {
+  -webkit-font-smoothing: antialiased;
+}
+
 /* Respeita usuários com redução de movimento. */
 @media (prefers-reduced-motion: reduce) {
   html[data-app-role="motorista"] *,
