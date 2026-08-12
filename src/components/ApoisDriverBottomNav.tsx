@@ -19,6 +19,9 @@ const ACTIVE_RIDE_STATUSES = ["motorista_a_caminho", "motorista_chegou", "em_via
  * guard is deliberately redundant: after Android recreates the WebView, a
  * stale React render must never let the bottom navigation cover operational
  * actions such as CHEGUEI, INICIAR CORRIDA or FINALIZAR CORRIDA.
+ *
+ * Visual refresh note: route targets, realtime recovery and active-ride guard
+ * are intentionally unchanged. Only the presentation shell below changed.
  */
 export function ApoisDriverBottomNav({ hidden = false }: { hidden?: boolean }) {
   const [rideActive, setRideActive] = useState(false);
@@ -72,23 +75,32 @@ export function ApoisDriverBottomNav({ hidden = false }: { hidden?: boolean }) {
       <DriverActiveRideRecovery />
       {!hidden && !rideActive && (
         <nav
-          className="fixed inset-x-0 bottom-0 z-[35] border-t border-white/8 bg-black/98 px-1.5 shadow-[0_-16px_40px_rgba(0,0,0,.48)] backdrop-blur-xl"
-          style={{ paddingBottom: "max(env(safe-area-inset-bottom), 7px)" }}
+          className="fixed inset-x-0 bottom-0 z-[35] px-2 pt-1.5"
+          style={{
+            paddingBottom: "max(env(safe-area-inset-bottom), 7px)",
+            background:
+              "linear-gradient(180deg, rgba(3,4,5,0.25) 0%, rgba(3,4,5,0.96) 18%, #030405 100%)",
+          }}
           aria-label="Navegação principal do motorista"
         >
-          <div className="mx-auto grid h-[68px] max-w-md grid-cols-5 gap-0.5">
+          <div
+            className="mx-auto grid h-[70px] max-w-md grid-cols-5 gap-0.5 rounded-t-[24px] border border-b-0 border-white/[0.075] px-1 shadow-[0_-18px_48px_-28px_rgba(0,0,0,0.95)] backdrop-blur-xl"
+            style={{ background: "rgba(8,10,12,0.965)" }}
+          >
             {ITEMS.map((item) => (
               <Link
                 key={item.to}
                 to={item.to}
                 activeOptions={{ exact: true }}
-                className="group flex min-w-0 flex-col items-center justify-center gap-1 text-zinc-600 transition"
+                className="group relative flex min-w-0 flex-col items-center justify-center gap-0.5 text-zinc-500 transition-colors duration-150"
                 activeProps={{ className: "text-[#F6BE1C]" }}
               >
-                <div className="relative flex h-8 w-10 items-center justify-center rounded-xl transition group-active:scale-95">
-                  <item.icon className="h-[21px] w-[21px]" strokeWidth={2} />
+                <div className="relative flex h-[34px] w-[46px] items-center justify-center rounded-[14px] transition duration-150 group-active:scale-95 group-[.active]:bg-[#F6BE1C]/10">
+                  <item.icon className="h-[22px] w-[22px]" strokeWidth={2.05} />
                 </div>
-                <span className="max-w-full truncate text-[9.5px] font-bold tracking-tight">{item.label}</span>
+                <span className="max-w-full truncate text-[9.5px] font-semibold tracking-[-0.01em]">
+                  {item.label}
+                </span>
               </Link>
             ))}
           </div>
