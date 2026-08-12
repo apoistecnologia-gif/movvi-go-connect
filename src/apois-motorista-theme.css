@@ -58,6 +58,7 @@ html[data-app-role="motorista"].dark {
   --apois-line: rgba(255, 255, 255, 0.09);
   --apois-line-gold: rgba(246, 190, 28, 0.34);
   --apois-shadow: 0 18px 48px -24px rgba(0, 0, 0, 0.92);
+  --apois-shadow-gold: 0 18px 42px -26px rgba(246, 190, 28, 0.72);
   --apois-radius-card: 20px;
   --apois-radius-sheet: 28px;
 
@@ -69,6 +70,7 @@ html[data-app-role="motorista"] body {
   color: #f8fafc;
   overscroll-behavior-y: none;
   -webkit-tap-highlight-color: transparent;
+  text-rendering: optimizeLegibility;
 }
 
 html[data-app-role="motorista"] ::selection {
@@ -90,6 +92,12 @@ html[data-app-role="motorista"] button {
   font: inherit;
 }
 
+html[data-app-role="motorista"] input,
+html[data-app-role="motorista"] textarea,
+html[data-app-role="motorista"] select {
+  caret-color: var(--apois-gold);
+}
+
 html[data-app-role="motorista"] input:focus,
 html[data-app-role="motorista"] textarea:focus,
 html[data-app-role="motorista"] select:focus {
@@ -99,6 +107,12 @@ html[data-app-role="motorista"] select:focus {
 html[data-app-role="motorista"] input::placeholder,
 html[data-app-role="motorista"] textarea::placeholder {
   color: #666d76;
+}
+
+html[data-app-role="motorista"] button:focus-visible,
+html[data-app-role="motorista"] a:focus-visible {
+  outline: 2px solid rgba(246, 190, 28, 0.72);
+  outline-offset: 2px;
 }
 
 /* Scrollbars discretas nos sheets sem alterar comportamento de rolagem. */
@@ -123,16 +137,50 @@ html[data-app-role="motorista"] .press-scale {
   transition-property: transform, filter, background-color, border-color, color, opacity;
   transition-duration: 150ms;
   transition-timing-function: ease-out;
+  will-change: transform;
 }
 
 html[data-app-role="motorista"] .press-scale:active {
   transform: scale(0.975);
 }
 
-/* Google Maps: controles nativos mais discretos no mapa escuro. */
+html[data-app-role="motorista"] button:disabled,
+html[data-app-role="motorista"] [aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
+/* Google Maps: acabamento dos controles nativos no mapa escuro do Motorista. */
 html[data-app-role="motorista"] .gm-style .gm-style-cc,
 html[data-app-role="motorista"] .gm-style a[href^="https://maps.google.com/maps"] {
   opacity: 0.58;
+}
+
+html[data-app-role="motorista"] .gm-style .gm-control-active,
+html[data-app-role="motorista"] .gm-style button.gm-control-active {
+  border-radius: 14px !important;
+  overflow: hidden;
+  box-shadow: 0 12px 30px -18px rgba(0, 0, 0, 0.9) !important;
+}
+
+html[data-app-role="motorista"] .gm-style .gm-svpc,
+html[data-app-role="motorista"] .gm-style .gmnoprint > div {
+  border-radius: 14px !important;
+}
+
+/* Evita flash claro dos controles sobre o mapa enquanto carregam. */
+html[data-app-role="motorista"] .gm-style .gmnoprint button,
+html[data-app-role="motorista"] .gm-style .gm-fullscreen-control {
+  background-color: rgba(11, 13, 15, 0.94) !important;
+}
+
+html[data-app-role="motorista"] .gm-style .gmnoprint button img,
+html[data-app-role="motorista"] .gm-style .gm-fullscreen-control img {
+  filter: invert(1) brightness(1.18);
+}
+
+/* Contraste de popovers/sheets no mapa, sem alterar posicionamento ou eventos. */
+html[data-app-role="motorista"] [role="dialog"] {
+  -webkit-font-smoothing: antialiased;
 }
 
 /* Respeita usuários com redução de movimento. */
