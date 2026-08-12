@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Bell, CarFront, House, UserRound, WalletCards } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { DriverActiveRideRecovery } from "@/components/DriverActiveRideRecovery";
+import "@/apois-driver-secondary.css";
 
 const ITEMS = [
   { to: "/motorista/app", label: "Início", icon: House },
