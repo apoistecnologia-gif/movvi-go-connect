@@ -92,15 +92,15 @@ html[data-app-role="motorista"] main:has(button[aria-label="Excluir notificaçã
   border-color: rgba(246,190,28,.20) !important;
 }
 
-/* Segurança — ancorada no atalho real para a polícia. */
-html[data-app-role="motorista"] main:has(a[href="tel:190"]) {
+/* Segurança — ancorada no 190, excluindo a Central de Ajuda (#cat). */
+html[data-app-role="motorista"] main:has(a[href="tel:190"]):not(:has(#cat)) {
   background:
     radial-gradient(circle at 82% 2%,rgba(239,68,68,.055),transparent 28%),
     radial-gradient(circle at 12% 20%,rgba(246,190,28,.04),transparent 30%),
     linear-gradient(180deg,#050607,#030405);
 }
 
-html[data-app-role="motorista"] main:has(a[href="tel:190"]) > section:first-child {
+html[data-app-role="motorista"] main:has(a[href="tel:190"]):not(:has(#cat)) > section:first-child {
   background:
     radial-gradient(circle at 85% 0%,rgba(239,68,68,.09),transparent 34%),
     linear-gradient(150deg,#141214,#090a0c) !important;
@@ -108,12 +108,47 @@ html[data-app-role="motorista"] main:has(a[href="tel:190"]) > section:first-chil
   box-shadow: 0 24px 56px -38px rgba(239,68,68,.36);
 }
 
-html[data-app-role="motorista"] main:has(a[href="tel:190"]) > section:not(:first-child) {
+html[data-app-role="motorista"] main:has(a[href="tel:190"]):not(:has(#cat)) > section:not(:first-child) {
   box-shadow: 0 20px 48px -36px rgba(0,0,0,.98);
 }
 
-html[data-app-role="motorista"] main:has(a[href="tel:190"]) input:focus {
+html[data-app-role="motorista"] main:has(a[href="tel:190"]):not(:has(#cat)) input:focus {
   box-shadow: 0 0 0 3px rgba(246,190,28,.09);
+}
+
+/* Central de Ajuda — formulário real do motorista. */
+html[data-app-role="motorista"] main:has(#cat) {
+  background:
+    radial-gradient(circle at 88% 1%,rgba(246,190,28,.05),transparent 30%),
+    linear-gradient(180deg,#050607,#030405);
+}
+
+html[data-app-role="motorista"] main:has(#cat) .container > header {
+  display: none;
+}
+
+html[data-app-role="motorista"] main:has(#cat) .container > div + div,
+html[data-app-role="motorista"] main:has(#cat) .container > div ~ div,
+html[data-app-role="motorista"] main:has(#cat) .container > div ~ [class*="border"] {
+  border-color: rgba(255,255,255,.075);
+}
+
+html[data-app-role="motorista"] main:has(#cat) [class*="bg-card"] {
+  background: linear-gradient(150deg,rgba(16,19,22,.98),rgba(8,10,12,.99));
+}
+
+html[data-app-role="motorista"] #cat,
+html[data-app-role="motorista"] #subj,
+html[data-app-role="motorista"] #ride,
+html[data-app-role="motorista"] #msg {
+  background-color: rgba(8,10,12,.96) !important;
+  border-color: rgba(255,255,255,.09) !important;
+}
+
+html[data-app-role="motorista"] #subj:focus,
+html[data-app-role="motorista"] #msg:focus {
+  border-color: rgba(246,190,28,.5) !important;
+  box-shadow: 0 0 0 3px rgba(246,190,28,.09) !important;
 }
 
 /* Documentos — ancorado nos inputs de upload exclusivos da tela. */
