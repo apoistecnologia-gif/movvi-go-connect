@@ -109,24 +109,26 @@ function DriverNotificationsPage() {
   const unread = items.filter((item) => !item.read_at).length;
 
   return (
-    <div className="min-h-[100dvh] bg-[#050607] text-white">
+    <div className="relative min-h-[100dvh] overflow-hidden bg-[#050607] text-white">
+      <div className="pointer-events-none fixed inset-x-0 top-0 h-72 bg-[radial-gradient(circle_at_50%_0%,rgba(246,190,28,0.12),transparent_62%)]" />
       <MovviHeader logoutRedirect="/" />
 
-      <main className="mx-auto w-full max-w-xl px-4 pb-[calc(env(safe-area-inset-bottom)+112px)] pt-5">
-        <section className="relative mb-5 overflow-hidden rounded-[30px] border border-[#F6BE1C]/15 bg-gradient-to-br from-[#1A160A] via-[#101214] to-[#08090A] p-5 shadow-[0_24px_70px_-40px_rgba(246,190,28,.7)]">
-          <div className="pointer-events-none absolute -right-12 -top-16 h-40 w-40 rounded-full bg-[#F6BE1C]/10 blur-3xl" />
+      <main className="relative mx-auto w-full max-w-xl px-4 pb-[calc(env(safe-area-inset-bottom)+112px)] pt-5">
+        <section className="relative mb-5 overflow-hidden rounded-[32px] border border-[#F6BE1C]/20 bg-gradient-to-br from-[#211A08] via-[#101214] to-[#08090A] p-5 shadow-[0_28px_80px_-40px_rgba(246,190,28,.78)]">
+          <div className="pointer-events-none absolute -right-12 -top-16 h-44 w-44 rounded-full bg-[#F6BE1C]/12 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-16 -left-16 h-36 w-36 rounded-full bg-white/[0.025] blur-3xl" />
           <div className="relative flex items-center justify-between gap-4">
             <div className="flex min-w-0 items-center gap-3">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] border border-[#F6BE1C]/20 bg-[#F6BE1C]/10 text-[#F6BE1C] shadow-[inset_0_1px_0_rgba(255,255,255,.04)]">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] border border-[#F6BE1C]/25 bg-[#F6BE1C]/12 text-[#F6BE1C] shadow-[inset_0_1px_0_rgba(255,255,255,.05),0_10px_30px_-18px_rgba(246,190,28,.9)]">
                 <Bell className="h-5 w-5" />
               </div>
               <div className="min-w-0">
-                <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.18em] text-[#F6BE1C]">
+                <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-[#F6BE1C]">
                   <Sparkles className="h-3 w-3" /> Central APOIS
                 </div>
-                <h1 className="mt-1 text-[22px] font-black tracking-[-0.03em]">Notificações</h1>
+                <h1 className="mt-1 text-[22px] font-black tracking-[-0.035em]">Notificações</h1>
                 <div className="mt-1 flex items-center gap-2">
-                  <span className={`h-2 w-2 rounded-full ${unread > 0 ? "bg-[#F6BE1C] shadow-[0_0_12px_rgba(246,190,28,.8)]" : "bg-emerald-400"}`} />
+                  <span className={`h-2 w-2 rounded-full ${unread > 0 ? "bg-[#F6BE1C] shadow-[0_0_14px_rgba(246,190,28,.9)]" : "bg-emerald-400"}`} />
                   <p className="text-[11px] font-semibold text-zinc-500">
                     {unread === 0 ? "Tudo em dia" : `${unread} ${unread === 1 ? "não lida" : "não lidas"}`}
                   </p>
@@ -139,7 +141,7 @@ function DriverNotificationsPage() {
                 type="button"
                 disabled={busy || unread === 0}
                 onClick={() => void markAll()}
-                className="flex min-h-10 shrink-0 items-center gap-1.5 rounded-2xl border border-[#F6BE1C]/20 bg-[#F6BE1C]/10 px-3 text-[10px] font-black text-[#F6BE1C] transition active:scale-95 disabled:opacity-35"
+                className="press-scale flex min-h-10 shrink-0 items-center gap-1.5 rounded-2xl border border-[#F6BE1C]/25 bg-[#F6BE1C]/10 px-3 text-[10px] font-black text-[#F6BE1C] shadow-[0_10px_26px_-18px_rgba(246,190,28,.9)] transition hover:bg-[#F6BE1C]/15 disabled:opacity-35"
               >
                 {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCheck className="h-3.5 w-3.5" />}
                 Ler todas
@@ -153,8 +155,8 @@ function DriverNotificationsPage() {
             <Loader2 className="h-7 w-7 animate-spin text-[#F6BE1C]" />
           </div>
         ) : items.length === 0 ? (
-          <section className="rounded-[28px] border border-white/5 bg-[#0D0F11] px-6 py-14 text-center shadow-[0_20px_60px_-42px_rgba(0,0,0,.9)]">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[22px] border border-[#F6BE1C]/15 bg-[#F6BE1C]/10 text-[#F6BE1C]">
+          <section className="rounded-[30px] border border-white/[0.06] bg-[#0D0F11]/95 px-6 py-14 text-center shadow-[0_24px_70px_-42px_rgba(0,0,0,.95)] backdrop-blur-xl">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[22px] border border-[#F6BE1C]/20 bg-[#F6BE1C]/10 text-[#F6BE1C] shadow-[0_12px_34px_-20px_rgba(246,190,28,.8)]">
               <Bell className="h-7 w-7" />
             </div>
             <p className="mt-4 text-sm font-black text-zinc-100">Nenhuma notificação</p>
@@ -167,14 +169,14 @@ function DriverNotificationsPage() {
             {items.map((item) => (
               <li
                 key={item.id}
-                className={`rounded-[24px] border p-4 shadow-[0_18px_45px_-36px_rgba(0,0,0,.95)] transition ${
+                className={`rounded-[24px] border p-4 shadow-[0_18px_46px_-34px_rgba(0,0,0,.98)] backdrop-blur-sm transition ${
                   item.read_at
-                    ? "border-white/5 bg-[#0D0F11]"
-                    : "border-[#F6BE1C]/20 bg-gradient-to-br from-[#171407] to-[#0D0F11]"
+                    ? "border-white/[0.06] bg-[#0D0F11]/95"
+                    : "border-[#F6BE1C]/22 bg-gradient-to-br from-[#1B1607] via-[#111315] to-[#0D0F11] shadow-[0_20px_52px_-34px_rgba(246,190,28,.42)]"
                 }`}
               >
                 <div className="flex items-start gap-3">
-                  <div className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${item.read_at ? "bg-zinc-700" : "bg-[#F6BE1C] shadow-[0_0_10px_rgba(246,190,28,.6)]"}`} />
+                  <div className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${item.read_at ? "bg-zinc-700" : "bg-[#F6BE1C] shadow-[0_0_12px_rgba(246,190,28,.75)]"}`} />
                   <div className="min-w-0 flex-1">
                     <p className="text-[13px] font-black leading-snug text-white">{item.title}</p>
                     {item.body ? (
@@ -189,7 +191,7 @@ function DriverNotificationsPage() {
                       <button
                         type="button"
                         onClick={() => void markRead(item.id)}
-                        className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#F6BE1C]/15 bg-[#F6BE1C]/10 text-[#F6BE1C] transition active:scale-95"
+                        className="press-scale flex h-9 w-9 items-center justify-center rounded-xl border border-[#F6BE1C]/20 bg-[#F6BE1C]/10 text-[#F6BE1C] transition hover:bg-[#F6BE1C]/15"
                         aria-label="Marcar como lida"
                       >
                         <Check className="h-4 w-4" />
@@ -198,7 +200,7 @@ function DriverNotificationsPage() {
                     <button
                       type="button"
                       onClick={() => void remove(item.id)}
-                      className="flex h-9 w-9 items-center justify-center rounded-xl border border-red-400/10 bg-red-400/8 text-red-400 transition active:scale-95"
+                      className="press-scale flex h-9 w-9 items-center justify-center rounded-xl border border-red-400/10 bg-red-400/8 text-red-400 transition hover:bg-red-400/12"
                       aria-label="Excluir notificação"
                     >
                       <Trash2 className="h-4 w-4" />
