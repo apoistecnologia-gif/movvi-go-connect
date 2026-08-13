@@ -186,19 +186,13 @@ function RootComponent() {
       const pathname = router.state.location.pathname;
       if (!profileResult.ok) {
         setDriverRuntimeAllowed(false);
-
-        // Durante o submit da tela de login, deixamos a própria tela exibir a
-        // mensagem específica e encerrar a sessão. Em cold start/deep link,
-        // eliminamos qualquer sessão que não pertença a um motorista.
-        if (pathname !== "/motorista/login") {
-          try {
-            await supabase.auth.signOut();
-          } catch {
-            // Mesmo se o signOut remoto falhar, o app não libera o runtime.
-          }
-          if (!cancelled) {
-            void router.navigate({ to: "/motorista/login", replace: true });
-          }
+        try {
+          await supabase.auth.signOut();
+        } catch {
+          // Mesmo se o signOut remoto falhar, o runtime do Motorista continua negado.
+        }
+        if (!cancelled && pathname !== "/motorista/login") {
+          void router.navigate({ to: "/motorista/login", replace: true });
         }
         return;
       }
