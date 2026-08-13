@@ -7,7 +7,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Toaster } from "sonner";
 
 import appCss from "../styles.css?url";
@@ -22,6 +22,7 @@ import { DriverPresenceKeeper } from "../components/DriverPresenceKeeper";
 import { DriverNativePermissionsSync } from "../components/DriverNativePermissionsSync";
 import { DriverPasswordRecoveryBridge } from "../components/DriverPasswordRecoveryBridge";
 import { supabase } from "../integrations/supabase/client";
+import { loadDriverProfile } from "../lib/driverProfile";
 
 // Ativa o proxy de rede quando rodando dentro do APK (Capacitor).
 // No build web isso é no-op. Precisa rodar antes de qualquer serverFn
@@ -143,6 +144,7 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
+  const [driverRuntimeAllowed, setDriverRuntimeAllowed] = useState(APP_ROLE !== "driver");
 
   // Fase 1 — guarda de bundle por papel (VITE_APP_ROLE).
   // No build "passenger" e "driver", qualquer tentativa de navegar para
@@ -162,36 +164,72 @@ function RootComponent() {
     return () => unsub();
   }, [router]);
 
-  // O Supabase persiste a sessão no localStorage. No APK do Motorista,
-  // restaura a navegação a partir da sessão real em vez de depender da
-  // landing visual. Também reage a INITIAL_SESSION/SIGNED_IN após cold start.
+  // O Supabase compartilha o mesmo Auth entre Passageiro e Motorista, mas uma
+  // sessão autenticada NÃO implica autorização para operar como motorista.
+  // Só restaura/entra no APK Motorista depois de confirmar o perfil Driver
+  // server-side. Contas apenas de passageiro permanecem fora do runtime.
   useEffect(() => {
     if (APP_ROLE !== "driver") return;
     let cancelled = false;
+    let verificationSequence = 0;
 
-    const enterDriverAppWhenAuthenticated = (hasSession: boolean) => {
-      if (!hasSession || cancelled) return;
+    const verifyDriverSession = async (hasSession: boolean) => {
+      const verificationId = ++verificationSequence;
+      if (!hasSession || cancelled) {
+        if (!cancelled) setDriverRuntimeAllowed(false);
+        return;
+      }
+
+      const profileResult = await loadDriverProfile();
+      if (cancelled || verificationId !== verificationSequence) return;
+
       const pathname = router.state.location.pathname;
+      if (!profileResult.ok) {
+        setDriverRuntimeAllowed(false);
+
+        // Durante o submit da tela de login, deixamos a própria tela exibir a
+        // mensagem específica e encerrar a sessão. Em cold start/deep link,
+        // eliminamos qualquer sessão que não pertença a um motorista.
+        if (pathname !== "/motorista/login") {
+          try {
+            await supabase.auth.signOut();
+          } catch {
+            // Mesmo se o signOut remoto falhar, o app não libera o runtime.
+          }
+          if (!cancelled) {
+            void router.navigate({ to: "/motorista/login", replace: true });
+          }
+        }
+        return;
+      }
+
+      setDriverRuntimeAllowed(true);
       if (pathname === "/" || pathname === "/motorista/login") {
-        void router.navigate({ to: "/motorista/app", replace: true });
+        const destination =
+          profileResult.profile.approval_status === "aprovado"
+            ? "/motorista/app"
+            : "/motorista/status";
+        void router.navigate({ to: destination, replace: true });
       }
     };
 
     void supabase.auth.getSession().then(({ data, error }) => {
       if (cancelled) return;
       if (error) {
+        setDriverRuntimeAllowed(false);
         console.warn("[APOIS MOTORISTA] não foi possível restaurar a sessão:", error.message);
         return;
       }
-      enterDriverAppWhenAuthenticated(Boolean(data.session));
+      void verifyDriverSession(Boolean(data.session));
     });
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      enterDriverAppWhenAuthenticated(Boolean(session));
+      void verifyDriverSession(Boolean(session));
     });
 
     return () => {
       cancelled = true;
+      verificationSequence += 1;
       authListener.subscription.unsubscribe();
     };
   }, [router]);
@@ -200,8 +238,8 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <MapThemeProvider>
-          {APP_ROLE === "driver" ? <DriverNativePermissionsSync /> : null}
-          {APP_ROLE === "driver" ? <DriverPresenceKeeper /> : null}
+          {APP_ROLE === "driver" && driverRuntimeAllowed ? <DriverNativePermissionsSync /> : null}
+          {APP_ROLE === "driver" && driverRuntimeAllowed ? <DriverPresenceKeeper /> : null}
           {APP_ROLE === "driver" ? <DriverPasswordRecoveryBridge /> : null}
           <Outlet />
           {APP_ROLE === "web" ? <NotificationPermissionPrompt /> : null}
