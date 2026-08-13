@@ -50,10 +50,13 @@ type PayoutDestination = {
 type Withdrawal = {
   id: string;
   amount: number | string;
+  provider_fee_amount: number | string | null;
+  net_amount: number | string | null;
   status: "pending" | "processing" | "paid" | "failed" | "cancelled";
   provider: string | null;
   failure_reason: string | null;
   requested_at: string;
+  processed_at: string | null;
 };
 
 const money = (value: number | string | null | undefined) =>
@@ -72,6 +75,7 @@ function sourceLabel(source: string) {
   if (source === "ride") return "Corrida";
   if (source === "adjustment") return "Ajuste";
   if (source === "withdrawal") return "Saque Pix";
+  if (source === "withdrawal_fee") return "Taxa de saque";
   if (source === "withdrawal_refund") return "Estorno de saque";
   return "Movimentação da carteira";
 }
@@ -111,7 +115,7 @@ function DriverWalletPage() {
         db.from("driver_wallets").select("driver_id,balance,available_balance,updated_at").eq("driver_id", id).maybeSingle(),
         db.from("driver_wallet_transactions").select("id,driver_id,amount,direction,source,source_id,description,created_at").eq("driver_id", id).order("created_at", { ascending: false }).limit(50),
         db.from("driver_payout_destinations").select("driver_id,pix_key,pix_key_type,holder_name,confirmed_at,payout_available_at").eq("driver_id", id).maybeSingle(),
-        db.from("driver_withdrawals").select("id,amount,status,provider,failure_reason,requested_at").eq("driver_id", id).order("requested_at", { ascending: false }).limit(20),
+        db.from("driver_withdrawals").select("id,amount,provider_fee_amount,net_amount,status,provider,failure_reason,requested_at,processed_at").eq("driver_id", id).order("requested_at", { ascending: false }).limit(20),
       ]);
       if (walletResult.error) throw walletResult.error;
       if (txResult.error) throw txResult.error;
@@ -224,7 +228,11 @@ function DriverWalletPage() {
       if (data?.error) throw new Error(String(data.error));
       await load(driverId);
       setPayoutAmount("");
-      setFinanceMessage(data?.status === "paid" ? "Saque Pix concluído." : "Saque recebido e encaminhado ao provedor para processamento.");
+      const requestedAmount = Number(data?.amount ?? amount);
+      const providerFeeAmount = Number(data?.providerFeeAmount ?? 0);
+      const providerAmount = Number(data?.providerAmount ?? requestedAmount - providerFeeAmount);
+      const statusMessage = data?.status === "paid" ? "Saque Pix concluído." : "Saque recebido e encaminhado ao provedor para processamento.";
+      setFinanceMessage(`${statusMessage} Solicitado: ${money(requestedAmount)} · Taxa de saque: ${money(providerFeeAmount)} · Líquido: ${money(providerAmount)}.`);
     } catch (caught: any) {
       console.error("[APOIS Motorista] saque:", caught);
       const detail = String(caught?.message ?? caught ?? "");
@@ -333,7 +341,7 @@ function DriverWalletPage() {
                   {requestingPayout ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Sacar
                 </button>
               </div>
-              <p className="mt-2 text-[9.5px] font-medium leading-4 text-zinc-600">Mínimo R$ 20,00. A solicitação é idempotente; o saldo só é estornado automaticamente quando o provedor rejeita a transferência de forma confirmada.</p>
+              <p className="mt-2 text-[9.5px] font-medium leading-4 text-zinc-600">Mínimo R$ 20,00. A taxa de saque e o valor líquido são calculados no backend e exibidos assim que a solicitação é aceita.</p>
               {financeMessage && <p className="mt-3 rounded-2xl border border-[#F6BE1C]/15 bg-[#F6BE1C]/5 px-4 py-3 text-[10px] font-bold leading-4 text-zinc-300">{financeMessage}</p>}
             </section>
 
@@ -341,13 +349,25 @@ function DriverWalletPage() {
               <section>
                 <div className="mb-3 px-1"><p className="text-[9px] font-black uppercase tracking-[0.18em] text-zinc-600">Saques</p><h2 className="mt-1 text-base font-black text-white">Últimas solicitações</h2></div>
                 <div className="space-y-2">
-                  {withdrawals.map((withdrawal) => (
-                    <article key={withdrawal.id} className="flex items-center gap-3 rounded-[20px] border border-white/5 bg-[#101214] px-4 py-3.5">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#F6BE1C]/10 text-[#F6BE1C]"><Send className="h-4 w-4" /></div>
-                      <div className="min-w-0 flex-1"><p className="text-[12px] font-black text-white">{withdrawalLabel(withdrawal.status)}</p><p className="mt-0.5 text-[9px] font-medium text-zinc-600">{dateLabel(withdrawal.requested_at)} · {withdrawal.provider || "provedor"}</p></div>
-                      <p className="text-[13px] font-black text-white">{money(withdrawal.amount)}</p>
-                    </article>
-                  ))}
+                  {withdrawals.map((withdrawal) => {
+                    const feeAmount = Number(withdrawal.provider_fee_amount ?? 0);
+                    const requestedAmount = Number(withdrawal.amount ?? 0);
+                    const netAmount = Number(withdrawal.net_amount ?? requestedAmount - feeAmount);
+                    return (
+                      <article key={withdrawal.id} className="rounded-[20px] border border-white/5 bg-[#101214] px-4 py-3.5">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#F6BE1C]/10 text-[#F6BE1C]"><Send className="h-4 w-4" /></div>
+                          <div className="min-w-0 flex-1"><p className="text-[12px] font-black text-white">{withdrawalLabel(withdrawal.status)}</p><p className="mt-0.5 text-[9px] font-medium text-zinc-600">{dateLabel(withdrawal.requested_at)} · {withdrawal.provider || "provedor"}</p></div>
+                          <p className="text-[13px] font-black text-white">{money(requestedAmount)}</p>
+                        </div>
+                        <div className="mt-3 grid grid-cols-3 gap-2 border-t border-white/5 pt-3 text-[9px]">
+                          <div><p className="font-bold uppercase tracking-[0.08em] text-zinc-600">Solicitado</p><p className="mt-1 font-black text-zinc-300">{money(requestedAmount)}</p></div>
+                          <div><p className="font-bold uppercase tracking-[0.08em] text-zinc-600">Taxa de saque</p><p className="mt-1 font-black text-zinc-300">{money(feeAmount)}</p></div>
+                          <div><p className="font-bold uppercase tracking-[0.08em] text-zinc-600">{withdrawal.status === "paid" ? "Líquido recebido" : "Líquido previsto"}</p><p className="mt-1 font-black text-emerald-400">{money(netAmount)}</p></div>
+                        </div>
+                      </article>
+                    );
+                  })}
                 </div>
               </section>
             )}
