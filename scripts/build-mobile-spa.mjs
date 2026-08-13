@@ -9,6 +9,12 @@ if (role !== "passageiro" && role !== "motorista") {
   process.exit(1);
 }
 
+const mode = (process.env.APOIS_MOBILE_VITE_MODE || "mobile").trim();
+if (!/^[a-z0-9][a-z0-9._-]*$/i.test(mode)) {
+  console.error(`[mobile-spa] APOIS_MOBILE_VITE_MODE inválido: ${mode}`);
+  process.exit(1);
+}
+
 const root = process.cwd();
 const distClient = resolve(root, "dist/client");
 const outputServer = resolve(root, ".output/server");
@@ -24,9 +30,10 @@ if (!existsSync(viteBin)) {
 rmSync(distClient, { recursive: true, force: true });
 rmSync(resolve(root, ".output"), { recursive: true, force: true });
 
+console.log(`[mobile-spa] build role=${role} mode=${mode}`);
 execFileSync(
   process.execPath,
-  [viteBin, "build", "--config", "vite.mobile.config.ts", "--mode", "mobile"],
+  [viteBin, "build", "--config", "vite.mobile.config.ts", "--mode", mode],
   { stdio: "inherit", cwd: root, env: process.env },
 );
 
@@ -58,5 +65,5 @@ if (existsSync(outputServer)) {
 }
 
 console.log(
-  `[mobile-spa] OK (${role}): dist/client/index.html + assets gerados sem .output/server.`,
+  `[mobile-spa] OK (${role}, mode=${mode}): dist/client/index.html + assets gerados sem .output/server.`,
 );
