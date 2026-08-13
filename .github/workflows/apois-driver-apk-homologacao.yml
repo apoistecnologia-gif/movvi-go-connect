@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - feat/apois-motorista-producao-homologacao
-      - ui/driver-polish-safe
     paths:
       - ".github/workflows/apois-driver-apk-homologacao.yml"
 
