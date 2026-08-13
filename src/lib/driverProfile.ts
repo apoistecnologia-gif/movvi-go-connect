@@ -28,8 +28,12 @@ export type DriverProfileRow = {
 };
 
 let asaasSubaccountProvisioningAttempted = false;
+const configuredDriverPayoutProvider = String(
+  import.meta.env.VITE_DRIVER_PAYOUT_PROVIDER ?? "",
+).trim().toLowerCase();
 
 async function ensureApprovedDriverAsaasSubaccount(profile: DriverProfileRow): Promise<void> {
+  if (configuredDriverPayoutProvider !== "asaas") return;
   if (profile.approval_status !== "aprovado" || asaasSubaccountProvisioningAttempted) return;
 
   asaasSubaccountProvisioningAttempted = true;
