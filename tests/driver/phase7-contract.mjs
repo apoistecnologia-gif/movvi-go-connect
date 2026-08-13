@@ -18,6 +18,7 @@ const homologationWorkflow = read(".github/workflows/apois-driver-homologation.y
 const driverApp = read("src/routes/motorista.app.tsx");
 const dispatch = read("supabase/functions/dispatch-ride/index.ts");
 const pushSender = read("supabase/functions/send-ride-push/index.ts");
+const pinAuditIdentityFix = read("supabase/migrations/20260813105000_fix_driver_start_ride_audit_actor_identity.sql");
 
 includes(documentsService, 'rpc("driver_update_document"', "KYC RPC");
 includes(documentsService, '"vehicle_photo"', "KYC vehicle photo");
@@ -45,6 +46,11 @@ for (const rpc of [
   "driver_cancel_ride",
   "driver_rate_passenger",
 ]) includes(lifecycle, rpc, `Driver lifecycle ${rpc}`);
+
+includes(pinAuditIdentityFix, "v_auth_user_id uuid := auth.uid();", "PIN audit auth identity");
+includes(pinAuditIdentityFix, "v_user_id uuid := public.mobility_user_id();", "PIN domain mobility identity");
+includes(pinAuditIdentityFix, "values (\n      v_auth_user_id,", "PIN audit actor FK namespace");
+excludes(pinAuditIdentityFix, "values (\n      v_user_id,\n      'ride_security_code_verified'", "PIN audit public-user actor regression");
 
 includes(nativeBridge, "PushNotifications.register", "native push registration");
 includes(nativeBridge, "registerDeviceToken", "native push token handoff");
