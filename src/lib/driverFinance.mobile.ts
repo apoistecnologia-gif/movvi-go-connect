@@ -56,6 +56,14 @@ export interface DriverFinancialDashboard {
     updatedAt: string;
   };
   payoutEnabled: boolean;
+  payout: {
+    enabled: boolean;
+    provider: string | null;
+    reason: string | null;
+    minWithdrawalCents: number;
+    destinationConfirmed: boolean;
+    payoutAvailableAt: string | null;
+  };
   settlements: DriverSettlementItem[];
   withdrawals: DriverWithdrawalItem[];
 }
@@ -133,6 +141,7 @@ function parseDashboard(value: unknown): DriverFinancialDashboard {
     throw new Error("driver_finance_invalid_response");
   }
 
+  const payoutEnabled = payout["enabled"] === true;
   return {
     driverId: requiredString(value, "driver_id"),
     period: {
@@ -153,13 +162,21 @@ function parseDashboard(value: unknown): DriverFinancialDashboard {
       debtBalanceCents: integer(wallet, "debt_balance_cents"),
       updatedAt: requiredString(wallet, "updated_at"),
     },
-    payoutEnabled: payout["enabled"] === true,
+    payoutEnabled,
+    payout: {
+      enabled: payoutEnabled,
+      provider: nullableString(payout, "provider"),
+      reason: nullableString(payout, "reason"),
+      minWithdrawalCents: integer(payout, "min_withdrawal_cents"),
+      destinationConfirmed: payout["destination_confirmed"] === true,
+      payoutAvailableAt: nullableString(payout, "payout_available_at"),
+    },
     settlements: value["settlements"].map(settlement),
     withdrawals: value["withdrawals"].map(withdrawal),
   };
 }
 
-export async function loadDriverFinancialDashboard(
+async function fetchDriverFinancialDashboard(
   from: Date,
   to: Date,
 ): Promise<DriverFinancialDashboard> {
@@ -175,21 +192,76 @@ export async function loadDriverFinancialDashboard(
   return parseDashboard(data);
 }
 
+function payoutDestinationReady(dashboard: DriverFinancialDashboard): boolean {
+  if (!dashboard.payout.destinationConfirmed) return false;
+  if (!dashboard.payout.payoutAvailableAt) return true;
+  const availableAt = Date.parse(dashboard.payout.payoutAvailableAt);
+  return Number.isFinite(availableAt) && availableAt <= Date.now();
+}
+
+async function ensureWooviPaymentAccountIfReady(
+  dashboard: DriverFinancialDashboard,
+): Promise<boolean> {
+  if (dashboard.payout.provider !== "woovi" || !payoutDestinationReady(dashboard)) return false;
+  if (dashboard.payout.reason !== "woovi_subaccount_not_active") return false;
+
+  const { data, error } = await supabase.functions.invoke("driver-woovi-payment-account", {
+    body: {},
+  });
+  if (error || (isRecord(data) && typeof data.error === "string")) {
+    console.warn("[APOIS Driver Finance] Woovi account binding pending", {
+      message: error?.message,
+      providerError: isRecord(data) ? data.error : undefined,
+    });
+    return false;
+  }
+  return true;
+}
+
+export async function loadDriverFinancialDashboard(
+  from: Date,
+  to: Date,
+): Promise<DriverFinancialDashboard> {
+  const dashboard = await fetchDriverFinancialDashboard(from, to);
+  const bound = await ensureWooviPaymentAccountIfReady(dashboard);
+  return bound ? fetchDriverFinancialDashboard(from, to) : dashboard;
+}
+
+function payoutErrorMessage(code: string): string {
+  if (/driver_payouts_not_homologated|homologation_disabled/i.test(code)) {
+    return "Os saques Pix ainda estão em homologação. Seu saldo permanece protegido na carteira.";
+  }
+  if (/payout_provider_not_woovi|payout_provider_not_supported/i.test(code)) {
+    return "O provedor de saques ainda não foi ativado pela APOIS.";
+  }
+  if (/woovi_subaccount_not_active/i.test(code)) {
+    return "Sua conta Pix ainda está sendo vinculada ao provedor. Atualize o financeiro em instantes.";
+  }
+  if (/pix_payout_destination_not_confirmed/i.test(code)) {
+    return "Confirme sua chave Pix na carteira antes de solicitar o saque.";
+  }
+  if (/pix_payout_destination_cooldown/i.test(code)) {
+    return "Sua chave Pix está no período de segurança. O saque será liberado após o prazo exibido na carteira.";
+  }
+  if (/min_withdrawal_amount/i.test(code)) return "O valor solicitado está abaixo do mínimo permitido para saque.";
+  if (/insufficient_available_balance/i.test(code)) return "Saldo disponível insuficiente.";
+  if (/withdrawal_already_in_progress/i.test(code)) return "Já existe um saque em processamento. Aguarde a conclusão.";
+  if (/driver_wallet_debt/i.test(code)) return "Sua carteira possui pendência financeira e não pode sacar agora.";
+  return "Não foi possível solicitar o saque agora.";
+}
+
 export async function requestDriverWithdrawal(amountCents: number): Promise<void> {
   if (!Number.isInteger(amountCents) || amountCents <= 0) throw new Error("Informe um valor de saque válido.");
-  const rpc = supabase as unknown as RpcClient;
-  const { error } = await rpc.rpc("driver_request_withdrawal", {
-    _amount_cents: amountCents,
-    _idempotency_key: crypto.randomUUID(),
-  });
-  if (!error) return;
 
-  const message = error.message ?? "";
-  if (/payout_provider_not_configured/i.test(message)) {
-    throw new Error("Os saques ainda não estão liberados porque o provedor de transferência não foi configurado.");
-  }
-  if (/insufficient_available_balance/i.test(message)) throw new Error("Saldo disponível insuficiente.");
-  if (/driver_wallet_debt/i.test(message)) throw new Error("Sua carteira possui pendência financeira e não pode sacar agora.");
-  console.error("[APOIS Driver Finance] withdrawal failed", { code: error.code, message });
-  throw new Error("Não foi possível solicitar o saque agora.");
+  const idempotencyKey = crypto.randomUUID();
+  const { data, error } = await supabase.functions.invoke("request-driver-payout", {
+    body: { amountCents, idempotencyKey },
+  });
+
+  if (!error && (!isRecord(data) || typeof data.error !== "string")) return;
+
+  const providerCode = isRecord(data) && typeof data.error === "string" ? data.error : "";
+  const detail = `${providerCode} ${error?.message ?? ""}`.trim();
+  console.error("[APOIS Driver Finance] withdrawal failed", { detail });
+  throw new Error(payoutErrorMessage(detail));
 }
