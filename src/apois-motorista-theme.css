@@ -57,11 +57,36 @@ html[data-app-role="motorista"] ::selection {
   color: #ffffff;
 }
 
+html[data-app-role="motorista"] * {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(246, 190, 28, 0.28) transparent;
+}
+
+html[data-app-role="motorista"] *::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+html[data-app-role="motorista"] *::-webkit-scrollbar-thumb {
+  background: rgba(246, 190, 28, 0.28);
+  border-radius: 999px;
+}
+
+html[data-app-role="motorista"] *::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 /* Acabamento dos cartões/sheets do motorista, alinhado aos mockups APOIS. */
 html[data-app-role="motorista"] .surface-card {
   background: linear-gradient(160deg, #121518 0%, #0d0f11 100%);
   border-color: rgba(255, 255, 255, 0.07);
   box-shadow: 0 20px 52px -34px rgba(0, 0, 0, 0.78);
+}
+
+html[data-app-role="motorista"] input,
+html[data-app-role="motorista"] textarea,
+html[data-app-role="motorista"] select {
+  caret-color: #f6be1c;
 }
 
 html[data-app-role="motorista"] input:focus,
@@ -97,10 +122,29 @@ html[data-app-role="motorista"] .driver-menu-active p:first-of-type {
   color: #fff8df;
 }
 
+/* Camadas nativas: mantém mapa/sheets com acabamento uniforme sem tocar na lógica. */
+html[data-app-role="motorista"] [role="dialog"] {
+  -webkit-font-smoothing: antialiased;
+}
+
+html[data-app-role="motorista"] .gm-style .gm-style-iw-c,
+html[data-app-role="motorista"] .gm-style .gm-style-iw-d {
+  color-scheme: dark;
+}
+
+html[data-app-role="motorista"] .gm-control-active {
+  filter: saturate(0.82) contrast(1.08);
+}
+
 /* Sensação mais nativa em controles interativos sem alterar comportamento. */
 html[data-app-role="motorista"] button,
 html[data-app-role="motorista"] a {
   -webkit-tap-highlight-color: transparent;
+}
+
+html[data-app-role="motorista"] button:active,
+html[data-app-role="motorista"] a:active {
+  transition-duration: 80ms;
 }
 
 @media (prefers-reduced-motion: no-preference) {
