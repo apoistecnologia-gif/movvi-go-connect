@@ -345,6 +345,31 @@ export function InterpolatedDriverMarker({
     [],
   );
 
+  const normalizedColor = color.toUpperCase();
+  const useApoisLocator = normalizedColor === "#F6BE1C" || normalizedColor === "#94A3B8";
+
+  if (useApoisLocator) {
+    return (
+      <>
+        <Marker
+          position={display}
+          clickable={false}
+          zIndex={9996}
+          icon={{
+            path: safeSymbol("CIRCLE"),
+            scale: 17,
+            fillColor: color,
+            fillOpacity: 0.08,
+            strokeColor: color,
+            strokeOpacity: 0.34,
+            strokeWeight: 1.3,
+          }}
+        />
+        <PlacePinMarker position={display} color={color} zIndexBase={9997} />
+      </>
+    );
+  }
+
   return (
     <>
       {/* halo colorido para destacar o motorista da corrida ativa */}
@@ -429,4 +454,3 @@ export function NearbyDriverMarker({
     </>
   );
 }
-
