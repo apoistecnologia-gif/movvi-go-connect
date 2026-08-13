@@ -26,8 +26,13 @@ excludes(documentsRoute, "useServerFn", "KYC static mobile route");
 excludes(documentsRoute, '.eq("user_id", session.user.id)', "KYC auth/profile identity mix");
 
 includes(financeService, 'rpc("get_driver_financial_dashboard"', "canonical Driver finance dashboard");
-includes(financeService, 'rpc("driver_request_withdrawal"', "canonical Driver payout request");
+includes(financeService, 'functions.invoke("request-driver-payout"', "provider-backed Driver payout request");
+excludes(financeService, 'rpc("driver_request_withdrawal"', "direct payout reservation without provider execution");
+includes(financeService, 'functions.invoke("driver-woovi-payment-account"', "Woovi subaccount binding");
+includes(financeService, 'dashboard.payout.provider !== "woovi"', "Woovi binding provider gate");
+includes(financeService, "dashboard.wallet.pendingBalanceCents", "provider-backed pending Driver balance");
 includes(financeRoute, "dashboard.period.settledEarningsCents", "settlement-backed UI");
+includes(financeRoute, "dashboard.wallet.pendingBalanceCents", "pending balance UI");
 excludes(financeRoute, '.from("rides")', "Driver finance ride arithmetic");
 excludes(financeRoute.toLowerCase(), "em breve", "fake withdrawal UI");
 
