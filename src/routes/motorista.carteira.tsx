@@ -224,7 +224,7 @@ function DriverWalletPage() {
       if (data?.error) throw new Error(String(data.error));
       await load(driverId);
       setPayoutAmount("");
-      setFinanceMessage(data?.status === "paid" ? "Saque Pix concluído." : "Saque recebido e enviado ao Asaas para processamento.");
+      setFinanceMessage(data?.status === "paid" ? "Saque Pix concluído." : "Saque recebido e encaminhado ao provedor para processamento.");
     } catch (caught: any) {
       console.error("[APOIS Motorista] saque:", caught);
       const detail = String(caught?.message ?? caught ?? "");
@@ -333,7 +333,7 @@ function DriverWalletPage() {
                   {requestingPayout ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Sacar
                 </button>
               </div>
-              <p className="mt-2 text-[9.5px] font-medium leading-4 text-zinc-600">Mínimo R$ 20,00. A solicitação é idempotente e o saldo é estornado automaticamente se o provedor rejeitar a transferência.</p>
+              <p className="mt-2 text-[9.5px] font-medium leading-4 text-zinc-600">Mínimo R$ 20,00. A solicitação é idempotente; o saldo só é estornado automaticamente quando o provedor rejeita a transferência de forma confirmada.</p>
               {financeMessage && <p className="mt-3 rounded-2xl border border-[#F6BE1C]/15 bg-[#F6BE1C]/5 px-4 py-3 text-[10px] font-bold leading-4 text-zinc-300">{financeMessage}</p>}
             </section>
 
@@ -357,7 +357,6 @@ function DriverWalletPage() {
                 <div><p className="text-[9px] font-black uppercase tracking-[0.18em] text-zinc-600">Movimentações</p><h2 className="mt-1 text-base font-black text-white">Histórico da carteira</h2></div>
                 <Clock3 className="h-4 w-4 text-zinc-700" />
               </div>
-
               {transactions.length === 0 ? (
                 <div className="rounded-[24px] border border-white/5 bg-[#0D0F11] p-6 text-center">
                   <WalletCards className="mx-auto h-8 w-8 text-zinc-700" />
