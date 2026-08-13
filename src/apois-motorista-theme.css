@@ -1,0 +1,68 @@
+/*
+ * APOIS Motorista — identidade visual oficial para o bundle mobile do motorista.
+ * O escopo por data-app-role impede que a paleta altere outros papéis do monorepo.
+ */
+html[data-app-role="motorista"],
+html[data-app-role="motorista"].dark {
+  --background: #050607;
+  --foreground: #f8fafc;
+  --surface: #0d0f11;
+  --surface-2: #15181b;
+
+  --card: #101214;
+  --card-foreground: #f8fafc;
+  --popover: #101214;
+  --popover-foreground: #f8fafc;
+
+  --primary: #f6be1c;
+  --primary-foreground: #090a0b;
+  --primary-glow: #ffd34f;
+
+  --secondary: #c88f00;
+  --secondary-foreground: #090a0b;
+
+  --muted: #1b1e21;
+  --muted-foreground: #9ca3af;
+  --accent: #f6be1c;
+  --accent-foreground: #090a0b;
+
+  --success: #38c172;
+  --warning: #f6be1c;
+  --border: #292d31;
+  --input: #171a1d;
+  --ring: #f6be1c;
+
+  --sidebar: #0b0d0f;
+  --sidebar-foreground: #f8fafc;
+  --sidebar-primary: #f6be1c;
+  --sidebar-primary-foreground: #090a0b;
+  --sidebar-accent: #171a1d;
+  --sidebar-accent-foreground: #f8fafc;
+  --sidebar-border: #292d31;
+  --sidebar-ring: #f6be1c;
+
+  --color-status-inride: #f6be1c;
+  --color-status-arrived: #f6be1c;
+  color-scheme: dark;
+}
+
+html[data-app-role="motorista"] body {
+  background: #050607;
+}
+
+html[data-app-role="motorista"] ::selection {
+  background: rgba(246, 190, 28, 0.28);
+  color: #ffffff;
+}
+
+/* Acabamento dos cartões/sheets do motorista, alinhado aos mockups APOIS. */
+html[data-app-role="motorista"] .surface-card {
+  background: #101214;
+  border-color: #292d31;
+}
+
+html[data-app-role="motorista"] input:focus,
+html[data-app-role="motorista"] textarea:focus,
+html[data-app-role="motorista"] select:focus {
+  outline-color: #f6be1c;
+}

@@ -2,25 +2,18 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const PROFILE_PHOTO_BUCKET = "profile-photos";
 const ALLOWED = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
-const MAX_BYTES = 5 * 1024 * 1024; // 5MB
-// Signed URL curta — a UI pode revalidar sob demanda quando expirar.
-const SIGNED_URL_TTL_SECONDS = 60 * 60; // 1 hora
+const MAX_BYTES = 5 * 1024 * 1024;
+const SIGNED_URL_TTL_SECONDS = 60 * 60;
 
 export type ProfilePhotoUploadResult = {
-  /** Path do arquivo no bucket privado. Persistir apenas isto no banco. */
   path: string;
-  /** URL assinada curta para exibir imediatamente após o upload. Não persistir. */
   signedUrl: string;
 };
 
 export function validateProfilePhotoFile(file: File): string | null {
   const type = (file.type || "").toLowerCase();
-  if (!ALLOWED.includes(type)) {
-    return "Formato inválido. Envie JPG, JPEG, PNG ou WEBP.";
-  }
-  if (file.size > MAX_BYTES) {
-    return "A foto deve ter no máximo 5 MB.";
-  }
+  if (!ALLOWED.includes(type)) return "Formato inválido. Envie JPG, JPEG, PNG ou WEBP.";
+  if (file.size > MAX_BYTES) return "A foto deve ter no máximo 5 MB.";
   if (file.size === 0) return "Arquivo vazio.";
   return null;
 }
@@ -34,49 +27,104 @@ function extFromFile(file: File) {
   return "jpg";
 }
 
+async function currentAuthUserId() {
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data.user?.id) throw new Error("Sua sessão expirou. Entre novamente para alterar a foto.");
+  return data.user.id;
+}
+
+async function persistOwnProfilePhoto(authUserId: string, path: string) {
+  const db = supabase as any;
+  const { data: publicUser, error: userLookupError } = await db
+    .from("users")
+    .select("id")
+    .eq("auth_user_id", authUserId)
+    .maybeSingle();
+  if (userLookupError || !publicUser?.id) throw new Error("Perfil da conta não encontrado.");
+
+  const { error: userError } = await db
+    .from("users")
+    .update({ avatar_url: path })
+    .eq("id", publicUser.id);
+  if (userError) throw new Error("Não foi possível vincular a foto ao perfil.");
+
+  // Passenger accounts do not have a drivers row. Updating zero rows is valid;
+  // when the authenticated account is a Driver this keeps both canonical views
+  // on the same private Storage path.
+  const { error: driverError } = await db
+    .from("drivers")
+    .update({ photo_url: path })
+    .eq("user_id", publicUser.id);
+  if (driverError) throw new Error("Não foi possível vincular a foto ao perfil do motorista.");
+
+  const { error: metadataError } = await supabase.auth.updateUser({ data: { avatar_path: path } });
+  if (metadataError) throw new Error("Foto salva, mas não foi possível atualizar os dados da conta.");
+}
+
 /**
- * Upload a profile photo for the currently authenticated user.
- * Persistir apenas `path` no banco. `signedUrl` é curto (1 h) e serve só para
- * exibir a foto recém-enviada; para revalidar, use `refreshProfilePhotoUrl`.
+ * Uploads into a private bucket using the authenticated Auth UID as the first
+ * folder segment. The previous implementation trusted a caller-provided id;
+ * screens that passed public.users.id produced an RLS denial because Storage
+ * policies intentionally require storage.foldername(name)[1] = auth.uid().
  */
 export async function uploadProfilePhoto(
-  userId: string,
+  _userId: string,
   file: File,
 ): Promise<ProfilePhotoUploadResult> {
-  const err = validateProfilePhotoFile(file);
-  if (err) throw new Error(err);
+  const validationError = validateProfilePhotoFile(file);
+  if (validationError) throw new Error(validationError);
 
+  const authUserId = await currentAuthUserId();
   const ext = extFromFile(file);
-  const path = `${userId}/avatar-${Date.now()}.${ext}`;
+  const path = `${authUserId}/avatar-${Date.now()}.${ext}`;
 
   const up = await supabase.storage
     .from(PROFILE_PHOTO_BUCKET)
     .upload(path, file, {
-      upsert: true,
+      upsert: false,
       contentType: file.type || "image/jpeg",
       cacheControl: "3600",
     });
   if (up.error) {
-    console.error("[MOVVI PHOTO] upload error:", up.error.message);
-    throw new Error("Falha ao enviar a foto. Tente novamente.");
+    console.error("[APOIS PHOTO] upload error:", up.error.message);
+    throw new Error(`Falha ao enviar a foto: ${up.error.message}`);
+  }
+
+  try {
+    await persistOwnProfilePhoto(authUserId, path);
+  } catch (error) {
+    await supabase.storage.from(PROFILE_PHOTO_BUCKET).remove([path]);
+    throw error;
   }
 
   const signed = await supabase.storage
     .from(PROFILE_PHOTO_BUCKET)
     .createSignedUrl(path, SIGNED_URL_TTL_SECONDS);
   if (signed.error || !signed.data?.signedUrl) {
-    throw new Error("Foto enviada, mas não foi possível gerar o link.");
+    throw new Error("Foto salva, mas não foi possível gerar a visualização.");
   }
 
   return { path, signedUrl: signed.data.signedUrl };
 }
 
-/** Refresh a signed URL for a stored photo path (works for any authenticated user). */
+/** Refresh a signed URL for a stored private profile-photo path. */
 export async function refreshProfilePhotoUrl(path: string): Promise<string | null> {
   if (!path) return null;
+  if (/^https?:\/\//i.test(path)) return path;
   const signed = await supabase.storage
     .from(PROFILE_PHOTO_BUCKET)
     .createSignedUrl(path, SIGNED_URL_TTL_SECONDS);
   return signed.data?.signedUrl ?? null;
 }
 
+/** Resolves the authenticated user's canonical profile photo without trusting screen-specific ids. */
+export async function loadOwnProfilePhotoUrl(): Promise<string | null> {
+  const authUserId = await currentAuthUserId();
+  const { data, error } = await (supabase as any)
+    .from("users")
+    .select("avatar_url")
+    .eq("auth_user_id", authUserId)
+    .maybeSingle();
+  if (error || !data?.avatar_url) return null;
+  return refreshProfilePhotoUrl(String(data.avatar_url));
+}

@@ -1,5 +1,5 @@
 /**
- * MOVVI DRIVE — Câmera de mapa premium.
+ * APOIS — Câmera de mapa premium.
  *
  * Interpolação suave de centro + zoom para dar a sensação de câmera
  * cinematográfica (Uber/99/InDrive) sem depender do animation nativo

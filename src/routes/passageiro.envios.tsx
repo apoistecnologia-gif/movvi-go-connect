@@ -10,11 +10,11 @@ type EnviosMode = "enviar" | "receber";
 export const Route = createFileRoute("/passageiro/envios")({
   head: () => ({
     meta: [
-      { title: "MOVVI Envios — Escolha como usar" },
+      { title: "APOIS Envios — Escolha como usar" },
       {
         name: "description",
         content:
-          "Envie ou receba itens com o MOVVI Envios. Rápido, seguro e com preço transparente.",
+          "Envie ou receba itens com o APOIS Envios. Rápido, seguro e com preço transparente.",
       },
       { name: "robots", content: "noindex, nofollow" },
     ],
@@ -88,7 +88,7 @@ function EnviosLanding() {
       <main className="mx-auto w-full max-w-md space-y-5 px-4 pt-4">
         <header className="space-y-1 px-1">
           <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
-            Envios MOVVI
+            Envios APOIS
           </h1>
           <p className="text-[13px] text-muted-foreground">
             Escolha como deseja usar o serviço.
@@ -170,7 +170,7 @@ function EnviosLanding() {
         )}
 
         <p className="px-1 text-[11.5px] leading-snug text-muted-foreground/80">
-          MOVVI Envios é indicado para documentos e pequenos volumes. Para
+          APOIS Envios é indicado para documentos e pequenos volumes. Para
           cargas maiores, use{" "}
           <Link to="/passageiro/mudancas" className="font-semibold text-primary">
             Mudanças / Fretes Grandes

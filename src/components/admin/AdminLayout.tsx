@@ -4,6 +4,7 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { DSButton } from "@/design-system";
 import { AdminGuard } from "@/components/AdminGuard";
 import { AdminSidebar } from "./AdminSidebar";
+import "@/apois-admin-theme.css";
 
 interface AdminLayoutProps {
   title: string;
@@ -16,14 +17,12 @@ export function AdminLayout({ title, description, actions, children }: AdminLayo
   const [open, setOpen] = useState(false);
   return (
     <AdminGuard>
-      <div className="flex min-h-screen bg-background text-foreground">
-        {/* Desktop sidebar */}
+      <div className="apois-admin-theme flex min-h-screen bg-background text-foreground">
         <div className="hidden lg:block">
           <AdminSidebar />
         </div>
-        {/* Mobile sidebar */}
         <Sheet open={open} onOpenChange={setOpen}>
-          <SheetContent side="left" className="w-64 p-0 border-r border-border">
+          <SheetContent side="left" className="apois-admin-theme w-64 p-0 border-r border-border">
             <AdminSidebar onNavigate={() => setOpen(false)} />
           </SheetContent>
         </Sheet>

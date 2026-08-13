@@ -2,8 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { ChevronRight, ClipboardList, MapPin, Navigation2, Search, Star } from "lucide-react";
 import { MovviHeader } from "@/components/MovviHeader";
-import { BottomNav, DRIVER_NAV } from "@/components/BottomNav";
+import { ApoisDriverBottomNav } from "@/components/ApoisDriverBottomNav";
 import { supabase } from "@/integrations/supabase/client";
+import { loadDriverProfile } from "@/lib/driverProfile";
 import {
   Avatar,
   Body,
@@ -28,7 +29,8 @@ type RideRow = {
   destination_name: string;
   category: string | null;
   payment_method: string | null;
-  passenger_photo_url: string | null;
+  passenger_id: string | null;
+  passenger_photo_url?: string | null;
   passenger_name?: string | null;
   final_price: number | null;
   estimated_price: number | null;
@@ -121,7 +123,6 @@ function RideCard({ ride, index }: { ride: RideRow; index: number }) {
       style={{ animationDelay: `${Math.min(index, 10) * 40}ms`, animationDuration: "320ms" }}
     >
       <DSCard className="press-scale flex flex-col gap-3 p-3 transition hover:-translate-y-[1px] sm:p-4">
-        {/* header row: passenger + status + price */}
         <div className="flex items-start gap-3">
           <Avatar src={ride.passenger_photo_url} name={passengerName} size={40} />
           <div className="min-w-0 flex-1">
@@ -140,11 +141,11 @@ function RideCard({ ride, index }: { ride: RideRow; index: number }) {
                 {brl(Number(price))}
               </Metric>
             )}
+            <Caption className="mt-1 block">valor da corrida</Caption>
             <Icon as={ChevronRight} size="sm" className="ml-auto mt-1 text-muted-foreground/60" />
           </div>
         </div>
 
-        {/* addresses */}
         <div className="flex flex-col gap-1.5 rounded-2xl bg-muted/40 p-2.5">
           <div className="flex items-start gap-2">
             <Icon as={MapPin} size="sm" className="mt-0.5 text-primary" />
@@ -158,7 +159,6 @@ function RideCard({ ride, index }: { ride: RideRow; index: number }) {
           </div>
         </div>
 
-        {/* meta row */}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground">
           {ride.distance_km != null && <Caption>{Number(ride.distance_km).toFixed(1)} km</Caption>}
           {ride.duration_min != null && (
@@ -191,24 +191,59 @@ function DriverRidesPage() {
 
   useEffect(() => {
     let active = true;
-    (async () => {
-      const { data: auth } = await supabase.auth.getUser();
-      const uid = auth?.user?.id;
-      if (!uid) {
+    void (async () => {
+      const profile = await loadDriverProfile();
+      if (!profile.ok) {
         if (active) setRides([]);
         return;
       }
+      const driverId = profile.profile.id;
       const { data, error } = await supabase
         .from("rides")
         .select(
-          "id,status,category,payment_method,passenger_photo_url,origin_name,destination_name,final_price,estimated_price,distance_km,duration_min,completed_at,created_at,accepted_at,passenger_rating,passenger_rating_comment,driver_rated_at",
+          "id,status,category,payment_method,passenger_id,origin_name,destination_name,final_price,estimated_price,distance_km,duration_min,completed_at,created_at,accepted_at,passenger_rating,passenger_rating_comment,driver_rated_at",
         )
-        .eq("driver_id", uid)
+        .eq("driver_id", driverId)
         .order("created_at", { ascending: false })
         .limit(50);
       if (!active) return;
-      if (error) setError(error.message);
-      else setRides((data ?? []) as RideRow[]);
+      if (error) {
+        setError(error.message);
+        setRides([]);
+        return;
+      }
+
+      const baseRides = (data ?? []) as RideRow[];
+      const passengerIds = Array.from(
+        new Set(baseRides.map((ride) => ride.passenger_id).filter(Boolean)),
+      ) as string[];
+      let passengerMap = new Map<string, { name: string | null; avatar_url: string | null }>();
+
+      if (passengerIds.length > 0) {
+        const { data: passengers } = await supabase
+          .from("users")
+          .select("id,name,avatar_url")
+          .in("id", passengerIds);
+        passengerMap = new Map(
+          (passengers ?? []).map((passenger) => [
+            passenger.id,
+            { name: passenger.name ?? null, avatar_url: passenger.avatar_url ?? null },
+          ]),
+        );
+      }
+
+      if (!active) return;
+      setError(null);
+      setRides(
+        baseRides.map((ride) => {
+          const passenger = ride.passenger_id ? passengerMap.get(ride.passenger_id) : null;
+          return {
+            ...ride,
+            passenger_name: passenger?.name ?? null,
+            passenger_photo_url: passenger?.avatar_url ?? null,
+          };
+        }),
+      );
     })();
     return () => {
       active = false;
@@ -254,12 +289,14 @@ function DriverRidesPage() {
     const list = filtered ?? [];
     const finished = list.filter((r) => r.status === "finalizada");
     const total = list.length;
-    const revenue = finished.reduce(
-      (s, r) => s + Number(r.final_price ?? r.estimated_price ?? 0),
+    // Isto é volume bruto das corridas, não saldo nem valor recebido pelo
+    // motorista. Ganhos/saques são lidos exclusivamente do ledger da carteira.
+    const grossVolume = finished.reduce(
+      (sum, ride) => sum + Number(ride.final_price ?? ride.estimated_price ?? 0),
       0,
     );
-    const avg = finished.length ? revenue / finished.length : 0;
-    return { total, revenue, avg };
+    const avgFare = finished.length ? grossVolume / finished.length : 0;
+    return { total, grossVolume, avgFare };
   }, [filtered]);
 
   return (
@@ -267,26 +304,26 @@ function DriverRidesPage() {
       <MovviHeader logoutRedirect="/" />
       <main className="flex-1 px-4 pt-4 pb-28 sm:px-5">
         <div className="mx-auto flex w-full max-w-2xl flex-col gap-5">
-          {/* HEADER */}
           <header className="animate-in fade-in slide-in-from-top-2 duration-500">
             <HeadingXL>Histórico</HeadingXL>
             <Body className="mt-1 text-muted-foreground">Revise suas viagens realizadas</Body>
           </header>
 
-          {/* SUMMARY */}
           <section
             aria-label="Resumo do período"
             className="flex flex-col gap-2 animate-in fade-in slide-in-from-bottom-2 duration-500"
           >
             <div className="grid grid-cols-3 gap-2 sm:gap-3">
               <SummaryCard label="Corridas" value={String(summary.total)} />
-              <SummaryCard label="Recebido" value={brl(summary.revenue)} tone="primary" />
-              <SummaryCard label="Ticket médio" value={brl(summary.avg)} />
+              <SummaryCard label="Valor das corridas" value={brl(summary.grossVolume)} tone="primary" />
+              <SummaryCard label="Tarifa média" value={brl(summary.avgFare)} />
             </div>
             <Caption className="pl-1">Período: {FILTER_LABEL[filter]}</Caption>
+            <Caption className="pl-1">
+              Este resumo mostra o valor bruto das viagens. Seu saldo e valores realmente creditados ficam em Carteira.
+            </Caption>
           </section>
 
-          {/* SEARCH */}
           <div className="relative animate-in fade-in duration-500">
             <label htmlFor="ride-search" className="sr-only">
               Buscar por endereço ou categoria
@@ -306,7 +343,6 @@ function DriverRidesPage() {
             />
           </div>
 
-          {/* FILTERS */}
           <section className="flex flex-col gap-3">
             <div
               role="tablist"
@@ -358,10 +394,8 @@ function DriverRidesPage() {
             </DSCard>
           )}
 
-          {/* LOADING */}
           {rides === null && <Loading label="Carregando corridas…" />}
 
-          {/* EMPTY */}
           {rides && filtered && filtered.length === 0 && (
             <EmptyState
               icon={ClipboardList}
@@ -377,24 +411,21 @@ function DriverRidesPage() {
             />
           )}
 
-          {/* LIST */}
           {filtered && filtered.length > 0 && (
             <ul className="flex flex-col gap-2.5">
-              {filtered.map((r, i) => (
-                <li key={r.id}>
-                  <RideCard ride={r} index={i} />
+              {filtered.map((ride, index) => (
+                <li key={ride.id}>
+                  <RideCard ride={ride} index={index} />
                 </li>
               ))}
             </ul>
           )}
         </div>
       </main>
-      <BottomNav items={DRIVER_NAV} />
+      <ApoisDriverBottomNav />
     </div>
   );
 }
-
-/* ---------------- Sub-components ---------------- */
 
 function SummaryCard({
   label,
@@ -447,6 +478,6 @@ function FilterPill({
 }
 
 export const Route = createFileRoute("/motorista/corridas")({
-  head: () => ({ meta: [{ title: "Histórico — MOVVI DRIVE" }] }),
+  head: () => ({ meta: [{ title: "Histórico — APOIS" }] }),
   component: DriverRidesPage,
 });

@@ -1,6 +1,10 @@
-// Chave do Google Maps fornecida pelo conector Lovable (referrer-restricted: *.lovable.app).
+// Chave própria da APOIS para os APKs/mobile. O conector Lovable permanece
+// apenas como fallback para o preview/site legado e não deve ser a credencial
+// principal do app publicado.
 export const GOOGLE_MAPS_API_KEY =
-  (import.meta.env.VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY as string | undefined) ?? "";
+  (import.meta.env.VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY as string | undefined) ??
+  (import.meta.env.VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY as string | undefined) ??
+  "";
 
 // Bibliotecas que usamos no app inteiro. Manter referência estável para evitar reload do script.
 export const GOOGLE_MAPS_LIBRARIES = ["places", "routes", "geometry", "marker", "visualization"] as unknown as (
@@ -38,7 +42,7 @@ export function sanitizeBrazilCenter(c?: { lat: number; lng: number } | null) {
   if (!c || !isBrazilCoordinate(c.lat, c.lng)) {
     if (c) {
       // eslint-disable-next-line no-console
-      if (import.meta.env.DEV) console.warn("[MOVVI] Coordenada fora do Brasil ignorada:", c);
+      if (import.meta.env.DEV) console.warn("[APOIS] Coordenada fora do Brasil ignorada:", c);
     }
     return BRAZIL_CENTER;
   }
@@ -78,69 +82,84 @@ export function purgeForeignMapCache() {
   }
 }
 
-// Estilo escuro premium — inspirado em apps de navegação noturna (Uber/Bolt).
-// Fundo navy profundo (não preto puro), ruas em cinza claro de alto contraste,
-// rodovias em verde-azulado escuro, água em azul-marinho, parques em verde escuro.
-export const MOVVI_DARK_MAP_STYLE: google.maps.MapTypeStyle[] = [
-  { elementType: "geometry", stylers: [{ color: "#0f1a2c" }] },
-  { elementType: "labels.text.stroke", stylers: [{ color: "#0f1a2c" }] },
-  { elementType: "labels.text.fill", stylers: [{ color: "#9fb0c8" }] },
+// Estilo escuro de navegação da APOIS.
+// Mantém o fundo noturno, mas NUNCA esconde nomes úteis: cidades, bairros,
+// ruas, rodovias, parques e pontos de interesse permanecem legíveis.
+export const APOIS_DARK_MAP_STYLE: google.maps.MapTypeStyle[] = [
+  { elementType: "geometry", stylers: [{ color: "#111d31" }] },
+  { elementType: "labels", stylers: [{ visibility: "on" }] },
+  { elementType: "labels.text.stroke", stylers: [{ color: "#101a2b" }, { weight: 3 }] },
+  { elementType: "labels.text.fill", stylers: [{ color: "#d5deeb" }] },
   { featureType: "administrative", elementType: "geometry", stylers: [{ visibility: "off" }] },
-  { featureType: "administrative.land_parcel", stylers: [{ visibility: "off" }] },
-  { featureType: "administrative.neighborhood", stylers: [{ visibility: "off" }] },
-  { featureType: "poi", stylers: [{ visibility: "off" }] },
-  { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#16322a" }] },
-  { featureType: "road", elementType: "geometry", stylers: [{ color: "#2a3a55" }] },
-  { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#1a2740" }] },
-  { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#a8b6cc" }] },
-  { featureType: "road.arterial", elementType: "geometry", stylers: [{ color: "#324663" }] },
-  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#4a5a7a" }] },
-  { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#1a2740" }] },
-  { featureType: "road.local", elementType: "labels", stylers: [{ visibility: "simplified" }] },
-  { featureType: "transit", stylers: [{ visibility: "off" }] },
-  { featureType: "water", elementType: "geometry", stylers: [{ color: "#0a1424" }] },
-  { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#4a6a92" }] },
+  { featureType: "administrative.country", elementType: "labels.text.fill", stylers: [{ color: "#aebbd0" }] },
+  { featureType: "administrative.locality", elementType: "labels", stylers: [{ visibility: "on" }] },
+  { featureType: "administrative.locality", elementType: "labels.text.fill", stylers: [{ color: "#f4f7fb" }] },
+  { featureType: "administrative.neighborhood", elementType: "labels", stylers: [{ visibility: "on" }] },
+  { featureType: "administrative.neighborhood", elementType: "labels.text.fill", stylers: [{ color: "#c4cfdf" }] },
+  { featureType: "administrative.land_parcel", elementType: "labels", stylers: [{ visibility: "simplified" }] },
+  { featureType: "poi", elementType: "labels", stylers: [{ visibility: "simplified" }] },
+  { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#b8c5d8" }] },
+  { featureType: "poi", elementType: "labels.icon", stylers: [{ visibility: "on" }, { saturation: -35 }, { lightness: -10 }] },
+  { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#173528" }] },
+  { featureType: "poi.park", elementType: "labels", stylers: [{ visibility: "on" }] },
+  { featureType: "poi.park", elementType: "labels.text.fill", stylers: [{ color: "#9fc4a8" }] },
+  { featureType: "road", elementType: "geometry", stylers: [{ color: "#30415d" }] },
+  { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#1d2a42" }] },
+  { featureType: "road", elementType: "labels", stylers: [{ visibility: "on" }] },
+  { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#edf2f8" }] },
+  { featureType: "road.arterial", elementType: "geometry", stylers: [{ color: "#3b506f" }] },
+  { featureType: "road.arterial", elementType: "labels", stylers: [{ visibility: "on" }] },
+  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#596b8e" }] },
+  { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#25334e" }] },
+  { featureType: "road.highway", elementType: "labels", stylers: [{ visibility: "on" }] },
+  { featureType: "road.local", elementType: "labels", stylers: [{ visibility: "on" }] },
+  { featureType: "transit", elementType: "labels", stylers: [{ visibility: "simplified" }] },
+  { featureType: "transit.station", elementType: "labels", stylers: [{ visibility: "on" }] },
+  { featureType: "water", elementType: "geometry", stylers: [{ color: "#091525" }] },
+  { featureType: "water", elementType: "labels", stylers: [{ visibility: "on" }] },
+  { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#79a1cc" }] },
 ];
 
-// Estilo claro premium — inspirado no Google Maps oficial, com ruas mais nítidas.
-export const MOVVI_LIGHT_MAP_STYLE: google.maps.MapTypeStyle[] = [
+// Estilo claro premium — mantém a aparência do Google Maps e todos os nomes úteis.
+export const APOIS_LIGHT_MAP_STYLE: google.maps.MapTypeStyle[] = [
   { elementType: "geometry", stylers: [{ color: "#f4f6f8" }] },
-  { elementType: "labels.text.fill", stylers: [{ color: "#4a5460" }] },
+  { elementType: "labels", stylers: [{ visibility: "on" }] },
+  { elementType: "labels.text.fill", stylers: [{ color: "#424b57" }] },
   { elementType: "labels.text.stroke", stylers: [{ color: "#ffffff" }, { weight: 3 }] },
   { featureType: "administrative", elementType: "geometry", stylers: [{ visibility: "off" }] },
-  { featureType: "administrative.land_parcel", stylers: [{ visibility: "off" }] },
-  { featureType: "administrative.neighborhood", elementType: "labels.text.fill", stylers: [{ color: "#7a8494" }] },
-  { featureType: "administrative.locality", elementType: "labels.text.fill", stylers: [{ color: "#2b323d" }] },
-  { featureType: "poi", stylers: [{ visibility: "off" }] },
+  { featureType: "administrative.neighborhood", elementType: "labels", stylers: [{ visibility: "on" }] },
+  { featureType: "administrative.neighborhood", elementType: "labels.text.fill", stylers: [{ color: "#6f7988" }] },
+  { featureType: "administrative.locality", elementType: "labels", stylers: [{ visibility: "on" }] },
+  { featureType: "administrative.locality", elementType: "labels.text.fill", stylers: [{ color: "#252d38" }] },
+  { featureType: "poi", elementType: "labels", stylers: [{ visibility: "simplified" }] },
+  { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#596576" }] },
   { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#dcedcf" }] },
+  { featureType: "poi.park", elementType: "labels", stylers: [{ visibility: "on" }] },
   { featureType: "poi.park", elementType: "labels.text.fill", stylers: [{ color: "#5e7d4a" }] },
   { featureType: "road", elementType: "geometry", stylers: [{ color: "#ffffff" }] },
   { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#d7dbe1" }] },
-  { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#5b6470" }] },
+  { featureType: "road", elementType: "labels", stylers: [{ visibility: "on" }] },
+  { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#505966" }] },
   { featureType: "road.arterial", elementType: "geometry", stylers: [{ color: "#ffffff" }] },
   { featureType: "road.arterial", elementType: "geometry.stroke", stylers: [{ color: "#c8cdd5" }] },
   { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#ffe28a" }] },
   { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#ecc25a" }] },
   { featureType: "road.highway.controlled_access", elementType: "geometry", stylers: [{ color: "#ffd15e" }] },
-  { featureType: "road.local", elementType: "labels", stylers: [{ visibility: "simplified" }] },
-  { featureType: "transit", stylers: [{ visibility: "off" }] },
+  { featureType: "road.local", elementType: "labels", stylers: [{ visibility: "on" }] },
+  { featureType: "transit", elementType: "labels", stylers: [{ visibility: "simplified" }] },
   { featureType: "water", elementType: "geometry", stylers: [{ color: "#c8e3f3" }] },
   { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#4a7ea6" }] },
 ];
 
-
-
 export function getMapStyleForTheme(
   theme: "light" | "dark",
 ): google.maps.MapTypeStyle[] {
-  return theme === "light" ? MOVVI_LIGHT_MAP_STYLE : MOVVI_DARK_MAP_STYLE;
+  return theme === "light" ? APOIS_LIGHT_MAP_STYLE : APOIS_DARK_MAP_STYLE;
 }
 
 export function getMapBackgroundForTheme(theme: "light" | "dark"): string {
-  return theme === "light" ? "#f8f9fa" : "#0f1a2c";
+  return theme === "light" ? "#f8f9fa" : "#111d31";
 }
-
-
 
 // ─── Helpers seguros para uso ANTES de o SDK terminar de carregar ─────────
 // O JSX pai de <MovviMap> é avaliado em todo render, mesmo enquanto

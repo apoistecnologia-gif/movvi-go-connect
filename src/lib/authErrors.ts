@@ -1,4 +1,4 @@
-// MOVVI DRIVE — tradução de erros de autenticação para português.
+// APOIS — tradução de erros de autenticação para português.
 // Usado em telas de login/cadastro para que o usuário nunca veja mensagens em inglês.
 
 const MAP: Array<{ match: RegExp; msg: string }> = [

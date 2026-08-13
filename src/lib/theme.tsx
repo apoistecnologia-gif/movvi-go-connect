@@ -14,7 +14,7 @@ type ThemeContextValue = {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-// A aplicação MOVVI é SEMPRE escura (identidade visual da marca).
+// A aplicação APOIS é SEMPRE escura (identidade visual da marca).
 // O tema do mapa é independente — ver src/lib/mapTheme.tsx.
 function resolveTheme(_mode: ThemeMode): ResolvedTheme {
   return "dark";

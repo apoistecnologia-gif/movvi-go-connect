@@ -1,0 +1,75 @@
+name: APOIS Corridas — Consolidation validation
+
+on:
+  push:
+    branches:
+      - fix/apois-corridas-consolidacao
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: apois-corridas-consolidation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund --package-lock=false
+
+      - name: TypeScript
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Web build
+        run: npm run build
+
+      - name: Motorista SPA build
+        run: npm run build:motorista
+
+      - name: Guard — CI must not modify tracked source
+        run: |
+          set -euo pipefail
+          if ! git diff --quiet -- . ':(exclude)src/routeTree.gen.ts'; then
+            echo 'CI alterou arquivos rastreados durante validação.' >&2
+            git diff -- . ':(exclude)src/routeTree.gen.ts'
+            exit 1
+          fi
+
+      - name: Guard — driver finalization cannot send client price
+        run: |
+          set -euo pipefail
+          if grep -n -E 'finalizarCorridaMobile\(\{ data \}: \{ data: \{[^}]*final_price|driver_finish_ride[^\n]*final_price' \
+            src/lib/driverRideLifecycle.mobile.ts; then
+            echo 'Encontrado preço final controlado pelo cliente na finalização.' >&2
+            exit 1
+          fi
+          grep -F 'driver_finish_ride' src/lib/driverRideLifecycle.mobile.ts
+
+      - name: Guard — generated types include official finance RPCs
+        run: |
+          set -euo pipefail
+          grep -F 'get_driver_financial_dashboard' src/integrations/supabase/types.ts
+          grep -F 'get_driver_ride_settlement' src/integrations/supabase/types.ts
+          grep -F 'driver_request_withdrawal' src/integrations/supabase/types.ts
+          grep -F 'ride_settlements' src/integrations/supabase/types.ts
+
+      - name: Consolidation validated
+        run: echo 'APOIS_CORRIDAS_CONSOLIDATION_OK'

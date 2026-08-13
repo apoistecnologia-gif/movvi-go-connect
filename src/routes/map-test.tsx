@@ -10,8 +10,8 @@ import { ArrowLeft, CheckCircle2, XCircle } from "lucide-react";
 export const Route = createFileRoute("/map-test")({
   head: () => ({
     meta: [
-      { title: "Diagnóstico do mapa — MOVVI DRIVE" },
-      { name: "description", content: "Página de teste do Google Maps na plataforma MOVVI DRIVE." },
+      { title: "Diagnóstico do mapa — APOIS" },
+      { name: "description", content: "Página de teste do Google Maps na plataforma APOIS." },
       { name: "robots", content: "noindex" },
     ],
   }),

@@ -1,0 +1,179 @@
+name: APOIS Motorista - APK Woovi homologação
+
+on:
+  push:
+    branches:
+      - feat/woovi-financial-cutover
+    paths:
+      - ".env.mobile-woovi-homologacao"
+      - "scripts/build-mobile-spa.mjs"
+      - ".github/workflows/apois-driver-apk-homologacao.yml"
+      - "src/**"
+      - "android-motorista/**"
+      - "capacitor.motorista.config.ts"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: apois-driver-woovi-homologacao-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      APOIS_VERSION_CODE: ${{ github.run_number }}
+      APOIS_VERSION_NAME: 1.0-homologacao.${{ github.run_number }}
+    steps:
+      - name: Checkout candidato Woovi
+        uses: actions/checkout@v4
+
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - name: Restaurar assinatura estável de homologação
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: apois-motorista-homologacao-signing-v1
+
+      - name: Garantir assinatura estável de homologação
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.android
+          if [ ! -f ~/.android/debug.keystore ]; then
+            keytool -genkeypair -v \
+              -keystore ~/.android/debug.keystore \
+              -storepass android \
+              -alias androiddebugkey \
+              -keypass android \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=APOIS Motorista Homologacao,O=APOIS,C=BR"
+          fi
+          keytool -list -v \
+            -keystore ~/.android/debug.keystore \
+            -storepass android \
+            -alias androiddebugkey \
+            | grep -E "SHA256:|Owner:"
+
+      - name: Instalar dependências
+        run: npm install --no-audit --no-fund
+
+      - name: Validar isolamento do Supabase de homologação
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+
+          const path = '.env.mobile-woovi-homologacao';
+          const values = Object.fromEntries(
+            readFileSync(path, 'utf8')
+              .split(/\r?\n/)
+              .map((line) => line.trim())
+              .filter((line) => line && !line.startsWith('#') && line.includes('='))
+              .map((line) => {
+                const idx = line.indexOf('=');
+                return [line.slice(0, idx), line.slice(idx + 1)];
+              }),
+          );
+
+          const expectedRef = 'breaseovgljypnjrqgep';
+          const productionRef = 'vqtucstyduxrqjgyigfk';
+          if (values.VITE_SUPABASE_PROJECT_ID !== expectedRef) {
+            throw new Error('Project ID do APK de homologação não é o branch Woovi esperado.');
+          }
+          if (values.VITE_SUPABASE_URL !== `https://${expectedRef}.supabase.co`) {
+            throw new Error('Supabase URL do APK de homologação não é a URL Woovi esperada.');
+          }
+          if (!String(values.VITE_SUPABASE_PUBLISHABLE_KEY || '').startsWith('sb_publishable_')) {
+            throw new Error('Publishable key browser-safe da homologação está ausente ou em formato inesperado.');
+          }
+          const raw = readFileSync(path, 'utf8');
+          if (raw.includes(productionRef)) {
+            throw new Error('Referência de produção encontrada no env exclusivo de homologação.');
+          }
+          if (/service_role|webhook_secret|private_key/i.test(raw.replace(/^#.*$/gm, ''))) {
+            throw new Error('Material privado proibido encontrado no env mobile de homologação.');
+          }
+          console.log('[woovi-homologacao] env isolado validado sem expor valores sensíveis.');
+          NODE
+
+      - name: Validar Google Maps browser key
+        env:
+          VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY: ${{ secrets.APOIS_GOOGLE_MAPS_BROWSER_KEY }}
+        run: |
+          if [ -z "$VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY" ]; then
+            echo "Secret APOIS_GOOGLE_MAPS_BROWSER_KEY não configurado."
+            exit 1
+          fi
+          echo "[maps-key] OK: chave browser da APOIS disponível para o build."
+
+      - name: Build e sync do Motorista contra Woovi homologação
+        env:
+          APOIS_MOBILE_VITE_MODE: mobile-woovi-homologacao
+          VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY: ${{ secrets.APOIS_GOOGLE_MAPS_BROWSER_KEY }}
+        run: npm run android:motorista
+
+      - name: Confirmar backend realmente empacotado
+        run: |
+          node --input-type=module <<'NODE'
+          import { readdirSync, readFileSync, statSync } from 'node:fs';
+          import { join } from 'node:path';
+
+          const expectedRef = 'breaseovgljypnjrqgep';
+          const productionRef = 'vqtucstyduxrqjgyigfk';
+          const root = 'dist/client';
+          const files = [];
+          const walk = (dir) => {
+            for (const name of readdirSync(dir)) {
+              const path = join(dir, name);
+              if (statSync(path).isDirectory()) walk(path);
+              else if (/\.(js|html|css)$/.test(name)) files.push(path);
+            }
+          };
+          walk(root);
+          const corpus = files.map((path) => readFileSync(path, 'utf8')).join('\n');
+          if (!corpus.includes(expectedRef)) {
+            throw new Error('Bundle mobile não contém a referência Supabase de homologação esperada.');
+          }
+          if (corpus.includes(productionRef)) {
+            throw new Error('BLOQUEADO: bundle de homologação contém referência ao Supabase de produção.');
+          }
+          console.log('[woovi-homologacao] bundle confirmado contra o Supabase de homologação; produção ausente.');
+          NODE
+
+      - name: Verificação nativa após sync
+        run: node scripts/verify-mobile-native.mjs motorista --live
+
+      - name: Compilar APK debug
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - name: Validar APK gerado
+        run: |
+          set -euo pipefail
+          test -s android/app/build/outputs/apk/debug/app-debug.apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk APOIS-Motorista-Woovi-Homologacao.apk
+          ls -lh APOIS-Motorista-Woovi-Homologacao.apk
+          echo "[apk] versionCode=${APOIS_VERSION_CODE} versionName=${APOIS_VERSION_NAME}"
+
+      - name: Publicar APK candidato de homologação Woovi
+        uses: actions/upload-artifact@v4
+        with:
+          name: APOIS-Motorista-Woovi-Homologacao-${{ github.run_number }}
+          path: APOIS-Motorista-Woovi-Homologacao.apk
+          if-no-files-found: error
+          retention-days: 14

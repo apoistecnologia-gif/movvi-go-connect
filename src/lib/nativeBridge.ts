@@ -1,4 +1,4 @@
-// MOVVI — inicialização de recursos nativos (Capacitor).
+// APOIS — inicialização de recursos nativos (Capacitor).
 // Só faz algo quando o app roda dentro do APK (Android/iOS). No web é no-op.
 //
 // FASE ATUAL:
@@ -12,10 +12,18 @@
 import { registerDeviceToken } from "@/lib/notifications/deviceTokenService";
 
 const ENABLE_NATIVE_PUSH = import.meta.env.VITE_ENABLE_NATIVE_PUSH === "true";
+const APP_ROLE = import.meta.env.VITE_APP_ROLE;
+const DRIVER_RIDE_CHANNEL_ID = "apois_rides";
 
 type CapacitorGlobal = {
   getPlatform?: () => string;
   isNativePlatform?: () => boolean;
+};
+
+type PushData = {
+  url?: string;
+  event?: string;
+  ride_id?: string;
 };
 
 export function isNative(): boolean {
@@ -24,8 +32,32 @@ export function isNative(): boolean {
   return cap?.isNativePlatform?.() === true;
 }
 
+function nativePlatform(): string {
+  if (typeof window === "undefined") return "web";
+  const cap = (window as unknown as { Capacitor?: CapacitorGlobal }).Capacitor;
+  return cap?.getPlatform?.() ?? "web";
+}
+
 let initStarted = false;
-let postAuthStarted = false;
+let postAuthInFlight: Promise<void> | null = null;
+
+function resolvePushTarget(data: PushData | undefined): string | null {
+  const rawUrl = typeof data?.url === "string" && data.url.startsWith("/") ? data.url : null;
+
+  // A mesma Edge Function atende Passageiro e Motorista. Eventos de corrida
+  // destinados ao APK do Motorista nunca podem abrir uma rota do Passageiro
+  // como /corrida/:id ou /corridas. O app ressincroniza a oferta/corrida pelo
+  // backend ao abrir /motorista/app.
+  if (APP_ROLE === "motorista" || APP_ROLE === "driver") {
+    if (rawUrl?.startsWith("/motorista/")) return rawUrl;
+    const event = typeof data?.event === "string" ? data.event : "";
+    if (event.startsWith("driver.") || event.startsWith("ride.")) return "/motorista/app";
+    if (rawUrl === "/corridas" || rawUrl?.startsWith("/corrida/")) return "/motorista/app";
+    return rawUrl ?? "/motorista/app";
+  }
+
+  return rawUrl;
+}
 
 /**
  * Inicialização passiva — não pede nada ao usuário, não depende de sessão.
@@ -47,19 +79,31 @@ export function initNativeBridge(): void {
 }
 
 /**
- * Pede permissões nativas — DEVE ser chamado só depois da autenticação e
- * com a UI já visível. Falhas nunca quebram o app.
+ * Pede/sincroniza permissões nativas somente depois da autenticação e com a UI
+ * já visível. Pode ser chamado novamente depois de troca/restauração de sessão:
+ * PushNotifications.register() devolve o token atual e a RPC canônica reassocia
+ * esse token ao public.users.id correto. Chamadas concorrentes são colapsadas.
  */
 export function requestPostAuthPermissions(): void {
-  if (postAuthStarted) return;
-  postAuthStarted = true;
-  if (!isNative()) return;
-  void setupGeolocation().catch((err) =>
-    console.warn("[native] geolocation warmup falhou", err),
-  );
-  if (ENABLE_NATIVE_PUSH) {
-    void setupPush().catch((err) => console.warn("[native] push setup falhou", err));
-  }
+  if (!isNative() || postAuthInFlight) return;
+
+  postAuthInFlight = (async () => {
+    try {
+      await setupGeolocation();
+    } catch (err) {
+      console.warn("[native] geolocation warmup falhou", err);
+    }
+
+    if (ENABLE_NATIVE_PUSH) {
+      try {
+        await setupPush();
+      } catch (err) {
+        console.warn("[native] push setup falhou", err);
+      }
+    }
+  })().finally(() => {
+    postAuthInFlight = null;
+  });
 }
 
 async function attachPushListenersOnly(): Promise<void> {
@@ -73,10 +117,23 @@ async function attachPushListenersOnly(): Promise<void> {
     console.warn("[native] registrationError", err);
   });
   PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
-    const url = (action.notification?.data as { url?: string } | undefined)?.url;
-    if (typeof url === "string" && url.startsWith("/")) {
-      window.location.assign(url);
-    }
+    const target = resolvePushTarget(action.notification?.data as PushData | undefined);
+    if (target) window.location.assign(target);
+  });
+}
+
+async function ensureDriverRideChannel(): Promise<void> {
+  if (nativePlatform() !== "android") return;
+  if (APP_ROLE !== "motorista" && APP_ROLE !== "driver") return;
+
+  const { PushNotifications } = await import("@capacitor/push-notifications");
+  await PushNotifications.createChannel({
+    id: DRIVER_RIDE_CHANNEL_ID,
+    name: "Novas corridas",
+    description: "Ofertas e eventos importantes de corridas APOIS.",
+    importance: 5,
+    vibration: true,
+    visibility: 1,
   });
 }
 
@@ -87,6 +144,9 @@ async function setupPush(): Promise<void> {
     perm = await PushNotifications.requestPermissions();
   }
   if (perm.receive !== "granted") return;
+
+  await ensureDriverRideChannel();
+
   try {
     await PushNotifications.register();
   } catch (err) {

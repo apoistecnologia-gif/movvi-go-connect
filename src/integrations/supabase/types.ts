@@ -10,45 +10,50 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.15"
   }
   public: {
     Tables: {
-      admin_audit_logs: {
+      account_deletion_requests: {
         Row: {
-          action: string
-          actor_id: string | null
-          after: Json | null
-          before: Json | null
+          completed_at: string | null
           created_at: string
-          entity: string
-          entity_id: string | null
           id: string
-          ip: string | null
+          reason: string | null
+          role: string
+          status: string
+          updated_at: string
+          user_id: string
         }
         Insert: {
-          action: string
-          actor_id?: string | null
-          after?: Json | null
-          before?: Json | null
+          completed_at?: string | null
           created_at?: string
-          entity: string
-          entity_id?: string | null
           id?: string
-          ip?: string | null
+          reason?: string | null
+          role?: string
+          status?: string
+          updated_at?: string
+          user_id: string
         }
         Update: {
-          action?: string
-          actor_id?: string | null
-          after?: Json | null
-          before?: Json | null
+          completed_at?: string | null
           created_at?: string
-          entity?: string
-          entity_id?: string | null
           id?: string
-          ip?: string | null
+          reason?: string | null
+          role?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "account_deletion_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       admin_driver_notes: {
         Row: {
@@ -82,285 +87,153 @@ export type Database = {
           },
         ]
       }
-      admin_login_history: {
-        Row: {
-          created_at: string
-          email: string | null
-          id: string
-          ip: string | null
-          success: boolean
-          user_agent: string | null
-          user_id: string | null
-        }
-        Insert: {
-          created_at?: string
-          email?: string | null
-          id?: string
-          ip?: string | null
-          success?: boolean
-          user_agent?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          created_at?: string
-          email?: string | null
-          id?: string
-          ip?: string | null
-          success?: boolean
-          user_agent?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
-      admin_passenger_notes: {
-        Row: {
-          admin_id: string
-          created_at: string
-          id: string
-          note: string
-          passenger_id: string
-        }
-        Insert: {
-          admin_id: string
-          created_at?: string
-          id?: string
-          note: string
-          passenger_id: string
-        }
-        Update: {
-          admin_id?: string
-          created_at?: string
-          id?: string
-          note?: string
-          passenger_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "admin_passenger_notes_passenger_id_fkey"
-            columns: ["passenger_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      admin_settings: {
-        Row: {
-          description: string | null
-          id: string
-          key: string
-          updated_at: string
-          value: Json
-        }
-        Insert: {
-          description?: string | null
-          id?: string
-          key: string
-          updated_at?: string
-          value?: Json
-        }
-        Update: {
-          description?: string | null
-          id?: string
-          key?: string
-          updated_at?: string
-          value?: Json
-        }
-        Relationships: []
-      }
-      admin_subscription_notes: {
-        Row: {
-          admin_user_id: string
-          created_at: string
-          id: string
-          note: string
-          subscription_id: string
-        }
-        Insert: {
-          admin_user_id: string
-          created_at?: string
-          id?: string
-          note: string
-          subscription_id: string
-        }
-        Update: {
-          admin_user_id?: string
-          created_at?: string
-          id?: string
-          note?: string
-          subscription_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "admin_subscription_notes_subscription_id_fkey"
-            columns: ["subscription_id"]
-            isOneToOne: false
-            referencedRelation: "subscriptions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      admin_users_meta: {
-        Row: {
-          created_at: string
-          display_name: string | null
-          last_login_at: string | null
-          phone: string | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          display_name?: string | null
-          last_login_at?: string | null
-          phone?: string | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          display_name?: string | null
-          last_login_at?: string | null
-          phone?: string | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       app_settings: {
         Row: {
-          category: string
           description: string | null
-          is_public: boolean
           key: string
           updated_at: string
-          updated_by: string | null
           value: Json
         }
         Insert: {
-          category?: string
           description?: string | null
-          is_public?: boolean
           key: string
           updated_at?: string
-          updated_by?: string | null
           value: Json
         }
         Update: {
-          category?: string
           description?: string | null
-          is_public?: boolean
           key?: string
           updated_at?: string
-          updated_by?: string | null
           value?: Json
         }
         Relationships: []
       }
-      backups: {
+      audit_logs: {
         Row: {
-          completed_at: string | null
+          action: string
+          actor_id: string | null
           created_at: string
-          created_by: string | null
-          error: string | null
-          file_path: string | null
-          id: string
-          size_bytes: number | null
-          status: string
-          tables: Json | null
-          type: string
+          entity_id: string | null
+          entity_type: string
+          id: number
+          metadata: Json
         }
         Insert: {
-          completed_at?: string | null
+          action: string
+          actor_id?: string | null
           created_at?: string
-          created_by?: string | null
-          error?: string | null
-          file_path?: string | null
-          id?: string
-          size_bytes?: number | null
-          status?: string
-          tables?: Json | null
-          type?: string
+          entity_id?: string | null
+          entity_type: string
+          id?: never
+          metadata?: Json
         }
         Update: {
-          completed_at?: string | null
+          action?: string
+          actor_id?: string | null
           created_at?: string
-          created_by?: string | null
-          error?: string | null
-          file_path?: string | null
-          id?: string
-          size_bytes?: number | null
-          status?: string
-          tables?: Json | null
-          type?: string
+          entity_id?: string | null
+          entity_type?: string
+          id?: never
+          metadata?: Json
         }
         Relationships: []
       }
       cancellation_fees: {
         Row: {
-          cancelled_by: string
+          amount: number
           created_at: string
-          driver_credit: number
-          driver_id: string | null
-          fee_amount: number
+          expires_at: string | null
+          fee_amount: number | null
           id: string
           is_paid: boolean
           mp_expires_at: string | null
+          mp_order_id: string | null
+          mp_order_status: string | null
+          mp_order_status_detail: string | null
           mp_payment_id: string | null
+          mp_payment_status: string | null
           mp_qr_code: string | null
           mp_qr_code_base64: string | null
           mp_ticket_url: string | null
           paid_at: string | null
           passenger_id: string
-          platform_fee: number
-          ride_id: string
-          ride_status_at_cancel: string
-          seconds_since_accept: number | null
+          provider: string | null
+          provider_payment_id: string | null
+          qr_code: string | null
+          qr_code_base64: string | null
+          reason: string | null
+          ride_id: string | null
+          status: string
+          ticket_url: string | null
           updated_at: string
+          value: number | null
         }
         Insert: {
-          cancelled_by: string
+          amount: number
           created_at?: string
-          driver_credit?: number
-          driver_id?: string | null
-          fee_amount?: number
+          expires_at?: string | null
+          fee_amount?: number | null
           id?: string
           is_paid?: boolean
           mp_expires_at?: string | null
+          mp_order_id?: string | null
+          mp_order_status?: string | null
+          mp_order_status_detail?: string | null
           mp_payment_id?: string | null
+          mp_payment_status?: string | null
           mp_qr_code?: string | null
           mp_qr_code_base64?: string | null
           mp_ticket_url?: string | null
           paid_at?: string | null
           passenger_id: string
-          platform_fee?: number
-          ride_id: string
-          ride_status_at_cancel: string
-          seconds_since_accept?: number | null
+          provider?: string | null
+          provider_payment_id?: string | null
+          qr_code?: string | null
+          qr_code_base64?: string | null
+          reason?: string | null
+          ride_id?: string | null
+          status?: string
+          ticket_url?: string | null
           updated_at?: string
+          value?: number | null
         }
         Update: {
-          cancelled_by?: string
+          amount?: number
           created_at?: string
-          driver_credit?: number
-          driver_id?: string | null
-          fee_amount?: number
+          expires_at?: string | null
+          fee_amount?: number | null
           id?: string
           is_paid?: boolean
           mp_expires_at?: string | null
+          mp_order_id?: string | null
+          mp_order_status?: string | null
+          mp_order_status_detail?: string | null
           mp_payment_id?: string | null
+          mp_payment_status?: string | null
           mp_qr_code?: string | null
           mp_qr_code_base64?: string | null
           mp_ticket_url?: string | null
           paid_at?: string | null
           passenger_id?: string
-          platform_fee?: number
-          ride_id?: string
-          ride_status_at_cancel?: string
-          seconds_since_accept?: number | null
+          provider?: string | null
+          provider_payment_id?: string | null
+          qr_code?: string | null
+          qr_code_base64?: string | null
+          reason?: string | null
+          ride_id?: string | null
+          status?: string
+          ticket_url?: string | null
           updated_at?: string
+          value?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "cancellation_fees_passenger_id_fkey"
+            columns: ["passenger_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "cancellation_fees_ride_id_fkey"
             columns: ["ride_id"]
@@ -370,219 +243,91 @@ export type Database = {
           },
         ]
       }
-      coupon_redemptions: {
+      content_documents: {
         Row: {
-          amount: number
-          coupon_id: string
-          created_at: string
-          id: string
-          ride_id: string | null
-          user_id: string
-        }
-        Insert: {
-          amount?: number
-          coupon_id: string
-          created_at?: string
-          id?: string
-          ride_id?: string | null
-          user_id: string
-        }
-        Update: {
-          amount?: number
-          coupon_id?: string
-          created_at?: string
-          id?: string
-          ride_id?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "coupon_redemptions_coupon_id_fkey"
-            columns: ["coupon_id"]
-            isOneToOne: false
-            referencedRelation: "coupons"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      coupons: {
-        Row: {
-          code: string
           created_at: string
           created_by: string | null
-          description: string | null
-          enabled: boolean
+          domain: string
           id: string
-          max_discount: number | null
-          scope_category: string | null
-          type: string
-          updated_at: string
-          usage_limit: number | null
-          used_count: number
-          valid_from: string | null
-          valid_to: string | null
-          value: number
-        }
-        Insert: {
-          code: string
-          created_at?: string
-          created_by?: string | null
-          description?: string | null
-          enabled?: boolean
-          id?: string
-          max_discount?: number | null
-          scope_category?: string | null
-          type: string
-          updated_at?: string
-          usage_limit?: number | null
-          used_count?: number
-          valid_from?: string | null
-          valid_to?: string | null
-          value?: number
-        }
-        Update: {
-          code?: string
-          created_at?: string
-          created_by?: string | null
-          description?: string | null
-          enabled?: boolean
-          id?: string
-          max_discount?: number | null
-          scope_category?: string | null
-          type?: string
-          updated_at?: string
-          usage_limit?: number | null
-          used_count?: number
-          valid_from?: string | null
-          valid_to?: string | null
-          value?: number
-        }
-        Relationships: []
-      }
-      driver_amenities: {
-        Row: {
-          air_conditioning: boolean
-          candy: boolean
-          charger: boolean
-          child_seat: boolean
-          created_at: string
-          large_luggage: boolean
-          music_on_demand: boolean
-          pet_friendly: boolean
-          quiet_ride: boolean
-          updated_at: string
-          user_id: string
-          water: boolean
-          wifi: boolean
-        }
-        Insert: {
-          air_conditioning?: boolean
-          candy?: boolean
-          charger?: boolean
-          child_seat?: boolean
-          created_at?: string
-          large_luggage?: boolean
-          music_on_demand?: boolean
-          pet_friendly?: boolean
-          quiet_ride?: boolean
-          updated_at?: string
-          user_id: string
-          water?: boolean
-          wifi?: boolean
-        }
-        Update: {
-          air_conditioning?: boolean
-          candy?: boolean
-          charger?: boolean
-          child_seat?: boolean
-          created_at?: string
-          large_luggage?: boolean
-          music_on_demand?: boolean
-          pet_friendly?: boolean
-          quiet_ride?: boolean
-          updated_at?: string
-          user_id?: string
-          water?: boolean
-          wifi?: boolean
-        }
-        Relationships: []
-      }
-      driver_announcements: {
-        Row: {
-          active: boolean
-          audience: string
-          body: string
-          created_at: string
-          ends_at: string | null
-          id: string
-          starts_at: string
+          locale: string
+          payload: Json
+          published_at: string | null
+          scheduled_at: string | null
+          slug: string
+          sort_order: number
+          status: Database["public"]["Enums"]["content_status"]
           title: string
           updated_at: string
+          updated_by: string | null
         }
         Insert: {
-          active?: boolean
-          audience?: string
-          body: string
           created_at?: string
-          ends_at?: string | null
+          created_by?: string | null
+          domain: string
           id?: string
-          starts_at?: string
+          locale?: string
+          payload?: Json
+          published_at?: string | null
+          scheduled_at?: string | null
+          slug: string
+          sort_order?: number
+          status?: Database["public"]["Enums"]["content_status"]
           title: string
           updated_at?: string
+          updated_by?: string | null
         }
         Update: {
-          active?: boolean
-          audience?: string
-          body?: string
           created_at?: string
-          ends_at?: string | null
+          created_by?: string | null
+          domain?: string
           id?: string
-          starts_at?: string
+          locale?: string
+          payload?: Json
+          published_at?: string | null
+          scheduled_at?: string | null
+          slug?: string
+          sort_order?: number
+          status?: Database["public"]["Enums"]["content_status"]
           title?: string
           updated_at?: string
+          updated_by?: string | null
         }
         Relationships: []
       }
-      driver_documents: {
+      content_versions: {
         Row: {
+          actor_id: string | null
+          change_kind: string
           created_at: string
-          driver_id: string
-          expires_at: string | null
-          file_url: string | null
-          id: string
-          rejected_reason: string | null
-          status: string
-          type: string
-          updated_at: string
+          document_id: string
+          id: number
+          snapshot: Json
+          version_number: number
         }
         Insert: {
+          actor_id?: string | null
+          change_kind: string
           created_at?: string
-          driver_id: string
-          expires_at?: string | null
-          file_url?: string | null
-          id?: string
-          rejected_reason?: string | null
-          status?: string
-          type: string
-          updated_at?: string
+          document_id: string
+          id?: never
+          snapshot: Json
+          version_number: number
         }
         Update: {
+          actor_id?: string | null
+          change_kind?: string
           created_at?: string
-          driver_id?: string
-          expires_at?: string | null
-          file_url?: string | null
-          id?: string
-          rejected_reason?: string | null
-          status?: string
-          type?: string
-          updated_at?: string
+          document_id?: string
+          id?: never
+          snapshot?: Json
+          version_number?: number
         }
         Relationships: [
           {
-            foreignKeyName: "driver_documents_driver_id_fkey"
-            columns: ["driver_id"]
+            foreignKeyName: "content_versions_document_id_fkey"
+            columns: ["document_id"]
             isOneToOne: false
-            referencedRelation: "drivers"
+            referencedRelation: "content_documents"
             referencedColumns: ["id"]
           },
         ]
@@ -590,7 +335,7 @@ export type Database = {
       driver_emergency_contacts: {
         Row: {
           created_at: string
-          driver_user_id: string
+          driver_id: string
           id: string
           is_primary: boolean
           name: string
@@ -600,7 +345,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          driver_user_id: string
+          driver_id: string
           id?: string
           is_primary?: boolean
           name: string
@@ -610,7 +355,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          driver_user_id?: string
+          driver_id?: string
           id?: string
           is_primary?: boolean
           name?: string
@@ -618,66 +363,9 @@ export type Database = {
           relation?: string | null
           updated_at?: string
         }
-        Relationships: []
-      }
-      driver_payment_events: {
-        Row: {
-          asaas_event: string | null
-          asaas_payment_id: string | null
-          asaas_subscription_id: string | null
-          created_at: string
-          driver_id: string | null
-          due_date: string | null
-          event_type: string | null
-          id: string
-          invoice_url: string | null
-          mp_payment_id: string | null
-          mp_preapproval_id: string | null
-          paid_at: string | null
-          provider: string
-          raw_payload: Json
-          status: string | null
-          value: number | null
-        }
-        Insert: {
-          asaas_event?: string | null
-          asaas_payment_id?: string | null
-          asaas_subscription_id?: string | null
-          created_at?: string
-          driver_id?: string | null
-          due_date?: string | null
-          event_type?: string | null
-          id?: string
-          invoice_url?: string | null
-          mp_payment_id?: string | null
-          mp_preapproval_id?: string | null
-          paid_at?: string | null
-          provider?: string
-          raw_payload: Json
-          status?: string | null
-          value?: number | null
-        }
-        Update: {
-          asaas_event?: string | null
-          asaas_payment_id?: string | null
-          asaas_subscription_id?: string | null
-          created_at?: string
-          driver_id?: string | null
-          due_date?: string | null
-          event_type?: string | null
-          id?: string
-          invoice_url?: string | null
-          mp_payment_id?: string | null
-          mp_preapproval_id?: string | null
-          paid_at?: string | null
-          provider?: string
-          raw_payload?: Json
-          status?: string | null
-          value?: number | null
-        }
         Relationships: [
           {
-            foreignKeyName: "driver_payment_events_driver_id_fkey"
+            foreignKeyName: "driver_emergency_contacts_driver_id_fkey"
             columns: ["driver_id"]
             isOneToOne: false
             referencedRelation: "drivers"
@@ -685,193 +373,43 @@ export type Database = {
           },
         ]
       }
-      driver_preferences: {
-        Row: {
-          accept_card: boolean
-          accept_cash: boolean
-          accept_long: boolean
-          accept_pix: boolean
-          accept_short: boolean
-          created_at: string
-          language: string
-          max_radius_km: number
-          navigation_app: string
-          push: boolean
-          ride_alerts: boolean
-          sound: boolean
-          theme: string
-          updated_at: string
-          user_id: string
-          vibration: boolean
-        }
-        Insert: {
-          accept_card?: boolean
-          accept_cash?: boolean
-          accept_long?: boolean
-          accept_pix?: boolean
-          accept_short?: boolean
-          created_at?: string
-          language?: string
-          max_radius_km?: number
-          navigation_app?: string
-          push?: boolean
-          ride_alerts?: boolean
-          sound?: boolean
-          theme?: string
-          updated_at?: string
-          user_id: string
-          vibration?: boolean
-        }
-        Update: {
-          accept_card?: boolean
-          accept_cash?: boolean
-          accept_long?: boolean
-          accept_pix?: boolean
-          accept_short?: boolean
-          created_at?: string
-          language?: string
-          max_radius_km?: number
-          navigation_app?: string
-          push?: boolean
-          ride_alerts?: boolean
-          sound?: boolean
-          theme?: string
-          updated_at?: string
-          user_id?: string
-          vibration?: boolean
-        }
-        Relationships: []
-      }
-      driver_public_locations: {
-        Row: {
-          category: string | null
-          current_heading: number | null
-          current_lat: number | null
-          current_lng: number | null
-          current_speed: number | null
-          is_online: boolean
-          last_location_at: string | null
-          name: string | null
-          photo_url: string | null
-          rating: number | null
-          updated_at: string
-          user_id: string
-          vehicle_color: string | null
-          vehicle_model: string | null
-        }
-        Insert: {
-          category?: string | null
-          current_heading?: number | null
-          current_lat?: number | null
-          current_lng?: number | null
-          current_speed?: number | null
-          is_online?: boolean
-          last_location_at?: string | null
-          name?: string | null
-          photo_url?: string | null
-          rating?: number | null
-          updated_at?: string
-          user_id: string
-          vehicle_color?: string | null
-          vehicle_model?: string | null
-        }
-        Update: {
-          category?: string | null
-          current_heading?: number | null
-          current_lat?: number | null
-          current_lng?: number | null
-          current_speed?: number | null
-          is_online?: boolean
-          last_location_at?: string | null
-          name?: string | null
-          photo_url?: string | null
-          rating?: number | null
-          updated_at?: string
-          user_id?: string
-          vehicle_color?: string | null
-          vehicle_model?: string | null
-        }
-        Relationships: []
-      }
-      driver_reports: {
-        Row: {
-          created_at: string
-          details: string | null
-          driver_id: string
-          id: string
-          passenger_id: string
-          reason: string
-          ride_id: string | null
-        }
-        Insert: {
-          created_at?: string
-          details?: string | null
-          driver_id: string
-          id?: string
-          passenger_id: string
-          reason: string
-          ride_id?: string | null
-        }
-        Update: {
-          created_at?: string
-          details?: string | null
-          driver_id?: string
-          id?: string
-          passenger_id?: string
-          reason?: string
-          ride_id?: string | null
-        }
-        Relationships: []
-      }
       driver_wallet_transactions: {
         Row: {
           amount: number
-          available_at: string | null
           created_at: string
           description: string | null
+          direction: string
           driver_id: string
           id: string
-          metadata: Json
-          source: Database["public"]["Enums"]["driver_wallet_tx_source"]
-          source_ride_id: string | null
-          status: Database["public"]["Enums"]["driver_wallet_tx_status"]
-          updated_at: string
-          withdrawn_at: string | null
+          source: string
+          source_id: string | null
         }
         Insert: {
           amount: number
-          available_at?: string | null
           created_at?: string
           description?: string | null
+          direction: string
           driver_id: string
           id?: string
-          metadata?: Json
-          source: Database["public"]["Enums"]["driver_wallet_tx_source"]
-          source_ride_id?: string | null
-          status?: Database["public"]["Enums"]["driver_wallet_tx_status"]
-          updated_at?: string
-          withdrawn_at?: string | null
+          source: string
+          source_id?: string | null
         }
         Update: {
           amount?: number
-          available_at?: string | null
           created_at?: string
           description?: string | null
+          direction?: string
           driver_id?: string
           id?: string
-          metadata?: Json
-          source?: Database["public"]["Enums"]["driver_wallet_tx_source"]
-          source_ride_id?: string | null
-          status?: Database["public"]["Enums"]["driver_wallet_tx_status"]
-          updated_at?: string
-          withdrawn_at?: string | null
+          source?: string
+          source_id?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "driver_wallet_transactions_source_ride_id_fkey"
-            columns: ["source_ride_id"]
+            foreignKeyName: "driver_wallet_transactions_driver_id_fkey"
+            columns: ["driver_id"]
             isOneToOne: false
-            referencedRelation: "rides"
+            referencedRelation: "drivers"
             referencedColumns: ["id"]
           },
         ]
@@ -879,553 +417,294 @@ export type Database = {
       driver_wallets: {
         Row: {
           available_balance: number
+          balance: number
           created_at: string
-          currency: string
           driver_id: string
-          id: string
-          last_transaction_at: string | null
-          pending_balance: number
           updated_at: string
-          wallet_balance: number
-          wallet_status: Database["public"]["Enums"]["wallet_status"]
         }
         Insert: {
           available_balance?: number
+          balance?: number
           created_at?: string
-          currency?: string
           driver_id: string
-          id?: string
-          last_transaction_at?: string | null
-          pending_balance?: number
           updated_at?: string
-          wallet_balance?: number
-          wallet_status?: Database["public"]["Enums"]["wallet_status"]
         }
         Update: {
           available_balance?: number
+          balance?: number
           created_at?: string
-          currency?: string
           driver_id?: string
-          id?: string
-          last_transaction_at?: string | null
-          pending_balance?: number
           updated_at?: string
-          wallet_balance?: number
-          wallet_status?: Database["public"]["Enums"]["wallet_status"]
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "driver_wallets_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: true
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       driver_withdrawals: {
         Row: {
           amount: number
-          created_at: string
           driver_id: string
           failure_reason: string | null
           id: string
-          mp_end_to_end_id: string | null
-          mp_response: Json | null
-          mp_transfer_id: string | null
-          paid_at: string | null
-          pix_holder_name: string | null
-          pix_key: string
-          pix_key_type: Database["public"]["Enums"]["pix_key_type"]
           processed_at: string | null
+          provider: string | null
+          provider_transfer_id: string | null
           requested_at: string
           status: string
           updated_at: string
-          wallet_tx_id: string | null
         }
         Insert: {
           amount: number
-          created_at?: string
           driver_id: string
           failure_reason?: string | null
           id?: string
-          mp_end_to_end_id?: string | null
-          mp_response?: Json | null
-          mp_transfer_id?: string | null
-          paid_at?: string | null
-          pix_holder_name?: string | null
-          pix_key: string
-          pix_key_type: Database["public"]["Enums"]["pix_key_type"]
           processed_at?: string | null
+          provider?: string | null
+          provider_transfer_id?: string | null
           requested_at?: string
           status?: string
           updated_at?: string
-          wallet_tx_id?: string | null
         }
         Update: {
           amount?: number
-          created_at?: string
           driver_id?: string
           failure_reason?: string | null
           id?: string
-          mp_end_to_end_id?: string | null
-          mp_response?: Json | null
-          mp_transfer_id?: string | null
-          paid_at?: string | null
-          pix_holder_name?: string | null
-          pix_key?: string
-          pix_key_type?: Database["public"]["Enums"]["pix_key_type"]
           processed_at?: string | null
+          provider?: string | null
+          provider_transfer_id?: string | null
           requested_at?: string
           status?: string
           updated_at?: string
-          wallet_tx_id?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "driver_withdrawals_wallet_tx_id_fkey"
-            columns: ["wallet_tx_id"]
+            foreignKeyName: "driver_withdrawals_driver_id_fkey"
+            columns: ["driver_id"]
             isOneToOne: false
-            referencedRelation: "driver_wallet_transactions"
+            referencedRelation: "drivers"
             referencedColumns: ["id"]
           },
         ]
       }
       drivers: {
         Row: {
-          approval_status: Database["public"]["Enums"]["driver_approval_status"]
+          approval_status: string
           approved_at: string | null
-          asaas_customer_id: string | null
-          asaas_subscription_id: string | null
-          average_rating: number
           birth_date: string | null
           blocked_at: string | null
-          category: Database["public"]["Enums"]["ride_category"]
-          city: string
+          category: string | null
+          city: string | null
           cnh_back_url: string | null
           cnh_url: string | null
-          completed_rides: number
-          cpf: string
+          cpf: string | null
           created_at: string
           current_heading: number | null
           current_lat: number | null
           current_lng: number | null
           current_speed: number | null
-          documents_status: string
-          email: string
-          financial_status: Database["public"]["Enums"]["driver_financial_status"]
+          documents_status: string | null
+          email: string | null
           id: string
-          insurance_url: string | null
           is_online: boolean
-          last_invoice_url: string | null
           last_location_at: string | null
-          last_payment_id: string | null
-          last_payment_status: string | null
-          mercadopago_init_point: string | null
-          mercadopago_payer_id: string | null
-          mercadopago_preapproval_id: string | null
           motivo_reprovacao: string | null
-          name: string
-          next_due_date: string | null
-          payment_status: string
-          phone: string
+          name: string | null
+          phone: string | null
           photo_url: string | null
-          pix_holder_name: string | null
-          pix_key: string | null
-          pix_key_type: Database["public"]["Enums"]["pix_key_type"] | null
-          rating: number
+          rating: number | null
           selfie_url: string | null
-          state: string
-          subscription_admin_note: string | null
-          subscription_expires_at: string | null
-          subscription_grace_days: number
-          subscription_status: Database["public"]["Enums"]["driver_subscription_status"]
-          subscription_value: number | null
+          state: string | null
+          subscription_status: string
           suspended_at: string | null
           total_ratings: number
           updated_at: string
           user_id: string
-          vehicle_color: string
+          vehicle_color: string | null
           vehicle_document_url: string | null
-          vehicle_model: string
+          vehicle_model: string | null
           vehicle_photo_url: string | null
-          vehicle_plate: string
-          vehicle_year: number
+          vehicle_plate: string | null
+          vehicle_year: number | null
         }
         Insert: {
-          approval_status?: Database["public"]["Enums"]["driver_approval_status"]
+          approval_status?: string
           approved_at?: string | null
-          asaas_customer_id?: string | null
-          asaas_subscription_id?: string | null
-          average_rating?: number
           birth_date?: string | null
           blocked_at?: string | null
-          category: Database["public"]["Enums"]["ride_category"]
-          city: string
+          category?: string | null
+          city?: string | null
           cnh_back_url?: string | null
           cnh_url?: string | null
-          completed_rides?: number
-          cpf: string
+          cpf?: string | null
           created_at?: string
           current_heading?: number | null
           current_lat?: number | null
           current_lng?: number | null
           current_speed?: number | null
-          documents_status?: string
-          email: string
-          financial_status?: Database["public"]["Enums"]["driver_financial_status"]
+          documents_status?: string | null
+          email?: string | null
           id?: string
-          insurance_url?: string | null
           is_online?: boolean
-          last_invoice_url?: string | null
           last_location_at?: string | null
-          last_payment_id?: string | null
-          last_payment_status?: string | null
-          mercadopago_init_point?: string | null
-          mercadopago_payer_id?: string | null
-          mercadopago_preapproval_id?: string | null
           motivo_reprovacao?: string | null
-          name: string
-          next_due_date?: string | null
-          payment_status?: string
-          phone: string
+          name?: string | null
+          phone?: string | null
           photo_url?: string | null
-          pix_holder_name?: string | null
-          pix_key?: string | null
-          pix_key_type?: Database["public"]["Enums"]["pix_key_type"] | null
-          rating?: number
+          rating?: number | null
           selfie_url?: string | null
-          state: string
-          subscription_admin_note?: string | null
-          subscription_expires_at?: string | null
-          subscription_grace_days?: number
-          subscription_status?: Database["public"]["Enums"]["driver_subscription_status"]
-          subscription_value?: number | null
+          state?: string | null
+          subscription_status?: string
           suspended_at?: string | null
           total_ratings?: number
           updated_at?: string
           user_id: string
-          vehicle_color: string
+          vehicle_color?: string | null
           vehicle_document_url?: string | null
-          vehicle_model: string
+          vehicle_model?: string | null
           vehicle_photo_url?: string | null
-          vehicle_plate: string
-          vehicle_year: number
+          vehicle_plate?: string | null
+          vehicle_year?: number | null
         }
         Update: {
-          approval_status?: Database["public"]["Enums"]["driver_approval_status"]
+          approval_status?: string
           approved_at?: string | null
-          asaas_customer_id?: string | null
-          asaas_subscription_id?: string | null
-          average_rating?: number
           birth_date?: string | null
           blocked_at?: string | null
-          category?: Database["public"]["Enums"]["ride_category"]
-          city?: string
+          category?: string | null
+          city?: string | null
           cnh_back_url?: string | null
           cnh_url?: string | null
-          completed_rides?: number
-          cpf?: string
+          cpf?: string | null
           created_at?: string
           current_heading?: number | null
           current_lat?: number | null
           current_lng?: number | null
           current_speed?: number | null
-          documents_status?: string
-          email?: string
-          financial_status?: Database["public"]["Enums"]["driver_financial_status"]
+          documents_status?: string | null
+          email?: string | null
           id?: string
-          insurance_url?: string | null
           is_online?: boolean
-          last_invoice_url?: string | null
           last_location_at?: string | null
-          last_payment_id?: string | null
-          last_payment_status?: string | null
-          mercadopago_init_point?: string | null
-          mercadopago_payer_id?: string | null
-          mercadopago_preapproval_id?: string | null
           motivo_reprovacao?: string | null
-          name?: string
-          next_due_date?: string | null
-          payment_status?: string
-          phone?: string
+          name?: string | null
+          phone?: string | null
           photo_url?: string | null
-          pix_holder_name?: string | null
-          pix_key?: string | null
-          pix_key_type?: Database["public"]["Enums"]["pix_key_type"] | null
-          rating?: number
+          rating?: number | null
           selfie_url?: string | null
-          state?: string
-          subscription_admin_note?: string | null
-          subscription_expires_at?: string | null
-          subscription_grace_days?: number
-          subscription_status?: Database["public"]["Enums"]["driver_subscription_status"]
-          subscription_value?: number | null
+          state?: string | null
+          subscription_status?: string
           suspended_at?: string | null
           total_ratings?: number
           updated_at?: string
           user_id?: string
-          vehicle_color?: string
+          vehicle_color?: string | null
           vehicle_document_url?: string | null
-          vehicle_model?: string
+          vehicle_model?: string | null
           vehicle_photo_url?: string | null
-          vehicle_plate?: string
-          vehicle_year?: number
-        }
-        Relationships: []
-      }
-      favorite_drivers: {
-        Row: {
-          created_at: string
-          driver_id: string
-          id: string
-          passenger_id: string
-        }
-        Insert: {
-          created_at?: string
-          driver_id: string
-          id?: string
-          passenger_id: string
-        }
-        Update: {
-          created_at?: string
-          driver_id?: string
-          id?: string
-          passenger_id?: string
-        }
-        Relationships: []
-      }
-      favorite_places: {
-        Row: {
-          address: string
-          created_at: string
-          icon: string | null
-          id: string
-          kind: string
-          label: string
-          lat: number
-          lng: number
-          sort_order: number
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          address: string
-          created_at?: string
-          icon?: string | null
-          id?: string
-          kind?: string
-          label: string
-          lat: number
-          lng: number
-          sort_order?: number
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          address?: string
-          created_at?: string
-          icon?: string | null
-          id?: string
-          kind?: string
-          label?: string
-          lat?: number
-          lng?: number
-          sort_order?: number
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      financial_transactions: {
-        Row: {
-          amount: number
-          created_at: string
-          currency: string
-          description: string | null
-          driver_id: string | null
-          id: string
-          metadata: Json
-          method: Database["public"]["Enums"]["payment_method_kind"] | null
-          passenger_id: string | null
-          reference_id: string | null
-          status: Database["public"]["Enums"]["financial_txn_status"]
-          type: Database["public"]["Enums"]["financial_txn_type"]
-          updated_at: string
-        }
-        Insert: {
-          amount: number
-          created_at?: string
-          currency?: string
-          description?: string | null
-          driver_id?: string | null
-          id?: string
-          metadata?: Json
-          method?: Database["public"]["Enums"]["payment_method_kind"] | null
-          passenger_id?: string | null
-          reference_id?: string | null
-          status?: Database["public"]["Enums"]["financial_txn_status"]
-          type: Database["public"]["Enums"]["financial_txn_type"]
-          updated_at?: string
-        }
-        Update: {
-          amount?: number
-          created_at?: string
-          currency?: string
-          description?: string | null
-          driver_id?: string | null
-          id?: string
-          metadata?: Json
-          method?: Database["public"]["Enums"]["payment_method_kind"] | null
-          passenger_id?: string | null
-          reference_id?: string | null
-          status?: Database["public"]["Enums"]["financial_txn_status"]
-          type?: Database["public"]["Enums"]["financial_txn_type"]
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      gps_diagnostics: {
-        Row: {
-          code: string | null
-          created_at: string
-          event: string
-          extra: Json | null
-          id: string
-          message: string | null
-          url: string | null
-          user_agent: string | null
-          user_id: string | null
-        }
-        Insert: {
-          code?: string | null
-          created_at?: string
-          event: string
-          extra?: Json | null
-          id?: string
-          message?: string | null
-          url?: string | null
-          user_agent?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          code?: string | null
-          created_at?: string
-          event?: string
-          extra?: Json | null
-          id?: string
-          message?: string | null
-          url?: string | null
-          user_agent?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
-      incident_reports: {
-        Row: {
-          category: string
-          created_at: string
-          description: string | null
-          id: string
-          ride_id: string | null
-          role: string
-          status: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          category: string
-          created_at?: string
-          description?: string | null
-          id?: string
-          ride_id?: string | null
-          role: string
-          status?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          category?: string
-          created_at?: string
-          description?: string | null
-          id?: string
-          ride_id?: string | null
-          role?: string
-          status?: string
-          updated_at?: string
-          user_id?: string
+          vehicle_plate?: string | null
+          vehicle_year?: number | null
         }
         Relationships: [
           {
-            foreignKeyName: "incident_reports_ride_id_fkey"
-            columns: ["ride_id"]
-            isOneToOne: false
-            referencedRelation: "rides"
+            foreignKeyName: "drivers_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
       }
-      notification_channels: {
+      form_submissions: {
         Row: {
-          channel: string
+          assigned_to: string | null
+          consent: boolean
           created_at: string
-          credentials_secret_name: string | null
-          display_name: string
-          enabled: boolean
-          extra: Json
-          from_address: string | null
           id: string
+          kind: Database["public"]["Enums"]["submission_kind"]
+          payload: Json
+          source: string | null
+          status: Database["public"]["Enums"]["submission_status"]
           updated_at: string
-          updated_by: string | null
         }
         Insert: {
-          channel: string
+          assigned_to?: string | null
+          consent?: boolean
           created_at?: string
-          credentials_secret_name?: string | null
-          display_name: string
-          enabled?: boolean
-          extra?: Json
-          from_address?: string | null
           id?: string
+          kind: Database["public"]["Enums"]["submission_kind"]
+          payload: Json
+          source?: string | null
+          status?: Database["public"]["Enums"]["submission_status"]
           updated_at?: string
-          updated_by?: string | null
         }
         Update: {
-          channel?: string
+          assigned_to?: string | null
+          consent?: boolean
           created_at?: string
-          credentials_secret_name?: string | null
-          display_name?: string
-          enabled?: boolean
-          extra?: Json
-          from_address?: string | null
           id?: string
+          kind?: Database["public"]["Enums"]["submission_kind"]
+          payload?: Json
+          source?: string | null
+          status?: Database["public"]["Enums"]["submission_status"]
           updated_at?: string
-          updated_by?: string | null
         }
         Relationships: []
       }
-      notification_inbox: {
+      media_assets: {
         Row: {
-          body: string | null
-          category: string
+          alt_text: string
+          bucket: string
+          category: string | null
           created_at: string
-          data: Json
           id: string
-          read_at: string | null
+          kind: Database["public"]["Enums"]["asset_kind"]
+          mime_type: string
+          owner_id: string | null
+          path: string
+          size_bytes: number
+          status: Database["public"]["Enums"]["content_status"]
+          tags: string[]
           title: string
-          user_id: string
+          updated_at: string
         }
         Insert: {
-          body?: string | null
-          category?: string
+          alt_text?: string
+          bucket: string
+          category?: string | null
           created_at?: string
-          data?: Json
           id?: string
-          read_at?: string | null
+          kind: Database["public"]["Enums"]["asset_kind"]
+          mime_type: string
+          owner_id?: string | null
+          path: string
+          size_bytes: number
+          status?: Database["public"]["Enums"]["content_status"]
+          tags?: string[]
           title: string
-          user_id: string
+          updated_at?: string
         }
         Update: {
-          body?: string | null
-          category?: string
+          alt_text?: string
+          bucket?: string
+          category?: string | null
           created_at?: string
-          data?: Json
           id?: string
-          read_at?: string | null
+          kind?: Database["public"]["Enums"]["asset_kind"]
+          mime_type?: string
+          owner_id?: string | null
+          path?: string
+          size_bytes?: number
+          status?: Database["public"]["Enums"]["content_status"]
+          tags?: string[]
           title?: string
-          user_id?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1434,39 +713,54 @@ export type Database = {
           body: string | null
           channel: string
           created_at: string
-          data: Json | null
-          error: string | null
+          data: Json
           event: string
           id: string
+          ride_id: string | null
           status: string
-          title: string | null
-          user_id: string | null
+          title: string
+          user_id: string
         }
         Insert: {
           body?: string | null
           channel?: string
           created_at?: string
-          data?: Json | null
-          error?: string | null
+          data?: Json
           event: string
           id?: string
-          status?: string
-          title?: string | null
-          user_id?: string | null
+          ride_id?: string | null
+          status: string
+          title: string
+          user_id: string
         }
         Update: {
           body?: string | null
           channel?: string
           created_at?: string
-          data?: Json | null
-          error?: string | null
+          data?: Json
           event?: string
           id?: string
+          ride_id?: string | null
           status?: string
-          title?: string | null
-          user_id?: string | null
+          title?: string
+          user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "notification_logs_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "rides"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notifications: {
         Row: {
@@ -1496,40 +790,15 @@ export type Database = {
           title?: string
           user_id?: string
         }
-        Relationships: []
-      }
-      notifications_broadcast: {
-        Row: {
-          audience_filter: Json | null
-          audience_type: string
-          body: string
-          delivery_count: number
-          id: string
-          sent_at: string
-          sent_by: string | null
-          title: string
-        }
-        Insert: {
-          audience_filter?: Json | null
-          audience_type: string
-          body: string
-          delivery_count?: number
-          id?: string
-          sent_at?: string
-          sent_by?: string | null
-          title: string
-        }
-        Update: {
-          audience_filter?: Json | null
-          audience_type?: string
-          body?: string
-          delivery_count?: number
-          id?: string
-          sent_at?: string
-          sent_by?: string | null
-          title?: string
-        }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       passenger_emergency_contacts: {
         Row: {
@@ -1537,9 +806,9 @@ export type Database = {
           id: string
           is_primary: boolean
           name: string
-          passenger_user_id: string
+          passenger_id: string
           phone: string
-          relation: string | null
+          relationship: string | null
           updated_at: string
         }
         Insert: {
@@ -1547,9 +816,9 @@ export type Database = {
           id?: string
           is_primary?: boolean
           name: string
-          passenger_user_id: string
+          passenger_id: string
           phone: string
-          relation?: string | null
+          relationship?: string | null
           updated_at?: string
         }
         Update: {
@@ -1557,12 +826,77 @@ export type Database = {
           id?: string
           is_primary?: boolean
           name?: string
-          passenger_user_id?: string
+          passenger_id?: string
           phone?: string
-          relation?: string | null
+          relationship?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "passenger_emergency_contacts_passenger_id_fkey"
+            columns: ["passenger_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      passenger_support_tickets: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          message: string
+          passenger_id: string
+          priority: string
+          protocol: string
+          ride_id: string | null
+          status: string
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          message: string
+          passenger_id: string
+          priority?: string
+          protocol: string
+          ride_id?: string | null
+          status?: string
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          message?: string
+          passenger_id?: string
+          priority?: string
+          protocol?: string
+          ride_id?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "passenger_support_tickets_passenger_id_fkey"
+            columns: ["passenger_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "passenger_support_tickets_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "rides"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       passenger_wallets: {
         Row: {
@@ -1595,255 +929,248 @@ export type Database = {
           passenger_id?: string
           updated_at?: string
         }
-        Relationships: []
-      }
-      payment_gateways: {
-        Row: {
-          api_key_secret_name: string | null
-          created_at: string
-          display_name: string
-          enabled: boolean
-          extra: Json
-          id: string
-          mode: string
-          pix_key: string | null
-          pix_key_type: string | null
-          provider: string
-          updated_at: string
-          updated_by: string | null
-          webhook_url: string | null
-        }
-        Insert: {
-          api_key_secret_name?: string | null
-          created_at?: string
-          display_name: string
-          enabled?: boolean
-          extra?: Json
-          id?: string
-          mode?: string
-          pix_key?: string | null
-          pix_key_type?: string | null
-          provider: string
-          updated_at?: string
-          updated_by?: string | null
-          webhook_url?: string | null
-        }
-        Update: {
-          api_key_secret_name?: string | null
-          created_at?: string
-          display_name?: string
-          enabled?: boolean
-          extra?: Json
-          id?: string
-          mode?: string
-          pix_key?: string | null
-          pix_key_type?: string | null
-          provider?: string
-          updated_at?: string
-          updated_by?: string | null
-          webhook_url?: string | null
-        }
-        Relationships: []
-      }
-      payments: {
-        Row: {
-          amount: number
-          created_at: string
-          id: string
-          method: string | null
-          provider_reference: string | null
-          ride_id: string
-          status: Database["public"]["Enums"]["payment_status"]
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          amount: number
-          created_at?: string
-          id?: string
-          method?: string | null
-          provider_reference?: string | null
-          ride_id: string
-          status?: Database["public"]["Enums"]["payment_status"]
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          amount?: number
-          created_at?: string
-          id?: string
-          method?: string | null
-          provider_reference?: string | null
-          ride_id?: string
-          status?: Database["public"]["Enums"]["payment_status"]
-          updated_at?: string
-          user_id?: string
-        }
         Relationships: [
           {
-            foreignKeyName: "payments_ride_id_fkey"
-            columns: ["ride_id"]
-            isOneToOne: false
-            referencedRelation: "rides"
+            foreignKeyName: "passenger_wallets_passenger_id_fkey"
+            columns: ["passenger_id"]
+            isOneToOne: true
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
       }
-      recent_places: {
+      payment_methods: {
         Row: {
-          address: string
+          code: string
           created_at: string
+          description: string | null
+          icon: string | null
           id: string
-          last_used_at: string
-          lat: number
-          lng: number
-          place_id: string | null
-          use_count: number
+          is_active: boolean
+          name: string
+          requires_balance: boolean
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          requires_balance?: boolean
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          requires_balance?: boolean
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      payment_webhook_receipts: {
+        Row: {
+          created_at: string
+          detail: string | null
+          event_key: string
+          id: string
+          processed_at: string | null
+          provider: string
+          raw_payload: Json
+          request_id: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          detail?: string | null
+          event_key: string
+          id?: string
+          processed_at?: string | null
+          provider: string
+          raw_payload?: Json
+          request_id?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          detail?: string | null
+          event_key?: string
+          id?: string
+          processed_at?: string | null
+          provider?: string
+          raw_payload?: Json
+          request_id?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          active: boolean
+          created_at: string
+          display_name: string | null
+          email: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
           user_id: string
         }
         Insert: {
-          address: string
+          active?: boolean
           created_at?: string
-          id?: string
-          last_used_at?: string
-          lat: number
-          lng: number
-          place_id?: string | null
-          use_count?: number
+          display_name?: string | null
+          email: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
           user_id: string
         }
         Update: {
-          address?: string
+          active?: boolean
           created_at?: string
-          id?: string
-          last_used_at?: string
-          lat?: number
-          lng?: number
-          place_id?: string | null
-          use_count?: number
+          display_name?: string | null
+          email?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
       }
       ride_categories: {
         Row: {
-          color: string
+          capacity_label: string | null
+          code: string
           created_at: string
-          enabled: boolean
-          icon: string
+          description: string | null
+          eta_label: string | null
+          icon: string | null
           id: string
-          key: string
-          label: string
+          image_url: string | null
+          is_active: boolean
+          name: string
           sort_order: number
           updated_at: string
         }
         Insert: {
-          color?: string
+          capacity_label?: string | null
+          code: string
           created_at?: string
-          enabled?: boolean
-          icon?: string
+          description?: string | null
+          eta_label?: string | null
+          icon?: string | null
           id?: string
-          key: string
-          label: string
+          image_url?: string | null
+          is_active?: boolean
+          name: string
           sort_order?: number
           updated_at?: string
         }
         Update: {
-          color?: string
+          capacity_label?: string | null
+          code?: string
           created_at?: string
-          enabled?: boolean
-          icon?: string
+          description?: string | null
+          eta_label?: string | null
+          icon?: string | null
           id?: string
-          key?: string
-          label?: string
+          image_url?: string | null
+          is_active?: boolean
+          name?: string
           sort_order?: number
           updated_at?: string
         }
         Relationships: []
       }
-      ride_ratings: {
+      ride_settlements: {
         Row: {
+          cash_amount: number | null
           created_at: string
-          driver_comment: string | null
+          currency: string
+          discount_amount: number | null
+          driver_earning: number | null
           driver_id: string | null
-          driver_rated_at: string | null
-          driver_rating: number | null
-          id: string
-          passenger_comment: string | null
-          passenger_id: string | null
-          passenger_rated_at: string | null
-          passenger_rating: number | null
+          gross_amount: number
+          passenger_charge: number
+          passenger_id: string
+          payment_method: string
+          payment_provider: string | null
+          payment_provider_fee: number | null
+          payment_status: string
+          platform_fee: number | null
+          provider_payment_id: string | null
+          refunded_amount: number | null
           ride_id: string
+          settled_at: string | null
+          status: string
           updated_at: string
+          wallet_amount: number | null
         }
         Insert: {
+          cash_amount?: number | null
           created_at?: string
-          driver_comment?: string | null
+          currency?: string
+          discount_amount?: number | null
+          driver_earning?: number | null
           driver_id?: string | null
-          driver_rated_at?: string | null
-          driver_rating?: number | null
-          id?: string
-          passenger_comment?: string | null
-          passenger_id?: string | null
-          passenger_rated_at?: string | null
-          passenger_rating?: number | null
+          gross_amount: number
+          passenger_charge: number
+          passenger_id: string
+          payment_method: string
+          payment_provider?: string | null
+          payment_provider_fee?: number | null
+          payment_status?: string
+          platform_fee?: number | null
+          provider_payment_id?: string | null
+          refunded_amount?: number | null
           ride_id: string
+          settled_at?: string | null
+          status?: string
           updated_at?: string
+          wallet_amount?: number | null
         }
         Update: {
+          cash_amount?: number | null
           created_at?: string
-          driver_comment?: string | null
+          currency?: string
+          discount_amount?: number | null
+          driver_earning?: number | null
           driver_id?: string | null
-          driver_rated_at?: string | null
-          driver_rating?: number | null
-          id?: string
-          passenger_comment?: string | null
-          passenger_id?: string | null
-          passenger_rated_at?: string | null
-          passenger_rating?: number | null
+          gross_amount?: number
+          passenger_charge?: number
+          passenger_id?: string
+          payment_method?: string
+          payment_provider?: string | null
+          payment_provider_fee?: number | null
+          payment_status?: string
+          platform_fee?: number | null
+          provider_payment_id?: string | null
+          refunded_amount?: number | null
           ride_id?: string
+          settled_at?: string | null
+          status?: string
           updated_at?: string
+          wallet_amount?: number | null
         }
         Relationships: [
           {
-            foreignKeyName: "ride_ratings_ride_id_fkey"
-            columns: ["ride_id"]
-            isOneToOne: true
-            referencedRelation: "rides"
+            foreignKeyName: "ride_settlements_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
             referencedColumns: ["id"]
           },
-        ]
-      }
-      ride_tips: {
-        Row: {
-          amount: number
-          created_at: string
-          driver_id: string | null
-          id: string
-          passenger_id: string
-          ride_id: string
-        }
-        Insert: {
-          amount: number
-          created_at?: string
-          driver_id?: string | null
-          id?: string
-          passenger_id: string
-          ride_id: string
-        }
-        Update: {
-          amount?: number
-          created_at?: string
-          driver_id?: string | null
-          id?: string
-          passenger_id?: string
-          ride_id?: string
-        }
-        Relationships: [
           {
-            foreignKeyName: "ride_tips_ride_id_fkey"
+            foreignKeyName: "ride_settlements_ride_id_fkey"
             columns: ["ride_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "rides"
             referencedColumns: ["id"]
           },
@@ -1853,267 +1180,301 @@ export type Database = {
         Row: {
           accepted_at: string | null
           accepted_driver_id: string | null
-          cancel_reason: string | null
-          cancellation_fee_eligible: boolean
+          cancellation_fee: number | null
+          cancellation_reason: string | null
           cancelled_at: string | null
           cancelled_by: string | null
           candidate_driver_ids: string[]
-          category: Database["public"]["Enums"]["ride_category"]
+          category: string
           completed_at: string | null
-          coupon_id: string | null
           created_at: string
           current_offer_driver_id: string | null
+          destination: Json
           destination_lat: number
           destination_lng: number
           destination_name: string
+          dispatch_attempts: number
           distance_km: number | null
-          driver_distance_to_pickup_at_cancel: number | null
+          driver_arrived_at: string | null
+          driver_heading: number | null
           driver_id: string | null
-          driver_lat: number | null
-          driver_lng: number | null
+          driver_latitude: number | null
+          driver_longitude: number | null
           driver_name: string | null
           driver_phone: string | null
-          driver_photo_url: string | null
+          driver_photo: string | null
           driver_rated_at: string | null
           driver_rating: number | null
-          driver_rating_comment: string | null
-          driver_vehicle: string | null
+          driver_vehicle_color: string | null
+          driver_vehicle_model: string | null
+          driver_vehicle_plate: string | null
           duration_min: number | null
-          estimated_price: number | null
-          fare_breakdown: Json | null
+          encoded_polyline: string | null
+          estimated_price: number
           final_price: number | null
           id: string
-          night_multiplier: number
+          intermediates: Json
           offered_driver_ids: string[]
+          origin: Json
           origin_lat: number
           origin_lng: number
           origin_name: string
           passenger_id: string
-          passenger_photo_url: string | null
           passenger_rated_at: string | null
           passenger_rating: number | null
           passenger_rating_comment: string | null
-          payment_method: string | null
-          payment_received_at: string | null
-          payment_received_by: string | null
+          payment_method: string
           pickup_address: string | null
           pickup_label: string | null
           pickup_place_id: string | null
           pickup_short_label: string | null
           pickup_source: string | null
+          queued_after_ride_id: string | null
+          queued_at: string | null
           rejected_driver_ids: string[]
           request_expires_at: string | null
-          route_polyline: string | null
-          safety_code: string | null
+          request_key: string
           scheduled_for: string | null
+          search_expires_at: string | null
+          security_code: string | null
+          service_details: Json | null
+          share_expires_at: string | null
+          share_revoked_at: string | null
           share_token: string | null
           started_at: string | null
-          status: Database["public"]["Enums"]["ride_status"]
-          surge_multiplier: number
+          status: string
           updated_at: string
-          waypoints: Json | null
         }
         Insert: {
           accepted_at?: string | null
           accepted_driver_id?: string | null
-          cancel_reason?: string | null
-          cancellation_fee_eligible?: boolean
+          cancellation_fee?: number | null
+          cancellation_reason?: string | null
           cancelled_at?: string | null
           cancelled_by?: string | null
           candidate_driver_ids?: string[]
-          category: Database["public"]["Enums"]["ride_category"]
+          category: string
           completed_at?: string | null
-          coupon_id?: string | null
           created_at?: string
           current_offer_driver_id?: string | null
+          destination: Json
           destination_lat: number
           destination_lng: number
           destination_name: string
+          dispatch_attempts?: number
           distance_km?: number | null
-          driver_distance_to_pickup_at_cancel?: number | null
+          driver_arrived_at?: string | null
+          driver_heading?: number | null
           driver_id?: string | null
-          driver_lat?: number | null
-          driver_lng?: number | null
+          driver_latitude?: number | null
+          driver_longitude?: number | null
           driver_name?: string | null
           driver_phone?: string | null
-          driver_photo_url?: string | null
+          driver_photo?: string | null
           driver_rated_at?: string | null
           driver_rating?: number | null
-          driver_rating_comment?: string | null
-          driver_vehicle?: string | null
+          driver_vehicle_color?: string | null
+          driver_vehicle_model?: string | null
+          driver_vehicle_plate?: string | null
           duration_min?: number | null
-          estimated_price?: number | null
-          fare_breakdown?: Json | null
+          encoded_polyline?: string | null
+          estimated_price: number
           final_price?: number | null
           id?: string
-          night_multiplier?: number
+          intermediates?: Json
           offered_driver_ids?: string[]
+          origin: Json
           origin_lat: number
           origin_lng: number
           origin_name: string
           passenger_id: string
-          passenger_photo_url?: string | null
           passenger_rated_at?: string | null
           passenger_rating?: number | null
           passenger_rating_comment?: string | null
-          payment_method?: string | null
-          payment_received_at?: string | null
-          payment_received_by?: string | null
+          payment_method: string
           pickup_address?: string | null
           pickup_label?: string | null
           pickup_place_id?: string | null
           pickup_short_label?: string | null
           pickup_source?: string | null
+          queued_after_ride_id?: string | null
+          queued_at?: string | null
           rejected_driver_ids?: string[]
           request_expires_at?: string | null
-          route_polyline?: string | null
-          safety_code?: string | null
+          request_key: string
           scheduled_for?: string | null
+          search_expires_at?: string | null
+          security_code?: string | null
+          service_details?: Json | null
+          share_expires_at?: string | null
+          share_revoked_at?: string | null
           share_token?: string | null
           started_at?: string | null
-          status?: Database["public"]["Enums"]["ride_status"]
-          surge_multiplier?: number
+          status?: string
           updated_at?: string
-          waypoints?: Json | null
         }
         Update: {
           accepted_at?: string | null
           accepted_driver_id?: string | null
-          cancel_reason?: string | null
-          cancellation_fee_eligible?: boolean
+          cancellation_fee?: number | null
+          cancellation_reason?: string | null
           cancelled_at?: string | null
           cancelled_by?: string | null
           candidate_driver_ids?: string[]
-          category?: Database["public"]["Enums"]["ride_category"]
+          category?: string
           completed_at?: string | null
-          coupon_id?: string | null
           created_at?: string
           current_offer_driver_id?: string | null
+          destination?: Json
           destination_lat?: number
           destination_lng?: number
           destination_name?: string
+          dispatch_attempts?: number
           distance_km?: number | null
-          driver_distance_to_pickup_at_cancel?: number | null
+          driver_arrived_at?: string | null
+          driver_heading?: number | null
           driver_id?: string | null
-          driver_lat?: number | null
-          driver_lng?: number | null
+          driver_latitude?: number | null
+          driver_longitude?: number | null
           driver_name?: string | null
           driver_phone?: string | null
-          driver_photo_url?: string | null
+          driver_photo?: string | null
           driver_rated_at?: string | null
           driver_rating?: number | null
-          driver_rating_comment?: string | null
-          driver_vehicle?: string | null
+          driver_vehicle_color?: string | null
+          driver_vehicle_model?: string | null
+          driver_vehicle_plate?: string | null
           duration_min?: number | null
-          estimated_price?: number | null
-          fare_breakdown?: Json | null
+          encoded_polyline?: string | null
+          estimated_price?: number
           final_price?: number | null
           id?: string
-          night_multiplier?: number
+          intermediates?: Json
           offered_driver_ids?: string[]
+          origin?: Json
           origin_lat?: number
           origin_lng?: number
           origin_name?: string
           passenger_id?: string
-          passenger_photo_url?: string | null
           passenger_rated_at?: string | null
           passenger_rating?: number | null
           passenger_rating_comment?: string | null
-          payment_method?: string | null
-          payment_received_at?: string | null
-          payment_received_by?: string | null
+          payment_method?: string
           pickup_address?: string | null
           pickup_label?: string | null
           pickup_place_id?: string | null
           pickup_short_label?: string | null
           pickup_source?: string | null
+          queued_after_ride_id?: string | null
+          queued_at?: string | null
           rejected_driver_ids?: string[]
           request_expires_at?: string | null
-          route_polyline?: string | null
-          safety_code?: string | null
+          request_key?: string
           scheduled_for?: string | null
+          search_expires_at?: string | null
+          security_code?: string | null
+          service_details?: Json | null
+          share_expires_at?: string | null
+          share_revoked_at?: string | null
           share_token?: string | null
           started_at?: string | null
-          status?: Database["public"]["Enums"]["ride_status"]
-          surge_multiplier?: number
+          status?: string
           updated_at?: string
-          waypoints?: Json | null
         }
         Relationships: [
           {
-            foreignKeyName: "rides_coupon_id_fkey"
-            columns: ["coupon_id"]
+            foreignKeyName: "rides_accepted_driver_id_fkey"
+            columns: ["accepted_driver_id"]
             isOneToOne: false
-            referencedRelation: "coupons"
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rides_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rides_passenger_id_fkey"
+            columns: ["passenger_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rides_queued_after_ride_id_fkey"
+            columns: ["queued_after_ride_id"]
+            isOneToOne: false
+            referencedRelation: "rides"
             referencedColumns: ["id"]
           },
         ]
       }
-      security_settings: {
+      role_permissions: {
         Row: {
-          audit_logs_enabled: boolean
-          id: number
-          max_login_attempts: number
-          password_policy: Json
-          require_2fa: boolean
-          session_timeout_minutes: number
-          updated_at: string
-          updated_by: string | null
+          permission: string
+          role: Database["public"]["Enums"]["app_role"]
         }
         Insert: {
-          audit_logs_enabled?: boolean
-          id?: number
-          max_login_attempts?: number
-          password_policy?: Json
-          require_2fa?: boolean
-          session_timeout_minutes?: number
-          updated_at?: string
-          updated_by?: string | null
+          permission: string
+          role: Database["public"]["Enums"]["app_role"]
         }
         Update: {
-          audit_logs_enabled?: boolean
-          id?: number
-          max_login_attempts?: number
-          password_policy?: Json
-          require_2fa?: boolean
-          session_timeout_minutes?: number
-          updated_at?: string
-          updated_by?: string | null
+          permission?: string
+          role?: Database["public"]["Enums"]["app_role"]
         }
         Relationships: []
       }
       sos_alerts: {
         Row: {
           created_at: string
+          driver_id: string | null
           id: string
           lat: number | null
           lng: number | null
           message: string | null
-          resolved_at: string | null
           ride_id: string | null
+          severity: string
+          status: string
+          updated_at: string
           user_id: string
         }
         Insert: {
           created_at?: string
+          driver_id?: string | null
           id?: string
           lat?: number | null
           lng?: number | null
           message?: string | null
-          resolved_at?: string | null
           ride_id?: string | null
+          severity?: string
+          status?: string
+          updated_at?: string
           user_id: string
         }
         Update: {
           created_at?: string
+          driver_id?: string | null
           id?: string
           lat?: number | null
           lng?: number | null
           message?: string | null
-          resolved_at?: string | null
           ride_id?: string | null
+          severity?: string
+          status?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "sos_alerts_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "sos_alerts_ride_id_fkey"
             columns: ["ride_id"]
@@ -2121,455 +1482,321 @@ export type Database = {
             referencedRelation: "rides"
             referencedColumns: ["id"]
           },
-        ]
-      }
-      subscription_plans: {
-        Row: {
-          billing_cycle_days: number
-          created_at: string
-          enabled: boolean
-          grace_period_days: number
-          id: string
-          name: string
-          price: number
-          promotional_price: number | null
-          updated_at: string
-        }
-        Insert: {
-          billing_cycle_days?: number
-          created_at?: string
-          enabled?: boolean
-          grace_period_days?: number
-          id?: string
-          name: string
-          price: number
-          promotional_price?: number | null
-          updated_at?: string
-        }
-        Update: {
-          billing_cycle_days?: number
-          created_at?: string
-          enabled?: boolean
-          grace_period_days?: number
-          id?: string
-          name?: string
-          price?: number
-          promotional_price?: number | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      subscriptions: {
-        Row: {
-          amount: number
-          asaas_payment_id: string | null
-          auto_suspend: boolean
-          created_at: string
-          driver_id: string
-          grace_until: string | null
-          id: string
-          invoice_url: string | null
-          paid_at: string | null
-          payment_method: string | null
-          period_end: string | null
-          period_start: string | null
-          pix_copy_paste: string | null
-          pix_qr_code: string | null
-          plan_id: string | null
-          provider_reference: string | null
-          status: Database["public"]["Enums"]["driver_subscription_status"]
-          updated_at: string
-        }
-        Insert: {
-          amount?: number
-          asaas_payment_id?: string | null
-          auto_suspend?: boolean
-          created_at?: string
-          driver_id: string
-          grace_until?: string | null
-          id?: string
-          invoice_url?: string | null
-          paid_at?: string | null
-          payment_method?: string | null
-          period_end?: string | null
-          period_start?: string | null
-          pix_copy_paste?: string | null
-          pix_qr_code?: string | null
-          plan_id?: string | null
-          provider_reference?: string | null
-          status?: Database["public"]["Enums"]["driver_subscription_status"]
-          updated_at?: string
-        }
-        Update: {
-          amount?: number
-          asaas_payment_id?: string | null
-          auto_suspend?: boolean
-          created_at?: string
-          driver_id?: string
-          grace_until?: string | null
-          id?: string
-          invoice_url?: string | null
-          paid_at?: string | null
-          payment_method?: string | null
-          period_end?: string | null
-          period_start?: string | null
-          pix_copy_paste?: string | null
-          pix_qr_code?: string | null
-          plan_id?: string | null
-          provider_reference?: string | null
-          status?: Database["public"]["Enums"]["driver_subscription_status"]
-          updated_at?: string
-        }
-        Relationships: [
           {
-            foreignKeyName: "subscriptions_plan_id_fkey"
-            columns: ["plan_id"]
+            foreignKeyName: "sos_alerts_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "subscription_plans"
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
-      }
-      support_ticket_attachments: {
-        Row: {
-          created_at: string
-          file_name: string | null
-          file_path: string
-          id: string
-          mime_type: string | null
-          size_bytes: number | null
-          ticket_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          file_name?: string | null
-          file_path: string
-          id?: string
-          mime_type?: string | null
-          size_bytes?: number | null
-          ticket_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          file_name?: string | null
-          file_path?: string
-          id?: string
-          mime_type?: string | null
-          size_bytes?: number | null
-          ticket_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "support_ticket_attachments_ticket_id_fkey"
-            columns: ["ticket_id"]
-            isOneToOne: false
-            referencedRelation: "support_tickets"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      support_ticket_notes: {
-        Row: {
-          admin_id: string
-          created_at: string
-          id: string
-          note: string
-          ticket_id: string
-        }
-        Insert: {
-          admin_id: string
-          created_at?: string
-          id?: string
-          note: string
-          ticket_id: string
-        }
-        Update: {
-          admin_id?: string
-          created_at?: string
-          id?: string
-          note?: string
-          ticket_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "support_ticket_notes_ticket_id_fkey"
-            columns: ["ticket_id"]
-            isOneToOne: false
-            referencedRelation: "support_tickets"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      support_tickets: {
-        Row: {
-          admin_status_note: string | null
-          category: string
-          created_at: string
-          description: string
-          id: string
-          priority: string
-          ride_id: string | null
-          status: string
-          subject: string
-          updated_at: string
-          user_id: string
-          user_type: string
-        }
-        Insert: {
-          admin_status_note?: string | null
-          category?: string
-          created_at?: string
-          description: string
-          id?: string
-          priority?: string
-          ride_id?: string | null
-          status?: string
-          subject: string
-          updated_at?: string
-          user_id: string
-          user_type?: string
-        }
-        Update: {
-          admin_status_note?: string | null
-          category?: string
-          created_at?: string
-          description?: string
-          id?: string
-          priority?: string
-          ride_id?: string | null
-          status?: string
-          subject?: string
-          updated_at?: string
-          user_id?: string
-          user_type?: string
-        }
-        Relationships: []
       }
       tariff_rules: {
         Row: {
-          category_key: string
+          accident_fee: number
+          assembly_fee: number
+          base_fare: number
+          category_id: string
+          city: string
           created_at: string
-          field_key: string
+          difficult_access_fee: number
+          dynamic_multiplier: number
+          fixed_fee: number
+          garage_fee: number
+          heavy_furniture_fee: number
+          heavy_vehicle_fee: number
+          helper1_fee: number
+          helper2_fee: number
           id: string
+          is_active: boolean
+          locked_wheels_fee: number
+          max_weight_kg: number
+          min_fare: number
+          packing_fee: number
+          per_kg: number
+          per_km: number
+          per_min: number
+          platform_fee: number
+          stair_fee: number
+          stop_fee: number
           updated_at: string
-          updated_by: string | null
-          value: number
+          valid_from: string | null
+          valid_to: string | null
         }
         Insert: {
-          category_key: string
+          accident_fee?: number
+          assembly_fee?: number
+          base_fare?: number
+          category_id: string
+          city?: string
           created_at?: string
-          field_key: string
+          difficult_access_fee?: number
+          dynamic_multiplier?: number
+          fixed_fee?: number
+          garage_fee?: number
+          heavy_furniture_fee?: number
+          heavy_vehicle_fee?: number
+          helper1_fee?: number
+          helper2_fee?: number
           id?: string
+          is_active?: boolean
+          locked_wheels_fee?: number
+          max_weight_kg?: number
+          min_fare?: number
+          packing_fee?: number
+          per_kg?: number
+          per_km?: number
+          per_min?: number
+          platform_fee?: number
+          stair_fee?: number
+          stop_fee?: number
           updated_at?: string
-          updated_by?: string | null
-          value?: number
+          valid_from?: string | null
+          valid_to?: string | null
         }
         Update: {
-          category_key?: string
+          accident_fee?: number
+          assembly_fee?: number
+          base_fare?: number
+          category_id?: string
+          city?: string
           created_at?: string
-          field_key?: string
+          difficult_access_fee?: number
+          dynamic_multiplier?: number
+          fixed_fee?: number
+          garage_fee?: number
+          heavy_furniture_fee?: number
+          heavy_vehicle_fee?: number
+          helper1_fee?: number
+          helper2_fee?: number
           id?: string
+          is_active?: boolean
+          locked_wheels_fee?: number
+          max_weight_kg?: number
+          min_fare?: number
+          packing_fee?: number
+          per_kg?: number
+          per_km?: number
+          per_min?: number
+          platform_fee?: number
+          stair_fee?: number
+          stop_fee?: number
           updated_at?: string
-          updated_by?: string | null
-          value?: number
+          valid_from?: string | null
+          valid_to?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "tariff_rules_category_key_fkey"
-            columns: ["category_key"]
+            foreignKeyName: "tariff_rules_category_id_fkey"
+            columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "ride_categories"
-            referencedColumns: ["key"]
+            referencedColumns: ["id"]
           },
         ]
       }
       user_notification_preferences: {
         Row: {
+          accessibility_large_text: boolean
           created_at: string
-          payment_reminders: boolean
+          payment_updates: boolean
           promotions: boolean
           ride_requests: boolean
           ride_updates: boolean
-          sound: boolean
+          safety_alerts: boolean
           updated_at: string
           user_id: string
-          vibration: boolean
         }
         Insert: {
+          accessibility_large_text?: boolean
           created_at?: string
-          payment_reminders?: boolean
+          payment_updates?: boolean
           promotions?: boolean
           ride_requests?: boolean
           ride_updates?: boolean
-          sound?: boolean
+          safety_alerts?: boolean
           updated_at?: string
           user_id: string
-          vibration?: boolean
         }
         Update: {
+          accessibility_large_text?: boolean
           created_at?: string
-          payment_reminders?: boolean
+          payment_updates?: boolean
           promotions?: boolean
           ride_requests?: boolean
           ride_updates?: boolean
-          sound?: boolean
+          safety_alerts?: boolean
           updated_at?: string
           user_id?: string
-          vibration?: boolean
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_notification_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_notification_tokens: {
         Row: {
-          auth_key: string | null
           created_at: string
-          endpoint: string | null
+          device_id: string | null
           id: string
-          last_seen_at: string
-          p256dh: string | null
+          is_active: boolean
+          last_used_at: string | null
+          permission_status: string
           platform: string
           token: string
           updated_at: string
-          user_agent: string | null
           user_id: string
         }
         Insert: {
-          auth_key?: string | null
           created_at?: string
-          endpoint?: string | null
+          device_id?: string | null
           id?: string
-          last_seen_at?: string
-          p256dh?: string | null
+          is_active?: boolean
+          last_used_at?: string | null
+          permission_status?: string
           platform: string
           token: string
           updated_at?: string
-          user_agent?: string | null
           user_id: string
         }
         Update: {
-          auth_key?: string | null
           created_at?: string
-          endpoint?: string | null
+          device_id?: string | null
           id?: string
-          last_seen_at?: string
-          p256dh?: string | null
+          is_active?: boolean
+          last_used_at?: string | null
+          permission_status?: string
           platform?: string
           token?: string
           updated_at?: string
-          user_agent?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_notification_tokens_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
           created_at: string
           id: string
-          role: Database["public"]["Enums"]["app_role"]
+          role: string
           user_id: string
         }
         Insert: {
           created_at?: string
           id?: string
-          role: Database["public"]["Enums"]["app_role"]
+          role: string
           user_id: string
         }
         Update: {
           created_at?: string
           id?: string
-          role?: Database["public"]["Enums"]["app_role"]
+          role?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       users: {
         Row: {
           auth_user_id: string
           avatar_url: string | null
-          average_rating: number
+          average_rating: number | null
           birth_date: string | null
           block_reason: string | null
           blocked_at: string | null
-          cancel_score_30d: number
           city: string | null
           completed_rides: number
           cpf: string | null
           created_at: string
           deleted_at: string | null
-          email: string
-          email_verified_at: string | null
-          emergency_contact_name: string | null
-          emergency_contact_phone: string | null
+          email: string | null
           gender: string | null
           id: string
-          last_login_at: string | null
-          name: string
+          legal_acceptance_source: string | null
+          name: string | null
           phone: string | null
-          phone_verified_at: string | null
           preferences: Json
+          privacy_accepted_at: string | null
+          privacy_version: string | null
           suspended_at: string | null
           suspended_until: string | null
+          terms_accepted_at: string | null
+          terms_version: string | null
           total_ratings: number
           updated_at: string
         }
         Insert: {
           auth_user_id: string
           avatar_url?: string | null
-          average_rating?: number
+          average_rating?: number | null
           birth_date?: string | null
           block_reason?: string | null
           blocked_at?: string | null
-          cancel_score_30d?: number
           city?: string | null
           completed_rides?: number
           cpf?: string | null
           created_at?: string
           deleted_at?: string | null
-          email: string
-          email_verified_at?: string | null
-          emergency_contact_name?: string | null
-          emergency_contact_phone?: string | null
+          email?: string | null
           gender?: string | null
           id?: string
-          last_login_at?: string | null
-          name: string
+          legal_acceptance_source?: string | null
+          name?: string | null
           phone?: string | null
-          phone_verified_at?: string | null
           preferences?: Json
+          privacy_accepted_at?: string | null
+          privacy_version?: string | null
           suspended_at?: string | null
           suspended_until?: string | null
+          terms_accepted_at?: string | null
+          terms_version?: string | null
           total_ratings?: number
           updated_at?: string
         }
         Update: {
           auth_user_id?: string
           avatar_url?: string | null
-          average_rating?: number
+          average_rating?: number | null
           birth_date?: string | null
           block_reason?: string | null
           blocked_at?: string | null
-          cancel_score_30d?: number
           city?: string | null
           completed_rides?: number
           cpf?: string | null
           created_at?: string
           deleted_at?: string | null
-          email?: string
-          email_verified_at?: string | null
-          emergency_contact_name?: string | null
-          emergency_contact_phone?: string | null
+          email?: string | null
           gender?: string | null
           id?: string
-          last_login_at?: string | null
-          name?: string
+          legal_acceptance_source?: string | null
+          name?: string | null
           phone?: string | null
-          phone_verified_at?: string | null
           preferences?: Json
+          privacy_accepted_at?: string | null
+          privacy_version?: string | null
           suspended_at?: string | null
           suspended_until?: string | null
+          terms_accepted_at?: string | null
+          terms_version?: string | null
           total_ratings?: number
           updated_at?: string
         }
@@ -2580,294 +1807,194 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      activate_due_scheduled_rides: {
-        Args: never
-        Returns: {
-          activated_ride_id: string
-        }[]
+      admin_is_authorized: { Args: never; Returns: boolean }
+      admin_set_driver_approval: {
+        Args: { _driver_id: string; _reason?: string; _status: string }
+        Returns: Json
       }
-      admin_analytics_financial: { Args: never; Returns: Json }
-      admin_analytics_new_users_timeseries: {
-        Args: { _bucket?: string; _from: string; _to: string }
-        Returns: {
-          bucket: string
-          new_drivers: number
-          new_passengers: number
-        }[]
+      create_passenger_share_token: {
+        Args: { _ride_id: string }
+        Returns: Json
       }
-      admin_analytics_overview: { Args: never; Returns: Json }
-      admin_analytics_rides_timeseries: {
-        Args: { _bucket?: string; _from: string; _to: string }
-        Returns: {
-          bucket: string
-          cancelled: number
-          completed: number
-          total: number
-        }[]
+      create_passenger_sos: {
+        Args: {
+          _lat?: number
+          _lng?: number
+          _message?: string
+          _ride_id: string
+          _severity?: string
+        }
+        Returns: Json
       }
-      admin_analytics_subscription_growth: {
-        Args: { _bucket?: string; _from: string; _to: string }
-        Returns: {
-          bucket: string
-          paid_count: number
-          revenue: number
-        }[]
-      }
-      admin_analytics_top_cities: {
-        Args: { _limit?: number }
-        Returns: {
-          city: string
-          rides: number
-        }[]
-      }
-      admin_analytics_top_drivers: {
-        Args: { _kind?: string; _limit?: number }
-        Returns: {
-          city: string
-          driver_id: string
-          name: string
-          rating: number
-          rides_total: number
-          value: number
-        }[]
-      }
-      admin_analytics_top_passengers: {
-        Args: { _kind?: string; _limit?: number }
-        Returns: {
-          city: string
-          name: string
-          rating: number
-          rides_total: number
-          user_id: string
-          value: number
-        }[]
-      }
-      admin_analytics_top_places: {
-        Args: { _kind?: string; _limit?: number }
-        Returns: {
-          place: string
-          rides: number
-        }[]
-      }
-      auto_suspend_overdue_subscriptions: { Args: never; Returns: undefined }
-      generate_share_token: { Args: never; Returns: string }
-      get_driver_amenities_public: {
-        Args: { target_user_id: string }
-        Returns: {
-          air_conditioning: boolean
-          candy: boolean
-          charger: boolean
-          child_seat: boolean
-          large_luggage: boolean
-          music_on_demand: boolean
-          pet_friendly: boolean
-          quiet_ride: boolean
-          user_id: string
-          water: boolean
-          wifi: boolean
-        }[]
-      }
-      get_driver_home_kpis: {
-        Args: { _user_id: string }
-        Returns: {
-          acceptance_rate: number
-          cancellation_rate: number
-          distance_today: number
-          earnings_today: number
-          rating: number
-          total_trips: number
-          trips_today: number
-        }[]
-      }
-      get_driver_public_profile: {
-        Args: { target_user_id: string }
-        Returns: {
-          approval_status: string
-          average_rating: number
-          category: string
-          city: string
-          completed_rides: number
-          is_online: boolean
-          member_since: string
-          name: string
-          photo_url: string
-          state: string
-          total_ratings: number
-          user_id: string
-          vehicle_color: string
-          vehicle_model: string
-          vehicle_plate: string
-          vehicle_year: number
-        }[]
-      }
-      get_driver_public_stats: {
-        Args: { p_user_id: string }
-        Returns: {
-          completed_rides: number
-          rating: number
-          total_ratings: number
-        }[]
-      }
-      get_driver_stats: {
-        Args: { _from: string; _to: string; _user_id: string }
-        Returns: {
-          acceptance_rate: number
-          avg_fare: number
-          avg_per_km: number
-          cancellation_rate: number
-          cancelled: number
-          distance_km: number
-          earnings: number
-          ride_minutes: number
-          trips: number
-        }[]
-      }
-      get_passenger_public_profile: {
-        Args: { target_user_id: string }
-        Returns: {
-          average_rating: number
-          city: string
-          completed_rides: number
-          member_since: string
-          name: string
-          photo_url: string
-          total_ratings: number
-          user_id: string
-        }[]
-      }
-      get_passenger_stats: {
-        Args: { _user_id: string }
-        Returns: {
-          avg_rating: number
-          cancelled_rides: number
-          completed_rides: number
-          total_rides: number
-          total_spent: number
-        }[]
-      }
-      get_ride_by_share_token: {
+      deactivate_notification_token: {
         Args: { _token: string }
+        Returns: boolean
+      }
+      driver_accept_ride: { Args: { _ride_id: string }; Returns: Json }
+      driver_bootstrap_profile: {
+        Args: {
+          _category: string
+          _vehicle_color: string
+          _vehicle_model: string
+          _vehicle_plate: string
+        }
+        Returns: Json
+      }
+      driver_cancel_ride: {
+        Args: { _reason?: string; _ride_id: string }
+        Returns: Json
+      }
+      driver_complete_registration: {
+        Args: {
+          _birth_date: string
+          _category: string
+          _city: string
+          _cnh_back_path: string
+          _cnh_path: string
+          _cpf: string
+          _name: string
+          _phone: string
+          _photo_path?: string
+          _selfie_path: string
+          _state: string
+          _vehicle_color: string
+          _vehicle_document_path: string
+          _vehicle_model: string
+          _vehicle_plate: string
+          _vehicle_year: number
+        }
+        Returns: Json
+      }
+      driver_complete_registration_v2: {
+        Args: {
+          _birth_date: string
+          _category: string
+          _city: string
+          _cnh_back_path: string
+          _cnh_path: string
+          _cpf: string
+          _name: string
+          _phone: string
+          _photo_path?: string
+          _selfie_path: string
+          _state: string
+          _vehicle_color: string
+          _vehicle_document_path: string
+          _vehicle_model: string
+          _vehicle_photo_path: string
+          _vehicle_plate: string
+          _vehicle_year: number
+        }
+        Returns: Json
+      }
+      driver_finish_ride: { Args: { _ride_id: string }; Returns: Json }
+      driver_get_profile: { Args: never; Returns: Json }
+      driver_mark_arrived: { Args: { _ride_id: string }; Returns: Json }
+      driver_rate_passenger: {
+        Args: { _comment?: string; _ride_id: string; _stars: number }
+        Returns: Json
+      }
+      driver_reject_ride: { Args: { _ride_id: string }; Returns: Json }
+      driver_request_withdrawal: {
+        Args: { _amount_cents: number; _idempotency_key: string }
+        Returns: Json
+      }
+      driver_set_presence: {
+        Args: {
+          _heading?: number
+          _lat?: number
+          _lng?: number
+          _online: boolean
+          _speed?: number
+        }
+        Returns: Json
+      }
+      driver_start_ride: {
+        Args: { _ride_id: string; _security_code: string }
+        Returns: Json
+      }
+      ensure_ride_settlement: {
+        Args: { _ride_id: string }
         Returns: {
-          category: string
-          destination_lat: number
-          destination_lng: number
-          destination_name: string
-          driver_first_name: string
-          driver_lat: number
-          driver_lng: number
-          driver_photo_url: string
-          is_live: boolean
-          origin_lat: number
-          origin_lng: number
-          origin_name: string
+          cash_amount: number | null
+          created_at: string
+          currency: string
+          discount_amount: number | null
+          driver_earning: number | null
+          driver_id: string | null
+          gross_amount: number
+          passenger_charge: number
+          passenger_id: string
+          payment_method: string
+          payment_provider: string | null
+          payment_provider_fee: number | null
+          payment_status: string
+          platform_fee: number | null
+          provider_payment_id: string | null
+          refunded_amount: number | null
+          ride_id: string
+          settled_at: string | null
           status: string
           updated_at: string
-          vehicle_color: string
-          vehicle_model: string
-          vehicle_plate_masked: string
-        }[]
-      }
-      mark_driver_withdrawal_failed: {
-        Args: { _reason: string; _response: Json; _withdrawal_id: string }
-        Returns: undefined
-      }
-      mark_driver_withdrawal_paid: {
-        Args: {
-          _end_to_end_id: string
-          _response: Json
-          _transfer_id: string
-          _withdrawal_id: string
+          wallet_amount: number | null
         }
-        Returns: undefined
+        SetofOptions: {
+          from: "*"
+          to: "ride_settlements"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
-      recompute_driver_rating: {
-        Args: { _driver_id: string }
-        Returns: undefined
+      get_driver_financial_dashboard: {
+        Args: { _from: string; _to: string }
+        Returns: Json
       }
-      recompute_passenger_rating: {
-        Args: { _passenger_id: string }
-        Returns: undefined
+      get_driver_ride_settlement: { Args: { _ride_id: string }; Returns: Json }
+      get_passenger_ride_receipt: { Args: { _ride_id: string }; Returns: Json }
+      get_ride_cancellation_policy: { Args: never; Returns: Json }
+      get_shared_passenger_ride: { Args: { _token: string }; Returns: Json }
+      mobility_user_id: { Args: never; Returns: string }
+      rate_passenger_ride: {
+        Args: { _comment?: string; _rating: number; _ride_id: string }
+        Returns: Json
       }
-      request_driver_withdrawal: { Args: { _amount: number }; Returns: string }
-      settle_cancellation_fee: { Args: { _fee_id: string }; Returns: undefined }
+      register_notification_token: {
+        Args: {
+          _device_id?: string
+          _permission_status?: string
+          _platform: string
+          _token: string
+        }
+        Returns: string
+      }
+      reverse_cancellation_fee_settlement: {
+        Args: { _fee_id: string }
+        Returns: Json
+      }
+      revoke_passenger_share_token: {
+        Args: { _ride_id: string }
+        Returns: Json
+      }
+      settle_cancellation_fee: { Args: { _fee_id: string }; Returns: Json }
     }
     Enums: {
-      app_role:
-        | "passenger"
-        | "driver"
-        | "admin"
-        | "super_admin"
-        | "financial"
-        | "support"
-        | "operations"
-        | "readonly"
-      driver_approval_status:
-        | "em_analise"
-        | "aprovado"
-        | "reprovado"
-        | "bloqueado"
-      driver_financial_status:
-        | "inactive"
-        | "pending"
-        | "active"
-        | "overdue"
-        | "cancelled"
-      driver_subscription_status:
-        | "active"
-        | "inactive"
-        | "overdue"
-        | "pending"
-        | "suspended"
-        | "expired"
-        | "blocked"
-        | "cancelled"
-      driver_wallet_tx_source:
-        | "cancellation_fee"
-        | "manual_credit"
-        | "withdrawal"
-        | "adjustment"
-      driver_wallet_tx_status:
-        | "pending"
-        | "available"
-        | "withdrawn"
-        | "cancelled"
-      financial_txn_status:
-        | "pending"
-        | "processing"
+      app_role: "administrator" | "editor" | "marketing" | "support" | "reader"
+      asset_kind:
+        | "image"
+        | "video"
+        | "pdf"
+        | "logo"
+        | "icon"
+        | "banner"
+        | "document"
+      content_status: "draft" | "scheduled" | "published" | "archived"
+      submission_kind: "company" | "contact" | "newsletter" | "download"
+      submission_status:
+        | "new"
+        | "in_progress"
         | "completed"
-        | "failed"
-        | "cancelled"
-        | "refunded"
-      financial_txn_type:
-        | "subscription"
-        | "ride_payment"
-        | "refund"
-        | "bonus"
-        | "adjustment"
-        | "withdrawal"
-        | "promotion"
-        | "future_pix"
-        | "future_card"
-      payment_method_kind:
-        | "pix"
-        | "credit_card"
-        | "debit_card"
-        | "cash"
-        | "wallet"
-        | "corporate"
-      payment_status: "pending" | "paid" | "failed" | "refunded"
-      pix_key_type: "cpf" | "cnpj" | "email" | "phone" | "random"
-      ride_category: "carros" | "motos" | "fretes" | "guincho" | "envios"
-      ride_status:
-        | "agendada"
-        | "procurar_motorista"
-        | "motorista_a_caminho"
-        | "motorista_chegou"
-        | "em_viagem"
-        | "finalizada"
-        | "cancelada_passageiro"
-        | "cancelada_motorista"
-      wallet_status: "active" | "frozen" | "closed"
+        | "spam"
+        | "archived"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2889,9 +2016,7 @@ export type Tables<
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
   ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
       DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
@@ -2917,9 +2042,7 @@ export type TablesInsert<
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I
     }
@@ -2942,9 +2065,7 @@ export type TablesUpdate<
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U
     }
@@ -2967,9 +2088,7 @@ export type Enums<
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
-> = DefaultSchemaEnumNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
+> = DefaultSchemaEnumNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
     ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
@@ -2984,9 +2103,7 @@ export type CompositeTypes<
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never = never,
-> = PublicCompositeTypeNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
+> = PublicCompositeTypeNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
@@ -2995,92 +2112,25 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: [
-        "passenger",
-        "driver",
-        "admin",
-        "super_admin",
-        "financial",
-        "support",
-        "operations",
-        "readonly",
+      app_role: ["administrator", "editor", "marketing", "support", "reader"],
+      asset_kind: [
+        "image",
+        "video",
+        "pdf",
+        "logo",
+        "icon",
+        "banner",
+        "document",
       ],
-      driver_approval_status: [
-        "em_analise",
-        "aprovado",
-        "reprovado",
-        "bloqueado",
-      ],
-      driver_financial_status: [
-        "inactive",
-        "pending",
-        "active",
-        "overdue",
-        "cancelled",
-      ],
-      driver_subscription_status: [
-        "active",
-        "inactive",
-        "overdue",
-        "pending",
-        "suspended",
-        "expired",
-        "blocked",
-        "cancelled",
-      ],
-      driver_wallet_tx_source: [
-        "cancellation_fee",
-        "manual_credit",
-        "withdrawal",
-        "adjustment",
-      ],
-      driver_wallet_tx_status: [
-        "pending",
-        "available",
-        "withdrawn",
-        "cancelled",
-      ],
-      financial_txn_status: [
-        "pending",
-        "processing",
+      content_status: ["draft", "scheduled", "published", "archived"],
+      submission_kind: ["company", "contact", "newsletter", "download"],
+      submission_status: [
+        "new",
+        "in_progress",
         "completed",
-        "failed",
-        "cancelled",
-        "refunded",
+        "spam",
+        "archived",
       ],
-      financial_txn_type: [
-        "subscription",
-        "ride_payment",
-        "refund",
-        "bonus",
-        "adjustment",
-        "withdrawal",
-        "promotion",
-        "future_pix",
-        "future_card",
-      ],
-      payment_method_kind: [
-        "pix",
-        "credit_card",
-        "debit_card",
-        "cash",
-        "wallet",
-        "corporate",
-      ],
-      payment_status: ["pending", "paid", "failed", "refunded"],
-      pix_key_type: ["cpf", "cnpj", "email", "phone", "random"],
-      ride_category: ["carros", "motos", "fretes", "guincho", "envios"],
-      ride_status: [
-        "agendada",
-        "procurar_motorista",
-        "motorista_a_caminho",
-        "motorista_chegou",
-        "em_viagem",
-        "finalizada",
-        "cancelada_passageiro",
-        "cancelada_motorista",
-      ],
-      wallet_status: ["active", "frozen", "closed"],
     },
   },
 } as const

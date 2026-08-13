@@ -3,7 +3,13 @@ import { Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { ArrowLeft, Home } from "lucide-react";
 import { MovviLogo } from "@/components/MovviLogo";
 import { translateAuthError } from "@/lib/authErrors";
-import { DSCard, DSCardContent, DSCardDescription, DSCardHeader, DSCardTitle } from "@/design-system";
+import {
+  DSCard,
+  DSCardContent,
+  DSCardDescription,
+  DSCardHeader,
+  DSCardTitle,
+} from "@/design-system";
 import { isNative } from "@/lib/nativeBridge";
 import { isPassengerBuild, isDriverBuild } from "@/lib/appRole";
 
@@ -12,9 +18,10 @@ interface AuthShellProps {
   description: ReactNode;
   children: ReactNode;
   footer?: ReactNode;
+  brandLabel?: string;
 }
 
-export function AuthShell({ title, description, children, footer }: AuthShellProps) {
+export function AuthShell({ title, description, children, footer, brandLabel }: AuthShellProps) {
   const router = useRouter();
   const navigate = useNavigate();
   // No APK (Capacitor) ou em builds de aplicativo (passageiro/motorista) não
@@ -32,7 +39,9 @@ export function AuthShell({ title, description, children, footer }: AuthShellPro
           <div className="mb-4 flex w-full items-center justify-between">
             <button
               type="button"
-              onClick={() => (window.history.length > 1 ? router.history.back() : navigate({ to: "/" }))}
+              onClick={() =>
+                window.history.length > 1 ? router.history.back() : navigate({ to: "/" })
+              }
               className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-medium text-muted-foreground transition hover:bg-accent/40 hover:text-foreground"
             >
               <ArrowLeft className="h-4 w-4" /> Voltar
@@ -49,7 +58,7 @@ export function AuthShell({ title, description, children, footer }: AuthShellPro
 
         <div className="flex w-full flex-col space-y-6">
           <div className="flex justify-center">
-            <MovviLogo size={56} />
+            <MovviLogo size={56} productLabel={brandLabel} />
           </div>
           <DSCard>
             <DSCardHeader>
@@ -69,7 +78,9 @@ interface UseAuthFormResult {
   error: string | null;
   setError: (s: string | null) => void;
   loading: boolean;
-  handle: (fn: (form: FormData) => Promise<void>) => (e: FormEvent<HTMLFormElement>) => Promise<void>;
+  handle: (
+    fn: (form: FormData) => Promise<void>,
+  ) => (e: FormEvent<HTMLFormElement>) => Promise<void>;
 }
 
 /** Timeout duro para qualquer promise — evita botão preso em "carregando". */

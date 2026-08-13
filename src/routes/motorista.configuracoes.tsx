@@ -1,12 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
-  Banknote, Bell, CreditCard, Info, KeyRound, Languages, LifeBuoy, Loader2,
-  LockKeyhole, LogOut, MapPin, MapPinned, Moon, Navigation, Palette,
-  QrCode, Save, Settings as SettingsIcon, Shield, ShieldCheck, Smartphone,
+  Bell, Info, KeyRound, Languages, LifeBuoy, Loader2,
+  LockKeyhole, LogOut, MapPin, Moon, Navigation, Palette,
+  Save, Settings as SettingsIcon, Shield, ShieldCheck, Smartphone,
   Sun, Trash2, User, Vibrate, Volume2, FileText, Fingerprint,
 } from "lucide-react";
-import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { requestPushPermission } from "@/lib/pushNotifications";
@@ -18,10 +17,10 @@ import {
   SettingsSection, SettingsToggleRow, SettingsLinkRow, SettingsRow, AppAboutCard,
   SettingsPageShell, SettingsHero,
 } from "@/components/settings";
-import { DSButton, DSLabel } from "@/design-system";
+import { DSButton } from "@/design-system";
 
 export const Route = createFileRoute("/motorista/configuracoes")({
-  head: () => ({ meta: [{ title: "Configurações — MOVVI DRIVE" }] }),
+  head: () => ({ meta: [{ title: "Configurações — APOIS" }] }),
   component: DriverSettingsPage,
 });
 
@@ -33,6 +32,7 @@ function DriverSettingsPage() {
   const [prefs, setPrefs] = useState<DriverPrefs>(DEFAULT_DRIVER_PREFS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [notifState, setNotifState] = useState<NotificationPermission | "unsupported" | null>(null);
   const [locState, setLocState] = useState<PermissionState | "unsupported" | null>(null);
 
@@ -66,7 +66,7 @@ function DriverSettingsPage() {
     setSaving(true);
     try {
       await saveDriverPrefs(userId, prefs);
-      toast.success("Configurações salvas!");
+      toast.success("Configurações salvas neste dispositivo.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Falha ao salvar.");
     } finally { setSaving(false); }
@@ -93,7 +93,9 @@ function DriverSettingsPage() {
   }
 
   async function handleClearCache() {
-    const keys = Object.keys(localStorage).filter((k) => k.startsWith("movvi:") && !k.includes("prefs"));
+    const keys = Object.keys(localStorage).filter((k) =>
+      (k.startsWith("movvi:") || k.startsWith("apois:")) && !k.includes(":prefs:"),
+    );
     keys.forEach((k) => localStorage.removeItem(k));
     toast.success(`Cache limpo (${keys.length} itens).`);
   }
@@ -109,156 +111,180 @@ function DriverSettingsPage() {
     navigate({ to: "/motorista/login" });
   }
 
+  async function handleDeleteAccount() {
+    if (deleting) return;
+    const confirmed = window.confirm(
+      "Excluir sua conta APOIS Motorista permanentemente? Seus dados pessoais e documentos serão removidos. Corridas e registros que precisam ser preservados por segurança, auditoria ou obrigação legal poderão permanecer anonimizados. Se houver uma corrida ativa, a exclusão será bloqueada até ela ser finalizada ou cancelada.",
+    );
+    if (!confirmed) return;
+
+    const phrase = window.prompt('Para confirmar a exclusão permanente, digite "EXCLUIR".');
+    if (phrase?.trim().toUpperCase() !== "EXCLUIR") {
+      toast.error("Exclusão cancelada: confirmação incorreta.");
+      return;
+    }
+
+    setDeleting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("delete-my-account", { body: {} });
+      if (error) {
+        let message = "Não foi possível excluir sua conta agora.";
+        const response = (error as { context?: Response }).context;
+        if (response && typeof response.json === "function") {
+          try {
+            const body = await response.json() as { message?: string };
+            if (body?.message) message = body.message;
+          } catch {
+            // resposta sem JSON; mantém a mensagem segura acima
+          }
+        }
+        throw new Error(message);
+      }
+      if (!data?.ok) throw new Error(data?.message ?? "Não foi possível excluir sua conta agora.");
+
+      try {
+        Object.keys(localStorage)
+          .filter((key) => key.startsWith("apois:") || key.startsWith("movvi:"))
+          .forEach((key) => localStorage.removeItem(key));
+      } catch {
+        // limpeza local é best effort; a exclusão server-side já foi concluída
+      }
+      try { await supabase.auth.signOut({ scope: "local" }); } catch { /* sessão pode já ter sido invalidada */ }
+      toast.success("Conta excluída com sucesso.");
+      navigate({ to: "/motorista/login", replace: true });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Não foi possível excluir sua conta agora.");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   return (
-    <SettingsPageShell>
+    <SettingsPageShell variant="driver">
       <SettingsHero
         icon={SettingsIcon}
         title="Configurações"
-        subtitle="Personalize seu app e preferências."
+        subtitle="Personalize o aplicativo neste dispositivo."
       />
 
-          {loading ? (
-            <div className="flex items-center gap-2 py-12 text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" /> Carregando...
-            </div>
-          ) : (
-            <>
-              {/* Conta */}
-              <SettingsSection icon={User} title="Conta" description={userEmail ?? undefined}>
-                <SettingsLinkRow icon={User} title="Perfil" hint="Foto, nome e dados pessoais" to="/motorista/perfil" />
-                <SettingsLinkRow icon={Smartphone} title="Telefone e e-mail" hint="Atualize seus contatos" to="/motorista/perfil" />
-                <SettingsLinkRow icon={LogOut} title="Sair" onClick={handleLogout} />
-                <SettingsLinkRow icon={Trash2} title="Excluir conta" hint="Em breve" destructive onClick={() => toast.message("Exclusão de conta em breve.")} />
-              </SettingsSection>
+      {loading ? (
+        <div className="flex items-center gap-2 py-12 text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" /> Carregando...
+        </div>
+      ) : (
+        <>
+          <SettingsSection icon={User} title="Conta" description={userEmail ?? undefined}>
+            <SettingsLinkRow icon={User} title="Perfil" hint="Foto, nome e dados pessoais" to="/motorista/perfil" />
+            <SettingsLinkRow icon={Smartphone} title="Telefone e e-mail" hint="Atualize seus contatos" to="/motorista/perfil" />
+            <SettingsLinkRow icon={LogOut} title="Sair" onClick={handleLogout} />
+            <SettingsLinkRow
+              icon={deleting ? Loader2 : Trash2}
+              title={deleting ? "Excluindo conta..." : "Excluir conta"}
+              hint="Exclusão permanente dos dados pessoais e documentos"
+              destructive
+              onClick={() => void handleDeleteAccount()}
+            />
+          </SettingsSection>
 
-              {/* Segurança */}
-              <SettingsSection icon={ShieldCheck} title="Segurança">
-                <SettingsLinkRow icon={KeyRound} title="Alterar senha" to="/motorista/seguranca" />
-                <SettingsLinkRow icon={Shield} title="Sessões ativas" hint="Em breve" onClick={() => toast.message("Sessões ativas em breve.")} />
-                <SettingsLinkRow icon={Fingerprint} title="Autenticação biométrica" hint="Em breve" onClick={() => toast.message("Biometria em breve.")} />
-                <SettingsLinkRow icon={LockKeyhole} title="Bloqueio por PIN" hint="Em breve" onClick={() => toast.message("PIN em breve.")} />
-                <SettingsLinkRow icon={LogOut} title="Sair de todos os dispositivos" destructive onClick={handleLogoutAll} />
-              </SettingsSection>
+          <SettingsSection icon={ShieldCheck} title="Segurança">
+            <SettingsLinkRow icon={KeyRound} title="Alterar senha" to="/motorista/seguranca" />
+            <SettingsLinkRow icon={Shield} title="Sessões ativas" hint="Em breve" onClick={() => toast.message("Sessões ativas em breve.")} />
+            <SettingsLinkRow icon={Fingerprint} title="Autenticação biométrica" hint="Em breve" onClick={() => toast.message("Biometria em breve.")} />
+            <SettingsLinkRow icon={LockKeyhole} title="Bloqueio por PIN" hint="Em breve" onClick={() => toast.message("PIN em breve.")} />
+            <SettingsLinkRow icon={LogOut} title="Sair de todos os dispositivos" destructive onClick={handleLogoutAll} />
+          </SettingsSection>
 
-              {/* Notificações */}
-              <SettingsSection icon={Bell} title="Notificações" description="Alertas e canais de aviso.">
-                <SettingsToggleRow icon={Bell} title="Notificações push" checked={prefs.push} onChange={(v) => v ? handleEnablePush() : update("push", false)} />
-                <SettingsToggleRow title="Alertas de corrida" hint="Novas corridas, atualizações e lembretes" checked={prefs.ride_alerts} onChange={(v) => update("ride_alerts", v)} />
-                <SettingsToggleRow icon={Volume2} title="Som" checked={prefs.sound} onChange={(v) => update("sound", v)} />
-                <SettingsToggleRow icon={Vibrate} title="Vibração" checked={prefs.vibration} onChange={(v) => update("vibration", v)} />
-                <SettingsLinkRow icon={Bell} title="Central de notificações" to="/motorista/notificacoes" />
-              </SettingsSection>
+          <SettingsSection icon={Bell} title="Notificações" description="Alertas e canais de aviso deste aparelho.">
+            <SettingsToggleRow icon={Bell} title="Notificações push" checked={prefs.push} onChange={(v) => v ? handleEnablePush() : update("push", false)} />
+            <SettingsToggleRow title="Alertas de corrida" hint="Novas corridas, atualizações e lembretes" checked={prefs.ride_alerts} onChange={(v) => update("ride_alerts", v)} />
+            <SettingsToggleRow icon={Volume2} title="Som" checked={prefs.sound} onChange={(v) => update("sound", v)} />
+            <SettingsToggleRow icon={Vibrate} title="Vibração" checked={prefs.vibration} onChange={(v) => update("vibration", v)} />
+            <SettingsLinkRow icon={Bell} title="Central de notificações" to="/motorista/notificacoes" />
+          </SettingsSection>
 
-              {/* Corridas */}
-              <SettingsSection icon={MapPinned} title="Corridas" description="Preferências de aceitação.">
-                <SettingsToggleRow title="Aceitar corridas curtas" checked={prefs.accept_short} onChange={(v) => update("accept_short", v)} />
-                <SettingsToggleRow title="Aceitar corridas longas" checked={prefs.accept_long} onChange={(v) => update("accept_long", v)} />
-                <div className="space-y-2 py-3">
-                  <div className="flex items-center justify-between">
-                    <DSLabel className="text-sm">Raio máximo de busca</DSLabel>
-                    <span className="rounded-md bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary ring-1 ring-primary/30">
-                      {prefs.max_radius_km} km
-                    </span>
-                  </div>
-                  <Slider value={[prefs.max_radius_km]} min={1} max={50} step={1} onValueChange={(v) => update("max_radius_km", v[0] ?? 10)} />
+          <SettingsSection icon={Palette} title="Aplicativo">
+            <SettingsRow
+              icon={Moon}
+              title="Tema"
+              right={
+                <div className="grid grid-cols-3 gap-1.5">
+                  <ThemeBtn icon={<Sun className="h-3.5 w-3.5" />} label="Claro" active={prefs.theme === "light"} onClick={() => update("theme", "light")} />
+                  <ThemeBtn icon={<Moon className="h-3.5 w-3.5" />} label="Escuro" active={prefs.theme === "dark"} onClick={() => update("theme", "dark")} />
+                  <ThemeBtn label="Auto" active={prefs.theme === "system"} onClick={() => update("theme", "system")} />
                 </div>
-              </SettingsSection>
+              }
+            />
+            <SettingsRow
+              icon={Navigation}
+              title="App de navegação"
+              hint="Aplicativo aberto ao iniciar corrida"
+              right={
+                <select
+                  value={prefs.navigation_app}
+                  onChange={(e) => update("navigation_app", e.target.value as DriverPrefs["navigation_app"])}
+                  className="h-9 rounded-md border border-input bg-background px-2 text-xs"
+                >
+                  <option value="internal">Interna</option>
+                  <option value="google">Google Maps</option>
+                  <option value="waze">Waze</option>
+                </select>
+              }
+            />
+            <SettingsRow
+              icon={Languages}
+              title="Idioma"
+              hint="Preferência local de interface"
+              right={
+                <select
+                  value={prefs.language}
+                  onChange={(e) => update("language", e.target.value as DriverPrefs["language"])}
+                  className="h-9 rounded-md border border-input bg-background px-2 text-xs"
+                >
+                  <option value="pt">Português</option>
+                  <option value="en">English</option>
+                  <option value="es">Español</option>
+                </select>
+              }
+            />
+            <SettingsLinkRow icon={Trash2} title="Limpar cache do aplicativo" onClick={handleClearCache} />
+          </SettingsSection>
 
-              {/* Pagamentos aceitos */}
-              <SettingsSection icon={CreditCard} title="Formas de pagamento aceitas">
-                <SettingsToggleRow icon={Banknote} title="Dinheiro" checked={prefs.accept_cash} onChange={(v) => update("accept_cash", v)} />
-                <SettingsToggleRow icon={QrCode} title="Pix" checked={prefs.accept_pix} onChange={(v) => update("accept_pix", v)} />
-                <SettingsToggleRow icon={CreditCard} title="Maquininha" checked={prefs.accept_card} onChange={(v) => update("accept_card", v)} />
-              </SettingsSection>
+          <SettingsSection icon={Shield} title="Privacidade">
+            <SettingsRow
+              icon={MapPin}
+              title="Permissão de localização"
+              hint={locState === "granted" ? "Permitida" : locState === "denied" ? "Bloqueada — ajuste no navegador" : locState === "unsupported" ? "Indisponível" : "Pendente"}
+              right={<DSButton size="sm" variant="outline" onClick={handleTestLocation}>Testar</DSButton>}
+            />
+            <SettingsRow
+              icon={Bell}
+              title="Permissão de notificações"
+              hint={notifState === "granted" ? "Permitida" : notifState === "denied" ? "Bloqueada" : notifState === "unsupported" ? "Indisponível" : "Pendente"}
+              right={<DSButton size="sm" variant="outline" onClick={handleEnablePush}>Solicitar</DSButton>}
+            />
+            <SettingsLinkRow icon={FileText} title="Termos de Uso" to="/motorista/termos" />
+            <SettingsLinkRow icon={ShieldCheck} title="Política de Privacidade" to="/motorista/privacidade" />
+          </SettingsSection>
 
-              {/* Aplicativo */}
-              <SettingsSection icon={Palette} title="Aplicativo">
-                <SettingsRow
-                  icon={Moon}
-                  title="Tema"
-                  right={
-                    <div className="grid grid-cols-3 gap-1.5">
-                      <ThemeBtn icon={<Sun className="h-3.5 w-3.5" />} label="Claro" active={prefs.theme === "light"} onClick={() => update("theme", "light")} />
-                      <ThemeBtn icon={<Moon className="h-3.5 w-3.5" />} label="Escuro" active={prefs.theme === "dark"} onClick={() => update("theme", "dark")} />
-                      <ThemeBtn label="Auto" active={prefs.theme === "system"} onClick={() => update("theme", "system")} />
-                    </div>
-                  }
-                />
-                <SettingsRow
-                  icon={Navigation}
-                  title="App de navegação"
-                  hint="Aplicativo aberto ao iniciar corrida"
-                  right={
-                    <select
-                      value={prefs.navigation_app}
-                      onChange={(e) => update("navigation_app", e.target.value as DriverPrefs["navigation_app"])}
-                      className="h-9 rounded-md border border-input bg-background px-2 text-xs"
-                    >
-                      <option value="internal">Interna</option>
-                      <option value="google">Google Maps</option>
-                      <option value="waze">Waze</option>
-                    </select>
-                  }
-                />
-                <SettingsRow
-                  icon={Languages}
-                  title="Idioma"
-                  hint="Em breve"
-                  right={
-                    <select
-                      value={prefs.language}
-                      onChange={(e) => update("language", e.target.value as DriverPrefs["language"])}
-                      className="h-9 rounded-md border border-input bg-background px-2 text-xs"
-                    >
-                      <option value="pt">Português</option>
-                      <option value="en">English</option>
-                      <option value="es">Español</option>
-                    </select>
-                  }
-                />
-                <SettingsLinkRow icon={Trash2} title="Limpar cache do aplicativo" onClick={handleClearCache} />
-              </SettingsSection>
+          <SettingsSection icon={LifeBuoy} title="Suporte">
+            <SettingsLinkRow icon={LifeBuoy} title="Central de ajuda" to="/motorista/suporte" />
+            <SettingsLinkRow icon={LifeBuoy} title="Perguntas frequentes" to="/motorista/suporte" />
+            <SettingsLinkRow icon={LifeBuoy} title="Falar com o suporte" to="/motorista/suporte" />
+          </SettingsSection>
 
-              {/* Privacidade */}
-              <SettingsSection icon={Shield} title="Privacidade">
-                <SettingsRow
-                  icon={MapPin}
-                  title="Permissão de localização"
-                  hint={locState === "granted" ? "Permitida" : locState === "denied" ? "Bloqueada — ajuste no navegador" : locState === "unsupported" ? "Indisponível" : "Pendente"}
-                  right={<DSButton size="sm" variant="outline" onClick={handleTestLocation}>Testar</DSButton>}
-                />
-                <SettingsRow
-                  icon={Bell}
-                  title="Permissão de notificações"
-                  hint={notifState === "granted" ? "Permitida" : notifState === "denied" ? "Bloqueada" : notifState === "unsupported" ? "Indisponível" : "Pendente"}
-                  right={<DSButton size="sm" variant="outline" onClick={handleEnablePush}>Solicitar</DSButton>}
-                />
-                <SettingsLinkRow icon={FileText} title="Termos de Uso" to="/motorista/termos" />
-                <SettingsLinkRow icon={ShieldCheck} title="Política de Privacidade" to="/motorista/privacidade" />
-              </SettingsSection>
+          <DSButton onClick={handleSave} disabled={saving} className="w-full">
+            {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+            Salvar configurações
+          </DSButton>
 
-              {/* Suporte */}
-              <SettingsSection icon={LifeBuoy} title="Suporte">
-                <SettingsLinkRow icon={LifeBuoy} title="Central de ajuda" to="/motorista/suporte" />
-                <SettingsLinkRow icon={LifeBuoy} title="Perguntas frequentes" to="/motorista/suporte" />
-                <SettingsLinkRow icon={LifeBuoy} title="Falar com o suporte" to="/motorista/suporte" />
-              </SettingsSection>
-
-              <DSButton onClick={handleSave} disabled={saving} className="w-full">
-                {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                Salvar configurações
-              </DSButton>
-
-              {/* Sobre */}
-              <SettingsSection icon={Info} title="Sobre">
-                <div className="py-2"><AppAboutCard /></div>
-              </SettingsSection>
-            </>
-          )}
+          <SettingsSection icon={Info} title="Sobre">
+            <div className="py-2"><AppAboutCard /></div>
+          </SettingsSection>
+        </>
+      )}
     </SettingsPageShell>
   );
 }
-
 
 function ThemeBtn({ icon, label, active, onClick }: { icon?: React.ReactNode; label: string; active: boolean; onClick: () => void }) {
   return (

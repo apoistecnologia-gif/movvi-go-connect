@@ -1,5 +1,5 @@
 /**
- * MOVVI — Haptic feedback leve (vibração curta em Android/Chrome).
+ * APOIS — Haptic feedback leve (vibração curta em Android/Chrome).
  *
  * Web Vibration API só existe em navegadores móveis; falha silenciosa
  * em desktop e iOS Safari. Nunca lança, nunca bloqueia.

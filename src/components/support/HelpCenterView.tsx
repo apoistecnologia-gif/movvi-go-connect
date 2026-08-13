@@ -4,8 +4,8 @@ import {
   Accordion, AccordionItem, AccordionTrigger, AccordionContent,
 } from "@/components/ui/accordion";
 import {
-  LifeBuoy, MessageSquare, Phone, AlertTriangle, Loader2, Send, MessagesSquare,
-  Paperclip, FileText, ShieldCheck, HelpCircle,
+  LifeBuoy, AlertTriangle, Loader2, Send, FileText, ShieldCheck, HelpCircle,
+  type LucideIcon,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -21,6 +21,7 @@ type Role = "passenger" | "driver";
 
 type Ticket = {
   id: string;
+  protocol: string;
   subject: string;
   category: string;
   status: string;
@@ -29,10 +30,43 @@ type Ticket = {
 
 type RideOption = { id: string; label: string };
 
+type PassengerSupportResponse = {
+  ok?: boolean;
+  error?: string;
+  message?: string;
+  ticket?: {
+    id: string;
+    protocol: string;
+    status: string;
+    createdAt: string;
+  };
+};
+
 type Props = {
   role: Role;
   termsHref: string;
   privacyHref: string;
+};
+
+const PASSENGER_CATEGORY_MAP: Record<string, "ride" | "payment" | "account" | "safety" | "other"> = {
+  ride_issue: "ride",
+  driver_issue: "ride",
+  payment: "payment",
+  safety: "safety",
+  account: "account",
+  app_bug: "other",
+  other: "other",
+};
+
+const TICKET_CATEGORY_LABELS: Record<string, string> = {
+  ride: "Corrida",
+  ride_issue: "Problema com corrida",
+  driver_issue: "Problema com motorista",
+  payment: "Pagamento",
+  safety: "Segurança",
+  account: "Conta",
+  app_bug: "Erro no app",
+  other: "Outro",
 };
 
 export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
@@ -40,7 +74,9 @@ export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
   const faq: Faq[] = isDriver ? DRIVER_FAQ : PASSENGER_FAQ;
   const categories: SupportCategory[] = isDriver ? DRIVER_CATEGORIES : PASSENGER_CATEGORIES;
 
-  const [userId, setUserId] = useState<string | null>(null);
+  const [authUserId, setAuthUserId] = useState<string | null>(null);
+  const [domainUserId, setDomainUserId] = useState<string | null>(null);
+  const [driverId, setDriverId] = useState<string | null>(null);
   const [subject, setSubject] = useState("");
   const [category, setCategory] = useState(categories[0].value);
   const [rideId, setRideId] = useState<string>("");
@@ -51,24 +87,37 @@ export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<string | null>(null);
 
-  async function loadTickets(uid: string) {
-    const { data } = await supabase
-      .from("support_tickets")
-      .select("id, subject, category, status, created_at")
-      .eq("user_id", uid)
+  async function loadTickets(passengerId: string) {
+    const { data, error } = await supabase
+      .from("passenger_support_tickets")
+      .select("id, protocol, subject, category, status, created_at")
+      .eq("passenger_id", passengerId)
       .order("created_at", { ascending: false })
       .limit(20);
+
+    if (error) {
+      console.error("[APOIS suporte] falha ao carregar tickets do passageiro", error);
+      setTickets([]);
+      return;
+    }
     setTickets(data ?? []);
   }
 
-  async function loadRecentRides(uid: string) {
-    const column = isDriver ? "driver_id" : "passenger_id";
-    const { data } = await supabase
+  async function loadRecentRides(ownerId: string) {
+    const column: "driver_id" | "passenger_id" = isDriver ? "driver_id" : "passenger_id";
+    const { data, error } = await supabase
       .from("rides")
       .select("id, created_at, origin_name, destination_name")
-      .eq(column, uid)
+      .eq(column, ownerId)
       .order("created_at", { ascending: false })
       .limit(10);
+
+    if (error) {
+      console.error("[APOIS suporte] falha ao carregar corridas recentes", error);
+      setRides([]);
+      return;
+    }
+
     setRides(
       (data ?? []).map((r) => ({
         id: r.id,
@@ -78,49 +127,145 @@ export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
   }
 
   useEffect(() => {
+    let alive = true;
+
     (async () => {
-      const { data } = await supabase.auth.getUser();
-      const uid = data.user?.id ?? null;
-      setUserId(uid);
-      if (uid) {
-        await Promise.all([loadTickets(uid), loadRecentRides(uid)]);
+      setLoading(true);
+      setTickets([]);
+      setRides([]);
+
+      const { data: authData, error: authError } = await supabase.auth.getUser();
+      const authUser = authData.user;
+      if (!alive) return;
+
+      if (authError || !authUser) {
+        setAuthUserId(null);
+        setDomainUserId(null);
+        setDriverId(null);
+        setLoading(false);
+        return;
       }
-      setLoading(false);
+
+      setAuthUserId(authUser.id);
+
+      const { data: profile, error: profileError } = await supabase
+        .from("users")
+        .select("id")
+        .eq("auth_user_id", authUser.id)
+        .maybeSingle();
+
+      if (!alive) return;
+      if (profileError || !profile) {
+        console.error("[APOIS suporte] perfil de domínio não encontrado", profileError);
+        setDomainUserId(null);
+        setDriverId(null);
+        setLoading(false);
+        return;
+      }
+
+      setDomainUserId(profile.id);
+
+      if (isDriver) {
+        const { data: driver, error: driverError } = await supabase
+          .from("drivers")
+          .select("id")
+          .eq("user_id", profile.id)
+          .maybeSingle();
+
+        if (!alive) return;
+        if (driverError || !driver) {
+          console.error("[APOIS suporte] entidade de motorista não encontrada", driverError);
+          setDriverId(null);
+          setLoading(false);
+          return;
+        }
+
+        setDriverId(driver.id);
+        await loadRecentRides(driver.id);
+      } else {
+        setDriverId(null);
+        await Promise.all([loadTickets(profile.id), loadRecentRides(profile.id)]);
+      }
+
+      if (alive) setLoading(false);
     })();
+
+    return () => {
+      alive = false;
+    };
+    // load helpers intentionally use the current role snapshot.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [role]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!userId) {
-      toast.error("Faça login para abrir um ticket.");
+    if (!authUserId || !domainUserId) {
+      toast.error("Faça login para enviar uma solicitação.");
       return;
     }
-    if (subject.trim().length < 3 || message.trim().length < 10) {
+    if (isDriver && !driverId) {
+      toast.error("Não foi possível identificar seu cadastro de motorista.");
+      return;
+    }
+    if (subject.trim().length < 5 || message.trim().length < 10) {
       toast.error("Preencha assunto e mensagem com mais detalhes.");
       return;
     }
+
     setSending(true);
-    const { error } = await supabase.from("support_tickets").insert({
-      user_id: userId,
-      user_type: role,
-      subject: subject.trim(),
-      category,
-      description: message.trim(),
-      ride_id: rideId || null,
-      status: "open",
-    });
-    setSending(false);
-    if (error) {
-      toast.error("Falha ao enviar ticket.");
-      return;
+    try {
+      if (isDriver) {
+        const { error } = await supabase.from("form_submissions").insert({
+          kind: "contact",
+          consent: true,
+          source: "apois-driver-app",
+          status: "new",
+          payload: {
+            channel: "driver_support",
+            auth_user_id: authUserId,
+            domain_user_id: domainUserId,
+            driver_id: driverId,
+            subject: subject.trim(),
+            category,
+            message: message.trim(),
+            ride_id: rideId || null,
+          },
+        });
+        if (error) throw error;
+        toast.success("Solicitação enviada ao suporte APOIS.");
+      } else {
+        const canonicalCategory = PASSENGER_CATEGORY_MAP[category] ?? "other";
+        const { data, error } = await supabase.functions.invoke<PassengerSupportResponse>("passenger-support", {
+          body: {
+            category: canonicalCategory,
+            subject: subject.trim(),
+            message: message.trim(),
+            rideId: rideId || undefined,
+          },
+        });
+
+        if (error || !data?.ok) {
+          throw new Error(data?.message || "Não foi possível registrar o atendimento.");
+        }
+
+        toast.success(
+          data.ticket?.protocol
+            ? `Atendimento aberto. Protocolo ${data.ticket.protocol}.`
+            : "Atendimento aberto com sucesso.",
+        );
+        await loadTickets(domainUserId);
+      }
+
+      setSubject("");
+      setMessage("");
+      setRideId("");
+      setCategory(categories[0].value);
+    } catch (error) {
+      console.error("[APOIS suporte] falha ao enviar solicitação", error);
+      toast.error(error instanceof Error ? error.message : "Falha ao enviar solicitação.");
+    } finally {
+      setSending(false);
     }
-    toast.success("Ticket enviado! Responderemos em breve.");
-    setSubject("");
-    setMessage("");
-    setRideId("");
-    setCategory(categories[0].value);
-    await loadTickets(userId);
   }
 
   return (
@@ -128,19 +273,14 @@ export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
       <header>
         <h1 className="text-2xl font-bold">Central de ajuda</h1>
         <p className="text-sm text-muted-foreground">
-          Encontre respostas rápidas, abra um ticket ou fale com a MOVVI.
+          Encontre respostas rápidas e envie uma solicitação ao suporte APOIS.
         </p>
       </header>
 
-      {/* Quick channels */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <QuickAction icon={MessagesSquare} label="WhatsApp" href="https://wa.me/5500000000000" />
-        <QuickAction icon={Phone} label="Ligar" href="tel:+5500000000000" />
-        <QuickAction icon={MessageSquare} label="E-mail" href="mailto:suporte@movvi.app" />
-        <QuickAction icon={AlertTriangle} label="Emergência" href="tel:190" danger />
+      <div className="grid grid-cols-1 gap-3">
+        <QuickAction icon={AlertTriangle} label="Emergência — ligar 190" href="tel:190" danger />
       </div>
 
-      {/* Help center sections */}
       <DSCard className="border-border/60 bg-card/60">
         <DSCardHeader>
           <DSCardTitle className="flex items-center gap-2 text-base">
@@ -178,7 +318,6 @@ export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
         </DSCardContent>
       </DSCard>
 
-      {/* FAQ */}
       <DSCard>
         <DSCardHeader>
           <DSCardTitle className="flex items-center gap-2 text-base">
@@ -198,11 +337,12 @@ export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
         </DSCardContent>
       </DSCard>
 
-      {/* New ticket */}
       <DSCard>
         <DSCardHeader>
           <DSCardTitle className="text-base">Falar com o suporte</DSCardTitle>
-          <DSCardDescription>Preencha o formulário. Respondemos em até 24h.</DSCardDescription>
+          <DSCardDescription>
+            A solicitação fica registrada no backend da APOIS para análise da equipe.
+          </DSCardDescription>
         </DSCardHeader>
         <DSCardContent>
           <form onSubmit={handleSubmit} className="space-y-3">
@@ -241,61 +381,56 @@ export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
               <DSTextarea id="msg" value={message} onChange={(e) => setMessage(e.target.value)} rows={5} placeholder="Descreva o ocorrido com detalhes" maxLength={2000} />
             </div>
 
-            <div className="flex items-center gap-2 rounded-lg border border-dashed border-border bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
-              <Paperclip className="h-3.5 w-3.5" />
-              Anexos estarão disponíveis em breve.
-            </div>
-
-            <DSButton type="submit" disabled={sending} className="w-full">
+            <DSButton type="submit" disabled={sending || loading} className="w-full">
               {sending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-              Enviar
+              Enviar solicitação
             </DSButton>
           </form>
         </DSCardContent>
       </DSCard>
 
-      {/* Previous tickets */}
-      <DSCard>
-        <DSCardHeader>
-          <DSCardTitle className="text-base">Meus tickets</DSCardTitle>
-        </DSCardHeader>
-        <DSCardContent>
-          {loading ? (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" /> Carregando...
-            </div>
-          ) : tickets.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Você ainda não abriu nenhum ticket.</p>
-          ) : (
-            <ul className="space-y-2">
-              {tickets.map((t) => (
-                <li key={t.id} className="flex items-center justify-between rounded-lg border border-border bg-card/50 px-3 py-2">
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-medium">{t.subject}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {new Date(t.created_at).toLocaleString("pt-BR")} • {labelFor(t.category, categories)}
+      {!isDriver && (
+        <DSCard>
+          <DSCardHeader>
+            <DSCardTitle className="text-base">Meus atendimentos</DSCardTitle>
+          </DSCardHeader>
+          <DSCardContent>
+            {loading ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" /> Carregando...
+              </div>
+            ) : tickets.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Você ainda não abriu nenhum atendimento.</p>
+            ) : (
+              <ul className="space-y-2">
+                {tickets.map((t) => (
+                  <li key={t.id} className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card/50 px-3 py-2">
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-medium">{t.subject}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {t.protocol} • {new Date(t.created_at).toLocaleString("pt-BR")} • {ticketCategoryLabel(t.category, categories)}
+                      </div>
                     </div>
-                  </div>
-                  <DSBadge
-                    variant={
-                      t.status === "open" ? "primary" : t.status === "resolved" ? "success" : "muted"
-                    }
-                  >
-                    {t.status === "open" ? "Aberto" : t.status === "resolved" ? "Resolvido" : t.status}
-                  </DSBadge>
-                </li>
-              ))}
-            </ul>
-          )}
-        </DSCardContent>
-      </DSCard>
+                    <DSBadge
+                      variant={
+                        t.status === "open" ? "primary" : t.status === "resolved" ? "success" : "muted"
+                      }
+                    >
+                      {t.status === "open" ? "Aberto" : t.status === "resolved" ? "Resolvido" : t.status}
+                    </DSBadge>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </DSCardContent>
+        </DSCard>
+      )}
 
-      {/* Legal */}
       <DSCard className="border-border/60 bg-card/40">
         <DSCardContent className="flex flex-col gap-2 pt-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <ShieldCheck className="h-4 w-4 text-primary" />
-            Documentos legais da MOVVI
+            Documentos legais da APOIS
           </div>
           <div className="flex gap-2">
             <DSButton asChild variant="outline" size="sm">
@@ -311,18 +446,16 @@ export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
   );
 }
 
-function labelFor(value: string, cats: SupportCategory[]) {
-  return cats.find((c) => c.value === value)?.label ?? value;
+function ticketCategoryLabel(value: string, cats: SupportCategory[]) {
+  return TICKET_CATEGORY_LABELS[value] ?? cats.find((c) => c.value === value)?.label ?? value;
 }
 
 function QuickAction({
   icon: Icon, label, href, danger,
-}: { icon: typeof MessagesSquare; label: string; href: string; danger?: boolean }) {
+}: { icon: LucideIcon; label: string; href: string; danger?: boolean }) {
   return (
     <a
       href={href}
-      target={href.startsWith("http") ? "_blank" : undefined}
-      rel="noreferrer"
       className={`flex flex-col items-center gap-1.5 rounded-xl border p-3 text-center transition-colors ${
         danger
           ? "border-destructive/40 bg-destructive/5 text-destructive hover:bg-destructive/10"

@@ -1,11 +1,9 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import type { Database } from "@/integrations/supabase/types";
+export type RideCategory = "carros" | "motos" | "fretes" | "guincho" | "envios";
 
 export type NearbyDriver = {
   user_id: string;
   name: string;
-  category: Database["public"]["Enums"]["ride_category"];
+  category: RideCategory;
   current_lat: number;
   current_lng: number;
   vehicle_model: string;
@@ -14,51 +12,23 @@ export type NearbyDriver = {
 };
 
 type Filter = {
-  category?: Database["public"]["Enums"]["ride_category"];
+  category?: RideCategory;
 };
 
+const NO_PUBLIC_DRIVERS: NearbyDriver[] = [];
+
 /**
- * Lista motoristas aprovados + online com GPS, atualizando em tempo real
- * via Supabase Realtime. Aplica filtro por categoria quando informado.
+ * A superfície Passageiro existente neste repositório não pode ler
+ * `public.drivers` para desenhar veículos: essa tabela contém dados privados.
+ *
+ * O schema oficial também não possui hoje a antiga relação
+ * `driver_public_locations`. Até existir um contrato público/coarse dedicado
+ * no backend, retornamos uma lista vazia em vez de fazer uma consulta que
+ * falha em runtime ou ampliar indevidamente o acesso a dados do motorista.
+ *
+ * O app Passageiro canônico vive em repositório próprio e deve consumir apenas
+ * um endpoint/RPC de localização pública explicitamente autorizado.
  */
-export function useNearbyDrivers({ category }: Filter = {}) {
-  const [drivers, setDrivers] = useState<NearbyDriver[]>([]);
-
-  useEffect(() => {
-    let active = true;
-
-    async function load() {
-      // Lê da visão pública `driver_public_locations` que expõe apenas
-      // colunas não-sensíveis (sem CPF/email/documentos).
-      let q = supabase
-        .from("driver_public_locations" as never)
-        .select(
-          "user_id, name, category, current_lat, current_lng, vehicle_model, vehicle_color, rating",
-        )
-        .eq("is_online", true)
-        .not("current_lat", "is", null)
-        .not("current_lng", "is", null);
-      if (category) q = q.eq("category", category);
-      const { data } = await q;
-      if (!active) return;
-      setDrivers((data ?? []) as NearbyDriver[]);
-    }
-    load();
-
-    const channel = supabase
-      .channel("nearby-drivers")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "driver_public_locations" },
-        () => load(),
-      )
-      .subscribe();
-
-    return () => {
-      active = false;
-      supabase.removeChannel(channel);
-    };
-  }, [category]);
-
-  return drivers;
+export function useNearbyDrivers(_filter: Filter = {}): NearbyDriver[] {
+  return NO_PUBLIC_DRIVERS;
 }

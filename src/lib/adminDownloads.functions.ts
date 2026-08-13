@@ -1,4 +1,4 @@
-// Admin-only signed URL for the MOVVI source ZIP.
+// Admin-only signed URL for the APOIS source ZIP.
 // Replaces the previously public /api/public/download/movvi-source endpoint.
 // Requires an authenticated admin session (has_role check) before creating
 // the short-lived signed URL from the private `downloads` bucket.
@@ -12,7 +12,10 @@ export const getMovviSourceSignedUrl = createServerFn({ method: "POST" })
     const { userId, supabase } = context;
     const { data: isAdmin, error: roleErr } = await (
       supabase as unknown as {
-        rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: boolean | null; error: unknown }>;
+        rpc: (
+          fn: string,
+          args: Record<string, unknown>,
+        ) => Promise<{ data: boolean | null; error: unknown }>;
       }
     ).rpc("has_role", { _user_id: userId, _role: "admin" });
     if (roleErr) throw new Error("role_check_failed");

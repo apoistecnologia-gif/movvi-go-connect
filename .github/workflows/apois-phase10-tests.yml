@@ -1,0 +1,130 @@
+name: APOIS Corridas — Phase 10 Tests
+
+on:
+  push:
+    branches:
+      - fix/apois-corridas-consolidacao
+    paths:
+      - ".github/workflows/apois-phase10-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: apois-phase10-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit-and-edge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Unit tests — Fare, state, settlement, validation and helpers
+        run: deno test tests/unit/*.test.ts
+
+      - name: Edge Function static checks
+        run: |
+          set -euo pipefail
+          deno check --node-modules-dir=auto supabase/functions/dispatch-ride/index.ts
+          deno check --node-modules-dir=auto supabase/functions/send-ride-push/index.ts
+          deno check --node-modules-dir=auto supabase/functions/mercadopago-webhook/index.ts
+          deno check --node-modules-dir=auto supabase/functions/request-driver-payout/index.ts
+          deno check --node-modules-dir=auto supabase/functions/create-cancellation-fee-charge/index.ts
+          echo 'APOIS_EDGE_FUNCTION_PHASE10_OK'
+
+  database-integration-security-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: apois_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d apois_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGPASSWORD: postgres
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGDATABASE: apois_test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Fresh canonical database install
+        run: |
+          set -euo pipefail
+          for file in \
+            supabase/baseline/000_ci_prelude.sql \
+            supabase/baseline/001_canonical_schema.sql \
+            supabase/baseline/002_functions.sql \
+            supabase/baseline/003_rls.sql \
+            supabase/baseline/004_storage_triggers_seed.sql \
+            supabase/baseline/005_security_hardening.sql \
+            supabase/baseline/006_dispatch_atomic_accept.sql \
+            supabase/baseline/007_financial_settlement.sql \
+            supabase/baseline/008_financial_hardening.sql \
+            supabase/baseline/009_passenger_experience.sql \
+            supabase/baseline/010_driver_experience.sql \
+            supabase/baseline/011_admin_control_plane.sql \
+            supabase/baseline/012_admin_staff_provisioning.sql \
+            supabase/baseline/013_admin_finance.sql \
+            supabase/baseline/014_admin_settings.sql \
+            supabase/baseline/015_admin_notifications.sql; do
+            psql -v ON_ERROR_STOP=1 -f "$file"
+          done
+          echo 'APOIS_FRESH_DATABASE_INSTALL_OK'
+
+      - name: Dispatch atomic concurrency — two Drivers, one winner
+        run: bash tests/database/dispatch_concurrency.sh
+
+      - name: Financial settlement and debt guards
+        run: |
+          set -euo pipefail
+          bash tests/database/financial_settlement.sh
+          bash tests/database/financial_debt_guard.sh
+
+      - name: Passenger and Driver integration contracts
+        run: |
+          set -euo pipefail
+          bash tests/database/passenger_experience.sh
+          bash tests/database/driver_experience.sh
+
+      - name: RLS and security negative-access tests
+        run: bash tests/database/security_rls.sh
+
+      - name: Admin control plane and allowlisted settings
+        run: |
+          set -euo pipefail
+          bash tests/database/admin_control_plane.sh
+          bash tests/database/admin_settings.sh
+
+      - name: E2E lifecycle → settlement → receipt → Admin supervision
+        run: bash tests/database/e2e_lifecycle_finance_admin.sh
+
+      - name: Final database invariants
+        run: |
+          set -euo pipefail
+          orphans=$(psql -Atqc "select count(*) from public.rides r left join public.users p on p.id=r.passenger_id where p.id is null")
+          duplicate_driver_users=$(psql -Atqc "select count(*) from (select user_id from public.drivers group by user_id having count(*)>1) q")
+          invalid_settlements=$(psql -Atqc "select count(*) from public.ride_settlements where driver_earning_cents+platform_fee_cents<>passenger_charge_cents or refunded_amount_cents>passenger_charge_cents")
+          test "$orphans" = "0"
+          test "$duplicate_driver_users" = "0"
+          test "$invalid_settlements" = "0"
+          echo 'APOIS_PHASE10_DATABASE_INVARIANTS_OK'

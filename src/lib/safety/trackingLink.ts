@@ -1,5 +1,5 @@
 /**
- * MOVVI — Live tracking link helpers.
+ * APOIS — Live tracking link helpers.
  * Builds the public /t/{token} URL a passenger can share so anyone
  * (no login) can watch the ride in real time in a browser.
  */
@@ -20,7 +20,7 @@ export async function ensureShareToken(rideId: string): Promise<string | null> {
     .eq("id", rideId)
     .maybeSingle();
   if (error) {
-    if (import.meta.env.DEV) console.warn("[MOVVI TRACK] read token", error.message);
+    if (import.meta.env.DEV) console.warn("[APOIS TRACK] read token", error.message);
     return null;
   }
   return (data as { share_token: string | null } | null)?.share_token ?? null;

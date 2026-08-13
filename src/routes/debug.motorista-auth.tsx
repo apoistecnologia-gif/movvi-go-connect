@@ -21,7 +21,7 @@ import { DevOrAdminGuard } from "@/components/DevOrAdminGuard";
 export const Route = createFileRoute("/debug/motorista-auth")({
   head: () => ({
     meta: [
-      { title: "Diagnóstico Auth Motorista — MOVVI" },
+      { title: "Diagnóstico Auth Motorista — APOIS" },
       { name: "robots", content: "noindex" },
     ],
   }),

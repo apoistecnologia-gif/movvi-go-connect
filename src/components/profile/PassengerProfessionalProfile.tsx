@@ -1,5 +1,5 @@
 /**
- * MOVVI — Passenger Professional Profile.
+ * APOIS — Passenger Professional Profile.
  * Read-only presentational card. Shows only public trust info.
  * Never renders sensitive data (CPF, phone, email, emergency contacts, birth date).
  */
@@ -77,7 +77,7 @@ export function PassengerProfessionalProfile({
           <RatingBadge role="passenger" average={avg} size="md" />
           <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary ring-1 ring-primary/30">
             <UserRound className="h-3 w-3" />
-            Passageiro MOVVI
+            Passageiro APOIS
           </span>
         </div>
       </div>
@@ -117,7 +117,7 @@ export function PassengerProfessionalProfile({
       </section>
 
       <p className="text-center text-[10.5px] leading-relaxed text-muted-foreground/80">
-        Dados públicos de confiança. A MOVVI não compartilha documentos ou informações
+        Dados públicos de confiança. A APOIS não compartilha documentos ou informações
         pessoais sensíveis.
       </p>
     </div>

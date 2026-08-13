@@ -1,13 +1,15 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabase } from "@/lib/supabaseClient";
+import { loadAdminAccess } from "@/lib/adminAccess";
 import { AuthShell, useAuthForm } from "@/components/AuthShell";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, ShieldCheck } from "lucide-react";
 import { DSButton, DSInput, DSLabel } from "@/design-system";
+import "@/apois-admin-theme.css";
 
 export const Route = createFileRoute("/admin/login")({
-  head: () => ({ meta: [{ title: "Admin — MOVVI DRIVE" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({ meta: [{ title: "Admin — APOIS" }, { name: "robots", content: "noindex" }] }),
   component: AdminLoginPage,
 });
 
@@ -22,69 +24,56 @@ function AdminLoginPage() {
 
   const onSubmit = handle(async (form) => {
     const parsed = schema.parse(Object.fromEntries(form.entries()));
-    const { data, error: e } = await supabase.auth.signInWithPassword(parsed);
-    if (e || !data.user) throw new Error("Credenciais inválidas");
+    const { data, error: signInError } = await supabase.auth.signInWithPassword(parsed);
+    if (signInError || !data.user) throw new Error("Credenciais inválidas");
 
-    const { data: roleRow } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", data.user.id)
-      .eq("role", "admin")
-      .maybeSingle();
-
-    if (!roleRow) {
+    const access = await loadAdminAccess();
+    if (!access?.authorized) {
       await supabase.auth.signOut();
-      setError("Esta conta não possui acesso administrativo.");
-      throw new Error("Acesso restrito a administradores.");
+      setError("Esta conta não possui acesso administrativo ativo.");
+      throw new Error("Acesso restrito à equipe administrativa APOIS.");
     }
 
-    await supabase.from("admin_login_history").insert({
-      user_id: data.user.id,
-      email: data.user.email ?? parsed.email,
-      user_agent: navigator.userAgent,
-      success: true,
-    });
-    await supabase.from("admin_users_meta").upsert(
-      { user_id: data.user.id, last_login_at: new Date().toISOString() },
-      { onConflict: "user_id" },
-    );
-    navigate({ to: "/admin/dashboard" });
+    await navigate({ to: "/admin/dashboard" });
   });
 
   return (
-    <AuthShell
-      title={
-        <span className="flex items-center gap-2">
-          <ShieldCheck className="h-6 w-6 text-primary" /> Painel administrativo
-        </span>
-      }
-      description="Acesso restrito à equipe MOVVI DRIVE."
-    >
-      <form onSubmit={onSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <DSLabel htmlFor="email">E-mail</DSLabel>
-          <DSInput id="email" name="email" type="email" required autoComplete="email" />
-        </div>
-        <div className="space-y-2">
-          <DSLabel htmlFor="password">Senha</DSLabel>
-          <DSInput
-            id="password"
-            name="password"
-            type="password"
-            required
-            autoComplete="current-password"
-          />
-        </div>
-        {error && (
-          <Alert variant="destructive">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-        <DSButton type="submit" className="w-full" disabled={loading}>
-          {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-          Entrar
-        </DSButton>
-      </form>
-    </AuthShell>
+    <div className="apois-admin-theme min-h-screen bg-background text-foreground">
+      <AuthShell
+        brandLabel="ADMIN"
+        title={
+          <span className="flex items-center gap-2">
+            <ShieldCheck className="h-6 w-6 text-primary" /> Painel administrativo
+          </span>
+        }
+        description="Acesso restrito à equipe APOIS."
+      >
+        <form onSubmit={onSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <DSLabel htmlFor="email">E-mail</DSLabel>
+            <DSInput id="email" name="email" type="email" required autoComplete="email" />
+          </div>
+          <div className="space-y-2">
+            <DSLabel htmlFor="password">Senha</DSLabel>
+            <DSInput
+              id="password"
+              name="password"
+              type="password"
+              required
+              autoComplete="current-password"
+            />
+          </div>
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          <DSButton type="submit" className="w-full" disabled={loading}>
+            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            Entrar
+          </DSButton>
+        </form>
+      </AuthShell>
+    </div>
   );
 }

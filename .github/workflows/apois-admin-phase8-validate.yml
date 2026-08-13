@@ -1,0 +1,206 @@
+name: APOIS Corridas — Admin Phase 8
+
+on:
+  push:
+    branches:
+      - fix/apois-corridas-consolidacao
+    paths:
+      - "src/routes/admin.**"
+      - "src/components/admin/**"
+      - "src/components/AdminGuard.tsx"
+      - "src/components/AuthShell.tsx"
+      - "src/components/MovviLogo.tsx"
+      - "src/lib/admin*.ts"
+      - "src/apois-admin-theme.css"
+      - "supabase/baseline/**"
+      - "tests/admin/**"
+      - "tests/database/admin_*.sh"
+      - "tsconfig.admin-phase8.json"
+      - ".github/workflows/apois-admin-phase8-validate.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "src/routes/admin.**"
+      - "src/components/admin/**"
+      - "src/components/AdminGuard.tsx"
+      - "src/components/AuthShell.tsx"
+      - "src/components/MovviLogo.tsx"
+      - "src/lib/admin*.ts"
+      - "src/apois-admin-theme.css"
+      - "supabase/baseline/**"
+      - "tests/admin/**"
+      - "tests/database/admin_*.sh"
+      - "tsconfig.admin-phase8.json"
+      - ".github/workflows/apois-admin-phase8-validate.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: apois-admin-phase8-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  admin-backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: apois_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d apois_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGPASSWORD: postgres
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGDATABASE: apois_test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Apply canonical baseline through Phase 8
+        run: |
+          set -euo pipefail
+          for file in \
+            supabase/baseline/000_ci_prelude.sql \
+            supabase/baseline/001_canonical_schema.sql \
+            supabase/baseline/002_functions.sql \
+            supabase/baseline/003_rls.sql \
+            supabase/baseline/004_storage_triggers_seed.sql \
+            supabase/baseline/005_security_hardening.sql \
+            supabase/baseline/006_dispatch_atomic_accept.sql \
+            supabase/baseline/007_financial_settlement.sql \
+            supabase/baseline/008_financial_hardening.sql \
+            supabase/baseline/009_passenger_experience.sql \
+            supabase/baseline/010_driver_experience.sql \
+            supabase/baseline/011_admin_control_plane.sql \
+            supabase/baseline/012_admin_staff_provisioning.sql \
+            supabase/baseline/013_admin_finance.sql \
+            supabase/baseline/014_admin_settings.sql \
+            supabase/baseline/015_admin_notifications.sql \
+            supabase/baseline/016_driver_payout_control.sql \
+            supabase/baseline/017_admin_private_rpc_boundary.sql; do
+            psql -v ON_ERROR_STOP=1 -f "$file"
+          done
+
+      - name: Admin control-plane integration tests
+        run: bash tests/database/admin_control_plane.sh
+
+      - name: Admin payout control integration tests
+        run: bash tests/database/admin_payout_control.sh
+
+      - name: Admin settings integration tests
+        run: bash tests/database/admin_settings.sh
+
+      - name: Admin privilege and security invariants
+        run: |
+          set -euo pipefail
+          for signature in \
+            "public.admin_is_authorized()" \
+            "public.admin_has_permission(text)" \
+            "public.admin_get_access_context()" \
+            "public.admin_set_driver_approval(uuid,text,text)" \
+            "public.admin_set_driver_suspension(uuid,boolean,text)" \
+            "public.admin_set_passenger_status(uuid,text,text)" \
+            "public.admin_set_staff_profile(uuid,public.app_role,boolean,text)" \
+            "public.admin_provision_staff(uuid,public.app_role,text)" \
+            "public.admin_update_ride_category(uuid,text,text,text,text,text,text,integer,boolean)" \
+            "public.admin_update_sos_alert(uuid,text)" \
+            "public.admin_update_support_ticket(uuid,text,text)" \
+            "public.admin_get_dashboard_metrics()" \
+            "public.admin_get_finance_summary(timestamp with time zone,timestamp with time zone)" \
+            "public.admin_approve_driver_withdrawal(uuid)" \
+            "public.admin_reject_driver_withdrawal(uuid,text)" \
+            "public.admin_get_settings(text[])" \
+            "public.admin_update_setting(text,jsonb)"; do
+            anon=$(psql -Atqc "select has_function_privilege('anon','$signature','EXECUTE')::int")
+            auth=$(psql -Atqc "select has_function_privilege('authenticated','$signature','EXECUTE')::int")
+            test "$anon" = "0"
+            test "$auth" = "1"
+          done
+
+          for signature in \
+            "public.begin_driver_withdrawal_processing(uuid,text)" \
+            "public.complete_driver_withdrawal(uuid,text,text)" \
+            "public.fail_driver_withdrawal(uuid,text,text)" \
+            "public.reverse_driver_withdrawal(uuid,text,text,text)"; do
+            anon=$(psql -Atqc "select has_function_privilege('anon','$signature','EXECUTE')::int")
+            auth=$(psql -Atqc "select has_function_privilege('authenticated','$signature','EXECUTE')::int")
+            service=$(psql -Atqc "select has_function_privilege('service_role','$signature','EXECUTE')::int")
+            test "$anon" = "0"
+            test "$auth" = "0"
+            test "$service" = "1"
+          done
+
+          for name in \
+            admin_set_driver_suspension \
+            admin_set_passenger_status \
+            admin_update_ride_category \
+            admin_upsert_tariff_rule \
+            admin_set_staff_profile \
+            admin_provision_staff \
+            admin_update_sos_alert \
+            admin_update_support_ticket \
+            admin_get_dashboard_metrics \
+            admin_get_finance_summary; do
+            public_definer=$(psql -Atqc "select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='$name' and p.prosecdef")
+            private_definer=$(psql -Atqc "select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='apois_rpc_private' and p.proname='$name' and p.prosecdef")
+            test "$public_definer" = "0"
+            test "$private_definer" -ge "1"
+          done
+
+          notification_policy=$(psql -Atqc "select count(*) from pg_policies where schemaname='public' and tablename='notification_logs' and policyname='notification_logs_admin_read'")
+          test "$notification_policy" = "1"
+
+          direct_settings_policy=$(psql -Atqc "select count(*) from pg_policies where schemaname='public' and tablename='app_settings' and roles::text like '%authenticated%' and (qual is null or qual <> 'false')")
+          test "$direct_settings_policy" = "0"
+
+          client_audit_table=$(psql -Atqc "select count(*) from information_schema.tables where table_schema='public' and table_name='admin_audit_logs'")
+          test "$client_audit_table" = "0"
+
+          echo 'APOIS_ADMIN_BACKEND_PHASE8_OK'
+
+  admin-frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Validate Admin Phase 8 contracts
+        run: node tests/admin/phase8-contract.mjs
+
+      - name: TypeScript — Phase 8 Admin surface
+        run: npx tsc --noEmit --project tsconfig.admin-phase8.json
+
+      - name: Production build
+        run: npm run build
+
+      - name: ESLint — Phase 8 Admin surface
+        run: |
+          npx eslint \
+            "src/routes/admin.*.tsx" \
+            "src/components/admin/**/*.tsx" \
+            src/components/AdminGuard.tsx \
+            src/components/AuthShell.tsx \
+            src/components/MovviLogo.tsx \
+            "src/lib/admin*.ts"

@@ -1,5 +1,5 @@
 /**
- * MOVVI — Toque de chamada para novas ofertas de corrida.
+ * APOIS — Toque de chamada para novas ofertas de corrida.
  *
  * Gera um padrão de dois beeps via WebAudio (sem asset externo) e
  * repete em loop enquanto a oferta estiver na tela. Também dispara

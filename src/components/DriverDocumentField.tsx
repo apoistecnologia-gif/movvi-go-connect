@@ -1,5 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import { Camera, Image as ImageIcon, RotateCcw, Trash2, Loader2, CheckCircle2, FileText } from "lucide-react";
+import {
+  Camera,
+  Image as ImageIcon,
+  RotateCcw,
+  Trash2,
+  Loader2,
+  CheckCircle2,
+  FileText,
+} from "lucide-react";
 import { compressDocumentImage } from "@/lib/imageCompress";
 
 type Props = {
@@ -77,7 +85,9 @@ export function DriverDocumentField({
   const done = !!file && !processing;
 
   return (
-    <div className={`rounded-xl border p-3 transition ${done ? "border-primary/40 bg-primary/5" : "border-dashed border-border bg-muted/20"}`}>
+    <div
+      className={`rounded-xl border p-3 transition ${done ? "border-primary/40 bg-primary/5" : "border-dashed border-border bg-muted/20"}`}
+    >
       <div className="mb-2 flex items-center justify-between gap-2">
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-foreground">
@@ -138,7 +148,10 @@ export function DriverDocumentField({
               </button>
               <button
                 type="button"
-                onClick={() => { onChange(null); setError(null); }}
+                onClick={() => {
+                  onChange(null);
+                  setError(null);
+                }}
                 disabled={processing}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-1.5 text-xs font-medium text-destructive transition hover:bg-destructive/15 disabled:opacity-60"
               >

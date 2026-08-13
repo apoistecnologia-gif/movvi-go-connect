@@ -1,0 +1,26 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "types/driver-route-types.d.ts",
+    "src/lib/driverDocuments.mobile.ts",
+    "src/lib/driverFinance.mobile.ts",
+    "src/lib/driverRideLifecycle.mobile.ts",
+    "src/lib/driverRoutes.mobile.ts",
+    "src/lib/driverProfile.ts",
+    "src/lib/profilePhoto.ts",
+    "src/lib/googleMaps.ts",
+    "src/lib/voiceNav.ts",
+    "src/lib/nativeBridge.ts",
+    "src/lib/notifications/deviceTokenService.ts",
+    "src/components/DriverActiveRideRecovery.tsx",
+    "src/components/ApoisDriverBottomNav.tsx",
+    "src/components/MovviMap.tsx",
+    "src/components/ProfilePhotoUploader.tsx",
+    "src/routes/motorista.documentos.tsx",
+    "src/routes/motorista.ganhos.tsx"
+  ],
+  "exclude": [
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx"
+  ]
+}

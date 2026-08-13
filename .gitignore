@@ -16,6 +16,17 @@ dist-ssr
 .nitro
 *.local
 
+# Environment files are local/runtime configuration.
+.env
+.env.local
+.env.development
+.env.production
+.env.staging
+.env.*.local
+# Keep documented/public mobile build contract and the template versioned.
+!.env.example
+!.env.mobile
+
 # Wrangler / Cloudflare
 .wrangler/
 .dev.vars

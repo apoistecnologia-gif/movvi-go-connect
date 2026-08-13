@@ -69,12 +69,17 @@ export function ConfirmDialog({
       <AlertDialogContent className="border-border bg-card">
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
-          {description && <AlertDialogDescription asChild><div>{description}</div></AlertDialogDescription>}
+          {description && (
+            <AlertDialogDescription asChild>
+              <div>{description}</div>
+            </AlertDialogDescription>
+          )}
         </AlertDialogHeader>
         {confirmWord && (
           <div className="space-y-1.5">
             <DSLabel htmlFor="confirm-word" className="text-xs text-muted-foreground">
-              Digite <span className="font-mono font-semibold text-foreground">{confirmWord}</span> para confirmar
+              Digite <span className="font-mono font-semibold text-foreground">{confirmWord}</span>{" "}
+              para confirmar
             </DSLabel>
             <DSInput
               id="confirm-word"
@@ -90,7 +95,11 @@ export function ConfirmDialog({
           <AlertDialogAction
             onClick={handleConfirm}
             disabled={!ready || busy}
-            className={destructive ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : ""}
+            className={
+              destructive
+                ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                : ""
+            }
           >
             {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {confirmLabel}

@@ -1,0 +1,250 @@
+name: Build APOIS Motorista Homologacao
+
+on:
+  push:
+    branches:
+      - feat/apois-motorista-producao-homologacao
+      - fix/apois-corridas-consolidacao
+    paths:
+      - "android-motorista/**"
+      - "capacitor.motorista.config.ts"
+      - "src/routes/motorista*.tsx"
+      - "src/lib/driverBackgroundLocation.ts"
+      - "src/lib/nativeBridge.ts"
+      - "src/lib/driverProfile.ts"
+      - "src/lib/profilePhoto.ts"
+      - "src/lib/driverRoutes.mobile.ts"
+      - "src/lib/googleMaps.ts"
+      - "src/lib/voiceNav.ts"
+      - "src/components/DriverActiveRideRecovery.tsx"
+      - "src/components/ApoisDriverBottomNav.tsx"
+      - "src/components/MovviMap.tsx"
+      - "src/components/ProfilePhotoUploader.tsx"
+      - "src/hooks/useDriverBroadcast.ts"
+      - "tests/mobile/driver-phase9-contract.mjs"
+      - "tests/mobile/driver-navigation-contract.mjs"
+      - "scripts/verify-mobile-native.mjs"
+      - "tsconfig.driver-phase7.json"
+      - ".github/workflows/apois-driver-homologation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: apois-driver-homologation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - name: Restaurar assinatura estável de homologação
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: apois-motorista-homologacao-signing-v1
+
+      - name: Garantir chave de homologação
+        run: |
+          mkdir -p ~/.android
+          if [ ! -f ~/.android/debug.keystore ]; then
+            keytool -genkeypair -v \
+              -keystore ~/.android/debug.keystore \
+              -storepass android \
+              -alias androiddebugkey \
+              -keypass android \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=APOIS Motorista Homologacao,O=APOIS,C=BR"
+          fi
+          keytool -list -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey | grep -E "SHA256:|Owner:"
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Validar contrato Phase 9 do Motorista
+        run: node tests/mobile/driver-phase9-contract.mjs
+
+      - name: Validar mapa e voz curva a curva
+        run: node tests/mobile/driver-navigation-contract.mjs
+
+      - name: TypeScript — superfície crítica do Motorista
+        run: npx tsc --noEmit --project tsconfig.driver-phase7.json
+
+      - name: Gate da corrida ativa e foto privada
+        run: |
+          set -euo pipefail
+          grep -F 'DriverActiveRideRecovery' src/components/ApoisDriverBottomNav.tsx
+          grep -F 'motorista_a_caminho' src/components/ApoisDriverBottomNav.tsx
+          grep -F 'driver_get_profile' src/components/DriverActiveRideRecovery.tsx
+          grep -F 'computeDriverRoute' src/components/DriverActiveRideRecovery.tsx
+          grep -F 'new google.maps.Polyline' src/components/DriverActiveRideRecovery.tsx
+          grep -F '__apoisMovviMap' src/components/MovviMap.tsx
+          grep -F 'const authUserId = await currentAuthUserId()' src/lib/profilePhoto.ts
+          grep -F 'const path = `${authUserId}/avatar-${Date.now()}.${ext}`' src/lib/profilePhoto.ts
+          grep -F 'refreshProfilePhotoUrl' src/components/ProfilePhotoUploader.tsx
+          echo 'APOIS_DRIVER_ACTIVE_RIDE_AND_PROFILE_PHOTO_OK'
+
+      - name: Validar secret Google Maps da APOIS
+        env:
+          VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY: ${{ secrets.APOIS_GOOGLE_MAPS_BROWSER_KEY }}
+        run: |
+          if [ -z "$VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY" ]; then
+            echo "Secret APOIS_GOOGLE_MAPS_BROWSER_KEY não configurado."
+            exit 1
+          fi
+          echo "[maps-key] OK: secret da APOIS disponível para o build."
+
+      - name: Preparar Firebase nativo do Motorista
+        env:
+          FIREBASE_CONFIG_B64: ${{ secrets.APOIS_MOTORISTA_GOOGLE_SERVICES_JSON_BASE64 }}
+        run: |
+          if [ -f android-motorista/app/google-services.json ]; then
+            echo "[firebase] usando configuração oficial versionada do Motorista."
+          elif [ -n "$FIREBASE_CONFIG_B64" ]; then
+            printf '%s' "$FIREBASE_CONFIG_B64" | base64 --decode > android-motorista/app/google-services.json
+            echo "[firebase] configuração recuperada do secret de fallback."
+          else
+            echo "NATIVE_PUSH_READY=false" >> "$GITHUB_ENV"
+            echo "::warning::Firebase do Motorista ausente. Nenhum APK será publicado como candidato de homologação com push."
+            exit 0
+          fi
+
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          const config = JSON.parse(readFileSync('android-motorista/app/google-services.json', 'utf8'));
+          const projectId = String(config?.project_info?.project_id ?? '').trim();
+          const projectNumber = String(config?.project_info?.project_number ?? '').trim();
+          const packages = (config?.client ?? []).map((client) =>
+            String(client?.client_info?.android_client_info?.package_name ?? '').trim(),
+          );
+          if (projectId !== 'movvi-4d041') {
+            throw new Error(`Firebase incorreto: esperado movvi-4d041; recebido ${projectId || 'ausente'}.`);
+          }
+          if (projectNumber !== '808678424624') {
+            throw new Error(`Firebase project_number inesperado: ${projectNumber || 'ausente'}.`);
+          }
+          if (!packages.includes('com.apois.motorista')) {
+            throw new Error(`google-services.json não contém o cliente com.apois.motorista. Pacotes: ${packages.join(', ')}`);
+          }
+          console.log(`[firebase] OK: com.apois.motorista no projeto ${projectId}`);
+          NODE
+          echo "NATIVE_PUSH_READY=true" >> "$GITHUB_ENV"
+
+      - name: Build e sync oficial do APOIS Motorista
+        env:
+          VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY: ${{ secrets.APOIS_GOOGLE_MAPS_BROWSER_KEY }}
+        run: VITE_ENABLE_NATIVE_PUSH="$NATIVE_PUSH_READY" npm run android:motorista
+
+      - name: Gate nativo do mapa e voz de navegação
+        run: |
+          set -euo pipefail
+          source_voice=android-motorista/app/src/main/java/com/apois/motorista/DriverVoicePlugin.java
+          synced_voice=android/app/src/main/java/com/apois/motorista/DriverVoicePlugin.java
+          source_activity=android-motorista/app/src/main/java/com/apois/motorista/MainActivity.java
+          synced_activity=android/app/src/main/java/com/apois/motorista/MainActivity.java
+          source_manifest=android-motorista/app/src/main/AndroidManifest.xml
+          synced_manifest=android/app/src/main/AndroidManifest.xml
+          test -f "$synced_voice"
+          cmp "$source_voice" "$synced_voice"
+          grep -F 'registerPlugin(DriverVoicePlugin.class)' "$source_activity"
+          grep -F 'registerPlugin(DriverVoicePlugin.class)' "$synced_activity"
+          grep -F 'GOOGLE_TTS_ENGINE = "com.google.android.tts"' "$synced_voice"
+          grep -F 'USAGE_ASSISTANCE_NAVIGATION_GUIDANCE' "$synced_voice"
+          grep -F 'android:name="android.intent.action.TTS_SERVICE"' "$source_manifest"
+          grep -F 'android:name="android.intent.action.TTS_SERVICE"' "$synced_manifest"
+          grep -F 'visibility: "on"' src/lib/googleMaps.ts
+          grep -F 'Array.isArray(result.steps)' src/lib/driverRoutes.mobile.ts
+          echo 'APOIS_DRIVER_MAP_AND_NATIVE_VOICE_OK'
+
+      - name: Gate canônico do buffer de localização offline
+        run: |
+          set -euo pipefail
+          source_service=android-motorista/app/src/main/java/com/apois/motorista/DriverLocationService.java
+          synced_service=android/app/src/main/java/com/apois/motorista/DriverLocationService.java
+          for service in "$source_service" "$synced_service"; do
+            grep -F 'SharedPreferences' "$service"
+            grep -F 'LOCATION_PREFS = "apois_driver_location_buffer"' "$service"
+            grep -F 'MAX_PENDING_LOCATION_AGE_MS = 120_000L' "$service"
+            grep -F 'rememberPendingLocation(location)' "$service"
+            grep -F 'readPendingLocation()' "$service"
+            grep -F 'location.getTime()' "$service"
+            grep -F 'location.getAccuracy()' "$service"
+            grep -F 'clearPendingLocationIfSynced' "$service"
+            if grep -E 'put(String|Long|Float|Boolean)\([^\n]*(accessToken|refreshToken|EXTRA_ACCESS_TOKEN|EXTRA_REFRESH_TOKEN)' "$service"; then
+              echo "Token de autenticação persistido indevidamente no buffer: $service"
+              exit 1
+            fi
+          done
+          cmp "$source_service" "$synced_service"
+          echo 'APOIS_DRIVER_OFFLINE_BUFFER_HOMOLOGATION_OK'
+
+      - name: Verificação nativa após sync
+        run: node scripts/verify-mobile-native.mjs motorista --live
+
+      - name: Confirmar configuração realmente empacotada
+        run: |
+          node --input-type=module <<'NODE'
+          import { existsSync, readFileSync } from 'node:fs';
+          const path = 'android/app/src/main/assets/capacitor.config.json';
+          const config = JSON.parse(readFileSync(path, 'utf8'));
+          if (config.appId !== 'com.apois.motorista') {
+            throw new Error(`appId empacotado incorreto: ${config.appId}`);
+          }
+          if (config.android?.initialFocus !== false) {
+            throw new Error(`android.initialFocus empacotado precisa ser false; recebido: ${config.android?.initialFocus}`);
+          }
+          if (config.android?.captureInput !== false) {
+            throw new Error(`android.captureInput empacotado precisa ser false; recebido: ${config.android?.captureInput}`);
+          }
+          const firebaseReady = process.env.NATIVE_PUSH_READY === 'true';
+          if (firebaseReady && !existsSync('android/app/google-services.json')) {
+            throw new Error('Firebase foi marcado como pronto, mas google-services.json não chegou ao projeto Android ativo.');
+          }
+          if (firebaseReady) {
+            const firebase = JSON.parse(readFileSync('android/app/google-services.json', 'utf8'));
+            const packages = (firebase?.client ?? []).map((client) =>
+              String(client?.client_info?.android_client_info?.package_name ?? '').trim(),
+            );
+            if (!packages.includes('com.apois.motorista')) {
+              throw new Error('Firebase empacotado não contém com.apois.motorista.');
+            }
+          }
+          console.log(`[apk-config] OK: configuração nativa do Motorista empacotada; push=${firebaseReady ? 'ativo' : 'bloqueado por falta de Firebase'}.`);
+          NODE
+
+      - name: Build debug APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - name: Avisar bloqueio de homologação sem push
+        if: ${{ env.NATIVE_PUSH_READY != 'true' }}
+        run: |
+          echo "::warning::Build técnico aprovado, porém o APK NÃO será publicado como candidato final porque o Firebase nativo do Motorista ainda não foi fornecido."
+
+      - name: Publish APOIS Motorista homologation APK
+        if: ${{ env.NATIVE_PUSH_READY == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: APOIS-Motorista-Homologacao
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14

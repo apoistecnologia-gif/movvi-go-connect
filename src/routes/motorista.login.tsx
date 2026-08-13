@@ -1,14 +1,22 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { z } from "zod";
+import {
+  AlertTriangle,
+  ChevronRight,
+  Eye,
+  EyeOff,
+  Loader2,
+  LockKeyhole,
+  Mail,
+  ShieldCheck,
+} from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
-import { AuthShell } from "@/components/AuthShell";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2 } from "lucide-react";
-import { DSButton, DSInput, DSLabel } from "@/design-system";
+import { loadDriverProfile } from "@/lib/driverProfile";
+import { MovviLogo } from "@/components/MovviLogo";
 
 export const Route = createFileRoute("/motorista/login")({
-  head: () => ({ meta: [{ title: "Entrar — Motorista MOVVI DRIVE" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({ meta: [{ title: "Entrar — APOIS Motorista" }, { name: "robots", content: "noindex" }] }),
   component: DriverLoginPage,
 });
 
@@ -17,9 +25,14 @@ const schema = z.object({
   password: z.string().min(1, "Informe a senha"),
 });
 
+const DriverRecoveryLink = Link as unknown as (props: {
+  to: "/motorista/recuperar-senha";
+  className?: string;
+  children: React.ReactNode;
+}) => React.ReactElement;
+
 const LOGIN_TIMEOUT_MS = 20_000;
 
-/** Erro sentinela para distinguir timeout/rede de credenciais inválidas. */
 class NetworkTimeoutError extends Error {
   constructor(msg = "Sem resposta do servidor. Verifique sua conexão.") {
     super(msg);
@@ -27,38 +40,39 @@ class NetworkTimeoutError extends Error {
   }
 }
 
-function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
-  let t: ReturnType<typeof setTimeout> | undefined;
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
   return new Promise<T>((resolve, reject) => {
-    t = setTimeout(() => reject(new NetworkTimeoutError()), ms);
-    p.then(
-      (v) => {
-        if (t) clearTimeout(t);
-        resolve(v);
+    timer = setTimeout(() => reject(new NetworkTimeoutError()), ms);
+    promise.then(
+      (value) => {
+        if (timer) clearTimeout(timer);
+        resolve(value);
       },
-      (e) => {
-        if (t) clearTimeout(t);
-        reject(e);
+      (error) => {
+        if (timer) clearTimeout(timer);
+        reject(error);
       },
     );
   });
 }
 
-function isNetworkFailure(err: unknown): boolean {
-  if (err instanceof NetworkTimeoutError) return true;
-  const msg = err instanceof Error ? err.message : String(err ?? "");
-  return /network|fetch failed|failed to fetch|load failed|timeout|timed out|abort/i.test(msg);
+function isNetworkFailure(error: unknown): boolean {
+  if (error instanceof NetworkTimeoutError) return true;
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  return /network|fetch failed|failed to fetch|load failed|timeout|timed out|abort/i.test(message);
 }
 
 function DriverLoginPage() {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const inFlight = useRef(false);
   const navigated = useRef(false);
 
-  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     if (inFlight.current || loading) return;
     inFlight.current = true;
     setError(null);
@@ -67,7 +81,7 @@ function DriverLoginPage() {
     try {
       let parsed: { email: string; password: string };
       try {
-        parsed = schema.parse(Object.fromEntries(new FormData(e.currentTarget).entries()));
+        parsed = schema.parse(Object.fromEntries(new FormData(event.currentTarget).entries()));
       } catch (zerr) {
         const first = zerr instanceof z.ZodError ? zerr.issues[0]?.message : null;
         setError(first ?? "Preencha os campos corretamente.");
@@ -76,14 +90,10 @@ function DriverLoginPage() {
 
       let signInResult: Awaited<ReturnType<typeof supabase.auth.signInWithPassword>>;
       try {
-        signInResult = await withTimeout(
-          supabase.auth.signInWithPassword(parsed),
-          LOGIN_TIMEOUT_MS,
-        );
-      } catch (err) {
-        console.warn("[motorista.login] network/timeout:", (err as Error)?.message);
+        signInResult = await withTimeout(supabase.auth.signInWithPassword(parsed), LOGIN_TIMEOUT_MS);
+      } catch (caughtError) {
         setError(
-          isNetworkFailure(err)
+          isNetworkFailure(caughtError)
             ? "Falha de conexão. Verifique sua internet e tente novamente."
             : "Não foi possível entrar agora. Tente novamente.",
         );
@@ -104,62 +114,38 @@ function DriverLoginPage() {
         return;
       }
 
-      // Consulta cadastro de motorista com timeout defensivo.
-      let driverRow: { approval_status: string | null; motivo_reprovacao: string | null } | null =
-        null;
-      try {
-        const res = await withTimeout(
-          Promise.resolve(
-            supabase
-              .from("drivers")
-              .select("approval_status, motivo_reprovacao")
-              .eq("user_id", data.user.id)
-              .maybeSingle(),
-          ),
-          10_000,
-        );
-        if (res.error) throw res.error;
-        driverRow = res.data;
-
-
-      } catch (err) {
-        console.warn("[motorista.login] falha ao consultar cadastro:", (err as Error)?.message);
-        setError(
-          isNetworkFailure(err)
-            ? "Falha de conexão ao consultar cadastro. Tente novamente."
-            : "Falha ao consultar cadastro de motorista.",
-        );
-        return;
-      }
-
-      if (!driverRow) {
-        try { await supabase.auth.signOut(); } catch { /* noop */ }
-        setError("Cadastro de motorista não encontrado.");
-        return;
-      }
-
-      // Confirma persistência da sessão antes de navegar (evita loop no APK).
-      try {
-        const confirmed = await withTimeout(supabase.auth.getSession(), 5_000);
-        if (!confirmed.data.session) {
+      const profileResult = await withTimeout(loadDriverProfile(), 10_000);
+      if (!profileResult.ok) {
+        if (profileResult.reason === "not_found") {
+          setError("Cadastro de motorista não encontrado. Use a opção de cadastro para concluir seu perfil.");
+        } else if (profileResult.reason === "no_session") {
           setError("Sessão não confirmada. Tente novamente.");
-          return;
+        } else {
+          setError(profileResult.message || "Falha ao consultar cadastro de motorista.");
         }
-      } catch {
+        return;
+      }
+
+      const confirmed = await withTimeout(supabase.auth.getSession(), 5_000);
+      if (!confirmed.data.session) {
         setError("Sessão não confirmada. Tente novamente.");
         return;
       }
 
       if (navigated.current) return;
       navigated.current = true;
-      if (driverRow.approval_status === "aprovado") {
+      if (profileResult.profile.approval_status === "aprovado") {
         navigate({ to: "/motorista/app", replace: true });
       } else {
         navigate({ to: "/motorista/status", replace: true });
       }
-    } catch (err) {
-      console.error("[motorista.login] erro inesperado:", err);
-      setError("Erro inesperado. Tente novamente.");
+    } catch (caughtError) {
+      console.error("[apois.motorista.login] erro:", caughtError);
+      setError(
+        isNetworkFailure(caughtError)
+          ? "Falha de conexão ao consultar cadastro. Tente novamente."
+          : "Erro inesperado. Tente novamente.",
+      );
     } finally {
       setLoading(false);
       inFlight.current = false;
@@ -167,44 +153,125 @@ function DriverLoginPage() {
   }
 
   return (
-    <AuthShell
-      title="Entrar como motorista"
-      description="Acesse sua conta MOVVI para começar a rodar."
-      footer={
-        <>
-          Quer dirigir conosco?{" "}
-          <Link to="/motorista/cadastro" className="text-primary hover:underline">
-            Cadastrar motorista
+    <main className="relative min-h-[100dvh] overflow-hidden bg-[#030405] text-white">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(circle at 50% 14%, rgba(246,190,28,0.18) 0%, rgba(246,190,28,0.035) 24%, transparent 48%), linear-gradient(180deg,#090a0c 0%,#030405 54%,#000 100%)",
+        }}
+      />
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-[36vh] opacity-25" style={{ background: "linear-gradient(180deg,transparent,rgba(246,190,28,.06))" }} />
+
+      <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-md flex-col overflow-y-auto px-5 pb-[calc(env(safe-area-inset-bottom)+24px)] pt-[calc(env(safe-area-inset-top)+20px)]">
+        <header className="flex justify-center pt-1">
+          <MovviLogo size={112} showTagline productLabel="" />
+        </header>
+
+        <section className="mt-5">
+          <h1 className="text-[31px] font-black leading-[1.08] tracking-[-0.04em]">
+            Bem-vindo(a) à<br />
+            <span className="text-[#F6BE1C]">APOIS</span> Motorista
+          </h1>
+          <p className="mt-3 text-[13px] font-medium leading-5 text-zinc-500">
+            Faça login para começar a receber corridas.
+          </p>
+        </section>
+
+        <form onSubmit={onSubmit} className="mt-6 space-y-4">
+          <label className="block">
+            <span className="mb-2 block text-[11px] font-black uppercase tracking-[0.12em] text-zinc-400">
+              E-mail
+            </span>
+            <div className="flex h-[58px] items-center gap-3 rounded-[17px] border border-white/12 bg-[#101214]/95 px-4 shadow-[inset_0_1px_0_rgba(255,255,255,.025)] focus-within:border-[#F6BE1C]/55 focus-within:ring-1 focus-within:ring-[#F6BE1C]/20">
+              <Mail className="h-[20px] w-[20px] shrink-0 text-[#F6BE1C]" strokeWidth={1.9} />
+              <input
+                name="email"
+                type="email"
+                required
+                autoComplete="email"
+                inputMode="email"
+                placeholder="Digite seu e-mail"
+                className="h-full min-w-0 flex-1 bg-transparent text-[14px] font-semibold text-white outline-none placeholder:text-zinc-600"
+              />
+            </div>
+          </label>
+
+          <label className="block">
+            <span className="mb-2 block text-[11px] font-black uppercase tracking-[0.12em] text-zinc-400">
+              Senha
+            </span>
+            <div className="flex h-[58px] items-center gap-3 rounded-[17px] border border-white/12 bg-[#101214]/95 px-4 shadow-[inset_0_1px_0_rgba(255,255,255,.025)] focus-within:border-[#F6BE1C]/55 focus-within:ring-1 focus-within:ring-[#F6BE1C]/20">
+              <LockKeyhole className="h-[20px] w-[20px] shrink-0 text-[#F6BE1C]" strokeWidth={1.9} />
+              <input
+                name="password"
+                type={showPassword ? "text" : "password"}
+                required
+                autoComplete="current-password"
+                placeholder="Digite sua senha"
+                className="h-full min-w-0 flex-1 bg-transparent text-[14px] font-semibold text-white outline-none placeholder:text-zinc-600"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((value) => !value)}
+                aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-zinc-500 transition active:scale-95 hover:bg-white/5 hover:text-white"
+              >
+                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              </button>
+            </div>
+          </label>
+
+          <div className="flex justify-end">
+            <DriverRecoveryLink
+              to="/motorista/recuperar-senha"
+              className="min-h-11 px-1 py-2 text-[12px] font-black text-[#F6BE1C]"
+            >
+              Esqueci minha senha
+            </DriverRecoveryLink>
+          </div>
+
+          {error ? (
+            <div className="flex items-start gap-2 rounded-[16px] border border-red-400/20 bg-red-400/8 px-3.5 py-3 text-[11px] font-semibold leading-relaxed text-red-300">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>{error}</span>
+            </div>
+          ) : null}
+
+          <button
+            type="submit"
+            disabled={loading}
+            aria-busy={loading}
+            className="flex h-[58px] w-full items-center justify-center gap-2 rounded-[17px] bg-[#F6BE1C] text-[16px] font-black text-black shadow-[0_20px_44px_-26px_rgba(246,190,28,0.9)] transition active:scale-[0.99] disabled:opacity-60"
+          >
+            {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
+            {loading ? "Entrando..." : "Entrar"}
+            {!loading ? <ChevronRight className="h-5 w-5" strokeWidth={2.7} /> : null}
+          </button>
+        </form>
+
+        <div className="mt-5 text-center">
+          <p className="text-[12px] font-semibold text-zinc-500">Ainda não tem uma conta?</p>
+          <Link
+            to="/motorista/cadastro"
+            className="mt-1 inline-flex min-h-10 items-center justify-center gap-1.5 px-3 text-[13px] font-black text-[#F6BE1C]"
+          >
+            Cadastrar como motorista
+            <ChevronRight className="h-4 w-4" />
           </Link>
-        </>
-      }
-    >
-      <form onSubmit={onSubmit} className="space-y-3">
-        <div className="space-y-1.5">
-          <DSLabel htmlFor="email" className="text-[13px]">E-mail</DSLabel>
-          <DSInput id="email" name="email" type="email" required autoComplete="email" className="h-9 text-[14px]" />
         </div>
-        <div className="space-y-1.5">
-          <DSLabel htmlFor="password" className="text-[13px]">Senha</DSLabel>
-          <DSInput
-            id="password"
-            name="password"
-            type="password"
-            required
-            autoComplete="current-password"
-            className="h-9 text-[14px]"
-          />
+
+        <div className="mt-4 flex items-start gap-3 rounded-[20px] border border-white/8 bg-[#0D0F11]/95 px-4 py-3.5">
+          <ShieldCheck className="mt-0.5 h-6 w-6 shrink-0 text-[#F6BE1C]" />
+          <div>
+            <p className="text-[12px] font-black text-white">Sua segurança é prioridade</p>
+            <p className="mt-1 text-[10.5px] font-medium leading-relaxed text-zinc-500">
+              PIN no embarque e recursos de segurança durante a corrida.
+            </p>
+          </div>
         </div>
-        {error && (
-          <Alert variant="destructive">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-        <DSButton type="submit" size="sm" className="w-full h-10" disabled={loading} aria-busy={loading}>
-          {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-          Entrar
-        </DSButton>
-      </form>
-    </AuthShell>
+      </div>
+    </main>
   );
 }

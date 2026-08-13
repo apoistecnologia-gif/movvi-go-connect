@@ -9,22 +9,31 @@ if (role !== "passageiro" && role !== "motorista") {
   process.exit(1);
 }
 
+const mode = (process.env.APOIS_MOBILE_VITE_MODE || "mobile").trim();
+if (!/^[a-z0-9][a-z0-9._-]*$/i.test(mode)) {
+  console.error(`[mobile-spa] APOIS_MOBILE_VITE_MODE inválido: ${mode}`);
+  process.exit(1);
+}
+
 const root = process.cwd();
 const distClient = resolve(root, "dist/client");
 const outputServer = resolve(root, ".output/server");
 const viteBin = resolve(root, "node_modules/vite/bin/vite.js");
 
 if (!existsSync(viteBin)) {
-  console.error("[mobile-spa] node_modules/vite/bin/vite.js não encontrado. Rode `npm install` primeiro.");
+  console.error(
+    "[mobile-spa] node_modules/vite/bin/vite.js não encontrado. Rode `npm install` primeiro.",
+  );
   process.exit(1);
 }
 
 rmSync(distClient, { recursive: true, force: true });
 rmSync(resolve(root, ".output"), { recursive: true, force: true });
 
+console.log(`[mobile-spa] build role=${role} mode=${mode}`);
 execFileSync(
   process.execPath,
-  [viteBin, "build", "--config", "vite.mobile.config.ts", "--mode", "mobile"],
+  [viteBin, "build", "--config", "vite.mobile.config.ts", "--mode", mode],
   { stdio: "inherit", cwd: root, env: process.env },
 );
 
@@ -49,8 +58,12 @@ if (!assets.some((name) => name.endsWith(".js")) || !assets.some((name) => name.
   process.exit(1);
 }
 if (existsSync(outputServer)) {
-  console.error("[mobile-spa] Falha: .output/server foi criado, o build mobile deve ser client-only.");
+  console.error(
+    "[mobile-spa] Falha: .output/server foi criado, o build mobile deve ser client-only.",
+  );
   process.exit(1);
 }
 
-console.log(`[mobile-spa] OK (${role}): dist/client/index.html + assets gerados sem .output/server.`);
+console.log(
+  `[mobile-spa] OK (${role}, mode=${mode}): dist/client/index.html + assets gerados sem .output/server.`,
+);

@@ -7,7 +7,7 @@ import { Loader2 } from "lucide-react";
 import { DSButton, DSInput, DSLabel } from "@/design-system";
 
 export const Route = createFileRoute("/passageiro/cadastro")({
-  head: () => ({ meta: [{ title: "Cadastro — Passageiro MOVVI DRIVE" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({ meta: [{ title: "Cadastro — Passageiro APOIS" }, { name: "robots", content: "noindex" }] }),
   component: PassengerSignUpPage,
 });
 

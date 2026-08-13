@@ -19,7 +19,7 @@ interface AddressAutocompleteProps {
 }
 
 /**
- * MOVVI reusable address search — same behavior as the ride flow:
+ * APOIS reusable address search — same behavior as the ride flow:
  * Google Places AutocompleteSuggestion, session token, BR-only, dark styling.
  * Selecting a suggestion fills address + lat/lng via onPick.
  */
@@ -40,9 +40,7 @@ export function AddressAutocomplete({
   });
 
   const [q, setQ] = useState(value);
-  const [suggestions, setSuggestions] = useState<
-    Array<{ placeId: string; text: string }>
-  >([]);
+  const [suggestions, setSuggestions] = useState<Array<{ placeId: string; text: string }>>([]);
   const [loading, setLoading] = useState(false);
   const [focused, setFocused] = useState(false);
   const tokenRef = useRef<google.maps.places.AutocompleteSessionToken | null>(null);
@@ -68,9 +66,7 @@ export function AddressAutocomplete({
     debRef.current = window.setTimeout(async () => {
       try {
         const { AutocompleteSuggestion, AutocompleteSessionToken } =
-          (await google.maps.importLibrary(
-            "places",
-          )) as google.maps.PlacesLibrary;
+          (await google.maps.importLibrary("places")) as google.maps.PlacesLibrary;
         if (!tokenRef.current) tokenRef.current = new AutocompleteSessionToken();
         const res = await AutocompleteSuggestion.fetchAutocompleteSuggestions({
           input: query,
@@ -88,7 +84,7 @@ export function AddressAutocomplete({
             .filter(Boolean) as Array<{ placeId: string; text: string }>,
         );
       } catch (e) {
-        if (import.meta.env.DEV) console.warn("[MOVVI] autocomplete failed", e);
+        if (import.meta.env.DEV) console.warn("[APOIS] autocomplete failed", e);
         setSuggestions([]);
       } finally {
         setLoading(false);
@@ -101,9 +97,7 @@ export function AddressAutocomplete({
 
   const choose = async (placeId: string, text: string) => {
     try {
-      const { Place } = (await google.maps.importLibrary(
-        "places",
-      )) as google.maps.PlacesLibrary;
+      const { Place } = (await google.maps.importLibrary("places")) as google.maps.PlacesLibrary;
       const place = new Place({ id: placeId });
       await place.fetchFields({ fields: ["location", "formattedAddress"] });
       const loc = place.location;
@@ -116,19 +110,16 @@ export function AddressAutocomplete({
       onPick({ address: addr, lat: loc.lat(), lng: loc.lng() });
       onChangeText?.(addr);
     } catch (e) {
-      if (import.meta.env.DEV) console.warn("[MOVVI] place fetch failed", e);
+      if (import.meta.env.DEV) console.warn("[APOIS] place fetch failed", e);
     }
   };
 
-  const showEmpty =
-    focused && !loading && q.trim().length > 2 && suggestions.length === 0;
+  const showEmpty = focused && !loading && q.trim().length > 2 && suggestions.length === 0;
 
   return (
     <div className="space-y-1.5">
       <label className="block space-y-1.5">
-        <span className="text-[12.5px] font-semibold text-foreground">
-          {label}
-        </span>
+        <span className="text-[12.5px] font-semibold text-foreground">{label}</span>
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
@@ -167,8 +158,7 @@ export function AddressAutocomplete({
       )}
       {showEmpty && (
         <p className="px-1 text-[11.5px] text-muted-foreground">
-          Nenhum endereço encontrado. Continue digitando ou tente ser mais
-          específico.
+          Nenhum endereço encontrado. Continue digitando ou tente ser mais específico.
         </p>
       )}
     </div>

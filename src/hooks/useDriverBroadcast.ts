@@ -1,9 +1,11 @@
 import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { isBrazilCoordinate } from "@/lib/googleMaps";
-import type { Database } from "@/integrations/supabase/types";
-
-type DriverUpdate = Database["public"]["Tables"]["drivers"]["Update"];
+import {
+  ensureDriverBackgroundLocationAuthGuard,
+  startDriverBackgroundLocation,
+  stopDriverBackgroundLocation,
+} from "@/lib/driverBackgroundLocation";
 
 export type DriverTelemetry = {
   lat: number;
@@ -12,11 +14,23 @@ export type DriverTelemetry = {
   speed?: number | null;
 };
 
-// Distância mínima (m) para gravar novo broadcast — evita spam quando parado.
+type DriverPresenceRpcArgs = {
+  _online: boolean;
+  _lat: number | null;
+  _lng: number | null;
+  _heading: number | null;
+  _speed: number | null;
+};
+
+type DriverPresenceRpcClient = {
+  rpc: (
+    name: "driver_set_presence",
+    args: DriverPresenceRpcArgs,
+  ) => Promise<{ error: { message: string } | null }>;
+};
+
 const MIN_MOVEMENT_METERS = 10;
-// Janela mínima entre escritas no banco (ms) — alvo 3-5s.
 const MIN_INTERVAL_MS = 3500;
-// Heartbeat mesmo parado (s) — garante que o passageiro saiba que o motorista está ativo.
 const HEARTBEAT_MS = 15000;
 
 function haversineMeters(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
@@ -30,73 +44,111 @@ function haversineMeters(a: { lat: number; lng: number }, b: { lat: number; lng:
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
+async function setPresence(
+  online: boolean,
+  position?: DriverTelemetry | null,
+) {
+  const { error } = await (supabase as unknown as DriverPresenceRpcClient).rpc("driver_set_presence", {
+    _online: online,
+    _lat: online ? position?.lat ?? null : null,
+    _lng: online ? position?.lng ?? null : null,
+    _heading: online ? position?.heading ?? null : null,
+    _speed: online ? position?.speed ?? null : null,
+  });
+  if (error) {
+    console.warn("[APOIS MOTORISTA] presença não atualizada:", error.message);
+  }
+}
+
 /**
- * Mantém posição/online do motorista atualizados no Supabase enquanto online.
+ * Mantém presença e GPS do motorista no contrato oficial do Supabase.
  *
- * - Escreve em `drivers` (privado, usado pelo admin / lifecycle).
- * - Escreve em `driver_public_locations` (público a authenticated, lido pelo
- *   passageiro via Realtime para acompanhar o carro em tempo real).
- * - Filtra atualizações <10 m e <3.5 s para evitar spam.
- * - Heartbeat a cada 15 s mesmo parado.
+ * Não grava em tabelas legadas. O RPC driver_set_presence autentica o
+ * motorista, valida aprovação/mensalidade e atualiza public.drivers. Uma
+ * trigger do banco espelha as coordenadas na corrida ativa para que o app do
+ * passageiro acompanhe o carro em realtime.
  */
 export function useDriverBroadcast(
   userId: string | null,
   online: boolean,
-  position: { lat: number; lng: number; heading?: number | null; speed?: number | null } | null,
+  position: DriverTelemetry | null,
 ) {
   const lastWrittenRef = useRef<{ lat: number; lng: number; at: number } | null>(null);
   const positionRef = useRef(position);
+
   useEffect(() => {
     positionRef.current = position;
   }, [position]);
 
-  // toggle online/offline
   useEffect(() => {
     if (!userId) return;
-    const patch: DriverUpdate = {
-      is_online: online,
-      last_location_at: new Date().toISOString(),
-      ...(online ? {} : { current_lat: null, current_lng: null }),
-    };
-    supabase.from("drivers").update(patch).eq("user_id", userId).then();
-
-    // Espelha online/offline na tabela pública.
-    if (online) {
-      supabase
-        .from("driver_public_locations" as never)
-        .upsert(
-          {
-            user_id: userId,
-            is_online: true,
-            updated_at: new Date().toISOString(),
-            last_location_at: new Date().toISOString(),
-          } as never,
-          { onConflict: "user_id" } as never,
-        )
-        .then();
-    } else {
+    if (!online) {
       lastWrittenRef.current = null;
-      supabase
-        .from("driver_public_locations" as never)
-        .update({
-          is_online: false,
-          current_lat: null,
-          current_lng: null,
-          updated_at: new Date().toISOString(),
-        } as never)
-        .eq("user_id", userId)
-        .then();
+      void setPresence(false, null);
+      return;
+    }
+
+    const current = positionRef.current;
+    if (current && isBrazilCoordinate(current.lat, current.lng)) {
+      void setPresence(true, current);
     }
   }, [userId, online]);
 
-  // Loop de broadcast (3-5 s, com filtro de 10 m).
+  // No APK do Motorista, espelha o estado online no Foreground Service nativo.
+  // O serviço continua publicando GPS diretamente no RPC oficial quando a
+  // WebView é suspensa por tela bloqueada/background. Reiniciamos/reidratamos
+  // apenas com a Activity visível, atendendo às restrições do Android 14+.
+  useEffect(() => {
+    if (!userId) return;
+
+    ensureDriverBackgroundLocationAuthGuard();
+    let cancelled = false;
+
+    const syncNativeService = async () => {
+      try {
+        if (online) {
+          if (typeof document !== "undefined" && document.visibilityState !== "visible") return;
+          const started = await startDriverBackgroundLocation();
+          if (!started && !cancelled) {
+            console.warn("[APOIS MOTORISTA] foreground service de localização não iniciou");
+          }
+          return;
+        }
+        await stopDriverBackgroundLocation();
+      } catch (err) {
+        if (!cancelled) {
+          console.warn("[APOIS MOTORISTA] sincronização do serviço nativo de localização falhou", err);
+        }
+      }
+    };
+
+    void syncNativeService();
+
+    const onVisibilityChange = () => {
+      if (online && document.visibilityState === "visible") {
+        void syncNativeService();
+      }
+    };
+
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", onVisibilityChange);
+    }
+
+    return () => {
+      cancelled = true;
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", onVisibilityChange);
+      }
+    };
+  }, [userId, online]);
+
   useEffect(() => {
     if (!userId || !online) return;
 
     const writeNow = (force = false) => {
       const p = positionRef.current;
-      if (!p) return;
-      if (!isBrazilCoordinate(p.lat, p.lng)) return;
+      if (!p || !isBrazilCoordinate(p.lat, p.lng)) return;
+
       const now = Date.now();
       const last = lastWrittenRef.current;
       if (!force && last) {
@@ -105,31 +157,11 @@ export function useDriverBroadcast(
         if (moved < MIN_MOVEMENT_METERS && elapsed < HEARTBEAT_MS) return;
         if (elapsed < MIN_INTERVAL_MS) return;
       }
+
       lastWrittenRef.current = { lat: p.lat, lng: p.lng, at: now };
-      const iso = new Date(now).toISOString();
-      const payload = {
-        current_lat: p.lat,
-        current_lng: p.lng,
-        current_heading: p.heading ?? null,
-        current_speed: p.speed ?? null,
-        last_location_at: iso,
-      };
-      supabase.from("drivers").update(payload).eq("user_id", userId).then();
-      supabase
-        .from("driver_public_locations" as never)
-        .upsert(
-          {
-            user_id: userId,
-            is_online: true,
-            updated_at: iso,
-            ...payload,
-          } as never,
-          { onConflict: "user_id" } as never,
-        )
-        .then();
+      void setPresence(true, p);
     };
 
-    // primeira escrita imediata
     writeNow(true);
     const interval = window.setInterval(() => writeNow(false), 4000);
     return () => window.clearInterval(interval);
