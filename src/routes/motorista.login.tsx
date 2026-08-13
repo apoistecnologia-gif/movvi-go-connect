@@ -169,12 +169,12 @@ function DriverLoginPage() {
           <MovviLogo size={112} showTagline productLabel="" />
         </header>
 
-        <section className="mt-5">
+        <section className="mt-5 text-center">
           <h1 className="text-[31px] font-black leading-[1.08] tracking-[-0.04em]">
             Bem-vindo(a) à<br />
             <span className="text-[#F6BE1C]">APOIS</span> Motorista
           </h1>
-          <p className="mt-3 text-[13px] font-medium leading-5 text-zinc-500">
+          <p className="mx-auto mt-3 max-w-sm text-[13px] font-medium leading-5 text-zinc-500">
             Faça login para começar a receber corridas.
           </p>
         </section>
