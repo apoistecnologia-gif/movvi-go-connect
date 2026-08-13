@@ -30,7 +30,7 @@ includes(financeService, 'functions.invoke("request-driver-payout"', "provider-b
 excludes(financeService, 'rpc("driver_request_withdrawal"', "direct payout reservation without provider execution");
 includes(financeService, 'functions.invoke("driver-woovi-payment-account"', "Woovi subaccount binding");
 includes(financeService, 'dashboard.payout.provider !== "woovi"', "Woovi binding provider gate");
-includes(financeService, "dashboard.wallet.pendingBalanceCents", "provider-backed pending Driver balance");
+includes(financeService, 'pendingBalanceCents: integer(wallet, "pending_balance_cents")', "provider-backed pending Driver balance");
 includes(financeRoute, "dashboard.period.settledEarningsCents", "settlement-backed UI");
 includes(financeRoute, "dashboard.wallet.pendingBalanceCents", "pending balance UI");
 excludes(financeRoute, '.from("rides")', "Driver finance ride arithmetic");
