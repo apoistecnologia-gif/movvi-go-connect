@@ -24,6 +24,14 @@ import { DriverPasswordRecoveryBridge } from "../components/DriverPasswordRecove
 import { supabase } from "../integrations/supabase/client";
 import { loadDriverProfile } from "../lib/driverProfile";
 
+const DRIVER_ONBOARDING_PATHS = new Set([
+  "/motorista/cadastro",
+  "/motorista/recuperar-senha",
+  "/motorista/redefinir-senha",
+  "/motorista/termos",
+  "/motorista/privacidade",
+]);
+
 // Ativa o proxy de rede quando rodando dentro do APK (Capacitor).
 // No build web isso é no-op. Precisa rodar antes de qualquer serverFn
 // disparar — por isso é executado em module scope, com guarda de window.
@@ -164,10 +172,10 @@ function RootComponent() {
     return () => unsub();
   }, [router]);
 
-  // O Supabase compartilha o mesmo Auth entre Passageiro e Motorista, mas uma
-  // sessão autenticada NÃO implica autorização para operar como motorista.
-  // Só restaura/entra no APK Motorista depois de confirmar o perfil Driver
-  // server-side. Contas apenas de passageiro permanecem fora do runtime.
+  // O Supabase compartilha a identidade autenticada entre apps. Uma sessão
+  // válida, porém, NÃO concede o papel de motorista. Antes de restaurar o
+  // runtime do APK Motorista confirmamos server-side a existência do perfil
+  // Driver. Apenas as rotas de onboarding podem existir sem esse perfil.
   useEffect(() => {
     if (APP_ROLE !== "driver") return;
     let cancelled = false;
@@ -186,6 +194,11 @@ function RootComponent() {
       const pathname = router.state.location.pathname;
       if (!profileResult.ok) {
         setDriverRuntimeAllowed(false);
+
+        // Cadastro e recuperação precisam poder usar uma sessão Auth antes de
+        // existir a entidade Driver. Nenhuma outra área do Motorista é liberada.
+        if (DRIVER_ONBOARDING_PATHS.has(pathname)) return;
+
         try {
           await supabase.auth.signOut();
         } catch {
