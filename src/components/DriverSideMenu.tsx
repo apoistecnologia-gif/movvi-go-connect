@@ -170,9 +170,9 @@ export function DriverSideMenu({ open, onOpenChange, onLogout }: Props) {
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="left"
-        className="w-[90vw] max-w-sm overflow-y-auto border-r border-white/5 bg-[#08090A] p-0 text-white"
+        className="w-[90vw] max-w-sm overflow-y-auto border-r border-[#F6BE1C]/10 bg-[#08090A] p-0 text-white shadow-[26px_0_80px_rgba(0,0,0,.6)]"
       >
-        <SheetHeader className="border-b border-white/5 bg-[#0D0F11] px-5 pb-5 pt-[calc(env(safe-area-inset-top)+18px)] text-left">
+        <SheetHeader className="border-b border-white/5 bg-[radial-gradient(circle_at_15%_0%,rgba(246,190,28,.10),transparent_38%),#0D0F11] px-5 pb-5 pt-[calc(env(safe-area-inset-top)+18px)] text-left">
           <div className="flex items-center justify-between gap-3">
             <MovviLogo size={48} />
             <div className="text-right">
@@ -197,9 +197,9 @@ export function DriverSideMenu({ open, onOpenChange, onLogout }: Props) {
               <Link
                 to="/motorista/perfil"
                 onClick={() => onOpenChange(false)}
-                className="flex items-center gap-3 rounded-[22px] border border-white/5 bg-[#111315] p-4 transition active:scale-[0.99]"
+                className="flex items-center gap-3 rounded-[22px] border border-[#F6BE1C]/10 bg-[linear-gradient(145deg,#121518,#0d0f11)] p-4 shadow-[0_16px_36px_-28px_rgba(246,190,28,.45)] transition active:scale-[0.99]"
               >
-                <div className="shrink-0 rounded-full border border-[#F6BE1C]/20 p-0.5">
+                <div className="shrink-0 rounded-full border border-[#F6BE1C]/30 bg-[#F6BE1C]/5 p-0.5 shadow-[0_0_24px_rgba(246,190,28,.08)]">
                   <Avatar src={photoUrl} name={displayName} size={54} />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -213,20 +213,19 @@ export function DriverSideMenu({ open, onOpenChange, onLogout }: Props) {
               </Link>
 
               <nav className="space-y-2" aria-label="Navegação do motorista">
-                {NAV_LINKS.map((item, index) => (
+                {NAV_LINKS.map((item) => (
                   <Link
                     key={item.to}
                     to={item.to}
+                    activeOptions={{ exact: true }}
                     onClick={() => onOpenChange(false)}
-                    className={`group flex min-h-[64px] items-center gap-3 rounded-[20px] border px-3.5 py-3 transition active:scale-[0.99] ${
-                      index === 0
-                        ? "border-[#F6BE1C]/25 bg-[#F6BE1C]/10"
-                        : "border-white/5 bg-[#101214] hover:border-white/10 hover:bg-[#15181B]"
-                    }`}
+                    className="driver-menu-link group flex min-h-[64px] items-center gap-3 rounded-[20px] border border-white/5 bg-[#101214] px-3.5 py-3 transition hover:border-white/10 hover:bg-[#15181B] active:scale-[0.99]"
+                    activeProps={{
+                      className:
+                        "driver-menu-active border-[#F6BE1C]/25 bg-[#F6BE1C]/[.08] shadow-[0_12px_30px_-24px_rgba(246,190,28,.6)]",
+                    }}
                   >
-                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${
-                      index === 0 ? "bg-[#F6BE1C] text-black" : "bg-black text-[#F6BE1C]"
-                    }`}>
+                    <div className="driver-menu-icon flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-black text-[#F6BE1C] ring-1 ring-inset ring-white/5 transition-all duration-200">
                       <item.icon className="h-[18px] w-[18px]" strokeWidth={2} />
                     </div>
                     <div className="min-w-0 flex-1">
