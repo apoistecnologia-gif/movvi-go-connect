@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - fix/apois-corridas-consolidacao
+      - feat/woovi-financial-cutover
     paths:
       - "supabase/functions/_shared/**"
       - "tests/unit/**"
@@ -43,7 +44,20 @@ jobs:
           deno-version: v2.x
 
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            if npm install --no-audit --no-fund; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "Dependency installation failed after 3 attempts."
+              exit 1
+            fi
+            echo "Dependency installation hit a transient network/native binary error; retrying..."
+            rm -rf node_modules
+            sleep $((attempt * 10))
+          done
 
       - name: Core typecheck
         run: npx tsc -p tsconfig.core.json --noEmit
