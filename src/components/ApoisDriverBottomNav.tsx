@@ -8,7 +8,7 @@ const ITEMS = [
   { to: "/motorista/app", label: "Início", icon: House },
   { to: "/motorista/corridas", label: "Corridas", icon: CarFront },
   { to: "/motorista/carteira", label: "Carteira", icon: WalletCards },
-  { to: "/motorista/notificacoes", label: "Notificações", icon: Bell },
+  { to: "/motorista/notificacoes", label: "Avisos", icon: Bell },
   { to: "/motorista/perfil", label: "Perfil", icon: UserRound },
 ] as const;
 
@@ -72,23 +72,33 @@ export function ApoisDriverBottomNav({ hidden = false }: { hidden?: boolean }) {
       <DriverActiveRideRecovery />
       {!hidden && !rideActive && (
         <nav
-          className="fixed inset-x-0 bottom-0 z-[35] border-t border-white/8 bg-black/98 px-1.5 shadow-[0_-16px_40px_rgba(0,0,0,.48)] backdrop-blur-xl"
-          style={{ paddingBottom: "max(env(safe-area-inset-bottom), 7px)" }}
+          className="fixed inset-x-0 bottom-0 z-[35] px-2 pt-1.5 shadow-[0_-18px_46px_rgba(0,0,0,.52)] backdrop-blur-2xl"
+          style={{
+            paddingBottom: "max(env(safe-area-inset-bottom), 7px)",
+            background: "linear-gradient(180deg, rgba(8,10,12,.90), rgba(4,5,6,.985))",
+            borderTop: "1px solid rgba(246,190,28,.12)",
+          }}
           aria-label="Navegação principal do motorista"
         >
-          <div className="mx-auto grid h-[68px] max-w-md grid-cols-5 gap-0.5">
+          <div className="mx-auto grid h-[66px] max-w-md grid-cols-5 gap-1">
             {ITEMS.map((item) => (
               <Link
                 key={item.to}
                 to={item.to}
                 activeOptions={{ exact: true }}
-                className="group flex min-w-0 flex-col items-center justify-center gap-1 text-zinc-600 transition"
-                activeProps={{ className: "text-[#F6BE1C]" }}
+                className="group relative flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-2xl px-1 text-zinc-500 transition-all duration-200 active:scale-[.96]"
+                activeProps={{
+                  className:
+                    "driver-nav-active text-[#F6BE1C] bg-[#F6BE1C]/[.08] ring-1 ring-inset ring-[#F6BE1C]/15",
+                }}
               >
-                <div className="relative flex h-8 w-10 items-center justify-center rounded-xl transition group-active:scale-95">
-                  <item.icon className="h-[21px] w-[21px]" strokeWidth={2} />
+                <span className="driver-nav-indicator absolute top-1.5 h-0.5 w-4 rounded-full bg-transparent transition-all duration-200" />
+                <div className="driver-nav-icon relative mt-1 flex h-8 w-10 items-center justify-center rounded-xl transition-all duration-200">
+                  <item.icon className="h-[20px] w-[20px]" strokeWidth={1.9} />
                 </div>
-                <span className="max-w-full truncate text-[9.5px] font-bold tracking-tight">{item.label}</span>
+                <span className="max-w-full truncate text-[9.5px] font-extrabold tracking-tight">
+                  {item.label}
+                </span>
               </Link>
             ))}
           </div>
