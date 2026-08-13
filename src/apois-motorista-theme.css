@@ -47,7 +47,9 @@ html[data-app-role="motorista"].dark {
 }
 
 html[data-app-role="motorista"] body {
-  background: #050607;
+  background:
+    radial-gradient(circle at 50% -15%, rgba(246, 190, 28, 0.06), transparent 28rem),
+    #050607;
 }
 
 html[data-app-role="motorista"] ::selection {
@@ -57,12 +59,58 @@ html[data-app-role="motorista"] ::selection {
 
 /* Acabamento dos cartões/sheets do motorista, alinhado aos mockups APOIS. */
 html[data-app-role="motorista"] .surface-card {
-  background: #101214;
-  border-color: #292d31;
+  background: linear-gradient(160deg, #121518 0%, #0d0f11 100%);
+  border-color: rgba(255, 255, 255, 0.07);
+  box-shadow: 0 20px 52px -34px rgba(0, 0, 0, 0.78);
 }
 
 html[data-app-role="motorista"] input:focus,
 html[data-app-role="motorista"] textarea:focus,
 html[data-app-role="motorista"] select:focus {
   outline-color: #f6be1c;
+  border-color: rgba(246, 190, 28, 0.55);
+  box-shadow: 0 0 0 3px rgba(246, 190, 28, 0.1);
+}
+
+/* Navegação inferior: o item ativo ganha indicador dourado e profundidade. */
+html[data-app-role="motorista"] .driver-nav-active .driver-nav-indicator {
+  width: 24px;
+  background: #f6be1c;
+  box-shadow: 0 0 14px rgba(246, 190, 28, 0.48);
+}
+
+html[data-app-role="motorista"] .driver-nav-active .driver-nav-icon {
+  color: #f6be1c;
+  background: rgba(246, 190, 28, 0.08);
+  transform: translateY(-1px);
+}
+
+/* Menu lateral: destaque real segue a rota ativa, não a posição do item. */
+html[data-app-role="motorista"] .driver-menu-active .driver-menu-icon {
+  color: #090a0b;
+  background: linear-gradient(145deg, #ffd34f 0%, #f6be1c 58%, #d9a000 100%);
+  box-shadow: 0 10px 24px -14px rgba(246, 190, 28, 0.75);
+  ring-color: transparent;
+}
+
+html[data-app-role="motorista"] .driver-menu-active p:first-of-type {
+  color: #fff8df;
+}
+
+/* Sensação mais nativa em controles interativos sem alterar comportamento. */
+html[data-app-role="motorista"] button,
+html[data-app-role="motorista"] a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html[data-app-role="motorista"] .driver-nav-icon,
+  html[data-app-role="motorista"] .driver-nav-indicator,
+  html[data-app-role="motorista"] .driver-menu-icon {
+    transition:
+      transform 180ms ease,
+      background-color 180ms ease,
+      color 180ms ease,
+      box-shadow 180ms ease;
+  }
 }
