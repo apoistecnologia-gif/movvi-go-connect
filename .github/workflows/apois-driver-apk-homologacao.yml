@@ -24,6 +24,9 @@ jobs:
   apk:
     runs-on: ubuntu-latest
     timeout-minutes: 35
+    env:
+      APOIS_VERSION_CODE: ${{ github.run_number }}
+      APOIS_VERSION_NAME: 1.0-homologacao.${{ github.run_number }}
     steps:
       - name: Checkout candidato Woovi
         uses: actions/checkout@v4
@@ -39,6 +42,31 @@ jobs:
           distribution: temurin
           java-version: "21"
           cache: gradle
+
+      - name: Restaurar assinatura estável de homologação
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: apois-motorista-homologacao-signing-v1
+
+      - name: Garantir assinatura estável de homologação
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.android
+          if [ ! -f ~/.android/debug.keystore ]; then
+            keytool -genkeypair -v \
+              -keystore ~/.android/debug.keystore \
+              -storepass android \
+              -alias androiddebugkey \
+              -keypass android \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=APOIS Motorista Homologacao,O=APOIS,C=BR"
+          fi
+          keytool -list -v \
+            -keystore ~/.android/debug.keystore \
+            -storepass android \
+            -alias androiddebugkey \
+            | grep -E "SHA256:|Owner:"
 
       - name: Instalar dependências
         run: npm install --no-audit --no-fund
@@ -136,9 +164,11 @@ jobs:
 
       - name: Validar APK gerado
         run: |
+          set -euo pipefail
           test -s android/app/build/outputs/apk/debug/app-debug.apk
           cp android/app/build/outputs/apk/debug/app-debug.apk APOIS-Motorista-Woovi-Homologacao.apk
           ls -lh APOIS-Motorista-Woovi-Homologacao.apk
+          echo "[apk] versionCode=${APOIS_VERSION_CODE} versionName=${APOIS_VERSION_NAME}"
 
       - name: Publicar APK candidato de homologação Woovi
         uses: actions/upload-artifact@v4
