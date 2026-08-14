@@ -15,7 +15,7 @@ declare
   v_auth_user_id uuid := auth.uid();
   v_profile_id uuid;
   v_driver public.drivers%rowtype;
-  v_slot text := lower(trim(coalesce(_slot, ''));
+  v_slot text := lower(trim(coalesce(_slot, '')));
   v_path text := trim(coalesce(_storage_path, ''));
   v_bucket text;
   v_complete boolean;
