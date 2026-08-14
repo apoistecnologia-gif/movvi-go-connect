@@ -91,20 +91,32 @@ export function useDriverBroadcast(
       return;
     }
 
-    if (nativeStartPendingRef.current) return;
-    nativeStartPendingRef.current = true;
-    void startNativeDriverLocation()
-      .then((started) => {
-        if (started && import.meta.env.DEV) {
-          console.log("[APOIS MOTORISTA] localização nativa em background ativa");
-        }
-      })
-      .catch((error: unknown) => {
-        console.warn("[APOIS MOTORISTA] localização nativa em background indisponível:", error);
-      })
-      .finally(() => {
-        nativeStartPendingRef.current = false;
-      });
+    const startWhenVisible = () => {
+      // Android 14+ restringe a criação de Foreground Service de localização
+      // quando a Activity já está em background. A reidratação acontece assim
+      // que a WebView volta a ficar visível; depois de iniciado, o serviço
+      // nativo continua independente da visibilidade da UI.
+      if (document.visibilityState !== "visible") return;
+      if (nativeStartPendingRef.current) return;
+
+      nativeStartPendingRef.current = true;
+      void startNativeDriverLocation()
+        .then((started) => {
+          if (started && import.meta.env.DEV) {
+            console.log("[APOIS MOTORISTA] localização nativa em background ativa");
+          }
+        })
+        .catch((error: unknown) => {
+          console.warn("[APOIS MOTORISTA] localização nativa em background indisponível:", error);
+        })
+        .finally(() => {
+          nativeStartPendingRef.current = false;
+        });
+    };
+
+    startWhenVisible();
+    document.addEventListener("visibilitychange", startWhenVisible);
+    return () => document.removeEventListener("visibilitychange", startWhenVisible);
   }, [userId, online]);
 
   useEffect(() => {
