@@ -69,39 +69,32 @@ BEGIN
   WHERE r.driver_id = v_driver.id
     AND r.status IN ('motorista_a_caminho', 'motorista_chegou', 'em_viagem');
 
+  IF v_candidate_ride_count = 1 THEN
+    v_ride_id := v_candidate_ride_ids[1];
+  ELSE
+    v_ride_id := NULL;
+  END IF;
+
+  -- A data inconsistency must never make an emergency button a placebo.
+  -- If more than one ride is active, do not guess a ride: audit the anomaly
+  -- and create the SOS without ride_id so Operations still receives it.
   IF v_candidate_ride_count > 1 THEN
     INSERT INTO public.audit_logs(actor_id, action, entity_type, entity_id, metadata)
     VALUES (
       v_profile_id,
-      'sos.driver.rejected.multiple_active_rides',
+      'sos.driver.multiple_active_rides',
       'driver',
       v_driver.id::text,
       jsonb_build_object(
         'driver_id', v_driver.id,
         'candidate_ride_ids', to_jsonb(v_candidate_ride_ids),
         'candidate_ride_count', v_candidate_ride_count,
+        'safe_rule', 'sos_created_without_ride_id',
         'severity', v_severity,
         'lat', _lat,
         'lng', _lng
       )
     );
-
-    RETURN jsonb_build_object(
-      'ok', false,
-      'error', 'multiple_active_rides',
-      'alert_id', NULL,
-      'ride_id', NULL,
-      'driver_id', v_driver.id,
-      'severity', v_severity,
-      'status', NULL,
-      'created_at', v_created_at
-    );
-  END IF;
-
-  IF v_candidate_ride_count = 1 THEN
-    v_ride_id := v_candidate_ride_ids[1];
-  ELSE
-    v_ride_id := NULL;
   END IF;
 
   v_message := nullif(
@@ -144,7 +137,8 @@ BEGIN
       'severity', v_severity,
       'status', 'open',
       'lat', _lat,
-      'lng', _lng
+      'lng', _lng,
+      'candidate_ride_count', v_candidate_ride_count
     )
   );
 
