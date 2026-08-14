@@ -41,6 +41,9 @@ function readableDriverRpcError(message: string, details?: StructuredRpcFailure)
   if (/driver_not_approved/i.test(raw)) return "Seu cadastro ainda não está aprovado.";
   if (/driver_subscription_inactive/i.test(raw)) return "Sua mensalidade precisa estar ativa para receber corridas.";
   if (/driver_offline/i.test(raw)) return "Fique online antes de aceitar a corrida.";
+  if (/driver_location_stale/i.test(raw)) return "Atualize sua localização antes de informar que chegou ao embarque.";
+  if (/driver_too_far_from_pickup/i.test(raw)) return "Aproxime-se do ponto de embarque antes de informar que chegou.";
+  if (/pickup_location_missing/i.test(raw)) return "O ponto de embarque desta corrida está inválido. Fale com o suporte antes de continuar.";
   if (/security_code_temporarily_locked/i.test(raw)) {
     const retry = details?.retry_after_seconds;
     if (typeof retry === "number" && Number.isFinite(retry) && retry > 0) {
