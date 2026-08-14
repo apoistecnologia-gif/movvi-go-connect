@@ -42,14 +42,13 @@ type RideRow = {
   cancelled_at: string | null;
   cancellation_reason: string | null;
   passenger_id: string | null;
-  passenger_rating: number | null;
-  passenger_rating_comment: string | null;
+  driver_to_passenger_rating: number | null;
+  driver_to_passenger_comment: string | null;
   driver_rated_at: string | null;
   driver_name: string | null;
   driver_vehicle_model: string | null;
   driver_vehicle_color: string | null;
   driver_vehicle_plate: string | null;
-  security_code: string | null;
 };
 
 type SettlementRow = {
@@ -165,9 +164,13 @@ function RideDetailsPage() {
         return;
       }
 
+      // Histórico usa projeção mínima: PIN, tokens de compartilhamento,
+      // IDs de provedor e campos internos de dispatch nunca chegam à tela.
       const { data, error } = await supabase
         .from("rides")
-        .select("*")
+        .select(
+          "id,status,category,origin_name,destination_name,pickup_label,pickup_short_label,distance_km,duration_min,estimated_price,final_price,payment_method,created_at,accepted_at,started_at,completed_at,cancelled_at,cancellation_reason,passenger_id,driver_to_passenger_rating,driver_to_passenger_comment,driver_rated_at,driver_name,driver_vehicle_model,driver_vehicle_color,driver_vehicle_plate",
+        )
         .eq("id", id)
         .eq("driver_id", driver.id)
         .maybeSingle();
@@ -344,13 +347,10 @@ function RideDetailsPage() {
                 </ol>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <Info
-                  label="Pagamento"
-                  value={settlement?.payment_method ?? ride.payment_method ?? "—"}
-                />
-                <Info label="PIN segurança" value={ride.security_code ?? "—"} />
-              </div>
+              <Info
+                label="Pagamento"
+                value={settlement?.payment_method ?? ride.payment_method ?? "—"}
+              />
 
               {ride.status === "finalizada" ? (
                 <div className="rounded-lg border border-border bg-card/40 p-3 text-xs">
@@ -379,12 +379,12 @@ function RideDetailsPage() {
 
               {ride.status === "finalizada" &&
               ride.driver_rated_at &&
-              ride.passenger_rating != null ? (
+              ride.driver_to_passenger_rating != null ? (
                 <div className="space-y-2 rounded-lg border border-border bg-card/40 p-3">
                   <RatingLine
                     label="Sua avaliação do passageiro"
-                    value={ride.passenger_rating}
-                    comment={ride.passenger_rating_comment}
+                    value={ride.driver_to_passenger_rating}
+                    comment={ride.driver_to_passenger_comment}
                   />
                 </div>
               ) : null}
