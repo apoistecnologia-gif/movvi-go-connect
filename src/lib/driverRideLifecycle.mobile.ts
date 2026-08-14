@@ -44,6 +44,8 @@ function readableDriverRpcError(message: string, details?: StructuredRpcFailure)
   if (/driver_location_stale/i.test(raw)) return "Atualize sua localização antes de informar que chegou ao embarque.";
   if (/driver_too_far_from_pickup/i.test(raw)) return "Aproxime-se do ponto de embarque antes de informar que chegou.";
   if (/pickup_location_missing/i.test(raw)) return "O ponto de embarque desta corrida está inválido. Fale com o suporte antes de continuar.";
+  if (/no_show_requires_driver_arrival/i.test(raw)) return "Informe primeiro que chegou ao ponto de embarque antes de registrar ausência do passageiro.";
+  if (/driver_no_show_wait_not_elapsed/i.test(raw)) return "Aguarde o tempo mínimo de espera no embarque antes de registrar que o passageiro não apareceu.";
   if (/security_code_temporarily_locked/i.test(raw)) {
     const retry = details?.retry_after_seconds;
     if (typeof retry === "number" && Number.isFinite(retry) && retry > 0) {
