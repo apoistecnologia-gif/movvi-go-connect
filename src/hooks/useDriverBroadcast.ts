@@ -31,6 +31,7 @@ type DriverPresenceRpcClient = {
 const MIN_MOVEMENT_METERS = 10;
 const MIN_INTERVAL_MS = 3500;
 const HEARTBEAT_MS = 15000;
+const DRIVER_ONLINE_STORAGE_KEY = "apois:driver:online";
 
 function haversineMeters(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
   const R = 6371000;
@@ -123,6 +124,12 @@ export function useDriverBroadcast(
     const { data } = supabase.auth.onAuthStateChange((event) => {
       if (event !== "SIGNED_OUT") return;
       nativeStartPendingRef.current = false;
+      lastWrittenRef.current = null;
+      try {
+        window.localStorage.setItem(DRIVER_ONLINE_STORAGE_KEY, "0");
+      } catch {
+        // armazenamento indisponível não pode impedir o encerramento do GPS
+      }
       void stopNativeDriverLocation().catch((error: unknown) => {
         console.warn("[APOIS MOTORISTA] falha ao encerrar localização nativa no logout:", error);
       });
