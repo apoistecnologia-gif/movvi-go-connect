@@ -53,7 +53,7 @@ async function pushOffers(ride: Record<string, unknown>, userIds: string[]): Pro
       user_ids: userIds,
       event: "driver.new_ride_request",
       title: "APOIS • Nova corrida disponível",
-      body: `${text(ride.origin_name) || "Origem"} → ${text(ride.destination_name) || "Destino"}`,
+      body: "Abra o app para ver os detalhes da solicitação.",
       url: "/motorista/app",
       ride_id: text(ride.id),
     }),
