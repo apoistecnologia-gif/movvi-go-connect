@@ -77,7 +77,7 @@ type Sos = {
   lat: number | null;
   lng: number | null;
   message: string | null;
-  severity: "low" | "medium" | "high" | "critical";
+  severity: "info" | "warning" | "high" | "critical" | "medical" | "security";
   status: "open" | "acknowledged" | "resolved" | "cancelled";
   created_at: string;
   updated_at: string;
@@ -196,7 +196,12 @@ function OpsCenterPage() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "sos_alerts" },
-        () => void loadAll(),
+        (payload) => {
+          if (payload.eventType === "INSERT") {
+            toast.error("Novo alerta SOS recebido na Central de Operações.");
+          }
+          void loadAll();
+        },
       )
       .subscribe();
     return () => {
@@ -283,6 +288,11 @@ function OpsCenterPage() {
         <div className="mb-4 space-y-2">
           {sos.map((alert) => {
             const passenger = passengers.get(alert.user_id);
+            const driverActor = drivers.find(
+              (driver) => driver.id === alert.driver_id && driver.user_id === alert.user_id,
+            );
+            const actorRole = driverActor ? "Motorista" : "Passageiro";
+            const actorName = driverActor?.name ?? passenger?.name ?? actorRole;
             return (
               <DSCard key={alert.id} className="border-destructive/50 bg-destructive/10">
                 <DSCardContent className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center">
@@ -296,7 +306,7 @@ function OpsCenterPage() {
                       />
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {passenger?.name ?? "Passageiro"} · {formatDate(alert.created_at)}
+                      {actorRole}: {actorName} · {formatDate(alert.created_at)}
                       {alert.ride_id ? ` · corrida ${alert.ride_id.slice(0, 8)}` : ""}
                     </p>
                     {alert.message && <p className="mt-1 text-sm">{alert.message}</p>}
