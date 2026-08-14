@@ -120,8 +120,9 @@ Deno.serve(async (req) => {
 
     if (mode === "redispatch" && rawRide.request_expires_at) {
       const offerExpiresAt = new Date(rawRide.request_expires_at).getTime();
-      if (Number.isFinite(offerExpiresAt) && offerExpiresAt > now) {
-        return json(req, { ok: true, status: rawRide.status, action: "offer_still_active", offered: stringArray(rawRide.offered_driver_ids).length });
+      const activeOfferIds = stringArray(rawRide.offered_driver_ids);
+      if (Number.isFinite(offerExpiresAt) && offerExpiresAt > now && activeOfferIds.length > 0) {
+        return json(req, { ok: true, status: rawRide.status, action: "offer_still_active", offered: activeOfferIds.length });
       }
     }
 
@@ -207,12 +208,6 @@ Deno.serve(async (req) => {
       },
     });
 
-    // candidate_driver_ids precisa conter os motoristas da oferta atual E o
-    // restante do pool. O app usa esse campo para decidir se deve manter a
-    // oferta visível, enquanto a RLS usa offered_driver_ids para liberar a
-    // leitura somente aos motoristas efetivamente ofertados. No redispatch, os
-    // IDs da oferta anterior são removidos automaticamente porque o engine os
-    // filtra por offered_driver_ids antes de formar o próximo pool.
     const visibleCandidateUserIds = [
       ...new Set([...result.offeredUserIds, ...result.remainingCandidateUserIds]),
     ];
