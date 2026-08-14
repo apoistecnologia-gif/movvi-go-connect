@@ -13,7 +13,7 @@ const notificationIcon = read("android-motorista/app/src/main/res/drawable/ic_st
 const gradle = read("android-motorista/app/build.gradle");
 const workflow = read(".github/workflows/apois-driver-phase9-release.yml");
 const nativeBridge = read("src/lib/nativeBridge.ts");
-const driverLocationNative = read("src/lib/driverBackgroundLocation.ts");
+const driverLocationNative = read("src/lib/driverNativeLocation.ts");
 const driverBroadcast = read("src/hooks/useDriverBroadcast.ts");
 const driverLocationService = read("android-motorista/app/src/main/java/com/apois/motorista/DriverLocationService.java");
 const driverLocationPlugin = read("android-motorista/app/src/main/java/com/apois/motorista/DriverLocationPlugin.java");
@@ -25,6 +25,7 @@ const loginRoute = read("src/routes/motorista.login.tsx");
 const rootRoute = read("src/routes/__root.tsx");
 
 assert.equal(pkg.dependencies?.["@capacitor/app"], "^8.1.1", "Capacitor App plugin must match v8 release line");
+assert.equal(pkg.dependencies?.["@capacitor/geolocation"], "^8.2.0", "Capacitor Geolocation plugin must match v8 release line");
 includes(capacitor, 'appId: "com.apois.motorista"', "Driver package id");
 includes(capacitor, 'appName: "APOIS Motorista"', "Driver app name");
 includes(manifest, 'android:allowBackup="false"', "Android backup hardening");
@@ -71,13 +72,17 @@ excludes(driverLocationService, 'putString("accessToken"', "Access token must ne
 excludes(driverLocationService, 'putString("refreshToken"', "Refresh token must never be persisted in location buffer");
 excludes(driverLocationService, "putString(EXTRA_ACCESS_TOKEN", "Access token extra must never be persisted in location buffer");
 excludes(driverLocationService, "putString(EXTRA_REFRESH_TOKEN", "Refresh token extra must never be persisted in location buffer");
+
 includes(driverLocationNative, 'registerPlugin<DriverLocationPlugin>("DriverLocation")', "Web-to-native DriverLocation bridge");
+includes(driverLocationNative, "Geolocation.checkPermissions()", "Foreground location permission check");
+includes(driverLocationNative, "Geolocation.requestPermissions", "Foreground location permission request");
 includes(driverLocationNative, "supabase.auth.getSession()", "Native bridge obtains current authenticated session");
+includes(driverLocationNative, "supabase.auth.refreshSession()", "Native bridge refreshes expiring session before service start");
 includes(driverLocationNative, "accessToken: data.session.access_token", "Native bridge passes access token without persistence");
 includes(driverLocationNative, "refreshToken: data.session.refresh_token", "Native bridge passes refresh token for long-running service");
-includes(driverLocationNative, 'event !== "SIGNED_OUT"', "Native service logout guard");
-includes(driverBroadcast, "startDriverBackgroundLocation()", "Production online lifecycle starts native location service");
-includes(driverBroadcast, "stopDriverBackgroundLocation()", "Production offline lifecycle stops native location service");
+includes(driverBroadcast, "startNativeDriverLocation()", "Production online lifecycle starts native location service");
+includes(driverBroadcast, "stopNativeDriverLocation()", "Production offline lifecycle stops native location service");
+includes(driverBroadcast, 'event !== "SIGNED_OUT"', "Native service logout guard");
 includes(driverBroadcast, 'document.visibilityState !== "visible"', "Android 14 visible-activity start guard");
 includes(driverBroadcast, 'document.addEventListener("visibilitychange"', "Native service foreground rehydration");
 
