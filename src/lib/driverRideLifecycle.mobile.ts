@@ -20,7 +20,7 @@ type StructuredRpcFailure = {
   remaining_attempts?: number;
 };
 
-type DriverCancelRedispatchResponse = {
+type DriverRedispatchResponse = {
   ok?: boolean;
   error?: string;
   ride?: unknown;
@@ -72,6 +72,19 @@ async function callRpc<T = unknown>(name: string, args: Record<string, unknown>)
   return data as T;
 }
 
+async function callDriverRedispatchFunction(
+  functionName: "driver-reject-redispatch" | "driver-cancel-redispatch",
+  body: Record<string, unknown>,
+): Promise<unknown> {
+  const { data: response, error } = await supabase.functions.invoke(functionName, { body });
+  if (error) throw new Error(readableDriverRpcError(error.message));
+  const result = (response ?? {}) as DriverRedispatchResponse;
+  if (result.ok !== true) {
+    throw new Error(readableDriverRpcError(result.error ?? "driver_operation_failed"));
+  }
+  return result.ride;
+}
+
 /**
  * Push é complementar ao realtime. A ação da corrida nunca deve voltar a falhar
  * só porque o aparelho do passageiro está sem token ou o FCM está indisponível.
@@ -98,8 +111,16 @@ export async function aceitarCorridaMobile({ data }: { data: { rideId: string } 
   return ride;
 }
 
+/**
+ * Rejeição e expiração local da oferta usam a mesma função autenticada. Depois
+ * da RPC remover o motorista do lote atual, o backend tenta avançar o dispatch.
+ * Se ainda restarem ofertas válidas, dispatch-ride apenas mantém o lote ativo;
+ * quando o último motorista rejeita, o próximo lote é formado imediatamente.
+ */
 export async function recusarCorridaMobile({ data }: { data: { rideId: string } }) {
-  return callRpc("driver_reject_ride", { _ride_id: data.rideId });
+  return callDriverRedispatchFunction("driver-reject-redispatch", {
+    ride_id: data.rideId,
+  });
 }
 
 export async function informarChegadaMobile({ data }: { data: { rideId: string } }) {
@@ -138,19 +159,10 @@ export async function finalizarCorridaMobile<T extends { rideId: string }>({ dat
  * a dependência do app do passageiro estar aberto para a busca continuar.
  */
 export async function cancelarPeloMotoristaMobile({ data }: { data: { rideId: string; motivo?: string } }) {
-  const { data: response, error } = await supabase.functions.invoke("driver-cancel-redispatch", {
-    body: {
-      ride_id: data.rideId,
-      reason: data.motivo ?? null,
-    },
+  return callDriverRedispatchFunction("driver-cancel-redispatch", {
+    ride_id: data.rideId,
+    reason: data.motivo ?? null,
   });
-
-  if (error) throw new Error(readableDriverRpcError(error.message));
-  const result = (response ?? {}) as DriverCancelRedispatchResponse;
-  if (result.ok !== true) {
-    throw new Error(readableDriverRpcError(result.error ?? "driver_cancel_failed"));
-  }
-  return result.ride;
 }
 
 export async function avaliarPassageiroMobile({
