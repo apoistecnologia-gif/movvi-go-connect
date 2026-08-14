@@ -15,8 +15,8 @@ const BUCKET_BY_SLOT: Record<DriverDocumentSlot, string> = {
   selfie: "driver-selfies",
   cnh_front: "driver-cnh",
   cnh_back: "driver-cnh",
-  crlv: "driver-crlv",
-  vehicle_photo: "driver-vehicle-photos",
+  crlv: "vehicle-documents",
+  vehicle_photo: "vehicle-documents",
 };
 
 const MIME_EXTENSIONS: Record<string, string> = {
@@ -44,6 +44,17 @@ function readString(record: Record<string, unknown>, key: string): string {
   const value = record[key];
   if (typeof value !== "string" || !value.trim()) throw new Error("driver_document_invalid_response");
   return value;
+}
+
+async function cleanupUploadedObject(bucket: string, objectPath: string): Promise<void> {
+  const { error } = await supabase.storage.from(bucket).remove([objectPath]);
+  if (error) {
+    console.warn("[APOIS Driver Documents] orphan cleanup failed", {
+      bucket,
+      objectPath,
+      message: error.message,
+    });
+  }
 }
 
 export async function uploadDriverDocument(
@@ -80,14 +91,19 @@ export async function uploadDriverDocument(
       code: error.code,
       message: error.message,
     });
-    // The object remains private and unattached if the RPC fails. Do not claim
-    // the new document is active in the Driver profile.
-    throw new Error("O arquivo foi enviado, mas não foi possível colocá-lo em análise. Tente novamente.");
+    await cleanupUploadedObject(bucket, objectPath);
+    throw new Error("O arquivo não pôde ser colocado em análise. Tente novamente.");
   }
-  if (!isRecord(data) || data["ok"] !== true) throw new Error("driver_document_invalid_response");
+  if (!isRecord(data) || data["ok"] !== true) {
+    await cleanupUploadedObject(bucket, objectPath);
+    throw new Error("driver_document_invalid_response");
+  }
 
   const responseSlot = readString(data, "slot") as DriverDocumentSlot;
-  if (!(responseSlot in BUCKET_BY_SLOT)) throw new Error("driver_document_invalid_response");
+  if (!(responseSlot in BUCKET_BY_SLOT)) {
+    await cleanupUploadedObject(bucket, objectPath);
+    throw new Error("driver_document_invalid_response");
+  }
 
   return {
     ok: true,
