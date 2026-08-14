@@ -207,11 +207,21 @@ Deno.serve(async (req) => {
       },
     });
 
+    // candidate_driver_ids precisa conter os motoristas da oferta atual E o
+    // restante do pool. O app usa esse campo para decidir se deve manter a
+    // oferta visível, enquanto a RLS usa offered_driver_ids para liberar a
+    // leitura somente aos motoristas efetivamente ofertados. No redispatch, os
+    // IDs da oferta anterior são removidos automaticamente porque o engine os
+    // filtra por offered_driver_ids antes de formar o próximo pool.
+    const visibleCandidateUserIds = [
+      ...new Set([...result.offeredUserIds, ...result.remainingCandidateUserIds]),
+    ];
+
     const nextOfferExpiresAt = new Date(now + OFFER_SECONDS * 1000).toISOString();
     const { data: updatedRide, error: updateError } = await admin
       .from("rides")
       .update({
-        candidate_driver_ids: result.remainingCandidateUserIds,
+        candidate_driver_ids: visibleCandidateUserIds,
         offered_driver_ids: result.offeredUserIds,
         current_offer_driver_id: null,
         request_expires_at: result.offeredUserIds.length > 0 ? nextOfferExpiresAt : new Date(now + 10_000).toISOString(),
