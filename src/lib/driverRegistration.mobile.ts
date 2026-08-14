@@ -45,6 +45,30 @@ function decodeBase64(base64: string) {
   return bytes;
 }
 
+function isAdultBirthDate(value: string | null | undefined): boolean {
+  if (!value) return false;
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return false;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(year, month - 1, day);
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) return false;
+
+  const today = new Date();
+  if (date.getTime() > today.getTime()) return false;
+  let age = today.getFullYear() - year;
+  const birthdayPassed =
+    today.getMonth() + 1 > month ||
+    (today.getMonth() + 1 === month && today.getDate() >= day);
+  if (!birthdayPassed) age -= 1;
+  return age >= 18;
+}
+
 function readableAuthError(message: string) {
   if (/already|registered|exists|duplicate/i.test(message)) return "Este e-mail já está cadastrado.";
   if (/password/i.test(message)) return "Use uma senha com no mínimo 8 caracteres.";
@@ -57,6 +81,8 @@ function readableRegistrationError(message: string) {
   if (/users_cpf_unique_active|drivers_cpf_unique|duplicate key.*cpf/i.test(message)) {
     return "Este CPF já está vinculado a outro cadastro APOIS.";
   }
+  if (/birth_date_required|invalid_birth_date/i.test(message)) return "Informe uma data de nascimento válida.";
+  if (/driver_must_be_adult/i.test(message)) return "O cadastro de motorista exige idade mínima de 18 anos.";
   return message || "Falha ao concluir cadastro de motorista.";
 }
 
@@ -99,6 +125,9 @@ export async function cadastrarMotoristaMobile(input: DriverRegistrationInput) {
   const normalizedCpf = normalizeCpf(input.cpf);
   if (!isValidCpf(normalizedCpf)) {
     throw new Error("CPF inválido. Confira os 11 dígitos informados.");
+  }
+  if (!isAdultBirthDate(input.birth_date)) {
+    throw new Error("O cadastro de motorista exige uma data válida e idade mínima de 18 anos.");
   }
 
   const authUser = await ensureAuthenticatedAccount(input);
