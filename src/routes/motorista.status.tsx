@@ -78,6 +78,14 @@ const STATUS_META: Record<DisplayStatus, StatusMeta> = {
     tone: "border-red-400/25 bg-red-400/10 text-red-400",
     iconTone: "bg-red-400 text-black",
   },
+  suspenso: {
+    label: "Suspenso",
+    title: "Acesso temporariamente suspenso",
+    description: "Seu cadastro permanece registrado, mas o acesso às corridas está suspenso. Fale com o suporte da APOIS para regularizar sua conta.",
+    icon: ShieldAlert,
+    tone: "border-amber-400/25 bg-amber-400/10 text-amber-300",
+    iconTone: "bg-amber-400 text-black",
+  },
   nao_encontrado: {
     label: "Não encontrado",
     title: "Cadastro não localizado",
