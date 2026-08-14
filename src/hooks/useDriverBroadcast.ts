@@ -1,11 +1,6 @@
 import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { isBrazilCoordinate } from "@/lib/googleMaps";
-import {
-  ensureDriverBackgroundLocationAuthGuard,
-  startDriverBackgroundLocation,
-  stopDriverBackgroundLocation,
-} from "@/lib/driverBackgroundLocation";
 
 export type DriverTelemetry = {
   lat: number;
@@ -61,12 +56,12 @@ async function setPresence(
 }
 
 /**
- * Mantém presença e GPS do motorista no contrato oficial do Supabase.
+ * Mantém a presença de foreground da WebView no contrato oficial do Supabase.
  *
- * Não grava em tabelas legadas. O RPC driver_set_presence autentica o
- * motorista, valida aprovação/mensalidade e atualiza public.drivers. Uma
- * trigger do banco espelha as coordenadas na corrida ativa para que o app do
- * passageiro acompanhe o carro em realtime.
+ * O Foreground Service nativo possui um único owner: DriverPresenceKeeper.
+ * Este hook não inicia nem encerra serviço Android; ele apenas publica a
+ * telemetria disponível enquanto a UI está ativa. Isso evita dois effects
+ * concorrentes disputando o ciclo de vida do mesmo serviço nativo.
  */
 export function useDriverBroadcast(
   userId: string | null,
@@ -92,54 +87,6 @@ export function useDriverBroadcast(
     if (current && isBrazilCoordinate(current.lat, current.lng)) {
       void setPresence(true, current);
     }
-  }, [userId, online]);
-
-  // No APK do Motorista, espelha o estado online no Foreground Service nativo.
-  // O serviço continua publicando GPS diretamente no RPC oficial quando a
-  // WebView é suspensa por tela bloqueada/background. Reiniciamos/reidratamos
-  // apenas com a Activity visível, atendendo às restrições do Android 14+.
-  useEffect(() => {
-    if (!userId) return;
-
-    ensureDriverBackgroundLocationAuthGuard();
-    let cancelled = false;
-
-    const syncNativeService = async () => {
-      try {
-        if (online) {
-          if (typeof document !== "undefined" && document.visibilityState !== "visible") return;
-          const started = await startDriverBackgroundLocation();
-          if (!started && !cancelled) {
-            console.warn("[APOIS MOTORISTA] foreground service de localização não iniciou");
-          }
-          return;
-        }
-        await stopDriverBackgroundLocation();
-      } catch (err) {
-        if (!cancelled) {
-          console.warn("[APOIS MOTORISTA] sincronização do serviço nativo de localização falhou", err);
-        }
-      }
-    };
-
-    void syncNativeService();
-
-    const onVisibilityChange = () => {
-      if (online && document.visibilityState === "visible") {
-        void syncNativeService();
-      }
-    };
-
-    if (typeof document !== "undefined") {
-      document.addEventListener("visibilitychange", onVisibilityChange);
-    }
-
-    return () => {
-      cancelled = true;
-      if (typeof document !== "undefined") {
-        document.removeEventListener("visibilitychange", onVisibilityChange);
-      }
-    };
   }, [userId, online]);
 
   useEffect(() => {
