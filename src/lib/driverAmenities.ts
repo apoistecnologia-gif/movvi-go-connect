@@ -13,9 +13,7 @@ import {
   BatteryCharging,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import type { Database } from "@/integrations/supabase/types";
 
 export type DriverAmenities = {
   charger: boolean;
@@ -44,28 +42,6 @@ export const DEFAULT_AMENITIES: DriverAmenities = {
 };
 
 export type AmenityKey = keyof DriverAmenities;
-
-type DriverAmenitiesRow = DriverAmenities & { user_id: string };
-type DriverAmenitiesDatabase = Database & {
-  public: Database["public"] & {
-    Tables: Database["public"]["Tables"] & {
-      driver_amenities: {
-        Row: DriverAmenitiesRow;
-        Insert: { user_id: string } & Partial<DriverAmenities>;
-        Update: { user_id?: string } & Partial<DriverAmenities>;
-        Relationships: [];
-      };
-    };
-    Functions: Database["public"]["Functions"] & {
-      get_driver_amenities_public: {
-        Args: { target_user_id: string };
-        Returns: DriverAmenities[];
-      };
-    };
-  };
-};
-
-const amenitiesSupabase = supabase as unknown as SupabaseClient<DriverAmenitiesDatabase>;
 
 export const AMENITY_META: Record<
   AmenityKey,
@@ -131,16 +107,12 @@ export async function loadDriverAmenities(userId: string): Promise<DriverAmeniti
 }
 
 async function refreshFromDb(userId: string): Promise<DriverAmenities> {
-  const { data, error } = await amenitiesSupabase
-    .from("driver_amenities")
-    .select("*")
-    .eq("user_id", userId)
-    .maybeSingle();
+  const { data, error } = await (supabase as any).rpc("get_own_driver_amenities");
   if (error) {
     if (import.meta.env.DEV) console.warn("[APOIS AMENITIES] load", error.message);
     return DEFAULT_AMENITIES;
   }
-  const prefs = normalize(data);
+  const prefs = normalize(data as Partial<DriverAmenities> | null);
   try {
     localStorage.setItem(CACHE_KEY(userId), JSON.stringify(prefs));
   } catch {
@@ -153,28 +125,36 @@ export async function saveDriverAmenities(
   userId: string,
   prefs: DriverAmenities,
 ): Promise<void> {
-  try {
-    localStorage.setItem(CACHE_KEY(userId), JSON.stringify(prefs));
-  } catch {
-    // A gravação canônica continua sendo o Supabase.
-  }
-  const { error } = await amenitiesSupabase
-    .from("driver_amenities")
-    .upsert({ user_id: userId, ...prefs }, { onConflict: "user_id" });
+  const { data, error } = await (supabase as any).rpc("set_own_driver_amenities", {
+    _charger: prefs.charger,
+    _water: prefs.water,
+    _candy: prefs.candy,
+    _music_on_demand: prefs.music_on_demand,
+    _pet_friendly: prefs.pet_friendly,
+    _large_luggage: prefs.large_luggage,
+    _air_conditioning: prefs.air_conditioning,
+    _wifi: prefs.wifi,
+    _child_seat: prefs.child_seat,
+    _quiet_ride: prefs.quiet_ride,
+  });
   if (error) throw error;
+  const saved = normalize(data as Partial<DriverAmenities> | null);
+  try {
+    localStorage.setItem(CACHE_KEY(userId), JSON.stringify(saved));
+  } catch {
+    // A gravação canônica já foi concluída no Supabase.
+  }
 }
 
 export async function fetchDriverAmenitiesPublic(userId: string): Promise<DriverAmenities> {
-  // Uses SECURITY DEFINER RPC so passengers can read amenities without a broad SELECT policy.
-  const { data, error } = await amenitiesSupabase.rpc("get_driver_amenities_public", {
+  const { data, error } = await (supabase as any).rpc("get_driver_amenities_public", {
     target_user_id: userId,
   });
   if (error) {
     if (import.meta.env.DEV) console.warn("[APOIS AMENITIES] public", error.message);
     return DEFAULT_AMENITIES;
   }
-  const row = Array.isArray(data) ? data[0] : data;
-  return normalize(row as Partial<DriverAmenities> | null);
+  return normalize(data as Partial<DriverAmenities> | null);
 }
 
 export function enabledAmenities(prefs: DriverAmenities): AmenityKey[] {
