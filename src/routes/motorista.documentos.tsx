@@ -46,7 +46,7 @@ const documents: DocConfig[] = [
 
 function statusLabel(profile: DriverProfileRow | null): string {
   if (!profile) return "Carregando";
-  if (profile.documents_status === "approved" && profile.approval_status === "aprovado") return "Aprovados";
+  if (profile.documents_status === "approved") return "Aprovados";
   if (profile.documents_status === "rejected" || profile.approval_status === "reprovado") return "Reenvio necessário";
   if (profile.documents_status === "pending_review" || profile.approval_status === "em_analise") return "Em análise";
   return "Envio incompleto";
