@@ -25,7 +25,6 @@ import {
   type DriverAmenities,
 } from "@/lib/driverAmenities";
 
-
 export type DriverPublicProfile = {
   user_id: string;
   name: string | null;
@@ -46,6 +45,7 @@ export type DriverPublicProfile = {
 };
 
 const FALLBACK = "Não informado";
+const DRIVER_PHOTO_SIGNED_URL_TTL_SECONDS = 60 * 60;
 
 function fmt<T extends string | number | null | undefined>(v: T): string {
   if (v === null || v === undefined) return FALLBACK;
@@ -61,6 +61,15 @@ function formatMemberSince(iso: string | null | undefined): string {
   } catch {
     return FALLBACK;
   }
+}
+
+async function signDriverPhotoPath(path: string | null): Promise<string | null> {
+  if (!path || /^https?:\/\//i.test(path)) return path;
+  const signed = await supabase.storage
+    .from("profile-photos")
+    .createSignedUrl(path, DRIVER_PHOTO_SIGNED_URL_TTL_SECONDS);
+  if (signed.error || !signed.data?.signedUrl) return null;
+  return signed.data.signedUrl;
 }
 
 function ApprovalPill({ status }: { status: string | null }) {
@@ -252,7 +261,6 @@ function AmenitiesSection({ userId }: { userId: string }) {
   );
 }
 
-
 function Stat({
   icon,
   label,
@@ -297,7 +305,9 @@ function MetaRow({
 
 /**
  * Hook — fetches the driver public profile via SECURITY DEFINER RPC.
- * Only public trust data is returned.
+ * Only public trust data is returned. The bucket stays private: when the RPC
+ * returns a storage path we exchange it for a short-lived signed URL under the
+ * existing ride-scoped Storage policy before handing it to the Avatar.
  */
 export function useDriverPublicProfile(userId: string | null | undefined) {
   const [data, setData] = useState<DriverPublicProfile | null>(null);
@@ -309,23 +319,48 @@ export function useDriverPublicProfile(userId: string | null | undefined) {
       setData(null);
       return;
     }
+
     let alive = true;
     setLoading(true);
     setError(null);
-    supabase
-      .rpc("get_driver_public_profile" as never, { target_user_id: userId } as never)
-      .then(({ data: rows, error: err }) => {
-        if (!alive) return;
-        if (err) {
-          setError(err.message);
-          setData(null);
-        } else {
-          const arr = rows as unknown as DriverPublicProfile[] | null;
-          const first = Array.isArray(arr) && arr.length > 0 ? arr[0] : null;
-          setData(first);
-        }
-      })
-      .then(() => alive && setLoading(false));
+
+    void (async () => {
+      const { data: rows, error: rpcError } = await supabase.rpc(
+        "get_driver_public_profile" as never,
+        { target_user_id: userId } as never,
+      );
+      if (!alive) return;
+
+      if (rpcError) {
+        setError(rpcError.message);
+        setData(null);
+        setLoading(false);
+        return;
+      }
+
+      const arr = rows as unknown as DriverPublicProfile[] | null;
+      const first = Array.isArray(arr) && arr.length > 0 ? arr[0] : null;
+      if (!first) {
+        setData(null);
+        setLoading(false);
+        return;
+      }
+
+      let resolvedPhoto = first.photo_url;
+      if (first.photo_url && !/^https?:\/\//i.test(first.photo_url)) {
+        resolvedPhoto = await signDriverPhotoPath(first.photo_url);
+      }
+      if (!alive) return;
+
+      setData({ ...first, photo_url: resolvedPhoto });
+      setLoading(false);
+    })().catch((caught: unknown) => {
+      if (!alive) return;
+      setError(caught instanceof Error ? caught.message : "Não foi possível carregar o perfil do motorista.");
+      setData(null);
+      setLoading(false);
+    });
+
     return () => {
       alive = false;
     };
