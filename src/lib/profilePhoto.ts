@@ -33,29 +33,12 @@ async function currentAuthUserId() {
   return data.user.id;
 }
 
-async function persistOwnProfilePhoto(authUserId: string, path: string) {
-  const db = supabase as any;
-  const { data: publicUser, error: userLookupError } = await db
-    .from("users")
-    .select("id")
-    .eq("auth_user_id", authUserId)
-    .maybeSingle();
-  if (userLookupError || !publicUser?.id) throw new Error("Perfil da conta não encontrado.");
-
-  const { error: userError } = await db
-    .from("users")
-    .update({ avatar_url: path })
-    .eq("id", publicUser.id);
-  if (userError) throw new Error("Não foi possível vincular a foto ao perfil.");
-
-  // Passenger accounts do not have a drivers row. Updating zero rows is valid;
-  // when the authenticated account is a Driver this keeps both canonical views
-  // on the same private Storage path.
-  const { error: driverError } = await db
-    .from("drivers")
-    .update({ photo_url: path })
-    .eq("user_id", publicUser.id);
-  if (driverError) throw new Error("Não foi possível vincular a foto ao perfil do motorista.");
+async function persistOwnProfilePhoto(path: string) {
+  const { data, error } = await (supabase as any).rpc("set_own_profile_photo", {
+    _storage_path: path,
+  });
+  if (error) throw new Error(error.message || "Não foi possível vincular a foto ao perfil.");
+  if (!data?.ok) throw new Error("Não foi possível vincular a foto ao perfil.");
 
   const { error: metadataError } = await supabase.auth.updateUser({ data: { avatar_path: path } });
   if (metadataError) throw new Error("Foto salva, mas não foi possível atualizar os dados da conta.");
@@ -91,7 +74,7 @@ export async function uploadProfilePhoto(
   }
 
   try {
-    await persistOwnProfilePhoto(authUserId, path);
+    await persistOwnProfilePhoto(path);
   } catch (error) {
     await supabase.storage.from(PROFILE_PHOTO_BUCKET).remove([path]);
     throw error;
