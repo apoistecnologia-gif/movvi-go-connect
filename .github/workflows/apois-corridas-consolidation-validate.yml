@@ -63,6 +63,17 @@ jobs:
           fi
           grep -F 'driver_finish_ride' src/lib/driverRideLifecycle.mobile.ts
 
+      - name: Guard — driver offer push must minimize lock-screen data
+        run: |
+          set -euo pipefail
+          source_file='supabase/functions/dispatch-ride/index.ts'
+          grep -F 'event: "driver.new_ride_request"' "$source_file"
+          grep -F 'body: "Abra o app para ver os detalhes da solicitação."' "$source_file"
+          if grep -n -E 'body:.*(origin_name|destination_name|pickup_label|destination_label)' "$source_file"; then
+            echo 'Oferta push do motorista voltou a expor endereço/detalhes na tela bloqueada.' >&2
+            exit 1
+          fi
+
       - name: Guard — generated types include official finance RPCs
         run: |
           set -euo pipefail
