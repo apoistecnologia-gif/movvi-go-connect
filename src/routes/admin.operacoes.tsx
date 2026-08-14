@@ -69,6 +69,8 @@ type Ride = {
   completed_at: string | null;
 };
 
+type SosSeverity = "critical" | "high" | "medical" | "security";
+
 type Sos = {
   id: string;
   user_id: string;
@@ -77,7 +79,7 @@ type Sos = {
   lat: number | null;
   lng: number | null;
   message: string | null;
-  severity: "info" | "warning" | "high" | "critical" | "medical" | "security";
+  severity: SosSeverity;
   status: "open" | "acknowledged" | "resolved" | "cancelled";
   created_at: string;
   updated_at: string;
@@ -89,6 +91,10 @@ type Passenger = {
   phone: string | null;
   city: string | null;
 };
+
+type SosActor =
+  | { kind: "driver"; name: string; driver: Driver | null }
+  | { kind: "passenger"; name: string; passenger: Passenger | null };
 
 const ACTIVE_RIDE_STATUSES = [
   "procurar_motorista",
@@ -108,6 +114,7 @@ function OpsCenterPage() {
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [rides, setRides] = useState<Ride[]>([]);
   const [sos, setSos] = useState<Sos[]>([]);
+  const [sosDrivers, setSosDrivers] = useState<Map<string, Driver>>(new Map());
   const [passengers, setPassengers] = useState<Map<string, Passenger>>(new Map());
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -155,7 +162,7 @@ function OpsCenterPage() {
     const passengerIds = [
       ...new Set([
         ...nextRides.map((ride) => ride.passenger_id),
-        ...nextSos.map((alert) => alert.user_id),
+        ...nextSos.filter((alert) => alert.driver_id === null).map((alert) => alert.user_id),
       ]),
     ];
     if (passengerIds.length) {
@@ -172,6 +179,31 @@ function OpsCenterPage() {
       }
     } else {
       setPassengers(new Map());
+    }
+
+    const sosDriverIds = [
+      ...new Set(
+        nextSos
+          .map((alert) => alert.driver_id)
+          .filter((driverId): driverId is string => Boolean(driverId)),
+      ),
+    ];
+    if (sosDriverIds.length) {
+      const sosDriverResult = await db
+        .from("drivers")
+        .select(
+          "id,user_id,name,is_online,current_lat,current_lng,last_location_at,category,city,vehicle_model,vehicle_plate,vehicle_color,approval_status",
+        )
+        .in("id", sosDriverIds);
+      if (!sosDriverResult.error) {
+        setSosDrivers(
+          new Map((sosDriverResult.data ?? []).map((driver: Driver) => [driver.id, driver])),
+        );
+      } else {
+        setSosDrivers(new Map());
+      }
+    } else {
+      setSosDrivers(new Map());
     }
     setLoading(false);
   }
@@ -247,6 +279,15 @@ function OpsCenterPage() {
       : null;
   }, [onlineDrivers, sos]);
 
+  function getSosActor(alert: Sos): SosActor {
+    if (alert.driver_id !== null) {
+      const driver = sosDrivers.get(alert.driver_id) ?? null;
+      return { kind: "driver", name: driver?.name ?? "Motorista", driver };
+    }
+    const passenger = passengers.get(alert.user_id) ?? null;
+    return { kind: "passenger", name: passenger?.name ?? "Passageiro", passenger };
+  }
+
   async function setSosStatus(alert: Sos, status: "acknowledged" | "resolved") {
     if (!canManage) {
       toast.error("Sua função administrativa possui somente leitura operacional.");
@@ -287,12 +328,13 @@ function OpsCenterPage() {
       {sos.length > 0 && (
         <div className="mb-4 space-y-2">
           {sos.map((alert) => {
-            const passenger = passengers.get(alert.user_id);
-            const driverActor = drivers.find(
-              (driver) => driver.id === alert.driver_id && driver.user_id === alert.user_id,
-            );
-            const actorRole = driverActor ? "Motorista" : "Passageiro";
-            const actorName = driverActor?.name ?? passenger?.name ?? actorRole;
+            const actor = getSosActor(alert);
+            const vehicle =
+              actor.kind === "driver"
+                ? [actor.driver?.vehicle_model, actor.driver?.vehicle_color, actor.driver?.vehicle_plate]
+                    .filter(Boolean)
+                    .join(" · ")
+                : "";
             return (
               <DSCard key={alert.id} className="border-destructive/50 bg-destructive/10">
                 <DSCardContent className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center">
@@ -306,8 +348,14 @@ function OpsCenterPage() {
                       />
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {actorRole}: {actorName} · {formatDate(alert.created_at)}
-                      {alert.ride_id ? ` · corrida ${alert.ride_id.slice(0, 8)}` : ""}
+                      {actor.kind === "driver" ? "MOTORISTA" : "PASSAGEIRO"}: {actor.name} · {formatDate(alert.created_at)}
+                    </p>
+                    {vehicle ? <p className="mt-1 text-xs text-muted-foreground">Veículo: {vehicle}</p> : null}
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {alert.ride_id ? `Corrida: ${alert.ride_id.slice(0, 8)}` : "Corrida: não associada"}
+                      {alert.lat != null && alert.lng != null
+                        ? ` · Localização SOS: ${alert.lat.toFixed(5)}, ${alert.lng.toFixed(5)}`
+                        : " · Localização SOS: indisponível"}
                     </p>
                     {alert.message && <p className="mt-1 text-sm">{alert.message}</p>}
                   </div>
