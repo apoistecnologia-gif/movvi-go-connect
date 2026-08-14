@@ -24,10 +24,19 @@ if (!existsSync(viteBin)) {
 rmSync(distClient, { recursive: true, force: true });
 rmSync(resolve(root, ".output"), { recursive: true, force: true });
 
+// Oferta de corrida em background é requisito operacional do APK Motorista.
+// A flag continua explicitamente desligada em builds web/genéricos, mas o
+// build mobile do Motorista a ativa por padrão sem embutir qualquer segredo.
+const mobileBuildEnv = {
+  ...process.env,
+  VITE_ENABLE_NATIVE_PUSH:
+    process.env.VITE_ENABLE_NATIVE_PUSH ?? (role === "motorista" ? "true" : "false"),
+};
+
 execFileSync(
   process.execPath,
   [viteBin, "build", "--config", "vite.mobile.config.ts", "--mode", "mobile"],
-  { stdio: "inherit", cwd: root, env: process.env },
+  { stdio: "inherit", cwd: root, env: mobileBuildEnv },
 );
 
 const indexHtml = resolve(distClient, "index.html");
