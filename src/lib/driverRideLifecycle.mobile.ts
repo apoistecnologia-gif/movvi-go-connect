@@ -20,6 +20,13 @@ type StructuredRpcFailure = {
   remaining_attempts?: number;
 };
 
+type DriverCancelRedispatchResponse = {
+  ok?: boolean;
+  error?: string;
+  ride?: unknown;
+  redispatch?: string;
+};
+
 const rpcClient = supabase as unknown as DynamicRpcClient;
 
 function isStructuredRpcFailure(value: unknown): value is StructuredRpcFailure {
@@ -125,15 +132,25 @@ export async function finalizarCorridaMobile<T extends { rideId: string }>({ dat
 }
 
 /**
- * Cancelamento do Motorista volta a corrida ao dispatch canônico. Não enviamos
- * `ride.cancelled` ao Passageiro aqui porque a corrida não termina: o Realtime
- * passa a refletir a nova busca/redispatch sem comunicar um estado falso.
+ * Cancelamento operacional passa pela Edge Function autenticada para que o
+ * banco valide a ação com o JWT real do motorista e, quando a corrida volta a
+ * procurar_motorista, o backend dispare redispatch imediatamente. Isso elimina
+ * a dependência do app do passageiro estar aberto para a busca continuar.
  */
 export async function cancelarPeloMotoristaMobile({ data }: { data: { rideId: string; motivo?: string } }) {
-  return callRpc("driver_cancel_ride", {
-    _ride_id: data.rideId,
-    _reason: data.motivo ?? null,
+  const { data: response, error } = await supabase.functions.invoke("driver-cancel-redispatch", {
+    body: {
+      ride_id: data.rideId,
+      reason: data.motivo ?? null,
+    },
   });
+
+  if (error) throw new Error(readableDriverRpcError(error.message));
+  const result = (response ?? {}) as DriverCancelRedispatchResponse;
+  if (result.ok !== true) {
+    throw new Error(readableDriverRpcError(result.error ?? "driver_cancel_failed"));
+  }
+  return result.ride;
 }
 
 export async function avaliarPassageiroMobile({
