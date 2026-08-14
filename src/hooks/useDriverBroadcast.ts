@@ -1,6 +1,10 @@
 import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { isBrazilCoordinate } from "@/lib/googleMaps";
+import {
+  startNativeDriverLocation,
+  stopNativeDriverLocation,
+} from "@/lib/driverNativeLocation";
 
 export type DriverTelemetry = {
   lat: number;
@@ -56,12 +60,12 @@ async function setPresence(
 }
 
 /**
- * Mantém a presença de foreground da WebView no contrato oficial do Supabase.
+ * Mantém a presença do motorista pelo contrato oficial do Supabase.
  *
- * O Foreground Service nativo possui um único owner: DriverPresenceKeeper.
- * Este hook não inicia nem encerra serviço Android; ele apenas publica a
- * telemetria disponível enquanto a UI está ativa. Isso evita dois effects
- * concorrentes disputando o ciclo de vida do mesmo serviço nativo.
+ * Enquanto a WebView está ativa, publica a telemetria em foreground. No APK
+ * Android também liga o DriverLocationService nativo ao entrar ONLINE, para
+ * continuar enviando GPS com tela bloqueada ou app em background, e o encerra
+ * ao ficar OFFLINE ou ao sair da conta.
  */
 export function useDriverBroadcast(
   userId: string | null,
@@ -70,10 +74,49 @@ export function useDriverBroadcast(
 ) {
   const lastWrittenRef = useRef<{ lat: number; lng: number; at: number } | null>(null);
   const positionRef = useRef(position);
+  const nativeStartPendingRef = useRef(false);
 
   useEffect(() => {
     positionRef.current = position;
   }, [position]);
+
+  useEffect(() => {
+    if (!userId) return;
+
+    if (!online) {
+      nativeStartPendingRef.current = false;
+      void stopNativeDriverLocation().catch((error: unknown) => {
+        console.warn("[APOIS MOTORISTA] serviço de localização nativa não encerrou:", error);
+      });
+      return;
+    }
+
+    if (nativeStartPendingRef.current) return;
+    nativeStartPendingRef.current = true;
+    void startNativeDriverLocation()
+      .then((started) => {
+        if (started && import.meta.env.DEV) {
+          console.log("[APOIS MOTORISTA] localização nativa em background ativa");
+        }
+      })
+      .catch((error: unknown) => {
+        console.warn("[APOIS MOTORISTA] localização nativa em background indisponível:", error);
+      })
+      .finally(() => {
+        nativeStartPendingRef.current = false;
+      });
+  }, [userId, online]);
+
+  useEffect(() => {
+    const { data } = supabase.auth.onAuthStateChange((event) => {
+      if (event !== "SIGNED_OUT") return;
+      nativeStartPendingRef.current = false;
+      void stopNativeDriverLocation().catch((error: unknown) => {
+        console.warn("[APOIS MOTORISTA] falha ao encerrar localização nativa no logout:", error);
+      });
+    });
+    return () => data.subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     if (!userId) return;
