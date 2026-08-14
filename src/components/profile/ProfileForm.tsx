@@ -1,8 +1,8 @@
 /**
  * APOIS — Shared editable profile form.
  * Used by both passenger and driver profile pages.
- * ❗ Purely UI + `users` table updates — NEVER touches ride tables, dispatch,
- * GPS, realtime or payment logic.
+ * Profile persistence goes through narrow self-service RPCs; ride, dispatch,
+ * GPS, realtime and payment tables are never written by this component.
  */
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { useNavigate } from "@tanstack/react-router";
@@ -45,7 +45,7 @@ export type ProfileFormProps = {
   headerSlot?: ReactNode;
   /** Rendered below the form card (driver info card, extra sections). */
   extraSlot?: ReactNode;
-  /** Called with the fresh users row after load, so parents can render extras. */
+  /** Called with the authenticated Auth UID after load. */
   onLoaded?: (ctx: { userId: string }) => void;
 };
 
@@ -152,41 +152,43 @@ export function ProfileForm({
 
     setSaving(true);
     try {
-      const { error: profErr } = await supabase
-        .from("users")
-        .update({
-          name: fullName.trim(),
-          phone: phone.trim(),
-          cpf: cpf || null,
-          birth_date: birthDate || null,
-          gender: gender || null,
-          city: city || null,
-        })
-        .eq("auth_user_id", userId);
+      const { data: profileResult, error: profErr } = await (supabase as any).rpc("update_own_profile", {
+        _name: fullName.trim(),
+        _phone: phone.trim(),
+        _cpf: cpf || null,
+        _birth_date: birthDate || null,
+        _gender: gender || null,
+        _city: city || null,
+      });
       if (profErr) throw profErr;
 
-      // Keep driver display fields in sync for driver-side name display only —
-      // does NOT touch dispatch, GPS or ride tables.
-      if (role === "driver") {
-        const { error: driverError } = await supabase
-          .from("drivers")
-          .update({ name: fullName.trim(), phone: phone.trim(), city: city || null })
-          .eq("user_id", userId);
-        if (driverError) throw driverError;
-      }
-
       const authUpdate: { data?: Record<string, string>; password?: string } = {
-        data: { full_name: fullName, phone, city },
+        data: { full_name: fullName.trim(), phone: phone.trim(), city },
       };
       if (newPassword) authUpdate.password = newPassword;
       const { error: authErr } = await supabase.auth.updateUser(authUpdate);
       if (authErr) throw authErr;
 
-      setSnapshot({ fullName, phone, cpf, birthDate, gender, city });
+      const nextSnapshot = {
+        fullName: fullName.trim(),
+        phone: phone.trim(),
+        cpf,
+        birthDate,
+        gender,
+        city,
+      };
+      setSnapshot(nextSnapshot);
+      setFullName(nextSnapshot.fullName);
+      setPhone(nextSnapshot.phone);
       setNewPassword("");
       setConfirmPassword("");
       setDirty(false);
-      toast.success("Perfil atualizado com sucesso!");
+
+      if (role === "driver" && profileResult?.driver_review_required) {
+        toast.success("Perfil atualizado. As alterações do cadastro foram enviadas para análise.");
+      } else {
+        toast.success("Perfil atualizado com sucesso!");
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Falha ao salvar.");
     } finally {
@@ -196,33 +198,18 @@ export function ProfileForm({
 
   async function handlePhotoUploaded(result: { signedUrl: string; path: string }) {
     if (!userId) return;
-    // Preview imediato usa a signed URL curta; no banco persistimos apenas o path.
+    // ProfilePhotoUploader já vinculou o path pelo RPC canônico.
     setPhotoUrl(result.signedUrl);
-    try {
-      const { error } = await supabase.from("users").update({ avatar_url: result.path }).eq("auth_user_id", userId);
-      if (error) throw error;
-      if (role === "driver") {
-        const { error: driverError } = await supabase.from("drivers").update({ photo_url: result.path }).eq("user_id", userId);
-        if (driverError) throw driverError;
-      }
-      const { error: authError } = await supabase.auth.updateUser({ data: { avatar_url: result.path } });
-      if (authError) throw authError;
-      toast.success("Foto atualizada!");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Falha ao salvar a foto.");
-    }
+    toast.success("Foto atualizada!");
   }
 
   async function handlePhotoRemoved() {
     if (!userId) return;
     try {
-      const { error } = await supabase.from("users").update({ avatar_url: null }).eq("auth_user_id", userId);
+      const { data, error } = await (supabase as any).rpc("clear_own_profile_photo");
       if (error) throw error;
-      if (role === "driver") {
-        const { error: driverError } = await supabase.from("drivers").update({ photo_url: null }).eq("user_id", userId);
-        if (driverError) throw driverError;
-      }
-      const { error: authError } = await supabase.auth.updateUser({ data: { avatar_url: "" } });
+      if (!data?.ok) throw new Error("Não foi possível remover a foto.");
+      const { error: authError } = await supabase.auth.updateUser({ data: { avatar_path: "", avatar_url: "" } });
       if (authError) throw authError;
       setPhotoUrl(null);
       toast.success("Foto removida.");
@@ -247,16 +234,19 @@ export function ProfileForm({
     const ok = window.confirm("Tem certeza? Sua conta será marcada para exclusão e você será desconectado.");
     if (!ok) return;
     try {
-      const { error: deleteError } = await supabase
-        .from("users")
-        .update({ deleted_at: new Date().toISOString() })
-        .eq("auth_user_id", userId);
+      const { data, error: deleteError } = await (supabase as any).rpc("request_own_account_deletion");
       if (deleteError) throw deleteError;
+      if (!data?.ok) throw new Error("Não foi possível solicitar a exclusão da conta.");
       await supabase.auth.signOut();
       toast.success("Conta marcada para exclusão.");
       navigate({ to: "/" });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Falha ao excluir.");
+      const message = err instanceof Error ? err.message : "Falha ao excluir.";
+      toast.error(
+        /active_ride_blocks_account_deletion/i.test(message)
+          ? "Finalize ou cancele a corrida em andamento antes de excluir sua conta."
+          : message,
+      );
     }
   }
 
