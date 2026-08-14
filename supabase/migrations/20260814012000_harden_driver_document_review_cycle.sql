@@ -157,15 +157,21 @@ BEGIN
     RAISE EXCEPTION 'invalid_status' USING errcode='22023';
   END IF;
 
-  SELECT d.*, u.auth_user_id
-  INTO v_driver, v_driver_auth_user_id
-  FROM public.drivers d
-  JOIN public.users u ON u.id = d.user_id
-  WHERE d.id = _driver_id
-  FOR UPDATE OF d;
+  SELECT * INTO v_driver
+  FROM public.drivers
+  WHERE id = _driver_id
+  FOR UPDATE;
 
   IF NOT FOUND THEN
     RAISE EXCEPTION 'driver_not_found' USING errcode='P0002';
+  END IF;
+
+  SELECT u.auth_user_id INTO v_driver_auth_user_id
+  FROM public.users u
+  WHERE u.id = v_driver.user_id;
+
+  IF v_driver_auth_user_id IS NULL THEN
+    RAISE EXCEPTION 'driver_auth_identity_missing' USING errcode='55000';
   END IF;
 
   IF v_status = 'aprovado' THEN
