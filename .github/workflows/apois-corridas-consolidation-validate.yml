@@ -82,5 +82,28 @@ jobs:
           grep -F 'driver_request_withdrawal' src/integrations/supabase/types.ts
           grep -F 'ride_settlements' src/integrations/supabase/types.ts
 
+      - name: Guard — suspended driver cannot bypass reinstatement flow
+        run: |
+          set -euo pipefail
+          migration='supabase/migrations/20260814210000_harden_suspended_driver_reapproval.sql'
+          grep -F "v_driver.approval_status='suspenso' and v_status='aprovado'" "$migration"
+          grep -F 'driver_suspension_requires_unsuspend_flow' "$migration"
+
+      - name: Guard — referenced KYC evidence is immutable to the driver
+        run: |
+          set -euo pipefail
+          migration='supabase/migrations/20260814211500_lock_referenced_driver_evidence.sql'
+          grep -F 'private.driver_evidence_object_is_referenced' "$migration"
+          grep -F 'or not private.driver_evidence_object_is_referenced(bucket_id,name)' "$migration"
+          grep -F 'apois_driver_storage_delete_own' "$migration"
+          grep -F 'apois_driver_storage_update_own' "$migration"
+
+      - name: Guard — server rejects implausible location jumps
+        run: |
+          set -euo pipefail
+          migration='supabase/migrations/20260814203000_harden_driver_location_jumps.sql'
+          grep -F 'implausible_location_jump' "$migration"
+          grep -F 'v_distance_m / greatest(v_elapsed_seconds, 1.0) > 100.0' "$migration"
+
       - name: Consolidation validated
         run: echo 'APOIS_CORRIDAS_CONSOLIDATION_OK'
