@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { isValidCpf, normalizeCpf } from "@/lib/cpf";
 
 const MAX_DOC_BYTES = 8 * 1024 * 1024;
 
@@ -51,6 +52,14 @@ function readableAuthError(message: string) {
   return message || "Não foi possível criar a conta.";
 }
 
+function readableRegistrationError(message: string) {
+  if (/invalid_cpf/i.test(message)) return "CPF inválido. Confira os 11 dígitos informados.";
+  if (/users_cpf_unique_active|drivers_cpf_unique|duplicate key.*cpf/i.test(message)) {
+    return "Este CPF já está vinculado a outro cadastro APOIS.";
+  }
+  return message || "Falha ao concluir cadastro de motorista.";
+}
+
 async function ensureAuthenticatedAccount(input: DriverRegistrationInput) {
   const email = input.email.trim().toLowerCase();
   const signup = await supabase.auth.signUp({
@@ -87,6 +96,11 @@ async function ensureAuthenticatedAccount(input: DriverRegistrationInput) {
 }
 
 export async function cadastrarMotoristaMobile(input: DriverRegistrationInput) {
+  const normalizedCpf = normalizeCpf(input.cpf);
+  if (!isValidCpf(normalizedCpf)) {
+    throw new Error("CPF inválido. Confira os 11 dígitos informados.");
+  }
+
   const authUser = await ensureAuthenticatedAccount(input);
   const uploaded: Array<{ bucket: string; path: string }> = [];
   const paths: Partial<Record<DriverDocument["label"], string>> = {};
@@ -125,7 +139,7 @@ export async function cadastrarMotoristaMobile(input: DriverRegistrationInput) {
     const { data, error } = await (supabase as any).rpc("driver_complete_registration_v3", {
       _name: input.name.trim(),
       _phone: input.phone.trim(),
-      _cpf: input.cpf.trim(),
+      _cpf: normalizedCpf,
       _birth_date: input.birth_date || null,
       _city: input.city.trim(),
       _state: input.state.trim().toUpperCase(),
@@ -147,7 +161,7 @@ export async function cadastrarMotoristaMobile(input: DriverRegistrationInput) {
       _vehicle_photo_path: paths.vehicle_photo,
       _photo_path: photoPath,
     });
-    if (error) throw new Error(error.message || "Falha ao concluir cadastro de motorista.");
+    if (error) throw new Error(readableRegistrationError(error.message));
 
     return {
       ok: true as const,
