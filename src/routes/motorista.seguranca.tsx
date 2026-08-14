@@ -143,13 +143,11 @@ function DriverSecurityPage() {
       );
     });
 
-    const { error } = await db.from("sos_alerts").insert({
-      user_id: mobilityUserId,
-      driver_id: driverId,
-      lat: pos?.coords.latitude ?? null,
-      lng: pos?.coords.longitude ?? null,
-      message: "SOS acionado pelo motorista no aplicativo APOIS.",
-      status: "open",
+    const { error } = await db.rpc("create_driver_sos", {
+      _lat: pos?.coords.latitude ?? null,
+      _lng: pos?.coords.longitude ?? null,
+      _severity: "critical",
+      _message: "SOS acionado pelo motorista no aplicativo APOIS.",
     });
     if (error) toast.error("Não foi possível registrar o alerta SOS.");
     else toast.success("Alerta SOS registrado e enviado para a central APOIS.");
