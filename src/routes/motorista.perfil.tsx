@@ -51,6 +51,7 @@ export const Route = createFileRoute("/motorista/perfil")({
 
 type Driver = {
   id?: string;
+  user_id?: string;
   name: string | null;
   email: string | null;
   photo_url: string | null;
@@ -64,6 +65,7 @@ type Driver = {
   total_ratings?: number | null;
   completed_rides?: number | null;
   approval_status: string | null;
+  documents_status?: string | null;
   subscription_status: string | null;
   subscription_expires_at?: string | null;
   city?: string | null;
@@ -90,27 +92,21 @@ function DriverProfilePage() {
     let alive = true;
     (async () => {
       const { data: u } = await supabase.auth.getUser();
-      if (!u.user) return;
-      if (!alive) return;
+      if (!u.user || !alive) return;
       setUserId(u.user.id);
 
-      const { data: d } = await supabase
-        .from("drivers")
-        .select(
-          "id,name,email,photo_url,category,vehicle_model,vehicle_color,vehicle_plate,vehicle_year,rating,average_rating,total_ratings,completed_rides,approval_status,subscription_status,subscription_expires_at,city,is_online,created_at",
-        )
-        .eq("user_id", u.user.id)
-        .maybeSingle();
+      const { data, error } = await (supabase as any).rpc("driver_get_profile");
       if (!alive) return;
-      setDriver((d ?? null) as Driver | null);
+      if (error) {
+        console.error("[APOIS DRIVER PROFILE] falha ao carregar perfil", error);
+        setDriver(null);
+        setTotalRides(0);
+        return;
+      }
 
-      const { count } = await supabase
-        .from("rides")
-        .select("id", { count: "exact", head: true })
-        .eq("driver_id", u.user.id)
-        .eq("status", "finalizada");
-      if (!alive) return;
-      setTotalRides(count ?? 0);
+      const d = (data ?? null) as Driver | null;
+      setDriver(d);
+      setTotalRides(Number(d?.completed_rides ?? 0));
     })();
     return () => {
       alive = false;
@@ -148,8 +144,18 @@ function DriverProfilePage() {
   const subStatus = (driver?.subscription_status ?? "").toLowerCase();
   const subActive = subStatus === "active" || subStatus === "ativa" || subStatus === "teste";
   const approval = (driver?.approval_status ?? "").toLowerCase();
-  const approvalApproved =
-    approval === "approved" || approval === "aprovado" || approval === "active";
+  const approvalApproved = approval === "approved" || approval === "aprovado" || approval === "active";
+  const approvalSuspended = approval === "suspenso" || approval === "suspended";
+  const approvalBlocked = approval === "bloqueado" || approval === "blocked";
+  const approvalLabel = approvalApproved
+    ? "Conta ativa"
+    : approvalSuspended
+      ? "Conta suspensa"
+      : approvalBlocked
+        ? "Conta bloqueada"
+        : "Conta pendente";
+  const approvalPillStatus = approvalApproved ? "accepted" : approvalSuspended || approvalBlocked ? "cancelled" : "searching";
+  const documentsApproved = driver?.documents_status === "approved";
   const memberSince = driver?.created_at
     ? new Date(driver.created_at).toLocaleDateString("pt-BR", { month: "long", year: "numeric" })
     : "—";
@@ -165,19 +171,9 @@ function DriverProfilePage() {
 
   async function handlePhotoUploaded(result: { signedUrl: string; path: string }) {
     if (!userId) return;
-    // Exibimos a signed URL curta imediatamente; no banco persistimos apenas o path.
+    // O uploader já persistiu o path pelo RPC canônico. Aqui atualizamos só a UI.
     setDriver((d) => (d ? { ...d, photo_url: result.signedUrl } : d));
-    try {
-      await supabase
-        .from("users")
-        .update({ avatar_url: result.path })
-        .eq("auth_user_id", userId);
-      await supabase.from("drivers").update({ photo_url: result.path }).eq("user_id", userId);
-      await supabase.auth.updateUser({ data: { avatar_path: result.path } });
-      toast.success("Foto atualizada!");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Falha ao salvar a foto.");
-    }
+    toast.success("Foto atualizada!");
   }
 
   return (
@@ -238,9 +234,9 @@ function DriverProfilePage() {
               {/* Status pills */}
               <div className="flex flex-wrap items-center justify-center gap-1.5">
                 <StatusPill
-                  status={approvalApproved ? "accepted" : "searching"}
-                  label={approvalApproved ? "Conta ativa" : "Conta pendente"}
-                  pulse={!approvalApproved}
+                  status={approvalPillStatus}
+                  label={approvalLabel}
+                  pulse={!approvalApproved && !approvalSuspended && !approvalBlocked}
                 />
                 <StatusPill
                   status={subActive ? "accepted" : "cancelled"}
@@ -346,8 +342,8 @@ function DriverProfilePage() {
                 to="/motorista/documentos"
                 trailing={
                   <StatusPill
-                    status={approvalApproved ? "accepted" : "searching"}
-                    label={approvalApproved ? "Aprovados" : "Pendentes"}
+                    status={documentsApproved ? "accepted" : "searching"}
+                    label={documentsApproved ? "Aprovados" : "Pendentes"}
                     pulse={false}
                   />
                 }
@@ -417,7 +413,7 @@ function DriverProfilePage() {
   );
 }
 
-/* ---------- subcomponents (DS-only) ---------- */
+/* ---------- subcomponents (DS-only) ---------- */}
 
 function InfoRow({
   icon,
