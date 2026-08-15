@@ -142,6 +142,13 @@ html[data-app-role="motorista"] a {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Alvos mínimos de toque nos controles flutuantes do mapa. */
+html[data-app-role="motorista"] button[aria-label="Abrir menu"],
+html[data-app-role="motorista"] button[aria-label="Sair"] {
+  min-width: 44px;
+  min-height: 44px;
+}
+
 html[data-app-role="motorista"] button:active,
 html[data-app-role="motorista"] a:active {
   transition-duration: 80ms;
