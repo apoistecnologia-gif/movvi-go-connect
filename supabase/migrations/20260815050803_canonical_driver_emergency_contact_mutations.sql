@@ -1,0 +1,12 @@
+-- Production reconciliation marker.
+-- The canonical DDL for emergency-contact mutations is defined in
+-- 20260815044826_canonical_driver_emergency_contact_mutations.sql.
+--
+-- Production was found with that GitHub migration missing from the Supabase
+-- migration ledger while only driver_delete_emergency_contact() was live.
+-- The canonical migration was therefore applied to production during the
+-- audit, which Supabase recorded as version 20260815050803.
+--
+-- This file intentionally contains no duplicate DDL so fresh environments
+-- execute the canonical definitions exactly once while keeping migration
+-- history aligned with production.
