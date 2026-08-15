@@ -54,7 +54,13 @@ export function RideReceiptDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[92vh] overflow-y-auto bg-background sm:max-w-md">
+      <DialogContent
+        className="overflow-y-auto bg-background sm:max-w-md"
+        style={{
+          maxHeight: "calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 24px)",
+          paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom))",
+        }}
+      >
         <DialogHeader className="sr-only">
           <DialogTitle>Recibo da corrida</DialogTitle>
           <DialogDescription>Detalhes da corrida APOIS</DialogDescription>
@@ -95,11 +101,11 @@ export function RideReceiptDialog({
         <div className="space-y-2 rounded-2xl border border-border bg-card p-4 text-sm">
           <p className="flex items-start gap-2">
             <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-            <span>{receipt.origin || "Não informado"}</span>
+            <span className="min-w-0 break-words">{receipt.origin || "Não informado"}</span>
           </p>
           <p className="flex items-start gap-2">
             <Navigation2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-            <span>{receipt.destination || "Não informado"}</span>
+            <span className="min-w-0 break-words">{receipt.destination || "Não informado"}</span>
           </p>
         </div>
 
@@ -131,7 +137,7 @@ export function RideReceiptDialog({
 
         {/* Value */}
         {receipt.value != null && (
-          <div className="mt-3 flex items-center justify-between rounded-2xl border border-primary/40 bg-primary/10 p-4">
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-primary/40 bg-primary/10 p-4">
             <span className="text-sm font-medium">Valor</span>
             <span className="text-xl font-bold text-primary">{formatBRL(receipt.value)}</span>
           </div>
@@ -143,7 +149,7 @@ export function RideReceiptDialog({
         </p>
 
         {/* Actions */}
-        <div className="mt-4 grid grid-cols-2 gap-2">
+        <div className="mt-4 grid grid-cols-1 gap-2 min-[360px]:grid-cols-2">
           <DSButton variant="outline" onClick={handleCopy}>
             <Copy className="mr-2 h-4 w-4" /> Copiar
           </DSButton>
@@ -166,12 +172,12 @@ function Row({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3">
-      <span className="flex items-center gap-1.5 text-muted-foreground">
+    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+      <span className="flex shrink-0 items-center gap-1.5 text-muted-foreground">
         {icon}
         {label}
       </span>
-      <span className="text-right font-medium">{children}</span>
+      <span className="min-w-0 break-words text-right font-medium">{children}</span>
     </div>
   );
 }
