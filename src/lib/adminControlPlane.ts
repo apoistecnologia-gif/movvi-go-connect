@@ -140,19 +140,6 @@ export async function setAdminDriverSuspension(
   });
 }
 
-export async function approveAdminDriverWithdrawal(withdrawalId: string) {
-  return rpc<Record<string, unknown>>("admin_approve_driver_withdrawal", {
-    _withdrawal_id: withdrawalId,
-  });
-}
-
-export async function rejectAdminDriverWithdrawal(withdrawalId: string, reason: string) {
-  return rpc<Record<string, unknown>>("admin_reject_driver_withdrawal", {
-    _withdrawal_id: withdrawalId,
-    _reason: reason,
-  });
-}
-
 export async function setAdminPassengerStatus(
   passengerId: string,
   action: "suspend" | "unsuspend" | "block" | "unblock" | "soft_delete",
