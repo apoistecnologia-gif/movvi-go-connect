@@ -67,13 +67,14 @@ jobs:
         run: |
           set -euo pipefail
           source_file='src/lib/rideLifecycle.ts'
-          if grep -n -E '\.from\(["'"']rides["'"']\).*(insert|update|delete|upsert)|\.from\(["'"']rides["'"']\)' "$source_file"; then
+          if grep -n -F '.from("rides")' "$source_file" || grep -n -F ".from('rides')" "$source_file"; then
             echo 'A fachada legada voltou a acessar public.rides diretamente.' >&2
             exit 1
           fi
           grep -F 'driver_accept_ride' "$source_file"
           grep -F 'passenger-ride-request' "$source_file"
           grep -F 'cancel-ride' "$source_file"
+          grep -F '_rating: data.stars' "$source_file"
 
       - name: Guard — driver offer push must minimize lock-screen data
         run: |
