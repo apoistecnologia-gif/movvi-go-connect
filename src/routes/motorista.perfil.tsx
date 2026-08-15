@@ -413,7 +413,7 @@ function DriverProfilePage() {
   );
 }
 
-/* ---------- subcomponents (DS-only) ---------- */}
+/* ---------- subcomponents (DS-only) ---------- */
 
 function InfoRow({
   icon,
