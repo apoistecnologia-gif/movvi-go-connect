@@ -22,3 +22,6 @@ verify_jwt = true
 
 [functions.driver-reject-redispatch]
 verify_jwt = true
+
+[functions.driver-cancel-redispatch]
+verify_jwt = true
