@@ -110,6 +110,16 @@ html[data-app-role="motorista"] .driver-nav-active .driver-nav-icon {
   transform: translateY(-1px);
 }
 
+/* O BottomNav compartilhado ainda aparece no formulário legado do perfil.
+ * Remove os glows verdes hardcoded quando o bundle ativo é o Motorista. */
+html[data-app-role="motorista"] [class*="rgba(141,217,43,0.7)"] {
+  box-shadow: 0 0 8px rgba(246, 190, 28, 0.7) !important;
+}
+
+html[data-app-role="motorista"] [class*="rgba(141,217,43,0.55)"] {
+  filter: drop-shadow(0 0 8px rgba(246, 190, 28, 0.55)) !important;
+}
+
 /* Menu lateral: destaque real segue a rota ativa, não a posição do item. */
 html[data-app-role="motorista"] .driver-menu-active .driver-menu-icon {
   color: #090a0b;
@@ -163,14 +173,20 @@ html[data-app-role="motorista"] a.min-h-9,
 html[data-app-role="motorista"] a.min-h-10,
 html[data-app-role="motorista"] a.h-8,
 html[data-app-role="motorista"] a.h-9,
-html[data-app-role="motorista"] a.h-10 {
+html[data-app-role="motorista"] a.h-10,
+html[data-app-role="motorista"] a.inline-flex {
   min-height: 44px;
 }
 
-/* Selects antigos das configurações usavam h-10 (40 px). */
-html[data-app-role="motorista"] select.h-8,
-html[data-app-role="motorista"] select.h-9,
-html[data-app-role="motorista"] select.h-10 {
+/* Campos de formulário legados do perfil/configurações ainda usam h-10. */
+html[data-app-role="motorista"] input[type="text"],
+html[data-app-role="motorista"] input[type="email"],
+html[data-app-role="motorista"] input[type="tel"],
+html[data-app-role="motorista"] input[type="password"],
+html[data-app-role="motorista"] input[type="date"],
+html[data-app-role="motorista"] input[type="number"],
+html[data-app-role="motorista"] input[type="search"],
+html[data-app-role="motorista"] select {
   min-height: 44px;
 }
 
@@ -188,8 +204,9 @@ html[data-app-role="motorista"] main.pb-28 {
   padding-bottom: calc(7rem + env(safe-area-inset-bottom));
 }
 
-/* Perfil antigo usa max(8rem, safe-area), que não soma a barra inferior ao inset. */
-html[data-app-role="motorista"] main[style*="max(8rem"] {
+/* Perfil e shells antigos usam max(..., safe-area), que não soma barra + inset. */
+html[data-app-role="motorista"] main[style*="max(8rem"],
+html[data-app-role="motorista"] main[style*="max(7rem"] {
   padding-bottom: calc(7rem + env(safe-area-inset-bottom)) !important;
 }
 
@@ -216,6 +233,12 @@ html[data-app-role="motorista"] button[aria-label="Abrir menu"],
 html[data-app-role="motorista"] button[aria-label="Sair"] {
   min-width: 44px;
   min-height: 44px;
+}
+
+html[data-app-role="motorista"] button:focus-visible,
+html[data-app-role="motorista"] a:focus-visible {
+  outline: 2px solid rgba(246, 190, 28, 0.9);
+  outline-offset: 2px;
 }
 
 html[data-app-role="motorista"] button:active,
