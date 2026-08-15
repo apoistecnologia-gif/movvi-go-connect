@@ -67,16 +67,18 @@ export function NotificationPreferencesPage({ audience }: { audience: "passenger
     : RIDE_ROWS.filter((r) => r.key !== "ride_requests");
 
   return (
-    <div className="container mx-auto max-w-xl px-4 py-6 pb-24">
-      <header className="mb-5 flex items-center gap-3">
-        <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/15 text-primary">
-          <Bell className="h-5 w-5" />
-        </div>
-        <div>
-          <h1 className="font-display text-xl font-bold">Preferências de notificação</h1>
-          <p className="text-xs text-muted-foreground">Escolha o que deseja receber e como.</p>
-        </div>
-      </header>
+    <div className={audience === "driver" ? "mx-auto max-w-xl px-4 py-5 pb-4" : "container mx-auto max-w-xl px-4 py-6 pb-24"}>
+      {audience !== "driver" ? (
+        <header className="mb-5 flex items-center gap-3">
+          <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/15 text-primary">
+            <Bell className="h-5 w-5" />
+          </div>
+          <div>
+            <h1 className="font-display text-xl font-bold">Preferências de notificação</h1>
+            <p className="text-xs text-muted-foreground">Escolha o que deseja receber e como.</p>
+          </div>
+        </header>
+      ) : null}
 
       <div className="mb-4 rounded-2xl border border-border bg-card/60 p-4">
         <div className="flex items-start gap-3">
@@ -85,7 +87,7 @@ export function NotificationPreferencesPage({ audience }: { audience: "passenger
           ) : (
             <BellOff className="h-5 w-5 text-muted-foreground" />
           )}
-          <div className="flex-1">
+          <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold">
               {perm.permission === "granted" && "Notificações ativadas"}
               {perm.permission === "denied" && "Notificações bloqueadas"}
@@ -125,7 +127,7 @@ export function NotificationPreferencesPage({ audience }: { audience: "passenger
             ))}
           </section>
 
-          <div className="mt-6 flex items-center justify-end gap-2">
+          <div className="mt-6 flex flex-wrap items-center justify-end gap-2">
             {saved && <span className="text-xs text-primary">Preferências salvas</span>}
             <DSButton onClick={onSave} disabled={saving}>
               {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
@@ -141,7 +143,7 @@ export function NotificationPreferencesPage({ audience }: { audience: "passenger
 function PrefRow({ row, value, onToggle }: { row: Row; value: boolean; onToggle: () => void }) {
   return (
     <label className="flex cursor-pointer items-start justify-between gap-3 rounded-2xl border border-border bg-card/60 p-4 transition hover:bg-card">
-      <div className="flex-1">
+      <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold">{row.title}</p>
         <p className="mt-0.5 text-xs text-muted-foreground">{row.description}</p>
       </div>
