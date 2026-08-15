@@ -16,3 +16,9 @@ verify_jwt = true
 
 [functions.request-driver-payout]
 verify_jwt = true
+
+[functions.dispatch-ride]
+verify_jwt = true
+
+[functions.driver-reject-redispatch]
+verify_jwt = true
