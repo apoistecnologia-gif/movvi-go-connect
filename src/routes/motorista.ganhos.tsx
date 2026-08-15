@@ -140,7 +140,7 @@ function DriverEarningsPage() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-xl space-y-5 px-4 py-5 pb-28">
+      <main className="mx-auto w-full max-w-xl space-y-5 px-4 py-5 pb-[calc(env(safe-area-inset-bottom)+112px)]">
         {error ? <section className="rounded-2xl border border-red-500/20 bg-red-500/8 p-4 text-xs font-bold text-red-300">{error}</section> : null}
 
         {loading && !dashboard ? (
@@ -165,8 +165,8 @@ function DriverEarningsPage() {
 
             <section className="space-y-3">
               <div><p className="text-[9px] font-black uppercase tracking-[0.18em] text-[#F6BE1C]">Período</p><h2 className="mt-1 text-lg font-black">Ganhos liquidados</h2></div>
-              <div className="flex flex-wrap gap-2">{(["today", "week", "month", "custom"] as Filter[]).map((item) => <button key={item} type="button" onClick={() => setFilter(item)} className={`rounded-full px-3 py-2 text-[10px] font-black ${filter === item ? "bg-[#F6BE1C] text-black" : "border border-white/8 bg-[#111315] text-zinc-400"}`}>{item === "today" ? "Hoje" : item === "week" ? "7 dias" : item === "month" ? "Mês" : "Personalizado"}</button>)}</div>
-              {filter === "custom" ? <div className="grid grid-cols-2 gap-2"><input type="date" value={customFrom} onChange={(event) => setCustomFrom(event.target.value)} className="rounded-xl border border-white/8 bg-[#111315] p-3 text-xs [color-scheme:dark]" /><input type="date" value={customTo} onChange={(event) => setCustomTo(event.target.value)} className="rounded-xl border border-white/8 bg-[#111315] p-3 text-xs [color-scheme:dark]" /></div> : null}
+              <div className="flex flex-wrap gap-2">{(["today", "week", "month", "custom"] as Filter[]).map((item) => <button key={item} type="button" onClick={() => setFilter(item)} className={`min-h-11 rounded-full px-4 py-2 text-[10px] font-black ${filter === item ? "bg-[#F6BE1C] text-black" : "border border-white/8 bg-[#111315] text-zinc-400"}`}>{item === "today" ? "Hoje" : item === "week" ? "7 dias" : item === "month" ? "Mês" : "Personalizado"}</button>)}</div>
+              {filter === "custom" ? <div className="grid grid-cols-2 gap-2"><input type="date" value={customFrom} onChange={(event) => setCustomFrom(event.target.value)} className="min-h-11 rounded-xl border border-white/8 bg-[#111315] p-3 text-xs [color-scheme:dark]" /><input type="date" value={customTo} onChange={(event) => setCustomTo(event.target.value)} className="min-h-11 rounded-xl border border-white/8 bg-[#111315] p-3 text-xs [color-scheme:dark]" /></div> : null}
               <div className="flex items-end justify-between rounded-2xl border border-white/6 bg-[#0D0F11] p-4"><div><p className="text-[9px] font-black uppercase tracking-[0.15em] text-zinc-600">Total do período</p><p className="mt-1 text-2xl font-black">{cents(dashboard.period.settledEarningsCents)}</p></div><p className="text-xs font-bold text-zinc-500">{dashboard.period.settledRides} corridas</p></div>
             </section>
 
