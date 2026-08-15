@@ -14,6 +14,11 @@ type RedispatchPayload = {
   redispatch?: string;
 };
 
+type RedispatchFunctionName =
+  | "driver-reject-redispatch"
+  | "driver-cancel-redispatch"
+  | "driver-finish-redispatch";
+
 function readableDriverRpcError(message: string) {
   const raw = String(message ?? "");
   if (/ride_offer_unavailable/i.test(raw)) return "Esta corrida não está mais disponível.";
@@ -38,7 +43,7 @@ async function callRpc<T = unknown>(name: string, args: Record<string, unknown>)
 }
 
 async function callRedispatchFunction(
-  functionName: "driver-reject-redispatch" | "driver-cancel-redispatch",
+  functionName: RedispatchFunctionName,
   body: Record<string, unknown>,
 ): Promise<RedispatchPayload> {
   const { data, error } = await supabase.functions.invoke(functionName, { body });
@@ -48,7 +53,7 @@ async function callRedispatchFunction(
   if (!payload.ok) throw new Error(readableDriverRpcError(payload.error ?? `${functionName}_failed`));
 
   if (payload.redispatch === "deferred") {
-    console.warn(`[APOIS MOTORISTA] ${functionName}: redispatch adiado; watchdog do servidor continuará a busca`);
+    console.warn(`[APOIS MOTORISTA] ${functionName}: redispatch adiado; o servidor continuará tentando`);
   }
   return payload;
 }
@@ -102,9 +107,11 @@ export async function iniciarCorridaMobile({ data }: { data: { rideId: string; s
 }
 
 export async function finalizarCorridaMobile({ data }: { data: { rideId: string; final_price?: number } }) {
-  const ride = await callRpc("driver_finish_ride", { _ride_id: data.rideId });
+  const payload = await callRedispatchFunction("driver-finish-redispatch", {
+    ride_id: data.rideId,
+  });
   notifyPassenger(data.rideId, "ride.completed");
-  return ride;
+  return payload.ride ?? payload;
 }
 
 export async function cancelarPeloMotoristaMobile({ data }: { data: { rideId: string; motivo?: string } }) {
