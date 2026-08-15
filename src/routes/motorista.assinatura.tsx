@@ -172,7 +172,7 @@ function DriverSubscriptionPage() {
               ? "O pagamento só é iniciado quando você confirmar a geração do Pix abaixo."
               : "Seu cadastro precisa ser aprovado antes de liberar a cobrança."}
           </p>
-          <div className="relative mt-4 inline-flex items-center gap-2 rounded-full border border-white/8 bg-black/35 px-3 py-1.5 text-[10px] font-black text-zinc-300">
+          <div className="relative mt-4 inline-flex max-w-full flex-wrap items-center justify-center gap-2 rounded-full border border-white/8 bg-black/35 px-3 py-1.5 text-[10px] font-black text-zinc-300">
             <span className={`h-2 w-2 rounded-full ${operational ? "bg-emerald-400" : "bg-zinc-600"}`} />
             {paidActive ? "Mensalidade ativa" : subscription === "teste" ? "Homologação ativa" : subscription === "pending" ? "Pagamento pendente" : "Mensalidade inativa"}
           </div>
@@ -250,9 +250,9 @@ function DriverSubscriptionPage() {
               {checkoutLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <QrCode className="mr-2 h-4 w-4" />}
               {subscription === "pending" ? "Consultar / gerar Pix" : "Gerar Pix da mensalidade"}
             </DSButton>
-            <div className="mt-3 flex items-center justify-center gap-2 text-[10px] font-semibold text-zinc-600">
-              <ShieldCheck className="h-3.5 w-3.5" />
-              Nenhuma cobrança automática ao abrir esta tela
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-2 text-center text-[10px] font-semibold text-zinc-600">
+              <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
+              <span>Nenhuma cobrança automática ao abrir esta tela</span>
             </div>
           </DSCard>
         )}
@@ -263,11 +263,11 @@ function DriverSubscriptionPage() {
             <h2 className="mt-1 text-lg font-black text-white">Pague a mensalidade</h2>
             <p className="mt-2 text-xs leading-5 text-zinc-500">A confirmação do pagamento é automática pelo webhook do Asaas.</p>
             {checkout.pixQrCodeBase64 ? (
-              <div className="mx-auto mt-4 w-fit rounded-2xl bg-white p-3">
+              <div className="mx-auto mt-4 w-fit max-w-full rounded-2xl bg-white p-3">
                 <img
                   src={`data:image/png;base64,${checkout.pixQrCodeBase64}`}
                   alt="QR Code Pix da mensalidade APOIS"
-                  className="h-48 w-48"
+                  className="h-auto w-48 max-w-full"
                 />
               </div>
             ) : null}
@@ -283,10 +283,10 @@ function DriverSubscriptionPage() {
           </DSCard>
         ) : null}
 
-        <DSCard className="flex items-center justify-between gap-3 border-white/8 bg-[#0D0F11] p-4">
-          <div className="flex min-w-0 items-center gap-3">
+        <DSCard className="flex flex-wrap items-center justify-between gap-3 border-white/8 bg-[#0D0F11] p-4">
+          <div className="flex min-w-0 flex-1 items-center gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/5 text-[#F6BE1C]"><LifeBuoy className="h-5 w-5" /></div>
-            <div className="min-w-0"><p className="text-xs font-black text-white">Precisa de ajuda?</p><p className="mt-0.5 truncate text-[10px] text-zinc-500">Fale com nossa equipe sobre sua conta.</p></div>
+            <div className="min-w-0"><p className="text-xs font-black text-white">Precisa de ajuda?</p><p className="mt-0.5 break-words text-[10px] text-zinc-500">Fale com nossa equipe sobre sua conta.</p></div>
           </div>
           <DSButton variant="outline" size="sm" asChild><Link to="/motorista/suporte">Suporte</Link></DSButton>
         </DSCard>
