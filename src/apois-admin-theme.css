@@ -59,11 +59,22 @@
   min-height: 44px;
 }
 
-/* Itens de selects Radix precisam de área de toque independente do trigger. */
-.apois-admin-theme [role="option"] {
+/* Itens de selects e abas Radix precisam de área de toque independente. */
+.apois-admin-theme [role="option"],
+.apois-admin-theme [role="menuitem"] {
   min-height: 44px;
   display: flex;
   align-items: center;
+}
+
+.apois-admin-theme [role="tablist"] {
+  height: auto;
+  min-height: 44px;
+  flex-wrap: wrap;
+}
+
+.apois-admin-theme [role="tab"] {
+  min-height: 44px;
 }
 
 /* Links de documento/recursos externos não podem ser alvos do tamanho da fonte. */
@@ -150,6 +161,18 @@
   .apois-admin-theme .admin-page-main input.w-auto {
     width: 100%;
     max-width: 100%;
+  }
+
+  /* Mapas operacionais não devem consumir quase toda a altura em landscape ou
+   * telas Android compactas; permanecem grandes em desktop. */
+  .apois-admin-theme .admin-page-main [class~="h-[420px]"] {
+    height: min(420px, 52dvh);
+    min-height: 260px;
+  }
+
+  .apois-admin-theme .admin-page-main [class~="h-[320px]"] {
+    height: min(320px, 48dvh);
+    min-height: 240px;
   }
 }
 
