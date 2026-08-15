@@ -1,9 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { CheckCircle2, RefreshCw, Search, Wallet, WalletCards, XCircle } from "lucide-react";
+import { RefreshCw, Search, Wallet, WalletCards } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
-import { approveAdminDriverWithdrawal, rejectAdminDriverWithdrawal } from "@/lib/adminControlPlane";
 import {
   DSBadge,
   DSButton,
@@ -61,7 +60,7 @@ function withdrawalVariant(status: string): "success" | "warning" | "danger" | "
 function withdrawalLabel(status: string) {
   const labels: Record<string, string> = {
     pending: "Pendente",
-    approved: "Aprovado",
+    approved: "Aprovado (legado)",
     processing: "Processando",
     paid: "Pago",
     failed: "Falhou",
@@ -71,24 +70,12 @@ function withdrawalLabel(status: string) {
   return labels[status] ?? status;
 }
 
-function payoutError(error: unknown) {
-  const message = error instanceof Error ? error.message : String(error);
-  if (/payout_provider_not_configured/i.test(message)) {
-    return "Configure o provedor de saque antes de aprovar transferências.";
-  }
-  if (/invalid_withdrawal_status/i.test(message)) {
-    return "Esse saque já mudou de estado. Atualize a tela e confira novamente.";
-  }
-  return message || "Não foi possível atualizar o saque.";
-}
-
 function AdminDriverFinancePage() {
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [wallets, setWallets] = useState<WalletRow[]>([]);
   const [withdrawals, setWithdrawals] = useState<WithdrawalRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
-  const [busyWithdrawalId, setBusyWithdrawalId] = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
@@ -147,36 +134,6 @@ function AdminDriverFinancePage() {
     };
   }, []);
 
-  async function approveWithdrawal(row: WithdrawalRow) {
-    setBusyWithdrawalId(row.id);
-    try {
-      await approveAdminDriverWithdrawal(row.id);
-      toast.success(
-        "Saque aprovado. A transferência só seguirá pelo worker do provedor configurado.",
-      );
-      await load();
-    } catch (error) {
-      toast.error(payoutError(error));
-    } finally {
-      setBusyWithdrawalId(null);
-    }
-  }
-
-  async function rejectWithdrawal(row: WithdrawalRow) {
-    const reason = window.prompt("Informe o motivo da reprovação do saque:")?.trim();
-    if (!reason) return;
-    setBusyWithdrawalId(row.id);
-    try {
-      await rejectAdminDriverWithdrawal(row.id, reason);
-      toast.success("Saque reprovado e valor reservado devolvido à carteira.");
-      await load();
-    } catch (error) {
-      toast.error(payoutError(error));
-    } finally {
-      setBusyWithdrawalId(null);
-    }
-  }
-
   const driverById = useMemo(
     () => new Map(drivers.map((driver) => [driver.id, driver])),
     [drivers],
@@ -210,7 +167,7 @@ function AdminDriverFinancePage() {
   return (
     <AdminLayout
       title="Financeiro motoristas"
-      description="Carteira, aprovação de saques e acompanhamento do payout pelos ledgers canônicos"
+      description="Carteiras e acompanhamento de saques pelos ledgers canônicos"
       actions={
         <DSButton
           variant="outline"
@@ -226,9 +183,10 @@ function AdminDriverFinancePage() {
       <DSCard className="mb-4 border-primary/20 bg-primary/5">
         <DSCardContent className="p-4 text-sm text-muted-foreground">
           Fonte de verdade: <strong>driver_wallets</strong>,{" "}
-          <strong>driver_wallet_transactions</strong> e <strong>driver_withdrawals</strong>. Aprovar
-          um saque não envia dinheiro pelo navegador: somente o serviço autenticado do provedor pode
-          mover o estado para processamento e confirmar pagamento.
+          <strong>driver_wallet_transactions</strong> e <strong>driver_withdrawals</strong>. Esta
+          tela é de acompanhamento: o navegador não aprova, reprova nem confirma transferências.
+          Mudanças financeiras de saque pertencem ao fluxo autenticado do backend e ao provedor
+          homologado.
         </DSCardContent>
       </DSCard>
 
@@ -304,7 +262,6 @@ function AdminDriverFinancePage() {
           <div className="space-y-2">
             {withdrawals.map((row) => {
               const driver = driverById.get(row.driver_id);
-              const busy = busyWithdrawalId === row.id;
               return (
                 <DSCard key={row.id}>
                   <DSCardContent className="flex flex-wrap items-center gap-2 p-3 text-xs">
@@ -320,29 +277,19 @@ function AdminDriverFinancePage() {
                       {formatDate(row.processed_at ?? row.requested_at)}
                     </span>
                     {row.status === "pending" && (
-                      <div className="flex w-full flex-wrap gap-2 border-t pt-2">
-                        <DSButton
-                          size="sm"
-                          className="gap-1"
-                          disabled={busy}
-                          onClick={() => void approveWithdrawal(row)}
-                        >
-                          <CheckCircle2 className="h-4 w-4" /> Aprovar saque
-                        </DSButton>
-                        <DSButton
-                          variant="outline"
-                          size="sm"
-                          className="gap-1"
-                          disabled={busy}
-                          onClick={() => void rejectWithdrawal(row)}
-                        >
-                          <XCircle className="h-4 w-4" /> Reprovar
-                        </DSButton>
-                      </div>
+                      <p className="w-full border-t pt-2 text-muted-foreground">
+                        Solicitação registrada. O backend decidirá o próximo estado conforme a
+                        homologação e o provedor configurado.
+                      </p>
                     )}
                     {row.status === "approved" && (
                       <p className="w-full text-muted-foreground">
-                        Aprovado. Aguardando o serviço seguro do provedor iniciar a transferência.
+                        Estado legado de aprovação. Nenhuma ação manual é oferecida nesta tela.
+                      </p>
+                    )}
+                    {row.status === "processing" && (
+                      <p className="w-full text-muted-foreground">
+                        Transferência em processamento pelo fluxo financeiro seguro.
                       </p>
                     )}
                     {row.provider_transfer_id && (
