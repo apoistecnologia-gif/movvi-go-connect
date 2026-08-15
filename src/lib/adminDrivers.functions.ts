@@ -1,12 +1,7 @@
-// Admin-only driver mutations — moved off the browser so the write only
-// happens after the server verifies the caller is authenticated AND holds the
-// `admin` role. Covers approval status transitions (aprovado / reprovado /
-// bloqueado / em_analise = "request correction"), suspension toggle, and
-// admin note create/delete.
-//
-// NOTE: This module intentionally does NOT touch rideLifecycle.ts, dispatch,
-// GPS, realtime, PIN, Asaas, or subscription sync. Approval status is a
-// driver-profile field only; the ride flow is untouched.
+// APOIS — mutações administrativas de motoristas.
+// O painel usa a sessão real do administrador no Supabase oficial.
+// Bloqueio/suspensão passam pela Edge Function canônica, que aplica a mutação
+// administrativa no banco e redistribui automaticamente corridas pré-embarque.
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -21,54 +16,43 @@ const reasonSchema = z.string().trim().max(500).optional().nullable();
 const noteSchema = z.string().trim().min(1).max(2000);
 
 type AuthedCtx = {
-  supabase: {
-    from: (t: string) => {
-      update: (patch: Record<string, unknown>) => { eq: (col: string, val: string) => Promise<{ error: { message: string } | null }> };
-      insert: (row: Record<string, unknown>) => {
-        select: (cols: string) => { single: () => Promise<{ data: unknown; error: { message: string } | null }> };
-      };
-      delete: () => { eq: (col: string, val: string) => Promise<{ error: { message: string } | null }> };
-    };
-    rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>;
-  };
+  supabase: any;
   userId: string;
 };
 
+type DriverOperationalResult = {
+  ok?: boolean;
+  error?: string;
+  driver?: Record<string, unknown>;
+  released_count?: number;
+  redispatch?: "triggered" | "deferred" | string;
+};
+
 async function assertAdmin(ctx: AuthedCtx) {
-  const { data, error } = await ctx.supabase.rpc("has_role", {
-    _user_id: ctx.userId,
-    _role: "admin",
-  });
+  const { data, error } = await ctx.supabase.rpc("admin_is_authorized");
   if (error) throw new Error("role_check_failed");
   if (!data) throw new Error("forbidden");
 }
 
-type ApprovalPatch = {
-  approval_status: ApprovalStatus;
-  motivo_reprovacao: string | null;
-  approved_at: string | null;
-  blocked_at: string | null;
-  documents_status?: "approved" | "rejected";
-};
+async function applyDriverOperationalStatus(
+  ctx: AuthedCtx,
+  body: Record<string, unknown>,
+): Promise<DriverOperationalResult> {
+  const { data, error } = await ctx.supabase.functions.invoke("admin-driver-operational-status", {
+    body,
+  });
+  if (error) throw new Error(error.message || "admin_driver_status_failed");
 
-function buildApprovalPatch(status: ApprovalStatus, reason: string | null | undefined): ApprovalPatch {
-  const patch: ApprovalPatch = {
-    approval_status: status,
-    motivo_reprovacao: status === "reprovado" ? (reason ? reason.trim() : null) : null,
-    approved_at: status === "aprovado" ? new Date().toISOString() : null,
-    blocked_at: status === "bloqueado" ? new Date().toISOString() : null,
-  };
-  // Ao aprovar/reprovar, sincronizamos documents_status — caso contrário a UI
-  // do motorista segue mostrando "em análise / faltam documentos" mesmo depois
-  // que o admin já liberou (ou recusou) a conta.
-  if (status === "aprovado") patch.documents_status = "approved";
-  if (status === "reprovado") patch.documents_status = "rejected";
-  return patch;
+  const result = (data ?? {}) as DriverOperationalResult;
+  if (!result.ok) throw new Error(result.error || "admin_driver_status_failed");
+  return result;
 }
 
 /**
- * Approve / reject / block / request-correction (em_analise) a driver.
- * All four transitions share the same shape; the status enum is validated.
+ * Aprova, reprova, bloqueia ou devolve o cadastro para análise.
+ * A Edge Function chama a RPC SECURITY DEFINER oficial e, quando o motorista
+ * fica inelegível, libera apenas corridas pré-embarque e dispara redispatch.
+ * Corridas já em viagem nunca são liberadas por este fluxo.
  */
 export const updateDriverApprovalStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -76,11 +60,42 @@ export const updateDriverApprovalStatus = createServerFn({ method: "POST" })
     z.object({ id: uuid, status: statusSchema, reason: reasonSchema }).parse(input),
   )
   .handler(async ({ data, context }) => {
-    await assertAdmin(context as unknown as AuthedCtx);
-    const patch = buildApprovalPatch(data.status, data.reason ?? null);
-    const { error } = await context.supabase.from("drivers").update(patch).eq("id", data.id);
-    if (error) throw new Error(error.message);
-    return { ok: true as const, patch };
+    const ctx = context as unknown as AuthedCtx;
+    await assertAdmin(ctx);
+
+    const result = await applyDriverOperationalStatus(ctx, {
+      driver_id: data.id,
+      action: "approval",
+      status: data.status,
+      reason: data.reason ?? null,
+    });
+
+    const driver = result.driver ?? {};
+    const patch = {
+      approval_status: String(driver.approval_status ?? data.status),
+      motivo_reprovacao:
+        data.status === "reprovado"
+          ? String(driver.motivo_reprovacao ?? data.reason?.trim() ?? "") || null
+          : null,
+      documents_status:
+        driver.documents_status ??
+        (data.status === "aprovado"
+          ? "approved"
+          : data.status === "reprovado"
+            ? "rejected"
+            : undefined),
+      approved_at: driver.approved_at ?? (data.status === "aprovado" ? new Date().toISOString() : null),
+      blocked_at: driver.blocked_at ?? (data.status === "bloqueado" ? new Date().toISOString() : null),
+      is_online: typeof driver.is_online === "boolean" ? driver.is_online : data.status === "aprovado" ? undefined : false,
+    };
+
+    return {
+      ok: true as const,
+      patch,
+      driver,
+      releasedCount: Number(result.released_count ?? 0),
+      redispatch: result.redispatch ?? "triggered",
+    };
   });
 
 export const setDriverSuspension = createServerFn({ method: "POST" })
@@ -89,11 +104,30 @@ export const setDriverSuspension = createServerFn({ method: "POST" })
     z.object({ id: uuid, suspend: z.boolean() }).parse(input),
   )
   .handler(async ({ data, context }) => {
-    await assertAdmin(context as unknown as AuthedCtx);
-    const patch = { suspended_at: data.suspend ? new Date().toISOString() : null };
-    const { error } = await context.supabase.from("drivers").update(patch).eq("id", data.id);
-    if (error) throw new Error(error.message);
-    return { ok: true as const, patch };
+    const ctx = context as unknown as AuthedCtx;
+    await assertAdmin(ctx);
+
+    const result = await applyDriverOperationalStatus(ctx, {
+      driver_id: data.id,
+      action: "suspension",
+      suspended: data.suspend,
+    });
+
+    const driver = result.driver ?? {};
+    const patch = {
+      suspended_at:
+        driver.suspended_at ?? (data.suspend ? new Date().toISOString() : null),
+      approval_status: String(driver.approval_status ?? (data.suspend ? "suspenso" : "aprovado")),
+      is_online: typeof driver.is_online === "boolean" ? driver.is_online : false,
+    };
+
+    return {
+      ok: true as const,
+      patch,
+      driver,
+      releasedCount: Number(result.released_count ?? 0),
+      redispatch: result.redispatch ?? "triggered",
+    };
   });
 
 export const addDriverAdminNote = createServerFn({ method: "POST" })
@@ -102,10 +136,11 @@ export const addDriverAdminNote = createServerFn({ method: "POST" })
     z.object({ driverId: uuid, note: noteSchema }).parse(input),
   )
   .handler(async ({ data, context }) => {
-    await assertAdmin(context as unknown as AuthedCtx);
-    const { data: row, error } = await context.supabase
+    const ctx = context as unknown as AuthedCtx;
+    await assertAdmin(ctx);
+    const { data: row, error } = await ctx.supabase
       .from("admin_driver_notes")
-      .insert({ driver_id: data.driverId, admin_id: context.userId, note: data.note })
+      .insert({ driver_id: data.driverId, admin_id: ctx.userId, note: data.note })
       .select("*")
       .single();
     if (error) throw new Error(error.message);
@@ -122,11 +157,9 @@ export const deleteDriverAdminNote = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { id: string }) => z.object({ id: uuid }).parse(input))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context as unknown as AuthedCtx);
-    const { error } = await context.supabase
-      .from("admin_driver_notes")
-      .delete()
-      .eq("id", data.id);
+    const ctx = context as unknown as AuthedCtx;
+    await assertAdmin(ctx);
+    const { error } = await ctx.supabase.from("admin_driver_notes").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true as const };
   });

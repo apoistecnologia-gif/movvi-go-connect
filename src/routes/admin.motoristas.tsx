@@ -30,7 +30,6 @@ import {
   setDriverSuspension,
   updateDriverApprovalStatus,
 } from "@/lib/adminDrivers.functions";
-// Aprovação chama a Edge Function Mercado Pago via fetch autenticado.
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Caption, DSBadge, DSButton as Button, DSCard, DSCardContent, DSInput, DSLabel, DSTextarea, EmptyState, Loading, StatusPill } from "@/design-system";
 import {
@@ -55,7 +54,7 @@ import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 
 export const Route = createFileRoute("/admin/motoristas")({
-  head: () => ({ meta: [{ title: "Motoristas — Admin MOVVI" }] }),
+  head: () => ({ meta: [{ title: "Motoristas — Admin APOIS" }] }),
   component: AdminMotoristas,
 });
 
@@ -89,14 +88,6 @@ type AdminNote = {
   created_at: string;
 };
 
-type ApproveMercadoPagoResult = {
-  ok: boolean;
-  alreadyExists: boolean;
-  preapprovalId: string;
-  initPoint: string | null;
-  dueDate: string | null;
-  error?: string;
-};
 
 const ACTIVE_RIDE_STATUSES = [
   "procurar_motorista",
@@ -183,7 +174,7 @@ function fmtRelative(d: string | null | undefined) {
 
 function docsPending(d: Driver) {
   if (d.documents_status && d.documents_status !== "approved" && d.documents_status !== "aprovado") return true;
-  return !d.selfie_url || !d.cnh_url || !d.vehicle_document_url;
+  return !d.selfie_url || !d.cnh_url || !d.cnh_back_url || !d.vehicle_document_url;
 }
 
 function mapAdminError(msg: string): string {
@@ -193,81 +184,6 @@ function mapAdminError(msg: string): string {
   if (msg === "forbidden") return "Ação restrita a administradores.";
   if (/^invalid_|^Required$|uuid/i.test(msg)) return "Dados inválidos.";
   return msg;
-}
-
-async function approveDriverWithMercadoPago(driverId: string): Promise<ApproveMercadoPagoResult> {
-  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-  const accessToken = sessionData.session?.access_token;
-  if (sessionError || !accessToken) throw new Error("admin_session_missing");
-
-  const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/approve-driver-and-create-mercadopago-subscription`;
-  const response = await fetch(functionUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${accessToken}`,
-      apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-    },
-    body: JSON.stringify({ driverId }),
-  });
-
-  const payload = (await response.json().catch(() => null)) as (ApproveMercadoPagoResult & {
-    message?: string;
-    detail?: string;
-    missing?: string[];
-  }) | null;
-
-  if (!response.ok || !payload?.ok) {
-    console.error("Falha ao aprovar motorista via Mercado Pago", {
-      status: response.status,
-      payload,
-    });
-    if (payload?.error === "missing_required_fields" && Array.isArray(payload.missing)) {
-      throw new Error(`missing_required_fields:${payload.missing.join(", ")}`);
-    }
-    if (payload?.error === "mercadopago_preapproval_failed" && payload.detail) {
-      throw new Error(`mercadopago_preapproval_failed:${payload.detail.slice(0, 200)}`);
-    }
-    if (payload?.error === "mercadopago_environment_mismatch") {
-      throw new Error("mercadopago_environment_mismatch");
-    }
-    throw new Error(payload?.error || payload?.message || payload?.detail || `function_http_${response.status}`);
-  }
-
-  return payload;
-}
-
-async function regenerateDriverCharge(
-  driverId: string,
-): Promise<{ ok: true; preferenceId: string; initPoint: string | null; dueDate: string }> {
-  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-  const accessToken = sessionData.session?.access_token;
-  if (sessionError || !accessToken) throw new Error("admin_session_missing");
-
-  const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/regenerate-driver-mercadopago-charge`;
-  const response = await fetch(functionUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${accessToken}`,
-      apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-    },
-    body: JSON.stringify({ driverId }),
-  });
-  const payload = (await response.json().catch(() => null)) as
-    | { ok?: boolean; preferenceId?: string; initPoint?: string | null; dueDate?: string; error?: string; detail?: string; missing?: string[] }
-    | null;
-  if (!response.ok || !payload?.ok) {
-    if (payload?.error === "driver_not_approved") throw new Error("driver_not_approved");
-    if (payload?.error === "missing_required_fields" && Array.isArray(payload.missing)) {
-      throw new Error(`missing_required_fields:${payload.missing.join(", ")}`);
-    }
-    if (payload?.error === "mercadopago_preference_failed" && payload.detail) {
-      throw new Error(`mercadopago_preference_failed:${payload.detail.slice(0, 200)}`);
-    }
-    throw new Error(payload?.error || `function_http_${response.status}`);
-  }
-  return payload as { ok: true; preferenceId: string; initPoint: string | null; dueDate: string };
 }
 
 function AdminMotoristas() {
@@ -368,60 +284,8 @@ function AdminMotoristas() {
 
   async function updateStatus(d: Driver, status: Status, reason?: string | null) {
     setBusyId(d.id);
-    const toastId = status === "aprovado" ? toast.loading("Aprovando motorista e gerando link...") : undefined;
+    const toastId = status === "aprovado" ? toast.loading("Aprovando motorista...") : undefined;
     try {
-      if (status === "aprovado") {
-        // Aprovação → cria assinatura (preapproval) no Mercado Pago via Edge Function.
-        const result = await approveDriverWithMercadoPago(d.id);
-        await logAdminAction({
-          action: "driver.aprovado",
-          entity: "drivers",
-          entity_id: d.id,
-          before: { approval_status: d.approval_status },
-          after: {
-            approval_status: "aprovado",
-            mercadopago_preapproval_id: result.preapprovalId,
-            mercadopago_init_point: result.initPoint,
-          },
-        });
-        if (result.initPoint && typeof window !== "undefined") {
-          try {
-            await navigator.clipboard.writeText(result.initPoint);
-          } catch {
-            /* ignore */
-          }
-        }
-        toast.success(
-          result.alreadyExists
-            ? "Motorista aprovado (assinatura já existia). Link copiado."
-            : "Motorista aprovado — link de pagamento gerado (copiado).",
-          {
-            id: toastId,
-            description: result.initPoint ?? undefined,
-            action: result.initPoint
-              ? {
-                  label: "Abrir",
-                  onClick: () => window.open(result.initPoint!, "_blank"),
-                }
-              : undefined,
-            duration: 10000,
-          },
-        );
-        setRejectFor(null);
-        setBlockFor(null);
-        setUnblockFor(null);
-        setRejectReason("");
-        if (detail?.id === d.id) {
-          setDetail({
-            ...d,
-            approval_status: "aprovado",
-            approved_at: new Date().toISOString(),
-          } as Driver);
-        }
-        load();
-        return;
-      }
-
       const { patch } = await updateApprovalFn({
         data: { id: d.id, status, reason: reason ?? null },
       });
@@ -432,29 +296,35 @@ function AdminMotoristas() {
         before: { approval_status: d.approval_status },
         after: patch,
       });
-      if (toastId) toast.dismiss(toastId);
-      if (status === "reprovado") toast.success("Motorista reprovado");
-      if (status === "bloqueado") toast.success("Motorista bloqueado");
-      if (status === "em_analise") toast.success("Cadastro reenviado para análise");
+
+      if (status === "aprovado") {
+        toast.success("Motorista aprovado", {
+          id: toastId,
+          description: "O cadastro foi liberado. A mensalidade será ativada pelo fluxo financeiro da APOIS.",
+        });
+      } else {
+        if (toastId) toast.dismiss(toastId);
+        if (status === "reprovado") toast.success("Motorista reprovado");
+        if (status === "bloqueado") toast.success("Motorista bloqueado");
+        if (status === "em_analise") toast.success("Cadastro reenviado para análise");
+      }
+
       setRejectFor(null);
       setBlockFor(null);
       setUnblockFor(null);
       setRejectReason("");
-      if (detail?.id === d.id)
-        setDetail({ ...d, ...(patch as Database["public"]["Tables"]["drivers"]["Update"]) } as Driver);
-      load();
+      if (detail?.id === d.id) {
+        setDetail({
+          ...d,
+          ...(patch as Database["public"]["Tables"]["drivers"]["Update"]),
+        } as Driver);
+      }
+      await load();
     } catch (e) {
       const raw = e instanceof Error ? e.message : "falha";
-      let msg = mapAdminError(raw);
-      if (raw.startsWith("missing_required_fields:")) {
-        msg = `Cadastro incompleto: faltam ${raw.split(":")[1]}`;
-      } else if (raw.startsWith("mercadopago_preapproval_failed:")) {
-        msg = "Erro no Mercado Pago ao criar assinatura: " + raw.split(":").slice(1).join(":");
-      } else if (raw === "mercadopago_environment_mismatch") {
-        msg = "Credencial do Mercado Pago em modo teste não aceita e-mail real. Atualize o token para produção ou use contas de teste do Mercado Pago.";
-      } else if (raw === "forbidden") {
-        msg = "Você não tem permissão para aprovar motoristas";
-      }
+      const msg = raw === "forbidden"
+        ? "Você não tem permissão para aprovar motoristas"
+        : mapAdminError(raw);
       toast.error("Erro ao atualizar status: " + msg, { id: toastId });
     } finally {
       setBusyId(null);
@@ -483,41 +353,6 @@ function AdminMotoristas() {
     }
   }
 
-  async function generateCharge(d: Driver) {
-    setBusyId(d.id);
-    const toastId = toast.loading("Gerando nova cobrança no Mercado Pago...");
-    try {
-      const result = await regenerateDriverCharge(d.id);
-      await logAdminAction({
-        action: "driver.charge_regenerated",
-        entity: "drivers",
-        entity_id: d.id,
-        before: { mercadopago_preapproval_id: d.mercadopago_preapproval_id ?? null },
-        after: { mercadopago_preapproval_id: result.preferenceId, mercadopago_init_point: result.initPoint },
-      });
-      if (result.initPoint && typeof window !== "undefined") {
-        try { await navigator.clipboard.writeText(result.initPoint); } catch { /* ignore */ }
-      }
-      toast.success("Nova cobrança gerada — link copiado", {
-        id: toastId,
-        description: result.initPoint ?? undefined,
-        action: result.initPoint
-          ? { label: "Abrir", onClick: () => window.open(result.initPoint!, "_blank") }
-          : undefined,
-        duration: 10000,
-      });
-      load();
-    } catch (e) {
-      const raw = e instanceof Error ? e.message : "falha";
-      let msg = mapAdminError(raw);
-      if (raw === "driver_not_approved") msg = "Motorista precisa estar aprovado para gerar cobrança.";
-      else if (raw.startsWith("missing_required_fields:")) msg = `Cadastro incompleto: faltam ${raw.split(":")[1]}`;
-      else if (raw.startsWith("mercadopago_preference_failed:")) msg = "Erro no Mercado Pago: " + raw.split(":").slice(1).join(":");
-      toast.error("Erro ao gerar cobrança: " + msg, { id: toastId });
-    } finally {
-      setBusyId(null);
-    }
-  }
 
   return (
     <AdminLayout
@@ -578,7 +413,7 @@ function AdminMotoristas() {
             <DriverCard
               key={d.id}
               driver={d}
-              activeRideStatus={activeRides[d.user_id] ?? null}
+              activeRideStatus={activeRides[d.id] ?? null}
               busy={busyId === d.id}
               onDetails={() => setDetail(d)}
               onApprove={() => updateStatus(d, "aprovado")}
@@ -590,7 +425,6 @@ function AdminMotoristas() {
               onUnblock={() => setUnblockFor(d)}
               onSuspendToggle={() => setSuspendFor(d)}
               onSubscription={() => setSubFor(d)}
-              onGenerateCharge={() => generateCharge(d)}
             />
           ))}
         </div>
@@ -598,7 +432,7 @@ function AdminMotoristas() {
 
       <DetailsDialog
         driver={detail}
-        activeRideStatus={detail ? activeRides[detail.user_id] ?? null : null}
+        activeRideStatus={detail ? activeRides[detail.id] ?? null : null}
         onClose={() => setDetail(null)}
         onApprove={(d) => updateStatus(d, "aprovado")}
         onReject={(d) => {
@@ -730,7 +564,6 @@ function DriverCard({
   onUnblock,
   onSuspendToggle,
   onSubscription,
-  onGenerateCharge,
 }: {
   driver: Driver;
   activeRideStatus: string | null;
@@ -742,7 +575,6 @@ function DriverCard({
   onUnblock: () => void;
   onSuspendToggle: () => void;
   onSubscription: () => void;
-  onGenerateCharge: () => void;
 }) {
   const meta = STATUS_META[driver.approval_status];
   const sm = subMeta(driver.subscription_status);
@@ -809,11 +641,6 @@ function DriverCard({
           {driver.approval_status !== "aprovado" && (
             <Button size="sm" onClick={onApprove} disabled={busy}>
               {busy ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-1 h-4 w-4" />} Aprovar
-            </Button>
-          )}
-          {driver.approval_status === "aprovado" && (
-            <Button size="sm" variant="outline" onClick={onGenerateCharge} disabled={busy}>
-              {busy ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <CreditCard className="mr-1 h-4 w-4" />} Cobrança
             </Button>
           )}
           <Button size="sm" variant="outline" onClick={onDetails}>
@@ -1023,12 +850,20 @@ function DetailsDialog({
               </p>
             )}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <DocCard label="Selfie" url={urls.selfie_url} rawPath={driver.selfie_url} loading={docsLoading} failed={!!urlError} />
-              <DocCard label="CNH" url={urls.cnh_url} rawPath={driver.cnh_url} loading={docsLoading} failed={!!urlError} />
+              <DocCard label="Foto de perfil" url={urls.selfie_url} rawPath={driver.selfie_url} loading={docsLoading} failed={!!urlError} />
+              <DocCard label="CNH — frente" url={urls.cnh_url} rawPath={driver.cnh_url} loading={docsLoading} failed={!!urlError} />
+              <DocCard label="CNH — verso" url={urls.cnh_back_url} rawPath={driver.cnh_back_url} loading={docsLoading} failed={!!urlError} />
               <DocCard
-                label="Doc. Veículo"
+                label="CRLV"
                 url={urls.vehicle_document_url}
                 rawPath={driver.vehicle_document_url}
+                loading={docsLoading}
+                failed={!!urlError}
+              />
+              <DocCard
+                label="Foto do veículo"
+                url={urls.vehicle_photo_url}
+                rawPath={driver.vehicle_photo_url}
                 loading={docsLoading}
                 failed={!!urlError}
               />
