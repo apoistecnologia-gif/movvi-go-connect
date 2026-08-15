@@ -198,10 +198,26 @@ html[data-app-role="motorista"] [class~="text-[9.5px]"] {
   font-size: 10px;
 }
 
+/* Tailwind min-h-screen usa 100vh; no Android com barras dinâmicas o conteúdo
+ * pode ganhar uma faixa escondida. O bundle mobile usa a viewport dinâmica. */
+html[data-app-role="motorista"] .min-h-screen {
+  min-height: 100dvh;
+}
+
 /* A navegação fixa do motorista cresce com a safe-area; páginas antigas com
  * pb-28 precisam reservar o mesmo inset para o último card não ficar escondido. */
 html[data-app-role="motorista"] main.pb-28 {
   padding-bottom: calc(7rem + env(safe-area-inset-bottom));
+}
+
+/* Telas públicas de recuperação/redefinição ainda usavam pb-8 puro. */
+html[data-app-role="motorista"] main.pb-8 {
+  padding-bottom: calc(2rem + env(safe-area-inset-bottom));
+}
+
+/* Detalhes da corrida usa py-6 sem reserva inferior explícita. */
+html[data-app-role="motorista"] main.flex-1.px-4.py-6 {
+  padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
 }
 
 /* Perfil e shells antigos usam max(..., safe-area), que não soma barra + inset. */
@@ -215,10 +231,11 @@ html[data-app-role="motorista"] button[aria-label="Voltar para o perfil"] {
   margin-top: env(safe-area-inset-top);
 }
 
-/* Histórico: três métricas em 320–359 px comprimem valores monetários. */
+/* Métricas em três colunas ficam comprimidas em aparelhos de 320–359 px. */
 @media (max-width: 359px) {
   html[data-app-role="motorista"] [aria-label="Resumo do período"] > .grid.grid-cols-3,
-  html[data-app-role="motorista"] [aria-label="Resumo do perfil"].grid.grid-cols-3 {
+  html[data-app-role="motorista"] [aria-label="Resumo do perfil"].grid.grid-cols-3,
+  html[data-app-role="motorista"] main .grid.grid-cols-3 {
     grid-template-columns: 1fr;
   }
 
