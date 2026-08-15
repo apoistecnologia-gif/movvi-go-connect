@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Headphones, LifeBuoy, ShieldCheck } from "lucide-react";
 import { SettingsPageShell, SettingsHero } from "@/components/settings";
 import { HelpCenterView } from "@/components/support/HelpCenterView";
-import { ApoisDriverBottomNav } from "@/components/ApoisDriverBottomNav";
 
 export const Route = createFileRoute("/motorista/suporte")({
   head: () => ({
@@ -56,7 +55,6 @@ function SuporteMotorista() {
           />
         </SettingsPageShell>
       </div>
-      <ApoisDriverBottomNav />
     </div>
   );
 }
