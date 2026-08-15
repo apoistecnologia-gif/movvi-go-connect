@@ -136,6 +136,9 @@ html[data-app-role="motorista"] .driver-menu-active p:first-of-type {
 html[data-app-role="motorista"] [role="dialog"] {
   -webkit-font-smoothing: antialiased;
   max-width: calc(100vw - 24px);
+  max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 24px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 /* O close padrão do Radix tem apenas o ícone de 16 px e não possui aria-label.
@@ -161,22 +164,55 @@ html[data-app-role="motorista"] .gm-control-active {
 html[data-app-role="motorista"] button,
 html[data-app-role="motorista"] a {
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 /*
- * O bundle do motorista é mobile-first. Controles antigos de 32–40 px ainda
- * aparecem em notificações, carteira, segurança e dialogs; nenhum botão deve
- * ter alvo vertical menor que 44 px, e controles icon-only também recebem
- * largura mínima. Links com aria-label seguem a mesma regra.
+ * O bundle do motorista é mobile-first. Botões convencionais antigos de 32–40
+ * px recebem alvo mínimo de 44 px. Switch/checkbox/radio preservam o trilho
+ * compacto e ampliam somente a hit-area, evitando deformação visual.
  */
-html[data-app-role="motorista"] button {
+html[data-app-role="motorista"] button:not([role="switch"]):not([role="checkbox"]):not([role="radio"]) {
   min-height: 44px;
 }
 
-html[data-app-role="motorista"] button[aria-label],
+html[data-app-role="motorista"] button[aria-label]:not([role="switch"]):not([role="checkbox"]):not([role="radio"]),
 html[data-app-role="motorista"] a[aria-label] {
   min-width: 44px;
   min-height: 44px;
+}
+
+html[data-app-role="motorista"] button[role="switch"],
+html[data-app-role="motorista"] button[role="checkbox"],
+html[data-app-role="motorista"] button[role="radio"] {
+  position: relative;
+}
+
+html[data-app-role="motorista"] button[role="switch"]::after,
+html[data-app-role="motorista"] button[role="checkbox"]::after,
+html[data-app-role="motorista"] button[role="radio"]::after {
+  content: "";
+  position: absolute;
+  inset: -12px;
+}
+
+html[data-app-role="motorista"] button[role="combobox"],
+html[data-app-role="motorista"] [role="option"],
+html[data-app-role="motorista"] [role="menuitem"],
+html[data-app-role="motorista"] [role="tab"] {
+  min-height: 44px;
+}
+
+html[data-app-role="motorista"] [role="option"],
+html[data-app-role="motorista"] [role="menuitem"] {
+  display: flex;
+  align-items: center;
+}
+
+html[data-app-role="motorista"] [role="tablist"] {
+  height: auto;
+  min-height: 44px;
+  flex-wrap: wrap;
 }
 
 html[data-app-role="motorista"] a.min-h-8,
@@ -197,7 +233,8 @@ html[data-app-role="motorista"] input[type="password"],
 html[data-app-role="motorista"] input[type="date"],
 html[data-app-role="motorista"] input[type="number"],
 html[data-app-role="motorista"] input[type="search"],
-html[data-app-role="motorista"] select {
+html[data-app-role="motorista"] select,
+html[data-app-role="motorista"] textarea {
   min-height: 44px;
 }
 
@@ -209,10 +246,13 @@ html[data-app-role="motorista"] [class~="text-[9.5px]"] {
   font-size: 10px;
 }
 
-/* Tailwind min-h-screen usa 100vh; no Android com barras dinâmicas o conteúdo
- * pode ganhar uma faixa escondida. O bundle mobile usa a viewport dinâmica. */
+/* 100vh fica atrás das barras móveis em Android; usar viewport dinâmica. */
 html[data-app-role="motorista"] .min-h-screen {
   min-height: 100dvh;
+}
+
+html[data-app-role="motorista"] .h-screen {
+  height: 100dvh;
 }
 
 /* A navegação fixa do motorista cresce com a safe-area; páginas antigas com
@@ -251,8 +291,37 @@ html[data-app-role="motorista"] button[aria-label="Voltar para o perfil"] {
 /* Conteúdo gerado pelo backend (motivos, nomes, meios de pagamento, IDs) não
  * deve forçar overflow horizontal em telas estreitas. */
 html[data-app-role="motorista"] main p,
-html[data-app-role="motorista"] main span {
+html[data-app-role="motorista"] main span,
+html[data-app-role="motorista"] main code,
+html[data-app-role="motorista"] main strong,
+html[data-app-role="motorista"] main a {
   overflow-wrap: anywhere;
+}
+
+@media (max-width: 639px) {
+  /* Títulos com status/badge/preço na mesma linha devem poder quebrar antes de
+   * esmagar textos operacionais em aparelhos pequenos. */
+  html[data-app-role="motorista"] main .flex.items-start.justify-between.gap-3,
+  html[data-app-role="motorista"] main .flex.items-center.justify-between.gap-3,
+  html[data-app-role="motorista"] main .flex.items-baseline.justify-between.gap-3 {
+    flex-wrap: wrap;
+  }
+
+  html[data-app-role="motorista"] main .flex.items-center.gap-3.text-muted-foreground {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  /* Mapas fixos não podem consumir quase toda a altura em landscape. */
+  html[data-app-role="motorista"] main [class~="h-[420px]"] {
+    height: min(420px, 52dvh);
+    min-height: 260px;
+  }
+
+  html[data-app-role="motorista"] main [class~="h-[320px]"] {
+    height: min(320px, 48dvh);
+    min-height: 240px;
+  }
 }
 
 /* Métricas, benefícios e formulários em duas/três colunas ficam comprimidos
@@ -277,6 +346,15 @@ html[data-app-role="motorista"] main span {
 
   html[data-app-role="motorista"] main .flex.items-baseline.justify-between.gap-3 {
     align-items: flex-start;
+  }
+
+  html[data-app-role="motorista"] main .flex.gap-2 {
+    flex-wrap: wrap;
+  }
+
+  html[data-app-role="motorista"] main .flex.gap-2 > button,
+  html[data-app-role="motorista"] main .flex.gap-2 > a {
+    flex: 1 1 100%;
   }
 
   /* Truncamento em telas muito estreitas escondia nomes e descrições úteis. */
