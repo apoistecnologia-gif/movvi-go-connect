@@ -67,7 +67,7 @@ export function MovviHeader({
       className={
         isFloating
           ? "absolute inset-x-0 top-0 z-30 px-3 pt-[calc(env(safe-area-inset-top)+12px)]"
-          : "sticky top-0 z-30 border-b border-white/5 bg-[#08090A]/92 backdrop-blur-xl"
+          : "sticky top-0 z-30 border-b border-white/5 bg-[#08090A]/92 pt-[env(safe-area-inset-top)] backdrop-blur-xl"
       }
       style={
         isFloating
