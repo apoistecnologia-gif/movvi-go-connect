@@ -142,6 +142,45 @@ html[data-app-role="motorista"] a {
   -webkit-tap-highlight-color: transparent;
 }
 
+/*
+ * O bundle do motorista é mobile-first. Controles antigos de 32–40 px ainda
+ * aparecem em notificações, carteira e dialogs; nenhum botão deve ter alvo
+ * vertical menor que 44 px, e botões icon-only também recebem largura mínima.
+ */
+html[data-app-role="motorista"] button {
+  min-height: 44px;
+}
+
+html[data-app-role="motorista"] button[aria-label] {
+  min-width: 44px;
+}
+
+/* Mantém textos operacionais legíveis em Android pequeno sem alterar hierarquia. */
+html[data-app-role="motorista"] [class~="text-[8px]"],
+html[data-app-role="motorista"] [class~="text-[8.5px]"],
+html[data-app-role="motorista"] [class~="text-[9px]"],
+html[data-app-role="motorista"] [class~="text-[9.5px]"] {
+  font-size: 10px;
+}
+
+/* A navegação fixa do motorista cresce com a safe-area; páginas antigas com
+ * pb-28 precisam reservar o mesmo inset para o último card não ficar escondido. */
+html[data-app-role="motorista"] main.pb-28 {
+  padding-bottom: calc(7rem + env(safe-area-inset-bottom));
+}
+
+/* Histórico: três métricas em 320–359 px comprimem valores monetários. */
+@media (max-width: 359px) {
+  html[data-app-role="motorista"] [aria-label="Resumo do período"] > .grid.grid-cols-3 {
+    grid-template-columns: 1fr;
+  }
+
+  /* Carteira: tipo da chave + valor deixam o input estreito em telas de 320 px. */
+  html[data-app-role="motorista"] [class*="grid-cols-[120px_1fr]"] {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Alvos mínimos de toque nos controles flutuantes do mapa. */
 html[data-app-role="motorista"] button[aria-label="Abrir menu"],
 html[data-app-role="motorista"] button[aria-label="Sair"] {
