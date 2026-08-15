@@ -12,6 +12,7 @@ export type DriverTelemetry = {
 const MIN_MOVEMENT_METERS = 10;
 const MIN_INTERVAL_MS = 3500;
 const HEARTBEAT_MS = 15000;
+let blockingReloadScheduled = false;
 
 function haversineMeters(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
   const R = 6371000;
@@ -22,6 +23,23 @@ function haversineMeters(a: { lat: number; lng: number }, b: { lat: number; lng:
     Math.sin(dLat / 2) ** 2 +
     Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2;
   return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+function reconcileOperationalBlock(message: string) {
+  if (!/driver_suspended|driver_not_approved|driver_subscription_inactive|driver_kyc_incomplete/i.test(message)) {
+    return;
+  }
+
+  try {
+    localStorage.setItem("apois:driver:online", "0");
+    window.dispatchEvent(new CustomEvent("apois:driver-presence-change", { detail: { online: false } }));
+  } catch {
+    // O backend já bloqueou a operação; armazenamento local é apenas UX.
+  }
+
+  if (blockingReloadScheduled) return;
+  blockingReloadScheduled = true;
+  window.setTimeout(() => window.location.reload(), 250);
 }
 
 async function setPresence(
@@ -37,6 +55,7 @@ async function setPresence(
   });
   if (error) {
     console.warn("[APOIS MOTORISTA] presença não atualizada:", error.message);
+    reconcileOperationalBlock(error.message ?? "");
   }
 }
 
@@ -47,6 +66,11 @@ async function setPresence(
  * motorista, valida aprovação/mensalidade e atualiza public.drivers. Uma
  * trigger do banco espelha as coordenadas na corrida ativa para que o app do
  * passageiro acompanhe o carro em realtime.
+ *
+ * Se a elegibilidade for retirada durante `em_viagem`, o servidor continua
+ * aceitando somente a telemetria da corrida atual e mantém o motorista offline.
+ * Assim que a viagem termina, a próxima tentativa de presença reconcilia o app
+ * para o estado bloqueado sem permitir novas ofertas.
  */
 export function useDriverBroadcast(
   userId: string | null,
