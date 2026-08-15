@@ -56,7 +56,7 @@ function TermosMotoristaPage() {
               <SettingsHero
                 icon={FileText}
                 title="Termos de Uso"
-                subtitle="Última atualização: 28 de junho de 2026"
+                subtitle="Última atualização: 15 de agosto de 2026"
               />
             </div>
           </div>
@@ -83,11 +83,13 @@ function TermosMotoristaPage() {
             </section>
 
             <section className="rounded-[20px] border border-white/5 bg-[#101214] p-4">
-              <h2 className="mb-2 text-base font-black text-white">Intermediação e assinatura</h2>
+              <h2 className="mb-2 text-base font-black text-white">Intermediação, pagamentos e assinatura</h2>
               <p className="text-zinc-400">
-                A APOIS é uma plataforma de intermediação tecnológica. O pagamento das corridas é
-                realizado diretamente entre passageiro e motorista — a APOIS não processa valores de
-                corrida. A assinatura mensal libera o recebimento de ofertas.
+                A APOIS é uma plataforma de intermediação tecnológica. As formas de pagamento disponibilizadas no aplicativo
+                podem utilizar provedores de pagamento integrados à plataforma, conforme a configuração operacional vigente.
+                O valor devido ao motorista, eventuais cobranças do passageiro, registros de liquidação e repasses seguem os
+                fluxos financeiros e as regras exibidas no aplicativo. A assinatura mensal do motorista libera o recebimento
+                de ofertas quando os demais requisitos cadastrais e operacionais também estiverem regulares.
               </p>
             </section>
 
