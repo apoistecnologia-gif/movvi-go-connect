@@ -11,6 +11,7 @@ function readableDriverRpcError(message: string) {
   const raw = String(message ?? "");
   if (/ride_offer_unavailable/i.test(raw)) return "Esta corrida não está mais disponível.";
   if (/driver_not_approved/i.test(raw)) return "Seu cadastro ainda não está aprovado.";
+  if (/driver_suspended/i.test(raw)) return "Seu acesso está suspenso. Fale com o suporte para regularizar.";
   if (/driver_subscription_inactive/i.test(raw)) return "Sua mensalidade precisa estar ativa para receber corridas.";
   if (/driver_offline/i.test(raw)) return "Fique online antes de aceitar a corrida.";
   if (/invalid_security_code_or_transition/i.test(raw)) return "Código incorreto. Peça o PIN ao passageiro e tente novamente.";
@@ -53,7 +54,25 @@ export async function aceitarCorridaMobile({ data }: { data: { rideId: string } 
 }
 
 export async function recusarCorridaMobile({ data }: { data: { rideId: string } }) {
-  return callRpc("driver_reject_ride", { _ride_id: data.rideId });
+  const { data: result, error } = await supabase.functions.invoke("driver-reject-redispatch", {
+    body: { ride_id: data.rideId },
+  });
+
+  if (error) throw new Error(readableDriverRpcError(error.message));
+
+  const payload = (result ?? {}) as {
+    ok?: boolean;
+    error?: string;
+    ride?: unknown;
+    redispatch?: string;
+  };
+  if (!payload.ok) throw new Error(readableDriverRpcError(payload.error ?? "driver_reject_failed"));
+
+  if (payload.redispatch === "deferred") {
+    console.warn("[APOIS MOTORISTA] corrida recusada; redispatch será retomado pelo watchdog do servidor");
+  }
+
+  return payload.ride ?? payload;
 }
 
 export async function informarChegadaMobile({ data }: { data: { rideId: string } }) {
