@@ -9,6 +9,7 @@ export type DriverProfileRow = {
   user_id: string;
   approval_status: "pendente" | "em_analise" | "aprovado" | "reprovado" | "bloqueado";
   motivo_reprovacao: string | null;
+  suspended_at: string | null;
   name: string | null;
   email: string | null;
   phone: string | null;
@@ -38,7 +39,20 @@ export async function loadDriverProfile(): Promise<
     return { ok: false, reason: "error", message: error.message };
   }
   if (!data) return { ok: false, reason: "not_found" };
-  return { ok: true, profile: data as DriverProfileRow };
+
+  const profile = data as DriverProfileRow;
+  if (profile.suspended_at) {
+    return {
+      ok: true,
+      profile: {
+        ...profile,
+        approval_status: "bloqueado",
+        motivo_reprovacao: profile.motivo_reprovacao || "Acesso suspenso pelo administrador.",
+      },
+    };
+  }
+
+  return { ok: true, profile };
 }
 
 export function driverProfileCompletionIssues(p: DriverProfileRow): {
