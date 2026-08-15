@@ -107,7 +107,7 @@ function DriverDocumentsPage() {
         <section className="rounded-[26px] border border-[#F6BE1C]/18 bg-gradient-to-br from-[#211A08] via-[#111315] to-[#08090A] p-5">
           <div className="flex items-start gap-4">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#F6BE1C] text-black"><ShieldCheck className="h-6 w-6" /></div>
-            <div><p className="text-[9px] font-black uppercase tracking-[0.18em] text-[#F6BE1C]">Status documental</p><h2 className="mt-1 text-lg font-black">{statusLabel(profile)}</h2><p className="mt-2 text-[11px] font-medium leading-5 text-zinc-500">Sempre que um documento obrigatório for substituído, o motorista sai do modo online e o cadastro volta para análise antes de receber novas corridas.</p></div>
+            <div className="min-w-0 flex-1"><p className="text-[9px] font-black uppercase tracking-[0.18em] text-[#F6BE1C]">Status documental</p><h2 className="mt-1 text-lg font-black">{statusLabel(profile)}</h2><p className="mt-2 text-[11px] font-medium leading-5 text-zinc-500">Sempre que um documento obrigatório for substituído, o motorista sai do modo online e o cadastro volta para análise antes de receber novas corridas.</p></div>
           </div>
         </section>
 
@@ -125,7 +125,7 @@ function DriverDocumentsPage() {
                 <article key={document.slot} className="rounded-[24px] border border-white/6 bg-[#0D0F11] p-4">
                   <div className="flex items-start gap-3">
                     <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${hasFile ? "bg-emerald-400/10 text-emerald-400" : "bg-[#F6BE1C]/10 text-[#F6BE1C]"}`}>{hasFile ? <CheckCircle2 className="h-5 w-5" /> : <Icon className="h-5 w-5" />}</div>
-                    <div className="min-w-0 flex-1"><div className="flex items-center gap-2"><h3 className="text-sm font-black">{document.title}</h3>{hasFile ? <span className="rounded-full bg-emerald-400/10 px-2 py-1 text-[8px] font-black uppercase text-emerald-400">Enviado</span> : null}</div><p className="mt-1 text-[10px] font-medium leading-4 text-zinc-600">{document.description}</p></div>
+                    <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><h3 className="min-w-0 break-words text-sm font-black">{document.title}</h3>{hasFile ? <span className="shrink-0 rounded-full bg-emerald-400/10 px-2 py-1 text-[8px] font-black uppercase text-emerald-400">Enviado</span> : null}</div><p className="mt-1 text-[10px] font-medium leading-4 text-zinc-600">{document.description}</p></div>
                   </div>
                   <input ref={(node) => { inputRefs.current[document.slot] = node; }} type="file" accept={document.accept} className="hidden" disabled={Boolean(savingSlot)} onChange={(event) => { const file = event.currentTarget.files?.[0]; event.currentTarget.value = ""; void handleFile(document.slot, file); }} />
                   <button type="button" disabled={Boolean(savingSlot)} onClick={() => inputRefs.current[document.slot]?.click()} className="mt-4 flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl border border-white/8 bg-[#141719] text-xs font-black text-white disabled:opacity-50">{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4 text-[#F6BE1C]" />}{saving ? "Enviando..." : hasFile ? "Substituir documento" : "Enviar documento"}</button>
