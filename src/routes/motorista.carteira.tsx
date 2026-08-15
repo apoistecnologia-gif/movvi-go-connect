@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { loadDriverProfile } from "@/lib/driverProfile";
+import { ApoisDriverBottomNav } from "@/components/ApoisDriverBottomNav";
 
 export const Route = createFileRoute("/motorista/carteira")({
   component: DriverWalletPage,
@@ -224,7 +225,7 @@ function DriverWalletPage() {
       if (data?.error) throw new Error(String(data.error));
       await load(driverId);
       setPayoutAmount("");
-      setFinanceMessage(data?.status === "paid" ? "Saque Pix concluído." : "Saque recebido e enviado ao Asaas para processamento.");
+      setFinanceMessage(data?.status === "paid" ? "Saque Pix concluído." : "Saque recebido e enviado para processamento.");
     } catch (caught: any) {
       console.error("[APOIS Motorista] saque:", caught);
       const detail = String(caught?.message ?? caught ?? "");
@@ -255,7 +256,7 @@ function DriverWalletPage() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-xl space-y-4 px-4 py-5 pb-[calc(env(safe-area-inset-bottom)+28px)]">
+      <main className="mx-auto w-full max-w-xl space-y-4 px-4 py-5 pb-[calc(env(safe-area-inset-bottom)+112px)]">
         {loading ? (
           <div className="flex min-h-[55vh] items-center justify-center"><Loader2 className="h-7 w-7 animate-spin text-[#F6BE1C]" /></div>
         ) : error ? (
@@ -379,6 +380,7 @@ function DriverWalletPage() {
           </>
         )}
       </main>
+      <ApoisDriverBottomNav />
     </div>
   );
 }
