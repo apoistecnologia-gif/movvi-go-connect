@@ -125,9 +125,9 @@ export function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
   }, [access]);
 
   return (
-    <aside className="flex h-full w-[260px] flex-col bg-card text-card-foreground border-r border-border/60">
-      <div className="relative px-5 pt-6 pb-5">
-        <span className="absolute right-3 top-3 rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.18em] text-primary">
+    <aside className="flex h-full w-[260px] max-w-full flex-col border-r border-border/60 bg-card text-card-foreground">
+      <div className="relative px-5 pb-5 pt-6">
+        <span className="absolute right-3 top-3 rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
           {access?.role ?? "Admin"}
         </span>
         <div className="flex justify-center">
@@ -147,7 +147,7 @@ export function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
                   to={to}
                   onClick={onNavigate}
                   className={[
-                    "group relative flex h-10 items-center gap-3 rounded-lg pl-3 pr-3 text-[13px] font-medium",
+                    "group relative flex min-h-11 items-center gap-3 rounded-lg pl-3 pr-3 text-[13px] font-medium",
                     "transition-all duration-200 ease-out",
                     active
                       ? "bg-primary/15 text-primary shadow-[0_0_0_1px_color-mix(in_oklab,var(--color-primary)_25%,transparent),0_0_20px_-6px_color-mix(in_oklab,var(--color-primary)_55%,transparent)]"
@@ -175,7 +175,7 @@ export function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
         <DSButton
           variant="ghost"
           size="sm"
-          className="w-full justify-start h-10 px-3 text-[13px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60"
+          className="min-h-11 w-full justify-start px-3 text-[13px] font-medium text-muted-foreground hover:bg-muted/60 hover:text-foreground"
           onClick={async () => {
             await supabase.auth.signOut();
             navigate({ to: "/admin/login" });
