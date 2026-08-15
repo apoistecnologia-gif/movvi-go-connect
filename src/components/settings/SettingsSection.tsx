@@ -8,15 +8,15 @@ export function SettingsSection({ icon: Icon, title, description, children, acti
   const driver = useSettingsVisual() === "driver";
   return (
     <section className="space-y-2">
-      <div className="flex items-end justify-between gap-3 px-2">
-        <div className="min-w-0">
+      <div className={driver ? "flex items-end justify-between gap-3 px-2 max-[359px]:flex-wrap" : "flex items-end justify-between gap-3 px-2"}>
+        <div className="min-w-0 flex-1">
           <h2 className={driver ? "flex items-center gap-1.5 text-[12px] font-black uppercase tracking-[0.14em] text-zinc-500" : "flex items-center gap-1.5 text-[13px] font-semibold uppercase tracking-wider text-[#707070]"}>
-            {Icon ? <Icon className={driver ? "h-3.5 w-3.5 text-[#F6BE1C]" : "h-3.5 w-3.5 text-[#76C139]"} strokeWidth={2} /> : null}
-            <span className="truncate">{title}</span>
+            {Icon ? <Icon className={driver ? "h-3.5 w-3.5 shrink-0 text-[#F6BE1C]" : "h-3.5 w-3.5 shrink-0 text-[#76C139]"} strokeWidth={2} /> : null}
+            <span className={driver ? "min-w-0 whitespace-normal [overflow-wrap:anywhere]" : "truncate"}>{title}</span>
           </h2>
-          {description ? <p className={driver ? "mt-0.5 text-[12px] text-zinc-600" : "mt-0.5 text-[12.5px] text-[#707070]"}>{description}</p> : null}
+          {description ? <p className={driver ? "mt-0.5 text-[12px] leading-4 text-zinc-600 [overflow-wrap:anywhere]" : "mt-0.5 text-[12.5px] text-[#707070]"}>{description}</p> : null}
         </div>
-        {action}
+        {action ? <div className={driver ? "shrink-0 max-[359px]:basis-full" : "shrink-0"}>{action}</div> : null}
       </div>
       <div className={driver
         ? "overflow-hidden rounded-[22px] border border-white/5 bg-[#101214] shadow-[0_18px_50px_-34px_rgba(0,0,0,0.95)] [&>*+*]:border-t [&>*+*]:border-white/5"
