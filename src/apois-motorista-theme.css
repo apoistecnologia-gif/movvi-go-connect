@@ -144,15 +144,34 @@ html[data-app-role="motorista"] a {
 
 /*
  * O bundle do motorista é mobile-first. Controles antigos de 32–40 px ainda
- * aparecem em notificações, carteira e dialogs; nenhum botão deve ter alvo
- * vertical menor que 44 px, e botões icon-only também recebem largura mínima.
+ * aparecem em notificações, carteira, segurança e dialogs; nenhum botão deve
+ * ter alvo vertical menor que 44 px, e controles icon-only também recebem
+ * largura mínima. Links com aria-label seguem a mesma regra.
  */
 html[data-app-role="motorista"] button {
   min-height: 44px;
 }
 
-html[data-app-role="motorista"] button[aria-label] {
+html[data-app-role="motorista"] button[aria-label],
+html[data-app-role="motorista"] a[aria-label] {
   min-width: 44px;
+  min-height: 44px;
+}
+
+html[data-app-role="motorista"] a.min-h-8,
+html[data-app-role="motorista"] a.min-h-9,
+html[data-app-role="motorista"] a.min-h-10,
+html[data-app-role="motorista"] a.h-8,
+html[data-app-role="motorista"] a.h-9,
+html[data-app-role="motorista"] a.h-10 {
+  min-height: 44px;
+}
+
+/* Selects antigos das configurações usavam h-10 (40 px). */
+html[data-app-role="motorista"] select.h-8,
+html[data-app-role="motorista"] select.h-9,
+html[data-app-role="motorista"] select.h-10 {
+  min-height: 44px;
 }
 
 /* Mantém textos operacionais legíveis em Android pequeno sem alterar hierarquia. */
@@ -169,9 +188,20 @@ html[data-app-role="motorista"] main.pb-28 {
   padding-bottom: calc(7rem + env(safe-area-inset-bottom));
 }
 
+/* Perfil antigo usa max(8rem, safe-area), que não soma a barra inferior ao inset. */
+html[data-app-role="motorista"] main[style*="max(8rem"] {
+  padding-bottom: calc(7rem + env(safe-area-inset-bottom)) !important;
+}
+
+/* O botão de retorno do modo de edição estava fixado em top-16 sem considerar notch. */
+html[data-app-role="motorista"] button[aria-label="Voltar para o perfil"] {
+  margin-top: env(safe-area-inset-top);
+}
+
 /* Histórico: três métricas em 320–359 px comprimem valores monetários. */
 @media (max-width: 359px) {
-  html[data-app-role="motorista"] [aria-label="Resumo do período"] > .grid.grid-cols-3 {
+  html[data-app-role="motorista"] [aria-label="Resumo do período"] > .grid.grid-cols-3,
+  html[data-app-role="motorista"] [aria-label="Resumo do perfil"].grid.grid-cols-3 {
     grid-template-columns: 1fr;
   }
 
