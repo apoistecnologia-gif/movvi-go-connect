@@ -77,7 +77,7 @@ function RegaliasPage() {
       <MovviHeader logoutRedirect="/" />
       <main
         className="relative flex-1 px-4 pt-4 sm:px-5"
-        style={{ paddingBottom: "max(8rem, env(safe-area-inset-bottom))" }}
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 7rem)" }}
       >
         <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
           <div className="flex items-center gap-2">
