@@ -109,7 +109,6 @@ const IniciarCorridaInput = z.object({
   rideId: z.string().uuid(),
   safety_code: z.string().trim().regex(/^\d{4}$/, "Código deve ter 4 dígitos"),
 });
-const FinalizarInput = z.object({ rideId: z.string().uuid(), final_price: z.number().optional() });
 const CancelarInput = z.object({ rideId: z.string().uuid(), motivo: z.string().max(500).optional() });
 const AvaliarPassageiroInput = z.object({
   rideId: z.string().uuid(),
@@ -288,7 +287,7 @@ export const iniciarCorrida = createServerFn({ method: "POST" })
 
 export const finalizarCorrida = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data) => FinalizarInput.parse(data))
+  .inputValidator((data) => RideIdInput.parse(data))
   .handler(async ({ data, context }) => {
     const result = await invokeEdge(context.supabase, "driver-finish-redispatch", { ride_id: data.rideId });
     return result.ride ?? result;
@@ -331,7 +330,7 @@ export const avaliarMotorista = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await rpc(context.supabase, "rate_passenger_ride", {
       _ride_id: data.rideId,
-      _stars: data.stars,
+      _rating: data.stars,
       _comment: data.comment ?? null,
     });
     return { ok: true };
