@@ -56,12 +56,24 @@ jobs:
       - name: Guard — driver finalization cannot send client price
         run: |
           set -euo pipefail
-          if grep -n -E 'finalizarCorridaMobile\(\{ data \}: \{ data: \{[^}]*final_price|driver_finish_ride[^\n]*final_price' \
+          if grep -n -E 'finalizarCorridaMobile\(\{ data \}: \{ data: \{[^}]*final_price|driver_finish_ride[^\n]*final_price|driver-finish-redispatch[^\n]*final_price' \
             src/lib/driverRideLifecycle.mobile.ts; then
             echo 'Encontrado preço final controlado pelo cliente na finalização.' >&2
             exit 1
           fi
-          grep -F 'driver_finish_ride' src/lib/driverRideLifecycle.mobile.ts
+          grep -F 'driver-finish-redispatch' src/lib/driverRideLifecycle.mobile.ts
+
+      - name: Guard — legacy ride lifecycle cannot mutate rides directly
+        run: |
+          set -euo pipefail
+          source_file='src/lib/rideLifecycle.ts'
+          if grep -n -E '\.from\(["'"']rides["'"']\).*(insert|update|delete|upsert)|\.from\(["'"']rides["'"']\)' "$source_file"; then
+            echo 'A fachada legada voltou a acessar public.rides diretamente.' >&2
+            exit 1
+          fi
+          grep -F 'driver_accept_ride' "$source_file"
+          grep -F 'passenger-ride-request' "$source_file"
+          grep -F 'cancel-ride' "$source_file"
 
       - name: Guard — driver offer push must minimize lock-screen data
         run: |
