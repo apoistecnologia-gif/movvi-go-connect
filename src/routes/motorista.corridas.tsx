@@ -41,7 +41,7 @@ type RideRow = {
   accepted_at: string | null;
   passenger_rating: number | null;
   passenger_rating_comment: string | null;
-  driver_rated_at: string | null;
+  passenger_rated_at: string | null;
 };
 
 type Filter = "today" | "d7" | "d30" | "custom";
@@ -167,15 +167,17 @@ function RideCard({ ride, index }: { ride: RideRow; index: number }) {
           <Caption>{formatPayment(ride.payment_method)}</Caption>
         </div>
 
-        {ride.status === "finalizada" && ride.driver_rated_at && ride.passenger_rating && (
-          <div
-            data-testid="rating-info"
-            className="flex items-center gap-2 border-t border-border/50 pt-2"
-          >
-            <StarRow value={ride.passenger_rating} />
-            <Caption>Sua avaliação · {ride.passenger_rating}/5</Caption>
-          </div>
-        )}
+        {ride.status === "finalizada" &&
+          ride.passenger_rated_at &&
+          ride.passenger_rating != null && (
+            <div
+              data-testid="rating-info"
+              className="flex items-center gap-2 border-t border-border/50 pt-2"
+            >
+              <StarRow value={ride.passenger_rating} />
+              <Caption>Avaliação recebida · {ride.passenger_rating}/5</Caption>
+            </div>
+          )}
       </DSCard>
     </Link>
   );
@@ -201,7 +203,7 @@ function DriverRidesPage() {
       const { data, error } = await supabase
         .from("rides")
         .select(
-          "id,status,category,payment_method,passenger_id,origin_name,destination_name,final_price,estimated_price,distance_km,duration_min,completed_at,created_at,accepted_at,passenger_rating,passenger_rating_comment,driver_rated_at",
+          "id,status,category,payment_method,passenger_id,origin_name,destination_name,final_price,estimated_price,distance_km,duration_min,completed_at,created_at,accepted_at,passenger_rating,passenger_rating_comment,passenger_rated_at",
         )
         .eq("driver_id", driverId)
         .order("created_at", { ascending: false })
