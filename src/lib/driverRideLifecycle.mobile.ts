@@ -112,7 +112,15 @@ export async function cancelarPeloMotoristaMobile({ data }: { data: { rideId: st
     ride_id: data.rideId,
     reason: data.motivo ?? "",
   });
-  notifyPassenger(data.rideId, "ride.cancelled");
+
+  const ride = payload.ride as { status?: string } | null | undefined;
+  // Cancelamento operacional antes do embarque devolve a MESMA corrida para
+  // busca de outro motorista; não devemos avisar falsamente ao passageiro que
+  // a corrida inteira foi cancelada. No-show, por outro lado, é terminal.
+  if (ride?.status !== "procurar_motorista") {
+    notifyPassenger(data.rideId, "ride.cancelled");
+  }
+
   return payload.ride ?? payload;
 }
 
