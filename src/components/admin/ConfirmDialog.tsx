@@ -66,7 +66,7 @@ export function ConfirmDialog({
         onOpenChange(v);
       }}
     >
-      <AlertDialogContent className="border-border bg-card">
+      <AlertDialogContent className="apois-admin-theme max-h-[calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-24px)] w-[calc(100vw-24px)] max-w-lg overflow-y-auto border-border bg-card">
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
           {description && (
