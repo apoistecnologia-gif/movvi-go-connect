@@ -244,23 +244,45 @@ html[data-app-role="motorista"] main span {
   overflow-wrap: anywhere;
 }
 
-/* Métricas em três colunas ficam comprimidas em aparelhos de 320–359 px. */
+/* Métricas, benefícios e formulários em duas/três colunas ficam comprimidos
+ * em aparelhos de 320–359 px. Empilha somente no bundle do Motorista. */
 @media (max-width: 359px) {
   html[data-app-role="motorista"] [aria-label="Resumo do período"] > .grid.grid-cols-3,
   html[data-app-role="motorista"] [aria-label="Resumo do perfil"].grid.grid-cols-3,
-  html[data-app-role="motorista"] main .grid.grid-cols-3 {
+  html[data-app-role="motorista"] main .grid.grid-cols-3,
+  html[data-app-role="motorista"] main .grid.grid-cols-2,
+  html[data-app-role="motorista"] main [class*="grid-cols-[120px_1fr]"],
+  html[data-app-role="motorista"] main [class*="grid-cols-[110px_1fr]"],
+  html[data-app-role="motorista"] main [class*="grid-cols-[1fr_100px]"] {
     grid-template-columns: 1fr;
   }
 
   /* Linhas de status/financeiro que combinam texto + preço/ação precisam
    * quebrar sem esmagar o conteúdo em 320 px. */
-  html[data-app-role="motorista"] main .flex.items-center.justify-between.gap-3 {
+  html[data-app-role="motorista"] main .flex.items-center.justify-between.gap-3,
+  html[data-app-role="motorista"] main .flex.items-baseline.justify-between.gap-3 {
     flex-wrap: wrap;
   }
 
-  /* Carteira: tipo da chave + valor deixam o input estreito em telas de 320 px. */
-  html[data-app-role="motorista"] [class*="grid-cols-[120px_1fr]"] {
-    grid-template-columns: 1fr;
+  html[data-app-role="motorista"] main .flex.items-baseline.justify-between.gap-3 {
+    align-items: flex-start;
+  }
+
+  /* Truncamento em telas muito estreitas escondia nomes e descrições úteis. */
+  html[data-app-role="motorista"] main .truncate {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+  }
+
+  /* Cartão da mensalidade mantém o valor íntegro sem esmagar descrição/ícone. */
+  html[data-app-role="motorista"] main .flex.items-start.gap-3:has(> .shrink-0.text-[20px]) {
+    flex-wrap: wrap;
+  }
+
+  html[data-app-role="motorista"] main .flex.items-start.gap-3:has(> .shrink-0.text-[20px]) > .shrink-0.text-[20px] {
+    width: 100%;
+    text-align: left;
   }
 }
 
