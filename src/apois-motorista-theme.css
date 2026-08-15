@@ -220,6 +220,12 @@ html[data-app-role="motorista"] main.flex-1.px-4.py-6 {
   padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
 }
 
+/* A tela de status cadastral também usa py-6 sem reservar a área de gestos
+ * enquanto carrega ou quando algum bloco condicional não é renderizado. */
+html[data-app-role="motorista"] main.max-w-xl.space-y-4.px-4.py-6 {
+  padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
+}
+
 /* Perfil e shells antigos usam max(..., safe-area), que não soma barra + inset. */
 html[data-app-role="motorista"] main[style*="max(8rem"],
 html[data-app-role="motorista"] main[style*="max(7rem"] {
@@ -231,12 +237,25 @@ html[data-app-role="motorista"] button[aria-label="Voltar para o perfil"] {
   margin-top: env(safe-area-inset-top);
 }
 
+/* Conteúdo gerado pelo backend (motivos, nomes, meios de pagamento, IDs) não
+ * deve forçar overflow horizontal em telas estreitas. */
+html[data-app-role="motorista"] main p,
+html[data-app-role="motorista"] main span {
+  overflow-wrap: anywhere;
+}
+
 /* Métricas em três colunas ficam comprimidas em aparelhos de 320–359 px. */
 @media (max-width: 359px) {
   html[data-app-role="motorista"] [aria-label="Resumo do período"] > .grid.grid-cols-3,
   html[data-app-role="motorista"] [aria-label="Resumo do perfil"].grid.grid-cols-3,
   html[data-app-role="motorista"] main .grid.grid-cols-3 {
     grid-template-columns: 1fr;
+  }
+
+  /* Linhas de status/financeiro que combinam texto + preço/ação precisam
+   * quebrar sem esmagar o conteúdo em 320 px. */
+  html[data-app-role="motorista"] main .flex.items-center.justify-between.gap-3 {
+    flex-wrap: wrap;
   }
 
   /* Carteira: tipo da chave + valor deixam o input estreito em telas de 320 px. */
