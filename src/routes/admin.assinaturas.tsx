@@ -32,7 +32,7 @@ import { adminRefreshAsaasPayment } from "@/lib/payments/adminReconcile.function
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 
 export const Route = createFileRoute("/admin/assinaturas")({
-  head: () => ({ meta: [{ title: "Assinaturas — Admin MOVVI" }] }),
+  head: () => ({ meta: [{ title: "Assinaturas — Admin APOIS" }] }),
   component: AdminAssinaturasPage,
 });
 
@@ -318,7 +318,7 @@ function AdminAssinaturasPage() {
   return (
     <AdminLayout
       title="Assinaturas"
-      description={`${subs.length} assinaturas · ${plans.length} planos · MOVVI recebe apenas a mensalidade do motorista`}
+      description={`${subs.length} assinaturas · ${plans.length} planos · APOIS recebe apenas a mensalidade do motorista`}
       actions={
         <div className="flex gap-2">
           <Button size="sm" variant="outline" onClick={() => setConfirmAutoSuspend(true)}>

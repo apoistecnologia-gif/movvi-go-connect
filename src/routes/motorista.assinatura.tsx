@@ -25,11 +25,11 @@ import {
   Caption,
 } from "@/design-system";
 import { supabase } from "@/integrations/supabase/client";
-import { MOVVI_MONTHLY_FEE_BRL } from "@/lib/payments/types";
+import { APOIS_MONTHLY_FEE_BRL } from "@/lib/payments/types";
 import { formatCurrency } from "@/lib/finance/financeSettings";
 
 export const Route = createFileRoute("/motorista/assinatura")({
-  head: () => ({ meta: [{ title: "Mensalidade — Motorista MOVVI" }] }),
+  head: () => ({ meta: [{ title: "Mensalidade — Motorista APOIS" }] }),
   component: DriverSubscriptionPage,
 });
 
@@ -110,7 +110,7 @@ function DriverSubscriptionPage() {
 
   if (loading && !driver) {
     return (
-      <SettingsPageShell>
+      <SettingsPageShell variant="driver">
         <Loading label="Carregando assinatura…" />
       </SettingsPageShell>
     );
@@ -135,20 +135,20 @@ function DriverSubscriptionPage() {
   const notApprovedYet = driver?.approval_status !== "aprovado";
 
   return (
-    <SettingsPageShell>
+    <SettingsPageShell variant="driver">
       <SettingsHero
         icon={Crown}
         title="Mensalidade"
-        subtitle="Plano Motorista MOVVI Premium"
+        subtitle="Plano Motorista APOIS Premium"
         action={pillFor(financial)}
       />
 
       <DSCard className="p-5 space-y-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 space-y-1">
-            <HeadingS>Plano Motorista MOVVI</HeadingS>
+            <HeadingS>Plano Motorista APOIS</HeadingS>
             <BodySmall className="text-muted-foreground">
-              Acesso completo à plataforma MOVVI DRIVE.
+              Acesso completo à plataforma APOIS.
             </BodySmall>
           </div>
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
@@ -161,7 +161,7 @@ function DriverSubscriptionPage() {
             variant="metric"
             className="text-[clamp(28px,9vw,36px)] text-foreground"
           >
-            {formatCurrency(Number(driver?.subscription_value ?? MOVVI_MONTHLY_FEE_BRL))}
+            {formatCurrency(Number(driver?.subscription_value ?? APOIS_MONTHLY_FEE_BRL))}
           </Typography>
           <Caption>por mês</Caption>
         </div>

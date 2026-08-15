@@ -9,7 +9,7 @@ import { logAdminAction } from "@/lib/adminAudit";
 import { DSButton, DSCard, DSCardContent, DSCardDescription, DSCardHeader, DSCardTitle, DSInput } from "@/design-system";
 
 export const Route = createFileRoute("/admin/seguranca")({
-  head: () => ({ meta: [{ title: "Segurança — Admin MOVVI" }] }),
+  head: () => ({ meta: [{ title: "Segurança — Admin APOIS" }] }),
   component: AdminSecurityPage,
 });
 

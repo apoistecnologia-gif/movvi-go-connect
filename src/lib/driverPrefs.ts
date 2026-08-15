@@ -1,4 +1,4 @@
-// MOVVI DRIVE — preferências do motorista persistidas em Supabase + cache local.
+// APOIS — preferências do motorista persistidas em Supabase + cache local.
 import { supabase } from "@/integrations/supabase/client";
 
 export type DriverPrefs = {
@@ -56,7 +56,7 @@ async function refreshFromDb(userId: string): Promise<DriverPrefs> {
     .eq("user_id", userId)
     .maybeSingle();
   if (error) {
-    if (import.meta.env.DEV) console.warn("[MOVVI PREFS] load erro:", error.message);
+    if (import.meta.env.DEV) console.warn("[APOIS PREFS] load erro:", error.message);
     return DEFAULT_DRIVER_PREFS;
   }
   if (!data) {

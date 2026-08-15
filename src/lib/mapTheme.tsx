@@ -11,11 +11,11 @@ import {
 /**
  * Tema do Google Map — INDEPENDENTE do tema da aplicação.
  *
- * A aplicação MOVVI permanece sempre no tema escuro de marca.
+ * A aplicação APOIS permanece sempre no tema escuro de marca.
  * O mapa pode ser alternado entre claro / escuro / automático
  * (claro entre 06:00 e 18:00, escuro fora desse intervalo).
  *
- * Padrão MOVVI: Interface escura + Mapa claro premium.
+ * Padrão APOIS: Interface escura + Mapa claro premium.
  */
 export type MapThemeMode = "light" | "dark" | "auto";
 export type ResolvedMapTheme = "light" | "dark";

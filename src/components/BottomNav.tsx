@@ -17,12 +17,12 @@ type NavItem = {
 };
 
 /**
- * MOVVI BottomNav — floating pill nav.
+ * APOIS BottomNav — floating pill nav.
  *
  * - `floating` mode: pill flutuante sobre o conteúdo/mapa, safe-area aware.
  * - `sticky` mode: barra ancorada no rodapé com fundo blur.
  *
- * Item ativo ganha um "pill" verde MOVVI atrás do ícone; ícone e label
+ * Item ativo ganha um "pill" verde APOIS atrás do ícone; ícone e label
  * viram foreground contrastante. Layout responsivo até 360px de largura.
  */
 
@@ -64,7 +64,7 @@ export function BottomNav({
 }: BottomNavProps) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
-  // Container palette — pill flutuante fica escuro por padrão para a identidade MOVVI.
+  // Container palette — pill flutuante fica escuro por padrão para a identidade APOIS.
   const containerBg =
     theme === "dark"
       ? "bg-[#0B0F17]/95 ring-white/[0.08]"

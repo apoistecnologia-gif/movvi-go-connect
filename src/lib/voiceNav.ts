@@ -1,9 +1,8 @@
 /**
- * MOVVI — Voz de navegação para o motorista.
+ * APOIS — Voz de navegação para o motorista.
  *
  * Usa a Web Speech API nativa (SpeechSynthesis). Preferimos vozes pt-BR
- * da Google (femininas por padrão no Android/Chrome), com fallback para
- * qualquer voz pt-BR disponível. Sem dependência de rede.
+ * da Google, com fallback para qualquer voz pt-BR disponível.
  */
 
 export type NavStep = {
@@ -16,9 +15,21 @@ export type NavStep = {
 
 type SpokenKey = string;
 const spoken = new Set<SpokenKey>();
+const VOICE_PREF_KEY = "apois:motorista:voice-enabled";
 let cachedVoice: SpeechSynthesisVoice | null = null;
 let voicesReadyPromise: Promise<void> | null = null;
-let enabled = true;
+
+function readStoredVoicePreference(): boolean {
+  if (typeof window === "undefined") return true;
+  try {
+    const stored = window.localStorage.getItem(VOICE_PREF_KEY);
+    return stored === null ? true : stored !== "false";
+  } catch {
+    return true;
+  }
+}
+
+let enabled = readStoredVoicePreference();
 
 function synth(): SpeechSynthesis | null {
   if (typeof window === "undefined" || !("speechSynthesis" in window)) return null;
@@ -33,7 +44,6 @@ function loadVoices(): Promise<void> {
     const pick = () => {
       const list = s.getVoices();
       if (!list.length) return false;
-      // Preferência: Google pt-BR (feminina) → qualquer pt-BR → qualquer pt.
       cachedVoice =
         list.find((v) => /google/i.test(v.name) && /pt-BR/i.test(v.lang)) ??
         list.find((v) => /pt-BR/i.test(v.lang)) ??
@@ -43,7 +53,6 @@ function loadVoices(): Promise<void> {
     };
     if (pick()) return resolve();
     s.onvoiceschanged = () => { pick(); resolve(); };
-    // Alguns navegadores não disparam onvoiceschanged — força após timeout.
     setTimeout(() => { pick(); resolve(); }, 1200);
   });
   return voicesReadyPromise;
@@ -51,6 +60,9 @@ function loadVoices(): Promise<void> {
 
 export function setVoiceEnabled(v: boolean) {
   enabled = v;
+  if (typeof window !== "undefined") {
+    try { window.localStorage.setItem(VOICE_PREF_KEY, String(v)); } catch { /* noop */ }
+  }
   if (!v) synth()?.cancel();
 }
 
@@ -59,6 +71,7 @@ export function isVoiceEnabled(): boolean {
 }
 
 export async function primeVoice(): Promise<void> {
+  enabled = readStoredVoicePreference();
   await loadVoices();
 }
 
@@ -103,7 +116,6 @@ export function tickNavigation(
     return 2 * R * Math.asin(Math.min(1, Math.sqrt(a)));
   };
 
-  // Procura o próximo passo dentro de 400m que ainda não foi anunciado.
   for (let i = 0; i < steps.length; i++) {
     const s = steps[i];
     const d = distTo(s);

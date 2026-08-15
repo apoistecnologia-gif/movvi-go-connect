@@ -1,5 +1,6 @@
-// Device token registry. Abstracts web-push subscriptions and future
-// Capacitor (iOS/Android) native tokens behind a single register/unregister API.
+// APOIS — registro canônico de tokens de notificação do Motorista.
+// O backend resolve a sessão para public.users.id dentro das RPCs oficiais,
+// evitando misturar auth.users.id com o ID operacional usado pelo dispatch.
 
 import { supabase } from "@/integrations/supabase/client";
 
@@ -8,88 +9,122 @@ export type DevicePlatform = "web" | "ios" | "android";
 export type DeviceToken = {
   platform: DevicePlatform;
   token: string;
-  endpoint?: string | null;
-  p256dh?: string | null;
-  auth_key?: string | null;
-  user_agent?: string | null;
+  device_id?: string | null;
+  permission_status?: "granted" | "provisional" | "denied";
 };
+
+const TOKEN_STORAGE_KEY = "apois.notification.device_token";
+const PLATFORM_STORAGE_KEY = "apois.notification.device_platform";
+const DEVICE_ID_KEY = "apois.notification.device_id";
 
 function detectPlatform(): DevicePlatform {
   if (typeof window === "undefined") return "web";
-  // Future: detect Capacitor via (window as any).Capacitor?.getPlatform()
   const cap = (window as unknown as { Capacitor?: { getPlatform?: () => string } }).Capacitor;
-  const p = cap?.getPlatform?.();
-  if (p === "ios") return "ios";
-  if (p === "android") return "android";
+  const platform = cap?.getPlatform?.();
+  if (platform === "ios") return "ios";
+  if (platform === "android") return "android";
   return "web";
 }
 
-/**
- * Register the current device with the backend. For web, we store a stable
- * pseudo-token derived from the browser's Push subscription endpoint when
- * available, otherwise a random per-device UUID persisted in localStorage.
- * On native (future) this will store the FCM/APNs token.
- */
+function getDeviceId(): string {
+  try {
+    const existing = localStorage.getItem(DEVICE_ID_KEY);
+    if (existing) return existing;
+    const generated = crypto.randomUUID();
+    localStorage.setItem(DEVICE_ID_KEY, generated);
+    return generated;
+  } catch {
+    return `driver-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  }
+}
+
+function rememberDeviceToken(token: string, platform: DevicePlatform): void {
+  try {
+    localStorage.setItem(TOKEN_STORAGE_KEY, token);
+    localStorage.setItem(PLATFORM_STORAGE_KEY, platform);
+  } catch {
+    // Persistência local é apenas auxiliar para logout/touch.
+  }
+}
+
+function readRememberedToken(): { token: string; platform: DevicePlatform } | null {
+  try {
+    const token = localStorage.getItem(TOKEN_STORAGE_KEY) ?? "";
+    const rawPlatform = localStorage.getItem(PLATFORM_STORAGE_KEY) ?? "";
+    const platform: DevicePlatform = rawPlatform === "android" || rawPlatform === "ios" ? rawPlatform : "web";
+    return token ? { token, platform } : null;
+  } catch {
+    return null;
+  }
+}
+
+function forgetRememberedToken(): void {
+  try {
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
+    localStorage.removeItem(PLATFORM_STORAGE_KEY);
+  } catch {
+    // no-op
+  }
+}
+
 export async function registerDeviceToken(input?: Partial<DeviceToken>): Promise<void> {
-  const { data: auth } = await supabase.auth.getUser();
-  const uid = auth?.user?.id;
-  if (!uid) return;
+  const { data: sessionData } = await supabase.auth.getSession();
+  if (!sessionData.session) return;
 
   const platform = input?.platform ?? detectPlatform();
-  let token = input?.token;
+  let token = input?.token?.trim() ?? "";
 
+  // O fluxo real de FCM só usa Android/iOS. Mantemos web como fallback
+  // compatível sem tratar esse identificador como token FCM no APK.
   if (!token && platform === "web") {
-    const KEY = "movvi.device_token";
-    token = typeof localStorage !== "undefined" ? localStorage.getItem(KEY) ?? "" : "";
-    if (!token) {
+    try {
+      token = localStorage.getItem(TOKEN_STORAGE_KEY) ?? "";
+      if (!token) token = crypto.randomUUID();
+    } catch {
       token = crypto.randomUUID();
-      try {
-        localStorage.setItem(KEY, token);
-      } catch {
-        /* ignore */
-      }
     }
   }
   if (!token) return;
 
-  const ua = typeof navigator !== "undefined" ? navigator.userAgent : null;
-  await supabase.from("user_notification_tokens").upsert(
-    {
-      user_id: uid,
-      platform,
-      token,
-      endpoint: input?.endpoint ?? null,
-      p256dh: input?.p256dh ?? null,
-      auth_key: input?.auth_key ?? null,
-      user_agent: input?.user_agent ?? ua,
-      last_seen_at: new Date().toISOString(),
-    },
-    { onConflict: "user_id,token" },
-  );
+  const permissionStatus = input?.permission_status ?? "granted";
+  const { error } = await (supabase as any).rpc("register_notification_token", {
+    _token: token,
+    _platform: platform,
+    _device_id: input?.device_id ?? getDeviceId(),
+    _permission_status: permissionStatus,
+  });
+
+  if (error) throw error;
+  rememberDeviceToken(token, platform);
 }
 
 export async function unregisterCurrentDevice(): Promise<void> {
-  const { data: auth } = await supabase.auth.getUser();
-  const uid = auth?.user?.id;
-  if (!uid) return;
-  const token = typeof localStorage !== "undefined" ? localStorage.getItem("movvi.device_token") : null;
-  if (!token) return;
-  await supabase
-    .from("user_notification_tokens")
-    .delete()
-    .eq("user_id", uid)
-    .eq("token", token);
+  const remembered = readRememberedToken();
+  if (!remembered) return;
+
+  const { data: sessionData } = await supabase.auth.getSession();
+  if (!sessionData.session) return;
+
+  const { error } = await (supabase as any).rpc("deactivate_notification_token", {
+    _token: remembered.token,
+  });
+  if (error) throw error;
+  forgetRememberedToken();
 }
 
 export async function touchCurrentDevice(): Promise<void> {
-  const { data: auth } = await supabase.auth.getUser();
-  const uid = auth?.user?.id;
-  if (!uid) return;
-  const token = typeof localStorage !== "undefined" ? localStorage.getItem("movvi.device_token") : null;
-  if (!token) return;
-  await supabase
-    .from("user_notification_tokens")
-    .update({ last_seen_at: new Date().toISOString() })
-    .eq("user_id", uid)
-    .eq("token", token);
+  const remembered = readRememberedToken();
+  if (!remembered) return;
+
+  const { data: sessionData } = await supabase.auth.getSession();
+  if (!sessionData.session) return;
+
+  // A RPC é idempotente e atualiza last_used_at/updated_at do token existente.
+  const { error } = await (supabase as any).rpc("register_notification_token", {
+    _token: remembered.token,
+    _platform: remembered.platform,
+    _device_id: getDeviceId(),
+    _permission_status: "granted",
+  });
+  if (error) throw error;
 }

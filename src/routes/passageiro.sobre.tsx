@@ -5,7 +5,7 @@ import { PASSENGER_NAV } from "@/components/BottomNav";
 import { MovviLogo } from "@/components/MovviLogo";
 
 export const Route = createFileRoute("/passageiro/sobre")({
-  head: () => ({ meta: [{ title: "Sobre — MOVVI" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({ meta: [{ title: "Sobre — APOIS" }, { name: "robots", content: "noindex" }] }),
   component: SobrePage,
 });
 
@@ -16,7 +16,7 @@ function SobrePage() {
     <SettingsPageShell nav={PASSENGER_NAV}>
       <SettingsHero
         icon={Info}
-        title="Sobre a MOVVI"
+        title="Sobre a APOIS"
         subtitle="Mobilidade urbana premium para todo o Brasil."
       />
 
@@ -26,7 +26,7 @@ function SobrePage() {
           Versão do app: <span className="font-mono text-[#1B1B1B]">{APP_VERSION}</span>
         </p>
         <p className="text-[12px] text-[#707070]">
-          © {new Date().getFullYear()} MOVVI Tecnologia. Todos os direitos reservados.
+          © {new Date().getFullYear()} APOIS Tecnologia. Todos os direitos reservados.
         </p>
       </section>
 

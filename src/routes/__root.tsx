@@ -18,6 +18,8 @@ import { NotificationPermissionPrompt } from "../components/notifications/Notifi
 import { APP_ROLE, isForbiddenPath, defaultLandingPath } from "../lib/appRole";
 import { installMobileFetchProxy } from "../lib/mobileFetchProxy";
 import { initNativeBridge } from "../lib/nativeBridge";
+import { DriverPresenceKeeper } from "../components/DriverPresenceKeeper";
+import { DriverNativePermissionsSync } from "../components/DriverNativePermissionsSync";
 
 // Ativa o proxy de rede quando rodando dentro do APK (Capacitor).
 // No build web isso é no-op. Precisa rodar antes de qualquer serverFn
@@ -34,7 +36,7 @@ function NotFoundComponent() {
         <h1 className="text-7xl font-display font-bold text-primary">404</h1>
         <h2 className="mt-4 text-xl font-semibold text-foreground">Página não encontrada</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          O endereço solicitado não existe na plataforma MOVVI DRIVE.
+          O endereço solicitado não existe na plataforma APOIS.
         </p>
         <div className="mt-6">
           <Link
@@ -93,11 +95,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { name: "theme-color", content: "#05070D" },
-      { title: "MOVVI DRIVE — Mobilidade que move você" },
-      { name: "description", content: "Plataforma de mobilidade urbana MOVVI DRIVE. Carros, motos, fretes, guincho e envios em todo o Brasil." },
-      { name: "author", content: "MOVVI DRIVE" },
+      { title: "APOIS — Mobilidade que move você" },
+      { name: "description", content: "Plataforma de mobilidade urbana APOIS. Carros, motos, fretes, guincho e envios em todo o Brasil." },
+      { name: "author", content: "APOIS" },
       { property: "og:type", content: "website" },
-      { property: "og:site_name", content: "MOVVI DRIVE" },
+      { property: "og:site_name", content: "APOIS" },
       { property: "og:locale", content: "pt_BR" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -118,6 +120,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 function RootShell({ children }: { children: ReactNode }) {
+  // O build mobile já possui <html>, <head> e <body> em index.mobile.html.
+  // A shell documental completa é necessária apenas no build web/SSR.
+  if (APP_ROLE !== "web") return <>{children}</>;
+
   return (
     <html lang="pt-BR" className="dark" style={{ colorScheme: "dark" }}>
       <head>
@@ -158,8 +164,10 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <MapThemeProvider>
+          {APP_ROLE === "driver" ? <DriverNativePermissionsSync /> : null}
+          {APP_ROLE === "driver" ? <DriverPresenceKeeper /> : null}
           <Outlet />
-          <NotificationPermissionPrompt />
+          {APP_ROLE === "web" ? <NotificationPermissionPrompt /> : null}
           <Toaster richColors position="top-right" closeButton />
         </MapThemeProvider>
       </ThemeProvider>

@@ -26,7 +26,7 @@ import { GOOGLE_MAPS_API_KEY, GOOGLE_MAPS_LIBRARIES } from "@/lib/googleMaps";
 import { useJsApiLoader } from "@react-google-maps/api";
 
 export const Route = createFileRoute("/passageiro/favoritos")({
-  head: () => ({ meta: [{ title: "Favoritos — MOVVI DRIVE" }] }),
+  head: () => ({ meta: [{ title: "Favoritos — APOIS" }] }),
   component: FavoritosPage,
 });
 

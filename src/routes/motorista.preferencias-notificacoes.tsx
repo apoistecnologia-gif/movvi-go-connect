@@ -5,7 +5,7 @@ import { NotificationPreferencesPage } from "@/components/notifications/Notifica
 
 function Page() {
   return (
-    <SettingsPageShell>
+    <SettingsPageShell variant="driver">
       <SettingsHero
         icon={BellRing}
         title="Preferências de notificação"
@@ -19,6 +19,6 @@ function Page() {
 }
 
 export const Route = createFileRoute("/motorista/preferencias-notificacoes")({
-  head: () => ({ meta: [{ title: "Preferências de notificação — MOVVI" }] }),
+  head: () => ({ meta: [{ title: "Preferências de notificação — APOIS" }] }),
   component: Page,
 });

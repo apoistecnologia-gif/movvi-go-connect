@@ -17,10 +17,10 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { MovviHeader } from "@/components/MovviHeader";
-import { BottomNav, DRIVER_NAV } from "@/components/BottomNav";
+import { ApoisDriverBottomNav } from "@/components/ApoisDriverBottomNav";
 import { supabase } from "@/integrations/supabase/client";
+import { loadDriverProfile } from "@/lib/driverProfile";
 import { downloadCsv } from "@/lib/csvExport";
-import { getDriverWallet } from "@/lib/finance/wallet";
 import { getDriverSubscriptionInfo } from "@/lib/payments/subscription.functions";
 import { SUBSCRIPTION_STATUS_UI_LABELS, toUiStatus } from "@/lib/payments/types";
 import {
@@ -43,7 +43,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
 export const Route = createFileRoute("/motorista/ganhos")({
-  head: () => ({ meta: [{ title: "Financeiro — MOVVI DRIVE" }] }),
+  head: () => ({ meta: [{ title: "Financeiro — APOIS" }] }),
   component: DriverEarningsPage,
 });
 
@@ -105,7 +105,7 @@ function formatPayment(method: string | null): string {
 function DriverEarningsPage() {
   const navigate = useNavigate();
   const loadSubscription = useServerFn(getDriverSubscriptionInfo);
-  const [userId, setUserId] = useState<string | null>(null);
+  const [driverId, setDriverId] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>("week");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
@@ -114,40 +114,45 @@ function DriverEarningsPage() {
   const [available, setAvailable] = useState<number | null>(null);
   const [totals, setTotals] = useState({ today: 0, week: 0, month: 0 });
   const [sub, setSub] = useState<Awaited<ReturnType<typeof getDriverSubscriptionInfo>> | null>(null);
+  const [driverSubscriptionStatus, setDriverSubscriptionStatus] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
-      const { data: a } = await supabase.auth.getUser();
-      if (!a?.user) { navigate({ to: "/motorista/login" }); return; }
-      setUserId(a.user.id);
+      const profile = await loadDriverProfile();
+      if (!profile.ok) {
+        navigate({ to: profile.reason === "no_session" ? "/motorista/login" : "/motorista/status" });
+        return;
+      }
+      setDriverId(profile.profile.id);
+      setDriverSubscriptionStatus(profile.profile.subscription_status ?? null);
     })();
   }, [navigate]);
 
   useEffect(() => {
-    if (!userId) return;
+    if (!driverId) return;
     (async () => {
       try {
-        const [wallet, subInfo] = await Promise.all([
-          getDriverWallet(userId),
+        const [walletResult, subInfo] = await Promise.all([
+          (supabase as any).from("driver_wallets").select("available_balance").eq("driver_id", driverId).maybeSingle(),
           loadSubscription({}).catch(() => null),
         ]);
-        if (wallet) setAvailable(Number(wallet.available_balance ?? 0));
+        if (walletResult?.data) setAvailable(Number(walletResult.data.available_balance ?? 0));
         if (subInfo) setSub(subInfo);
       } catch {
         /* silent */
       }
     })();
-  }, [userId, loadSubscription]);
+  }, [driverId, loadSubscription]);
 
   useEffect(() => {
-    if (!userId) return;
+    if (!driverId) return;
     setLoading(true);
     (async () => {
       const [from, to] = range(filter, customFrom, customTo);
       const { data } = await supabase
         .from("rides")
         .select("id,created_at,completed_at,origin_name,destination_name,distance_km,duration_min,final_price,estimated_price,payment_method,category")
-        .eq("driver_id", userId).eq("status", "finalizada")
+        .eq("driver_id", driverId).eq("status", "finalizada")
         .gte("completed_at", from.toISOString())
         .lte("completed_at", to.toISOString())
         .order("completed_at", { ascending: false });
@@ -160,7 +165,7 @@ function DriverEarningsPage() {
       const { data: monthRows } = await supabase
         .from("rides")
         .select("final_price,estimated_price,completed_at")
-        .eq("driver_id", userId).eq("status", "finalizada")
+        .eq("driver_id", driverId).eq("status", "finalizada")
         .gte("completed_at", monthStart.toISOString());
       let t = 0, w = 0, m = 0;
       (monthRows ?? []).forEach((r) => {
@@ -173,7 +178,7 @@ function DriverEarningsPage() {
       setTotals({ today: t, week: w, month: m });
       setLoading(false);
     })();
-  }, [userId, filter, customFrom, customTo]);
+  }, [driverId, filter, customFrom, customTo]);
 
   const periodStats = useMemo(() => {
     const earnings = rides.reduce((s, r) => s + Number(r.final_price ?? r.estimated_price ?? 0), 0);
@@ -182,7 +187,7 @@ function DriverEarningsPage() {
 
   const displayedBalance = available ?? totals.month;
 
-  const subUi = sub ? toUiStatus(sub.subscriptionStatus) : "expired";
+  const subUi = toUiStatus(sub?.subscriptionStatus ?? driverSubscriptionStatus);
   const subLabel = SUBSCRIPTION_STATUS_UI_LABELS[subUi];
   const subActive = subUi === "active";
   const subExpires = sub?.nextDueAt
@@ -191,7 +196,7 @@ function DriverEarningsPage() {
 
   function exportCsv() {
     downloadCsv(
-      `movvi-ganhos-${filter}`,
+      `apois-ganhos-${filter}`,
       rides.map((r) => ({
         id: r.id,
         data: new Date(r.completed_at ?? r.created_at).toLocaleString("pt-BR"),
@@ -209,7 +214,7 @@ function DriverEarningsPage() {
   function exportPdf() {
     const doc = new jsPDF();
     doc.setFontSize(16);
-    doc.text("MOVVI DRIVE — Extrato de Ganhos", 14, 16);
+    doc.text("APOIS — Extrato de Ganhos", 14, 16);
     doc.setFontSize(10);
     doc.text(`Período: ${filter} · Gerado em ${new Date().toLocaleString("pt-BR")}`, 14, 23);
     doc.text(`Total: ${brl(periodStats.earnings)} · ${periodStats.trips} corridas`, 14, 30);
@@ -227,7 +232,7 @@ function DriverEarningsPage() {
       styles: { fontSize: 8 },
       headStyles: { fillColor: [18, 24, 38] },
     });
-    doc.save(`movvi-extrato-${filter}.pdf`);
+    doc.save(`apois-extrato-${filter}.pdf`);
   }
 
   return (
@@ -304,7 +309,7 @@ function DriverEarningsPage() {
             </span>
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <Body className="font-semibold">MOVVI Premium</Body>
+                <Body className="font-semibold">APOIS Premium</Body>
                 <StatusPill
                   status={subActive ? "accepted" : "cancelled"}
                   label={subLabel}
@@ -397,7 +402,7 @@ function DriverEarningsPage() {
           )}
         </div>
       </main>
-      <BottomNav items={DRIVER_NAV} />
+      <ApoisDriverBottomNav />
     </div>
   );
 }

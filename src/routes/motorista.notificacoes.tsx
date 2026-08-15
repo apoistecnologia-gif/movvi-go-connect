@@ -1,13 +1,13 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { Bell, Check, Trash2 } from "lucide-react";
-import { SettingsPageShell, SettingsHero } from "@/components/settings";
+import { useCallback, useEffect, useState } from "react";
+import { Bell, Check, CheckCheck, Loader2, Trash2 } from "lucide-react";
+import { MovviHeader } from "@/components/MovviHeader";
 import { supabase } from "@/integrations/supabase/client";
+import { loadDriverProfile } from "@/lib/driverProfile";
 import { toast } from "sonner";
-import { DSButton } from "@/design-system";
 
 export const Route = createFileRoute("/motorista/notificacoes")({
-  head: () => ({ meta: [{ title: "Notificações — MOVVI DRIVE" }] }),
+  head: () => ({ meta: [{ title: "Notificações — APOIS Motorista" }] }),
   component: DriverNotificationsPage,
 });
 
@@ -15,140 +15,194 @@ type Notif = {
   id: string;
   title: string;
   body: string | null;
-  category: string | null;
   read_at: string | null;
   created_at: string;
 };
 
 function DriverNotificationsPage() {
   const navigate = useNavigate();
-  const [userId, setUserId] = useState<string | null>(null);
+  const [mobilityUserId, setMobilityUserId] = useState<string | null>(null);
   const [items, setItems] = useState<Notif[]>([]);
   const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
 
-  async function load(uid: string) {
+  const load = useCallback(async (userId: string) => {
     const { data, error } = await supabase
-      .from("notification_inbox")
-      .select("id,title,body,category,read_at,created_at")
-      .eq("user_id", uid)
+      .from("notifications")
+      .select("id,title,body,read_at,created_at")
+      .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .limit(100);
-    if (!error) setItems((data ?? []) as Notif[]);
+    if (error) {
+      console.error("[APOIS Motorista] notificações:", error);
+      toast.error("Não foi possível carregar as notificações.");
+    } else {
+      setItems((data ?? []) as Notif[]);
+    }
     setLoading(false);
-  }
+  }, []);
 
   useEffect(() => {
-    (async () => {
-      const { data: a } = await supabase.auth.getUser();
-      if (!a?.user) { navigate({ to: "/motorista/login" }); return; }
-      setUserId(a.user.id);
-      await load(a.user.id);
+    let alive = true;
+    void (async () => {
+      const profile = await loadDriverProfile();
+      if (!alive) return;
+      if (!profile.ok) {
+        await navigate({
+          to: profile.reason === "no_session" ? "/motorista/login" : "/motorista/status",
+        });
+        return;
+      }
+      const userId = profile.profile.user_id;
+      setMobilityUserId(userId);
+      await load(userId);
     })();
-  }, [navigate]);
+    return () => {
+      alive = false;
+    };
+  }, [load, navigate]);
+
+  useEffect(() => {
+    if (!mobilityUserId) return;
+    const channel = supabase
+      .channel(`apois-driver-notifications-${mobilityUserId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${mobilityUserId}` },
+        () => void load(mobilityUserId),
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [load, mobilityUserId]);
 
   async function markRead(id: string) {
-    if (!userId) return;
-    await supabase.from("notification_inbox").update({ read_at: new Date().toISOString() }).eq("id", id);
-    setItems((prev) => prev.map((n) => (n.id === id ? { ...n, read_at: new Date().toISOString() } : n)));
+    const now = new Date().toISOString();
+    const { error } = await supabase.from("notifications").update({ read_at: now }).eq("id", id);
+    if (error) return toast.error("Não foi possível marcar como lida.");
+    setItems((prev) => prev.map((item) => (item.id === id ? { ...item, read_at: now } : item)));
   }
+
   async function markAll() {
-    if (!userId) return;
-    await supabase
-      .from("notification_inbox")
-      .update({ read_at: new Date().toISOString() })
-      .eq("user_id", userId)
+    if (!mobilityUserId || busy) return;
+    setBusy(true);
+    const now = new Date().toISOString();
+    const { error } = await supabase
+      .from("notifications")
+      .update({ read_at: now })
+      .eq("user_id", mobilityUserId)
       .is("read_at", null);
-    if (userId) await load(userId);
+    setBusy(false);
+    if (error) return toast.error("Não foi possível atualizar as notificações.");
+    setItems((prev) => prev.map((item) => ({ ...item, read_at: item.read_at ?? now })));
     toast.success("Todas marcadas como lidas.");
   }
+
   async function remove(id: string) {
-    await supabase.from("notification_inbox").delete().eq("id", id);
-    setItems((prev) => prev.filter((n) => n.id !== id));
+    const { error } = await supabase.from("notifications").delete().eq("id", id);
+    if (error) return toast.error("Não foi possível excluir a notificação.");
+    setItems((prev) => prev.filter((item) => item.id !== id));
   }
 
-  const unread = items.filter((i) => !i.read_at).length;
+  const unread = items.filter((item) => !item.read_at).length;
 
   return (
-    <SettingsPageShell>
-      <SettingsHero
-        icon={Bell}
-        title="Notificações"
-        subtitle={`${unread} não ${unread === 1 ? "lida" : "lidas"}`}
-        action={
-          items.length > 0 ? (
-            <DSButton variant="outline" size="sm" onClick={markAll}>
-              <Check className="mr-1 h-3.5 w-3.5" /> Marcar todas
-            </DSButton>
-          ) : undefined
-        }
-      />
+    <div className="min-h-[100dvh] bg-[#050607] text-white">
+      <MovviHeader logoutRedirect="/" />
 
-      {loading ? (
-        <ul className="space-y-2.5" aria-busy="true" aria-label="Carregando notificações">
-          {[0, 1, 2, 3].map((i) => (
-            <li
-              key={i}
-              className="rounded-[24px] bg-white p-4 shadow-[0_6px_20px_-14px_rgba(15,23,42,0.12)] ring-1 ring-black/5"
-            >
-              <div className="space-y-2">
-                <div className="h-3.5 w-2/5 animate-pulse rounded bg-[#F1F5F1]" />
-                <div className="h-3 w-4/5 animate-pulse rounded bg-[#F1F5F1]" />
-                <div className="h-2.5 w-1/4 animate-pulse rounded bg-[#F1F5F1]" />
+      <main className="mx-auto w-full max-w-xl px-4 pb-[calc(env(safe-area-inset-bottom)+32px)] pt-5">
+        <section className="mb-5 rounded-[26px] border border-white/5 bg-[#0D0F11] p-5">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#F6BE1C]/10 text-[#F6BE1C]">
+                <Bell className="h-5 w-5" />
               </div>
-            </li>
-          ))}
-        </ul>
-      ) : items.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-[24px] bg-white px-6 py-14 text-center shadow-[0_6px_20px_-14px_rgba(15,23,42,0.12)] ring-1 ring-black/5">
-          <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[#76C139]/10 text-[#5A9A2A]">
-            <Bell className="h-6 w-6" strokeWidth={1.75} />
+              <div className="min-w-0">
+                <p className="text-[9px] font-black uppercase tracking-[0.18em] text-[#F6BE1C]">Central APOIS</p>
+                <h1 className="mt-1 text-xl font-black tracking-tight">Notificações</h1>
+                <p className="mt-1 text-[11px] font-medium text-zinc-500">
+                  {unread === 0 ? "Tudo em dia" : `${unread} ${unread === 1 ? "não lida" : "não lidas"}`}
+                </p>
+              </div>
+            </div>
+
+            {items.length > 0 ? (
+              <button
+                type="button"
+                disabled={busy || unread === 0}
+                onClick={() => void markAll()}
+                className="flex min-h-10 shrink-0 items-center gap-1.5 rounded-2xl border border-[#F6BE1C]/20 bg-[#F6BE1C]/10 px-3 text-[10px] font-black text-[#F6BE1C] disabled:opacity-35"
+              >
+                {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCheck className="h-3.5 w-3.5" />}
+                Ler todas
+              </button>
+            ) : null}
           </div>
-          <p className="text-[15px] font-semibold text-[#1B1B1B]">Tudo em dia</p>
-          <p className="mt-1 max-w-xs text-[12.5px] text-[#707070]">
-            Você não tem novas notificações. Avisos sobre corridas, pagamentos e atualizações aparecem aqui.
-          </p>
-        </div>
-      ) : (
-        <ul className="space-y-2.5">
-          {items.map((n, i) => (
-            <li
-              key={n.id}
-              className={`animate-fade-in rounded-[24px] p-4 shadow-[0_6px_20px_-14px_rgba(15,23,42,0.12)] ring-1 ring-black/5 transition ${
-                n.read_at ? "bg-white" : "bg-[#F3FBEA]"
-              }`}
-              style={{ animationDelay: `${i * 40}ms`, animationFillMode: "backwards" }}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <p className="text-[15px] font-semibold leading-snug text-[#1B1B1B]">{n.title}</p>
-                  {n.body && <p className="mt-1 text-[12.5px] leading-relaxed text-[#707070]">{n.body}</p>}
-                  <p className="mt-1.5 text-[11px] text-[#94A3B8]">
-                    {new Date(n.created_at).toLocaleString("pt-BR")}
-                  </p>
-                </div>
-                <div className="flex flex-col gap-1">
-                  {!n.read_at && (
+        </section>
+
+        {loading ? (
+          <div className="flex min-h-[45vh] items-center justify-center">
+            <Loader2 className="h-7 w-7 animate-spin text-[#F6BE1C]" />
+          </div>
+        ) : items.length === 0 ? (
+          <section className="rounded-[26px] border border-white/5 bg-[#0D0F11] px-6 py-14 text-center">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#F6BE1C]/10 text-[#F6BE1C]">
+              <Bell className="h-6 w-6" />
+            </div>
+            <p className="mt-4 text-sm font-black text-zinc-200">Nenhuma notificação</p>
+            <p className="mx-auto mt-1 max-w-xs text-[11px] font-medium leading-5 text-zinc-600">
+              Avisos sobre corridas, pagamentos e segurança aparecerão aqui.
+            </p>
+          </section>
+        ) : (
+          <ul className="space-y-2.5">
+            {items.map((item) => (
+              <li
+                key={item.id}
+                className={`rounded-[22px] border p-4 transition ${
+                  item.read_at
+                    ? "border-white/5 bg-[#0D0F11]"
+                    : "border-[#F6BE1C]/18 bg-[#F6BE1C]/[0.06]"
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${item.read_at ? "bg-zinc-700" : "bg-[#F6BE1C]"}`} />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[13px] font-black leading-snug text-white">{item.title}</p>
+                    {item.body ? (
+                      <p className="mt-1.5 text-[11px] font-medium leading-5 text-zinc-500">{item.body}</p>
+                    ) : null}
+                    <p className="mt-2 text-[9px] font-bold text-zinc-700">
+                      {new Date(item.created_at).toLocaleString("pt-BR")}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 flex-col gap-1">
+                    {!item.read_at ? (
+                      <button
+                        type="button"
+                        onClick={() => void markRead(item.id)}
+                        className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#F6BE1C]/10 text-[#F6BE1C] active:scale-95"
+                        aria-label="Marcar como lida"
+                      >
+                        <Check className="h-4 w-4" />
+                      </button>
+                    ) : null}
                     <button
-                      onClick={() => markRead(n.id)}
-                      className="flex h-9 w-9 items-center justify-center rounded-xl text-[#5A9A2A] transition hover:bg-[#76C139]/10 active:scale-95"
-                      aria-label="Marcar como lida"
+                      type="button"
+                      onClick={() => void remove(item.id)}
+                      className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-400/8 text-red-400 active:scale-95"
+                      aria-label="Excluir notificação"
                     >
-                      <Check className="h-4 w-4" />
+                      <Trash2 className="h-4 w-4" />
                     </button>
-                  )}
-                  <button
-                    onClick={() => remove(n.id)}
-                    className="flex h-9 w-9 items-center justify-center rounded-xl text-[#DC2626] transition hover:bg-[#FEE2E2] active:scale-95"
-                    aria-label="Excluir"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                  </div>
                 </div>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-    </SettingsPageShell>
+              </li>
+            ))}
+          </ul>
+        )}
+      </main>
+    </div>
   );
 }

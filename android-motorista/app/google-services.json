@@ -1,0 +1,98 @@
+{
+  "project_info": {
+    "project_number": "808678424624",
+    "project_id": "movvi-4d041",
+    "storage_bucket": "movvi-4d041.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:808678424624:android:363cfe71ef943d02bf2df5",
+        "android_client_info": {
+          "package_name": "com.apois.motorista"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCy-GKYNPmfESc0ig4fhch3sTrw17lIGsw"
+        },
+        {
+          "current_key": "AIzaSyBwyo_3LzRA-2-OE7tJjvZIt0CDzav01xU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:808678424624:android:cd7479afa0c4bb46bf2df5",
+        "android_client_info": {
+          "package_name": "com.apois.passageiro"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCy-GKYNPmfESc0ig4fhch3sTrw17lIGsw"
+        },
+        {
+          "current_key": "AIzaSyBwyo_3LzRA-2-OE7tJjvZIt0CDzav01xU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:808678424624:android:14ff12743d57d380bf2df5",
+        "android_client_info": {
+          "package_name": "com.movvi.driver"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCy-GKYNPmfESc0ig4fhch3sTrw17lIGsw"
+        },
+        {
+          "current_key": "AIzaSyBwyo_3LzRA-2-OE7tJjvZIt0CDzav01xU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:808678424624:android:2306db60b1abc521bf2df5",
+        "android_client_info": {
+          "package_name": "com.movvi.passenger"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCy-GKYNPmfESc0ig4fhch3sTrw17lIGsw"
+        },
+        {
+          "current_key": "AIzaSyBwyo_3LzRA-2-OE7tJjvZIt0CDzav01xU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

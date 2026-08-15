@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Validação anti-regressão do APK Android.
-// Impede compilar novamente um pacote com MainActivity antigo, target SDK 35/36
+// Impede compilar novamente um pacote com MainActivity antiga, target SDK 35/36
 // ou configuração Capacitor que quebra entrada de texto no WebView.
 
 import { existsSync, readFileSync } from "node:fs";
@@ -16,7 +16,7 @@ if (role !== "passageiro" && role !== "motorista") {
 
 const root = process.cwd();
 const androidDir = resolve(root, checkLiveAndroid ? "android" : `android-${role}`);
-const packageDir = role === "passageiro" ? "com/movvi/passenger" : "com/movvi/driver";
+const packageDir = role === "passageiro" ? "com/movvi/passenger" : "com/apois/motorista";
 const configFile = resolve(root, `capacitor.${role}.config.ts`);
 
 function readRequired(path) {
@@ -37,6 +37,7 @@ const manifest = readRequired(resolve(androidDir, "app/src/main/AndroidManifest.
 const mainActivity = readRequired(
   resolve(androidDir, `app/src/main/java/${packageDir}/MainActivity.java`),
 );
+const appGradle = readRequired(resolve(androidDir, "app/build.gradle"));
 const config = readRequired(configFile);
 
 if (!/targetSdkVersion\s*=\s*34\b/.test(variables)) {
@@ -73,11 +74,83 @@ const forbiddenMainActivityPatterns = [
 for (const pattern of forbiddenMainActivityPatterns) {
   if (mainActivity.includes(pattern)) {
     fail(
-      `MainActivity.java contém '${pattern}'. A Activity deve ficar mínima para não interferir no IME/WebView.`,
+      `MainActivity.java contém '${pattern}'. A Activity não pode interferir no IME/WebView.`,
+    );
+  }
+}
+
+if (role === "motorista") {
+  const service = readRequired(
+    resolve(androidDir, "app/src/main/java/com/apois/motorista/DriverLocationService.java"),
+  );
+  const plugin = readRequired(
+    resolve(androidDir, "app/src/main/java/com/apois/motorista/DriverLocationPlugin.java"),
+  );
+
+  const requiredManifestFragments = [
+    'android.permission.ACCESS_BACKGROUND_LOCATION',
+    'android.permission.FOREGROUND_SERVICE_LOCATION',
+    'android:name=".DriverLocationService"',
+    'android:foregroundServiceType="location"',
+  ];
+  for (const fragment of requiredManifestFragments) {
+    if (!manifest.includes(fragment)) fail(`contrato de localização nativa ausente no Manifest: ${fragment}`);
+  }
+
+  if (!appGradle.includes("com.google.android.gms:play-services-location")) {
+    fail("play-services-location precisa estar no APK do motorista.");
+  }
+  if (!mainActivity.includes("registerPlugin(DriverLocationPlugin.class)")) {
+    fail("DriverLocationPlugin precisa estar registrado na MainActivity.");
+  }
+
+  for (const fragment of [
+    "FusedLocationProviderClient",
+    "startForeground",
+    "driver_set_presence",
+    "/auth/v1/token?grant_type=refresh_token",
+  ]) {
+    if (!service.includes(fragment)) fail(`DriverLocationService incompleto: ${fragment}`);
+  }
+  if (!plugin.includes("ContextCompat.startForegroundService")) {
+    fail("DriverLocationPlugin precisa iniciar Foreground Service explicitamente.");
+  }
+
+  const nativeBridge = readRequired(resolve(root, "src/lib/nativeBridge.ts"));
+  const packageJson = readRequired(resolve(root, "package.json"));
+  if (!nativeBridge.includes('@capacitor/push-notifications')) {
+    fail("bridge nativa do motorista precisa integrar @capacitor/push-notifications.");
+  }
+  if (!packageJson.includes('"@capacitor/push-notifications"')) {
+    fail("dependência @capacitor/push-notifications ausente.");
+  }
+}
+
+if (checkLiveAndroid) {
+  const packedConfigPath = resolve(androidDir, "app/src/main/assets/capacitor.config.json");
+  const packedConfigRaw = readRequired(packedConfigPath);
+  let packedConfig;
+  try {
+    packedConfig = JSON.parse(packedConfigRaw);
+  } catch {
+    fail("android/app/src/main/assets/capacitor.config.json não contém JSON válido.");
+  }
+
+  if (packedConfig.appId !== (role === "motorista" ? "com.apois.motorista" : packedConfig.appId)) {
+    fail(`appId empacotado do motorista está incorreto: ${packedConfig.appId ?? "ausente"}.`);
+  }
+  if (packedConfig.android?.initialFocus !== false) {
+    fail(
+      `config empacotada precisa ter android.initialFocus=false; recebido: ${packedConfig.android?.initialFocus}.`,
+    );
+  }
+  if (packedConfig.android?.captureInput !== false) {
+    fail(
+      `config empacotada precisa ter android.captureInput=false; recebido: ${packedConfig.android?.captureInput}.`,
     );
   }
 }
 
 console.log(
-  `[verify-mobile-native] OK (${role}${checkLiveAndroid ? ", android/" : ", fonte"}): native login/input safe.`,
+  `[verify-mobile-native] OK (${role}${checkLiveAndroid ? ", android/ + config empacotada" : ", fonte"}): native login/input safe${role === "motorista" ? ", foreground location contract present" : ""}.`,
 );

@@ -1,5 +1,5 @@
 /**
- * MOVVI — Driver Professional Profile.
+ * APOIS — Driver Professional Profile.
  * Read-only presentational card. Shows only public trust info.
  * Never render sensitive data (CPF, CNH, documents, phone, email).
  */
@@ -203,7 +203,7 @@ export function DriverProfessionalProfile({
       <AmenitiesSection userId={profile.user_id} />
 
       <p className="text-center text-[10.5px] leading-relaxed text-muted-foreground/80">
-        Dados públicos de confiança. A MOVVI não compartilha documentos ou informações
+        Dados públicos de confiança. A APOIS não compartilha documentos ou informações
         pessoais sensíveis.
       </p>
     </div>

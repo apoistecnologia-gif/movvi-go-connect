@@ -1,200 +1,308 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { AlertTriangle, Loader2, Phone, Plus, Share2, ShieldAlert, Trash2 } from "lucide-react";
-import { SettingsPageShell, SettingsHero, SettingsSection } from "@/components/settings";
+import { useCallback, useEffect, useState } from "react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Loader2,
+  Phone,
+  Plus,
+  Share2,
+  ShieldAlert,
+  Star,
+  Trash2,
+} from "lucide-react";
+import { MovviHeader } from "@/components/MovviHeader";
 import { supabase } from "@/integrations/supabase/client";
+import { loadDriverProfile } from "@/lib/driverProfile";
 import { toast } from "sonner";
-import { DSButton, DSInput, DSLabel } from "@/design-system";
 
 export const Route = createFileRoute("/motorista/seguranca")({
-  head: () => ({ meta: [{ title: "Segurança — MOVVI DRIVE" }] }),
+  head: () => ({ meta: [{ title: "Segurança — APOIS Motorista" }] }),
   component: DriverSecurityPage,
 });
 
-type Contact = { id: string; name: string; phone: string; relation: string | null; is_primary: boolean };
+type Contact = {
+  id: string;
+  name: string;
+  phone: string;
+  relation: string | null;
+  is_primary: boolean;
+};
 
 function DriverSecurityPage() {
   const navigate = useNavigate();
-  const [userId, setUserId] = useState<string | null>(null);
+  const [driverId, setDriverId] = useState<string | null>(null);
+  const [mobilityUserId, setMobilityUserId] = useState<string | null>(null);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [relation, setRelation] = useState("");
   const [adding, setAdding] = useState(false);
+  const db = supabase as any;
 
-  async function load(uid: string) {
-    const { data } = await supabase
+  const load = useCallback(async (id: string) => {
+    const { data, error } = await db
       .from("driver_emergency_contacts")
       .select("id,name,phone,relation,is_primary")
-      .eq("driver_user_id", uid)
-      .order("is_primary", { ascending: false });
+      .eq("driver_id", id)
+      .order("is_primary", { ascending: false })
+      .order("created_at", { ascending: true });
+    if (error) {
+      console.error("[APOIS Motorista] contatos de emergência:", error);
+      toast.error("Não foi possível carregar os contatos de emergência.");
+    }
     setContacts((data ?? []) as Contact[]);
     setLoading(false);
-  }
+  }, []);
 
   useEffect(() => {
-    (async () => {
-      const { data: a } = await supabase.auth.getUser();
-      if (!a?.user) { navigate({ to: "/motorista/login" }); return; }
-      setUserId(a.user.id);
-      await load(a.user.id);
+    let alive = true;
+    void (async () => {
+      const profile = await loadDriverProfile();
+      if (!alive) return;
+      if (!profile.ok) {
+        await navigate({
+          to: profile.reason === "no_session" ? "/motorista/login" : "/motorista/status",
+        });
+        return;
+      }
+      setDriverId(profile.profile.id);
+      setMobilityUserId(profile.profile.user_id);
+      await load(profile.profile.id);
     })();
-  }, [navigate]);
+    return () => {
+      alive = false;
+    };
+  }, [load, navigate]);
 
   async function addContact() {
-    if (!userId || !name || !phone) return;
+    if (!driverId || !name.trim() || !phone.trim() || adding) return;
     setAdding(true);
-    const { error } = await supabase.from("driver_emergency_contacts").insert({
-      driver_user_id: userId, name, phone, relation: relation || null,
+    const { error } = await db.from("driver_emergency_contacts").insert({
+      driver_id: driverId,
+      name: name.trim(),
+      phone: phone.trim(),
+      relation: relation.trim() || null,
       is_primary: contacts.length === 0,
     });
     setAdding(false);
-    if (error) { toast.error(error.message); return; }
-    setName(""); setPhone(""); setRelation("");
-    await load(userId);
-    toast.success("Contato adicionado!");
+    if (error) {
+      toast.error("Não foi possível adicionar o contato.");
+      return;
+    }
+    setName("");
+    setPhone("");
+    setRelation("");
+    await load(driverId);
+    toast.success("Contato de emergência adicionado.");
   }
 
   async function setPrimary(id: string) {
-    if (!userId) return;
-    await supabase.from("driver_emergency_contacts").update({ is_primary: false }).eq("driver_user_id", userId);
-    await supabase.from("driver_emergency_contacts").update({ is_primary: true }).eq("id", id);
-    await load(userId);
+    if (!driverId) return;
+    const { error: clearError } = await db
+      .from("driver_emergency_contacts")
+      .update({ is_primary: false, updated_at: new Date().toISOString() })
+      .eq("driver_id", driverId);
+    if (clearError) return toast.error("Não foi possível atualizar o contato principal.");
+
+    const { error } = await db
+      .from("driver_emergency_contacts")
+      .update({ is_primary: true, updated_at: new Date().toISOString() })
+      .eq("id", id)
+      .eq("driver_id", driverId);
+    if (error) return toast.error("Não foi possível definir o contato principal.");
+    await load(driverId);
   }
 
   async function remove(id: string) {
-    await supabase.from("driver_emergency_contacts").delete().eq("id", id);
-    if (userId) await load(userId);
+    if (!driverId) return;
+    const removedWasPrimary = contacts.some((contact) => contact.id === id && contact.is_primary);
+    const { error } = await db
+      .from("driver_emergency_contacts")
+      .delete()
+      .eq("id", id)
+      .eq("driver_id", driverId);
+    if (error) return toast.error("Não foi possível excluir o contato.");
+
+    await load(driverId);
+    if (removedWasPrimary) {
+      const remaining = contacts.find((contact) => contact.id !== id);
+      if (remaining) await setPrimary(remaining.id);
+    }
   }
 
   async function triggerSOS() {
-    if (!userId) return;
-    const pos = await new Promise<GeolocationPosition | null>((res) => {
-      if (!navigator.geolocation) return res(null);
-      navigator.geolocation.getCurrentPosition((p) => res(p), () => res(null), { enableHighAccuracy: true, timeout: 5000 });
+    if (!driverId || !mobilityUserId) return;
+    const pos = await new Promise<GeolocationPosition | null>((resolve) => {
+      if (!navigator.geolocation) return resolve(null);
+      navigator.geolocation.getCurrentPosition(
+        (value) => resolve(value),
+        () => resolve(null),
+        { enableHighAccuracy: true, timeout: 5000 },
+      );
     });
-    const { error } = await supabase.from("sos_alerts").insert({
-      user_id: userId,
+
+    const { error } = await db.from("sos_alerts").insert({
+      user_id: mobilityUserId,
+      driver_id: driverId,
       lat: pos?.coords.latitude ?? null,
       lng: pos?.coords.longitude ?? null,
-      message: "SOS acionado pelo motorista",
+      message: "SOS acionado pelo motorista no aplicativo APOIS.",
+      status: "open",
     });
-    if (error) toast.error(error.message);
-    else toast.success("Alerta SOS enviado para o suporte MOVVI.");
+    if (error) toast.error("Não foi possível registrar o alerta SOS.");
+    else toast.success("Alerta SOS registrado e enviado para a central APOIS.");
   }
 
   function shareLocation() {
-    if (!navigator.geolocation) { toast.error("GPS indisponível."); return; }
+    if (!navigator.geolocation) {
+      toast.error("GPS indisponível.");
+      return;
+    }
     navigator.geolocation.getCurrentPosition(
-      async (p) => {
-        const url = `https://maps.google.com/?q=${p.coords.latitude},${p.coords.longitude}`;
+      async (position) => {
+        const url = `https://maps.google.com/?q=${position.coords.latitude},${position.coords.longitude}`;
         if (navigator.share) {
-          await navigator.share({ title: "Minha localização — MOVVI", text: "Estou aqui agora:", url });
+          await navigator.share({
+            title: "Minha localização — APOIS",
+            text: "Estou aqui agora:",
+            url,
+          });
         } else {
           await navigator.clipboard.writeText(url);
-          toast.success("Link da localização copiado!");
+          toast.success("Link da localização copiado.");
         }
       },
       () => toast.error("Não foi possível obter sua localização."),
+      { enableHighAccuracy: true, timeout: 8000 },
     );
   }
 
   return (
-    <SettingsPageShell>
-      <SettingsHero
-        icon={ShieldAlert}
-        title="Segurança"
-        subtitle="Acione ajuda rápida e gerencie contatos de emergência."
-        tone="danger"
-      />
+    <div className="min-h-[100dvh] bg-[#050607] text-white">
+      <MovviHeader logoutRedirect="/" />
 
-      <section className="rounded-[24px] bg-white p-5 shadow-[0_6px_20px_-14px_rgba(15,23,42,0.12)] ring-1 ring-black/5 space-y-3">
-        <DSButton onClick={triggerSOS} variant="destructive" className="w-full" size="lg">
-          <AlertTriangle className="mr-2 h-5 w-5" /> Acionar SOS
-        </DSButton>
-        <div className="grid grid-cols-2 gap-2">
-          <DSButton asChild variant="outline">
-            <a href="tel:190"><Phone className="mr-2 h-4 w-4" /> Polícia 190</a>
-          </DSButton>
-          <DSButton onClick={shareLocation} variant="outline">
-            <Share2 className="mr-2 h-4 w-4" /> Compartilhar
-          </DSButton>
-        </div>
-      </section>
-
-      <SettingsSection title="Contatos de emergência">
-        {loading ? (
-          <div className="px-4 py-4 text-[12.5px] text-[#707070]">
-            <Loader2 className="inline h-3.5 w-3.5 animate-spin" /> Carregando...
-          </div>
-        ) : contacts.length === 0 ? (
-          <div className="px-4 py-4 text-[12.5px] text-[#707070]">Nenhum contato cadastrado.</div>
-        ) : (
-          contacts.map((c) => (
-            <div key={c.id} className="flex items-center justify-between gap-2 px-4 py-3.5">
-              <div className="min-w-0">
-                <p className="truncate text-[15px] font-semibold text-[#1B1B1B]">
-                  {c.name}
-                  {c.is_primary && (
-                    <span className="ml-2 rounded-full bg-[#76C139]/15 px-2 py-0.5 text-[10px] font-semibold text-[#3F7A17] ring-1 ring-[#76C139]/25">
-                      PRINCIPAL
-                    </span>
-                  )}
-                </p>
-                <p className="text-[12.5px] text-[#707070]">
-                  {c.phone}{c.relation ? ` · ${c.relation}` : ""}
-                </p>
-              </div>
-              <div className="flex items-center gap-1">
-                <a
-                  href={`tel:${c.phone}`}
-                  className="flex h-9 w-9 items-center justify-center rounded-xl text-[#5A9A2A] hover:bg-[#76C139]/10"
-                  aria-label="Ligar"
-                >
-                  <Phone className="h-4 w-4" />
-                </a>
-                {!c.is_primary && (
-                  <button
-                    onClick={() => setPrimary(c.id)}
-                    className="rounded-xl px-2.5 py-1 text-[11px] font-semibold text-[#1B1B1B] hover:bg-[#F7F9F7]"
-                  >
-                    Definir
-                  </button>
-                )}
-                <button
-                  onClick={() => remove(c.id)}
-                  className="flex h-9 w-9 items-center justify-center rounded-xl text-[#DC2626] hover:bg-[#FEE2E2]"
-                  aria-label="Excluir"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
+      <main className="mx-auto w-full max-w-xl space-y-4 px-4 pb-[calc(env(safe-area-inset-bottom)+32px)] pt-5">
+        <section className="rounded-[26px] border border-red-400/15 bg-[#0D0F11] p-5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-400/10 text-red-400">
+              <ShieldAlert className="h-5 w-5" />
             </div>
-          ))
-        )}
-      </SettingsSection>
+            <div>
+              <p className="text-[9px] font-black uppercase tracking-[0.18em] text-[#F6BE1C]">Proteção APOIS</p>
+              <h1 className="mt-1 text-xl font-black">Segurança</h1>
+              <p className="mt-1 text-[11px] font-medium text-zinc-500">Ajuda rápida e contatos de emergência.</p>
+            </div>
+          </div>
 
-      <SettingsSection title="Adicionar contato">
-        <div className="space-y-3 p-4">
-          <div>
-            <DSLabel className="text-[12px] text-[#707070]">Nome</DSLabel>
-            <DSInput value={name} onChange={(e) => setName(e.target.value)} placeholder="Maria Silva" />
+          <button
+            type="button"
+            onClick={() => void triggerSOS()}
+            className="mt-5 flex min-h-14 w-full items-center justify-center gap-2 rounded-[18px] bg-red-500 px-4 text-sm font-black text-white active:scale-[0.99]"
+          >
+            <AlertTriangle className="h-5 w-5" />
+            Acionar SOS
+          </button>
+
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            <a
+              href="tel:190"
+              className="flex min-h-12 items-center justify-center gap-2 rounded-[16px] border border-white/8 bg-[#111315] text-xs font-black text-white"
+            >
+              <Phone className="h-4 w-4 text-[#F6BE1C]" /> Polícia 190
+            </a>
+            <button
+              type="button"
+              onClick={shareLocation}
+              className="flex min-h-12 items-center justify-center gap-2 rounded-[16px] border border-white/8 bg-[#111315] text-xs font-black text-white"
+            >
+              <Share2 className="h-4 w-4 text-[#F6BE1C]" /> Compartilhar
+            </button>
           </div>
-          <div>
-            <DSLabel className="text-[12px] text-[#707070]">Telefone</DSLabel>
-            <DSInput value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(11) 99999-9999" inputMode="tel" />
+        </section>
+
+        <section className="rounded-[24px] border border-white/5 bg-[#0D0F11] p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <div>
+              <p className="text-[9px] font-black uppercase tracking-[0.18em] text-[#F6BE1C]">Rede de apoio</p>
+              <h2 className="mt-1 text-base font-black">Contatos de emergência</h2>
+            </div>
+            <span className="rounded-full bg-white/5 px-2.5 py-1 text-[10px] font-black text-zinc-500">{contacts.length}</span>
           </div>
-          <div>
-            <DSLabel className="text-[12px] text-[#707070]">Parentesco (opcional)</DSLabel>
-            <DSInput value={relation} onChange={(e) => setRelation(e.target.value)} placeholder="Esposa, irmão..." />
+
+          {loading ? (
+            <div className="flex min-h-20 items-center justify-center">
+              <Loader2 className="h-5 w-5 animate-spin text-[#F6BE1C]" />
+            </div>
+          ) : contacts.length === 0 ? (
+            <p className="rounded-2xl border border-white/5 bg-[#111315] p-4 text-center text-[11px] font-medium text-zinc-600">
+              Nenhum contato cadastrado.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {contacts.map((contact) => (
+                <article key={contact.id} className="flex items-center gap-3 rounded-[18px] border border-white/5 bg-[#111315] p-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="truncate text-[12px] font-black text-white">{contact.name}</p>
+                      {contact.is_primary ? <Star className="h-3.5 w-3.5 fill-[#F6BE1C] text-[#F6BE1C]" /> : null}
+                    </div>
+                    <p className="mt-1 truncate text-[10px] font-medium text-zinc-600">
+                      {contact.phone}{contact.relation ? ` · ${contact.relation}` : ""}
+                    </p>
+                  </div>
+                  <a href={`tel:${contact.phone}`} aria-label={`Ligar para ${contact.name}`} className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#F6BE1C]/10 text-[#F6BE1C]">
+                    <Phone className="h-4 w-4" />
+                  </a>
+                  {!contact.is_primary ? (
+                    <button type="button" onClick={() => void setPrimary(contact.id)} aria-label="Definir contato principal" className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-400/10 text-emerald-400">
+                      <CheckCircle2 className="h-4 w-4" />
+                    </button>
+                  ) : null}
+                  <button type="button" onClick={() => void remove(contact.id)} aria-label="Excluir contato" className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-400/8 text-red-400">
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="rounded-[24px] border border-white/5 bg-[#0D0F11] p-4">
+          <p className="text-[9px] font-black uppercase tracking-[0.18em] text-[#F6BE1C]">Adicionar contato</p>
+          <div className="mt-3 space-y-2.5">
+            <input
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              placeholder="Nome"
+              className="min-h-12 w-full rounded-[16px] border border-white/8 bg-[#111315] px-4 text-sm font-semibold text-white outline-none placeholder:text-zinc-700 focus:border-[#F6BE1C]/50"
+            />
+            <input
+              value={phone}
+              onChange={(event) => setPhone(event.target.value)}
+              placeholder="Telefone"
+              inputMode="tel"
+              className="min-h-12 w-full rounded-[16px] border border-white/8 bg-[#111315] px-4 text-sm font-semibold text-white outline-none placeholder:text-zinc-700 focus:border-[#F6BE1C]/50"
+            />
+            <input
+              value={relation}
+              onChange={(event) => setRelation(event.target.value)}
+              placeholder="Parentesco ou relação (opcional)"
+              className="min-h-12 w-full rounded-[16px] border border-white/8 bg-[#111315] px-4 text-sm font-semibold text-white outline-none placeholder:text-zinc-700 focus:border-[#F6BE1C]/50"
+            />
+            <button
+              type="button"
+              onClick={() => void addContact()}
+              disabled={!name.trim() || !phone.trim() || adding}
+              className="flex min-h-12 w-full items-center justify-center gap-2 rounded-[16px] bg-[#F6BE1C] px-4 text-xs font-black text-black disabled:opacity-40"
+            >
+              {adding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+              Adicionar contato
+            </button>
           </div>
-          <DSButton onClick={addContact} disabled={!name || !phone || adding} className="w-full">
-            {adding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
-            Adicionar
-          </DSButton>
-        </div>
-      </SettingsSection>
-    </SettingsPageShell>
+        </section>
+      </main>
+    </div>
   );
 }

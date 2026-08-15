@@ -186,16 +186,16 @@ export const cadastrarMotorista = createServerFn({ method: "POST" })
           if (body.byteLength > MAX_DOC_BYTES) {
             throw new Error(`Arquivo de ${doc.label} excede 8 MB.`);
           }
-          if (import.meta.env.DEV) console.log("[MOVVI DOCS] upload iniciado:", { bucket: doc.bucket, path });
+          if (import.meta.env.DEV) console.log("[APOIS DOCS] upload iniciado:", { bucket: doc.bucket, path });
           const { error } = await supabaseAdmin.storage
             .from(doc.bucket)
             .upload(path, body, { upsert: true, contentType: ct });
           if (error) {
-            console.error("[MOVVI DOCS] falha upload:", doc.label, error.message);
+            console.error("[APOIS DOCS] falha upload:", doc.label, error.message);
             throw new Error(`Falha no upload de ${doc.label}.`);
           }
           uploaded.push({ bucket: doc.bucket, path });
-          if (import.meta.env.DEV) console.log("[MOVVI DOCS] upload concluído:", { bucket: doc.bucket, path });
+          if (import.meta.env.DEV) console.log("[APOIS DOCS] upload concluído:", { bucket: doc.bucket, path });
           return [doc.label, { path, body, contentType: ct, fileName: doc.fileName }] as const;
         }),
       );
@@ -204,7 +204,7 @@ export const cadastrarMotorista = createServerFn({ method: "POST" })
         "selfie" | "cnh" | "cnh_back" | "veiculo",
         { path: string; body: ArrayBuffer; contentType: string; fileName: string }
       >;
-      if (import.meta.env.DEV) console.log("[MOVVI DOCS] paths salvos:", {
+      if (import.meta.env.DEV) console.log("[APOIS DOCS] paths salvos:", {
         selfie: docMap.selfie.path,
         cnh: docMap.cnh.path,
         cnh_back: docMap.cnh_back.path,
@@ -224,7 +224,7 @@ export const cadastrarMotorista = createServerFn({ method: "POST" })
         uploaded.push({ bucket: "profile-photos", path: p });
         photoPath = p;
       } catch (photoErr) {
-        console.error("[MOVVI PHOTO] falha ao copiar foto do motorista:", photoErr);
+        console.error("[APOIS PHOTO] falha ao copiar foto do motorista:", photoErr);
       }
       const photoUrl: string | null = photoPath;
 

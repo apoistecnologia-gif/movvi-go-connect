@@ -38,7 +38,7 @@ import {
 } from "@/design-system";
 
 export const Route = createFileRoute("/admin/dashboard")({
-  head: () => ({ meta: [{ title: "Dashboard — Admin MOVVI" }] }),
+  head: () => ({ meta: [{ title: "Dashboard — Admin APOIS" }] }),
   component: AdminDashboardPage,
 });
 
@@ -193,7 +193,7 @@ function AdminDashboardPage() {
   }, [online]);
 
   return (
-    <AdminLayout title="Dashboard" description="Visão geral da operação MOVVI DRIVE em tempo real">
+    <AdminLayout title="Dashboard" description="Visão geral da operação APOIS em tempo real">
       <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         <Kpi icon={Radio} label="Motoristas online" value={formatNumber(m.driversOnline)} tone="primary" loading={loading} />
         <Kpi icon={UserX} label="Motoristas offline" value={formatNumber(m.driversOffline)} loading={loading} />

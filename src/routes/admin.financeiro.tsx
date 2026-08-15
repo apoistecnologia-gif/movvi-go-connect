@@ -24,10 +24,10 @@ import { formatBRL } from "@/lib/formatters";
 import { downloadCsv } from "@/lib/csvExport";
 import { toast } from "sonner";
 import { adminRefreshAsaasPayment } from "@/lib/payments/adminReconcile.functions";
-import { MOVVI_MONTHLY_FEE_BRL } from "@/lib/payments/types";
+import { APOIS_MONTHLY_FEE_BRL } from "@/lib/payments/types";
 
 export const Route = createFileRoute("/admin/financeiro")({
-  head: () => ({ meta: [{ title: "Financeiro — Admin MOVVI" }] }),
+  head: () => ({ meta: [{ title: "Financeiro — Admin APOIS" }] }),
   component: AdminFinanceiroPage,
 });
 
@@ -225,7 +225,7 @@ function AdminFinanceiroPage() {
           x.period_end &&
           new Date(x.period_end) >= startMonth &&
           new Date(x.period_end) <= endMonth,
-      ).length * MOVVI_MONTHLY_FEE_BRL + revenueMonth;
+      ).length * APOIS_MONTHLY_FEE_BRL + revenueMonth;
 
     const delinquentDrivers = drivers.filter(
       (d) =>
@@ -235,7 +235,7 @@ function AdminFinanceiroPage() {
         d.subscription_status === "expirada",
     ).length;
 
-    // Informational — ride totals (belong to drivers, NOT MOVVI revenue)
+    // Informational — ride totals (belong to drivers, NOT APOIS revenue)
     const finalized = rides.filter((r) => r.status === "finalizada" && r.final_price);
     const rideToday = finalized
       .filter((r) => new Date(r.completed_at ?? r.created_at) >= startToday)
@@ -342,7 +342,7 @@ function AdminFinanceiroPage() {
   return (
     <AdminLayout
       title="Financeiro"
-      description="Receita MOVVI (assinaturas) e visibilidade financeira operacional"
+      description="Receita APOIS (assinaturas) e visibilidade financeira operacional"
       actions={
         <>
           <Button variant="outline" size="sm" onClick={() => void load()} className="gap-1">
@@ -397,9 +397,9 @@ function AdminFinanceiroPage() {
         </CardContent>
       </Card>
 
-      {/* MOVVI revenue KPIs */}
+      {/* APOIS revenue KPIs */}
       <p className="mb-2 text-[10px] uppercase tracking-widest text-muted-foreground">
-        Receita real MOVVI (assinaturas)
+        Receita real APOIS (assinaturas)
       </p>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         <Kpi icon={<TrendingUp className="h-4 w-4" />} label="Hoje" value={formatBRL(kpis.revenueToday)} accent />
@@ -411,7 +411,7 @@ function AdminFinanceiroPage() {
         <Kpi icon={<AlertCircle className="h-4 w-4" />} label="Motoristas inadimplentes" value={String(kpis.delinquentDrivers)} />
       </div>
 
-      {/* Informational — ride values (NOT MOVVI revenue) */}
+      {/* Informational — ride values (NOT APOIS revenue) */}
       <div className="mt-6 rounded-xl border border-dashed border-border bg-card/30 p-3">
         <p className="mb-2 flex items-center gap-2 text-[10px] uppercase tracking-widest text-muted-foreground">
           <Info className="h-3.5 w-3.5" /> Informativo — Valores das corridas (pagos direto ao motorista)
@@ -422,7 +422,7 @@ function AdminFinanceiroPage() {
           <Kpi icon={<Wallet className="h-4 w-4" />} label="Ticket médio" value={formatBRL(kpis.rideAvgTicket)} muted />
         </div>
         <p className="mt-2 text-[11px] text-muted-foreground">
-          MOVVI não recebe pagamentos de corridas. Estes valores são exibidos apenas para
+          APOIS não recebe pagamentos de corridas. Estes valores são exibidos apenas para
           acompanhamento operacional.
         </p>
       </div>

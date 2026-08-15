@@ -1,3 +1,5 @@
+import { APOIS_LOGO_DATA_URL } from "@/assets/apoisLogoData";
+
 interface MovviLogoProps {
   size?: number;
   showTagline?: boolean;
@@ -5,55 +7,35 @@ interface MovviLogoProps {
 }
 
 /**
- * Logo MOVVI DRIVE em SVG (M + D estilizado com estrada e curva verde).
- * Sem dependência de arquivo de imagem — vetorial, escalável, alinhado à identidade.
+ * Mantemos o nome do componente por compatibilidade com as telas legadas,
+ * porém toda a apresentação visível agora usa a identidade oficial APOIS.
  */
 export function MovviLogo({ size = 64, showTagline = false, className }: MovviLogoProps) {
   return (
     <div className={`flex flex-col items-center gap-2 ${className ?? ""}`}>
-      <svg
-        width={size}
-        height={size}
-        viewBox="0 0 120 120"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        aria-label="MOVVI DRIVE logo"
+      <div
+        className="overflow-hidden rounded-full border border-[#F6BE1C]/20 bg-black shadow-[0_12px_34px_-20px_rgba(246,190,28,0.65)]"
+        style={{ width: size, height: size }}
       >
-        {/* M */}
-        <path
-          d="M18 100 L18 28 L40 28 L60 70 L60 100 Z"
-          fill="hsl(0 0% 100%)"
+        <img
+          src={APOIS_LOGO_DATA_URL}
+          alt="APOIS"
+          width={size}
+          height={size}
+          className="h-full w-full object-cover"
+          draggable={false}
         />
-        {/* Curva verde do D */}
-        <path
-          d="M60 28 Q100 28 100 64 Q100 100 60 100 L60 78 Q82 78 82 64 Q82 50 60 50 Z"
-          fill="hsl(95 75% 51%)"
-        />
-        {/* Estrada cinza/preta atravessando */}
-        <path
-          d="M28 82 Q60 60 95 82"
-          stroke="hsl(220 30% 8%)"
-          strokeWidth="8"
-          strokeLinecap="round"
-          fill="none"
-        />
-        <path
-          d="M28 82 Q60 60 95 82"
-          stroke="hsl(0 0% 100%)"
-          strokeWidth="1.5"
-          strokeDasharray="4 5"
-          fill="none"
-        />
-      </svg>
+      </div>
+
       <div className="text-center">
-        <div className="font-display text-2xl font-bold tracking-wider text-foreground">
-          MOVVI <span className="text-primary">DRIVE</span>
+        <div className="font-display text-xl font-black tracking-[0.08em] text-white">
+          APOIS <span className="text-[#F6BE1C]">MOTORISTA</span>
         </div>
-        {showTagline && (
-          <div className="mt-1 text-xs uppercase tracking-[0.3em] text-primary">
-            Mobilidade que move você
+        {showTagline ? (
+          <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.28em] text-[#F6BE1C]">
+            Apois, vamos?
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );

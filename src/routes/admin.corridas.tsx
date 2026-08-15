@@ -25,7 +25,7 @@ import { formatBRL, formatDate } from "@/lib/formatters";
 import { downloadCsv } from "@/lib/csvExport";
 
 export const Route = createFileRoute("/admin/corridas")({
-  head: () => ({ meta: [{ title: "Corridas — Admin MOVVI" }] }),
+  head: () => ({ meta: [{ title: "Corridas — Admin APOIS" }] }),
   component: AdminCorridasPage,
 });
 
@@ -540,7 +540,7 @@ function RideDetail({
   const value = ride.final_price ?? ride.estimated_price ?? 0;
 
   const summary =
-    `MOVVI · Corrida ${ride.id}\n` +
+    `APOIS · Corrida ${ride.id}\n` +
     `Status: ${STATUS_LABEL[ride.status] ?? ride.status}\n` +
     `Data: ${formatDate(ride.created_at)}\n` +
     `Origem: ${origin}\n` +

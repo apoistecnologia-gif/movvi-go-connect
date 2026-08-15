@@ -9,7 +9,7 @@ import {
 } from "react";
 
 /**
- * MovviSheet — bottom sheet próprio do MOVVI DRIVE.
+ * MovviSheet — bottom sheet próprio do APOIS.
  *
  * - Snap points em % da altura da viewport.
  * - Acompanha o dedo em tempo real (pointer events + rAF).

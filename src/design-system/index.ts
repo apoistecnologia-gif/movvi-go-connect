@@ -1,5 +1,5 @@
 /**
- * MOVVI Design System — official entry point.
+ * APOIS Design System — official entry point.
  *
  * Consume components and tokens from `@/design-system` only. Never import
  * the underlying implementation files directly from feature code.

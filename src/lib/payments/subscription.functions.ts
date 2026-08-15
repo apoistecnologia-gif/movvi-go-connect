@@ -4,7 +4,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { MOVVI_MONTHLY_FEE_BRL, type SubscriptionPaymentMethod } from "./types";
+import { APOIS_MONTHLY_FEE_BRL, type SubscriptionPaymentMethod } from "./types";
 
 interface CreateChargeInput {
   method: SubscriptionPaymentMethod;
@@ -47,7 +47,7 @@ export const createDriverMonthlyCharge = createServerFn({ method: "POST" })
     if (!customerId) {
       const ensured = await asaasProvider.ensureCustomer({
         driverId: driver.id,
-        name: driver.name ?? userRow?.name ?? "Motorista MOVVI",
+        name: driver.name ?? userRow?.name ?? "Motorista APOIS",
         email: userRow?.email ?? `driver-${driver.id}@movvi.local`,
         phone: driver.phone ?? userRow?.phone ?? null,
       });
@@ -61,9 +61,9 @@ export const createDriverMonthlyCharge = createServerFn({ method: "POST" })
     const charge = await asaasProvider.createMonthlyCharge({
       driverId: driver.id,
       customerId,
-      amount: MOVVI_MONTHLY_FEE_BRL,
+      amount: APOIS_MONTHLY_FEE_BRL,
       method,
-      description: "Mensalidade Motorista MOVVI",
+      description: "Mensalidade Motorista APOIS",
     });
 
     // Persist subscription row (idempotent by asaas_payment_id).
@@ -124,6 +124,6 @@ export const getDriverSubscriptionInfo = createServerFn({ method: "GET" })
       subscriptionStatus: driver.subscription_status,
       nextDueAt: driver.subscription_expires_at ?? latest?.period_end ?? null,
       latest,
-      monthlyFee: MOVVI_MONTHLY_FEE_BRL,
+      monthlyFee: APOIS_MONTHLY_FEE_BRL,
     };
   });

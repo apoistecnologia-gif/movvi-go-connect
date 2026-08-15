@@ -7,8 +7,8 @@ import { EmergencyContactsManager } from "@/components/safety/EmergencyContactsM
 export const Route = createFileRoute("/passageiro/seguranca")({
   head: () => ({
     meta: [
-      { title: "Segurança — MOVVI" },
-      { name: "description", content: "Contatos de emergência e recursos de segurança MOVVI." },
+      { title: "Segurança — APOIS" },
+      { name: "description", content: "Contatos de emergência e recursos de segurança APOIS." },
     ],
   }),
   component: PassengerSafetyPage,
@@ -29,7 +29,7 @@ function PassengerSafetyPage() {
       </div>
 
       <p className="text-center text-[11.5px] text-[#707070]">
-        Em caso de emergência real, ligue 190. A MOVVI registra alertas SOS com sua localização e dados da corrida.
+        Em caso de emergência real, ligue 190. A APOIS registra alertas SOS com sua localização e dados da corrida.
       </p>
     </SettingsPageShell>
   );

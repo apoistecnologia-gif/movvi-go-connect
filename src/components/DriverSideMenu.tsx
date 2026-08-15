@@ -1,22 +1,19 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import {
   Bell,
+  ChevronRight,
   ClipboardList,
+  Coins,
   Home,
   LifeBuoy,
   Loader2,
-  Lock,
   LogOut,
-  Mail,
-  Phone,
-  Save,
   Settings,
   ShieldAlert,
   ShieldCheck,
   User as UserIcon,
   Wallet,
-  Coins,
 } from "lucide-react";
 import {
   Sheet,
@@ -25,16 +22,11 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
-import { ProfilePhotoUploader } from "@/components/ProfilePhotoUploader";
-import { supabase } from "@/integrations/supabase/client";
+import { Avatar } from "@/components/Avatar";
+import { MovviLogo } from "@/components/MovviLogo";
+import { loadDriverProfile, type DriverProfileRow } from "@/lib/driverProfile";
 import { refreshProfilePhotoUrl } from "@/lib/profilePhoto";
-import { DSButton, DSInput, DSLabel } from "@/design-system";
-
-async function resolveStoredPhoto(value: string | null | undefined): Promise<string | null> {
-  if (!value) return null;
-  if (/^https?:\/\//i.test(value)) return value;
-  return (await refreshProfilePhotoUrl(value)) ?? null;
-}
+import { supabase } from "@/integrations/supabase/client";
 
 type Props = {
   open: boolean;
@@ -43,267 +35,161 @@ type Props = {
 };
 
 const NAV_LINKS = [
-  { to: "/motorista/app", label: "Início", icon: Home },
-  { to: "/motorista/carteira", label: "Minha carteira", icon: Coins },
-  { to: "/motorista/perfil", label: "Meu perfil", icon: UserIcon },
-  { to: "/motorista/corridas", label: "Minhas corridas", icon: ClipboardList },
-  { to: "/motorista/ganhos", label: "Financeiro", icon: Wallet },
-  { to: "/motorista/notificacoes", label: "Notificações", icon: Bell },
-  { to: "/motorista/seguranca", label: "Segurança & SOS", icon: ShieldAlert },
-  { to: "/motorista/status", label: "Status do cadastro", icon: ShieldCheck },
-  { to: "/motorista/suporte", label: "Central de ajuda", icon: LifeBuoy },
-  { to: "/motorista/configuracoes", label: "Configurações", icon: Settings },
+  { to: "/motorista/app", label: "Início", description: "Mapa e novas corridas", icon: Home },
+  { to: "/motorista/corridas", label: "Corridas", description: "Histórico e detalhes", icon: ClipboardList },
+  { to: "/motorista/carteira", label: "Carteira", description: "Saldo e movimentações", icon: Coins },
+  { to: "/motorista/ganhos", label: "Financeiro", description: "Ganhos e repasses", icon: Wallet },
+  { to: "/motorista/notificacoes", label: "Avisos", description: "Notificações da APOIS", icon: Bell },
+  { to: "/motorista/perfil", label: "Perfil", description: "Conta, veículo e documentos", icon: UserIcon },
+  { to: "/motorista/seguranca", label: "Segurança", description: "SOS e recursos da corrida", icon: ShieldAlert },
+  { to: "/motorista/status", label: "Status do cadastro", description: "Acompanhe sua análise", icon: ShieldCheck },
+  { to: "/motorista/suporte", label: "Ajuda", description: "Fale com a APOIS", icon: LifeBuoy },
+  { to: "/motorista/configuracoes", label: "Configurações", description: "Preferências do aplicativo", icon: Settings },
 ] as const;
+
+function approvalLabel(status: DriverProfileRow["approval_status"] | undefined) {
+  switch (status) {
+    case "aprovado":
+      return { text: "Cadastro aprovado", className: "text-emerald-400 border-emerald-400/20 bg-emerald-400/10" };
+    case "reprovado":
+      return { text: "Cadastro reprovado", className: "text-red-400 border-red-400/20 bg-red-400/10" };
+    case "bloqueado":
+      return { text: "Cadastro bloqueado", className: "text-red-400 border-red-400/20 bg-red-400/10" };
+    default:
+      return { text: "Cadastro em análise", className: "text-[#F6BE1C] border-[#F6BE1C]/20 bg-[#F6BE1C]/10" };
+  }
+}
 
 export function DriverSideMenu({ open, onOpenChange, onLogout }: Props) {
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
-
-  const [userId, setUserId] = useState<string | null>(null);
-  const [name, setName] = useState("");
+  const [profile, setProfile] = useState<DriverProfileRow | null>(null);
   const [email, setEmail] = useState("");
-  const [originalEmail, setOriginalEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [newPassword, setNewPassword] = useState("");
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
-    setMsg(null);
-    setLoading(true);
-    (async () => {
-      const { data } = await supabase.auth.getUser();
-      const u = data.user;
-      if (!u) {
-        setLoading(false);
-        return;
-      }
-      const meta = (u.user_metadata ?? {}) as Record<string, string>;
-      setUserId(u.id);
-      setEmail(u.email ?? "");
-      setOriginalEmail(u.email ?? "");
-      setName(meta.full_name ?? meta.name ?? "");
-      setPhone(meta.phone ?? u.phone ?? "");
+    let cancelled = false;
 
-      const { data: drv } = await supabase
-        .from("drivers")
-        .select("photo_url, name, phone")
-        .eq("user_id", u.id)
-        .maybeSingle();
-      if (drv) {
-        setPhotoUrl(await resolveStoredPhoto(drv.photo_url));
-        if (!meta.full_name && !meta.name && drv.name) setName(drv.name);
-        if (!meta.phone && drv.phone) setPhone(drv.phone);
+    void (async () => {
+      setLoading(true);
+      const [{ data: authData }, profileResult] = await Promise.all([
+        supabase.auth.getUser(),
+        loadDriverProfile(),
+      ]);
+      if (cancelled) return;
+
+      setEmail(authData.user?.email ?? "");
+      if (profileResult.ok) {
+        setProfile(profileResult.profile);
+        const storedPhoto = profileResult.profile.photo_url ?? profileResult.profile.selfie_url;
+        if (storedPhoto) {
+          if (/^https?:\/\//i.test(storedPhoto)) setPhotoUrl(storedPhoto);
+          else setPhotoUrl((await refreshProfilePhotoUrl(storedPhoto)) ?? null);
+        } else {
+          setPhotoUrl(null);
+        }
+      } else {
+        setProfile(null);
+        setPhotoUrl(null);
       }
-      setLoading(false);
+      if (!cancelled) setLoading(false);
     })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [open]);
 
-  async function onSave(e: FormEvent) {
-    e.preventDefault();
-    setSaving(true);
-    setMsg(null);
-    try {
-      const updates: {
-        data: Record<string, string>;
-        password?: string;
-        email?: string;
-      } = { data: { full_name: name, phone } };
-      if (newPassword) {
-        if (newPassword.length < 6) {
-          throw new Error("A senha deve ter pelo menos 6 caracteres.");
-        }
-        updates.password = newPassword;
-      }
-      if (email && email !== originalEmail) updates.email = email;
-
-      const { error } = await supabase.auth.updateUser(updates);
-      if (error) throw error;
-
-      if (userId) {
-        await Promise.all([
-          supabase.from("users").update({ name, phone }).eq("auth_user_id", userId),
-          supabase.from("drivers").update({ name, phone }).eq("user_id", userId),
-        ]);
-      }
-      setNewPassword("");
-      setMsg({
-        kind: "ok",
-        text:
-          email !== originalEmail
-            ? "Dados salvos! Confirme o novo e-mail pela caixa de entrada."
-            : "Dados atualizados com sucesso!",
-      });
-    } catch (err) {
-      setMsg({
-        kind: "err",
-        text: err instanceof Error ? err.message : "Falha ao salvar.",
-      });
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function handlePhotoUploaded(result: { signedUrl: string; path: string }) {
-    if (!userId) return;
-    // Preview imediato com a signed URL curta; no banco persistimos apenas o path.
-    setPhotoUrl(result.signedUrl);
-    try {
-      await Promise.all([
-        supabase.from("users").update({ avatar_url: result.path }).eq("auth_user_id", userId),
-        supabase.from("drivers").update({ photo_url: result.path }).eq("user_id", userId),
-        supabase.auth.updateUser({ data: { avatar_url: result.path } }),
-      ]);
-      setMsg({ kind: "ok", text: "Foto de perfil atualizada!" });
-    } catch (err) {
-      setMsg({
-        kind: "err",
-        text: err instanceof Error ? err.message : "Falha ao salvar a foto.",
-      });
-    }
-  }
+  const status = approvalLabel(profile?.approval_status);
+  const displayName = profile?.name?.trim() || email.split("@")[0] || "Motorista";
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="left"
-        className="w-[88vw] max-w-sm overflow-y-auto bg-background p-0"
+        className="w-[90vw] max-w-sm overflow-y-auto border-r border-white/5 bg-[#08090A] p-0 text-white"
       >
-        <SheetHeader className="border-b border-border bg-card/60 px-5 py-4 text-left">
-          <SheetTitle className="text-lg">Minha conta</SheetTitle>
-          <SheetDescription className="text-xs">
-            Gerencie seu perfil, navegação e configurações.
-          </SheetDescription>
+        <SheetHeader className="border-b border-white/5 bg-[#0D0F11] px-5 pb-5 pt-[calc(env(safe-area-inset-top)+18px)] text-left">
+          <div className="flex items-center justify-between gap-3">
+            <MovviLogo size={48} />
+            <div className="text-right">
+              <SheetTitle className="text-[11px] font-black uppercase tracking-[0.2em] text-[#F6BE1C]">
+                Menu
+              </SheetTitle>
+              <SheetDescription className="mt-1 text-[10px] font-medium text-zinc-500">
+                APOIS Motorista
+              </SheetDescription>
+            </div>
+          </div>
         </SheetHeader>
 
-        <div className="space-y-5 px-5 py-5">
+        <div className="space-y-5 px-4 py-5">
           {loading ? (
-            <div className="flex items-center justify-center gap-2 py-10 text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" /> Carregando...
+            <div className="flex items-center justify-center gap-2 py-12 text-sm text-zinc-500">
+              <Loader2 className="h-4 w-4 animate-spin text-[#F6BE1C]" />
+              Carregando sua conta...
             </div>
           ) : (
             <>
-              {userId && (
-                <div className="flex justify-center">
-                  <ProfilePhotoUploader
-                    userId={userId}
-                    name={name || email}
-                    currentUrl={photoUrl}
-                    onUploaded={handlePhotoUploaded}
-                    size={96}
-                    required
-                  />
+              <Link
+                to="/motorista/perfil"
+                onClick={() => onOpenChange(false)}
+                className="flex items-center gap-3 rounded-[22px] border border-white/5 bg-[#111315] p-4 transition active:scale-[0.99]"
+              >
+                <div className="shrink-0 rounded-full border border-[#F6BE1C]/20 p-0.5">
+                  <Avatar src={photoUrl} name={displayName} size={54} />
                 </div>
-              )}
-
-              <form onSubmit={onSave} className="space-y-3">
-                <div className="space-y-1.5">
-                  <DSLabel htmlFor="dm_name" className="flex items-center gap-1.5 text-xs">
-                    <UserIcon className="h-3.5 w-3.5" /> Nome
-                  </DSLabel>
-                  <DSInput
-                    id="dm_name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Seu nome"
-                  />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[15px] font-black text-white">{displayName}</p>
+                  <p className="mt-0.5 truncate text-[11px] font-medium text-zinc-500">{email}</p>
+                  <span className={`mt-2 inline-flex rounded-full border px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.12em] ${status.className}`}>
+                    {status.text}
+                  </span>
                 </div>
+                <ChevronRight className="h-4 w-4 shrink-0 text-zinc-600" />
+              </Link>
 
-                <div className="space-y-1.5">
-                  <DSLabel htmlFor="dm_phone" className="flex items-center gap-1.5 text-xs">
-                    <Phone className="h-3.5 w-3.5" /> Telefone
-                  </DSLabel>
-                  <DSInput
-                    id="dm_phone"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="(11) 99999-9999"
-                    inputMode="tel"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <DSLabel htmlFor="dm_email" className="flex items-center gap-1.5 text-xs">
-                    <Mail className="h-3.5 w-3.5" /> E-mail
-                  </DSLabel>
-                  <DSInput
-                    id="dm_email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="voce@exemplo.com"
-                  />
-                  {email !== originalEmail && (
-                    <p className="text-[11px] text-muted-foreground">
-                      Você receberá um link de confirmação no novo endereço.
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-1.5 rounded-lg border border-border bg-card/50 p-3">
-                  <DSLabel htmlFor="dm_pwd" className="flex items-center gap-1.5 text-xs">
-                    <Lock className="h-3.5 w-3.5" /> Nova senha (opcional)
-                  </DSLabel>
-                  <DSInput
-                    id="dm_pwd"
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="Deixe em branco para não alterar"
-                    minLength={6}
-                  />
-                </div>
-
-                {msg && (
-                  <div
-                    className={`rounded-lg px-3 py-2 text-xs ${
-                      msg.kind === "ok"
-                        ? "bg-primary/15 text-primary ring-1 ring-primary/30"
-                        : "bg-destructive/15 text-destructive ring-1 ring-destructive/30"
-                    }`}
-                  >
-                    {msg.text}
-                  </div>
-                )}
-
-                <DSButton type="submit" disabled={saving} className="w-full">
-                  {saving ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Save className="mr-2 h-4 w-4" />
-                  )}
-                  Salvar alterações
-                </DSButton>
-              </form>
-
-              <nav className="space-y-1.5 border-t border-border pt-4">
-                {NAV_LINKS.map((item) => (
+              <nav className="space-y-2" aria-label="Navegação do motorista">
+                {NAV_LINKS.map((item, index) => (
                   <Link
                     key={item.to}
                     to={item.to}
                     onClick={() => onOpenChange(false)}
-                    className="flex items-center gap-3 rounded-lg border border-border bg-card/60 px-3 py-2.5 text-sm font-medium text-foreground transition hover:bg-accent/40 hover:ring-1 hover:ring-primary/30"
+                    className={`group flex min-h-[64px] items-center gap-3 rounded-[20px] border px-3.5 py-3 transition active:scale-[0.99] ${
+                      index === 0
+                        ? "border-[#F6BE1C]/25 bg-[#F6BE1C]/10"
+                        : "border-white/5 bg-[#101214] hover:border-white/10 hover:bg-[#15181B]"
+                    }`}
                   >
-                    <item.icon className="h-4 w-4 text-primary" />
-                    {item.label}
+                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${
+                      index === 0 ? "bg-[#F6BE1C] text-black" : "bg-black text-[#F6BE1C]"
+                    }`}>
+                      <item.icon className="h-[18px] w-[18px]" strokeWidth={2} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[13px] font-black text-white">{item.label}</p>
+                      <p className="mt-0.5 truncate text-[10.5px] font-medium text-zinc-500">
+                        {item.description}
+                      </p>
+                    </div>
+                    <ChevronRight className="h-4 w-4 shrink-0 text-zinc-700 transition group-hover:text-[#F6BE1C]" />
                   </Link>
                 ))}
-
-                {onLogout && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onOpenChange(false);
-                      onLogout();
-                    }}
-                    className="mt-2 flex w-full items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2.5 text-sm font-medium text-destructive transition hover:bg-destructive/20"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    Sair
-                  </button>
-                )}
               </nav>
+
+              {onLogout ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onOpenChange(false);
+                    onLogout();
+                  }}
+                  className="flex min-h-12 w-full items-center justify-center gap-2 rounded-[18px] border border-red-500/20 bg-red-500/8 px-4 text-[12px] font-black uppercase tracking-[0.12em] text-red-400 transition active:scale-[0.99]"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Sair do aplicativo
+                </button>
+              ) : null}
             </>
           )}
         </div>

@@ -18,7 +18,7 @@ import {
 import { DSButton } from "@/design-system";
 
 export const Route = createFileRoute("/passageiro/configuracoes")({
-  head: () => ({ meta: [{ title: "Configurações — MOVVI" }] }),
+  head: () => ({ meta: [{ title: "Configurações — APOIS" }] }),
   component: ConfiguracoesPassageiro,
 });
 
@@ -143,7 +143,7 @@ function ConfiguracoesPassageiro() {
       <SettingsHero
         icon={SettingsIcon}
         title="Configurações"
-        subtitle={saving ? "Salvando…" : (userEmail ?? "Personalize sua conta MOVVI.")}
+        subtitle={saving ? "Salvando…" : (userEmail ?? "Personalize sua conta APOIS.")}
         action={saving ? <Save className="h-4 w-4 animate-pulse text-[#5A9A2A]" /> : undefined}
       />
       <div className="space-y-5">
@@ -171,7 +171,7 @@ function ConfiguracoesPassageiro() {
             <SettingsToggleRow icon={Bell} title="Notificações push" hint="Avisos mesmo com o app fechado" checked={prefs.push} onChange={(v) => v ? handleEnablePush() : save({ ...prefs, push: false })} />
             <SettingsToggleRow title="Atualizações da corrida" hint="Aceite, chegada, início e fim" checked={prefs.ride_alerts} onChange={(v) => save({ ...prefs, ride_alerts: v })} />
             <SettingsToggleRow icon={Tag} title="Promoções e cupons" checked={prefs.promo_alerts} onChange={(v) => save({ ...prefs, promo_alerts: v })} />
-            <SettingsToggleRow title="Novidades MOVVI" checked={prefs.news_alerts} onChange={(v) => save({ ...prefs, news_alerts: v })} />
+            <SettingsToggleRow title="Novidades APOIS" checked={prefs.news_alerts} onChange={(v) => save({ ...prefs, news_alerts: v })} />
             <SettingsToggleRow title="Lembretes de pagamento" checked={prefs.payment_reminders} onChange={(v) => save({ ...prefs, payment_reminders: v })} />
             <SettingsToggleRow icon={Volume2} title="Som" checked={prefs.sound} onChange={(v) => save({ ...prefs, sound: v })} />
             <SettingsToggleRow icon={Vibrate} title="Vibração" checked={prefs.vibration} onChange={(v) => save({ ...prefs, vibration: v })} />
@@ -247,7 +247,7 @@ function ConfiguracoesPassageiro() {
           {/* Sobre */}
           <SettingsSection icon={Info} title="Sobre">
             <div className="py-2"><AppAboutCard /></div>
-            <SettingsLinkRow icon={Info} title="Mais sobre a MOVVI" to="/passageiro/sobre" />
+            <SettingsLinkRow icon={Info} title="Mais sobre a APOIS" to="/passageiro/sobre" />
           </SettingsSection>
       </div>
     </SettingsPageShell>

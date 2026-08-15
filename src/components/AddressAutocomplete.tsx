@@ -19,7 +19,7 @@ interface AddressAutocompleteProps {
 }
 
 /**
- * MOVVI reusable address search — same behavior as the ride flow:
+ * APOIS reusable address search — same behavior as the ride flow:
  * Google Places AutocompleteSuggestion, session token, BR-only, dark styling.
  * Selecting a suggestion fills address + lat/lng via onPick.
  */
@@ -88,7 +88,7 @@ export function AddressAutocomplete({
             .filter(Boolean) as Array<{ placeId: string; text: string }>,
         );
       } catch (e) {
-        if (import.meta.env.DEV) console.warn("[MOVVI] autocomplete failed", e);
+        if (import.meta.env.DEV) console.warn("[APOIS] autocomplete failed", e);
         setSuggestions([]);
       } finally {
         setLoading(false);
@@ -116,7 +116,7 @@ export function AddressAutocomplete({
       onPick({ address: addr, lat: loc.lat(), lng: loc.lng() });
       onChangeText?.(addr);
     } catch (e) {
-      if (import.meta.env.DEV) console.warn("[MOVVI] place fetch failed", e);
+      if (import.meta.env.DEV) console.warn("[APOIS] place fetch failed", e);
     }
   };
 

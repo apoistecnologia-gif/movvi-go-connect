@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 
 /**
- * MOVVI ServiceCard — card compacto para grid de serviços (Carros, Motos,
+ * APOIS ServiceCard — card compacto para grid de serviços (Carros, Motos,
  * Fretes, Guincho, Envios). Ícone linear, título curto, opcional badge "Novo".
  *
  * Renderiza como `<Link>` quando `to` é passado, ou `<button>` caso contrário.
@@ -70,7 +70,7 @@ export function ServiceCard({
 }
 
 /**
- * MOVVI ServicesGrid — grid responsivo para ServiceCard. Prefer 2 colunas
+ * APOIS ServicesGrid — grid responsivo para ServiceCard. Prefer 2 colunas
  * em mobile, 3 a partir de sm, 4 a partir de md. Wrapper opcional com
  * título e ação secundária.
  */

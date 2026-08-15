@@ -1,5 +1,5 @@
 /**
- * MOVVI — Profile hero: name, avatar preview, status badges row.
+ * APOIS — Profile hero: name, avatar preview, status badges row.
  * Purely presentational — receives all data via props.
  */
 import { Avatar } from "@/components/Avatar";

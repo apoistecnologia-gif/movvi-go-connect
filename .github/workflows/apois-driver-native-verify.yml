@@ -1,0 +1,64 @@
+name: APOIS Motorista - validação nativa
+
+on:
+  push:
+    branches:
+      - feat/apois-motorista-producao-homologacao
+    paths:
+      - "android-motorista/**"
+      - "capacitor.motorista.config.ts"
+      - "scripts/verify-mobile-native.mjs"
+      - ".github/workflows/apois-driver-native-verify.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify-native:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Verificar contrato nativo
+        run: node scripts/verify-mobile-native.mjs motorista
+
+      - name: Verificar identidade APOIS
+        run: |
+          grep -q 'appId: "com.apois.motorista"' capacitor.motorista.config.ts
+          grep -q 'appName: "APOIS Motorista"' capacitor.motorista.config.ts
+          grep -q 'applicationId "com.apois.motorista"' android-motorista/app/build.gradle
+          grep -q '<string name="app_name">APOIS Motorista</string>' android-motorista/app/src/main/res/values/strings.xml
+          test -f android-motorista/app/src/main/java/com/apois/motorista/MainActivity.java
+          test ! -f android-motorista/app/src/main/java/com/movvi/driver/MainActivity.java
+
+      - name: Verificar ícones e splash
+        run: |
+          python <<'PY'
+          from pathlib import Path
+          import struct
+
+          root = Path('android-motorista/app/src/main/res')
+          densities = ['mdpi','hdpi','xhdpi','xxhdpi','xxxhdpi']
+          for density in densities:
+              folder = root / f'mipmap-{density}'
+              for name in ['ic_launcher.png','ic_launcher_round.png','ic_launcher_foreground.png']:
+                  path = folder / name
+                  assert path.is_file() and path.stat().st_size > 500, f'asset ausente/inválido: {path}'
+                  with path.open('rb') as fh:
+                      signature = fh.read(24)
+                  assert signature[:8] == b'\x89PNG\r\n\x1a\n', f'PNG inválido: {path}'
+                  width, height = struct.unpack('>II', signature[16:24])
+                  assert width > 0 and height > 0, f'dimensões inválidas: {path}'
+
+          splashes = list(root.rglob('splash.png'))
+          assert splashes, 'nenhum splash.png encontrado'
+          for path in splashes:
+              assert path.stat().st_size > 1000, f'splash inválido: {path}'
+          print(f'APOIS_NATIVE_VERIFY_OK splashes={len(splashes)}')
+          PY

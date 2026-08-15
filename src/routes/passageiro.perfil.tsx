@@ -16,7 +16,7 @@ import { toast } from "sonner";
 type Search = { editar?: string };
 
 export const Route = createFileRoute("/passageiro/perfil")({
-  head: () => ({ meta: [{ title: "Conta — MOVVI" }] }),
+  head: () => ({ meta: [{ title: "Conta — APOIS" }] }),
   validateSearch: (s: Record<string, unknown>): Search => ({
     editar: typeof s.editar === "string" ? s.editar : undefined,
   }),
@@ -111,7 +111,7 @@ function PerfilPassageiro() {
     );
   }
 
-  const rawName = name || email?.split("@")[0] || "Passageiro MOVVI";
+  const rawName = name || email?.split("@")[0] || "Passageiro APOIS";
   const displayName = rawName
     .toLocaleLowerCase("pt-BR")
     .split(/\s+/)
@@ -263,7 +263,7 @@ function PerfilPassageiro() {
         </button>
 
         <p className="pb-2 pt-1 text-center text-[11px] text-white/30">
-          MOVVI · Passageiro
+          APOIS · Passageiro
         </p>
       </main>
 

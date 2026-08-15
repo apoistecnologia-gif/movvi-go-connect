@@ -150,6 +150,6 @@ function PassengerInboxPage() {
 }
 
 export const Route = createFileRoute("/passageiro/notificacoes")({
-  head: () => ({ meta: [{ title: "Notificações — MOVVI" }] }),
+  head: () => ({ meta: [{ title: "Notificações — APOIS" }] }),
   component: PassengerInboxPage,
 });

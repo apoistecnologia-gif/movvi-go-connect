@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { logAdminAction } from "@/lib/adminAudit";
 
 export const Route = createFileRoute("/admin/configuracoes")({
-  head: () => ({ meta: [{ title: "Configurações — Admin MOVVI" }] }),
+  head: () => ({ meta: [{ title: "Configurações — Admin APOIS" }] }),
   component: AdminConfigPage,
 });
 
@@ -37,7 +37,7 @@ const SECTIONS: Section[] = [
     icon: Building2,
     description: "Identidade legal e endereço da operação.",
     fields: [
-      { key: "company.name", label: "Razão social", type: "text", placeholder: "MOVVI DRIVE LTDA" },
+      { key: "company.name", label: "Razão social", type: "text", placeholder: "APOIS LTDA" },
       { key: "company.cnpj", label: "CNPJ", type: "text", placeholder: "00.000.000/0000-00" },
       { key: "company.address", label: "Endereço completo", type: "text", placeholder: "Rua, número, cidade — UF" },
       { key: "company.support_hours", label: "Horário de atendimento", type: "text", placeholder: "24/7 ou Seg-Sex 8h-18h" },

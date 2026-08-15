@@ -1,6 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Avatar } from "@/components/Avatar";
-import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Marker, Polyline } from "@react-google-maps/api";
 import {
@@ -24,6 +23,8 @@ import {
 import { RIDE_CATEGORIES } from "@/lib/rideCategories";
 import { MovviMap } from "@/components/MovviMap";
 import { DriverSideMenu } from "@/components/DriverSideMenu";
+import { ApoisDriverBottomNav } from "@/components/ApoisDriverBottomNav";
+import { DriverVoiceToggle } from "@/components/DriverVoiceToggle";
 import { BrandSplash } from "@/components/BrandSplash";
 import { MovviSheet, type MovviSheetHandle } from "@/components/MovviSheet";
 import { PassengerProfessionalProfileDialog } from "@/components/profile/PassengerProfessionalProfileDialog";
@@ -44,19 +45,19 @@ import {
 import { useDriverBroadcast } from "@/hooks/useDriverBroadcast";
 import { loadDriverProfile, driverProfileCompletionIssues } from "@/lib/driverProfile";
 import { isDevelopmentEnvironment } from "@/lib/environment";
-import { computeRoute, type RouteStep } from "@/lib/routes.functions";
+import { computeDriverRoute, type DriverRouteStep } from "@/lib/driverRoutes.mobile";
 import { primeVoice, resetSpokenCache, speak, tickNavigation, type NavStep } from "@/lib/voiceNav";
 import { startRideRingtone, stopRideRingtone } from "@/lib/rideRingtone";
+import { type RideStatus } from "@/lib/rideLifecycle";
 import {
-  aceitarCorrida,
-  recusarCorrida,
-  informarChegada,
-  iniciarCorrida,
-  finalizarCorrida,
-  cancelarPeloMotorista,
-  avaliarPassageiro,
-  type RideStatus,
-} from "@/lib/rideLifecycle";
+  aceitarCorridaMobile,
+  recusarCorridaMobile,
+  informarChegadaMobile,
+  iniciarCorridaMobile,
+  finalizarCorridaMobile,
+  cancelarPeloMotoristaMobile,
+  avaliarPassageiroMobile,
+} from "@/lib/driverRideLifecycle.mobile";
 import { notifyRideStatus } from "@/lib/rideStatusToast";
 import { toast } from "sonner";
 
@@ -75,7 +76,7 @@ const TEST_DRIVER_LOCATION = {
 const RIDE_OFFER_TIMEOUT_SECONDS = 60;
 
 export const Route = createFileRoute("/motorista/app")({
-  head: () => ({ meta: [{ title: "App do Motorista — MOVVI DRIVE" }] }),
+  head: () => ({ meta: [{ title: "APOIS Motorista" }] }),
   // Auth guard: mesmo padrão do passageiro — sem sessão → login (sem loop).
   beforeLoad: async () => {
     const { redirect } = await import("@tanstack/react-router");
@@ -96,7 +97,7 @@ export const Route = createFileRoute("/motorista/app")({
 function MotoristaAppRoute() {
   return (
     <>
-      <BrandSplash storageKey="movvi:splash:motorista" />
+      <BrandSplash storageKey="apois:splash:motorista" />
       <MotoristaApp />
     </>
   );
@@ -104,7 +105,18 @@ function MotoristaAppRoute() {
 
 type LatLng = { lat: number; lng: number };
 type RideRow = Database["public"]["Tables"]["rides"]["Row"];
-type Passenger = { name: string | null; phone: string | null; avatar_url: string | null };
+type Passenger = {
+  name: string | null;
+  phone: string | null;
+  avatar_url: string | null;
+  average_rating: number | null;
+  total_ratings: number | null;
+};
+
+function passengerRatingText(passenger: Passenger | null, digits = 1) {
+  const value = passenger?.average_rating == null ? 5 : Number(passenger.average_rating);
+  return (Number.isFinite(value) ? value : 5).toFixed(digits);
+}
 
 const EMPTY_ROUTE: LatLng[] = [];
 
@@ -299,16 +311,19 @@ function subscriptionBlockIsPayable(status: string): boolean {
 
 function MotoristaApp() {
   const navigate = useNavigate();
-  const callAccept   = useServerFn(aceitarCorrida);
-  const callReject   = useServerFn(recusarCorrida);
-  const callArrive   = useServerFn(informarChegada);
-  const callStart    = useServerFn(iniciarCorrida);
-  const callComplete = useServerFn(finalizarCorrida);
-  const callCancel   = useServerFn(cancelarPeloMotorista);
-  const callRate     = useServerFn(avaliarPassageiro);
-  const callRoute    = useServerFn(computeRoute);
+  const callAccept   = aceitarCorridaMobile;
+  const callReject   = recusarCorridaMobile;
+  const callArrive   = informarChegadaMobile;
+  const callStart    = iniciarCorridaMobile;
+  const callComplete = finalizarCorridaMobile;
+  const callCancel   = cancelarPeloMotoristaMobile;
+  const callRate     = avaliarPassageiroMobile;
+  const callRoute    = computeDriverRoute;
 
+  // userId = public.users.id (usado em candidate_driver_ids e drivers.user_id).
+  // driverId = public.drivers.id (usado em rides.driver_id/accepted_driver_id).
   const [userId, setUserId] = useState<string | null>(null);
+  const [driverId, setDriverId] = useState<string | null>(null);
   const [driverName, setDriverName] = useState<string>("");
   const [sideMenuOpen, setSideMenuOpen] = useState(false);
 
@@ -317,7 +332,22 @@ function MotoristaApp() {
     navigate({ to: "/" });
   }
   const [position, setPosition] = useState<(LatLng & { heading?: number | null; speed?: number | null }) | null>(null);
-  const [online, setOnline] = useState(false);
+  const [online, setOnline] = useState(() => {
+    try {
+      return localStorage.getItem("apois:driver:online") === "1";
+    } catch {
+      return false;
+    }
+  });
+  const setDesiredOnline = useCallback((value: boolean) => {
+    setOnline(value);
+    try {
+      localStorage.setItem("apois:driver:online", value ? "1" : "0");
+      window.dispatchEvent(new CustomEvent("apois:driver-presence-change", { detail: { online: value } }));
+    } catch {
+      // armazenamento indisponível não pode bloquear a operação do motorista
+    }
+  }, []);
   const [statusBlock, setStatusBlock] = useState<string | null>(null);
   type GpsStatus = "prompt" | "loading" | "granted" | "denied" | "timeout" | "unavailable" | "error";
   const [gpsStatus, setGpsStatus] = useState<GpsStatus>("prompt");
@@ -328,6 +358,7 @@ function MotoristaApp() {
 
   const [incoming, setIncoming] = useState<RideRow | null>(null);
   const [active, setActive] = useState<RideRow | null>(null);
+  const [queuedRide, setQueuedRide] = useState<RideRow | null>(null);
   const [passenger, setPassenger] = useState<Passenger | null>(null);
   const [countdown, setCountdown] = useState(RIDE_OFFER_TIMEOUT_SECONDS);
   const [profilePassengerId, setProfilePassengerId] = useState<string | null>(null);
@@ -347,30 +378,7 @@ function MotoristaApp() {
   const [submittingRating, setSubmittingRating] = useState(false);
   const [ratingSubmitted, setRatingSubmitted] = useState(false);
   const [ratingError, setRatingError] = useState<string | null>(null);
-  const [paymentConfirming, setPaymentConfirming] = useState(false);
-  const [paymentConfirmedAt, setPaymentConfirmedAt] = useState<string | null>(null);
   const ratedRidesRef = useRef<Set<string>>(new Set());
-
-  async function confirmPaymentReceived() {
-    if (!ratingRide || paymentConfirming || paymentConfirmedAt) return;
-    setPaymentConfirming(true);
-    try {
-      const nowIso = new Date().toISOString();
-      const { error } = await supabase
-        .from("rides")
-        .update({ payment_received_at: nowIso, payment_received_by: userId })
-        .eq("id", ratingRide.id)
-        .is("payment_received_at", null);
-      if (error) throw error;
-      setPaymentConfirmedAt(nowIso);
-      toast.success("Pagamento confirmado");
-      if (navigator.vibrate) navigator.vibrate(30);
-    } catch (e) {
-      toast.error("Não foi possível confirmar", { description: (e as Error).message });
-    } finally {
-      setPaymentConfirming(false);
-    }
-  }
 
   const mapRef = useRef<google.maps.Map | null>(null);
   const sheetRef = useRef<MovviSheetHandle | null>(null);
@@ -378,11 +386,13 @@ function MotoristaApp() {
   // Refs para evitar recriação do canal Realtime e impedir loop de oferta
   const activeRef = useRef<RideRow | null>(null);
   const incomingRef = useRef<RideRow | null>(null);
+  const queuedRideRef = useRef<RideRow | null>(null);
   const ratingRef = useRef<RideRow | null>(null);
   // Corridas que o motorista já tratou (aceitou/recusou) — NUNCA reabrir
   const handledRidesRef = useRef<Set<string>>(new Set());
   useEffect(() => { activeRef.current = active; }, [active]);
   useEffect(() => { incomingRef.current = incoming; }, [incoming]);
+  useEffect(() => { queuedRideRef.current = queuedRide; }, [queuedRide]);
   useEffect(() => { ratingRef.current = ratingRide; }, [ratingRide]);
 
   const removeIncomingRequest = useCallback((ride: RideRow, removeReason: RequestRemovalReason | string) => {
@@ -395,7 +405,7 @@ function MotoristaApp() {
       });
       return;
     }
-    if (import.meta.env.DEV) console.log("[MOVVI REQUEST REMOVAL]", {
+    if (import.meta.env.DEV) console.log("[APOIS REQUEST REMOVAL]", {
       driverId: userId,
       rideId: ride.id,
       timestamp: new Date().toISOString(),
@@ -425,13 +435,15 @@ function MotoristaApp() {
     (async () => {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) { navigate({ to: "/motorista/login" }); return; }
-      setUserId(u.user.id);
       const meta = (u.user.user_metadata ?? {}) as Record<string, unknown>;
       setDriverName(((meta.name as string) || (meta.full_name as string) || u.user.email?.split("@")[0] || "").split(" ")[0]);
 
       const result = await loadDriverProfile();
       if (result.ok) {
         const d = result.profile;
+        setUserId(d.user_id);
+        setDriverId(d.id);
+        if (d.name) setDriverName(d.name.trim().split(/\s+/)[0] || d.name);
         if (d.approval_status !== "aprovado") {
           setStatusBlock(
             d.approval_status === "reprovado"
@@ -440,7 +452,7 @@ function MotoristaApp() {
                 ? "Cadastro bloqueado. Entre em contato com o suporte."
                 : "Cadastro em análise.",
           );
-        } else if (d.subscription_status && d.subscription_status !== "active") {
+        } else if (d.subscription_status && !["active", "ativa", "teste"].includes(d.subscription_status)) {
           setStatusBlock(subscriptionBlockMessage(d.subscription_status));
         } else {
           const issues = driverProfileCompletionIssues(d);
@@ -480,27 +492,18 @@ function MotoristaApp() {
                   ? "Sua conta foi bloqueada pelo administrador."
                   : "Cadastro em análise.";
             setStatusBlock(msg);
-            setOnline(false);
-            if (userId) {
-              void supabase.from("drivers").update({ is_online: false }).eq("user_id", userId);
-            }
+            setDesiredOnline(false);
             return;
           }
-          if (row.subscription_status && row.subscription_status !== "active") {
+          if (row.subscription_status && !["active", "ativa", "teste"].includes(row.subscription_status)) {
             setStatusBlock(subscriptionBlockMessage(row.subscription_status));
             // Se já há corrida em andamento, NÃO forçar offline imediatamente:
             // deixamos a corrida atual terminar. Apenas impedimos novas ofertas
             // marcando is_online=false no banco (o dispatch ignora offline).
             // Após finalizar, o statusBlock permanece e bloqueia voltar a online.
             if (activeRef.current) {
-              if (userId) {
-                void supabase.from("drivers").update({ is_online: false }).eq("user_id", userId);
-              }
             } else {
-              setOnline(false);
-              if (userId) {
-                void supabase.from("drivers").update({ is_online: false }).eq("user_id", userId);
-              }
+              setDesiredOnline(false);
             }
             return;
           }
@@ -515,17 +518,17 @@ function MotoristaApp() {
   }, [userId]);
 
   // estatísticas do dia
-  const loadTodayStats = useCallback(async (uid: string) => {
+  const loadTodayStats = useCallback(async (driverRecordId: string) => {
     const start = new Date(); start.setHours(0, 0, 0, 0);
     const { data } = await supabase.from("rides")
       .select("final_price, estimated_price")
-      .eq("driver_id", uid).eq("status", "finalizada")
+      .eq("driver_id", driverRecordId).eq("status", "finalizada")
       .gte("completed_at", start.toISOString());
     const rides = data?.length ?? 0;
     const earnings = (data ?? []).reduce((s, r) => s + Number(r.final_price ?? r.estimated_price ?? 0), 0);
     setTodayStats({ rides, earnings });
   }, []);
-  useEffect(() => { if (userId) loadTodayStats(userId); }, [userId, loadTodayStats]);
+  useEffect(() => { if (driverId) loadTodayStats(driverId); }, [driverId, loadTodayStats]);
 
   // ===== GPS =====
   const startWatch = useCallback(() => {
@@ -538,12 +541,12 @@ function MotoristaApp() {
         const speed = Number.isFinite(pos.coords.speed as number) ? (pos.coords.speed as number) : null;
         setPosition((prev) => {
           if (!prev || Math.abs(prev.lat - lat) > 0.0001 || Math.abs(prev.lng - lng) > 0.0001) {
-            if (import.meta.env.DEV) console.log("[MOVVI MOTORISTA] localização:", { lat, lng, heading, speed, accuracy: pos.coords.accuracy });
+            if (import.meta.env.DEV) console.log("[APOIS MOTORISTA] localização:", { lat, lng, heading, speed, accuracy: pos.coords.accuracy });
           }
           return { lat, lng, heading, speed };
         });
       },
-      (err) => { if (import.meta.env.DEV) console.warn("[MOVVI MOTORISTA] watch GPS:", err.message); },
+      (err) => { if (import.meta.env.DEV) console.warn("[APOIS MOTORISTA] watch GPS:", err.message); },
       { enableHighAccuracy: true, maximumAge: 4000, timeout: 15000 },
     );
   }, []);
@@ -557,11 +560,11 @@ function MotoristaApp() {
     }
     setGpsStatus("loading");
     setGpsMessage(null);
-    if (import.meta.env.DEV) console.log("[MOVVI MOTORISTA] solicitando GPS manualmente");
+    if (import.meta.env.DEV) console.log("[APOIS MOTORISTA] solicitando GPS manualmente");
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const lat = pos.coords.latitude, lng = pos.coords.longitude;
-        if (import.meta.env.DEV) console.log("[MOVVI MOTORISTA] GPS concedido:", { lat, lng });
+        if (import.meta.env.DEV) console.log("[APOIS MOTORISTA] GPS concedido:", { lat, lng });
         if (!isBrazilCoordinate(lat, lng)) {
           setGpsStatus("error");
           setGpsMessage("Sua localização não parece estar no Brasil. Ative o GPS real do aparelho e tente novamente.");
@@ -572,17 +575,6 @@ function MotoristaApp() {
         setGpsStatus("granted");
         setGpsMessage(null);
         setShowTestLocationButton(false);
-        // salva imediatamente no perfil do motorista
-        supabase.auth.getUser().then(({ data: u }) => {
-          if (!u.user) return;
-          supabase.from("drivers").update({
-            current_lat: lat, current_lng: lng,
-            last_location_at: new Date().toISOString(),
-          }).eq("user_id", u.user.id).then(({ error }) => {
-            if (error) { if (import.meta.env.DEV) console.warn("[MOVVI MOTORISTA] erro salvando localização:", error.message); }
-            else { if (import.meta.env.DEV) console.log("[MOVVI MOTORISTA] localização salva no perfil"); }
-          });
-        });
         // centraliza mapa
         if (mapRef.current && !initialCenteredRef.current) {
           smoothPanZoom(mapRef.current, { lat, lng }, 16, 700);
@@ -591,7 +583,7 @@ function MotoristaApp() {
         startWatch();
       },
       (err) => {
-        if (import.meta.env.DEV) console.warn("[MOVVI MOTORISTA] GPS erro:", err.code, err.message);
+        if (import.meta.env.DEV) console.warn("[APOIS MOTORISTA] GPS erro:", err.code, err.message);
         if (err.code === err.PERMISSION_DENIED) {
           setGpsStatus("denied");
           setGpsMessage("Localização negada. Ative a permissão do navegador para receber corridas.");
@@ -622,7 +614,7 @@ function MotoristaApp() {
     const permsApi = (navigator as Navigator & { permissions?: { query: (p: { name: PermissionName }) => Promise<PermissionStatus> } }).permissions;
     if (permsApi?.query) {
       permsApi.query({ name: "geolocation" as PermissionName }).then((st) => {
-        if (import.meta.env.DEV) console.log("[MOVVI MOTORISTA] permissão GPS:", st.state);
+        if (import.meta.env.DEV) console.log("[APOIS MOTORISTA] permissão GPS:", st.state);
         if (st.state === "granted") {
           setGpsStatus("granted");
           setGpsMessage(null);
@@ -649,32 +641,20 @@ function MotoristaApp() {
   const activateOnlineWithCoords = useCallback(
     (lat: number, lng: number, heading: number | null, speed: number | null, isTest: boolean) => {
       if (!isBrazilCoordinate(lat, lng)) {
-        if (import.meta.env.DEV) console.warn("[MOVVI MOTORISTA] activate ignorado — coord inválida:", { lat, lng });
+        if (import.meta.env.DEV) console.warn("[APOIS MOTORISTA] activate ignorado — coord inválida:", { lat, lng });
         return;
       }
       setPosition({ lat, lng, heading, speed });
       setGpsStatus("granted");
       setGpsMessage(isTest ? "Modo teste ativo com localização no Brasil." : null);
       setShowTestLocationButton(false);
-      if (userId) {
-        supabase.from("drivers").update({
-          is_online: true,
-          current_lat: lat, current_lng: lng,
-          current_heading: heading,
-          current_speed: speed,
-          last_location_at: new Date().toISOString(),
-        }).eq("user_id", userId).then(({ error }) => {
-          if (error) { if (import.meta.env.DEV) console.warn("[MOVVI MOTORISTA] erro salvando localização:", error.message); }
-          else { if (import.meta.env.DEV) console.log("[MOVVI MOTORISTA] localização salva:", { lat, lng, isTest }); }
-        });
-      }
       if (mapRef.current) {
         smoothPanZoom(mapRef.current, { lat, lng }, 16, 700);
         initialCenteredRef.current = true;
       }
       if (!isTest) startWatch();
-      setOnline(true);
-      if (import.meta.env.DEV) console.log(`[MOVVI MOTORISTA] online: true (${isTest ? "modo teste" : "GPS real"})`);
+      setDesiredOnline(true);
+      if (import.meta.env.DEV) console.log(`[APOIS MOTORISTA] online: true (${isTest ? "modo teste" : "GPS real"})`);
     },
     [userId, startWatch],
   );
@@ -689,19 +669,7 @@ function MotoristaApp() {
     setGpsStatus("granted");
     setGpsMessage("Modo teste ativo com localização no Brasil.");
     setShowTestLocationButton(false);
-    setOnline(true);
-
-    await supabase
-      .from("drivers")
-      .update({
-        is_online: true,
-        current_lat: lat,
-        current_lng: lng,
-        current_heading: null,
-        current_speed: null,
-        last_location_at: new Date().toISOString(),
-      })
-      .eq("user_id", userId);
+    setDesiredOnline(true);
 
     if (mapRef.current) {
       smoothPanZoom(mapRef.current, { lat, lng }, 16, 700);
@@ -715,14 +683,14 @@ function MotoristaApp() {
   const toggleOnline = useCallback(() => {
     // Se já está online → fica offline imediatamente
     if (online) {
-      if (import.meta.env.DEV) console.log("[MOVVI MOTORISTA] indo offline");
+      if (import.meta.env.DEV) console.log("[APOIS MOTORISTA] indo offline");
       // Para o watcher de GPS para não continuar consumindo bateria nem
       // gravando posições fantasmas enquanto o motorista está offline.
       if (watchIdRef.current != null && "geolocation" in navigator) {
         navigator.geolocation.clearWatch(watchIdRef.current);
         watchIdRef.current = null;
       }
-      setOnline(false);
+      setDesiredOnline(false);
       return;
     }
     // Offline → tentar ficar online
@@ -736,19 +704,19 @@ function MotoristaApp() {
     setGpsStatus("loading");
     setGpsMessage("Obtendo sua localização...");
     setShowTestLocationButton(false);
-    if (import.meta.env.DEV) console.log("[MOVVI MOTORISTA] FICAR ONLINE clicado → solicitando GPS no clique");
+    if (import.meta.env.DEV) console.log("[APOIS MOTORISTA] FICAR ONLINE clicado → solicitando GPS no clique");
 
     const onSuccess = (pos: GeolocationPosition) => {
       const rawLat = pos.coords.latitude, rawLng = pos.coords.longitude;
-      if (import.meta.env.DEV) console.log("[MOVVI MOTORISTA] GPS ok:", { lat: rawLat, lng: rawLng });
+      if (import.meta.env.DEV) console.log("[APOIS MOTORISTA] GPS ok:", { lat: rawLat, lng: rawLng });
       if (!isBrazilCoordinate(rawLat, rawLng)) {
         if (isDevelopmentEnvironment()) {
-          if (import.meta.env.DEV) console.warn("[MOVVI MOTORISTA] GPS fora do Brasil — fallback automático para localização de teste (dev):", { lat: rawLat, lng: rawLng });
+          if (import.meta.env.DEV) console.warn("[APOIS MOTORISTA] GPS fora do Brasil — fallback automático para localização de teste (dev):", { lat: rawLat, lng: rawLng });
           setGpsMessage("GPS fora do Brasil detectado. Usando localização de teste no Brasil (modo dev).");
           activateOnlineWithCoords(TEST_DRIVER_LOCATION.lat, TEST_DRIVER_LOCATION.lng, null, null, true);
           return;
         }
-        if (import.meta.env.DEV) console.warn("[MOVVI MOTORISTA] GPS fora do Brasil — bloqueando online:", { lat: rawLat, lng: rawLng });
+        if (import.meta.env.DEV) console.warn("[APOIS MOTORISTA] GPS fora do Brasil — bloqueando online:", { lat: rawLat, lng: rawLng });
         setGpsStatus("error");
         setGpsMessage("Sua localização não parece estar no Brasil. Ative o GPS real do aparelho e tente novamente.");
         setShowTestLocationButton(true);
@@ -761,7 +729,7 @@ function MotoristaApp() {
 
 
     const finalFail = (err: GeolocationPositionError) => {
-      if (import.meta.env.DEV) console.warn("[MOVVI MOTORISTA] GPS erro final:", err.code, err.message);
+      if (import.meta.env.DEV) console.warn("[APOIS MOTORISTA] GPS erro final:", err.code, err.message);
       setGpsStatus(err.code === err.PERMISSION_DENIED ? "denied" : err.code === err.TIMEOUT ? "timeout" : "error");
       setGpsMessage("Não foi possível obter sua localização. Verifique se o GPS está ativo e tente novamente.");
       setShowTestLocationButton(isDevelopmentEnvironment());
@@ -771,7 +739,7 @@ function MotoristaApp() {
       navigator.geolocation.getCurrentPosition(
         onSuccess,
         (err) => {
-          if (import.meta.env.DEV) console.warn("[MOVVI MOTORISTA] GPS tentativa rápida falhou:", err.code, err.message);
+          if (import.meta.env.DEV) console.warn("[APOIS MOTORISTA] GPS tentativa rápida falhou:", err.code, err.message);
           if (err.code === err.PERMISSION_DENIED) {
             finalFail(err);
             return;
@@ -790,7 +758,7 @@ function MotoristaApp() {
     if (permsApi?.query) {
       permsApi.query({ name: "geolocation" as PermissionName })
         .then((st) => {
-          if (import.meta.env.DEV) console.log("[MOVVI MOTORISTA] permissão GPS no clique:", st.state);
+          if (import.meta.env.DEV) console.log("[APOIS MOTORISTA] permissão GPS no clique:", st.state);
           if (st.state === "denied") {
             setGpsStatus("denied");
             setGpsMessage("Localização negada. Ative a permissão do navegador para receber corridas.");
@@ -805,11 +773,6 @@ function MotoristaApp() {
     }
   }, [online, statusBlock, activateOnlineWithCoords]);
 
-  // offline ao desmontar
-  useEffect(() => () => { if (online && userId)
-    supabase.from("drivers").update({ is_online: false }).eq("user_id", userId).then();
-  }, [online, userId]);
-
   // realtime: ofertas (broadcast) + corrida ativa — canal estável
   useEffect(() => {
     if (!userId) return;
@@ -818,12 +781,12 @@ function MotoristaApp() {
       const candidates: string[] = Array.isArray((r as any).candidate_driver_ids) ? (r as any).candidate_driver_ids : [];
       const rejected: string[] = Array.isArray((r as any).rejected_driver_ids) ? (r as any).rejected_driver_ids : [];
       const acceptedDriverId = (r as any).accepted_driver_id ?? r.driver_id ?? null;
-      const isCandidate = candidates.includes(userId);
-      const didReject = rejected.includes(userId);
+      const isCandidate = candidates.includes(userId as string);
+      const didReject = rejected.includes(userId as string);
       const expired = computeOfferCountdown(r) <= 0;
 
       if (incomingRef.current?.id === r.id) {
-        if (acceptedDriverId && acceptedDriverId !== userId) {
+        if (acceptedDriverId && acceptedDriverId !== driverId) {
           removeIncomingRequest(r, "accepted_by_other");
           toast.info("Corrida aceita por outro motorista");
           return;
@@ -849,10 +812,13 @@ function MotoristaApp() {
       if (r.status !== "procurar_motorista") return;
       if (acceptedDriverId || didReject || !isCandidate || expired) return;
       if (handledRidesRef.current.has(r.id)) return;
-      if (activeRef.current || ratingRef.current) return;
+      if (ratingRef.current) return;
+      const currentRide = activeRef.current;
+      if (currentRide && currentRide.status !== "em_viagem") return;
+      if (currentRide?.status === "em_viagem" && queuedRideRef.current) return;
       if (incomingRef.current && incomingRef.current.id !== r.id) return;
 
-      if (import.meta.env.DEV) console.log("[MOVVI MOTORISTA] corrida recebida (broadcast candidatos):", r.id, {
+      if (import.meta.env.DEV) console.log("[APOIS MOTORISTA] corrida recebida (broadcast candidatos):", r.id, {
         category: r.category,
         origin: r.origin_name,
         destination: r.destination_name,
@@ -871,27 +837,46 @@ function MotoristaApp() {
           return;
         }
         const acceptedDriverId = (r as any).accepted_driver_id ?? r.driver_id ?? null;
-        if (acceptedDriverId && acceptedDriverId !== userId) {
+        if (acceptedDriverId && acceptedDriverId !== driverId) {
           removeIncomingRequest(r, "accepted_by_other");
           toast.info("Corrida aceita por outro motorista");
           return;
         }
       }
-      if (r.driver_id !== userId && (r as any).accepted_driver_id !== userId) return;
+      if (!driverId || (r.driver_id !== driverId && (r as any).accepted_driver_id !== driverId)) return;
+
+      const queuedAfterRideId = (r as any).queued_after_ride_id as string | null | undefined;
+      if (r.status === "procurar_motorista" && queuedAfterRideId && r.driver_id === driverId) {
+        if (incomingRef.current?.id === r.id) setIncoming(null);
+        handledRidesRef.current.add(r.id);
+        setQueuedRide(r);
+        return;
+      }
+
       if (r.status === "finalizada") {
         setActive(null); setPolyline([]);
         if (ratedRidesRef.current.has(r.id)) {
           if (ratingRef.current?.id === r.id && !ratingSubmitted) setRatingRide(null);
         } else if (!r.driver_rated_at && !ratingRef.current) {
           setRatingRide(r); setStars(5); setRatingComment(""); setRatingSubmitted(false);
-          setPaymentConfirmedAt((r as any).payment_received_at ?? null);
         } else if (r.driver_rated_at) {
           ratedRidesRef.current.add(r.id);
           if (ratingRef.current?.id === r.id && !ratingSubmitted) setRatingRide(null);
         }
-        loadTodayStats(userId);
+        if (driverId) loadTodayStats(driverId);
       } else if (r.status === "cancelada_passageiro" || r.status === "cancelada_motorista") {
-        const wasActive = activeRef.current?.id === r.id || r.driver_id === userId || (r as any).accepted_driver_id === userId;
+        const wasQueued = queuedRideRef.current?.id === r.id || Boolean((r as any).queued_after_ride_id && r.driver_id === driverId);
+        if (wasQueued) {
+          handledRidesRef.current.add(r.id);
+          setIncoming(null);
+          setQueuedRide(null);
+          toast.warning("Próxima corrida cancelada", {
+            description: "A corrida reservada foi cancelada. Sua viagem atual continua normalmente.",
+            duration: 6000,
+          });
+          return;
+        }
+        const wasActive = activeRef.current?.id === r.id || r.driver_id === driverId || (r as any).accepted_driver_id === driverId;
         if (wasActive && r.status === "cancelada_passageiro") {
           const reason = (r.cancel_reason ?? "").trim();
           toast.warning("Passageiro cancelou a corrida", {
@@ -900,9 +885,9 @@ function MotoristaApp() {
           });
           if (navigator.vibrate) navigator.vibrate([220, 90, 220, 90, 220]);
           showPush({
-            title: "MOVVI • Corrida cancelada",
+            title: "APOIS • Corrida cancelada",
             body: reason ? `Motivo: ${reason}` : "O passageiro cancelou a corrida.",
-            tag: `movvi-ride-motorista-cancelada_passageiro-${r.id}`,
+            tag: `apois-ride-motorista-cancelada_passageiro-${r.id}`,
             url: "/motorista/app",
           });
         }
@@ -912,12 +897,13 @@ function MotoristaApp() {
         setPolyline([]);
       } else if (r.status === "motorista_a_caminho" || r.status === "motorista_chegou" || r.status === "em_viagem") {
         if (incomingRef.current?.id === r.id) setIncoming(null);
+        if (queuedRideRef.current?.id === r.id) setQueuedRide(null);
         handledRidesRef.current.add(r.id);
         setActive(r);
       }
     };
 
-    if (import.meta.env.DEV) console.log("[MOVVI MOTORISTA] escutando corridas: canal driver-rides-" + userId);
+    if (import.meta.env.DEV) console.log("[APOIS MOTORISTA] escutando corridas: canal driver-rides-" + userId);
     // Sem filtro por coluna: a RLS já garante que só recebo rides em que estou
     // envolvido (passageiro/driver/candidate_driver_ids/accepted_driver_id).
     const ch = supabase.channel(`driver-rides-${userId}`)
@@ -930,39 +916,48 @@ function MotoristaApp() {
           applyActive(row);
         })
       .subscribe(async (status) => {
-        if (import.meta.env.DEV) console.log("[MOVVI MOTORISTA] status do canal:", status);
+        if (import.meta.env.DEV) console.log("[APOIS MOTORISTA] status do canal:", status);
         if (status !== "SUBSCRIBED") return;
-        const ongoing = await supabase
-          .from("rides").select("*")
-          .eq("driver_id", userId)
-          .in("status", ["motorista_a_caminho", "motorista_chegou", "em_viagem"])
-          .order("created_at", { ascending: false })
-          .limit(1).maybeSingle();
-        if (ongoing.data) { applyActive(ongoing.data as RideRow); return; }
-        const pending = await supabase
-          .from("rides").select("*")
-          .contains("candidate_driver_ids", [userId])
-          .eq("status", "procurar_motorista")
-          .order("created_at", { ascending: false })
-          .limit(1).maybeSingle();
-        if (pending.data) presentOffer(pending.data as RideRow);
+        await resyncDriverRides();
       });
+
+    const resyncDriverRides = async () => {
+      const ongoing = await supabase
+        .from("rides").select("*")
+        .eq("driver_id", driverId as string)
+        .in("status", ["motorista_a_caminho", "motorista_chegou", "em_viagem"])
+        .order("created_at", { ascending: false })
+        .limit(1).maybeSingle();
+      const current = ongoing.data as RideRow | null;
+      if (current) applyActive(current);
+
+      const queued = await (supabase.from("rides") as any)
+        .select("*")
+        .eq("driver_id", driverId as string)
+        .eq("status", "procurar_motorista")
+        .not("queued_after_ride_id", "is", null)
+        .order("queued_at", { ascending: true })
+        .limit(1).maybeSingle();
+      if (queued.data) applyActive(queued.data as RideRow);
+      else setQueuedRide(null);
+
+      const canReceiveNext = !current || (current.status === "em_viagem" && !queued.data);
+      if (!canReceiveNext || ratingRef.current) return;
+      const pending = await supabase
+        .from("rides").select("*")
+        .contains("candidate_driver_ids", [userId as string])
+        .eq("status", "procurar_motorista")
+        .is("driver_id", null)
+        .order("created_at", { ascending: false })
+        .limit(1).maybeSingle();
+      if (pending.data) presentOffer(pending.data as RideRow);
+    };
 
     // Rede de segurança 1: re-sincroniza ao retomar a aba (após background no mobile)
     const onVisibility = async () => {
       if (document.visibilityState !== "visible") return;
-      if (import.meta.env.DEV) console.log("[MOVVI MOTORISTA] aba visível — ressincronizando corrida ativa");
-      const ongoing = await supabase
-        .from("rides").select("*").eq("driver_id", userId)
-        .in("status", ["motorista_a_caminho", "motorista_chegou", "em_viagem", "finalizada"])
-        .order("created_at", { ascending: false }).limit(1).maybeSingle();
-      if (ongoing.data) { applyActive(ongoing.data as RideRow); return; }
-      const pending = await supabase
-        .from("rides").select("*")
-        .contains("candidate_driver_ids", [userId])
-        .eq("status", "procurar_motorista")
-        .order("created_at", { ascending: false }).limit(1).maybeSingle();
-      if (pending.data) presentOffer(pending.data as RideRow);
+      if (import.meta.env.DEV) console.log("[APOIS MOTORISTA] aba visível — ressincronizando corrida ativa/fila");
+      await resyncDriverRides();
     };
     document.addEventListener("visibilitychange", onVisibility);
     // Também refetch em focus da janela e reconexão de rede
@@ -974,11 +969,17 @@ function MotoristaApp() {
     // Rede de segurança 2: polling leve da corrida ativa a cada 8s caso o realtime caia
     const poll = window.setInterval(async () => {
       const cur = activeRef.current;
-      if (!cur) return;
-      const { data } = await supabase.from("rides").select("*").eq("id", cur.id).maybeSingle();
-      if (data && (data as RideRow).status !== cur.status) {
-        if (import.meta.env.DEV) console.log("[MOVVI MOTORISTA] polling detectou mudança de status:", cur.status, "→", (data as RideRow).status);
-        applyActive(data as RideRow);
+      if (cur) {
+        const { data } = await supabase.from("rides").select("*").eq("id", cur.id).maybeSingle();
+        if (data && (data as RideRow).status !== cur.status) {
+          if (import.meta.env.DEV) console.log("[APOIS MOTORISTA] polling detectou mudança de status:", cur.status, "→", (data as RideRow).status);
+          applyActive(data as RideRow);
+        }
+      }
+      const queued = queuedRideRef.current;
+      if (queued) {
+        const { data } = await supabase.from("rides").select("*").eq("id", queued.id).maybeSingle();
+        if (data) applyActive(data as RideRow);
       }
     }, 8000);
 
@@ -990,16 +991,16 @@ function MotoristaApp() {
       window.removeEventListener("online", onFocus);
       window.clearInterval(poll);
     };
-  }, [userId, loadTodayStats]);
+  }, [userId, driverId, loadTodayStats]);
 
 
 
   // carrega dados do passageiro
   useEffect(() => {
-    const pid = active?.passenger_id ?? ratingRide?.passenger_id ?? incoming?.passenger_id;
+    const pid = incoming?.passenger_id ?? active?.passenger_id ?? ratingRide?.passenger_id;
     if (!pid) { setPassenger(null); return; }
-    supabase.from("users").select("name, phone, avatar_url").eq("auth_user_id", pid).maybeSingle()
-      .then(({ data }) => setPassenger(data ?? { name: null, phone: null, avatar_url: null }));
+    supabase.from("users").select("name, phone, avatar_url, average_rating, total_ratings").eq("id", pid).maybeSingle()
+      .then(({ data }) => setPassenger(data ?? { name: null, phone: null, avatar_url: null, average_rating: 5, total_ratings: 0 }));
   }, [active?.passenger_id, ratingRide?.passenger_id, incoming?.passenger_id]);
 
   // countdown da oferta
@@ -1007,7 +1008,7 @@ function MotoristaApp() {
     if (!incoming) return;
     if (countdown <= 0) {
       removeIncomingRequest(incoming, "expired");
-      void callReject({ data: { rideId: incoming.id } }).catch((e) => console.error("[MOVVI MOTORISTA] erro ao expirar oferta:", e));
+      void callReject({ data: { rideId: incoming.id } }).catch((e) => console.error("[APOIS MOTORISTA] erro ao expirar oferta:", e));
       return;
     }
     const t = window.setTimeout(() => setCountdown(computeOfferCountdown(incoming)), 1000);
@@ -1019,14 +1020,23 @@ function MotoristaApp() {
     if (!offer) return;
     try {
       const r = await callAccept({ data: { rideId: offer.id } });
-      if (import.meta.env.DEV) console.log("[MOVVI MOTORISTA] corrida aceita:", offer.id);
+      if (import.meta.env.DEV) console.log("[APOIS MOTORISTA] corrida aceita:", offer.id);
       // Só remove o alerta depois que o backend confirma o aceite da MESMA corrida.
       handledRidesRef.current.add(offer.id);
       setIncoming(null);
-      setActive(r as RideRow);
-      sheetRef.current?.snapTo(34);
+      const accepted = r as RideRow;
+      if ((accepted as any).queued_after_ride_id && accepted.status === "procurar_motorista") {
+        setQueuedRide(accepted);
+        toast.success("Próxima corrida reservada", {
+          description: "Finalize a viagem atual. Depois, a rota para o próximo embarque será aberta automaticamente.",
+          duration: 6500,
+        });
+      } else {
+        setActive(accepted);
+        sheetRef.current?.snapTo(34);
+      }
     } catch (e) {
-      console.error("[MOVVI MOTORISTA] erro ao aceitar:", e);
+      console.error("[APOIS MOTORISTA] erro ao aceitar:", e);
       handledRidesRef.current.delete(offer.id);
       setIncoming(offer);
       setGpsMessage(e instanceof Error ? e.message : "Não foi possível aceitar a corrida. Tente novamente.");
@@ -1036,9 +1046,9 @@ function MotoristaApp() {
     const offer = incomingRef.current;
     if (!offer) return;
     removeIncomingRequest(offer, "driver_rejected");
-    if (import.meta.env.DEV) console.log("[MOVVI MOTORISTA] corrida recusada:", offer.id);
+    if (import.meta.env.DEV) console.log("[APOIS MOTORISTA] corrida recusada:", offer.id);
     try { await callReject({ data: { rideId: offer.id } }); }
-    catch (e) { console.error("[MOVVI MOTORISTA] erro ao recusar:", e); }
+    catch (e) { console.error("[APOIS MOTORISTA] erro ao recusar:", e); }
   }
 
   async function handleDriverCancelRide(motivo: string) {
@@ -1236,11 +1246,11 @@ function MotoristaApp() {
         setEtaSeconds(res.durationSeconds);
         setLegKm(res.distanceMeters / 1000);
         setRouteSteps(
-          (res.steps ?? []).map((s: RouteStep) => ({
+          (res.steps ?? []).map((s: DriverRouteStep) => ({
             lat: s.lat, lng: s.lng,
             distanceMeters: s.distanceMeters,
             instruction: s.instruction,
-            maneuver: s.maneuver,
+            maneuver: s.maneuver ?? undefined,
           })),
         );
         resetSpokenCache();
@@ -1276,6 +1286,25 @@ function MotoristaApp() {
     if (active.status !== "motorista_a_caminho" && active.status !== "em_viagem") return;
     tickNavigation({ lat: position.lat, lng: position.lng }, routeSteps, active.id);
   }, [position?.lat, position?.lng, routeSteps, active?.id, active?.status]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Avisos automáticos de chegada exigidos pelo checklist do Motorista.
+  // O botão “Cheguei” continua existindo; este aviso é apenas orientação por voz.
+  useEffect(() => {
+    if (!active || !position) return;
+    if (active.status === "motorista_a_caminho") {
+      const km = haversineKm(position, { lat: active.origin_lat, lng: active.origin_lng });
+      if (km <= 0.05) {
+        void speak("Você chegou ao ponto de embarque.", { dedupKey: `${active.id}:pickup-arrival` });
+      }
+      return;
+    }
+    if (active.status === "em_viagem") {
+      const km = haversineKm(position, { lat: active.destination_lat, lng: active.destination_lng });
+      if (km <= 0.05) {
+        void speak("Você chegou ao destino final.", { dedupKey: `${active.id}:destination-arrival` });
+      }
+    }
+  }, [position?.lat, position?.lng, active?.id, active?.status]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fala transições de status importantes.
   const lastSpokenStatusRef = useRef<string | null>(null);
@@ -1331,7 +1360,7 @@ function MotoristaApp() {
       setRatingSubmitted(true);
     } catch (e) {
       const msg = (e as Error)?.message ?? "Falha ao enviar avaliação.";
-      if (import.meta.env.DEV) console.warn("[MOVVI MOTORISTA] erro ao avaliar:", msg);
+      if (import.meta.env.DEV) console.warn("[APOIS MOTORISTA] erro ao avaliar:", msg);
       setRatingError(msg);
     } finally { setSubmittingRating(false); }
   }
@@ -1373,14 +1402,14 @@ function MotoristaApp() {
             <InterpolatedDriverMarker
               position={position}
               heading={position.heading ?? 0}
-              color={online ? "#8DD92B" : "#94a3b8"}
+              color={online ? "#F6BE1C" : "#94a3b8"}
             />
           )}
           {active && (
             <>
               <PlacePinMarker
                 position={{ lat: active.origin_lat, lng: active.origin_lng }}
-                color="#8DD92B"
+                color="#F6BE1C"
                 zIndexBase={9990}
               />
               <PlacePinMarker
@@ -1400,9 +1429,9 @@ function MotoristaApp() {
               <Polyline path={polyline} options={{
                 strokeColor: "#ffffff", strokeOpacity: 0.95, strokeWeight: 14, geodesic: true, zIndex: 2,
               }} />
-              {/* rota — verde MOVVI, encorpado */}
+              {/* rota — dourado APOIS, encorpado */}
               <Polyline path={polyline} options={{
-                strokeColor: "#8DD92B", strokeOpacity: 1, strokeWeight: 9, geodesic: true, zIndex: 3,
+                strokeColor: "#F6BE1C", strokeOpacity: 1, strokeWeight: 9, geodesic: true, zIndex: 3,
               }} />
             </>
           )}
@@ -1607,6 +1636,25 @@ function MotoristaApp() {
       />
 
 
+      {queuedRide && active?.status === "em_viagem" && !incoming && (
+        <div
+          className="fixed left-4 right-4 z-[45] mx-auto max-w-md rounded-[18px] border border-[#F6BE1C]/25 bg-[#0D0F11]/94 px-4 py-3 shadow-[0_18px_44px_-22px_rgba(0,0,0,0.95)] backdrop-blur-md"
+          style={{ top: "calc(env(safe-area-inset-top) + 134px)" }}
+        >
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="text-[9px] font-black uppercase tracking-[0.17em] text-[#F6BE1C]">Próxima corrida reservada</p>
+              <p className="mt-1 truncate text-[12px] font-bold text-white">{queuedRide.pickup_label || queuedRide.origin_name}</p>
+              <p className="mt-0.5 truncate text-[10px] font-medium text-zinc-500">Finalize a atual para seguir ao próximo embarque</p>
+            </div>
+            <div className="shrink-0 text-right">
+              <p className="text-[14px] font-black text-[#F6BE1C]">{formatBRL(Number(queuedRide.estimated_price ?? 0))}</p>
+              <p className="mt-0.5 text-[9px] font-bold text-zinc-600">reservada</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ===== Rating ===== */}
       {ratingRide && (
         <RatingScreen
@@ -1620,13 +1668,14 @@ function MotoristaApp() {
           onSubmit={submitRating}
           onDismiss={dismissRating}
           onSkip={skipRating}
-          paymentConfirmedAt={paymentConfirmedAt}
-          paymentConfirming={paymentConfirming}
-          onConfirmPayment={confirmPaymentReceived}
         />
       )}
 
-      {/* Bottom nav removido — todas as opções vivem dentro do menu lateral (hambúrguer). */}
+      <DriverVoiceToggle
+        visible={!!active && (active.status === "motorista_a_caminho" || active.status === "em_viagem")}
+      />
+
+      <ApoisDriverBottomNav hidden={!!ratingRide} />
     </div>
   );
 }
@@ -1654,7 +1703,7 @@ function IdleBottomPanel({
   canUseTestLocation: boolean;
   onUseTestLocation: () => void;
 }) {
-  const navReserve = "calc(env(safe-area-inset-bottom) + 20px)";
+  const navReserve = "calc(env(safe-area-inset-bottom) + 76px)";
   const firstName = (driverName || "").trim().split(/\s+/)[0] || "Motorista";
 
   return (
@@ -1780,12 +1829,14 @@ function IncomingOffer({
     return haversineKm(driverPos, { lat: ride.origin_lat, lng: ride.origin_lng });
   }, [driverPos, ride.origin_lat, ride.origin_lng]);
   const pickupMin = pickupKm != null ? Math.max(1, Math.round((pickupKm / 32) * 60)) : null;
+  const tripKm = ride.distance_km != null ? Number(ride.distance_km) : null;
+  const totalKm = pickupKm != null && tripKm != null ? pickupKm + tripKm : null;
 
   const cat = RIDE_CATEGORIES.find((c) => c.key === ride.category);
   const CatIcon = cat?.icon ?? RouteIcon;
   const catLabel = cat?.label?.toUpperCase() ?? "CORRIDA";
 
-  // MOVVI Ride Score — badge visual (deriva de distance_km, sem backend novo).
+  // APOIS Ride Score — badge visual (deriva de distance_km, sem backend novo).
   const score = useMemo(() => {
     const km = Number(ride.distance_km ?? 0);
     const pk = pickupKm ?? 0;
@@ -1796,8 +1847,7 @@ function IncomingOffer({
     return { label: "Corrida disponível", tone: "text-primary", dot: "bg-primary", bg: "bg-primary/10", border: "border-primary/25" };
   }, [ride.distance_km, pickupKm]);
 
-  const rating = (passenger as { rating?: number | null } | null)?.rating;
-  const ratingText = rating != null ? Number(rating).toFixed(2) : "5.00";
+  const ratingText = passengerRatingText(passenger, 2);
 
   // Toque de chamada + voz "Nova corrida" enquanto a oferta estiver visível.
   useEffect(() => {
@@ -1808,7 +1858,8 @@ function IncomingOffer({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 animate-in fade-in duration-200"
+      className="fixed inset-x-0 top-0 z-50 flex items-end justify-center bg-black/40 animate-in fade-in duration-200"
+      style={{ bottom: "calc(env(safe-area-inset-bottom) + 68px)" }}
       role="dialog" aria-modal="true"
     >
       <div
@@ -1878,18 +1929,26 @@ function IncomingOffer({
             <AddressRow dotColor="bg-destructive" label="Destino" name={ride.destination_name} />
           </div>
 
-          {/* Pagamento */}
-          <div className="mt-2.5 mb-2 flex items-center justify-between rounded-2xl border border-border bg-background/40 px-4 py-2">
-            <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">Pagamento</span>
-            <span className="text-[13px] font-semibold text-foreground">{paymentLabelFor(ride.payment_method)}</span>
+          {/* Total de deslocamento + pagamento */}
+          <div className="mt-2.5 grid grid-cols-2 gap-2">
+            <div className="rounded-2xl border border-[#F6BE1C]/20 bg-[#F6BE1C]/8 px-3 py-2">
+              <span className="block text-[9px] font-black uppercase tracking-[0.12em] text-[#F6BE1C]">Km total</span>
+              <span className="mt-0.5 block text-[13px] font-black tabular-nums text-foreground">
+                {totalKm != null ? `${totalKm.toFixed(1)} km` : "—"}
+              </span>
+            </div>
+            <div className="rounded-2xl border border-border bg-background/40 px-3 py-2 text-right">
+              <span className="block text-[9px] font-medium uppercase tracking-[0.12em] text-muted-foreground">Pagamento</span>
+              <span className="mt-0.5 block truncate text-[12px] font-semibold text-foreground">{paymentLabelFor(ride.payment_method)}</span>
+            </div>
           </div>
         </div>
 
 
         {/* Footer sticky — botões sempre visíveis */}
         <div
-          className="shrink-0 border-t border-border/60 bg-card px-4 pt-3 sm:px-5"
-          style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 20px)" }}
+          className="sticky bottom-0 z-10 shrink-0 border-t border-white/5 bg-[#08090A] px-4 pt-3"
+          style={{ paddingBottom: "16px" }}
         >
           <div className="grid grid-cols-2 gap-3">
             <DSButton type="button" variant="outline" size="lg" onClick={onReject}>
@@ -1945,7 +2004,7 @@ function CountdownRing({ seconds, pct }: { seconds: number; pct: number }) {
     <div className={`relative h-12 w-12 ${isLow ? "animate-pulse-soft" : ""}`}>
       <svg viewBox="0 0 44 44" className="h-12 w-12 -rotate-90">
         <circle cx="22" cy="22" r={r} stroke="hsl(var(--border))" strokeWidth="3" fill="none" />
-        <circle cx="22" cy="22" r={r} stroke="#76C139" strokeWidth="3" fill="none"
+        <circle cx="22" cy="22" r={r} stroke="#F6BE1C" strokeWidth="3" fill="none"
           strokeDasharray={c} strokeDashoffset={c - (c * pct) / 100}
           strokeLinecap="round" className="transition-[stroke-dashoffset] duration-700 ease-linear" />
       </svg>
@@ -2189,10 +2248,10 @@ function ActiveRidePanel({
             <div className="min-w-0 flex-1">
               <div className="truncate text-[20px] font-bold leading-tight tracking-tight">{passenger?.name ?? "Passageiro"}</div>
               <div className="mt-1 flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground">
-                <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" /> 5.0
+                <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" /> {passengerRatingText(passenger)}
                 <span className="text-muted-foreground/50">·</span>
                 <CatIcon className="h-3.5 w-3.5" strokeWidth={1.75} />
-                <span>MOVVI {(category?.label ?? "CAR").toUpperCase()}</span>
+                <span>APOIS {(category?.label ?? "CAR").toUpperCase()}</span>
               </div>
             </div>
             <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/70" />
@@ -2221,10 +2280,10 @@ function ActiveRidePanel({
             </div>
           </div>
 
-          {/* Primary CTA — Cheguei ao local */}
+          {/* Primary CTA — Cheguei no embarque */}
           <DSButton size="lg" onClick={() => onArrive()} className="h-14 w-full text-[15px] font-bold uppercase tracking-[0.06em]">
             <CheckCircle2 className="h-5 w-5" strokeWidth={2} />
-            Cheguei ao local
+            Cheguei no embarque
           </DSButton>
 
           <button
@@ -2343,10 +2402,10 @@ function ActiveRidePanel({
             <div className="min-w-0 flex-1">
               <div className="truncate text-[20px] font-bold leading-tight tracking-tight">{passenger?.name ?? "Passageiro"}</div>
               <div className="mt-1 flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground">
-                <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" /> 5.0
+                <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" /> {passengerRatingText(passenger)}
                 <span className="text-muted-foreground/50">·</span>
                 <CatIcon className="h-3.5 w-3.5" strokeWidth={1.75} />
-                <span>MOVVI {(category?.label ?? "CAR").toUpperCase()}</span>
+                <span>APOIS {(category?.label ?? "CAR").toUpperCase()}</span>
               </div>
             </div>
             <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/70" />
@@ -2451,7 +2510,7 @@ function ActiveRidePanel({
           <div className="min-w-0 flex-1">
             <div className="truncate text-[14px] font-semibold tracking-tight">{passenger?.name ?? "Passageiro"}</div>
             <div className="mt-0.5 flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
-              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" /> 5.0
+              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" /> {passengerRatingText(passenger)}
               <span className="text-muted-foreground/50">·</span>
               <span className="truncate">{paymentLabelFor(ride.payment_method)}</span>
             </div>
@@ -2471,7 +2530,7 @@ function ActiveRidePanel({
       <div className="space-y-2 rounded-2xl bg-background/60 p-2.5 ring-1 ring-border">
         <div className="flex items-center gap-2.5">
           <span className={`h-2.5 w-2.5 shrink-0 rounded-full ring-2 ring-card ${
-            toPickup ? "bg-blue-500 animate-pulse" : "bg-blue-500/60"}`} />
+            toPickup ? "bg-[#F6BE1C] animate-pulse" : "bg-[#F6BE1C]/60"}`} />
           <div className="min-w-0 flex-1">
             <div className="text-[9.5px] uppercase tracking-widest text-muted-foreground leading-none mb-0.5">Embarque</div>
             <div className="truncate text-[13px] font-medium">{ride.pickup_short_label || ride.pickup_label || ride.origin_name || "—"}</div>
@@ -2501,7 +2560,7 @@ function ActiveRidePanel({
           <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2.5 text-[12.5px] font-semibold text-foreground/90">
             <span className="flex items-center gap-2">
               <AlertTriangle className="h-3.5 w-3.5 text-primary" strokeWidth={2} />
-              Segurança MOVVI
+              Segurança APOIS
             </span>
             <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-90" />
           </summary>
@@ -2717,7 +2776,6 @@ function ActionButton({
 function RatingScreen({
   ride, passenger, stars, setStars, comment, setComment, submitting, submitted,
   errorMessage, onSubmit, onDismiss, onSkip,
-  paymentConfirmedAt, paymentConfirming, onConfirmPayment,
 }: {
   ride: RideRow; passenger: Passenger | null;
   stars: number; setStars: (n: number) => void;
@@ -2725,9 +2783,6 @@ function RatingScreen({
   submitting: boolean; submitted: boolean;
   errorMessage: string | null;
   onSubmit: () => void; onDismiss: () => void; onSkip: () => void;
-  paymentConfirmedAt: string | null;
-  paymentConfirming: boolean;
-  onConfirmPayment: () => void;
 }) {
   const total = Number(ride.final_price ?? ride.estimated_price ?? 0);
   const paymentLabel = paymentLabelFor(ride.payment_method);
@@ -2779,13 +2834,6 @@ function RatingScreen({
               </div>
             </div>
 
-            <PaymentConfirmBlock
-              paymentLabel={paymentLabel}
-              confirmedAt={paymentConfirmedAt}
-              loading={paymentConfirming}
-              onConfirm={onConfirmPayment}
-            />
-
 
             {/* Next status */}
             <div className="mt-4 flex items-center gap-3 rounded-[18px] bg-primary/10 p-3.5 ring-1 ring-primary/25 animate-in fade-in slide-in-from-bottom-2 duration-500">
@@ -2814,13 +2862,6 @@ function RatingScreen({
                 <Banknote className="h-3 w-3" /> {paymentLabel}
               </div>
             </div>
-
-            <PaymentConfirmBlock
-              paymentLabel={paymentLabel}
-              confirmedAt={paymentConfirmedAt}
-              loading={paymentConfirming}
-              onConfirm={onConfirmPayment}
-            />
 
             {/* ===== TRIP SUMMARY ===== */}
 
@@ -2859,7 +2900,7 @@ function RatingScreen({
                   <div className="truncate text-[16px] font-semibold leading-tight tracking-tight">{passenger?.name ?? "Passageiro"}</div>
                   <div className="mt-0.5 flex items-center gap-1.5 text-[12px] text-muted-foreground">
                     <CatIcon className="h-3 w-3" strokeWidth={1.75} />
-                    <span>MOVVI {(category?.label ?? "CAR").toUpperCase()}</span>
+                    <span>APOIS {(category?.label ?? "CAR").toUpperCase()}</span>
                   </div>
                 </div>
               </div>
@@ -2923,45 +2964,6 @@ function SummaryRow({ icon, label, value }: { icon: ReactNode; label: string; va
     </div>
   );
 }
-
-function PaymentConfirmBlock({
-  paymentLabel, confirmedAt, loading, onConfirm,
-}: {
-  paymentLabel: string;
-  confirmedAt: string | null;
-  loading: boolean;
-  onConfirm: () => void;
-}) {
-  if (confirmedAt) {
-    return (
-      <div className="mt-3 flex items-center gap-3 rounded-[18px] bg-emerald-500/10 p-3.5 ring-1 ring-emerald-500/30">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-500">
-          <CheckCircle2 className="h-4 w-4" strokeWidth={2} />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="text-[13.5px] font-semibold text-foreground">Pagamento recebido</div>
-          <div className="text-[12px] text-muted-foreground">{paymentLabel} · confirmado por você</div>
-        </div>
-      </div>
-    );
-  }
-  return (
-    <div className="mt-3 rounded-[18px] bg-amber-500/10 p-3.5 ring-1 ring-amber-500/30">
-      <div className="flex items-center gap-2 text-[12px] font-semibold text-amber-600 dark:text-amber-400">
-        <Banknote className="h-3.5 w-3.5" /> Aguardando confirmação — {paymentLabel}
-      </div>
-      <DSButton
-        onClick={onConfirm}
-        disabled={loading}
-        size="sm"
-        className="mt-2 w-full"
-      >
-        {loading ? "Confirmando…" : "Confirmar recebimento"}
-      </DSButton>
-    </div>
-  );
-}
-
 
 /* ============================================================
    TOP FLOATING GLASS STAT (usado na fase "a caminho")
@@ -3062,11 +3064,11 @@ function PickupNavOverlay({
             </a>
           </button>
 
-          <button type="button" disabled={arriveBusy} onClick={handleArrive} className="flex h-12 w-full items-center justify-center gap-2 rounded-[14px] bg-[#76C139] text-[15px] font-bold uppercase tracking-[0.06em] text-[#071008] shadow-[0_10px_22px_-14px_rgba(118,193,57,0.4)] transition active:scale-[0.98] hover:brightness-[1.05] disabled:cursor-not-allowed disabled:opacity-60">
+          <button type="button" disabled={arriveBusy} onClick={handleArrive} className="flex h-12 w-full items-center justify-center gap-2 rounded-[14px] bg-[#F6BE1C] text-[15px] font-bold uppercase tracking-[0.06em] text-black shadow-[0_10px_22px_-14px_rgba(246,190,28,0.45)] transition active:scale-[0.98] hover:brightness-[1.05] disabled:cursor-not-allowed disabled:opacity-60">
             {arriveBusy ? (
-              <><span className="h-4 w-4 rounded-full border-2 border-[#071008]/70 border-t-transparent animate-spin" />Confirmando…</>
+              <><span className="h-4 w-4 rounded-full border-2 border-black/70 border-t-transparent animate-spin" />Confirmando…</>
             ) : (
-              <><CheckCircle2 className="h-5 w-5" strokeWidth={2} />Cheguei ao local</>
+              <><CheckCircle2 className="h-5 w-5" strokeWidth={2} />Cheguei no embarque</>
             )}
           </button>
         </div>
@@ -3230,11 +3232,11 @@ function ActiveTripNavOverlay({
             type="button"
             disabled={busy}
             onClick={handleComplete}
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-[14px] bg-[#76C139] text-[15px] font-bold uppercase tracking-[0.06em] text-[#071008] shadow-[0_10px_22px_-14px_rgba(118,193,57,0.4)] transition active:scale-[0.98] hover:brightness-[1.05] disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-[14px] bg-[#F6BE1C] text-[15px] font-bold uppercase tracking-[0.06em] text-black shadow-[0_10px_22px_-14px_rgba(246,190,28,0.45)] transition active:scale-[0.98] hover:brightness-[1.05] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {busy ? (
               <>
-                <span className="h-4 w-4 rounded-full border-2 border-[#071008]/70 border-t-transparent animate-spin" />
+                <span className="h-4 w-4 rounded-full border-2 border-black/70 border-t-transparent animate-spin" />
                 Finalizando…
               </>
             ) : (

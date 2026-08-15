@@ -9,7 +9,7 @@ import { RideReceiptDialog } from "@/components/rides/RideReceiptDialog";
 import { DSButton, DSCard, DSCardContent } from "@/design-system";
 
 export const Route = createFileRoute("/motorista/corridas/$id")({
-  head: () => ({ meta: [{ title: "Detalhes da corrida — MOVVI DRIVE" }] }),
+  head: () => ({ meta: [{ title: "Detalhes da corrida — APOIS" }] }),
   component: RideDetailsPage,
 });
 

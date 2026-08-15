@@ -1,4 +1,4 @@
-// MOVVI — Mobile Fetch Proxy
+// APOIS — Mobile Fetch Proxy
 //
 // Quando o app é empacotado com Capacitor (VITE_APP_ROLE=passageiro|motorista),
 // o WebView carrega o SPA a partir de uma origem local (capacitor://localhost

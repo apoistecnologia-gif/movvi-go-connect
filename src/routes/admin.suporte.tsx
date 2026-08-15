@@ -33,7 +33,7 @@ import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 
 
 export const Route = createFileRoute("/admin/suporte")({
-  head: () => ({ meta: [{ title: "Suporte — Admin MOVVI" }] }),
+  head: () => ({ meta: [{ title: "Suporte — Admin APOIS" }] }),
   component: AdminSuportePage,
 });
 

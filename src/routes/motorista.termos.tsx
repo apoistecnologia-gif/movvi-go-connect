@@ -8,8 +8,8 @@ import { SettingsPageShell, SettingsHero } from "@/components/settings";
 export const Route = createFileRoute("/motorista/termos")({
   head: () => ({
     meta: [
-      { title: "Termos de Uso — MOVVI DRIVE" },
-      { name: "description", content: "Termos de Uso da plataforma MOVVI DRIVE." },
+      { title: "Termos de Uso — APOIS" },
+      { name: "description", content: "Termos de Uso da plataforma APOIS." },
     ],
   }),
   component: TermosMotoristaPage,
@@ -44,7 +44,7 @@ function TermosMotoristaPage() {
   }
 
   return (
-    <SettingsPageShell>
+    <SettingsPageShell variant="driver">
       <SettingsHero
         icon={FileText}
         title="Termos de Uso"
@@ -52,12 +52,12 @@ function TermosMotoristaPage() {
       />
       <article className="space-y-4 rounded-[24px] bg-white p-6 text-[14px] leading-relaxed text-[#1B1B1B] shadow-[0_6px_20px_-14px_rgba(15,23,42,0.12)] ring-1 ring-black/5">
         <p>
-          Ao utilizar o aplicativo MOVVI DRIVE como motorista parceiro, você concorda com estes
+          Ao utilizar o aplicativo APOIS como motorista parceiro, você concorda com estes
           Termos, com a Política de Privacidade e com as regras operacionais da plataforma.
         </p>
         <p>
-          A MOVVI é uma plataforma de intermediação tecnológica. O pagamento das corridas é
-          realizado diretamente entre passageiro e motorista — a MOVVI não processa valores de
+          A APOIS é uma plataforma de intermediação tecnológica. O pagamento das corridas é
+          realizado diretamente entre passageiro e motorista — a APOIS não processa valores de
           corrida. A assinatura mensal libera o recebimento de ofertas.
         </p>
         <p>
@@ -65,7 +65,7 @@ function TermosMotoristaPage() {
           respeitar a legislação de trânsito e agir com cordialidade com passageiros.
         </p>
         <p className="text-[12.5px] text-[#707070]">
-          Esta é uma versão preliminar. O texto oficial será publicado pela MOVVI em breve.
+          Esta é uma versão preliminar. O texto oficial será publicado pela APOIS em breve.
         </p>
       </article>
     </SettingsPageShell>

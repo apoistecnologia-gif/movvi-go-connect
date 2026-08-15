@@ -1,9 +1,6 @@
 import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { isBrazilCoordinate } from "@/lib/googleMaps";
-import type { Database } from "@/integrations/supabase/types";
-
-type DriverUpdate = Database["public"]["Tables"]["drivers"]["Update"];
 
 export type DriverTelemetry = {
   lat: number;
@@ -12,12 +9,10 @@ export type DriverTelemetry = {
   speed?: number | null;
 };
 
-// Distância mínima (m) para gravar novo broadcast — evita spam quando parado.
 const MIN_MOVEMENT_METERS = 10;
-// Janela mínima entre escritas no banco (ms) — alvo 3-5s.
 const MIN_INTERVAL_MS = 3500;
-// Heartbeat mesmo parado (s) — garante que o passageiro saiba que o motorista está ativo.
 const HEARTBEAT_MS = 15000;
+let blockingReloadScheduled = false;
 
 function haversineMeters(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
   const R = 6371000;
@@ -30,73 +25,86 @@ function haversineMeters(a: { lat: number; lng: number }, b: { lat: number; lng:
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
+function reconcileOperationalBlock(message: string) {
+  if (!/driver_suspended|driver_not_approved|driver_subscription_inactive|driver_kyc_incomplete/i.test(message)) {
+    return;
+  }
+
+  try {
+    localStorage.setItem("apois:driver:online", "0");
+    window.dispatchEvent(new CustomEvent("apois:driver-presence-change", { detail: { online: false } }));
+  } catch {
+    // O backend já bloqueou a operação; armazenamento local é apenas UX.
+  }
+
+  if (blockingReloadScheduled) return;
+  blockingReloadScheduled = true;
+  window.setTimeout(() => window.location.reload(), 250);
+}
+
+async function setPresence(
+  online: boolean,
+  position?: DriverTelemetry | null,
+) {
+  const { error } = await (supabase as any).rpc("driver_set_presence", {
+    _online: online,
+    _lat: online ? position?.lat ?? null : null,
+    _lng: online ? position?.lng ?? null : null,
+    _heading: online ? position?.heading ?? null : null,
+    _speed: online ? position?.speed ?? null : null,
+  });
+  if (error) {
+    console.warn("[APOIS MOTORISTA] presença não atualizada:", error.message);
+    reconcileOperationalBlock(error.message ?? "");
+  }
+}
+
 /**
- * Mantém posição/online do motorista atualizados no Supabase enquanto online.
+ * Mantém presença e GPS do motorista no contrato oficial do Supabase.
  *
- * - Escreve em `drivers` (privado, usado pelo admin / lifecycle).
- * - Escreve em `driver_public_locations` (público a authenticated, lido pelo
- *   passageiro via Realtime para acompanhar o carro em tempo real).
- * - Filtra atualizações <10 m e <3.5 s para evitar spam.
- * - Heartbeat a cada 15 s mesmo parado.
+ * Não grava em tabelas legadas. O RPC driver_set_presence autentica o
+ * motorista, valida aprovação/mensalidade e atualiza public.drivers. Uma
+ * trigger do banco espelha as coordenadas na corrida ativa para que o app do
+ * passageiro acompanhe o carro em realtime.
+ *
+ * Se a elegibilidade for retirada durante `em_viagem`, o servidor continua
+ * aceitando somente a telemetria da corrida atual e mantém o motorista offline.
+ * Assim que a viagem termina, a próxima tentativa de presença reconcilia o app
+ * para o estado bloqueado sem permitir novas ofertas.
  */
 export function useDriverBroadcast(
   userId: string | null,
   online: boolean,
-  position: { lat: number; lng: number; heading?: number | null; speed?: number | null } | null,
+  position: DriverTelemetry | null,
 ) {
   const lastWrittenRef = useRef<{ lat: number; lng: number; at: number } | null>(null);
   const positionRef = useRef(position);
+
   useEffect(() => {
     positionRef.current = position;
   }, [position]);
 
-  // toggle online/offline
   useEffect(() => {
     if (!userId) return;
-    const patch: DriverUpdate = {
-      is_online: online,
-      last_location_at: new Date().toISOString(),
-      ...(online ? {} : { current_lat: null, current_lng: null }),
-    };
-    supabase.from("drivers").update(patch).eq("user_id", userId).then();
-
-    // Espelha online/offline na tabela pública.
-    if (online) {
-      supabase
-        .from("driver_public_locations" as never)
-        .upsert(
-          {
-            user_id: userId,
-            is_online: true,
-            updated_at: new Date().toISOString(),
-            last_location_at: new Date().toISOString(),
-          } as never,
-          { onConflict: "user_id" } as never,
-        )
-        .then();
-    } else {
+    if (!online) {
       lastWrittenRef.current = null;
-      supabase
-        .from("driver_public_locations" as never)
-        .update({
-          is_online: false,
-          current_lat: null,
-          current_lng: null,
-          updated_at: new Date().toISOString(),
-        } as never)
-        .eq("user_id", userId)
-        .then();
+      void setPresence(false, null);
+      return;
+    }
+
+    const current = positionRef.current;
+    if (current && isBrazilCoordinate(current.lat, current.lng)) {
+      void setPresence(true, current);
     }
   }, [userId, online]);
 
-  // Loop de broadcast (3-5 s, com filtro de 10 m).
   useEffect(() => {
     if (!userId || !online) return;
 
     const writeNow = (force = false) => {
       const p = positionRef.current;
-      if (!p) return;
-      if (!isBrazilCoordinate(p.lat, p.lng)) return;
+      if (!p || !isBrazilCoordinate(p.lat, p.lng)) return;
+
       const now = Date.now();
       const last = lastWrittenRef.current;
       if (!force && last) {
@@ -105,31 +113,11 @@ export function useDriverBroadcast(
         if (moved < MIN_MOVEMENT_METERS && elapsed < HEARTBEAT_MS) return;
         if (elapsed < MIN_INTERVAL_MS) return;
       }
+
       lastWrittenRef.current = { lat: p.lat, lng: p.lng, at: now };
-      const iso = new Date(now).toISOString();
-      const payload = {
-        current_lat: p.lat,
-        current_lng: p.lng,
-        current_heading: p.heading ?? null,
-        current_speed: p.speed ?? null,
-        last_location_at: iso,
-      };
-      supabase.from("drivers").update(payload).eq("user_id", userId).then();
-      supabase
-        .from("driver_public_locations" as never)
-        .upsert(
-          {
-            user_id: userId,
-            is_online: true,
-            updated_at: iso,
-            ...payload,
-          } as never,
-          { onConflict: "user_id" } as never,
-        )
-        .then();
+      void setPresence(true, p);
     };
 
-    // primeira escrita imediata
     writeNow(true);
     const interval = window.setInterval(() => writeNow(false), 4000);
     return () => window.clearInterval(interval);

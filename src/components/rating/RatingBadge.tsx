@@ -1,5 +1,5 @@
 /**
- * MOVVI — Rating badge + summary.
+ * APOIS — Rating badge + summary.
  * Automatic tier based on average rating.
  * Read-only presentational component.
  */
@@ -17,7 +17,7 @@ export type RatingTier = {
 export function getRatingTier(role: RatingRole, avg: number | null | undefined): RatingTier {
   const v = typeof avg === "number" ? avg : 0;
   if (role === "driver") {
-    if (v >= 4.9)  return { key: "gold",      label: "MOVVI Ouro",   className: "bg-yellow-500/15 text-yellow-400 ring-yellow-500/40" };
+    if (v >= 4.9)  return { key: "gold",      label: "APOIS Ouro",   className: "bg-yellow-500/15 text-yellow-400 ring-yellow-500/40" };
     if (v >= 4.8)  return { key: "excellent", label: "Excelente",    className: "bg-primary/15 text-primary ring-primary/40" };
     if (v >= 4.6)  return { key: "good",      label: "Muito Bom",    className: "bg-emerald-500/15 text-emerald-400 ring-emerald-500/40" };
     return         { key: "none",      label: "Sem selo",     className: "bg-muted text-muted-foreground ring-border" };

@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { logAdminAction } from "@/lib/adminAudit";
 
 export const Route = createFileRoute("/admin/pagamentos")({
-  head: () => ({ meta: [{ title: "Pagamentos — Admin MOVVI" }] }),
+  head: () => ({ meta: [{ title: "Pagamentos — Admin APOIS" }] }),
   component: AdminPaymentsPage,
 });
 

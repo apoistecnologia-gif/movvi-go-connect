@@ -55,7 +55,7 @@ import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 
 export const Route = createFileRoute("/admin/motoristas")({
-  head: () => ({ meta: [{ title: "Motoristas — Admin MOVVI" }] }),
+  head: () => ({ meta: [{ title: "Motoristas — Admin APOIS" }] }),
   component: AdminMotoristas,
 });
 

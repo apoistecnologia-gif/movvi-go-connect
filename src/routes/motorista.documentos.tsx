@@ -32,7 +32,7 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/motorista/documentos")({
-  head: () => ({ meta: [{ title: "Meus documentos — MOVVI DRIVE" }] }),
+  head: () => ({ meta: [{ title: "Meus documentos — APOIS" }] }),
   component: DriverDocumentsPage,
 });
 
@@ -171,7 +171,7 @@ function DriverDocumentsPage() {
 
   if (loading) {
     return (
-      <SettingsPageShell>
+      <SettingsPageShell variant="driver">
         <Loading label="Carregando documentos…" />
       </SettingsPageShell>
     );
@@ -179,7 +179,7 @@ function DriverDocumentsPage() {
 
   if (!driver) {
     return (
-      <SettingsPageShell>
+      <SettingsPageShell variant="driver">
         <EmptyState
           icon={FileText}
           title="Cadastro não encontrado"
@@ -199,7 +199,7 @@ function DriverDocumentsPage() {
   const overall = driver.approval_status === "aprovado" ? "approved" : driver.documents_status;
 
   return (
-    <SettingsPageShell>
+    <SettingsPageShell variant="driver">
       <SettingsHero
         icon={FileText}
         title="Meus documentos"

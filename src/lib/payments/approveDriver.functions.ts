@@ -4,7 +4,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { MOVVI_MONTHLY_FEE_BRL } from "./types";
+import { APOIS_MONTHLY_FEE_BRL } from "./types";
 
 const uuid = z.string().uuid();
 
@@ -99,9 +99,9 @@ export const approveDriverAndCreateSubscription = createServerFn({ method: "POST
       subResult = await asaasProvider.createSubscription({
         driverId: driver.id,
         customerId,
-        value: MOVVI_MONTHLY_FEE_BRL,
+        value: APOIS_MONTHLY_FEE_BRL,
         nextDueDate,
-        description: "Mensalidade Motorista MOVVI",
+        description: "Mensalidade Motorista APOIS",
       });
     } catch (e) {
       const msg = e instanceof Error ? e.message : "unknown";
@@ -119,7 +119,7 @@ export const approveDriverAndCreateSubscription = createServerFn({ method: "POST
         approved_at: nowIso,
         documents_status: "approved",
         asaas_subscription_id: subResult.subscriptionId,
-        subscription_value: MOVVI_MONTHLY_FEE_BRL,
+        subscription_value: APOIS_MONTHLY_FEE_BRL,
         next_due_date: subResult.nextDueDate,
         financial_status: "pending",
         last_payment_id: subResult.firstPaymentId,
@@ -133,7 +133,7 @@ export const approveDriverAndCreateSubscription = createServerFn({ method: "POST
       .insert({
         driver_id: driver.id,
         status: "pending",
-        amount: MOVVI_MONTHLY_FEE_BRL,
+        amount: APOIS_MONTHLY_FEE_BRL,
         period_start: nowIso,
         period_end: periodEnd,
         provider_reference: subResult.subscriptionId,
@@ -150,7 +150,7 @@ export const approveDriverAndCreateSubscription = createServerFn({ method: "POST
       asaas_payment_id: subResult.firstPaymentId,
       asaas_subscription_id: subResult.subscriptionId,
       status: "PENDING",
-      value: MOVVI_MONTHLY_FEE_BRL,
+      value: APOIS_MONTHLY_FEE_BRL,
       due_date: subResult.nextDueDate,
       invoice_url: subResult.invoiceUrl ?? subResult.bankSlipUrl,
       raw_payload: {

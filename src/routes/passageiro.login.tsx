@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/passageiro/login")({
-  head: () => ({ meta: [{ title: "Entrar — Passageiro MOVVI DRIVE" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({ meta: [{ title: "Entrar — Passageiro APOIS" }, { name: "robots", content: "noindex" }] }),
   component: PassengerLoginPage,
 });
 

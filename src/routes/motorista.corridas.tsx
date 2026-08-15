@@ -2,8 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { ChevronRight, ClipboardList, MapPin, Navigation2, Search, Star } from "lucide-react";
 import { MovviHeader } from "@/components/MovviHeader";
-import { BottomNav, DRIVER_NAV } from "@/components/BottomNav";
+import { ApoisDriverBottomNav } from "@/components/ApoisDriverBottomNav";
 import { supabase } from "@/integrations/supabase/client";
+import { loadDriverProfile } from "@/lib/driverProfile";
 import {
   Avatar,
   Body,
@@ -28,7 +29,8 @@ type RideRow = {
   destination_name: string;
   category: string | null;
   payment_method: string | null;
-  passenger_photo_url: string | null;
+  passenger_id: string | null;
+  passenger_photo_url?: string | null;
   passenger_name?: string | null;
   final_price: number | null;
   estimated_price: number | null;
@@ -192,23 +194,56 @@ function DriverRidesPage() {
   useEffect(() => {
     let active = true;
     (async () => {
-      const { data: auth } = await supabase.auth.getUser();
-      const uid = auth?.user?.id;
-      if (!uid) {
+      const profile = await loadDriverProfile();
+      if (!profile.ok) {
         if (active) setRides([]);
         return;
       }
+      const driverId = profile.profile.id;
       const { data, error } = await supabase
         .from("rides")
         .select(
-          "id,status,category,payment_method,passenger_photo_url,origin_name,destination_name,final_price,estimated_price,distance_km,duration_min,completed_at,created_at,accepted_at,passenger_rating,passenger_rating_comment,driver_rated_at",
+          "id,status,category,payment_method,passenger_id,origin_name,destination_name,final_price,estimated_price,distance_km,duration_min,completed_at,created_at,accepted_at,passenger_rating,passenger_rating_comment,driver_rated_at",
         )
-        .eq("driver_id", uid)
+        .eq("driver_id", driverId)
         .order("created_at", { ascending: false })
         .limit(50);
       if (!active) return;
-      if (error) setError(error.message);
-      else setRides((data ?? []) as RideRow[]);
+      if (error) {
+        setError(error.message);
+        setRides([]);
+        return;
+      }
+
+      const baseRides = (data ?? []) as RideRow[];
+      const passengerIds = Array.from(new Set(baseRides.map((ride) => ride.passenger_id).filter(Boolean))) as string[];
+      let passengerMap = new Map<string, { name: string | null; avatar_url: string | null }>();
+
+      if (passengerIds.length > 0) {
+        const { data: passengers } = await supabase
+          .from("users")
+          .select("id,name,avatar_url")
+          .in("id", passengerIds);
+        passengerMap = new Map(
+          (passengers ?? []).map((passenger) => [
+            passenger.id,
+            { name: passenger.name ?? null, avatar_url: passenger.avatar_url ?? null },
+          ]),
+        );
+      }
+
+      if (!active) return;
+      setError(null);
+      setRides(
+        baseRides.map((ride) => {
+          const passenger = ride.passenger_id ? passengerMap.get(ride.passenger_id) : null;
+          return {
+            ...ride,
+            passenger_name: passenger?.name ?? null,
+            passenger_photo_url: passenger?.avatar_url ?? null,
+          };
+        }),
+      );
     })();
     return () => {
       active = false;
@@ -389,7 +424,7 @@ function DriverRidesPage() {
           )}
         </div>
       </main>
-      <BottomNav items={DRIVER_NAV} />
+      <ApoisDriverBottomNav />
     </div>
   );
 }
@@ -447,6 +482,6 @@ function FilterPill({
 }
 
 export const Route = createFileRoute("/motorista/corridas")({
-  head: () => ({ meta: [{ title: "Histórico — MOVVI DRIVE" }] }),
+  head: () => ({ meta: [{ title: "Histórico — APOIS" }] }),
   component: DriverRidesPage,
 });

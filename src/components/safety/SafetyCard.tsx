@@ -40,7 +40,7 @@ export function SafetyCard({ role, rideId, shareInput, counterpartLabel }: Props
           <Shield className="h-4 w-4" />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="text-[12.5px] font-bold tracking-tight">Segurança MOVVI</div>
+          <div className="text-[12.5px] font-bold tracking-tight">Segurança APOIS</div>
           <div className="text-[10.5px] text-muted-foreground">Compartilhe, denuncie ou acione o SOS.</div>
         </div>
       </div>

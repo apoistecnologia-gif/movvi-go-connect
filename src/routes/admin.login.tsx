@@ -7,7 +7,7 @@ import { Loader2, ShieldCheck } from "lucide-react";
 import { DSButton, DSInput, DSLabel } from "@/design-system";
 
 export const Route = createFileRoute("/admin/login")({
-  head: () => ({ meta: [{ title: "Admin — MOVVI DRIVE" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({ meta: [{ title: "Admin — APOIS" }, { name: "robots", content: "noindex" }] }),
   component: AdminLoginPage,
 });
 
@@ -58,7 +58,7 @@ function AdminLoginPage() {
           <ShieldCheck className="h-6 w-6 text-primary" /> Painel administrativo
         </span>
       }
-      description="Acesso restrito à equipe MOVVI DRIVE."
+      description="Acesso restrito à equipe APOIS."
     >
       <form onSubmit={onSubmit} className="space-y-4">
         <div className="space-y-2">

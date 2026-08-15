@@ -1,9 +1,9 @@
-// MOVVI — App role (build-time flag).
+// APOIS — App role (build-time flag).
 //
 // Fase 1 da separação dos aplicativos. Um único código-fonte, três "sabores"
 // de build controlados por `VITE_APP_ROLE`:
 //
-//   - "passenger" → build do app MOVVI Passageiro (Play Store). Só expõe
+//   - "passenger" → build do app APOIS Passageiro (Play Store). Só expõe
 //     rotas /passageiro/*. Menus/cards de motorista e admin são ocultados
 //     e uma navegação acidental para essas áreas redireciona para o login
 //     do passageiro.

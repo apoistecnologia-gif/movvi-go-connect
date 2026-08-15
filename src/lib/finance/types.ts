@@ -94,7 +94,7 @@ export const PAYMENT_METHOD_LABELS: Record<PaymentMethodKind, string> = {
   credit_card: "Cartão de crédito",
   debit_card: "Cartão de débito",
   cash: "Dinheiro",
-  wallet: "Carteira MOVVI",
+  wallet: "Carteira APOIS",
   corporate: "Corporativo",
 };
 
