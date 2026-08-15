@@ -26,7 +26,8 @@ excludes(documentsRoute, "useServerFn", "KYC static mobile route");
 excludes(documentsRoute, '.eq("user_id", session.user.id)', "KYC auth/profile identity mix");
 
 includes(financeService, 'rpc("get_driver_financial_dashboard"', "canonical Driver finance dashboard");
-includes(financeService, 'rpc("driver_request_withdrawal"', "canonical Driver payout request");
+includes(financeService, 'functions.invoke("request-driver-payout"', "provider-neutral Driver payout request");
+includes(financeService, "idempotencyKey", "Driver payout idempotency contract");
 includes(financeRoute, "dashboard.period.settledEarningsCents", "settlement-backed UI");
 excludes(financeRoute, '.from("rides")', "Driver finance ride arithmetic");
 excludes(financeRoute.toLowerCase(), "em breve", "fake withdrawal UI");
