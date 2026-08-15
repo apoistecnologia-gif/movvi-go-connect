@@ -54,7 +54,7 @@ function DriverPasswordRecoveryPage() {
   }
 
   return (
-    <main className="min-h-[100dvh] bg-[#050607] px-5 pb-8 pt-[calc(env(safe-area-inset-top)+24px)] text-white">
+    <main className="min-h-[100dvh] bg-[#050607] px-5 pb-[calc(env(safe-area-inset-bottom)+32px)] pt-[calc(env(safe-area-inset-top)+24px)] text-white">
       <div className="mx-auto w-full max-w-md">
         <div className="flex items-center justify-between">
           <Link
