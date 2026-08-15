@@ -16,7 +16,7 @@ export const Route = createFileRoute("/motorista/suporte")({
 
 function SuporteMotorista() {
   return (
-    <div className="relative min-h-[100dvh] overflow-hidden bg-[#050607] pb-[calc(env(safe-area-inset-bottom)+82px)] text-white">
+    <div className="relative min-h-[100dvh] overflow-hidden bg-[#050607] text-white">
       <div className="pointer-events-none fixed inset-x-0 top-0 h-72 bg-[radial-gradient(circle_at_50%_0%,rgba(246,190,28,0.11),transparent_64%)]" />
       <div className="relative">
         <SettingsPageShell variant="driver">
