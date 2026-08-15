@@ -84,8 +84,10 @@
   align-items: center;
 }
 
-/* Close padrão do Sheet/Dialog do shadcn é visualmente 16 px. */
-.apois-admin-theme [role="dialog"] > button.absolute.right-4.top-4 {
+/* Portal roots recebem a classe do tema no próprio elemento, portanto os dois
+ * formatos de seletor precisam estar cobertos. */
+.apois-admin-theme [role="dialog"] > button.absolute.right-4.top-4,
+.apois-admin-theme[role="dialog"] > button.absolute.right-4.top-4 {
   min-width: 44px;
   min-height: 44px;
   display: inline-flex;
@@ -93,7 +95,8 @@
   justify-content: center;
 }
 
-.apois-admin-theme [role="dialog"] {
+.apois-admin-theme [role="dialog"],
+.apois-admin-theme[role="dialog"] {
   max-width: calc(100vw - 24px);
   max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 24px);
   overflow-y: auto;
