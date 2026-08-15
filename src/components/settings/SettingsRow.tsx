@@ -30,6 +30,7 @@ export function SettingsRow({
   const driver = useSettingsVisual() === "driver";
   const rowClassName = cn(
     "flex w-full items-center gap-3 px-4 py-3.5 text-left transition",
+    driver && "max-[359px]:flex-wrap",
     interactive &&
       (driver
         ? "active:bg-white/5 disabled:pointer-events-none disabled:opacity-60"
@@ -66,7 +67,7 @@ export function SettingsRow({
           <div
             className={
               driver
-                ? "truncate text-[11.5px] text-zinc-600"
+                ? "text-[11.5px] leading-4 text-zinc-600 [overflow-wrap:anywhere]"
                 : "truncate text-[12.5px] text-[#707070]"
             }
           >
@@ -74,7 +75,11 @@ export function SettingsRow({
           </div>
         ) : null}
       </div>
-      {right ? <div className="shrink-0">{right}</div> : null}
+      {right ? (
+        <div className={cn("shrink-0", driver && "max-[359px]:ml-[52px] max-[359px]:max-w-[calc(100%-52px)] max-[359px]:shrink max-[359px]:basis-full")}>
+          {right}
+        </div>
+      ) : null}
     </>
   );
 
