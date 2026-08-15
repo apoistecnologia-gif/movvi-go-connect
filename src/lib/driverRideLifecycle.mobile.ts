@@ -78,7 +78,7 @@ async function callRpc<T = unknown>(name: string, args: Record<string, unknown>)
 }
 
 async function callDriverRedispatchFunction(
-  functionName: "driver-reject-redispatch" | "driver-cancel-redispatch",
+  functionName: "driver-reject-redispatch" | "driver-cancel-redispatch" | "driver-finish-redispatch",
   body: Record<string, unknown>,
 ): Promise<unknown> {
   const { data: response, error } = await supabase.functions.invoke(functionName, { body });
@@ -144,15 +144,15 @@ export async function iniciarCorridaMobile({ data }: { data: { rideId: string; s
 }
 
 /**
- * O motorista apenas sinaliza que a viagem terminou. O backend canônico é o
- * único responsável por definir preço final, settlement e efeitos financeiros.
- *
- * O generic preserva compatibilidade com telas antigas que ainda montam campos
- * extras no objeto local; somente rideId cruza esta fronteira e chega ao RPC.
+ * Finalização usa a Edge Function canônica porque, além de concluir a corrida
+ * de forma atômica no banco, ela redispara qualquer próxima corrida que tenha
+ * sido liberada pelo encerramento da corrida atual. O app nunca envia preço.
  */
 export async function finalizarCorridaMobile<T extends { rideId: string }>({ data }: { data: T }) {
   const rideId = data.rideId;
-  const ride = await callRpc("driver_finish_ride", { _ride_id: rideId });
+  const ride = await callDriverRedispatchFunction("driver-finish-redispatch", {
+    ride_id: rideId,
+  });
   notifyPassenger(rideId, "ride.completed");
   return ride;
 }
