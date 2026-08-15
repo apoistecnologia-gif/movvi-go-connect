@@ -177,19 +177,43 @@ export async function loadDriverFinancialDashboard(
 
 export async function requestDriverWithdrawal(amountCents: number): Promise<void> {
   if (!Number.isInteger(amountCents) || amountCents <= 0) throw new Error("Informe um valor de saque válido.");
-  const rpc = supabase as unknown as RpcClient;
-  const { error } = await rpc.rpc("driver_request_withdrawal", {
-    _amount_cents: amountCents,
-    _idempotency_key: crypto.randomUUID(),
-  });
-  if (!error) return;
 
-  const message = error.message ?? "";
-  if (/payout_provider_not_configured/i.test(message)) {
-    throw new Error("Os saques ainda não estão liberados porque o provedor de transferência não foi configurado.");
+  const idempotencyKey = crypto.randomUUID();
+  const { data, error } = await supabase.functions.invoke("request-driver-payout", {
+    body: { amountCents, idempotencyKey },
+  });
+
+  const payload = isRecord(data) ? data : null;
+  const backendError = payload && typeof payload["error"] === "string" ? payload["error"] : "";
+  const backendDetail = payload && typeof payload["detail"] === "string" ? payload["detail"] : "";
+  if (!error && !backendError) return;
+
+  const message = `${backendError} ${backendDetail} ${error?.message ?? ""}`.trim();
+  if (/driver_payouts_not_homologated|payout_provider_not_asaas|payout_provider_not_configured/i.test(message)) {
+    throw new Error("Os saques ainda não estão liberados porque o provedor de transferência não foi homologado.");
+  }
+  if (/asaas_subaccount_not_approved/i.test(message)) {
+    throw new Error("Sua conta financeira de motorista ainda não está aprovada para receber saques.");
+  }
+  if (/asaas_subaccount_secret_missing|asaas_payout_webhook_not_ready/i.test(message)) {
+    throw new Error("A integração de saque ainda não está pronta para esta conta. Tente novamente mais tarde.");
+  }
+  if (/pix_payout_destination_not_confirmed/i.test(message)) {
+    throw new Error("Confirme sua chave Pix na carteira antes de solicitar o saque.");
+  }
+  if (/pix_payout_destination_cooldown/i.test(message)) {
+    throw new Error("Sua chave Pix está no período de segurança. Aguarde a liberação para solicitar o saque.");
   }
   if (/insufficient_available_balance/i.test(message)) throw new Error("Saldo disponível insuficiente.");
+  if (/min_withdrawal_amount/i.test(message)) throw new Error("O valor solicitado é menor que o mínimo permitido para saque.");
   if (/driver_wallet_debt/i.test(message)) throw new Error("Sua carteira possui pendência financeira e não pode sacar agora.");
-  console.error("[APOIS Driver Finance] withdrawal failed", { code: error.code, message });
+  if (/asaas_transfer_reconciliation_required/i.test(message)) {
+    throw new Error("O saque foi registrado e está em conciliação com o provedor. Consulte o histórico antes de tentar novamente.");
+  }
+
+  console.error("[APOIS Driver Finance] withdrawal failed", {
+    message,
+    idempotencyKey,
+  });
   throw new Error("Não foi possível solicitar o saque agora.");
 }
