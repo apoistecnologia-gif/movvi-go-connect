@@ -270,12 +270,14 @@ export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
 
   return (
     <div className="container mx-auto max-w-2xl space-y-5">
-      <header>
-        <h1 className="text-2xl font-bold">Central de ajuda</h1>
-        <p className="text-sm text-muted-foreground">
-          Encontre respostas rápidas e envie uma solicitação ao suporte APOIS.
-        </p>
-      </header>
+      {!isDriver && (
+        <header>
+          <h1 className="text-2xl font-bold">Central de ajuda</h1>
+          <p className="text-sm text-muted-foreground">
+            Encontre respostas rápidas e envie uma solicitação ao suporte APOIS.
+          </p>
+        </header>
+      )}
 
       <div className="grid grid-cols-1 gap-3">
         <QuickAction icon={AlertTriangle} label="Emergência — ligar 190" href="tel:190" danger />
@@ -432,7 +434,7 @@ export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
             <ShieldCheck className="h-4 w-4 text-primary" />
             Documentos legais da APOIS
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <DSButton asChild variant="outline" size="sm">
               <Link to={termsHref}><FileText className="mr-1.5 h-3.5 w-3.5" /> Termos</Link>
             </DSButton>
