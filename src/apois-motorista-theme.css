@@ -135,6 +135,17 @@ html[data-app-role="motorista"] .driver-menu-active p:first-of-type {
 /* Camadas nativas: mantém mapa/sheets com acabamento uniforme sem tocar na lógica. */
 html[data-app-role="motorista"] [role="dialog"] {
   -webkit-font-smoothing: antialiased;
+  max-width: calc(100vw - 24px);
+}
+
+/* O close padrão do Radix tem apenas o ícone de 16 px e não possui aria-label.
+ * Garante alvo real de 44x44 sem alterar o componente compartilhado. */
+html[data-app-role="motorista"] [role="dialog"] > button.absolute.right-4.top-4 {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 html[data-app-role="motorista"] .gm-style .gm-style-iw-c,
