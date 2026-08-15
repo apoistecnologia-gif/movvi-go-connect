@@ -100,36 +100,28 @@ function DriverSecurityPage() {
 
   async function setPrimary(id: string) {
     if (!driverId) return;
-    const { error: clearError } = await db
-      .from("driver_emergency_contacts")
-      .update({ is_primary: false, updated_at: new Date().toISOString() })
-      .eq("driver_id", driverId);
-    if (clearError) return toast.error("Não foi possível atualizar o contato principal.");
-
-    const { error } = await db
-      .from("driver_emergency_contacts")
-      .update({ is_primary: true, updated_at: new Date().toISOString() })
-      .eq("id", id)
-      .eq("driver_id", driverId);
-    if (error) return toast.error("Não foi possível definir o contato principal.");
+    const { error } = await db.rpc("driver_set_emergency_contact_primary", {
+      _contact_id: id,
+    });
+    if (error) {
+      toast.error("Não foi possível definir o contato principal.");
+      return;
+    }
     await load(driverId);
+    toast.success("Contato principal atualizado.");
   }
 
   async function remove(id: string) {
     if (!driverId) return;
-    const removedWasPrimary = contacts.some((contact) => contact.id === id && contact.is_primary);
-    const { error } = await db
-      .from("driver_emergency_contacts")
-      .delete()
-      .eq("id", id)
-      .eq("driver_id", driverId);
-    if (error) return toast.error("Não foi possível excluir o contato.");
-
-    await load(driverId);
-    if (removedWasPrimary) {
-      const remaining = contacts.find((contact) => contact.id !== id);
-      if (remaining) await setPrimary(remaining.id);
+    const { error } = await db.rpc("driver_delete_emergency_contact", {
+      _contact_id: id,
+    });
+    if (error) {
+      toast.error("Não foi possível excluir o contato.");
+      return;
     }
+    await load(driverId);
+    toast.success("Contato de emergência excluído.");
   }
 
   async function triggerSOS() {
