@@ -79,12 +79,10 @@ function DriverSecurityPage() {
   async function addContact() {
     if (!driverId || !name.trim() || !phone.trim() || adding) return;
     setAdding(true);
-    const { error } = await db.from("driver_emergency_contacts").insert({
-      driver_id: driverId,
-      name: name.trim(),
-      phone: phone.trim(),
-      relation: relation.trim() || null,
-      is_primary: contacts.length === 0,
+    const { error } = await db.rpc("driver_add_emergency_contact", {
+      _name: name.trim(),
+      _phone: phone.trim(),
+      _relation: relation.trim() || null,
     });
     setAdding(false);
     if (error) {
