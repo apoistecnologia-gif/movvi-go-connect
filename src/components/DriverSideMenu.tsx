@@ -172,7 +172,7 @@ export function DriverSideMenu({ open, onOpenChange, onLogout }: Props) {
         side="left"
         className="w-[90vw] max-w-sm overflow-y-auto border-r border-[#F6BE1C]/10 bg-[#08090A] p-0 text-white shadow-[26px_0_80px_rgba(0,0,0,.6)]"
       >
-        <SheetHeader className="border-b border-white/5 bg-[radial-gradient(circle_at_15%_0%,rgba(246,190,28,.10),transparent_38%),#0D0F11] px-5 pb-5 pt-[calc(env(safe-area-inset-top)+18px)] text-left">
+        <SheetHeader className="border-b border-white/5 bg-[radial-gradient(circle_at_15%_0%,rgba(246,190,28,.10),transparent_38%),#0D0F11] px-5 pb-5 pr-16 pt-[calc(env(safe-area-inset-top)+18px)] text-left">
           <div className="flex items-center justify-between gap-3">
             <MovviLogo size={48} />
             <div className="text-right">
@@ -230,7 +230,7 @@ export function DriverSideMenu({ open, onOpenChange, onLogout }: Props) {
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-[13px] font-black text-white">{item.label}</p>
-                      <p className="mt-0.5 truncate text-[10.5px] font-medium text-zinc-500">
+                      <p className="mt-0.5 text-[10.5px] font-medium leading-4 text-zinc-500">
                         {item.description}
                       </p>
                     </div>
