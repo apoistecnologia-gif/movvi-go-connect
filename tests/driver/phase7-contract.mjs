@@ -34,13 +34,15 @@ excludes(financeRoute.toLowerCase(), "em breve", "fake withdrawal UI");
 
 for (const rpc of [
   "driver_accept_ride",
-  "driver_reject_ride",
   "driver_mark_arrived",
   "driver_start_ride",
-  "driver_finish_ride",
-  "driver_cancel_ride",
   "driver_rate_passenger",
 ]) includes(lifecycle, rpc, `Driver lifecycle ${rpc}`);
+for (const fn of [
+  "driver-reject-redispatch",
+  "driver-finish-redispatch",
+  "driver-cancel-redispatch",
+]) includes(lifecycle, fn, `Driver lifecycle ${fn}`);
 
 includes(nativeBridge, "PushNotifications.register", "native push registration");
 includes(nativeBridge, "registerDeviceToken", "native push token handoff");
