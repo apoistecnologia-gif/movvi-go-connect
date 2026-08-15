@@ -25,16 +25,32 @@
 
 /* O painel também é usado em celulares durante a operação. Componentes antigos
  * usam alturas de 36/40 px; elevamos a área real de toque sem alterar ações. */
-.apois-admin-theme button,
+.apois-admin-theme button:not([role="switch"]):not([role="checkbox"]):not([role="radio"]),
 .apois-admin-theme a[role="button"],
 .apois-admin-theme button[role="combobox"] {
   min-height: 44px;
 }
 
-.apois-admin-theme button[aria-label],
+.apois-admin-theme button[aria-label]:not([role="switch"]):not([role="checkbox"]):not([role="radio"]),
 .apois-admin-theme a[aria-label] {
   min-width: 44px;
   min-height: 44px;
+}
+
+/* Switches/checkboxes/radios mantêm o trilho compacto, mas sua hit-area real
+ * cresce para aproximadamente 44 px via pseudo-elemento do próprio controle. */
+.apois-admin-theme button[role="switch"],
+.apois-admin-theme button[role="checkbox"],
+.apois-admin-theme button[role="radio"] {
+  position: relative;
+}
+
+.apois-admin-theme button[role="switch"]::after,
+.apois-admin-theme button[role="checkbox"]::after,
+.apois-admin-theme button[role="radio"]::after {
+  content: "";
+  position: absolute;
+  inset: -12px;
 }
 
 .apois-admin-theme input:not([type="checkbox"]):not([type="radio"]),
