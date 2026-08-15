@@ -85,7 +85,7 @@ function DriverPasswordResetPage() {
 
   if (sessionState === "checking") {
     return (
-      <main className="grid min-h-[100dvh] place-items-center bg-[#050607] text-white">
+      <main className="grid min-h-[100dvh] place-items-center bg-[#050607] px-5 pb-[calc(env(safe-area-inset-bottom)+24px)] pt-[calc(env(safe-area-inset-top)+24px)] text-white">
         <div className="text-center">
           <Loader2 className="mx-auto h-8 w-8 animate-spin text-[#F6BE1C]" />
           <p className="mt-4 text-xs font-black uppercase tracking-[0.18em] text-zinc-500">
@@ -98,7 +98,7 @@ function DriverPasswordResetPage() {
 
   if (sessionState === "invalid") {
     return (
-      <main className="min-h-[100dvh] bg-[#050607] px-5 pt-[calc(env(safe-area-inset-top)+28px)] text-white">
+      <main className="min-h-[100dvh] bg-[#050607] px-5 pb-[calc(env(safe-area-inset-bottom)+32px)] pt-[calc(env(safe-area-inset-top)+28px)] text-white">
         <div className="mx-auto w-full max-w-md text-center">
           <MovviLogo size={64} productLabel="MOTORISTA" />
           <section className="mt-8 rounded-[28px] border border-red-400/20 bg-[#0D0F11] p-6">
@@ -107,12 +107,12 @@ function DriverPasswordResetPage() {
             <p className="mt-3 text-sm leading-6 text-zinc-500">
               Por segurança, solicite um novo link para redefinir sua senha.
             </p>
-            <a
-              href="/motorista/recuperar-senha"
+            <Link
+              to="/motorista/recuperar-senha"
               className="mt-6 inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-[#F6BE1C] px-5 text-sm font-black text-black"
             >
               Solicitar novo link
-            </a>
+            </Link>
           </section>
         </div>
       </main>
@@ -120,7 +120,7 @@ function DriverPasswordResetPage() {
   }
 
   return (
-    <main className="min-h-[100dvh] bg-[#050607] px-5 pb-8 pt-[calc(env(safe-area-inset-top)+24px)] text-white">
+    <main className="min-h-[100dvh] bg-[#050607] px-5 pb-[calc(env(safe-area-inset-bottom)+32px)] pt-[calc(env(safe-area-inset-top)+24px)] text-white">
       <div className="mx-auto w-full max-w-md">
         <div className="flex items-center justify-between">
           <Link
@@ -156,7 +156,7 @@ function DriverPasswordResetPage() {
                   type="button"
                   onClick={() => setShowPassword((current) => !current)}
                   aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
-                  className="flex h-10 w-10 items-center justify-center text-zinc-500"
+                  className="flex h-11 w-11 items-center justify-center text-zinc-500"
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
