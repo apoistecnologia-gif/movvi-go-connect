@@ -7,6 +7,13 @@ type DriverRidePushEvent =
   | "ride.completed"
   | "ride.cancelled";
 
+type RedispatchPayload = {
+  ok?: boolean;
+  error?: string;
+  ride?: unknown;
+  redispatch?: string;
+};
+
 function readableDriverRpcError(message: string) {
   const raw = String(message ?? "");
   if (/ride_offer_unavailable/i.test(raw)) return "Esta corrida não está mais disponível.";
@@ -16,6 +23,9 @@ function readableDriverRpcError(message: string) {
   if (/driver_offline/i.test(raw)) return "Fique online antes de aceitar a corrida.";
   if (/invalid_security_code_or_transition/i.test(raw)) return "Código incorreto. Peça o PIN ao passageiro e tente novamente.";
   if (/invalid_ride_transition/i.test(raw)) return "Esta ação não está disponível nesta etapa da corrida.";
+  if (/driver_cancel_reason_required/i.test(raw)) return "Informe o motivo do cancelamento.";
+  if (/no_show_requires_driver_arrival/i.test(raw)) return "Marque sua chegada antes de informar que o passageiro não apareceu.";
+  if (/driver_no_show_wait_not_elapsed/i.test(raw)) return "Aguarde o tempo mínimo após a chegada antes de informar ausência do passageiro.";
   if (/rating_unavailable/i.test(raw)) return "Esta corrida já foi avaliada ou ainda não pode ser avaliada.";
   if (/driver_profile_missing/i.test(raw)) return "Cadastro de motorista não encontrado.";
   return raw || "Não foi possível concluir a ação.";
@@ -25,6 +35,22 @@ async function callRpc<T = unknown>(name: string, args: Record<string, unknown>)
   const { data, error } = await (supabase as any).rpc(name, args);
   if (error) throw new Error(readableDriverRpcError(error.message));
   return data as T;
+}
+
+async function callRedispatchFunction(
+  functionName: "driver-reject-redispatch" | "driver-cancel-redispatch",
+  body: Record<string, unknown>,
+): Promise<RedispatchPayload> {
+  const { data, error } = await supabase.functions.invoke(functionName, { body });
+  if (error) throw new Error(readableDriverRpcError(error.message));
+
+  const payload = (data ?? {}) as RedispatchPayload;
+  if (!payload.ok) throw new Error(readableDriverRpcError(payload.error ?? `${functionName}_failed`));
+
+  if (payload.redispatch === "deferred") {
+    console.warn(`[APOIS MOTORISTA] ${functionName}: redispatch adiado; watchdog do servidor continuará a busca`);
+  }
+  return payload;
 }
 
 /**
@@ -54,24 +80,9 @@ export async function aceitarCorridaMobile({ data }: { data: { rideId: string } 
 }
 
 export async function recusarCorridaMobile({ data }: { data: { rideId: string } }) {
-  const { data: result, error } = await supabase.functions.invoke("driver-reject-redispatch", {
-    body: { ride_id: data.rideId },
+  const payload = await callRedispatchFunction("driver-reject-redispatch", {
+    ride_id: data.rideId,
   });
-
-  if (error) throw new Error(readableDriverRpcError(error.message));
-
-  const payload = (result ?? {}) as {
-    ok?: boolean;
-    error?: string;
-    ride?: unknown;
-    redispatch?: string;
-  };
-  if (!payload.ok) throw new Error(readableDriverRpcError(payload.error ?? "driver_reject_failed"));
-
-  if (payload.redispatch === "deferred") {
-    console.warn("[APOIS MOTORISTA] corrida recusada; redispatch será retomado pelo watchdog do servidor");
-  }
-
   return payload.ride ?? payload;
 }
 
@@ -97,12 +108,12 @@ export async function finalizarCorridaMobile({ data }: { data: { rideId: string;
 }
 
 export async function cancelarPeloMotoristaMobile({ data }: { data: { rideId: string; motivo?: string } }) {
-  const ride = await callRpc("driver_cancel_ride", {
-    _ride_id: data.rideId,
-    _reason: data.motivo ?? null,
+  const payload = await callRedispatchFunction("driver-cancel-redispatch", {
+    ride_id: data.rideId,
+    reason: data.motivo ?? "",
   });
   notifyPassenger(data.rideId, "ride.cancelled");
-  return ride;
+  return payload.ride ?? payload;
 }
 
 export async function avaliarPassageiroMobile({
