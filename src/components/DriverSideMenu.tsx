@@ -186,7 +186,7 @@ export function DriverSideMenu({ open, onOpenChange, onLogout }: Props) {
           </div>
         </SheetHeader>
 
-        <div className="space-y-5 px-4 py-5">
+        <div className="space-y-5 px-4 pb-[calc(env(safe-area-inset-bottom)+20px)] pt-5">
           {loading ? (
             <div className="flex items-center justify-center gap-2 py-12 text-sm text-zinc-500">
               <Loader2 className="h-4 w-4 animate-spin text-[#F6BE1C]" />
