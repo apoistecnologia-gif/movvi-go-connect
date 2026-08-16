@@ -1,0 +1,93 @@
+/* APOIS Motorista — rodada 10: 25 correções adicionais de UI/UX mobile. */
+
+/* 186 — elementos focáveis por tabindex recebem foco visível consistente. */
+html[data-app-role="motorista"] [tabindex]:not([tabindex="-1"]):focus-visible { outline: 2px solid rgba(246,190,28,.95); outline-offset: 2px; }
+
+/* 187 — toggles aria-pressed mantêm estado ativo perceptível. */
+html[data-app-role="motorista"] [aria-pressed="true"] { box-shadow: inset 0 0 0 1px rgba(246,190,28,.55); }
+
+/* 188 — itens aria-selected mantêm peso suficiente para indicar seleção. */
+html[data-app-role="motorista"] [aria-selected="true"] { font-weight: 700; }
+
+/* 189 — controles aria-checked preservam destaque dourado. */
+html[data-app-role="motorista"] [aria-checked="true"] { accent-color: #f6be1c; }
+
+/* 190 — elementos com aria-describedby podem encolher em layouts flex/grid. */
+html[data-app-role="motorista"] [aria-describedby] { min-width: 0; }
+
+/* 191 — role=group não mantém largura intrínseca maior que o card. */
+html[data-app-role="motorista"] [role="group"] { min-width: 0; max-width: 100%; }
+
+/* 192 — toolbars operacionais podem quebrar em telas estreitas. */
+@media (max-width: 359px) {
+  html[data-app-role="motorista"] [role="toolbar"] { flex-wrap: wrap; gap: .5rem; }
+}
+
+/* 193 — links geo/mapa recebem alvo mínimo tocável. */
+html[data-app-role="motorista"] a[href^="geo:"] { min-height: 44px; display: inline-flex; align-items: center; }
+
+/* 194 — valores nowrap podem quebrar no breakpoint extremo. */
+@media (max-width: 339px) {
+  html[data-app-role="motorista"] span.whitespace-nowrap { white-space: normal; }
+}
+
+/* 195 — line-clamp deixa de esconder informação operacional em 320px. */
+@media (max-width: 339px) {
+  html[data-app-role="motorista"] [class*="line-clamp-"] { display: block; overflow: visible; -webkit-line-clamp: unset; }
+}
+
+/* 196 — sections/articles não mantêm min-content acima da viewport. */
+html[data-app-role="motorista"] section,
+html[data-app-role="motorista"] article { min-width: 0; max-width: 100%; }
+
+/* 197 — address de recibos/localização permite quebra segura. */
+html[data-app-role="motorista"] address { overflow-wrap: anywhere; font-style: normal; }
+
+/* 198 — mark preserva contraste do tema escuro. */
+html[data-app-role="motorista"] mark { color: inherit; }
+
+/* 199 — small mantém piso mínimo de legibilidade. */
+html[data-app-role="motorista"] small { font-size: max(.625rem, 10px); }
+
+/* 200 — sub/sup não aumenta line-height em labels compactas. */
+html[data-app-role="motorista"] sub,
+html[data-app-role="motorista"] sup { line-height: 0; }
+
+/* 201 — imagens lazy mantêm fundo estável durante carregamento. */
+html[data-app-role="motorista"] img[loading="lazy"] { background-color: rgba(255,255,255,.03); }
+
+/* 202 — overlays data-state=open permanecem dentro da largura útil. */
+html[data-app-role="motorista"] [data-state="open"] { max-width: 100%; }
+
+/* 203 — conteúdo Radix orientado por side não ultrapassa viewport. */
+html[data-app-role="motorista"] [data-side="top"],
+html[data-app-role="motorista"] [data-side="right"],
+html[data-app-role="motorista"] [data-side="bottom"],
+html[data-app-role="motorista"] [data-side="left"] { max-width: calc(100vw - 16px); }
+
+/* 204 — conteúdo dos poppers quebra IDs/textos longos. */
+html[data-app-role="motorista"] [data-radix-popper-content-wrapper] > * { overflow-wrap: anywhere; }
+
+/* 205 — progressbar customizada nunca expande o card. */
+html[data-app-role="motorista"] [role="progressbar"] { max-width: 100%; }
+
+/* 206 — spinbuttons usados em valores/configurações têm alvo mínimo. */
+html[data-app-role="motorista"] [role="spinbutton"] { min-height: 44px; max-width: 100%; }
+
+/* 207 — campo password reserva espaço para ação mostrar/ocultar. */
+html[data-app-role="motorista"] input[type="password"] { padding-right: max(2.75rem, var(--password-action-space, 2.75rem)); }
+
+/* 208 — ações absolutas dentro de inputs não ficam menores que 44px. */
+html[data-app-role="motorista"] .relative > button.absolute { min-width: 44px; min-height: 44px; }
+
+/* 209 — footers sticky em landscape baixo podem reorganizar ações. */
+@media (max-height: 520px) and (orientation: landscape) {
+  html[data-app-role="motorista"] [class*="sticky"][class*="bottom-0"] { flex-wrap: wrap; }
+}
+
+/* 210 — prefers-contrast reforça a área visual de foco dos controles. */
+@media (prefers-contrast: more) {
+  html[data-app-role="motorista"] button,
+  html[data-app-role="motorista"] input,
+  html[data-app-role="motorista"] select { outline-offset: 2px; }
+}
