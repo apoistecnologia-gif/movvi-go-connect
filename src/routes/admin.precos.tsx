@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Temporary Phase 8 bridge until generated Supabase types include canonical admin RPCs. */
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import { Loader2, Save, ShieldCheck } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Loader2, Save, ShieldCheck, SlidersHorizontal } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -11,6 +11,7 @@ import {
   DSCardHeader as CardHeader,
   DSCardTitle as CardTitle,
   DSInput,
+  EmptyState,
   Loading,
 } from "@/design-system";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -23,9 +24,11 @@ export const Route = createFileRoute("/admin/precos")({
   component: AdminPrecosPage,
 });
 
+type CategoryCode = "carros" | "motos" | "fretes" | "guincho" | "envios";
+
 type Category = {
   id: string;
-  code: "carros" | "motos" | "fretes" | "guincho" | "envios";
+  code: CategoryCode;
   name: string;
   is_active: boolean;
 };
@@ -59,7 +62,9 @@ type TariffRow = {
 };
 
 type NumericKey = Exclude<keyof TariffRow, "id" | "category_id" | "city" | "is_active">;
+type DraftMap = Record<string, Partial<Record<NumericKey, string>>>;
 
+const CATEGORY_CODES: CategoryCode[] = ["carros", "motos", "fretes", "guincho", "envios"];
 const DEFAULT_TARIFF: Omit<TariffRow, "category_id"> = {
   city: "default",
   base_fare: 0,
@@ -96,7 +101,7 @@ const COMMON_FIELDS: Array<[NumericKey, string]> = [
   ["dynamic_multiplier", "Multiplicador dinâmico"],
 ];
 
-const EXTRA_FIELDS: Record<Category["code"], Array<[NumericKey, string]>> = {
+const EXTRA_FIELDS: Record<CategoryCode, Array<[NumericKey, string]>> = {
   carros: [],
   motos: [],
   fretes: [
@@ -122,86 +127,160 @@ const EXTRA_FIELDS: Record<Category["code"], Array<[NumericKey, string]>> = {
   ],
 };
 
-function asNumber(value: unknown, fallback = 0) {
+function cleanText(value: unknown, fallback = "") {
+  const text = String(value ?? "").trim().replace(/\s+/g, " ");
+  return text || fallback;
+}
+
+function isCategoryCode(value: unknown): value is CategoryCode {
+  return CATEGORY_CODES.includes(cleanText(value).toLowerCase() as CategoryCode);
+}
+
+function asNonNegativeNumber(value: unknown, fallback = 0) {
   const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+}
+
+function asMultiplier(value: unknown) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0.001 && parsed <= 100 ? parsed : 1;
 }
 
 function normalizeTariff(row: Record<string, unknown>, categoryId: string): TariffRow {
   return {
-    id: typeof row.id === "string" ? row.id : undefined,
+    id: cleanText(row.id) || undefined,
     category_id: categoryId,
-    city: String(row.city ?? "default"),
-    base_fare: asNumber(row.base_fare),
-    min_fare: asNumber(row.min_fare),
-    per_km: asNumber(row.per_km),
-    per_min: asNumber(row.per_min),
-    stop_fee: asNumber(row.stop_fee),
-    fixed_fee: asNumber(row.fixed_fee),
-    dynamic_multiplier: asNumber(row.dynamic_multiplier, 1) || 1,
-    helper1_fee: asNumber(row.helper1_fee),
-    helper2_fee: asNumber(row.helper2_fee),
-    heavy_furniture_fee: asNumber(row.heavy_furniture_fee),
-    assembly_fee: asNumber(row.assembly_fee),
-    packing_fee: asNumber(row.packing_fee),
-    difficult_access_fee: asNumber(row.difficult_access_fee),
-    stair_fee: asNumber(row.stair_fee),
-    heavy_vehicle_fee: asNumber(row.heavy_vehicle_fee),
-    accident_fee: asNumber(row.accident_fee),
-    platform_fee: asNumber(row.platform_fee),
-    locked_wheels_fee: asNumber(row.locked_wheels_fee),
-    garage_fee: asNumber(row.garage_fee),
-    max_weight_kg: asNumber(row.max_weight_kg),
-    per_kg: asNumber(row.per_kg),
-    is_active: row.is_active !== false,
+    city: cleanText(row.city, "default").toLowerCase().slice(0, 120),
+    base_fare: asNonNegativeNumber(row.base_fare),
+    min_fare: asNonNegativeNumber(row.min_fare),
+    per_km: asNonNegativeNumber(row.per_km),
+    per_min: asNonNegativeNumber(row.per_min),
+    stop_fee: asNonNegativeNumber(row.stop_fee),
+    fixed_fee: asNonNegativeNumber(row.fixed_fee),
+    dynamic_multiplier: asMultiplier(row.dynamic_multiplier),
+    helper1_fee: asNonNegativeNumber(row.helper1_fee),
+    helper2_fee: asNonNegativeNumber(row.helper2_fee),
+    heavy_furniture_fee: asNonNegativeNumber(row.heavy_furniture_fee),
+    assembly_fee: asNonNegativeNumber(row.assembly_fee),
+    packing_fee: asNonNegativeNumber(row.packing_fee),
+    difficult_access_fee: asNonNegativeNumber(row.difficult_access_fee),
+    stair_fee: asNonNegativeNumber(row.stair_fee),
+    heavy_vehicle_fee: asNonNegativeNumber(row.heavy_vehicle_fee),
+    accident_fee: asNonNegativeNumber(row.accident_fee),
+    platform_fee: asNonNegativeNumber(row.platform_fee),
+    locked_wheels_fee: asNonNegativeNumber(row.locked_wheels_fee),
+    garage_fee: asNonNegativeNumber(row.garage_fee),
+    max_weight_kg: asNonNegativeNumber(row.max_weight_kg),
+    per_kg: asNonNegativeNumber(row.per_kg),
+    is_active: row.is_active === true,
   };
+}
+
+function validateRow(row: TariffRow) {
+  const numericKeys = Object.keys(DEFAULT_TARIFF).filter(
+    (key): key is NumericKey => key !== "city" && key !== "is_active",
+  );
+  for (const key of numericKeys) {
+    const value = row[key];
+    if (!Number.isFinite(value) || value < 0) return "Há um valor numérico inválido na tarifa.";
+  }
+  if (row.dynamic_multiplier < 0.001 || row.dynamic_multiplier > 100) {
+    return "O multiplicador dinâmico deve ficar entre 0,001 e 100.";
+  }
+  if (!cleanText(row.category_id)) return "Categoria inválida.";
+  return null;
 }
 
 function AdminPrecosPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [tariffs, setTariffs] = useState<Record<string, TariffRow>>({});
+  const [drafts, setDrafts] = useState<DraftMap>({});
+  const [dirtyCodes, setDirtyCodes] = useState<Set<string>>(new Set());
   const [activeCode, setActiveCode] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [savingCode, setSavingCode] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const requestRef = useRef(0);
+  const dirtyRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    dirtyRef.current = dirtyCodes;
+  }, [dirtyCodes]);
 
   useEffect(() => {
     let alive = true;
-    const refresh = async () => {
-      const db = supabase as any;
-      const [categoryResult, tariffResult] = await Promise.all([
-        db
-          .from("ride_categories")
-          .select("id,code,name,is_active")
-          .order("sort_order", { ascending: true }),
-        db.from("tariff_rules").select("*").order("city", { ascending: true }),
-      ]);
-      if (!alive) return;
-      if (categoryResult.error) {
-        toast.error("Categorias: " + categoryResult.error.message);
-        setLoading(false);
-        return;
-      }
-      if (tariffResult.error) {
-        toast.error("Tarifas: " + tariffResult.error.message);
-        setLoading(false);
-        return;
-      }
+    let refreshTimer: number | null = null;
 
-      const nextCategories = (categoryResult.data ?? []) as Category[];
-      const byCategory: Record<string, TariffRow> = {};
-      for (const category of nextCategories) {
-        const existing = (tariffResult.data ?? []).find(
-          (row: Record<string, unknown>) =>
-            row.category_id === category.id && String(row.city ?? "default") === "default",
+    const refresh = async () => {
+      const requestId = ++requestRef.current;
+      setLoading(true);
+      setLoadError(null);
+      const db = supabase as any;
+      try {
+        const [categoryResult, tariffResult] = await Promise.all([
+          db
+            .from("ride_categories")
+            .select("id,code,name,is_active")
+            .order("sort_order", { ascending: true }),
+          db.from("tariff_rules").select("*").order("city", { ascending: true }),
+        ]);
+        if (!alive || requestId !== requestRef.current) return;
+        if (categoryResult.error) throw categoryResult.error;
+        if (tariffResult.error) throw tariffResult.error;
+
+        const nextCategories = ((categoryResult.data ?? []) as Array<Record<string, unknown>>)
+          .filter((row) => Boolean(cleanText(row.id)) && isCategoryCode(row.code))
+          .map((row) => ({
+            id: cleanText(row.id),
+            code: cleanText(row.code).toLowerCase() as CategoryCode,
+            name: cleanText(row.name, cleanText(row.code)).slice(0, 100),
+            is_active: row.is_active === true,
+          }));
+
+        const byCategory: Record<string, TariffRow> = {};
+        for (const category of nextCategories) {
+          const existing = (tariffResult.data ?? []).find(
+            (row: Record<string, unknown>) =>
+              cleanText(row.category_id) === category.id && cleanText(row.city, "default").toLowerCase() === "default",
+          );
+          byCategory[category.code] = existing
+            ? normalizeTariff(existing as Record<string, unknown>, category.id)
+            : { ...DEFAULT_TARIFF, category_id: category.id };
+        }
+
+        setCategories(nextCategories);
+        setTariffs((current) => {
+          const merged = { ...byCategory };
+          for (const code of dirtyRef.current) {
+            if (current[code]) merged[code] = current[code];
+          }
+          return merged;
+        });
+        setDrafts((current) => {
+          const next = { ...current };
+          for (const code of Object.keys(byCategory)) {
+            if (!dirtyRef.current.has(code)) delete next[code];
+          }
+          return next;
+        });
+        setActiveCode((current) =>
+          nextCategories.some((category) => category.code === current)
+            ? current
+            : nextCategories[0]?.code ?? "",
         );
-        byCategory[category.code] = existing
-          ? normalizeTariff(existing as Record<string, unknown>, category.id)
-          : { ...DEFAULT_TARIFF, category_id: category.id };
+      } catch (error) {
+        if (!alive || requestId !== requestRef.current) return;
+        setLoadError("Não foi possível carregar as tarifas agora. Tente novamente.");
+        if (import.meta.env.DEV) console.warn("[APOIS Admin] falha ao carregar tarifas", error);
+      } finally {
+        if (alive && requestId === requestRef.current) setLoading(false);
       }
-      setCategories(nextCategories);
-      setTariffs(byCategory);
-      setActiveCode((current) => current || nextCategories[0]?.code || "");
-      setLoading(false);
+    };
+
+    const scheduleRefresh = () => {
+      if (refreshTimer != null) window.clearTimeout(refreshTimer);
+      refreshTimer = window.setTimeout(() => void refresh(), 250);
     };
 
     void refresh();
@@ -210,11 +289,23 @@ function AdminPrecosPage() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "tariff_rules" },
-        () => void refresh(),
+        scheduleRefresh,
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "ride_categories" },
+        scheduleRefresh,
       )
       .subscribe();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") scheduleRefresh();
+    };
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       alive = false;
+      requestRef.current += 1;
+      if (refreshTimer != null) window.clearTimeout(refreshTimer);
+      document.removeEventListener("visibilitychange", onVisible);
       void supabase.removeChannel(channel);
     };
   }, []);
@@ -224,21 +315,62 @@ function AdminPrecosPage() {
     [categories],
   );
 
+  function markDirty(code: string) {
+    setDirtyCodes((current) => new Set(current).add(code));
+    setSaveError(null);
+  }
+
   function patch(code: string, next: Partial<TariffRow>) {
-    setTariffs((current) => ({
+    setTariffs((current) => {
+      const row = current[code];
+      if (!row) return current;
+      return { ...current, [code]: { ...row, ...next } };
+    });
+    markDirty(code);
+  }
+
+  function setDraft(code: string, key: NumericKey, value: string) {
+    if (!/^\d*(?:[.,]\d{0,3})?$/.test(value)) return;
+    setDrafts((current) => ({
       ...current,
-      [code]: { ...current[code], ...next },
+      [code]: { ...current[code], [key]: value },
+    }));
+    markDirty(code);
+  }
+
+  function commitDraft(code: string, key: NumericKey) {
+    const raw = drafts[code]?.[key];
+    if (raw == null) return;
+    const normalized = raw.trim().replace(",", ".");
+    if (!normalized) return;
+    const parsed = Number(normalized);
+    if (!Number.isFinite(parsed) || parsed < 0) return;
+    const nextValue = key === "dynamic_multiplier" ? asMultiplier(parsed) : parsed;
+    patch(code, { [key]: nextValue } as Partial<TariffRow>);
+    setDrafts((current) => ({
+      ...current,
+      [code]: { ...current[code], [key]: String(nextValue) },
     }));
   }
 
-  async function save(code: Category["code"]) {
+  async function save(code: CategoryCode) {
+    if (savingCode) return;
     const row = tariffs[code];
-    if (!row) return;
+    if (!row || !dirtyCodes.has(code)) return;
+    const fields = [...COMMON_FIELDS, ...EXTRA_FIELDS[code]];
+    for (const [key] of fields) commitDraft(code, key);
+
+    const validation = validateRow(row);
+    if (validation) {
+      setSaveError(validation);
+      return;
+    }
     setSavingCode(code);
+    setSaveError(null);
     try {
       const input: AdminTariffInput = {
         categoryCode: code,
-        city: row.city || "default",
+        city: cleanText(row.city, "default").toLowerCase(),
         baseFare: row.base_fare,
         minFare: row.min_fare,
         perKm: row.per_km,
@@ -263,9 +395,20 @@ function AdminPrecosPage() {
         isActive: row.is_active,
       };
       await upsertAdminTariffRule(input);
+      setDirtyCodes((current) => {
+        const next = new Set(current);
+        next.delete(code);
+        return next;
+      });
+      setDrafts((current) => {
+        const next = { ...current };
+        delete next[code];
+        return next;
+      });
       toast.success(`Tarifa de ${categoryMap.get(code)?.name ?? code} salva no modelo canônico.`);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Não foi possível salvar a tarifa.");
+      setSaveError("Não foi possível salvar a tarifa. Revise os valores e tente novamente.");
+      if (import.meta.env.DEV) console.warn("[APOIS Admin] falha ao salvar tarifa", error);
     } finally {
       setSavingCode(null);
     }
@@ -277,23 +420,39 @@ function AdminPrecosPage() {
       description="Edite os parâmetros consumidos pelo Fare Engine server-side. O painel não calcula o preço final da corrida."
     >
       {loading ? (
-        <Loading label="Carregando tarifas..." />
+        <div role="status" aria-live="polite"><Loading label="Carregando tarifas..." /></div>
+      ) : loadError ? (
+        <Card className="border-destructive/30 bg-destructive/5">
+          <CardContent className="space-y-3 p-4" role="alert">
+            <p className="text-sm font-medium text-destructive">{loadError}</p>
+            <Button className="min-h-11" variant="outline" onClick={() => window.location.reload()}>
+              Tentar novamente
+            </Button>
+          </CardContent>
+        </Card>
+      ) : categories.length === 0 ? (
+        <EmptyState
+          icon={SlidersHorizontal}
+          title="Nenhuma categoria tarifável"
+          description="As cinco categorias canônicas aparecerão aqui quando estiverem disponíveis no backend."
+        />
       ) : (
         <div className="space-y-4">
-          <div className="flex items-start gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm text-muted-foreground">
-            <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-            <p>
+          <div className="flex min-w-0 items-start gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm leading-6 text-muted-foreground">
+            <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+            <p className="min-w-0 break-words">
               O valor exibido ao passageiro continua sendo calculado pelo backend. Esta tela apenas
               administra os parâmetros tipados da tarifa; não existem campos livres de preço.
             </p>
           </div>
 
           <Tabs value={activeCode} onValueChange={setActiveCode} className="space-y-4">
-            <TabsList className="flex flex-wrap gap-1">
+            <TabsList className="flex h-auto max-w-full flex-wrap gap-1 p-1">
               {categories.map((category) => (
-                <TabsTrigger key={category.code} value={category.code}>
+                <TabsTrigger key={category.code} value={category.code} className="min-h-11 min-w-0 whitespace-normal text-center">
                   {category.name}
                   {!category.is_active ? " (categoria off)" : ""}
+                  {dirtyCodes.has(category.code) ? " •" : ""}
                 </TabsTrigger>
               ))}
             </TabsList>
@@ -302,57 +461,71 @@ function AdminPrecosPage() {
               const row = tariffs[category.code];
               if (!row) return null;
               const fields = [...COMMON_FIELDS, ...EXTRA_FIELDS[category.code]];
+              const dirty = dirtyCodes.has(category.code);
               return (
                 <TabsContent key={category.code} value={category.code} className="space-y-4">
                   <Card className="border-border bg-card/60">
-                    <CardHeader className="flex flex-row items-center justify-between gap-3">
-                      <div>
-                        <CardTitle className="text-base">{category.name}</CardTitle>
-                        <p className="mt-1 text-xs text-muted-foreground">
+                    <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0">
+                        <CardTitle className="break-words text-base">{category.name}</CardTitle>
+                        <p className="mt-1 break-words text-sm text-muted-foreground">
                           Regra: {category.code} · cidade: {row.city}
                         </p>
+                        {dirty ? <p className="mt-1 text-sm font-medium text-warning" role="status">Alterações não salvas</p> : null}
                       </div>
-                      <label className="flex items-center gap-2 text-xs font-medium">
+                      <div className="flex min-h-11 items-center gap-2 text-sm font-medium">
                         <Switch
                           checked={row.is_active}
-                          onCheckedChange={(value) => patch(category.code, { is_active: value })}
+                          disabled={Boolean(savingCode)}
+                          onCheckedChange={(value) => patch(category.code, { is_active: value === true })}
+                          aria-label={`${row.is_active ? "Desativar" : "Ativar"} tarifa de ${category.name}`}
                         />
-                        {row.is_active ? "Tarifa ativa" : "Tarifa desativada"}
-                      </label>
+                        <span>{row.is_active ? "Tarifa ativa" : "Tarifa desativada"}</span>
+                      </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                        {fields.map(([key, label]) => (
-                          <Field key={key} label={label} technical={key}>
-                            <DSInput
-                              type="number"
-                              min={key === "dynamic_multiplier" ? 0.001 : 0}
-                              step={key === "dynamic_multiplier" ? 0.01 : 0.01}
-                              value={row[key]}
-                              onChange={(event) =>
-                                patch(category.code, {
-                                  [key]:
-                                    Number(event.target.value) ||
-                                    (key === "dynamic_multiplier" ? 1 : 0),
-                                } as Partial<TariffRow>)
-                              }
-                            />
-                          </Field>
-                        ))}
+                        {fields.map(([key, label]) => {
+                          const displayValue = drafts[category.code]?.[key] ?? String(row[key]);
+                          const inputId = `tariff-${category.code}-${key}`;
+                          return (
+                            <Field key={key} id={inputId} label={label} technical={key}>
+                              <DSInput
+                                id={inputId}
+                                inputMode="decimal"
+                                min={key === "dynamic_multiplier" ? 0.001 : 0}
+                                step="0.01"
+                                value={displayValue}
+                                disabled={Boolean(savingCode)}
+                                className="min-h-11 text-base tabular-nums"
+                                aria-invalid={displayValue.trim() === ""}
+                                onChange={(event) => setDraft(category.code, key, event.target.value)}
+                                onBlur={() => commitDraft(category.code, key)}
+                              />
+                            </Field>
+                          );
+                        })}
                       </div>
+
+                      {saveError && activeCode === category.code ? (
+                        <p className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive" role="alert">
+                          {saveError}
+                        </p>
+                      ) : null}
 
                       <div className="flex justify-end">
                         <Button
                           onClick={() => void save(category.code)}
-                          disabled={savingCode === category.code}
-                          className="gap-2"
+                          disabled={Boolean(savingCode) || !dirty}
+                          className="min-h-11 gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                          aria-busy={savingCode === category.code}
                         >
                           {savingCode === category.code ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
                           ) : (
-                            <Save className="h-4 w-4" />
+                            <Save className="h-4 w-4" aria-hidden="true" />
                           )}
-                          Salvar tarifa
+                          {savingCode === category.code ? "Salvando…" : "Salvar tarifa"}
                         </Button>
                       </div>
                     </CardContent>
@@ -368,19 +541,21 @@ function AdminPrecosPage() {
 }
 
 function Field({
+  id,
   label,
   technical,
   children,
 }: {
+  id: string;
   label: string;
   technical: string;
   children: React.ReactNode;
 }) {
   return (
-    <label className="flex flex-col gap-1">
-      <span className="text-[11px] font-semibold text-muted-foreground">{label}</span>
+    <div className="flex min-w-0 flex-col gap-1">
+      <label htmlFor={id} className="break-words text-sm font-semibold text-muted-foreground">{label}</label>
       {children}
-      <span className="font-mono text-[9px] text-muted-foreground/60">{technical}</span>
-    </label>
+      <span className="break-all font-mono text-xs text-muted-foreground/80">Campo: {technical}</span>
+    </div>
   );
 }
