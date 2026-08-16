@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { CreditCard, RefreshCw, Search, ShieldCheck } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,7 +13,6 @@ import {
   EmptyState,
   Loading,
 } from "@/design-system";
-import { toast } from "sonner";
 
 type DriverSubscriptionRow = {
   id: string;
@@ -34,19 +33,53 @@ export const Route = createFileRoute("/admin/assinaturas")({
 });
 
 function parseMoneySetting(value: unknown): number | null {
-  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "number" && Number.isFinite(value) && value >= 0) return value;
   if (typeof value === "string") {
-    const parsed = Number(value.replace(",", "."));
-    return Number.isFinite(parsed) ? parsed : null;
+    const parsed = Number(value.trim().replace(",", "."));
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
   }
   return null;
 }
 
+function cleanText(value: unknown, fallback = "") {
+  const text = String(value ?? "").trim().replace(/\s+/g, " ");
+  return text || fallback;
+}
+
+function normalizeStatus(value: unknown) {
+  return cleanText(value, "não informado").toLowerCase();
+}
+
+function subscriptionLabel(status: string) {
+  const normalized = normalizeStatus(status);
+  if (["active", "ativa", "ativo", "paid", "pago"].includes(normalized)) return "Ativa";
+  if (["teste", "trial", "homologacao", "homologação"].includes(normalized)) return "Homologação";
+  if (["pending", "pendente", "processing", "processando"].includes(normalized)) return "Pendente";
+  if (["overdue", "vencida", "atrasada"].includes(normalized)) return "Vencida";
+  if (["suspended", "suspensa", "suspenso"].includes(normalized)) return "Suspensa";
+  if (["inactive", "inativa", "inativo"].includes(normalized)) return "Inativa";
+  return cleanText(status, "Não informado");
+}
+
+function approvalLabel(status: string) {
+  const normalized = normalizeStatus(status);
+  if (["aprovado", "approved", "ativo", "active"].includes(normalized)) return "Aprovado";
+  if (["rejeitado", "rejected"].includes(normalized)) return "Rejeitado";
+  if (["pendente", "pending", "em_analise", "em análise"].includes(normalized)) return "Em análise";
+  return cleanText(status, "Não informado");
+}
+
 function statusVariant(status: string): "success" | "warning" | "danger" | "muted" {
-  if (["active", "ativa", "teste"].includes(status)) return "success";
-  if (["pending", "pendente"].includes(status)) return "warning";
-  if (["overdue", "vencida", "atrasada", "suspended", "suspensa"].includes(status)) return "danger";
+  const normalized = normalizeStatus(status);
+  if (["active", "ativa", "ativo", "paid", "pago", "teste", "trial", "homologacao", "homologação"].includes(normalized)) return "success";
+  if (["pending", "pendente", "processing", "processando"].includes(normalized)) return "warning";
+  if (["overdue", "vencida", "atrasada", "suspended", "suspensa", "suspenso"].includes(normalized)) return "danger";
   return "muted";
+}
+
+function safeDate(value: unknown) {
+  const date = new Date(String(value ?? ""));
+  return Number.isNaN(date.getTime()) ? null : date;
 }
 
 function AdminAssinaturasPage() {
@@ -54,9 +87,13 @@ function AdminAssinaturasPage() {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [monthlyPrice, setMonthlyPrice] = useState<number | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const requestRef = useRef(0);
 
   async function load() {
+    const requestId = ++requestRef.current;
     setLoading(true);
+    setLoadError(null);
     try {
       const [driversResult, settings] = await Promise.all([
         supabase
@@ -67,56 +104,85 @@ function AdminAssinaturasPage() {
           .order("updated_at", { ascending: false }),
         getAdminSettings(["subscription.default_plan_price"]),
       ]);
+      if (requestId !== requestRef.current) return;
       if (driversResult.error) throw driversResult.error;
-      setRows((driversResult.data ?? []) as DriverSubscriptionRow[]);
+
+      const normalizedRows = ((driversResult.data ?? []) as DriverSubscriptionRow[])
+        .filter((row) => Boolean(cleanText(row.id)))
+        .map((row) => ({
+          ...row,
+          id: cleanText(row.id),
+          name: cleanText(row.name) || null,
+          email: cleanText(row.email) || null,
+          phone: cleanText(row.phone) || null,
+          city: cleanText(row.city) || null,
+          state: cleanText(row.state) || null,
+          subscription_status: normalizeStatus(row.subscription_status),
+          approval_status: normalizeStatus(row.approval_status),
+          is_online: row.is_online === true,
+          updated_at: safeDate(row.updated_at)?.toISOString() ?? "",
+        }));
+      setRows(normalizedRows);
       setMonthlyPrice(
         parseMoneySetting(
           settings.find((row) => row.key === "subscription.default_plan_price")?.value,
         ),
       );
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Não foi possível carregar as assinaturas.",
-      );
+      if (requestId !== requestRef.current) return;
       setRows([]);
       setMonthlyPrice(null);
+      setLoadError("Não foi possível carregar as mensalidades agora. Tente novamente.");
+      if (import.meta.env.DEV) console.warn("[APOIS Admin] falha ao carregar mensalidades", error);
     } finally {
-      setLoading(false);
+      if (requestId === requestRef.current) setLoading(false);
     }
   }
 
   useEffect(() => {
     void load();
+    let refreshTimer: number | null = null;
+    const scheduleRefresh = () => {
+      if (refreshTimer != null) window.clearTimeout(refreshTimer);
+      refreshTimer = window.setTimeout(() => void load(), 250);
+    };
     const channel = supabase
       .channel("admin-subscription-driver-state")
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "drivers" },
-        () => void load(),
+        scheduleRefresh,
       )
       .subscribe();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") scheduleRefresh();
+    };
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
+      requestRef.current += 1;
+      if (refreshTimer != null) window.clearTimeout(refreshTimer);
+      document.removeEventListener("visibilitychange", onVisible);
       void supabase.removeChannel(channel);
     };
   }, []);
 
   const filtered = useMemo(() => {
-    const needle = query.trim().toLowerCase();
+    const needle = query.trim().toLocaleLowerCase("pt-BR");
     if (!needle) return rows;
     return rows.filter((row) =>
-      [row.name, row.email, row.phone, row.city, row.state, row.subscription_status]
+      [row.name, row.email, row.phone, row.city, row.state, subscriptionLabel(row.subscription_status)]
         .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(needle)),
+        .some((value) => String(value).toLocaleLowerCase("pt-BR").includes(needle)),
     );
   }, [query, rows]);
 
   const counts = useMemo(() => {
-    const normalized = rows.map((row) => row.subscription_status.toLowerCase());
+    const normalized = rows.map((row) => normalizeStatus(row.subscription_status));
     return {
-      active: normalized.filter((status) => ["active", "ativa", "teste"].includes(status)).length,
-      pending: normalized.filter((status) => ["pending", "pendente"].includes(status)).length,
+      active: normalized.filter((status) => ["active", "ativa", "ativo", "paid", "pago", "teste", "trial", "homologacao", "homologação"].includes(status)).length,
+      pending: normalized.filter((status) => ["pending", "pendente", "processing", "processando"].includes(status)).length,
       overdue: normalized.filter((status) =>
-        ["overdue", "vencida", "atrasada", "suspended", "suspensa"].includes(status),
+        ["overdue", "vencida", "atrasada", "suspended", "suspensa", "suspenso"].includes(status),
       ).length,
     };
   }, [rows]);
@@ -131,30 +197,31 @@ function AdminAssinaturasPage() {
           size="sm"
           onClick={() => void load()}
           disabled={loading}
-          className="gap-1"
+          className="min-h-11 gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          aria-busy={loading}
         >
-          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Atualizar
+          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin motion-reduce:animate-none" : ""}`} aria-hidden="true" />
+          {loading ? "Atualizando…" : "Atualizar"}
         </DSButton>
       }
     >
       <DSCard className="mb-4 border-primary/20 bg-primary/5">
-        <DSCardContent className="flex gap-3 p-4 text-sm text-muted-foreground">
-          <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-          <div>
-            <p className="font-semibold text-foreground">Sem modelo paralelo de assinatura</p>
-            <p className="mt-1">
-              Esta tela não usa as tabelas legadas subscription_plans/subscriptions nem permite
-              fabricar pagamento manualmente. O status exibido é drivers.subscription_status;
-              confirmação financeira deve vir do backend/provedor e de webhooks idempotentes.
+        <DSCardContent className="flex min-w-0 gap-3 p-4 text-sm leading-6 text-muted-foreground">
+          <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+          <div className="min-w-0">
+            <p className="font-semibold text-foreground">Mensalidade vinculada ao backend</p>
+            <p className="mt-1 break-words">
+              O status exibido vem do perfil operacional do motorista. Confirmações financeiras
+              são realizadas pelo backend e pelos webhooks do provedor configurado para mensalidade.
             </p>
           </div>
         </DSCardContent>
       </DSCard>
 
       <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Metric label="Ativas/teste" value={counts.active} />
+        <Metric label="Ativas / homologação" value={counts.active} />
         <Metric label="Pendentes" value={counts.pending} />
-        <Metric label="Vencidas/suspensas" value={counts.overdue} />
+        <Metric label="Vencidas / suspensas" value={counts.overdue} />
         <Metric
           label="Mensalidade configurada"
           value={
@@ -168,46 +235,64 @@ function AdminAssinaturasPage() {
       </div>
 
       <div className="relative mb-4">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
         <DSInput
-          className="pl-9"
+          className="min-h-11 pl-9 text-base"
           placeholder="Buscar motorista, cidade ou status"
           value={query}
+          maxLength={120}
+          aria-label="Buscar mensalidade por motorista, cidade ou status"
           onChange={(event) => setQuery(event.target.value)}
         />
       </div>
 
       {loading ? (
-        <Loading label="Carregando assinaturas..." />
+        <div aria-live="polite"><Loading label="Carregando assinaturas..." /></div>
+      ) : loadError ? (
+        <DSCard className="border-destructive/30 bg-destructive/5">
+          <DSCardContent className="space-y-3 p-4" role="alert">
+            <p className="text-sm font-medium text-destructive">{loadError}</p>
+            <DSButton variant="outline" className="min-h-11" onClick={() => void load()}>
+              Tentar novamente
+            </DSButton>
+          </DSCardContent>
+        </DSCard>
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={CreditCard}
-          title="Nenhum motorista encontrado"
-          description="Os status de mensalidade aparecerão aqui quando existirem perfis de motorista."
+          title={query.trim() ? "Nenhum resultado para a busca" : "Nenhum motorista encontrado"}
+          description={query.trim() ? "Revise os termos pesquisados." : "Os status de mensalidade aparecerão aqui quando existirem perfis de motorista."}
         />
       ) : (
         <div className="space-y-2">
           {filtered.map((row) => (
             <DSCard key={row.id}>
-              <DSCardContent className="flex flex-wrap items-center gap-3 p-4 text-sm">
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold">{row.name || "Motorista sem nome"}</p>
-                  <p className="truncate text-xs text-muted-foreground">
+              <DSCardContent className="flex min-w-0 flex-wrap items-center gap-3 p-4 text-sm">
+                <div className="min-w-0 flex-1 basis-52">
+                  <p className="break-words font-semibold">{row.name || "Motorista sem nome"}</p>
+                  <p className="break-all text-sm text-muted-foreground">
                     {row.email || row.phone || "Sem contato"}
                   </p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="break-words text-sm text-muted-foreground">
                     {[row.city, row.state].filter(Boolean).join(" — ") || "Cidade não informada"}
                   </p>
+                  {row.updated_at ? (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Atualizado em {new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date(row.updated_at))}
+                    </p>
+                  ) : null}
                 </div>
-                <DSBadge variant={statusVariant(row.subscription_status)}>
-                  {row.subscription_status}
-                </DSBadge>
-                <DSBadge variant={row.approval_status === "aprovado" ? "success" : "muted"}>
-                  {row.approval_status}
-                </DSBadge>
-                <DSBadge variant={row.is_online ? "primary" : "muted"}>
-                  {row.is_online ? "Online" : "Offline"}
-                </DSBadge>
+                <div className="flex max-w-full flex-wrap gap-2">
+                  <DSBadge variant={statusVariant(row.subscription_status)}>
+                    {subscriptionLabel(row.subscription_status)}
+                  </DSBadge>
+                  <DSBadge variant={["aprovado", "approved", "ativo", "active"].includes(normalizeStatus(row.approval_status)) ? "success" : "muted"}>
+                    {approvalLabel(row.approval_status)}
+                  </DSBadge>
+                  <DSBadge variant={row.is_online ? "primary" : "muted"}>
+                    {row.is_online ? "Online" : "Offline"}
+                  </DSBadge>
+                </div>
               </DSCardContent>
             </DSCard>
           ))}
@@ -220,9 +305,9 @@ function AdminAssinaturasPage() {
 function Metric({ label, value }: { label: string; value: number | string }) {
   return (
     <DSCard>
-      <DSCardContent className="p-4">
-        <p className="text-xs text-muted-foreground">{label}</p>
-        <p className="mt-1 text-xl font-bold">{value}</p>
+      <DSCardContent className="min-w-0 p-4">
+        <p className="break-words text-sm text-muted-foreground">{label}</p>
+        <p className="mt-1 break-words text-xl font-bold tabular-nums">{value}</p>
       </DSCardContent>
     </DSCard>
   );
