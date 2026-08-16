@@ -107,10 +107,51 @@ function withdrawalLabel(value: string): string {
 }
 
 function normalizeMoneyInput(value: string): number | null {
-  const normalized = value.trim().replace(/\s/g, "").replace(/\./g, "").replace(",", ".");
-  if (!/^\d+(?:\.\d{1,2})?$/.test(normalized)) return null;
+  const compact = value.trim().replace(/\s/g, "");
+  if (!compact || !/^\d[\d.,]*$/.test(compact)) return null;
+
+  const lastComma = compact.lastIndexOf(",");
+  const lastDot = compact.lastIndexOf(".");
+  let normalized = compact;
+
+  if (lastComma >= 0 && lastDot >= 0) {
+    const decimalSeparator = lastComma > lastDot ? "," : ".";
+    const thousandsSeparator = decimalSeparator === "," ? "." : ",";
+    normalized = compact.split(thousandsSeparator).join("");
+    if (decimalSeparator === ",") normalized = normalized.replace(",", ".");
+  } else if (lastComma >= 0) {
+    const parts = compact.split(",");
+    if (parts.length !== 2 || parts[1]!.length > 2) return null;
+    normalized = `${parts[0]}.${parts[1]}`;
+  } else if (lastDot >= 0) {
+    const parts = compact.split(".");
+    if (parts.length === 2 && parts[1]!.length <= 2) normalized = compact;
+    else if (parts.slice(1).every((part) => part.length === 3)) normalized = parts.join("");
+    else return null;
+  }
+
+  if (!/^\d+(?:\.\d{0,2})?$/.test(normalized)) return null;
   const parsed = Number(normalized);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+function payoutUnavailableMessage(dashboard: DriverFinancialDashboard): string {
+  const reason = dashboard.payout.reason ?? "";
+  if (reason === "pix_payout_destination_not_confirmed") {
+    return "Confirme sua chave Pix na carteira antes de solicitar um saque.";
+  }
+  if (reason === "pix_payout_destination_cooldown") {
+    const availableAt = dashboard.payout.payoutAvailableAt;
+    const suffix = availableAt ? ` até ${formatDate(availableAt)}` : "";
+    return `Sua chave Pix está no período de segurança${suffix}.`;
+  }
+  if (reason === "asaas_subaccount_not_approved") {
+    return "Sua conta financeira de motorista ainda não está aprovada para receber saques.";
+  }
+  if (reason === "asaas_subaccount_secret_missing") {
+    return "A integração de transferência ainda não está pronta para esta conta.";
+  }
+  return "As transferências ainda estão em homologação. Nenhum valor será reservado enquanto o saque não estiver liberado.";
 }
 
 function DriverEarningsPage() {
@@ -167,6 +208,14 @@ function DriverEarningsPage() {
       return;
     }
     const amountCents = Math.round(parsed * 100);
+    if (!Number.isSafeInteger(amountCents) || amountCents <= 0) {
+      setWithdrawalError("Informe um valor de saque válido.");
+      return;
+    }
+    if (amountCents < dashboard.payout.minWithdrawalCents) {
+      setWithdrawalError(`O valor mínimo para saque é ${cents(dashboard.payout.minWithdrawalCents)}.`);
+      return;
+    }
     const availableCents = Number.isFinite(dashboard.wallet.availableBalanceCents)
       ? Math.max(0, dashboard.wallet.availableBalanceCents)
       : 0;
@@ -183,7 +232,11 @@ function DriverEarningsPage() {
       await load();
     } catch (caughtError: unknown) {
       console.error("[APOIS Driver Finance] withdrawal failed", caughtError);
-      setWithdrawalError("Não foi possível solicitar o saque agora. Tente novamente.");
+      setWithdrawalError(
+        caughtError instanceof Error && caughtError.message
+          ? caughtError.message
+          : "Não foi possível solicitar o saque agora. Tente novamente.",
+      );
     } finally {
       setWithdrawing(false);
     }
@@ -220,12 +273,12 @@ function DriverEarningsPage() {
               {dashboard.payoutEnabled ? (
                 <div className="mt-4 min-w-0 rounded-2xl border border-white/8 bg-black/25 p-3">
                   <label className="break-words text-[11px] font-black uppercase tracking-[0.13em] text-zinc-500" htmlFor="withdrawal-amount">Solicitar saque</label>
-                  <p id="withdrawal-help" className="mt-1 break-words text-[11px] leading-4 text-zinc-500">Informe o valor em reais. Ex.: 50,00.</p>
+                  <p id="withdrawal-help" className="mt-1 break-words text-[11px] leading-4 text-zinc-500">Mínimo {cents(dashboard.payout.minWithdrawalCents)}. Informe o valor em reais.</p>
                   <div className="mt-2 flex min-w-0 flex-col gap-2 sm:flex-row"><input id="withdrawal-amount" value={withdrawalAmount} onChange={(event) => { setWithdrawalAmount(event.target.value.slice(0, 18)); setWithdrawalError(null); }} inputMode="decimal" autoComplete="off" placeholder="0,00" aria-describedby="withdrawal-help withdrawal-error" aria-invalid={Boolean(withdrawalError)} className="min-h-11 min-w-0 flex-1 rounded-xl border border-white/8 bg-[#101214] px-4 text-base font-black outline-none focus:border-[#F6BE1C]/60 focus-visible:ring-2 focus-visible:ring-[#F6BE1C]" /><button type="button" disabled={withdrawing || !Number.isFinite(dashboard.wallet.availableBalanceCents) || dashboard.wallet.availableBalanceCents <= 0} aria-busy={withdrawing} onClick={() => void submitWithdrawal()} className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#F6BE1C] px-4 text-xs font-black text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:bg-zinc-800 disabled:text-zinc-600">{withdrawing ? <Loader2 className="h-4 w-4 shrink-0 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <ArrowUpRight className="h-4 w-4 shrink-0" aria-hidden="true" />}<span>{withdrawing ? "Solicitando..." : "Sacar"}</span></button></div>
                   <p id="withdrawal-error" role={withdrawalError ? "alert" : undefined} className="mt-2 min-h-4 break-words text-[11px] leading-4 text-red-300">{withdrawalError ?? ""}</p>
                 </div>
               ) : (
-                <div className="mt-4 flex min-w-0 gap-3 rounded-2xl border border-amber-400/15 bg-amber-400/8 p-4" role="status"><ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber-300" aria-hidden="true" /><div className="min-w-0"><p className="break-words text-xs font-black text-amber-100">Saques ainda não liberados</p><p className="mt-1 break-words text-[11px] leading-4 text-amber-100/60">As transferências ainda estão em homologação. Nenhum valor será reservado enquanto o saque não estiver liberado.</p></div></div>
+                <div className="mt-4 flex min-w-0 gap-3 rounded-2xl border border-amber-400/15 bg-amber-400/8 p-4" role="status"><ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber-300" aria-hidden="true" /><div className="min-w-0"><p className="break-words text-xs font-black text-amber-100">Saques indisponíveis</p><p className="mt-1 break-words text-[11px] leading-4 text-amber-100/60">{payoutUnavailableMessage(dashboard)}</p></div></div>
               )}
             </section>
 
