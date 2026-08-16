@@ -1,12 +1,14 @@
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { loadDriverPrefs } from "@/lib/driverPrefs";
 import { requestPostAuthPermissions } from "@/lib/nativeBridge";
 
 /**
- * Garante que push/FCM e permissões nativas sejam sincronizados somente quando
- * existe uma sessão autenticada. O root do app permanece montado durante o
- * login, então é necessário ouvir também mudanças de Auth para registrar o
- * dispositivo imediatamente após o sign-in.
+ * Garante que permissões nativas sejam sincronizadas somente quando existe uma
+ * sessão autenticada. O root do app permanece montado durante o login, então é
+ * necessário ouvir também mudanças de Auth para registrar o dispositivo logo
+ * após o sign-in. A preferência local de push é respeitada em cold start e ao
+ * voltar do background; geolocalização continua sendo sincronizada sempre.
  */
 export function DriverNativePermissionsSync() {
   useEffect(() => {
@@ -23,7 +25,11 @@ export function DriverNativePermissionsSync() {
         pendingTimer = null;
         if (!active) return;
         lastSyncedUserId = normalizedUserId;
-        requestPostAuthPermissions();
+        void loadDriverPrefs(normalizedUserId)
+          .then((prefs) => requestPostAuthPermissions({ pushEnabled: prefs.push }))
+          .catch((error) => {
+            if (import.meta.env.DEV) console.warn("[APOIS] falha ao sincronizar permissões nativas", error);
+          });
       }, 0);
     };
 
