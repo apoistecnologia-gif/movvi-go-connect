@@ -12,18 +12,15 @@ export interface EmergencyContact {
 
 const MAX_NAME_LENGTH = 80;
 const MAX_RELATION_LENGTH = 80;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function tableFor(role: SafetyRole): "driver_emergency_contacts" | "passenger_emergency_contacts" {
   return role === "driver" ? "driver_emergency_contacts" : "passenger_emergency_contacts";
 }
 
-function userColumnFor(role: SafetyRole): "driver_user_id" | "passenger_user_id" {
-  return role === "driver" ? "driver_user_id" : "passenger_user_id";
-}
-
 function requireId(value: string, field: string): string {
   const normalized = value.trim();
-  if (!normalized) throw new Error(`${field}_required`);
+  if (!UUID_RE.test(normalized)) throw new Error(`${field}_invalid`);
   return normalized;
 }
 
@@ -40,7 +37,7 @@ function normalizeContact(value: unknown): EmergencyContact | null {
   const id = typeof row.id === "string" ? row.id.trim() : "";
   const name = typeof row.name === "string" ? row.name.trim().slice(0, MAX_NAME_LENGTH) : "";
   const phoneRaw = typeof row.phone === "string" ? row.phone : "";
-  if (!id || !name) return null;
+  if (!UUID_RE.test(id) || !name) return null;
 
   let phone: string;
   try {
@@ -49,8 +46,9 @@ function normalizeContact(value: unknown): EmergencyContact | null {
     return null;
   }
 
-  const relation = typeof row.relation === "string" && row.relation.trim()
-    ? row.relation.trim().slice(0, MAX_RELATION_LENGTH)
+  const relationSource = typeof row.relation === "string" ? row.relation : row.relationship;
+  const relation = typeof relationSource === "string" && relationSource.trim()
+    ? relationSource.trim().slice(0, MAX_RELATION_LENGTH)
     : null;
 
   return {
@@ -62,8 +60,7 @@ function normalizeContact(value: unknown): EmergencyContact | null {
   };
 }
 
-// The passenger_emergency_contacts table was just added and may not appear in the
-// generated Supabase types yet — bypass strict column typing where necessary.
+// Some safety tables/RPCs are newer than the generated Supabase client types.
 type AnyBuilder = {
   select: (columns: string) => AnyBuilder;
   insert: (row: unknown) => AnyBuilder;
@@ -74,8 +71,19 @@ type AnyBuilder = {
   then: Promise<{ data: unknown; error: { message: string } | null }>["then"];
 };
 
+type RpcResult = { data: unknown; error: { message: string } | null };
+
 function tbl(role: SafetyRole): AnyBuilder {
   return (supabase as unknown as { from: (t: string) => AnyBuilder }).from(tableFor(role));
+}
+
+async function driverSafetyRpc(name: string, args: Record<string, unknown>): Promise<unknown> {
+  const client = supabase as unknown as {
+    rpc: (rpcName: string, rpcArgs: Record<string, unknown>) => Promise<RpcResult>;
+  };
+  const { data, error } = await client.rpc(name, args);
+  if (error) throw new Error("driver_contact_operation_failed");
+  return data;
 }
 
 export async function listContacts(
@@ -83,10 +91,18 @@ export async function listContacts(
   userId: string,
 ): Promise<EmergencyContact[]> {
   const normalizedUserId = requireId(userId, "user_id");
-  const res = (await tbl(role)
-    .select("id,name,phone,relation,is_primary")
-    .eq(userColumnFor(role), normalizedUserId)
-    .order("is_primary", { ascending: false })) as unknown as {
+
+  // Driver contacts are keyed by drivers.id (not auth/public user id). RLS already
+  // scopes SELECT to the current driver's canonical mobility identity, so adding a
+  // nonexistent driver_user_id predicate would make the query fail.
+  const query = role === "driver"
+    ? tbl(role).select("id,name,phone,relation,is_primary").order("is_primary", { ascending: false })
+    : tbl(role)
+        .select("id,name,phone,relationship,is_primary")
+        .eq("passenger_id", normalizedUserId)
+        .order("is_primary", { ascending: false });
+
+  const res = (await query) as unknown as {
     data: unknown[] | null;
     error: { message: string } | null;
   };
@@ -107,16 +123,25 @@ export async function createContact(
   input: { name: string; phone: string; relation?: string | null; is_primary?: boolean },
 ) {
   const normalizedUserId = requireId(userId, "user_id");
-  const name = input.name.trim().slice(0, MAX_NAME_LENGTH);
+  const name = input.name.trim().replace(/\s+/g, " ").slice(0, MAX_NAME_LENGTH);
   if (name.length < 2) throw new Error("invalid_name");
   const phone = normalizePhone(input.phone);
-  const relation = input.relation?.trim().slice(0, MAX_RELATION_LENGTH) || null;
+  const relation = input.relation?.trim().replace(/\s+/g, " ").slice(0, MAX_RELATION_LENGTH) || null;
+
+  if (role === "driver") {
+    await driverSafetyRpc("driver_add_emergency_contact", {
+      _name: name,
+      _phone: phone,
+      _relation: relation,
+    });
+    return;
+  }
 
   const row: Record<string, unknown> = {
-    [userColumnFor(role)]: normalizedUserId,
+    passenger_id: normalizedUserId,
     name,
     phone,
-    relation,
+    relationship: relation,
     is_primary: input.is_primary === true,
   };
   const res = (await tbl(role).insert(row)) as unknown as {
@@ -127,6 +152,12 @@ export async function createContact(
 
 export async function deleteContact(role: SafetyRole, id: string) {
   const normalizedId = requireId(id, "contact_id");
+
+  if (role === "driver") {
+    await driverSafetyRpc("driver_delete_emergency_contact", { _contact_id: normalizedId });
+    return;
+  }
+
   const res = (await tbl(role).delete().eq("id", normalizedId)) as unknown as {
     error: { message: string } | null;
   };
@@ -137,9 +168,14 @@ export async function setPrimaryContact(role: SafetyRole, userId: string, id: st
   const normalizedUserId = requireId(userId, "user_id");
   const normalizedId = requireId(id, "contact_id");
 
+  if (role === "driver") {
+    await driverSafetyRpc("driver_set_emergency_contact_primary", { _contact_id: normalizedId });
+    return;
+  }
+
   const clearResult = (await tbl(role)
     .update({ is_primary: false })
-    .eq(userColumnFor(role), normalizedUserId)) as unknown as {
+    .eq("passenger_id", normalizedUserId)) as unknown as {
     error: { message: string } | null;
   };
   if (clearResult.error) throw new Error("contact_primary_clear_failed");
@@ -147,7 +183,7 @@ export async function setPrimaryContact(role: SafetyRole, userId: string, id: st
   const res = (await tbl(role)
     .update({ is_primary: true })
     .eq("id", normalizedId)
-    .eq(userColumnFor(role), normalizedUserId)) as unknown as {
+    .eq("passenger_id", normalizedUserId)) as unknown as {
     error: { message: string } | null;
   };
   if (res.error) throw new Error("contact_primary_update_failed");
