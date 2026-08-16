@@ -28,6 +28,13 @@ if (typeof document !== "undefined") {
 let reactMounted = false;
 let fatalRendered = false;
 
+function escapeBootstrapDetail(value: unknown): string {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+}
+
 function renderFatalBootstrapError(error: unknown) {
   if (fatalRendered) return;
   fatalRendered = true;
@@ -47,16 +54,15 @@ function renderFatalBootstrapError(error: unknown) {
       return "erro desconhecido";
     }
   })();
+  const safeDetail = escapeBootstrapDetail(detail || "erro desconhecido");
   root.innerHTML = `
-    <main style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#050607;color:#f8fafc;padding:24px;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
-      <section style="width:100%;max-width:360px;text-align:center">
-        <div style="margin:0 auto 18px;width:54px;height:4px;border-radius:999px;background:#f6be1c"></div>
-        <h1 style="margin:0 0 10px;font-size:22px;line-height:1.15">Não foi possível abrir a APOIS</h1>
-        <p style="margin:0 0 12px;color:#a1a1aa;font-size:14px;line-height:1.45">Verifique sua conexão e tente novamente.</p>
-        <p style="margin:0 0 18px;color:#71717a;font-size:11px;line-height:1.4;word-break:break-word">${
-          String(detail).replace(/[<>&]/g, "")
-        }</p>
-        <button style="width:100%;border:0;border-radius:16px;background:#f6be1c;color:#090a0b;font-weight:800;padding:14px 16px;font-size:15px" onclick="location.reload()">Tentar novamente</button>
+    <main style="box-sizing:border-box;min-height:100dvh;display:flex;align-items:center;justify-content:center;background:#050607;color:#f8fafc;padding:max(24px,env(safe-area-inset-top)) max(20px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left));font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;overflow:auto">
+      <section role="alert" aria-live="assertive" style="box-sizing:border-box;width:min(100%,360px);min-width:0;text-align:center;overflow-wrap:anywhere">
+        <div aria-hidden="true" style="margin:0 auto 18px;width:54px;height:4px;border-radius:999px;background:#f6be1c"></div>
+        <h1 style="margin:0 0 10px;font-size:22px;line-height:1.15;overflow-wrap:anywhere">Não foi possível abrir a APOIS</h1>
+        <p style="margin:0 0 12px;color:#a1a1aa;font-size:14px;line-height:1.45;overflow-wrap:anywhere">Verifique sua conexão e tente novamente.</p>
+        <p style="margin:0 0 18px;color:#71717a;font-size:12px;line-height:1.45;overflow-wrap:anywhere;word-break:break-word">${safeDetail}</p>
+        <button type="button" aria-label="Tentar abrir a APOIS novamente" style="box-sizing:border-box;width:100%;min-height:44px;border:0;border-radius:16px;background:#f6be1c;color:#090a0b;font-weight:800;padding:12px 16px;font-size:15px;line-height:20px;touch-action:manipulation;cursor:pointer" onclick="location.reload()">Tentar novamente</button>
       </section>
     </main>
   `;
