@@ -7,36 +7,54 @@ interface MovviLogoProps {
   productLabel?: string;
 }
 
+function safeLogoSize(value: number | undefined) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return 64;
+  return Math.min(160, Math.max(40, Math.round(value)));
+}
+
+function safeProductLabel(value: string | undefined) {
+  const normalized = (value ?? "MOTORISTA").trim().replace(/\s+/g, " ");
+  return normalized.slice(0, 24);
+}
+
 /**
  * Mantemos o nome do componente por compatibilidade com as telas legadas,
  * porém toda a apresentação visível agora usa a identidade oficial APOIS.
- * `productLabel` evita reutilizar o rótulo MOTORISTA em superfícies como Admin.
  */
 export function MovviLogo({
-  size = 64,
+  size,
   showTagline = false,
   className,
-  productLabel = "MOTORISTA",
+  productLabel,
 }: MovviLogoProps) {
-  const label = productLabel.trim();
+  const logoSize = safeLogoSize(size);
+  const label = safeProductLabel(productLabel);
+  const accessibleName = label ? `APOIS ${label}` : "APOIS";
+
   return (
-    <div className={`flex flex-col items-center gap-2 ${className ?? ""}`}>
+    <div
+      className={`flex min-w-0 max-w-full flex-col items-center gap-2 text-center ${className ?? ""}`}
+      role="img"
+      aria-label={accessibleName}
+    >
       <div
-        className="overflow-hidden rounded-full border border-[#F6BE1C]/20 bg-black shadow-[0_12px_34px_-20px_rgba(246,190,28,0.65)]"
-        style={{ width: size, height: size }}
+        className="shrink-0 overflow-hidden rounded-full border border-[#F6BE1C]/20 bg-black shadow-[0_12px_34px_-20px_rgba(246,190,28,0.65)]"
+        style={{ width: logoSize, height: logoSize }}
+        aria-hidden="true"
       >
         <img
           src={APOIS_LOGO_DATA_URL}
-          alt="APOIS"
-          width={size}
-          height={size}
+          alt=""
+          width={logoSize}
+          height={logoSize}
           className="h-full w-full object-cover"
           draggable={false}
+          decoding="async"
         />
       </div>
 
-      <div className="text-center">
-        <div className="font-display text-xl font-black tracking-[0.08em] text-white">
+      <div className="min-w-0 max-w-full" aria-hidden="true">
+        <div className="break-words font-display text-xl font-black leading-tight tracking-[0.08em] text-white">
           APOIS
           {label ? (
             <>
@@ -46,7 +64,7 @@ export function MovviLogo({
           ) : null}
         </div>
         {showTagline ? (
-          <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.28em] text-[#F6BE1C]">
+          <div className="mt-1 break-words text-xs font-bold uppercase leading-4 tracking-[0.22em] text-[#F6BE1C]">
             Apois, vamos?
           </div>
         ) : null}
