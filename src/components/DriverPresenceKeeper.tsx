@@ -75,6 +75,7 @@ export function DriverPresenceKeeper() {
   const runningRef = useRef(false);
   const startingRef = useRef(false);
   const nativeRef = useRef(false);
+  const desiredOnlineRef = useRef(readDesiredOnline());
   const syncInFlightRef = useRef(false);
   const pendingSyncRef = useRef<{ online: boolean; position: Telemetry | null } | null>(null);
 
@@ -118,19 +119,29 @@ export function DriverPresenceKeeper() {
   }, []);
 
   const startTracking = useCallback(async () => {
-    if (runningRef.current || startingRef.current || !readDesiredOnline()) return;
+    if (runningRef.current || startingRef.current || !desiredOnlineRef.current) return;
     startingRef.current = true;
 
     try {
       const { data, error } = await supabase.auth.getSession();
-      if (error || !data.session || !readDesiredOnline()) return;
+      if (error) {
+        if (import.meta.env.DEV) console.warn("[APOIS MOTORISTA] sessão indisponível para presença", error);
+        return;
+      }
+      if (!data.session || !desiredOnlineRef.current) return;
 
-      requestPostAuthPermissions();
+      try {
+        await requestPostAuthPermissions();
+      } catch (error) {
+        // A tela que iniciou o fluxo de online continua responsável por mostrar
+        // a orientação de permissão. Uma falha aqui não deve criar rejection solta.
+        if (import.meta.env.DEV) console.warn("[APOIS MOTORISTA] permissões pós-login indisponíveis", error);
+      }
 
       if (isNativeAndroidDriverLocation()) {
         try {
           const started = await startNativeDriverLocation();
-          if (started && readDesiredOnline()) {
+          if (started && desiredOnlineRef.current) {
             nativeRef.current = true;
             runningRef.current = true;
             return;
@@ -145,13 +156,11 @@ export function DriverPresenceKeeper() {
         }
       }
 
-      if (typeof navigator === "undefined" || !("geolocation" in navigator) || !readDesiredOnline()) {
-        return;
-      }
+      if (typeof navigator === "undefined" || !("geolocation" in navigator) || !desiredOnlineRef.current) return;
       runningRef.current = true;
 
       const onPosition = (pos: GeolocationPosition) => {
-        if (!readDesiredOnline()) return;
+        if (!desiredOnlineRef.current) return;
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
         if (!Number.isFinite(lat) || !Number.isFinite(lng) || !isBrazilCoordinate(lat, lng)) return;
@@ -171,9 +180,7 @@ export function DriverPresenceKeeper() {
 
       const onPositionError = (error: GeolocationPositionError) => {
         if (import.meta.env.DEV) {
-          console.warn("[APOIS MOTORISTA] localização em primeiro plano indisponível", {
-            code: error.code,
-          });
+          console.warn("[APOIS MOTORISTA] localização em primeiro plano indisponível", { code: error.code });
         }
       };
 
@@ -188,7 +195,7 @@ export function DriverPresenceKeeper() {
         maximumAge: 5000,
       });
       timerRef.current = window.setInterval(() => {
-        if (!readDesiredOnline()) {
+        if (!desiredOnlineRef.current) {
           stopTracking();
           latestRef.current = null;
           queuePresenceSync(false, null);
@@ -205,10 +212,12 @@ export function DriverPresenceKeeper() {
   }, [queuePresenceSync, stopTracking]);
 
   useEffect(() => {
+    desiredOnlineRef.current = readDesiredOnline();
     void startTracking();
 
     const onPresenceChange = (event: Event) => {
       const online = (event as CustomEvent<{ online?: boolean }>).detail?.online === true;
+      desiredOnlineRef.current = online;
       if (online) {
         void startTracking();
       } else {
@@ -219,11 +228,11 @@ export function DriverPresenceKeeper() {
     };
 
     const onVisibility = () => {
-      if (document.visibilityState === "visible" && readDesiredOnline()) void startTracking();
+      if (document.visibilityState === "visible" && desiredOnlineRef.current) void startTracking();
     };
 
     const onOnline = () => {
-      if (readDesiredOnline()) void startTracking();
+      if (desiredOnlineRef.current) void startTracking();
     };
 
     window.addEventListener(PRESENCE_EVENT, onPresenceChange as EventListener);
@@ -231,6 +240,7 @@ export function DriverPresenceKeeper() {
     document.addEventListener("visibilitychange", onVisibility);
     const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_OUT") {
+        desiredOnlineRef.current = false;
         try {
           localStorage.setItem(STORAGE_KEY, "0");
         } catch {
@@ -239,7 +249,7 @@ export function DriverPresenceKeeper() {
         stopTracking();
         latestRef.current = null;
         queuePresenceSync(false, null);
-      } else if (readDesiredOnline()) {
+      } else if (desiredOnlineRef.current) {
         void startTracking();
       }
     });
@@ -249,8 +259,10 @@ export function DriverPresenceKeeper() {
       window.removeEventListener("online", onOnline);
       document.removeEventListener("visibilitychange", onVisibility);
       authListener.subscription.unsubscribe();
+      desiredOnlineRef.current = false;
       stopTracking();
       latestRef.current = null;
+      pendingSyncRef.current = null;
     };
   }, [queuePresenceSync, startTracking, stopTracking]);
 
