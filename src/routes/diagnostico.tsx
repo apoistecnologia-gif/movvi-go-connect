@@ -1,20 +1,26 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+import { DevOrAdminGuard } from "@/components/DevOrAdminGuard";
 
 export const Route = createFileRoute("/diagnostico")({
   head: () => ({
     meta: [
       { title: "Diagnóstico — APOIS" },
-      { name: "robots", content: "noindex" },
+      { name: "robots", content: "noindex,nofollow" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
     ],
   }),
-  component: DiagnosticoPage,
+  component: () => (
+    <DevOrAdminGuard>
+      <DiagnosticoPage />
+    </DevOrAdminGuard>
+  ),
 });
 
 function DiagnosticoPage() {
   const [email, setEmail] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const fillIntervalRef = useRef<number | null>(null);
   const [fillReport, setFillReport] = useState<string>("(sem preenchimento)");
   const [viewport, setViewport] = useState({
     innerH: 0,
@@ -26,64 +32,77 @@ function DiagnosticoPage() {
   const [events, setEvents] = useState<string[]>([]);
 
   function log(msg: string) {
+    const safeMessage = String(msg ?? "").slice(0, 200);
     const t = new Date().toISOString().slice(11, 23);
-    setEvents((prev) => [`${t} ${msg}`, ...prev].slice(0, 30));
+    setEvents((prev) => [`${t} ${safeMessage}`, ...prev].slice(0, 30));
   }
 
   useEffect(() => {
     function refresh() {
       const vv = window.visualViewport;
       setViewport({
-        innerH: window.innerHeight,
-        innerW: window.innerWidth,
-        visualH: vv ? Math.round(vv.height) : 0,
-        visualOffsetTop: vv ? Math.round(vv.offsetTop) : 0,
+        innerH: Math.max(0, Math.round(window.innerHeight || 0)),
+        innerW: Math.max(0, Math.round(window.innerWidth || 0)),
+        visualH: vv ? Math.max(0, Math.round(vv.height || 0)) : 0,
+        visualOffsetTop: vv ? Math.max(0, Math.round(vv.offsetTop || 0)) : 0,
       });
     }
     refresh();
-    window.addEventListener("resize", refresh);
-    window.visualViewport?.addEventListener("resize", refresh);
-    window.visualViewport?.addEventListener("scroll", refresh);
+    window.addEventListener("resize", refresh, { passive: true });
+    window.visualViewport?.addEventListener("resize", refresh, { passive: true });
+    window.visualViewport?.addEventListener("scroll", refresh, { passive: true });
     return () => {
       window.removeEventListener("resize", refresh);
       window.visualViewport?.removeEventListener("resize", refresh);
       window.visualViewport?.removeEventListener("scroll", refresh);
+      if (fillIntervalRef.current != null) {
+        window.clearInterval(fillIntervalRef.current);
+        fillIntervalRef.current = null;
+      }
     };
   }, []);
 
-  // Heurística: se visualViewport.height < innerHeight * 0.8, teclado provavelmente aberto.
   const keyboardLikelyOpen =
-    viewport.visualH > 0 && viewport.visualH < viewport.innerH * 0.8;
+    viewport.innerH > 0 && viewport.visualH > 0 && viewport.visualH < viewport.innerH * 0.8;
   const keyboardHeight = keyboardLikelyOpen
-    ? viewport.innerH - viewport.visualH
+    ? Math.max(0, viewport.innerH - viewport.visualH)
     : 0;
 
-  // Modo de ajuste: com adjustPan o innerHeight NÃO muda quando o teclado abre;
-  // com adjustResize o innerHeight ENCOLHE. Comparamos com a altura inicial.
   const [initialInnerH] = useState(() =>
-    typeof window !== "undefined" ? window.innerHeight : 0,
+    typeof window !== "undefined" ? Math.max(0, Math.round(window.innerHeight || 0)) : 0,
   );
-  const heightShrunk = viewport.innerH < initialInnerH - 40;
+  const heightShrunk = initialInnerH > 0 && viewport.innerH < initialInnerH - 40;
   const adjustMode = keyboardLikelyOpen
     ? heightShrunk
       ? "adjustResize (innerHeight encolheu)"
       : "adjustPan (innerHeight estável, visualViewport encolheu)"
     : "sem teclado";
 
+  function runFillDiagnostic() {
+    if (fillIntervalRef.current != null) {
+      window.clearInterval(fillIntervalRef.current);
+      fillIntervalRef.current = null;
+    }
+    fillIntervalRef.current = programmaticFill(inputRef.current, setEmail, log, setFillReport);
+  }
+
   return (
-    <div
+    <main
       style={{
         minHeight: "100dvh",
+        minWidth: 0,
+        overflowX: "hidden",
         background: "#0b0b0d",
         color: "#f4f4f5",
         fontFamily: "system-ui, -apple-system, sans-serif",
-        padding: 16,
+        padding: "max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom))",
         boxSizing: "border-box",
       }}
     >
       <h1 style={{ fontSize: 20, margin: "0 0 12px" }}>Diagnóstico do teclado</h1>
 
-      <section style={card}>
+      <section style={card} aria-labelledby="diag-input-title">
+        <h2 id="diag-input-title" style={h2}>Campo de teste</h2>
         <label style={label} htmlFor="diag-email">
           E-mail (digite aqui)
         </label>
@@ -99,9 +118,11 @@ function DiagnosticoPage() {
           data-lpignore="true"
           data-form-type="other"
           value={email}
-          onChange={(e) => {
-            setEmail(e.target.value);
-            log(`input len=${e.target.value.length}`);
+          maxLength={254}
+          onChange={(event) => {
+            const next = event.target.value.slice(0, 254);
+            setEmail(next);
+            log(`input len=${next.length}`);
           }}
           onFocus={() => {
             setFocus("email");
@@ -114,26 +135,21 @@ function DiagnosticoPage() {
           placeholder="voce@exemplo.com"
           style={inputStyle}
         />
-        <button
-          type="button"
-          onClick={() => programaticFill(inputRef.current, setEmail, log, setFillReport)}
-          style={btnStyle}
-        >
+        <button type="button" onClick={runFillDiagnostic} style={btnStyle}>
           Preencher com “teste123” e manter foco
         </button>
-        <div style={{ marginTop: 8, fontSize: 13, opacity: 0.85 }}>
+        <div style={{ marginTop: 8, fontSize: 13, opacity: 0.85 }} aria-live="polite">
           <div>
-            valor atual:{" "}
-            <code style={code}>{email || "(vazio)"}</code>{" "}
-            <span style={{ opacity: 0.6 }}>({email.length} chars)</span>
+            valor atual: <code style={code}>{email || "(vazio)"}</code>{" "}
+            <span style={{ opacity: 0.7 }}>({email.length} chars)</span>
           </div>
           <div>foco: <code style={code}>{focus}</code></div>
           <div>cursor: <code style={code}>{fillReport}</code></div>
         </div>
       </section>
 
-      <section style={card}>
-        <h2 style={h2}>Modo de ajuste</h2>
+      <section style={card} aria-labelledby="diag-adjust-title">
+        <h2 id="diag-adjust-title" style={h2}>Modo de ajuste</h2>
         <div style={row}><span>Estado:</span><b>{adjustMode}</b></div>
         <div style={row}>
           <span>Teclado provavelmente aberto:</span>
@@ -145,35 +161,43 @@ function DiagnosticoPage() {
         </div>
       </section>
 
-      <section style={card}>
-        <h2 style={h2}>Viewport</h2>
+      <section style={card} aria-labelledby="diag-viewport-title">
+        <h2 id="diag-viewport-title" style={h2}>Viewport</h2>
         <div style={row}><span>innerWidth × innerHeight:</span><b>{viewport.innerW} × {viewport.innerH}</b></div>
         <div style={row}><span>innerHeight inicial:</span><b>{initialInnerH}</b></div>
         <div style={row}><span>visualViewport.height:</span><b>{viewport.visualH}</b></div>
         <div style={row}><span>visualViewport.offsetTop:</span><b>{viewport.visualOffsetTop}</b></div>
-        <div style={row}><span>devicePixelRatio:</span><b>{typeof window !== "undefined" ? window.devicePixelRatio : "-"}</b></div>
+        <div style={row}>
+          <span>devicePixelRatio:</span>
+          <b>{typeof window !== "undefined" && Number.isFinite(window.devicePixelRatio) ? window.devicePixelRatio : "-"}</b>
+        </div>
       </section>
 
-      <section style={card}>
-        <h2 style={h2}>Eventos recentes</h2>
-        <pre style={{
-          margin: 0,
-          fontSize: 12,
-          maxHeight: 200,
-          overflow: "auto",
-          background: "#000",
-          padding: 8,
-          borderRadius: 6,
-          whiteSpace: "pre-wrap",
-        }}>
+      <section style={card} aria-labelledby="diag-events-title">
+        <h2 id="diag-events-title" style={h2}>Eventos recentes</h2>
+        <pre
+          aria-live="polite"
+          style={{
+            margin: 0,
+            fontSize: 12,
+            maxHeight: 200,
+            maxWidth: "100%",
+            overflow: "auto",
+            background: "#000",
+            padding: 8,
+            borderRadius: 6,
+            whiteSpace: "pre-wrap",
+            overflowWrap: "anywhere",
+          }}
+        >
           {events.length ? events.join("\n") : "(nenhum evento)"}
         </pre>
       </section>
 
-      <p style={{ fontSize: 12, opacity: 0.6, marginTop: 16 }}>
-        Rota isolada de diagnóstico. Não usa Supabase, roteamento aninhado ou componentes do app.
+      <p style={{ fontSize: 13, opacity: 0.7, marginTop: 16, lineHeight: 1.5 }}>
+        Rota isolada de diagnóstico. Não usa Supabase, roteamento aninhado ou componentes operacionais do app.
       </p>
-    </div>
+    </main>
   );
 }
 
@@ -183,12 +207,15 @@ const card: React.CSSProperties = {
   borderRadius: 10,
   padding: 12,
   marginBottom: 12,
+  minWidth: 0,
 };
 const h2: React.CSSProperties = { fontSize: 14, margin: "0 0 8px", opacity: 0.9 };
 const row: React.CSSProperties = {
   display: "flex",
+  flexWrap: "wrap",
   justifyContent: "space-between",
   fontSize: 13,
+  lineHeight: 1.5,
   padding: "2px 0",
   gap: 12,
 };
@@ -200,7 +227,7 @@ const label: React.CSSProperties = {
 };
 const inputStyle: React.CSSProperties = {
   width: "100%",
-  height: 44,
+  minHeight: 44,
   padding: "0 12px",
   fontSize: 16,
   borderRadius: 8,
@@ -215,11 +242,13 @@ const code: React.CSSProperties = {
   padding: "1px 6px",
   borderRadius: 4,
   fontFamily: "ui-monospace, Menlo, monospace",
+  overflowWrap: "anywhere",
 };
 const btnStyle: React.CSSProperties = {
   marginTop: 10,
   width: "100%",
-  height: 40,
+  minHeight: 44,
+  padding: "8px 12px",
   fontSize: 14,
   fontWeight: 600,
   borderRadius: 8,
@@ -231,21 +260,18 @@ const btnStyle: React.CSSProperties = {
 
 /**
  * Preenche o campo com "teste123" usando o setter nativo do HTMLInputElement
- * (para React "ver" a mudança via evento 'input'), mantém o foco no campo e
- * amostra por 2s se document.activeElement continua sendo o input — proxy
- * para "cursor continua piscando" (o caret só pisca em elemento focado e
- * editável).
+ * e amostra por 2s se document.activeElement continua sendo o input.
  */
-function programaticFill(
+function programmaticFill(
   el: HTMLInputElement | null,
-  setEmail: (v: string) => void,
-  log: (m: string) => void,
-  setFillReport: (m: string) => void,
-) {
+  setEmail: (value: string) => void,
+  log: (message: string) => void,
+  setFillReport: (message: string) => void,
+): number | null {
   if (!el) {
     setFillReport("input ausente");
     log("fill: input ausente");
-    return;
+    return null;
   }
   const proto = window.HTMLInputElement.prototype;
   const nativeSetter = Object.getOwnPropertyDescriptor(proto, "value")?.set;
@@ -260,20 +286,22 @@ function programaticFill(
   el.dispatchEvent(new Event("change", { bubbles: true }));
   try {
     el.setSelectionRange(el.value.length, el.value.length);
-  } catch { /* type=email: setSelectionRange pode lançar em alguns browsers */ }
+  } catch {
+    // Alguns tipos de input não aceitam setSelectionRange.
+  }
   setEmail(el.value);
   log(`fill: valor="${el.value}" foco=${document.activeElement === el}`);
 
   const start = performance.now();
   let ticks = 0;
   let stillFocused = 0;
-  const iv = window.setInterval(() => {
-    ticks++;
-    if (document.activeElement === el) stillFocused++;
+  const intervalId = window.setInterval(() => {
+    ticks += 1;
+    if (document.activeElement === el) stillFocused += 1;
     if (performance.now() - start >= 2000) {
-      window.clearInterval(iv);
-      const ratio = stillFocused / ticks;
-      const blinking = ratio >= 0.9; // manteve foco em ≥90% das amostras
+      window.clearInterval(intervalId);
+      const ratio = ticks > 0 ? stillFocused / ticks : 0;
+      const blinking = ratio >= 0.9;
       setFillReport(
         blinking
           ? `piscando (foco mantido em ${stillFocused}/${ticks} amostras)`
@@ -282,4 +310,5 @@ function programaticFill(
       log(`fill.check: foco ${stillFocused}/${ticks} → ${blinking ? "piscando" : "não piscando"}`);
     }
   }, 200);
+  return intervalId;
 }
