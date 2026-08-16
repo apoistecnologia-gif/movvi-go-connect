@@ -1,0 +1,86 @@
+/* APOIS Motorista — rodada 6: 25 correções adicionais de UI/UX mobile. */
+
+/* 86 — evita redimensionamento automático de texto pelo WebView após rotação. */
+html[data-app-role="motorista"] body,
+html[data-app-role="motorista"] main,
+html[data-app-role="motorista"] [role="dialog"] { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+
+/* 87 — links telefônicos em suporte/segurança recebem alvo mínimo. */
+html[data-app-role="motorista"] a[href^="tel:"] { min-height: 44px; display: inline-flex; align-items: center; }
+
+/* 88 — links de e-mail em suporte/perfil recebem alvo mínimo. */
+html[data-app-role="motorista"] a[href^="mailto:"] { min-height: 44px; display: inline-flex; align-items: center; }
+
+/* 89 — elementos summary usados em detalhes/FAQ ficam tocáveis. */
+html[data-app-role="motorista"] summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; }
+
+/* 90 — input de arquivo/documento não fica com hit-area reduzida. */
+html[data-app-role="motorista"] input[type="file"] { min-height: 44px; max-width: 100%; }
+
+/* 91 — campos readonly preservam contraste total. */
+html[data-app-role="motorista"] input[readonly],
+html[data-app-role="motorista"] textarea[readonly] { opacity: 1; }
+
+/* 92 — autofill do Android/Chrome mantém texto compatível com o tema escuro. */
+html[data-app-role="motorista"] input:-webkit-autofill { -webkit-text-fill-color: currentColor; caret-color: currentColor; }
+
+/* 93 — blocos preformatados/diagnóstico rolam localmente. */
+html[data-app-role="motorista"] pre { max-width: 100%; overflow-x: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* 94 — código inline, IDs e chaves longas podem quebrar. */
+html[data-app-role="motorista"] code { word-break: break-word; }
+
+/* 95 — fieldsets não preservam min-width implícito que estoura cards. */
+html[data-app-role="motorista"] fieldset { min-width: 0; max-width: 100%; }
+
+/* 96 — legends longas quebram corretamente. */
+html[data-app-role="motorista"] legend { max-width: 100%; overflow-wrap: anywhere; }
+
+/* 97 — labels longas não obrigam formulário a aumentar de largura. */
+html[data-app-role="motorista"] label { overflow-wrap: anywhere; }
+
+/* 98 — mídia incorporada/comprovantes nunca ultrapassam o contêiner. */
+html[data-app-role="motorista"] iframe,
+html[data-app-role="motorista"] audio { max-width: 100%; }
+
+/* 99 — progress bars usadas em status/documentos respeitam a largura útil. */
+html[data-app-role="motorista"] progress { max-width: 100%; }
+
+/* 100 — sticky inferior respeita a área de gesto do sistema. */
+html[data-app-role="motorista"] [class*="sticky"][class*="bottom-0"] { padding-bottom: max(0.5rem, env(safe-area-inset-bottom)); }
+
+/* 101 — sticky superior respeita notch quando não usa header canônico. */
+html[data-app-role="motorista"] [class*="sticky"][class*="top-0"] { padding-top: max(0.25rem, env(safe-area-inset-top)); }
+
+/* 102 — menus não podem ultrapassar a largura da viewport. */
+html[data-app-role="motorista"] [role="menu"] { max-width: calc(100vw - 16px); }
+
+/* 103 — listboxes/autocomplete ficam roláveis em telas baixas. */
+html[data-app-role="motorista"] [role="listbox"] { max-width: calc(100vw - 16px); max-height: min(60dvh, 420px); overflow-y: auto; }
+
+/* 104 — tooltips longos não escapam das laterais. */
+html[data-app-role="motorista"] [role="tooltip"] { max-width: min(280px, calc(100vw - 24px)); overflow-wrap: anywhere; }
+
+/* 105 — dialogs e descendentes usam box-sizing consistente. */
+html[data-app-role="motorista"] [role="dialog"],
+html[data-app-role="motorista"] [role="dialog"] * { box-sizing: border-box; }
+
+/* 106 — botões/links largos não preservam max-content além do card. */
+html[data-app-role="motorista"] button,
+html[data-app-role="motorista"] a { max-width: 100%; }
+
+/* 107 — imagens sem altura explícita preservam proporção natural. */
+html[data-app-role="motorista"] img { height: auto; }
+
+/* 108 — em 320–339px, rótulos da navegação podem usar duas linhas. */
+@media (max-width: 339px) {
+  html[data-app-role="motorista"] nav span { white-space: normal; line-height: 1.15; }
+}
+
+/* 109 — em landscape baixo, dialogs deixam respiro para as barras do sistema. */
+@media (max-height: 520px) and (orientation: landscape) {
+  html[data-app-role="motorista"] [role="dialog"] { max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 12px); }
+}
+
+/* 110 — foco programático preserva margem lateral mínima no scroll. */
+html[data-app-role="motorista"] :focus { scroll-margin-inline: 8px; }
