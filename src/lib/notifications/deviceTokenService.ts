@@ -171,6 +171,10 @@ export async function registerDeviceToken(input?: Partial<DeviceToken>): Promise
   rememberDeviceToken(token, platform);
 }
 
+/**
+ * Desativa o token deste aparelho antes de encerrar a sessão. A RPC precisa do
+ * JWT ainda válido, por isso esta função deve ser chamada ANTES de signOut().
+ */
 export async function unregisterCurrentDevice(): Promise<void> {
   const remembered = readRememberedToken();
   if (!remembered) return;
@@ -182,6 +186,38 @@ export async function unregisterCurrentDevice(): Promise<void> {
   }
 
   await deactivateToken(remembered.token);
+  forgetRememberedToken();
+}
+
+/**
+ * Usado pelo "sair de todos os dispositivos". A própria RLS da tabela permite
+ * ler somente tokens do usuário autenticado; cada token é então desativado pela
+ * RPC canônica antes que o logout global invalide as sessões.
+ */
+export async function unregisterAllDevices(): Promise<void> {
+  if (!(await hasSession())) {
+    forgetRememberedToken();
+    return;
+  }
+
+  const { data, error } = await supabase
+    .from("user_notification_tokens")
+    .select("token")
+    .eq("is_active", true)
+    .limit(100);
+  if (error) throw new Error("notification_tokens_lookup_failed");
+
+  const tokens = Array.from(
+    new Set(
+      (data ?? [])
+        .map((row) => validToken(row.token))
+        .filter((token): token is string => Boolean(token)),
+    ),
+  );
+
+  for (const token of tokens) {
+    await deactivateToken(token);
+  }
   forgetRememberedToken();
 }
 
