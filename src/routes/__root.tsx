@@ -7,7 +7,8 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Loader2 } from "lucide-react";
 import { Toaster } from "sonner";
 
 import appCss from "../styles.css?url";
@@ -25,67 +26,114 @@ import { DriverPasswordRecoveryBridge } from "../components/DriverPasswordRecove
 import { supabase } from "../integrations/supabase/client";
 
 if (typeof window !== "undefined") {
-  installMobileFetchProxy();
-  initNativeBridge();
+  try {
+    installMobileFetchProxy();
+  } catch (error) {
+    if (import.meta.env.DEV) console.warn("[APOIS] falha ao instalar proxy mobile", error);
+  }
+  try {
+    initNativeBridge();
+  } catch (error) {
+    if (import.meta.env.DEV) console.warn("[APOIS] falha ao iniciar bridge nativa", error);
+  }
 }
 
 function NotFoundComponent() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-7xl font-display font-bold text-primary">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Página não encontrada</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
+    <main className="flex min-h-dvh min-w-0 items-center justify-center overflow-x-hidden bg-background px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))]">
+      <div className="min-w-0 max-w-md text-center">
+        <p className="font-display text-6xl font-bold text-primary sm:text-7xl" aria-hidden="true">
+          404
+        </p>
+        <h1 className="mt-4 break-words text-xl font-semibold text-foreground">Página não encontrada</h1>
+        <p className="mt-2 break-words text-sm leading-6 text-muted-foreground">
           O endereço solicitado não existe na plataforma APOIS.
         </p>
         <div className="mt-6">
           <Link
             to="/"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-glow"
+            className="inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground outline-none transition-colors hover:bg-primary-glow focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 motion-reduce:transition-none"
           >
             Voltar ao início
           </Link>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
 
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
-  console.error(error);
   const router = useRouter();
+  const [retrying, setRetrying] = useState(false);
+  const [retryError, setRetryError] = useState<string | null>(null);
+  const aliveRef = useRef(true);
+
   useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
+    aliveRef.current = true;
+    try {
+      reportLovableError(error, { boundary: "tanstack_root_error_component" });
+    } catch (reportError) {
+      if (import.meta.env.DEV) console.warn("[APOIS] falha ao reportar erro da aplicação", reportError);
+    }
+    if (import.meta.env.DEV) console.error(error);
+    return () => {
+      aliveRef.current = false;
+    };
   }, [error]);
 
+  async function retry() {
+    if (retrying) return;
+    setRetrying(true);
+    setRetryError(null);
+    try {
+      await router.invalidate();
+      if (!aliveRef.current) return;
+      reset();
+    } catch (cause) {
+      if (!aliveRef.current) return;
+      setRetryError("Não foi possível recarregar a página agora. Tente novamente.");
+      if (import.meta.env.DEV) console.warn("[APOIS] falha ao recuperar boundary", cause);
+    } finally {
+      if (aliveRef.current) setRetrying(false);
+    }
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">
+    <main className="flex min-h-dvh min-w-0 items-center justify-center overflow-x-hidden bg-background px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))]">
+      <div className="min-w-0 max-w-md text-center">
+        <h1 className="break-words text-xl font-semibold tracking-tight text-foreground">
           Algo deu errado
         </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
+        <p className="mt-2 break-words text-sm leading-6 text-muted-foreground">
           Não conseguimos carregar esta página. Tente novamente em instantes.
         </p>
+        {retryError ? (
+          <p className="mt-3 break-words text-sm text-destructive" role="alert">
+            {retryError}
+          </p>
+        ) : null}
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
-            onClick={() => {
-              router.invalidate();
-              reset();
-            }}
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-glow"
+            type="button"
+            onClick={() => void retry()}
+            disabled={retrying}
+            aria-busy={retrying}
+            className="inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground outline-none transition-colors hover:bg-primary-glow focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transition-none"
           >
-            Tentar novamente
+            {retrying ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+            ) : null}
+            {retrying ? "Tentando…" : "Tentar novamente"}
           </button>
-          <a
-            href="/"
-            className="inline-flex items-center justify-center rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-2"
+          <Link
+            to="/"
+            className="inline-flex min-h-11 items-center justify-center rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground outline-none transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 motion-reduce:transition-none"
           >
             Início
-          </a>
+          </Link>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
 
@@ -96,7 +144,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { name: "theme-color", content: "#05070D" },
       { title: "APOIS — Mobilidade que move você" },
-      { name: "description", content: "Plataforma de mobilidade urbana APOIS. Carros, motos, fretes, guincho e envios em todo o Brasil." },
+      {
+        name: "description",
+        content:
+          "Plataforma de mobilidade urbana APOIS. Carros, motos, fretes, guincho e envios em todo o Brasil.",
+      },
       { name: "author", content: "APOIS" },
       { property: "og:type", content: "website" },
       { property: "og:site_name", content: "APOIS" },
@@ -128,7 +180,7 @@ function RootShell({ children }: { children: ReactNode }) {
         <HeadContent />
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
-      <body className="bg-background text-foreground antialiased">
+      <body className="min-w-0 overflow-x-hidden bg-background text-foreground antialiased">
         {children}
         <Scripts />
       </body>
@@ -142,37 +194,63 @@ function RootComponent() {
 
   useEffect(() => {
     if (APP_ROLE === "web") return;
+    let redirecting = false;
+    const ensureAllowedPath = (pathname: string) => {
+      if (!isForbiddenPath(pathname) || redirecting) return;
+      redirecting = true;
+      void router
+        .navigate({ to: defaultLandingPath(), replace: true })
+        .catch((error) => {
+          if (import.meta.env.DEV) console.warn("[APOIS] falha ao redirecionar rota proibida", error);
+        })
+        .finally(() => {
+          redirecting = false;
+        });
+    };
     const unsub = router.subscribe("onBeforeNavigate", ({ toLocation }) => {
-      if (isForbiddenPath(toLocation.pathname)) {
-        router.navigate({ to: defaultLandingPath(), replace: true });
-      }
+      ensureAllowedPath(toLocation.pathname);
     });
-    if (isForbiddenPath(router.state.location.pathname)) {
-      router.navigate({ to: defaultLandingPath(), replace: true });
-    }
+    ensureAllowedPath(router.state.location.pathname);
     return () => unsub();
   }, [router]);
 
   useEffect(() => {
     if (APP_ROLE !== "driver") return;
     let cancelled = false;
+    let redirecting = false;
 
     const enterDriverAppWhenAuthenticated = (hasSession: boolean) => {
-      if (!hasSession || cancelled) return;
+      if (!hasSession || cancelled || redirecting) return;
       const pathname = router.state.location.pathname;
-      if (pathname === "/" || pathname === "/motorista/login") {
-        void router.navigate({ to: "/motorista/app", replace: true });
-      }
+      if (pathname !== "/" && pathname !== "/motorista/login") return;
+      redirecting = true;
+      void router
+        .navigate({ to: "/motorista/app", replace: true })
+        .catch((error) => {
+          if (import.meta.env.DEV) console.warn("[APOIS MOTORISTA] falha ao abrir app autenticado", error);
+        })
+        .finally(() => {
+          redirecting = false;
+        });
     };
 
-    void supabase.auth.getSession().then(({ data, error }) => {
-      if (cancelled) return;
-      if (error) {
-        console.warn("[APOIS MOTORISTA] não foi possível restaurar a sessão:", error.message);
-        return;
-      }
-      enterDriverAppWhenAuthenticated(Boolean(data.session));
-    });
+    void supabase.auth
+      .getSession()
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) {
+          if (import.meta.env.DEV) {
+            console.warn("[APOIS MOTORISTA] não foi possível restaurar a sessão", error);
+          }
+          return;
+        }
+        enterDriverAppWhenAuthenticated(Boolean(data.session));
+      })
+      .catch((error) => {
+        if (!cancelled && import.meta.env.DEV) {
+          console.warn("[APOIS MOTORISTA] falha inesperada ao restaurar sessão", error);
+        }
+      });
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       enterDriverAppWhenAuthenticated(Boolean(session));
