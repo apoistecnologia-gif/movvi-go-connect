@@ -35,6 +35,15 @@ export interface DriverWithdrawalItem {
   processedAt: string | null;
 }
 
+export interface DriverPayoutState {
+  enabled: boolean;
+  provider: string | null;
+  reason: string | null;
+  minWithdrawalCents: number;
+  destinationConfirmed: boolean;
+  payoutAvailableAt: string | null;
+}
+
 export interface DriverFinancialDashboard {
   driverId: string;
   period: {
@@ -56,6 +65,7 @@ export interface DriverFinancialDashboard {
     updatedAt: string;
   };
   payoutEnabled: boolean;
+  payout: DriverPayoutState;
   settlements: DriverSettlementItem[];
   withdrawals: DriverWithdrawalItem[];
 }
@@ -77,14 +87,20 @@ function nullableString(record: Record<string, unknown>, key: string): string | 
 
 function integer(record: Record<string, unknown>, key: string): number {
   const value = Number(record[key]);
-  if (!Number.isInteger(value)) throw new Error("driver_finance_invalid_response");
+  if (!Number.isSafeInteger(value)) throw new Error("driver_finance_invalid_response");
+  return value;
+}
+
+function nonNegativeInteger(record: Record<string, unknown>, key: string): number {
+  const value = integer(record, key);
+  if (value < 0) throw new Error("driver_finance_invalid_response");
   return value;
 }
 
 function nullableNumber(record: Record<string, unknown>, key: string): number | null {
   if (record[key] === null || record[key] === undefined) return null;
   const value = Number(record[key]);
-  return Number.isFinite(value) ? value : null;
+  return Number.isFinite(value) && value >= 0 ? value : null;
 }
 
 function settlement(value: unknown): DriverSettlementItem {
@@ -100,8 +116,8 @@ function settlement(value: unknown): DriverSettlementItem {
     paymentMethod: requiredString(value, "payment_method"),
     paymentStatus: requiredString(value, "payment_status"),
     settlementStatus: requiredString(value, "settlement_status"),
-    driverEarningCents: integer(value, "driver_earning_cents"),
-    platformFeeCents: integer(value, "platform_fee_cents"),
+    driverEarningCents: nonNegativeInteger(value, "driver_earning_cents"),
+    platformFeeCents: nonNegativeInteger(value, "platform_fee_cents"),
     createdAt: requiredString(value, "created_at"),
     settledAt: nullableString(value, "settled_at"),
   };
@@ -111,7 +127,7 @@ function withdrawal(value: unknown): DriverWithdrawalItem {
   if (!isRecord(value)) throw new Error("driver_finance_invalid_response");
   return {
     id: requiredString(value, "id"),
-    amountCents: integer(value, "amount_cents"),
+    amountCents: nonNegativeInteger(value, "amount_cents"),
     status: requiredString(value, "status"),
     provider: nullableString(value, "provider"),
     failureReason: nullableString(value, "failure_reason"),
@@ -133,27 +149,37 @@ function parseDashboard(value: unknown): DriverFinancialDashboard {
     throw new Error("driver_finance_invalid_response");
   }
 
+  const payoutState: DriverPayoutState = {
+    enabled: payout["enabled"] === true,
+    provider: nullableString(payout, "provider"),
+    reason: nullableString(payout, "reason"),
+    minWithdrawalCents: Math.max(1, nonNegativeInteger(payout, "min_withdrawal_cents")),
+    destinationConfirmed: payout["destination_confirmed"] === true,
+    payoutAvailableAt: nullableString(payout, "payout_available_at"),
+  };
+
   return {
     driverId: requiredString(value, "driver_id"),
     period: {
       from: requiredString(period, "from"),
       to: requiredString(period, "to"),
-      settledEarningsCents: integer(period, "settled_earnings_cents"),
-      settledRides: integer(period, "settled_rides"),
+      settledEarningsCents: nonNegativeInteger(period, "settled_earnings_cents"),
+      settledRides: nonNegativeInteger(period, "settled_rides"),
     },
     kpis: {
-      todayCents: integer(kpis, "today_cents"),
-      last7DaysCents: integer(kpis, "last_7_days_cents"),
-      monthCents: integer(kpis, "month_cents"),
+      todayCents: nonNegativeInteger(kpis, "today_cents"),
+      last7DaysCents: nonNegativeInteger(kpis, "last_7_days_cents"),
+      monthCents: nonNegativeInteger(kpis, "month_cents"),
     },
     wallet: {
       balanceCents: integer(wallet, "balance_cents"),
-      availableBalanceCents: integer(wallet, "available_balance_cents"),
-      pendingBalanceCents: integer(wallet, "pending_balance_cents"),
-      debtBalanceCents: integer(wallet, "debt_balance_cents"),
+      availableBalanceCents: nonNegativeInteger(wallet, "available_balance_cents"),
+      pendingBalanceCents: nonNegativeInteger(wallet, "pending_balance_cents"),
+      debtBalanceCents: nonNegativeInteger(wallet, "debt_balance_cents"),
       updatedAt: requiredString(wallet, "updated_at"),
     },
-    payoutEnabled: payout["enabled"] === true,
+    payoutEnabled: payoutState.enabled,
+    payout: payoutState,
     settlements: value["settlements"].map(settlement),
     withdrawals: value["withdrawals"].map(withdrawal),
   };
@@ -163,6 +189,9 @@ export async function loadDriverFinancialDashboard(
   from: Date,
   to: Date,
 ): Promise<DriverFinancialDashboard> {
+  if (!Number.isFinite(from?.getTime()) || !Number.isFinite(to?.getTime()) || from.getTime() > to.getTime()) {
+    throw new Error("Período financeiro inválido.");
+  }
   const rpc = supabase as unknown as RpcClient;
   const { data, error } = await rpc.rpc("get_driver_financial_dashboard", {
     _from: from.toISOString(),
@@ -172,13 +201,25 @@ export async function loadDriverFinancialDashboard(
     console.error("[APOIS Driver Finance] dashboard failed", { code: error.code, message: error.message });
     throw new Error("Não foi possível carregar o financeiro agora.");
   }
-  return parseDashboard(data);
+  try {
+    return parseDashboard(data);
+  } catch (error) {
+    console.error("[APOIS Driver Finance] invalid dashboard response", error);
+    throw new Error("Não foi possível validar os dados financeiros agora.");
+  }
+}
+
+function secureUuid(): string {
+  if (typeof crypto === "undefined" || typeof crypto.randomUUID !== "function") {
+    throw new Error("Não foi possível criar uma solicitação segura de saque neste aparelho.");
+  }
+  return crypto.randomUUID();
 }
 
 export async function requestDriverWithdrawal(amountCents: number): Promise<void> {
-  if (!Number.isInteger(amountCents) || amountCents <= 0) throw new Error("Informe um valor de saque válido.");
+  if (!Number.isSafeInteger(amountCents) || amountCents <= 0) throw new Error("Informe um valor de saque válido.");
 
-  const idempotencyKey = crypto.randomUUID();
+  const idempotencyKey = secureUuid();
   const { data, error } = await supabase.functions.invoke("request-driver-payout", {
     body: { amountCents, idempotencyKey },
   });
@@ -189,8 +230,11 @@ export async function requestDriverWithdrawal(amountCents: number): Promise<void
   if (!error && !backendError) return;
 
   const message = `${backendError} ${backendDetail} ${error?.message ?? ""}`.trim();
-  if (/driver_payouts_not_homologated|payout_provider_not_asaas|payout_provider_not_configured/i.test(message)) {
+  if (/driver_payouts_not_homologated|payout_provider_not_(?:asaas|configured|homologated)/i.test(message)) {
     throw new Error("Os saques ainda não estão liberados porque o provedor de transferência não foi homologado.");
+  }
+  if (/driver_not_eligible_for_payout/i.test(message)) {
+    throw new Error("Seu cadastro não está elegível para solicitar saques agora.");
   }
   if (/asaas_subaccount_not_approved/i.test(message)) {
     throw new Error("Sua conta financeira de motorista ainda não está aprovada para receber saques.");
@@ -198,7 +242,7 @@ export async function requestDriverWithdrawal(amountCents: number): Promise<void
   if (/asaas_subaccount_secret_missing|asaas_payout_webhook_not_ready/i.test(message)) {
     throw new Error("A integração de saque ainda não está pronta para esta conta. Tente novamente mais tarde.");
   }
-  if (/pix_payout_destination_not_confirmed/i.test(message)) {
+  if (/pix_payout_destination_(?:not_confirmed|missing)/i.test(message)) {
     throw new Error("Confirme sua chave Pix na carteira antes de solicitar o saque.");
   }
   if (/pix_payout_destination_cooldown/i.test(message)) {
@@ -209,6 +253,12 @@ export async function requestDriverWithdrawal(amountCents: number): Promise<void
   if (/driver_wallet_debt/i.test(message)) throw new Error("Sua carteira possui pendência financeira e não pode sacar agora.");
   if (/asaas_transfer_reconciliation_required/i.test(message)) {
     throw new Error("O saque foi registrado e está em conciliação com o provedor. Consulte o histórico antes de tentar novamente.");
+  }
+  if (/withdrawal_closed/i.test(message)) {
+    throw new Error("Esta solicitação de saque já foi encerrada. Atualize o histórico antes de tentar novamente.");
+  }
+  if (/asaas_transfer_rejected|asaas_transfer_failed/i.test(message)) {
+    throw new Error("O provedor não concluiu a transferência. O sistema preservará ou estornará o saldo conforme a conciliação.");
   }
 
   console.error("[APOIS Driver Finance] withdrawal failed", {
