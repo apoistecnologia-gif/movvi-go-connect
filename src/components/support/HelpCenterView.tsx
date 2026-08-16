@@ -69,6 +69,15 @@ const TICKET_CATEGORY_LABELS: Record<string, string> = {
   other: "Outro",
 };
 
+const TICKET_STATUS_LABELS: Record<string, string> = {
+  open: "Aberto",
+  resolved: "Resolvido",
+  closed: "Encerrado",
+  pending: "Em análise",
+  in_progress: "Em atendimento",
+  new: "Recebido",
+};
+
 export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
   const isDriver = role === "driver";
   const faq: Faq[] = isDriver ? DRIVER_FAQ : PASSENGER_FAQ;
@@ -269,89 +278,92 @@ export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
   }
 
   return (
-    <div className="container mx-auto max-w-2xl space-y-5">
+    <div className="container mx-auto min-w-0 max-w-2xl space-y-5 overflow-x-hidden px-0.5">
       {!isDriver && (
-        <header>
-          <h1 className="text-2xl font-bold">Central de ajuda</h1>
-          <p className="text-sm text-muted-foreground">
+        <header className="min-w-0">
+          <h1 className="break-words text-2xl font-bold">Central de ajuda</h1>
+          <p className="break-words text-sm leading-6 text-muted-foreground">
             Encontre respostas rápidas e envie uma solicitação ao suporte APOIS.
           </p>
         </header>
       )}
 
-      <div className="grid grid-cols-1 gap-3">
+      <div className="grid min-w-0 grid-cols-1 gap-3">
         <QuickAction icon={AlertTriangle} label="Emergência — ligar 190" href="tel:190" danger />
       </div>
 
-      <DSCard className="border-border/60 bg-card/60">
-        <DSCardHeader>
-          <DSCardTitle className="flex items-center gap-2 text-base">
-            <HelpCircle className="h-4 w-4 text-primary" /> Categorias de ajuda
+      <DSCard className="min-w-0 border-border/60 bg-card/60">
+        <DSCardHeader className="min-w-0">
+          <DSCardTitle className="flex min-w-0 items-center gap-2 text-base">
+            <HelpCircle className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" /> <span className="min-w-0 break-words">Categorias de ajuda</span>
           </DSCardTitle>
-          <DSCardDescription>Escolha um tema para ver informações.</DSCardDescription>
+          <DSCardDescription className="break-words">Escolha um tema para ver informações.</DSCardDescription>
         </DSCardHeader>
-        <DSCardContent>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        <DSCardContent className="min-w-0">
+          <div className="grid min-w-0 grid-cols-2 gap-2 max-[359px]:grid-cols-1 sm:grid-cols-3">
             {HELP_SECTIONS.map((s) => {
               const active = activeSection === s.id;
               const Icon = s.icon;
+              const descriptionId = `help-section-${s.id}`;
               return (
                 <button
                   key={s.id}
                   type="button"
+                  aria-pressed={active}
+                  aria-controls={descriptionId}
                   onClick={() => setActiveSection(active ? null : s.id)}
-                  className={`group flex flex-col items-start gap-1.5 rounded-xl border p-3 text-left transition-all ${
+                  className={`group flex min-h-20 min-w-0 flex-col items-start justify-center gap-1.5 rounded-xl border p-3 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                     active
                       ? "border-primary bg-primary/10"
                       : "border-border/60 bg-background/40 hover:border-primary/40 hover:bg-primary/5"
                   }`}
                 >
-                  <Icon className={`h-4 w-4 ${active ? "text-primary" : "text-muted-foreground group-hover:text-primary"}`} />
-                  <span className="text-xs font-semibold">{s.title}</span>
+                  <Icon className={`h-4 w-4 shrink-0 ${active ? "text-primary" : "text-muted-foreground group-hover:text-primary"}`} aria-hidden="true" />
+                  <span className="min-w-0 break-words text-xs font-semibold leading-4">{s.title}</span>
                 </button>
               );
             })}
           </div>
           {activeSection && (
-            <div className="mt-3 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm text-muted-foreground">
+            <div id={`help-section-${activeSection}`} role="region" aria-live="polite" className="mt-3 min-w-0 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm leading-6 text-muted-foreground [overflow-wrap:anywhere]">
               {HELP_SECTIONS.find((s) => s.id === activeSection)?.description}
             </div>
           )}
         </DSCardContent>
       </DSCard>
 
-      <DSCard>
-        <DSCardHeader>
-          <DSCardTitle className="flex items-center gap-2 text-base">
-            <LifeBuoy className="h-4 w-4 text-primary" /> Perguntas frequentes
+      <DSCard className="min-w-0">
+        <DSCardHeader className="min-w-0">
+          <DSCardTitle className="flex min-w-0 items-center gap-2 text-base">
+            <LifeBuoy className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" /> <span className="min-w-0 break-words">Perguntas frequentes</span>
           </DSCardTitle>
-          <DSCardDescription>Respostas para as dúvidas mais comuns.</DSCardDescription>
+          <DSCardDescription className="break-words">Respostas para as dúvidas mais comuns.</DSCardDescription>
         </DSCardHeader>
-        <DSCardContent>
-          <Accordion type="single" collapsible className="w-full">
+        <DSCardContent className="min-w-0">
+          <Accordion type="single" collapsible className="w-full min-w-0">
             {faq.map((item, i) => (
-              <AccordionItem key={i} value={`q-${i}`}>
-                <AccordionTrigger className="text-left text-sm">{item.q}</AccordionTrigger>
-                <AccordionContent className="text-sm text-muted-foreground">{item.a}</AccordionContent>
+              <AccordionItem key={i} value={`q-${i}`} className="min-w-0">
+                <AccordionTrigger className="min-h-11 min-w-0 py-3 text-left text-sm leading-5 [overflow-wrap:anywhere]">{item.q}</AccordionTrigger>
+                <AccordionContent className="min-w-0 text-sm leading-6 text-muted-foreground [overflow-wrap:anywhere]">{item.a}</AccordionContent>
               </AccordionItem>
             ))}
           </Accordion>
         </DSCardContent>
       </DSCard>
 
-      <DSCard>
-        <DSCardHeader>
-          <DSCardTitle className="text-base">Falar com o suporte</DSCardTitle>
-          <DSCardDescription>
+      <DSCard className="min-w-0">
+        <DSCardHeader className="min-w-0">
+          <DSCardTitle className="break-words text-base">Falar com o suporte</DSCardTitle>
+          <DSCardDescription className="break-words leading-5">
             A solicitação fica registrada no backend da APOIS para análise da equipe.
           </DSCardDescription>
         </DSCardHeader>
-        <DSCardContent>
-          <form onSubmit={handleSubmit} className="space-y-3">
-            <div className="space-y-1.5">
+        <DSCardContent className="min-w-0">
+          <form onSubmit={handleSubmit} className="min-w-0 space-y-3" aria-busy={sending}>
+            <div className="min-w-0 space-y-1.5">
               <DSLabel htmlFor="cat">Categoria</DSLabel>
               <DSSelect value={category} onValueChange={setCategory}>
-                <DSSelectTrigger id="cat"><DSSelectValue /></DSSelectTrigger>
+                <DSSelectTrigger id="cat" className="min-h-11 min-w-0"><DSSelectValue /></DSSelectTrigger>
                 <DSSelectContent>
                   {categories.map((c) => (
                     <DSSelectItem key={c.value} value={c.value}>{c.label}</DSSelectItem>
@@ -360,15 +372,15 @@ export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
               </DSSelect>
             </div>
 
-            <div className="space-y-1.5">
+            <div className="min-w-0 space-y-1.5">
               <DSLabel htmlFor="subj">Assunto</DSLabel>
-              <DSInput id="subj" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Resumo do problema" maxLength={120} />
+              <DSInput id="subj" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Resumo do problema" maxLength={120} className="min-h-11 min-w-0 text-base" />
             </div>
 
-            <div className="space-y-1.5">
+            <div className="min-w-0 space-y-1.5">
               <DSLabel htmlFor="ride">Corrida relacionada (opcional)</DSLabel>
               <DSSelect value={rideId || "none"} onValueChange={(v) => setRideId(v === "none" ? "" : v)}>
-                <DSSelectTrigger id="ride"><DSSelectValue placeholder="Nenhuma" /></DSSelectTrigger>
+                <DSSelectTrigger id="ride" className="min-h-11 min-w-0"><DSSelectValue placeholder="Nenhuma" /></DSSelectTrigger>
                 <DSSelectContent>
                   <DSSelectItem value="none">Nenhuma</DSSelectItem>
                   {rides.map((r) => (
@@ -378,38 +390,38 @@ export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
               </DSSelect>
             </div>
 
-            <div className="space-y-1.5">
+            <div className="min-w-0 space-y-1.5">
               <DSLabel htmlFor="msg">Mensagem</DSLabel>
-              <DSTextarea id="msg" value={message} onChange={(e) => setMessage(e.target.value)} rows={5} placeholder="Descreva o ocorrido com detalhes" maxLength={2000} />
+              <DSTextarea id="msg" value={message} onChange={(e) => setMessage(e.target.value)} rows={5} placeholder="Descreva o ocorrido com detalhes" maxLength={2000} className="min-w-0 text-base" />
             </div>
 
-            <DSButton type="submit" disabled={sending || loading} className="w-full">
-              {sending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-              Enviar solicitação
+            <DSButton type="submit" disabled={sending || loading} aria-busy={sending} className="min-h-11 w-full min-w-0">
+              {sending ? <Loader2 className="mr-2 h-4 w-4 shrink-0 animate-spin" aria-hidden="true" /> : <Send className="mr-2 h-4 w-4 shrink-0" aria-hidden="true" />}
+              <span className="break-words">{sending ? "Enviando solicitação..." : "Enviar solicitação"}</span>
             </DSButton>
           </form>
         </DSCardContent>
       </DSCard>
 
       {!isDriver && (
-        <DSCard>
-          <DSCardHeader>
-            <DSCardTitle className="text-base">Meus atendimentos</DSCardTitle>
+        <DSCard className="min-w-0">
+          <DSCardHeader className="min-w-0">
+            <DSCardTitle className="break-words text-base">Meus atendimentos</DSCardTitle>
           </DSCardHeader>
-          <DSCardContent>
+          <DSCardContent className="min-w-0">
             {loading ? (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" /> Carregando...
+              <div className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground" role="status" aria-live="polite">
+                <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden="true" /> <span>Carregando...</span>
               </div>
             ) : tickets.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Você ainda não abriu nenhum atendimento.</p>
+              <p className="break-words text-sm text-muted-foreground">Você ainda não abriu nenhum atendimento.</p>
             ) : (
-              <ul className="space-y-2">
+              <ul className="min-w-0 space-y-2">
                 {tickets.map((t) => (
-                  <li key={t.id} className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card/50 px-3 py-2">
-                    <div className="min-w-0">
-                      <div className="truncate text-sm font-medium">{t.subject}</div>
-                      <div className="text-xs text-muted-foreground">
+                  <li key={t.id} className="flex min-w-0 items-start justify-between gap-3 rounded-lg border border-border bg-card/50 px-3 py-3 max-[359px]:flex-col">
+                    <div className="min-w-0 flex-1">
+                      <div className="break-words text-sm font-medium leading-5">{t.subject}</div>
+                      <div className="mt-1 text-xs leading-5 text-muted-foreground [overflow-wrap:anywhere]">
                         {t.protocol} • {new Date(t.created_at).toLocaleString("pt-BR")} • {ticketCategoryLabel(t.category, categories)}
                       </div>
                     </div>
@@ -417,8 +429,9 @@ export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
                       variant={
                         t.status === "open" ? "primary" : t.status === "resolved" ? "success" : "muted"
                       }
+                      className="max-w-full shrink-0 whitespace-normal text-center"
                     >
-                      {t.status === "open" ? "Aberto" : t.status === "resolved" ? "Resolvido" : t.status}
+                      {TICKET_STATUS_LABELS[t.status] ?? "Em análise"}
                     </DSBadge>
                   </li>
                 ))}
@@ -428,18 +441,18 @@ export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
         </DSCard>
       )}
 
-      <DSCard className="border-border/60 bg-card/40">
-        <DSCardContent className="flex flex-col gap-2 pt-6 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <ShieldCheck className="h-4 w-4 text-primary" />
-            Documentos legais da APOIS
+      <DSCard className="min-w-0 border-border/60 bg-card/40">
+        <DSCardContent className="flex min-w-0 flex-col gap-3 pt-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
+            <ShieldCheck className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+            <span className="break-words">Documentos legais da APOIS</span>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <DSButton asChild variant="outline" size="sm">
-              <Link to={termsHref}><FileText className="mr-1.5 h-3.5 w-3.5" /> Termos</Link>
+          <div className="flex min-w-0 flex-wrap gap-2 max-[359px]:grid max-[359px]:w-full max-[359px]:grid-cols-1">
+            <DSButton asChild variant="outline" size="sm" className="min-h-11">
+              <Link to={termsHref}><FileText className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" /> Termos</Link>
             </DSButton>
-            <DSButton asChild variant="outline" size="sm">
-              <Link to={privacyHref}><ShieldCheck className="mr-1.5 h-3.5 w-3.5" /> Privacidade</Link>
+            <DSButton asChild variant="outline" size="sm" className="min-h-11">
+              <Link to={privacyHref}><ShieldCheck className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" /> Privacidade</Link>
             </DSButton>
           </div>
         </DSCardContent>
@@ -449,7 +462,7 @@ export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
 }
 
 function ticketCategoryLabel(value: string, cats: SupportCategory[]) {
-  return TICKET_CATEGORY_LABELS[value] ?? cats.find((c) => c.value === value)?.label ?? value;
+  return TICKET_CATEGORY_LABELS[value] ?? cats.find((c) => c.value === value)?.label ?? "Outra categoria";
 }
 
 function QuickAction({
@@ -458,14 +471,14 @@ function QuickAction({
   return (
     <a
       href={href}
-      className={`flex flex-col items-center gap-1.5 rounded-xl border p-3 text-center transition-colors ${
+      className={`flex min-h-12 min-w-0 flex-col items-center justify-center gap-1.5 rounded-xl border p-3 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
         danger
           ? "border-destructive/40 bg-destructive/5 text-destructive hover:bg-destructive/10"
           : "border-border bg-card/50 hover:border-primary/40 hover:bg-primary/5"
       }`}
     >
-      <Icon className="h-5 w-5" />
-      <span className="text-xs font-medium">{label}</span>
+      <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
+      <span className="break-words text-xs font-medium leading-4">{label}</span>
     </a>
   );
 }
