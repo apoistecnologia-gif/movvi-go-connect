@@ -19,12 +19,17 @@ export function validateProfilePhotoFile(file: File): string | null {
 }
 
 function extFromFile(file: File) {
-  const fromName = file.name.split(".").pop()?.toLowerCase();
-  if (fromName && /^[a-z0-9]{2,5}$/.test(fromName)) return fromName;
-  const t = (file.type || "").toLowerCase();
-  if (t.includes("png")) return "png";
-  if (t.includes("webp")) return "webp";
+  const type = (file.type || "").toLowerCase();
+  if (type === "image/png") return "png";
+  if (type === "image/webp") return "webp";
   return "jpg";
+}
+
+function safeStoragePath(value: unknown): string | null {
+  const path = String(value ?? "").trim();
+  if (!path || path.length > 512 || path.startsWith("/") || path.includes("\\") || path.includes("..")) return null;
+  if (/[\u0000-\u001f\u007f]/.test(path)) return null;
+  return path;
 }
 
 async function currentAuthUserId() {
@@ -34,14 +39,23 @@ async function currentAuthUserId() {
 }
 
 async function persistOwnProfilePhoto(path: string) {
-  const { data, error } = await (supabase as any).rpc("set_own_profile_photo", {
-    _storage_path: path,
-  });
-  if (error) throw new Error(error.message || "Não foi possível vincular a foto ao perfil.");
-  if (!data?.ok) throw new Error("Não foi possível vincular a foto ao perfil.");
+  const safePath = safeStoragePath(path);
+  if (!safePath) throw new Error("O caminho da foto não é válido.");
 
-  const { error: metadataError } = await supabase.auth.updateUser({ data: { avatar_path: path } });
-  if (metadataError) throw new Error("Foto salva, mas não foi possível atualizar os dados da conta.");
+  const { data, error } = await (supabase as any).rpc("set_own_profile_photo", {
+    _storage_path: safePath,
+  });
+  if (error || !data?.ok) {
+    if (error && import.meta.env.DEV) console.warn("[APOIS PHOTO] falha ao vincular foto", error);
+    throw new Error("Não foi possível vincular a foto ao perfil.");
+  }
+
+  // public.users.avatar_url é o registro canônico. Auth metadata é apenas um
+  // espelho auxiliar; falhar aqui não pode apagar o arquivo que o RPC já vinculou.
+  const { error: metadataError } = await supabase.auth.updateUser({ data: { avatar_path: safePath } });
+  if (metadataError && import.meta.env.DEV) {
+    console.warn("[APOIS PHOTO] metadata auxiliar não atualizada", metadataError);
+  }
 }
 
 /**
@@ -61,22 +75,23 @@ export async function uploadProfilePhoto(
   const ext = extFromFile(file);
   const path = `${authUserId}/avatar-${Date.now()}.${ext}`;
 
-  const up = await supabase.storage
+  const upload = await supabase.storage
     .from(PROFILE_PHOTO_BUCKET)
     .upload(path, file, {
       upsert: false,
       contentType: file.type || "image/jpeg",
       cacheControl: "3600",
     });
-  if (up.error) {
-    console.error("[APOIS PHOTO] upload error:", up.error.message);
-    throw new Error(`Falha ao enviar a foto: ${up.error.message}`);
+  if (upload.error) {
+    if (import.meta.env.DEV) console.warn("[APOIS PHOTO] falha no upload", upload.error);
+    throw new Error("Não foi possível enviar a foto agora. Tente novamente.");
   }
 
   try {
     await persistOwnProfilePhoto(path);
   } catch (error) {
-    await supabase.storage.from(PROFILE_PHOTO_BUCKET).remove([path]);
+    const { error: cleanupError } = await supabase.storage.from(PROFILE_PHOTO_BUCKET).remove([path]);
+    if (cleanupError && import.meta.env.DEV) console.warn("[APOIS PHOTO] falha ao limpar upload não vinculado", cleanupError);
     throw error;
   }
 
@@ -84,7 +99,8 @@ export async function uploadProfilePhoto(
     .from(PROFILE_PHOTO_BUCKET)
     .createSignedUrl(path, SIGNED_URL_TTL_SECONDS);
   if (signed.error || !signed.data?.signedUrl) {
-    throw new Error("Foto salva, mas não foi possível gerar a visualização.");
+    if (signed.error && import.meta.env.DEV) console.warn("[APOIS PHOTO] falha ao gerar visualização", signed.error);
+    throw new Error("Foto salva com sucesso, mas a visualização ainda não está disponível. Reabra a tela em instantes.");
   }
 
   return { path, signedUrl: signed.data.signedUrl };
@@ -92,11 +108,20 @@ export async function uploadProfilePhoto(
 
 /** Refresh a signed URL for a stored private profile-photo path. */
 export async function refreshProfilePhotoUrl(path: string): Promise<string | null> {
-  if (!path) return null;
-  if (/^https?:\/\//i.test(path)) return path;
+  const raw = String(path ?? "").trim();
+  if (!raw) return null;
+  if (/^https:\/\//i.test(raw)) return raw;
+  if (/^http:\/\//i.test(raw)) return null;
+  const safePath = safeStoragePath(raw);
+  if (!safePath) return null;
+
   const signed = await supabase.storage
     .from(PROFILE_PHOTO_BUCKET)
-    .createSignedUrl(path, SIGNED_URL_TTL_SECONDS);
+    .createSignedUrl(safePath, SIGNED_URL_TTL_SECONDS);
+  if (signed.error) {
+    if (import.meta.env.DEV) console.warn("[APOIS PHOTO] falha ao renovar visualização", signed.error);
+    return null;
+  }
   return signed.data?.signedUrl ?? null;
 }
 
@@ -108,6 +133,10 @@ export async function loadOwnProfilePhotoUrl(): Promise<string | null> {
     .select("avatar_url")
     .eq("auth_user_id", authUserId)
     .maybeSingle();
-  if (error || !data?.avatar_url) return null;
+  if (error) {
+    if (import.meta.env.DEV) console.warn("[APOIS PHOTO] perfil canônico indisponível", error);
+    return null;
+  }
+  if (!data?.avatar_url) return null;
   return refreshProfilePhotoUrl(String(data.avatar_url));
 }
