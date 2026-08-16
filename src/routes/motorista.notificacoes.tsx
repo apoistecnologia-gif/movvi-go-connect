@@ -36,6 +36,7 @@ function DriverNotificationsPage() {
   const [loadError, setLoadError] = useState(false);
 
   const load = useCallback(async (userId: string, showLoading = false) => {
+    if (!userId.trim()) return;
     if (showLoading) setLoading(true);
     setLoadError(false);
     const { data, error } = await supabase
@@ -65,7 +66,12 @@ function DriverNotificationsPage() {
         });
         return;
       }
-      const userId = profile.profile.user_id;
+      const userId = profile.profile.user_id?.trim();
+      if (!userId) {
+        setLoadError(true);
+        setLoading(false);
+        return;
+      }
       setMobilityUserId(userId);
       await load(userId);
     })();
@@ -84,16 +90,25 @@ function DriverNotificationsPage() {
         () => void load(mobilityUserId),
       )
       .subscribe();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void load(mobilityUserId);
+    };
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
+      document.removeEventListener("visibilitychange", onVisible);
       void supabase.removeChannel(channel);
     };
   }, [load, mobilityUserId]);
 
   async function markRead(id: string) {
-    if (itemBusy) return;
+    if (!mobilityUserId || itemBusy || busy) return;
     setItemBusy(id);
     const now = new Date().toISOString();
-    const { error } = await supabase.from("notifications").update({ read_at: now }).eq("id", id);
+    const { error } = await supabase
+      .from("notifications")
+      .update({ read_at: now })
+      .eq("id", id)
+      .eq("user_id", mobilityUserId);
     setItemBusy(null);
     if (error) {
       toast.error("Não foi possível marcar como lida.");
@@ -103,7 +118,7 @@ function DriverNotificationsPage() {
   }
 
   async function markAll() {
-    if (!mobilityUserId || busy) return;
+    if (!mobilityUserId || busy || itemBusy) return;
     setBusy(true);
     const now = new Date().toISOString();
     const { error } = await supabase
@@ -121,10 +136,14 @@ function DriverNotificationsPage() {
   }
 
   async function remove(id: string) {
-    if (itemBusy) return;
+    if (!mobilityUserId || itemBusy || busy) return;
     if (!window.confirm("Excluir esta notificação?")) return;
     setItemBusy(id);
-    const { error } = await supabase.from("notifications").delete().eq("id", id);
+    const { error } = await supabase
+      .from("notifications")
+      .delete()
+      .eq("id", id)
+      .eq("user_id", mobilityUserId);
     setItemBusy(null);
     if (error) {
       toast.error("Não foi possível excluir a notificação.");
@@ -140,7 +159,7 @@ function DriverNotificationsPage() {
       <div className="pointer-events-none fixed inset-x-0 top-0 h-72 bg-[radial-gradient(circle_at_50%_0%,rgba(246,190,28,0.12),transparent_62%)]" aria-hidden="true" />
       <MovviHeader logoutRedirect="/" />
 
-      <main className="relative mx-auto w-full min-w-0 max-w-xl px-4 pb-[calc(env(safe-area-inset-bottom)+112px)] pt-5">
+      <main className="relative mx-auto w-full min-w-0 max-w-xl px-4 pb-[calc(env(safe-area-inset-bottom)+112px)] pt-5 max-[339px]:px-3">
         <section className="relative mb-5 min-w-0 overflow-hidden rounded-[32px] border border-[#F6BE1C]/20 bg-gradient-to-br from-[#211A08] via-[#101214] to-[#08090A] p-4 shadow-[0_28px_80px_-40px_rgba(246,190,28,.78)] sm:p-5">
           <div className="pointer-events-none absolute -right-12 -top-16 h-44 w-44 rounded-full bg-[#F6BE1C]/12 blur-3xl" aria-hidden="true" />
           <div className="pointer-events-none absolute -bottom-16 -left-16 h-36 w-36 rounded-full bg-white/[0.025] blur-3xl" aria-hidden="true" />
@@ -154,7 +173,7 @@ function DriverNotificationsPage() {
                   <Sparkles className="h-3 w-3 shrink-0" aria-hidden="true" /> <span className="min-w-0 break-words">Central APOIS</span>
                 </div>
                 <h1 className="mt-1 break-words text-[22px] font-black leading-tight tracking-[-0.035em]">Notificações</h1>
-                <div className="mt-1 flex min-w-0 items-center gap-2" aria-live="polite">
+                <div className="mt-1 flex min-w-0 items-center gap-2" aria-live="polite" aria-atomic="true">
                   <span className={`h-2 w-2 shrink-0 rounded-full ${unread > 0 ? "bg-[#F6BE1C] shadow-[0_0_14px_rgba(246,190,28,.9)]" : "bg-emerald-400"}`} aria-hidden="true" />
                   <p className="min-w-0 break-words text-[11px] font-semibold leading-4 text-zinc-500">
                     {unread === 0 ? "Tudo em dia" : `${unread} ${unread === 1 ? "não lida" : "não lidas"}`}
@@ -166,13 +185,13 @@ function DriverNotificationsPage() {
             {items.length > 0 ? (
               <button
                 type="button"
-                disabled={busy || unread === 0}
+                disabled={busy || Boolean(itemBusy) || unread === 0}
                 aria-busy={busy}
                 onClick={() => void markAll()}
                 className="press-scale flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-2xl border border-[#F6BE1C]/25 bg-[#F6BE1C]/10 px-3 py-2 text-center text-[11px] font-black leading-4 text-[#F6BE1C] shadow-[0_10px_26px_-18px_rgba(246,190,28,.9)] transition hover:bg-[#F6BE1C]/15 disabled:opacity-35 max-[339px]:w-full motion-reduce:transition-none"
               >
                 {busy ? <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <CheckCheck className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />}
-                {busy ? "Atualizando..." : "Marcar todas como lidas"}
+                <span className="break-words">{busy ? "Atualizando..." : "Marcar todas como lidas"}</span>
               </button>
             ) : null}
           </div>
@@ -189,8 +208,8 @@ function DriverNotificationsPage() {
           <section className="min-w-0 rounded-[28px] border border-red-400/15 bg-red-400/[0.06] p-5 text-center" role="alert">
             <p className="break-words text-sm font-black text-red-300">Não foi possível carregar suas notificações.</p>
             <p className="mt-1 break-words text-xs leading-5 text-zinc-500">Verifique sua conexão e tente novamente.</p>
-            <button type="button" disabled={!mobilityUserId} onClick={() => mobilityUserId && void load(mobilityUserId, true)} className="mt-4 inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-[#F6BE1C] px-4 text-xs font-black text-black disabled:opacity-40">
-              <RefreshCw className="h-4 w-4" aria-hidden="true" /> Tentar novamente
+            <button type="button" disabled={!mobilityUserId} onClick={() => mobilityUserId && void load(mobilityUserId, true)} className="mt-4 inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-[#F6BE1C] px-4 text-xs font-black text-black disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">
+              <RefreshCw className="h-4 w-4" aria-hidden="true" /> <span className="break-words">Tentar novamente</span>
             </button>
           </section>
         ) : items.length === 0 ? (
@@ -213,6 +232,7 @@ function DriverNotificationsPage() {
                 <li
                   key={item.id}
                   aria-busy={pending}
+                  aria-label={`${item.read_at ? "Lida" : "Não lida"}: ${title}`}
                   className={`min-w-0 rounded-[24px] border p-4 shadow-[0_18px_46px_-34px_rgba(0,0,0,.98)] backdrop-blur-sm transition motion-reduce:transition-none ${
                     item.read_at
                       ? "border-white/[0.06] bg-[#0D0F11]/95"
@@ -234,7 +254,8 @@ function DriverNotificationsPage() {
                       {!item.read_at ? (
                         <button
                           type="button"
-                          disabled={pending}
+                          disabled={pending || busy}
+                          aria-busy={pending}
                           onClick={() => void markRead(item.id)}
                           className="press-scale flex h-11 w-11 items-center justify-center rounded-xl border border-[#F6BE1C]/20 bg-[#F6BE1C]/10 text-[#F6BE1C] transition hover:bg-[#F6BE1C]/15 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F6BE1C] motion-reduce:transition-none"
                           aria-label={`Marcar ${title} como lida`}
@@ -244,7 +265,8 @@ function DriverNotificationsPage() {
                       ) : null}
                       <button
                         type="button"
-                        disabled={pending}
+                        disabled={pending || busy}
+                        aria-busy={pending}
                         onClick={() => void remove(item.id)}
                         className="press-scale flex h-11 w-11 items-center justify-center rounded-xl border border-red-400/10 bg-red-400/8 text-red-400 transition hover:bg-red-400/12 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 motion-reduce:transition-none"
                         aria-label={`Excluir ${title}`}
