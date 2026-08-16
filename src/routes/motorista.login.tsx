@@ -45,14 +45,8 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     timer = setTimeout(() => reject(new NetworkTimeoutError()), ms);
     promise.then(
-      (value) => {
-        if (timer) clearTimeout(timer);
-        resolve(value);
-      },
-      (error) => {
-        if (timer) clearTimeout(timer);
-        reject(error);
-      },
+      (value) => { if (timer) clearTimeout(timer); resolve(value); },
+      (error) => { if (timer) clearTimeout(timer); reject(error); },
     );
   });
 }
@@ -92,60 +86,34 @@ function DriverLoginPage() {
       try {
         signInResult = await withTimeout(supabase.auth.signInWithPassword(parsed), LOGIN_TIMEOUT_MS);
       } catch (caughtError) {
-        setError(
-          isNetworkFailure(caughtError)
-            ? "Falha de conexão. Verifique sua internet e tente novamente."
-            : "Não foi possível entrar agora. Tente novamente.",
-        );
+        setError(isNetworkFailure(caughtError) ? "Falha de conexão. Verifique sua internet e tente novamente." : "Não foi possível entrar agora. Tente novamente.");
         return;
       }
 
       const { data, error: authError } = signInResult;
       if (authError) {
-        setError(
-          isNetworkFailure(authError)
-            ? "Falha de conexão. Verifique sua internet e tente novamente."
-            : "E-mail ou senha inválidos.",
-        );
+        setError(isNetworkFailure(authError) ? "Falha de conexão. Verifique sua internet e tente novamente." : "E-mail ou senha inválidos.");
         return;
       }
-      if (!data?.session || !data?.user) {
-        setError("Não foi possível iniciar a sessão. Tente novamente.");
-        return;
-      }
+      if (!data?.session || !data?.user) { setError("Não foi possível iniciar a sessão. Tente novamente."); return; }
 
       const profileResult = await withTimeout(loadDriverProfile(), 10_000);
       if (!profileResult.ok) {
-        if (profileResult.reason === "not_found") {
-          setError("Cadastro de motorista não encontrado. Use a opção de cadastro para concluir seu perfil.");
-        } else if (profileResult.reason === "no_session") {
-          setError("Sessão não confirmada. Tente novamente.");
-        } else {
-          setError(profileResult.message || "Falha ao consultar cadastro de motorista.");
-        }
+        if (profileResult.reason === "not_found") setError("Cadastro de motorista não encontrado. Use a opção de cadastro para concluir seu perfil.");
+        else if (profileResult.reason === "no_session") setError("Sessão não confirmada. Tente novamente.");
+        else setError(profileResult.message || "Falha ao consultar cadastro de motorista.");
         return;
       }
 
       const confirmed = await withTimeout(supabase.auth.getSession(), 5_000);
-      if (!confirmed.data.session) {
-        setError("Sessão não confirmada. Tente novamente.");
-        return;
-      }
+      if (!confirmed.data.session) { setError("Sessão não confirmada. Tente novamente."); return; }
 
       if (navigated.current) return;
       navigated.current = true;
-      if (profileResult.profile.approval_status === "aprovado") {
-        navigate({ to: "/motorista/app", replace: true });
-      } else {
-        navigate({ to: "/motorista/status", replace: true });
-      }
+      navigate({ to: profileResult.profile.approval_status === "aprovado" ? "/motorista/app" : "/motorista/status", replace: true });
     } catch (caughtError) {
       console.error("[apois.motorista.login] erro:", caughtError);
-      setError(
-        isNetworkFailure(caughtError)
-          ? "Falha de conexão ao consultar cadastro. Tente novamente."
-          : "Erro inesperado. Tente novamente.",
-      );
+      setError(isNetworkFailure(caughtError) ? "Falha de conexão ao consultar cadastro. Tente novamente." : "Erro inesperado. Tente novamente.");
     } finally {
       setLoading(false);
       inFlight.current = false;
@@ -153,124 +121,46 @@ function DriverLoginPage() {
   }
 
   return (
-    <main className="relative min-h-[100dvh] overflow-hidden bg-[#030405] text-white">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            "radial-gradient(circle at 50% 14%, rgba(246,190,28,0.18) 0%, rgba(246,190,28,0.035) 24%, transparent 48%), linear-gradient(180deg,#090a0c 0%,#030405 54%,#000 100%)",
-        }}
-      />
+    <main className="relative min-h-[100dvh] min-w-0 overflow-hidden bg-[#030405] text-white">
+      <div aria-hidden className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(circle at 50% 14%, rgba(246,190,28,0.18) 0%, rgba(246,190,28,0.035) 24%, transparent 48%), linear-gradient(180deg,#090a0c 0%,#030405 54%,#000 100%)" }} />
       <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-[36vh] opacity-25" style={{ background: "linear-gradient(180deg,transparent,rgba(246,190,28,.06))" }} />
 
-      <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-md flex-col overflow-y-auto px-5 pb-[calc(env(safe-area-inset-bottom)+24px)] pt-[calc(env(safe-area-inset-top)+20px)]">
-        <header className="flex justify-center pt-1">
-          <MovviLogo size={112} showTagline productLabel="" />
-        </header>
+      <div className="relative mx-auto flex min-h-[100dvh] w-full min-w-0 max-w-md flex-col overflow-y-auto px-4 pb-[calc(env(safe-area-inset-bottom)+24px)] pt-[calc(env(safe-area-inset-top)+20px)] sm:px-5">
+        <header className="flex justify-center pt-1"><MovviLogo size={112} showTagline productLabel="" /></header>
 
-        <section className="mt-5">
-          <h1 className="text-[31px] font-black leading-[1.08] tracking-[-0.04em]">
-            Bem-vindo(a) à<br />
-            <span className="text-[#F6BE1C]">APOIS</span> Motorista
-          </h1>
-          <p className="mt-3 text-[13px] font-medium leading-5 text-zinc-500">
-            Faça login para começar a receber corridas.
-          </p>
+        <section className="mt-5 min-w-0">
+          <h1 className="break-words text-[clamp(27px,9vw,31px)] font-black leading-[1.08] tracking-[-0.04em]">Bem-vindo(a) à<br /><span className="text-[#F6BE1C]">APOIS</span> Motorista</h1>
+          <p className="mt-3 break-words text-[13px] font-medium leading-5 text-zinc-500">Faça login para começar a receber corridas.</p>
         </section>
 
-        <form onSubmit={onSubmit} className="mt-6 space-y-4">
-          <label className="block">
-            <span className="mb-2 block text-[11px] font-black uppercase tracking-[0.12em] text-zinc-400">
-              E-mail
-            </span>
-            <div className="flex h-[58px] items-center gap-3 rounded-[17px] border border-white/12 bg-[#101214]/95 px-4 shadow-[inset_0_1px_0_rgba(255,255,255,.025)] focus-within:border-[#F6BE1C]/55 focus-within:ring-1 focus-within:ring-[#F6BE1C]/20">
-              <Mail className="h-[20px] w-[20px] shrink-0 text-[#F6BE1C]" strokeWidth={1.9} />
-              <input
-                name="email"
-                type="email"
-                required
-                autoComplete="email"
-                inputMode="email"
-                placeholder="Digite seu e-mail"
-                className="h-full min-w-0 flex-1 bg-transparent text-[14px] font-semibold text-white outline-none placeholder:text-zinc-600"
-              />
+        <form onSubmit={onSubmit} className="mt-6 min-w-0 space-y-4" aria-busy={loading}>
+          <label className="block min-w-0">
+            <span className="mb-2 block text-[11px] font-black uppercase tracking-[0.12em] text-zinc-400">E-mail</span>
+            <div className="flex h-[58px] min-w-0 items-center gap-3 rounded-[17px] border border-white/12 bg-[#101214]/95 px-4 shadow-[inset_0_1px_0_rgba(255,255,255,.025)] focus-within:border-[#F6BE1C]/55 focus-within:ring-1 focus-within:ring-[#F6BE1C]/20">
+              <Mail className="h-[20px] w-[20px] shrink-0 text-[#F6BE1C]" strokeWidth={1.9} aria-hidden="true" />
+              <input name="email" type="email" required autoComplete="email" inputMode="email" placeholder="Digite seu e-mail" className="h-full min-w-0 flex-1 bg-transparent text-base font-semibold text-white outline-none placeholder:text-zinc-600" />
             </div>
           </label>
 
-          <label className="block">
-            <span className="mb-2 block text-[11px] font-black uppercase tracking-[0.12em] text-zinc-400">
-              Senha
-            </span>
-            <div className="flex h-[58px] items-center gap-3 rounded-[17px] border border-white/12 bg-[#101214]/95 px-4 shadow-[inset_0_1px_0_rgba(255,255,255,.025)] focus-within:border-[#F6BE1C]/55 focus-within:ring-1 focus-within:ring-[#F6BE1C]/20">
-              <LockKeyhole className="h-[20px] w-[20px] shrink-0 text-[#F6BE1C]" strokeWidth={1.9} />
-              <input
-                name="password"
-                type={showPassword ? "text" : "password"}
-                required
-                autoComplete="current-password"
-                placeholder="Digite sua senha"
-                className="h-full min-w-0 flex-1 bg-transparent text-[14px] font-semibold text-white outline-none placeholder:text-zinc-600"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((value) => !value)}
-                aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-zinc-500 transition active:scale-95 hover:bg-white/5 hover:text-white"
-              >
-                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-              </button>
+          <label className="block min-w-0">
+            <span className="mb-2 block text-[11px] font-black uppercase tracking-[0.12em] text-zinc-400">Senha</span>
+            <div className="flex h-[58px] min-w-0 items-center gap-3 rounded-[17px] border border-white/12 bg-[#101214]/95 px-3 pl-4 shadow-[inset_0_1px_0_rgba(255,255,255,.025)] focus-within:border-[#F6BE1C]/55 focus-within:ring-1 focus-within:ring-[#F6BE1C]/20">
+              <LockKeyhole className="h-[20px] w-[20px] shrink-0 text-[#F6BE1C]" strokeWidth={1.9} aria-hidden="true" />
+              <input name="password" type={showPassword ? "text" : "password"} required autoComplete="current-password" placeholder="Digite sua senha" className="h-full min-w-0 flex-1 bg-transparent text-base font-semibold text-white outline-none placeholder:text-zinc-600" />
+              <button type="button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"} aria-pressed={showPassword} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-zinc-500 transition active:scale-95 hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F6BE1C]">{showPassword ? <EyeOff className="h-5 w-5" aria-hidden="true" /> : <Eye className="h-5 w-5" aria-hidden="true" />}</button>
             </div>
           </label>
 
-          <div className="flex justify-end">
-            <DriverRecoveryLink
-              to="/motorista/recuperar-senha"
-              className="min-h-11 px-1 py-2 text-[12px] font-black text-[#F6BE1C]"
-            >
-              Esqueci minha senha
-            </DriverRecoveryLink>
-          </div>
+          <div className="flex justify-end"><DriverRecoveryLink to="/motorista/recuperar-senha" className="inline-flex min-h-11 items-center px-2 py-2 text-[12px] font-black text-[#F6BE1C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F6BE1C]">Esqueci minha senha</DriverRecoveryLink></div>
 
-          {error ? (
-            <div className="flex items-start gap-2 rounded-[16px] border border-red-400/20 bg-red-400/8 px-3.5 py-3 text-[11px] font-semibold leading-relaxed text-red-300">
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-              <span>{error}</span>
-            </div>
-          ) : null}
+          {error ? <div role="alert" aria-live="assertive" className="flex min-w-0 items-start gap-2 rounded-[16px] border border-red-400/20 bg-red-400/8 px-3.5 py-3 text-[11px] font-semibold leading-relaxed text-red-300"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" /><span className="min-w-0 flex-1 break-words">{error}</span></div> : null}
 
-          <button
-            type="submit"
-            disabled={loading}
-            aria-busy={loading}
-            className="flex h-[58px] w-full items-center justify-center gap-2 rounded-[17px] bg-[#F6BE1C] text-[16px] font-black text-black shadow-[0_20px_44px_-26px_rgba(246,190,28,0.9)] transition active:scale-[0.99] disabled:opacity-60"
-          >
-            {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
-            {loading ? "Entrando..." : "Entrar"}
-            {!loading ? <ChevronRight className="h-5 w-5" strokeWidth={2.7} /> : null}
-          </button>
+          <button type="submit" disabled={loading} aria-busy={loading} className="flex min-h-[58px] w-full items-center justify-center gap-2 rounded-[17px] bg-[#F6BE1C] px-4 py-3 text-center text-[16px] font-black leading-5 text-black shadow-[0_20px_44px_-26px_rgba(246,190,28,0.9)] transition active:scale-[0.99] disabled:opacity-60">{loading ? <Loader2 className="h-5 w-5 shrink-0 animate-spin" aria-hidden="true" /> : null}{loading ? "Entrando..." : "Entrar"}{!loading ? <ChevronRight className="h-5 w-5 shrink-0" strokeWidth={2.7} aria-hidden="true" /> : null}</button>
         </form>
 
-        <div className="mt-5 text-center">
-          <p className="text-[12px] font-semibold text-zinc-500">Ainda não tem uma conta?</p>
-          <Link
-            to="/motorista/cadastro"
-            className="mt-1 inline-flex min-h-10 items-center justify-center gap-1.5 px-3 text-[13px] font-black text-[#F6BE1C]"
-          >
-            Cadastrar como motorista
-            <ChevronRight className="h-4 w-4" />
-          </Link>
-        </div>
+        <div className="mt-5 min-w-0 text-center"><p className="break-words text-[12px] font-semibold text-zinc-500">Ainda não tem uma conta?</p><Link to="/motorista/cadastro" className="mt-1 inline-flex min-h-11 max-w-full items-center justify-center gap-1.5 px-3 py-2 text-center text-[13px] font-black leading-5 text-[#F6BE1C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F6BE1C]">Cadastrar como motorista<ChevronRight className="h-4 w-4 shrink-0" aria-hidden="true" /></Link></div>
 
-        <div className="mt-4 flex items-start gap-3 rounded-[20px] border border-white/8 bg-[#0D0F11]/95 px-4 py-3.5">
-          <ShieldCheck className="mt-0.5 h-6 w-6 shrink-0 text-[#F6BE1C]" />
-          <div>
-            <p className="text-[12px] font-black text-white">Sua segurança é prioridade</p>
-            <p className="mt-1 text-[10.5px] font-medium leading-relaxed text-zinc-500">
-              PIN no embarque e recursos de segurança durante a corrida.
-            </p>
-          </div>
-        </div>
+        <div className="mt-4 flex min-w-0 items-start gap-3 rounded-[20px] border border-white/8 bg-[#0D0F11]/95 px-4 py-3.5"><ShieldCheck className="mt-0.5 h-6 w-6 shrink-0 text-[#F6BE1C]" aria-hidden="true" /><div className="min-w-0"><p className="break-words text-[12px] font-black text-white">Sua segurança é prioridade</p><p className="mt-1 break-words text-[10.5px] font-medium leading-relaxed text-zinc-500">PIN no embarque e recursos de segurança durante a corrida.</p></div></div>
       </div>
     </main>
   );
