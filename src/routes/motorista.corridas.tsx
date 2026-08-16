@@ -53,8 +53,24 @@ const FILTER_LABEL: Record<Filter, string> = {
   custom: "Período personalizado",
 };
 
+const CATEGORY_LABELS: Record<string, string> = {
+  carros: "Carro",
+  carro: "Carro",
+  motos: "Moto",
+  moto: "Moto",
+  fretes: "Fretes e Mudanças",
+  frete: "Fretes e Mudanças",
+  guincho: "Guincho",
+  envios: "Envios",
+  envio: "Envios",
+};
+
 function brl(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+function formatDecimal(v: number, digits = 1) {
+  return v.toLocaleString("pt-BR", { minimumFractionDigits: digits, maximumFractionDigits: digits });
 }
 
 function startOfToday(): Date {
@@ -70,34 +86,56 @@ function daysAgo(n: number): Date {
 }
 
 function formatPayment(method: string | null): string {
-  if (!method) return "—";
+  if (!method) return "Não informado";
   const m = method.toLowerCase();
   if (m.includes("pix")) return "Pix";
-  if (m.includes("credit") || m.includes("credito")) return "Crédito";
-  if (m.includes("debit") || m.includes("debito")) return "Débito";
+  if (m.includes("credit") || m.includes("credito")) return "Cartão de crédito";
+  if (m.includes("debit") || m.includes("debito")) return "Cartão de débito";
   if (m.includes("cash") || m.includes("dinheiro")) return "Dinheiro";
-  return method;
+  if (m.includes("wallet") || m.includes("carteira")) return "Carteira APOIS";
+  return "Pagamento registrado";
+}
+
+function formatCategory(category: string | null): string {
+  if (!category) return "Categoria não informada";
+  return CATEGORY_LABELS[category.toLowerCase()] ?? "Categoria de serviço";
 }
 
 function rideStatus(status: string): {
   key: "finished" | "cancelled" | "trip";
   label: string;
 } {
-  if (status === "finalizada") return { key: "finished", label: "Concluída" };
-  if (status?.startsWith("cancel")) return { key: "cancelled", label: "Cancelada" };
-  return { key: "trip", label: status || "Em andamento" };
+  const normalized = status?.toLowerCase() ?? "";
+  if (normalized === "finalizada" || normalized === "completed") return { key: "finished", label: "Concluída" };
+  if (normalized.startsWith("cancel") || normalized === "expired" || normalized === "no_driver_available") {
+    return { key: "cancelled", label: normalized === "expired" || normalized === "no_driver_available" ? "Busca encerrada" : "Cancelada" };
+  }
+  const labels: Record<string, string> = {
+    solicitada: "Solicitada",
+    procurar_motorista: "Buscando motorista",
+    buscando_motorista: "Buscando motorista",
+    motorista_a_caminho: "Motorista a caminho",
+    motorista_chegou: "Motorista chegou",
+    aguardando_pin: "Aguardando PIN",
+    em_viagem: "Em viagem",
+    em_andamento: "Em viagem",
+    agendada: "Agendada",
+  };
+  return { key: "trip", label: labels[normalized] ?? "Em andamento" };
 }
 
 function StarRow({ value }: { value: number }) {
+  const safeValue = Math.min(5, Math.max(0, value));
+  const labelValue = formatDecimal(safeValue, 1);
   return (
-    <div className="flex items-center gap-0.5" aria-label={`Avaliação: ${value} de 5`}>
+    <div className="flex items-center gap-0.5" aria-label={`Avaliação: ${labelValue} de 5`}>
       {[1, 2, 3, 4, 5].map((n) => (
         <Star
           key={n}
           aria-hidden="true"
           className={cn(
-            "h-3 w-3",
-            n <= value ? "fill-primary text-primary" : "text-muted-foreground/40",
+            "h-3 w-3 shrink-0",
+            n <= safeValue ? "fill-primary text-primary" : "text-muted-foreground/40",
           )}
         />
       ))}
@@ -106,76 +144,82 @@ function StarRow({ value }: { value: number }) {
 }
 
 function RideCard({ ride, index }: { ride: RideRow; index: number }) {
-  const price = ride.final_price ?? ride.estimated_price;
+  const rawPrice = Number(ride.final_price ?? ride.estimated_price);
+  const price = Number.isFinite(rawPrice) && rawPrice >= 0 ? rawPrice : null;
   const date = new Date(ride.completed_at ?? ride.created_at);
-  const passengerName = ride.passenger_name || "Passageiro";
+  const passengerName = ride.passenger_name?.trim() || "Passageiro";
   const status = rideStatus(ride.status);
+  const category = formatCategory(ride.category);
+  const hasValidDate = Number.isFinite(date.getTime());
+  const distance = Number(ride.distance_km);
+  const duration = Number(ride.duration_min);
 
-  const dateStr = date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
-  const timeStr = date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  const dateStr = hasValidDate ? date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }) : "Data indisponível";
+  const timeStr = hasValidDate ? date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "";
 
   return (
     <Link
       to="/motorista/corridas/$id"
       params={{ id: ride.id }}
       data-testid="ride-card"
-      className="block rounded-2xl animate-in fade-in slide-in-from-bottom-1 fill-mode-both focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      aria-label={`Abrir corrida de ${passengerName}, ${status.label}`}
+      className="block min-w-0 rounded-2xl animate-in fade-in slide-in-from-bottom-1 fill-mode-both focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       style={{ animationDelay: `${Math.min(index, 10) * 40}ms`, animationDuration: "320ms" }}
     >
-      <DSCard className="press-scale flex flex-col gap-3 p-3 transition hover:-translate-y-[1px] sm:p-4">
-        <div className="flex min-w-0 items-start gap-3">
+      <DSCard className="press-scale flex min-w-0 flex-col gap-3 p-3 transition hover:-translate-y-[1px] sm:p-4">
+        <div className="flex min-w-0 flex-wrap items-start gap-3 min-[360px]:flex-nowrap">
           <Avatar src={ride.passenger_photo_url} name={passengerName} size={40} />
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <div className="min-w-[140px] flex-1">
+            <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
               <Body className="min-w-0 break-words font-semibold">{passengerName}</Body>
               <StatusPill status={status.key} label={status.label} pulse={false} />
             </div>
-            <Caption className="mt-0.5 block break-words">
-              {dateStr} · {timeStr}
-              {ride.category ? ` · ${ride.category}` : ""}
+            <Caption className="mt-0.5 block break-words leading-4">
+              {dateStr}{timeStr ? ` · ${timeStr}` : ""} · {category}
             </Caption>
           </div>
-          <div className="min-w-0 max-w-[42%] shrink-0 text-right">
-            {price !== null && (
+          <div className="min-w-[96px] max-w-full shrink-0 text-right max-[359px]:ml-[52px] max-[359px]:text-left">
+            {price !== null ? (
               <Metric className="break-words text-[clamp(14px,4.4vw,17px)] leading-tight text-primary">
-                {brl(Number(price))}
+                {brl(price)}
               </Metric>
+            ) : (
+              <Caption className="block break-words">Valor indisponível</Caption>
             )}
             <Caption className="mt-1 block break-words">valor da corrida</Caption>
-            <Icon as={ChevronRight} size="sm" className="ml-auto mt-1 text-muted-foreground/60" />
+            <Icon as={ChevronRight} size="sm" className="ml-auto mt-1 text-muted-foreground/60 max-[359px]:ml-0" />
           </div>
         </div>
 
-        <div className="flex flex-col gap-1.5 rounded-2xl bg-muted/40 p-2.5">
+        <div className="flex min-w-0 flex-col gap-1.5 rounded-2xl bg-muted/40 p-2.5">
           <div className="flex min-w-0 items-start gap-2">
             <Icon as={MapPin} size="sm" className="mt-0.5 shrink-0 text-primary" />
-            <BodySmall className="min-w-0 break-words leading-5 text-foreground">{ride.origin_name}</BodySmall>
+            <BodySmall className="min-w-0 break-words leading-5 text-foreground">{ride.origin_name?.trim() || "Origem não informada"}</BodySmall>
           </div>
           <div className="flex min-w-0 items-start gap-2">
             <Icon as={Navigation2} size="sm" className="mt-0.5 shrink-0 text-primary" />
             <BodySmall className="min-w-0 break-words leading-5 text-foreground">
-              {ride.destination_name}
+              {ride.destination_name?.trim() || "Destino não informado"}
             </BodySmall>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground">
-          {ride.distance_km != null && <Caption>{Number(ride.distance_km).toFixed(1)} km</Caption>}
-          {ride.duration_min != null && (
-            <Caption>{Math.round(Number(ride.duration_min))} min</Caption>
-          )}
-          <Caption className="break-words">{formatPayment(ride.payment_method)}</Caption>
+        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground">
+          {Number.isFinite(distance) && distance >= 0 ? <Caption>{formatDecimal(distance)} km</Caption> : null}
+          {Number.isFinite(duration) && duration >= 0 ? <Caption>{Math.round(duration)} min</Caption> : null}
+          <Caption className="max-w-full break-words">{formatPayment(ride.payment_method)}</Caption>
         </div>
 
         {ride.status === "finalizada" &&
           ride.passenger_rated_at &&
-          ride.passenger_rating != null && (
+          ride.passenger_rating != null &&
+          Number.isFinite(Number(ride.passenger_rating)) && (
             <div
               data-testid="rating-info"
-              className="flex flex-wrap items-center gap-2 border-t border-border/50 pt-2"
+              className="flex min-w-0 flex-wrap items-center gap-2 border-t border-border/50 pt-2"
             >
-              <StarRow value={ride.passenger_rating} />
-              <Caption className="break-words">Avaliação recebida · {ride.passenger_rating}/5</Caption>
+              <StarRow value={Number(ride.passenger_rating)} />
+              <Caption className="break-words">Avaliação recebida · {formatDecimal(Number(ride.passenger_rating))}/5</Caption>
             </div>
           )}
       </DSCard>
@@ -196,11 +240,14 @@ function DriverRidesPage() {
     void (async () => {
       const profile = await loadDriverProfile();
       if (!profile.ok) {
-        if (active) setRides([]);
+        if (active) {
+          setError("Não foi possível identificar seu cadastro de motorista.");
+          setRides([]);
+        }
         return;
       }
       const driverId = profile.profile.id;
-      const { data, error } = await supabase
+      const { data, error: ridesError } = await supabase
         .from("rides")
         .select(
           "id,status,category,payment_method,passenger_id,origin_name,destination_name,final_price,estimated_price,distance_km,duration_min,completed_at,created_at,accepted_at,passenger_rating,passenger_rating_comment,passenger_rated_at",
@@ -209,8 +256,9 @@ function DriverRidesPage() {
         .order("created_at", { ascending: false })
         .limit(50);
       if (!active) return;
-      if (error) {
-        setError(error.message);
+      if (ridesError) {
+        console.error("[APOIS Motorista] histórico de corridas:", ridesError);
+        setError("Não foi possível carregar seu histórico de corridas agora.");
         setRides([]);
         return;
       }
@@ -222,16 +270,20 @@ function DriverRidesPage() {
       let passengerMap = new Map<string, { name: string | null; avatar_url: string | null }>();
 
       if (passengerIds.length > 0) {
-        const { data: passengers } = await supabase
+        const { data: passengers, error: passengersError } = await supabase
           .from("users")
           .select("id,name,avatar_url")
           .in("id", passengerIds);
-        passengerMap = new Map(
-          (passengers ?? []).map((passenger) => [
-            passenger.id,
-            { name: passenger.name ?? null, avatar_url: passenger.avatar_url ?? null },
-          ]),
-        );
+        if (passengersError) {
+          console.warn("[APOIS Motorista] dados públicos dos passageiros indisponíveis:", passengersError);
+        } else {
+          passengerMap = new Map(
+            (passengers ?? []).map((passenger) => [
+              passenger.id,
+              { name: passenger.name ?? null, avatar_url: passenger.avatar_url ?? null },
+            ]),
+          );
+        }
       }
 
       if (!active) return;
@@ -270,17 +322,17 @@ function DriverRidesPage() {
       to = new Date(now);
       to.setHours(23, 59, 59, 999);
     } else if (filter === "custom") {
-      from = customFrom ? new Date(customFrom + "T00:00:00") : null;
-      to = customTo ? new Date(customTo + "T23:59:59") : null;
+      from = customFrom ? new Date(`${customFrom}T00:00:00`) : null;
+      to = customTo ? new Date(`${customTo}T23:59:59`) : null;
     }
-    const q = query.trim().toLowerCase();
+    const q = query.trim().toLocaleLowerCase("pt-BR");
     return rides.filter((r) => {
       const at = new Date(r.completed_at ?? r.created_at);
+      if (!Number.isFinite(at.getTime())) return false;
       if (from && at < from) return false;
       if (to && at > to) return false;
       if (q) {
-        const hay =
-          `${r.origin_name ?? ""} ${r.destination_name ?? ""} ${r.category ?? ""}`.toLowerCase();
+        const hay = `${r.origin_name ?? ""} ${r.destination_name ?? ""} ${formatCategory(r.category)} ${formatPayment(r.payment_method)} ${r.passenger_name ?? ""}`.toLocaleLowerCase("pt-BR");
         if (!hay.includes(q)) return false;
       }
       return true;
@@ -291,44 +343,44 @@ function DriverRidesPage() {
     const list = filtered ?? [];
     const finished = list.filter((r) => r.status === "finalizada");
     const total = list.length;
-    // Isto é volume bruto das corridas, não saldo nem valor recebido pelo
-    // motorista. Ganhos/saques são lidos exclusivamente do ledger da carteira.
-    const grossVolume = finished.reduce(
-      (sum, ride) => sum + Number(ride.final_price ?? ride.estimated_price ?? 0),
-      0,
-    );
+    const grossVolume = finished.reduce((sum, ride) => {
+      const value = Number(ride.final_price ?? ride.estimated_price ?? 0);
+      return Number.isFinite(value) && value >= 0 ? sum + value : sum;
+    }, 0);
     const avgFare = finished.length ? grossVolume / finished.length : 0;
     return { total, grossVolume, avgFare };
   }, [filtered]);
 
+  const customRangeInvalid = Boolean(customFrom && customTo && customFrom > customTo);
+
   return (
     <div className="flex min-h-dvh flex-col bg-background">
       <MovviHeader logoutRedirect="/" />
-      <main className="flex-1 px-4 pb-28 pt-4 sm:px-5">
-        <div className="mx-auto flex w-full max-w-2xl flex-col gap-5">
-          <header className="animate-in fade-in slide-in-from-top-2 duration-500">
-            <HeadingXL>Histórico</HeadingXL>
-            <Body className="mt-1 text-muted-foreground">Revise suas viagens realizadas</Body>
+      <main className="flex-1 px-4 pb-[calc(7rem+env(safe-area-inset-bottom))] pt-4 sm:px-5">
+        <div className="mx-auto flex w-full min-w-0 max-w-2xl flex-col gap-5">
+          <header className="min-w-0 animate-in fade-in slide-in-from-top-2 duration-500">
+            <HeadingXL className="break-words">Histórico</HeadingXL>
+            <Body className="mt-1 break-words text-muted-foreground">Revise suas viagens realizadas</Body>
           </header>
 
           <section
             aria-label="Resumo do período"
-            className="flex flex-col gap-2 animate-in fade-in slide-in-from-bottom-2 duration-500"
+            className="flex min-w-0 flex-col gap-2 animate-in fade-in slide-in-from-bottom-2 duration-500"
           >
             <div className="grid grid-cols-1 gap-2 min-[380px]:grid-cols-3 sm:gap-3">
               <SummaryCard label="Corridas" value={String(summary.total)} />
               <SummaryCard label="Valor das corridas" value={brl(summary.grossVolume)} tone="primary" />
               <SummaryCard label="Tarifa média" value={brl(summary.avgFare)} />
             </div>
-            <Caption className="pl-1">Período: {FILTER_LABEL[filter]}</Caption>
+            <Caption className="break-words pl-1">Período: {FILTER_LABEL[filter]}</Caption>
             <Caption className="break-words pl-1">
               Este resumo mostra o valor bruto das viagens. Seu saldo e valores realmente creditados ficam em Carteira.
             </Caption>
           </section>
 
-          <div className="relative animate-in fade-in duration-500">
+          <div className="relative min-w-0 animate-in fade-in duration-500">
             <label htmlFor="ride-search" className="sr-only">
-              Buscar por endereço ou categoria
+              Buscar por passageiro, endereço, categoria ou pagamento
             </label>
             <Icon
               as={Search}
@@ -340,16 +392,18 @@ function DriverRidesPage() {
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Buscar por endereço ou categoria"
-              className="h-12 w-full rounded-full border border-border/60 bg-card pl-11 pr-4 text-foreground placeholder:text-muted-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              placeholder="Buscar corrida"
+              autoComplete="off"
+              enterKeyHint="search"
+              className="min-h-12 w-full min-w-0 rounded-full border border-border/60 bg-card pl-11 pr-4 text-base text-foreground placeholder:text-muted-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
 
-          <section className="flex flex-col gap-3">
+          <section className="flex min-w-0 flex-col gap-3">
             <div
               role="tablist"
               aria-label="Filtro de período"
-              className="flex flex-wrap gap-1.5 animate-in fade-in slide-in-from-left-2 duration-500"
+              className="flex min-w-0 flex-wrap gap-1.5 animate-in fade-in slide-in-from-left-2 duration-500"
             >
               <FilterPill active={filter === "today"} onClick={() => setFilter("today")}>
                 Hoje
@@ -365,7 +419,7 @@ function DriverRidesPage() {
               </FilterPill>
             </div>
             {filter === "custom" && (
-              <div className="grid grid-cols-1 gap-2 min-[380px]:grid-cols-2">
+              <div className="grid min-w-0 grid-cols-1 gap-2 min-[380px]:grid-cols-2">
                 <label className="sr-only" htmlFor="ride-from">
                   Data inicial
                 </label>
@@ -373,8 +427,9 @@ function DriverRidesPage() {
                   id="ride-from"
                   type="date"
                   value={customFrom}
+                  max={customTo || undefined}
                   onChange={(e) => setCustomFrom(e.target.value)}
-                  className="h-11 min-w-0 rounded-[14px] border border-border/60 bg-card px-3 text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="min-h-11 min-w-0 rounded-[14px] border border-border/60 bg-card px-3 text-base text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 />
                 <label className="sr-only" htmlFor="ride-to">
                   Data final
@@ -383,15 +438,21 @@ function DriverRidesPage() {
                   id="ride-to"
                   type="date"
                   value={customTo}
+                  min={customFrom || undefined}
                   onChange={(e) => setCustomTo(e.target.value)}
-                  className="h-11 min-w-0 rounded-[14px] border border-border/60 bg-card px-3 text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="min-h-11 min-w-0 rounded-[14px] border border-border/60 bg-card px-3 text-base text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 />
+                {customRangeInvalid ? (
+                  <p className="break-words text-sm font-semibold text-destructive min-[380px]:col-span-2" role="alert">
+                    A data final precisa ser igual ou posterior à data inicial.
+                  </p>
+                ) : null}
               </div>
             )}
           </section>
 
           {error && (
-            <DSCard className="p-3" role="alert">
+            <DSCard className="min-w-0 p-3" role="alert">
               <Body className="break-words text-destructive">{error}</Body>
             </DSCard>
           )}
@@ -402,7 +463,7 @@ function DriverRidesPage() {
             <EmptyState
               icon={ClipboardList}
               title="Nenhuma corrida encontrada"
-              description="Ajuste o filtro ou complete sua primeira viagem para construir seu histórico."
+              description={query.trim() || filter !== "d30" ? "Nenhuma corrida corresponde aos filtros atuais." : "Complete sua primeira viagem para construir seu histórico."}
               action={
                 <Link to="/motorista/app" className="inline-flex min-h-11 items-center">
                   <DSButton variant="outline" size="sm">
@@ -413,10 +474,10 @@ function DriverRidesPage() {
             />
           )}
 
-          {filtered && filtered.length > 0 && (
-            <ul className="flex flex-col gap-2.5">
+          {filtered && filtered.length > 0 && !customRangeInvalid && (
+            <ul className="flex min-w-0 flex-col gap-2.5" aria-label={`${filtered.length} corridas encontradas`}>
               {filtered.map((ride, index) => (
-                <li key={ride.id}>
+                <li key={ride.id} className="min-w-0">
                   <RideCard ride={ride} index={index} />
                 </li>
               ))}
@@ -442,7 +503,7 @@ function SummaryCard({
     <DSCard className="flex min-w-0 flex-col gap-1.5 p-3 sm:p-4">
       <Metric
         className={cn(
-          "break-words text-[clamp(14px,4.6vw,18px)] leading-tight",
+          "max-w-full break-words text-[clamp(14px,4.6vw,18px)] leading-tight",
           tone === "primary" && "text-primary",
         )}
       >
@@ -470,7 +531,7 @@ function FilterPill({
       size="sm"
       onClick={onClick}
       className={cn(
-        "min-h-11 rounded-full px-4 whitespace-normal",
+        "min-h-11 max-w-full whitespace-normal rounded-full px-4 text-center",
         !active && "bg-card text-muted-foreground hover:text-foreground",
       )}
     >
