@@ -31,11 +31,12 @@ export function SafetyCard({ role, rideId, shareInput, counterpartLabel }: Props
     setSharing(true);
     setShareError(null);
     try {
-      const token = await ensureShareToken(safeRideId);
+      const token = await ensureShareToken(safeRideId, role);
       const trackingUrl = token ? buildTrackingUrl(token) : null;
       await shareRide({ ...shareInput, trackingUrl });
-    } catch {
+    } catch (error) {
       setShareError("Não foi possível compartilhar a corrida agora. Tente novamente.");
+      if (import.meta.env.DEV) console.warn("[APOIS Safety] falha ao compartilhar corrida", error);
     } finally {
       setSharing(false);
     }
