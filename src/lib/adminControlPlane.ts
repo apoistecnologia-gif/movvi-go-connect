@@ -2,7 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 const db = supabase as any;
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const CATEGORY_CODES = ["carros", "motos", "fretes", "guincho", "envios"] as const;
 const STAFF_ROLES = ["administrator", "editor", "marketing", "support", "reader"] as const;
 const DRIVER_APPROVAL = ["em_analise", "aprovado", "reprovado", "bloqueado"] as const;
@@ -54,6 +54,15 @@ function safeBoolean(value: unknown): boolean {
 function safeImageUrl(value: unknown): string | null {
   const raw = cleanText(value, 2_048);
   if (!raw) return null;
+  if (/^(?:javascript|data|vbscript):/i.test(raw) || raw.startsWith("//") || raw.includes("\\")) {
+    throw new Error("image_url_invalid");
+  }
+  if (raw.startsWith("/")) {
+    if (/[?#]/.test(raw.slice(1, 2)) || /[\u0000-\u001f\u007f]/.test(raw)) {
+      throw new Error("image_url_invalid");
+    }
+    return raw;
+  }
   try {
     const parsed = new URL(raw);
     if (parsed.protocol !== "https:") throw new Error("image_url_invalid");
