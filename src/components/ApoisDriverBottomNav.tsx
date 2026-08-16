@@ -16,17 +16,41 @@ const ACTIVE_RIDE_STATUSES = ["motorista_a_caminho", "motorista_chegou", "em_via
 
 export function ApoisDriverBottomNav({ hidden = false }: { hidden?: boolean }) {
   const [rideActive, setRideActive] = useState(false);
+  const [checkingRide, setCheckingRide] = useState(!hidden);
 
   useEffect(() => {
     if (hidden) {
       setRideActive(false);
+      setCheckingRide(false);
       return;
     }
 
     let alive = true;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    let driverId: string | null = null;
 
-    const refresh = async () => {
+    const refreshRideState = async () => {
+      if (!driverId) return;
+      const { data, error } = await supabase
+        .from("rides")
+        .select("id")
+        .eq("driver_id", driverId)
+        .in("status", [...ACTIVE_RIDE_STATUSES])
+        .limit(1);
+      if (!alive) return;
+      if (error) {
+        console.warn("[APOIS Motorista] não foi possível confirmar corrida ativa para a navegação", error);
+        setCheckingRide(false);
+        return;
+      }
+      setRideActive((data?.length ?? 0) > 0);
+      setCheckingRide(false);
+    };
+
+    void (async () => {
+      setCheckingRide(true);
       const { data: profile, error: profileError } = await supabase.rpc("driver_get_profile");
+      if (!alive) return;
       const profileId =
         profile &&
         typeof profile === "object" &&
@@ -34,53 +58,46 @@ export function ApoisDriverBottomNav({ hidden = false }: { hidden?: boolean }) {
         typeof profile.id === "string"
           ? profile.id
           : null;
-      if (!alive) return;
       if (profileError || !profileId) {
+        if (profileError) console.warn("[APOIS Motorista] perfil indisponível para a navegação", profileError);
         setRideActive(false);
+        setCheckingRide(false);
         return;
       }
 
-      const { data, error } = await supabase
-        .from("rides")
-        .select("id")
-        .eq("driver_id", profileId)
-        .in("status", [...ACTIVE_RIDE_STATUSES])
-        .limit(1);
+      driverId = profileId;
+      await refreshRideState();
       if (!alive) return;
-      if (error) {
-        console.warn("[APOIS Motorista] não foi possível confirmar corrida ativa para a navegação", error);
-        setRideActive(false);
-        return;
-      }
-      setRideActive((data?.length ?? 0) > 0);
-    };
 
-    void refresh();
-    const channel = supabase
-      .channel("driver-bottom-nav-active-ride")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "rides" },
-        () => void refresh(),
-      )
-      .subscribe();
+      channel = supabase
+        .channel(`driver-bottom-nav-active-ride-${profileId}`)
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "rides", filter: `driver_id=eq.${profileId}` },
+          () => void refreshRideState(),
+        )
+        .subscribe();
+    })();
 
     const onVisible = () => {
-      if (document.visibilityState === "visible") void refresh();
+      if (document.visibilityState === "visible") void refreshRideState();
     };
+    const onFocus = () => void refreshRideState();
     document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onFocus);
 
     return () => {
       alive = false;
       document.removeEventListener("visibilitychange", onVisible);
-      void supabase.removeChannel(channel);
+      window.removeEventListener("focus", onFocus);
+      if (channel) void supabase.removeChannel(channel);
     };
   }, [hidden]);
 
   return (
     <>
       <DriverActiveRideRecovery />
-      {!hidden && !rideActive && (
+      {!hidden && !rideActive && !checkingRide && (
         <nav
           className="fixed inset-x-0 bottom-0 z-[35] pt-1.5 shadow-[0_-18px_46px_rgba(0,0,0,.52)] backdrop-blur-2xl"
           style={{
