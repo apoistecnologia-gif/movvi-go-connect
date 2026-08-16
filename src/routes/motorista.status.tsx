@@ -116,7 +116,8 @@ function DriverStatusPage() {
       if (!mounted) return;
 
       if (!result.ok && result.reason === "no_session") {
-        await navigate({ to: "/motorista/login" });
+        setLoading(false);
+        await navigate({ to: "/motorista/login", replace: true });
         return;
       }
 
@@ -140,13 +141,16 @@ function DriverStatusPage() {
       .subscribe();
 
     const onFocus = () => void fetchProfile();
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") void fetchProfile();
+    };
     window.addEventListener("focus", onFocus);
-    document.addEventListener("visibilitychange", onFocus);
+    document.addEventListener("visibilitychange", onVisibilityChange);
 
     return () => {
       mounted = false;
       window.removeEventListener("focus", onFocus);
-      document.removeEventListener("visibilitychange", onFocus);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
       void supabase.removeChannel(channel);
     };
   }, [navigate]);
@@ -180,10 +184,16 @@ function DriverStatusPage() {
   const sentCount = documents.filter((item) => item.sent).length;
   const meta = status ? STATUS_META[status] : null;
   const Icon = meta?.icon ?? Clock3;
+  const subscriptionStatus = (profile?.subscription_status ?? "").trim().toLowerCase();
+  const subscriptionIsTest = subscriptionStatus === "teste" || subscriptionStatus === "test";
+  const subscriptionIsActive = ["active", "ativa", "ativo", "paid", "pago"].includes(subscriptionStatus);
+  const subscriptionAllowsAccess = subscriptionIsTest || subscriptionIsActive;
+  const documentsStatus = (profile?.documents_status ?? "").trim().toLowerCase();
+  const documentsNeedReview = ["rejected", "reprovado", "reprovada"].includes(documentsStatus);
 
   async function switchAccount() {
     await supabase.auth.signOut();
-    await navigate({ to: "/motorista/login" });
+    await navigate({ to: "/motorista/login", replace: true });
   }
 
   return (
@@ -221,7 +231,7 @@ function DriverStatusPage() {
           </div>
         ) : (
           <>
-            <section className="overflow-hidden rounded-[28px] border border-white/5 bg-[#101214] shadow-[0_24px_70px_-38px_rgba(0,0,0,0.95)]">
+            <section className="overflow-hidden rounded-[28px] border border-white/5 bg-[#101214] shadow-[0_24px_70px_-38px_rgba(0,0,0,0.95)]" aria-labelledby="driver-status-title">
               <div className="px-4 pb-5 pt-6 text-center sm:px-5">
                 <div className={`mx-auto flex h-20 w-20 items-center justify-center rounded-full border border-[#F6BE1C]/20 ${meta.iconTone}`}>
                   <Icon className="h-9 w-9" strokeWidth={2.1} aria-hidden="true" />
@@ -229,7 +239,7 @@ function DriverStatusPage() {
                 <span className={`mt-4 inline-flex max-w-full rounded-full border px-3 py-1.5 text-center text-[10px] font-black uppercase tracking-[0.14em] ${meta.tone}`}>
                   {meta.label}
                 </span>
-                <h1 className="mt-4 break-words text-[clamp(22px,7vw,26px)] font-black leading-tight tracking-tight text-white">
+                <h1 id="driver-status-title" className="mt-4 break-words text-[clamp(22px,7vw,26px)] font-black leading-tight tracking-tight text-white">
                   {meta.title}
                 </h1>
                 <p className="mx-auto mt-2 max-w-md break-words text-[13px] font-medium leading-relaxed text-zinc-400">
@@ -243,7 +253,7 @@ function DriverStatusPage() {
                     <BadgeCheck className="h-5 w-5" aria-hidden="true" />
                   </div>
                   <div className="min-w-0 flex-1 basis-[150px]">
-                    <p className="break-words text-[13px] font-black text-white">{profile.name || "Motorista APOIS"}</p>
+                    <p className="break-words text-[13px] font-black text-white">{profile.name?.trim() || "Motorista APOIS"}</p>
                     <p className="mt-0.5 text-[10px] font-medium text-zinc-500">Motorista parceiro</p>
                   </div>
                   <div className="shrink-0 text-right">
@@ -264,13 +274,13 @@ function DriverStatusPage() {
             </section>
 
             {status !== "nao_encontrado" && status !== "aprovado" ? (
-              <section className="rounded-[24px] border border-white/5 bg-[#0D0F11] p-4">
+              <section className="rounded-[24px] border border-white/5 bg-[#0D0F11] p-4" aria-label="Documentos enviados">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="min-w-0 flex-1 basis-[170px]">
                     <p className="break-words text-[10px] font-black uppercase tracking-[0.14em] text-[#F6BE1C]">Documentos enviados</p>
-                    <p className="mt-1 break-words text-[13px] font-semibold text-zinc-400">{sentCount} de 4 itens recebidos</p>
+                    <p className="mt-1 break-words text-[13px] font-semibold text-zinc-400">{sentCount} de {documents.length} itens recebidos</p>
                   </div>
-                  <div className="shrink-0 rounded-2xl bg-black px-3 py-2 text-[18px] font-black tabular-nums text-white">{sentCount}/4</div>
+                  <div className="shrink-0 rounded-2xl bg-black px-3 py-2 text-[18px] font-black tabular-nums text-white">{sentCount}/{documents.length}</div>
                 </div>
 
                 <div className="mt-4 space-y-2">
@@ -290,10 +300,10 @@ function DriverStatusPage() {
                   ))}
                 </div>
 
-                {sentCount < 4 || profile?.documents_status === "rejected" ? (
+                {sentCount < documents.length || documentsNeedReview ? (
                   <Link
                     to="/motorista/documentos"
-                    className="mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-[18px] border border-[#F6BE1C]/25 bg-[#F6BE1C]/10 px-4 text-center text-[12px] font-black text-[#F6BE1C]"
+                    className="mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-[18px] border border-[#F6BE1C]/25 bg-[#F6BE1C]/10 px-4 text-center text-[12px] font-black text-[#F6BE1C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F6BE1C]"
                   >
                     <FileCheck2 className="h-4 w-4 shrink-0" aria-hidden="true" />
                     <span className="break-words">Revisar documentos</span>
@@ -302,8 +312,8 @@ function DriverStatusPage() {
               </section>
             ) : null}
 
-            {status === "aprovado" && profile?.subscription_status === "teste" ? (
-              <section className="rounded-[24px] border border-[#F6BE1C]/20 bg-[#F6BE1C]/8 p-4">
+            {status === "aprovado" && subscriptionIsTest ? (
+              <section className="rounded-[24px] border border-[#F6BE1C]/20 bg-[#F6BE1C]/8 p-4" role="status">
                 <div className="flex items-start gap-3">
                   <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#F6BE1C] text-black">
                     <CheckCircle2 className="h-5 w-5" aria-hidden="true" />
@@ -316,10 +326,24 @@ function DriverStatusPage() {
               </section>
             ) : null}
 
-            {status === "aprovado" && profile?.subscription_status !== "teste" ? (
+            {status === "aprovado" && subscriptionIsActive ? (
+              <section className="rounded-[24px] border border-emerald-400/20 bg-emerald-400/8 p-4" role="status">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-400/15 text-emerald-400">
+                    <ShieldCheck className="h-5 w-5" aria-hidden="true" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="break-words text-[12px] font-black text-white">Mensalidade ativa</p>
+                    <p className="mt-1 break-words text-[10px] font-medium leading-relaxed text-zinc-400">Seu acesso às corridas está liberado.</p>
+                  </div>
+                </div>
+              </section>
+            ) : null}
+
+            {status === "aprovado" && !subscriptionAllowsAccess ? (
               <section className="overflow-hidden rounded-[26px] border border-[#F6BE1C]/20 bg-[#0D0F11]">
                 <div className="border-b border-white/5 px-4 py-4">
-                  <p className="break-words text-[10px] font-black uppercase tracking-[0.14em] text-zinc-500">Sua primeira mensalidade</p>
+                  <p className="break-words text-[10px] font-black uppercase tracking-[0.14em] text-zinc-500">Sua mensalidade</p>
                   <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
                     <div className="flex min-w-0 flex-1 basis-[180px] items-center gap-3">
                       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#F6BE1C]/20 bg-[#F6BE1C]/10 text-[#F6BE1C]"><Star className="h-5 w-5" aria-hidden="true" /></div>
@@ -349,7 +373,7 @@ function DriverStatusPage() {
                     <div className="flex min-w-0 flex-1 basis-[160px] items-center gap-2">
                       <QrCode className="h-5 w-5 shrink-0 text-[#F6BE1C]" aria-hidden="true" />
                       <div className="min-w-0 flex-1">
-                        <p className="break-words text-[10px] font-black text-white">Pague com PIX</p>
+                        <p className="break-words text-[10px] font-black text-white">Pague com Pix</p>
                         <p className="mt-0.5 break-words text-[10px] font-medium leading-4 text-zinc-600">Pagamento rápido e seguro</p>
                       </div>
                     </div>
@@ -358,9 +382,9 @@ function DriverStatusPage() {
 
                   <Link
                     to="/motorista/assinatura"
-                    className="flex min-h-14 w-full items-center justify-center gap-2 rounded-[18px] bg-[#F6BE1C] px-4 text-center text-[13px] font-black text-black shadow-[0_18px_40px_-24px_rgba(246,190,28,0.85)]"
+                    className="flex min-h-14 w-full items-center justify-center gap-2 rounded-[18px] bg-[#F6BE1C] px-4 text-center text-[13px] font-black text-black shadow-[0_18px_40px_-24px_rgba(246,190,28,0.85)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
                   >
-                    <span className="break-words">Pagar primeira mensalidade</span>
+                    <span className="break-words">Regularizar mensalidade</span>
                     <ChevronRight className="h-4 w-4 shrink-0" aria-hidden="true" />
                   </Link>
                 </div>
@@ -368,10 +392,10 @@ function DriverStatusPage() {
             ) : null}
 
             <section className="space-y-2 pb-[calc(env(safe-area-inset-bottom)+14px)]">
-              {status === "aprovado" && ["teste", "active", "ativa"].includes(profile?.subscription_status ?? "") ? (
+              {status === "aprovado" && subscriptionAllowsAccess ? (
                 <Link
                   to="/motorista/app"
-                  className="flex min-h-14 w-full items-center justify-center gap-2 rounded-[20px] border border-white/8 bg-[#101214] px-5 text-center text-[12px] font-black text-white"
+                  className="flex min-h-14 w-full items-center justify-center gap-2 rounded-[20px] border border-white/8 bg-[#101214] px-5 text-center text-[12px] font-black text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F6BE1C]"
                 >
                   <span className="break-words">Abrir APOIS Motorista</span>
                   <ChevronRight className="h-4 w-4 shrink-0 text-[#F6BE1C]" aria-hidden="true" />
@@ -381,7 +405,7 @@ function DriverStatusPage() {
               {status === "nao_encontrado" ? (
                 <Link
                   to="/motorista/cadastro"
-                  className="flex min-h-14 w-full items-center justify-center gap-2 rounded-[20px] bg-[#F6BE1C] px-5 text-center text-[14px] font-black text-black"
+                  className="flex min-h-14 w-full items-center justify-center gap-2 rounded-[20px] bg-[#F6BE1C] px-5 text-center text-[14px] font-black text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
                 >
                   <span className="break-words">Fazer cadastro como motorista</span>
                   <ChevronRight className="h-4 w-4 shrink-0" aria-hidden="true" />
@@ -391,7 +415,7 @@ function DriverStatusPage() {
               <button
                 type="button"
                 onClick={switchAccount}
-                className="flex min-h-12 w-full items-center justify-center gap-2 rounded-[18px] border border-white/8 bg-[#101214] px-4 text-center text-[11px] font-black uppercase tracking-[0.1em] text-zinc-400"
+                className="flex min-h-12 w-full items-center justify-center gap-2 rounded-[18px] border border-white/8 bg-[#101214] px-4 text-center text-[11px] font-black uppercase tracking-[0.1em] text-zinc-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F6BE1C]"
               >
                 <LogIn className="h-4 w-4 shrink-0" aria-hidden="true" />
                 <span className="break-words">Entrar com outra conta</span>
