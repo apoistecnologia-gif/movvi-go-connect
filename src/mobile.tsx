@@ -28,13 +28,6 @@ if (typeof document !== "undefined") {
 let reactMounted = false;
 let fatalRendered = false;
 
-function escapeBootstrapDetail(value: unknown): string {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;");
-}
-
 function renderFatalBootstrapError(error: unknown) {
   if (fatalRendered) return;
   fatalRendered = true;
@@ -45,23 +38,16 @@ function renderFatalBootstrapError(error: unknown) {
   }
   const root = document.getElementById("root");
   if (!root) return;
-  const detail = (() => {
-    try {
-      if (error instanceof Error) return error.message;
-      if (typeof error === "string") return error;
-      return JSON.stringify(error);
-    } catch {
-      return "erro desconhecido";
-    }
-  })();
-  const safeDetail = escapeBootstrapDetail(detail || "erro desconhecido");
+
+  // O detalhe técnico continua disponível nos logs de diagnóstico, mas nunca é
+  // renderizado para o usuário. Mensagens de exceção podem conter nomes de
+  // funções, URLs internas, identificadores ou dados de infraestrutura.
   root.innerHTML = `
     <main style="box-sizing:border-box;min-height:100dvh;display:flex;align-items:center;justify-content:center;background:#050607;color:#f8fafc;padding:max(24px,env(safe-area-inset-top)) max(20px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left));font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;overflow:auto">
       <section role="alert" aria-live="assertive" style="box-sizing:border-box;width:min(100%,360px);min-width:0;text-align:center;overflow-wrap:anywhere">
         <div aria-hidden="true" style="margin:0 auto 18px;width:54px;height:4px;border-radius:999px;background:#f6be1c"></div>
         <h1 style="margin:0 0 10px;font-size:22px;line-height:1.15;overflow-wrap:anywhere">Não foi possível abrir a APOIS</h1>
-        <p style="margin:0 0 12px;color:#a1a1aa;font-size:14px;line-height:1.45;overflow-wrap:anywhere">Verifique sua conexão e tente novamente.</p>
-        <p style="margin:0 0 18px;color:#71717a;font-size:12px;line-height:1.45;overflow-wrap:anywhere;word-break:break-word">${safeDetail}</p>
+        <p style="margin:0 0 18px;color:#a1a1aa;font-size:14px;line-height:1.45;overflow-wrap:anywhere">Verifique sua conexão e tente novamente. Se o problema continuar, fale com o suporte.</p>
         <button type="button" aria-label="Tentar abrir a APOIS novamente" style="box-sizing:border-box;width:100%;min-height:44px;border:0;border-radius:16px;background:#f6be1c;color:#090a0b;font-weight:800;padding:12px 16px;font-size:15px;line-height:20px;touch-action:manipulation;cursor:pointer" onclick="location.reload()">Tentar novamente</button>
       </section>
     </main>
