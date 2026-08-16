@@ -78,22 +78,34 @@ const TICKET_STATUS_LABELS: Record<string, string> = {
   new: "Recebido",
 };
 
+function safeDate(value: string): string {
+  const date = new Date(value);
+  return Number.isFinite(date.getTime()) ? date.toLocaleString("pt-BR") : "Data indisponível";
+}
+
+function safeDateOnly(value: string): string {
+  const date = new Date(value);
+  return Number.isFinite(date.getTime()) ? date.toLocaleDateString("pt-BR") : "Data indisponível";
+}
+
 export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
   const isDriver = role === "driver";
   const faq: Faq[] = isDriver ? DRIVER_FAQ : PASSENGER_FAQ;
   const categories: SupportCategory[] = isDriver ? DRIVER_CATEGORIES : PASSENGER_CATEGORIES;
+  const defaultCategory = categories[0]?.value ?? "other";
 
   const [authUserId, setAuthUserId] = useState<string | null>(null);
   const [domainUserId, setDomainUserId] = useState<string | null>(null);
   const [driverId, setDriverId] = useState<string | null>(null);
   const [subject, setSubject] = useState("");
-  const [category, setCategory] = useState(categories[0].value);
+  const [category, setCategory] = useState(defaultCategory);
   const [rideId, setRideId] = useState<string>("");
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [rides, setRides] = useState<RideOption[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<string | null>(null);
 
   async function loadTickets(passengerId: string) {
@@ -107,6 +119,7 @@ export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
     if (error) {
       console.error("[APOIS suporte] falha ao carregar tickets do passageiro", error);
       setTickets([]);
+      setLoadError("Não foi possível carregar seus atendimentos agora.");
       return;
     }
     setTickets(data ?? []);
@@ -130,16 +143,23 @@ export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
     setRides(
       (data ?? []).map((r) => ({
         id: r.id,
-        label: `${new Date(r.created_at).toLocaleDateString("pt-BR")} • ${(r.origin_name ?? "Origem").slice(0, 22)} → ${(r.destination_name ?? "Destino").slice(0, 22)}`,
+        label: `${safeDateOnly(r.created_at)} • ${r.origin_name?.trim() || "Origem não informada"} → ${r.destination_name?.trim() || "Destino não informado"}`,
       })),
     );
   }
+
+  useEffect(() => {
+    setCategory(defaultCategory);
+    setRideId("");
+    setActiveSection(null);
+  }, [defaultCategory, role]);
 
   useEffect(() => {
     let alive = true;
 
     (async () => {
       setLoading(true);
+      setLoadError(null);
       setTickets([]);
       setRides([]);
 
@@ -148,9 +168,11 @@ export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
       if (!alive) return;
 
       if (authError || !authUser) {
+        if (authError) console.error("[APOIS suporte] falha ao consultar sessão", authError);
         setAuthUserId(null);
         setDomainUserId(null);
         setDriverId(null);
+        setLoadError("Entre na sua conta para abrir e acompanhar atendimentos.");
         setLoading(false);
         return;
       }
@@ -168,6 +190,7 @@ export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
         console.error("[APOIS suporte] perfil de domínio não encontrado", profileError);
         setDomainUserId(null);
         setDriverId(null);
+        setLoadError("Não foi possível carregar seu perfil para o suporte.");
         setLoading(false);
         return;
       }
@@ -185,6 +208,7 @@ export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
         if (driverError || !driver) {
           console.error("[APOIS suporte] entidade de motorista não encontrada", driverError);
           setDriverId(null);
+          setLoadError("Não foi possível identificar seu cadastro de motorista para o suporte.");
           setLoading(false);
           return;
         }
@@ -208,6 +232,7 @@ export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (sending) return;
     if (!authUserId || !domainUserId) {
       toast.error("Faça login para enviar uma solicitação.");
       return;
@@ -216,8 +241,24 @@ export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
       toast.error("Não foi possível identificar seu cadastro de motorista.");
       return;
     }
-    if (subject.trim().length < 5 || message.trim().length < 10) {
-      toast.error("Preencha assunto e mensagem com mais detalhes.");
+
+    const cleanSubject = subject.trim();
+    const cleanMessage = message.trim();
+    if (cleanSubject.length < 5) {
+      toast.error("Informe um assunto com pelo menos 5 caracteres.");
+      return;
+    }
+    if (cleanMessage.length < 10) {
+      toast.error("Descreva o ocorrido com pelo menos 10 caracteres.");
+      return;
+    }
+    if (!categories.some((item) => item.value === category)) {
+      toast.error("Selecione uma categoria válida.");
+      return;
+    }
+    if (rideId && !rides.some((ride) => ride.id === rideId)) {
+      toast.error("Selecione novamente a corrida relacionada.");
+      setRideId("");
       return;
     }
 
@@ -234,9 +275,9 @@ export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
             auth_user_id: authUserId,
             domain_user_id: domainUserId,
             driver_id: driverId,
-            subject: subject.trim(),
+            subject: cleanSubject,
             category,
-            message: message.trim(),
+            message: cleanMessage,
             ride_id: rideId || null,
           },
         });
@@ -247,14 +288,15 @@ export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
         const { data, error } = await supabase.functions.invoke<PassengerSupportResponse>("passenger-support", {
           body: {
             category: canonicalCategory,
-            subject: subject.trim(),
-            message: message.trim(),
+            subject: cleanSubject,
+            message: cleanMessage,
             rideId: rideId || undefined,
           },
         });
 
         if (error || !data?.ok) {
-          throw new Error(data?.message || "Não foi possível registrar o atendimento.");
+          console.error("[APOIS suporte] passenger-support rejeitou solicitação", error ?? data);
+          throw new Error("support_submit_failed");
         }
 
         toast.success(
@@ -268,10 +310,10 @@ export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
       setSubject("");
       setMessage("");
       setRideId("");
-      setCategory(categories[0].value);
+      setCategory(defaultCategory);
     } catch (error) {
       console.error("[APOIS suporte] falha ao enviar solicitação", error);
-      toast.error(error instanceof Error ? error.message : "Falha ao enviar solicitação.");
+      toast.error("Não foi possível enviar sua solicitação agora. Tente novamente.");
     } finally {
       setSending(false);
     }
@@ -292,6 +334,14 @@ export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
         <QuickAction icon={AlertTriangle} label="Emergência — ligar 190" href="tel:190" danger />
       </div>
 
+      {loadError ? (
+        <DSCard className="min-w-0 border-amber-500/30 bg-amber-500/5" role="status" aria-live="polite">
+          <DSCardContent className="pt-6">
+            <p className="break-words text-sm leading-6 text-amber-200">{loadError}</p>
+          </DSCardContent>
+        </DSCard>
+      ) : null}
+
       <DSCard className="min-w-0 border-border/60 bg-card/60">
         <DSCardHeader className="min-w-0">
           <DSCardTitle className="flex min-w-0 items-center gap-2 text-base">
@@ -310,6 +360,7 @@ export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
                   key={s.id}
                   type="button"
                   aria-pressed={active}
+                  aria-expanded={active}
                   aria-controls={descriptionId}
                   onClick={() => setActiveSection(active ? null : s.id)}
                   className={`group flex min-h-20 min-w-0 flex-col items-start justify-center gap-1.5 rounded-xl border p-3 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
@@ -326,7 +377,7 @@ export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
           </div>
           {activeSection && (
             <div id={`help-section-${activeSection}`} role="region" aria-live="polite" className="mt-3 min-w-0 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm leading-6 text-muted-foreground [overflow-wrap:anywhere]">
-              {HELP_SECTIONS.find((s) => s.id === activeSection)?.description}
+              {HELP_SECTIONS.find((s) => s.id === activeSection)?.description || "Informação indisponível para esta categoria."}
             </div>
           )}
         </DSCardContent>
@@ -342,7 +393,7 @@ export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
         <DSCardContent className="min-w-0">
           <Accordion type="single" collapsible className="w-full min-w-0">
             {faq.map((item, i) => (
-              <AccordionItem key={i} value={`q-${i}`} className="min-w-0">
+              <AccordionItem key={`${item.q}-${i}`} value={`q-${i}`} className="min-w-0">
                 <AccordionTrigger className="min-h-11 min-w-0 py-3 text-left text-sm leading-5 [overflow-wrap:anywhere]">{item.q}</AccordionTrigger>
                 <AccordionContent className="min-w-0 text-sm leading-6 text-muted-foreground [overflow-wrap:anywhere]">{item.a}</AccordionContent>
               </AccordionItem>
@@ -362,7 +413,7 @@ export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
           <form onSubmit={handleSubmit} className="min-w-0 space-y-3" aria-busy={sending}>
             <div className="min-w-0 space-y-1.5">
               <DSLabel htmlFor="cat">Categoria</DSLabel>
-              <DSSelect value={category} onValueChange={setCategory}>
+              <DSSelect value={category} onValueChange={setCategory} disabled={sending || loading}>
                 <DSSelectTrigger id="cat" className="min-h-11 min-w-0"><DSSelectValue /></DSSelectTrigger>
                 <DSSelectContent>
                   {categories.map((c) => (
@@ -374,17 +425,18 @@ export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
 
             <div className="min-w-0 space-y-1.5">
               <DSLabel htmlFor="subj">Assunto</DSLabel>
-              <DSInput id="subj" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Resumo do problema" maxLength={120} className="min-h-11 min-w-0 text-base" />
+              <DSInput id="subj" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Resumo do problema" maxLength={120} disabled={sending || loading} className="min-h-11 min-w-0 text-base" aria-describedby="subject-count" />
+              <p id="subject-count" className="text-right text-[10px] text-muted-foreground" aria-live="polite">{subject.length}/120</p>
             </div>
 
             <div className="min-w-0 space-y-1.5">
               <DSLabel htmlFor="ride">Corrida relacionada (opcional)</DSLabel>
-              <DSSelect value={rideId || "none"} onValueChange={(v) => setRideId(v === "none" ? "" : v)}>
+              <DSSelect value={rideId || "none"} onValueChange={(v) => setRideId(v === "none" ? "" : v)} disabled={sending || loading}>
                 <DSSelectTrigger id="ride" className="min-h-11 min-w-0"><DSSelectValue placeholder="Nenhuma" /></DSSelectTrigger>
                 <DSSelectContent>
                   <DSSelectItem value="none">Nenhuma</DSSelectItem>
                   {rides.map((r) => (
-                    <DSSelectItem key={r.id} value={r.id}>{r.label}</DSSelectItem>
+                    <DSSelectItem key={r.id} value={r.id} className="max-w-[calc(100vw-32px)] whitespace-normal [overflow-wrap:anywhere]">{r.label}</DSSelectItem>
                   ))}
                 </DSSelectContent>
               </DSSelect>
@@ -392,11 +444,12 @@ export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
 
             <div className="min-w-0 space-y-1.5">
               <DSLabel htmlFor="msg">Mensagem</DSLabel>
-              <DSTextarea id="msg" value={message} onChange={(e) => setMessage(e.target.value)} rows={5} placeholder="Descreva o ocorrido com detalhes" maxLength={2000} className="min-w-0 text-base" />
+              <DSTextarea id="msg" value={message} onChange={(e) => setMessage(e.target.value)} rows={5} placeholder="Descreva o ocorrido com detalhes" maxLength={2000} disabled={sending || loading} className="min-w-0 text-base" aria-describedby="message-count" />
+              <p id="message-count" className="text-right text-[10px] text-muted-foreground" aria-live="polite">{message.length}/2000</p>
             </div>
 
-            <DSButton type="submit" disabled={sending || loading} aria-busy={sending} className="min-h-11 w-full min-w-0">
-              {sending ? <Loader2 className="mr-2 h-4 w-4 shrink-0 animate-spin" aria-hidden="true" /> : <Send className="mr-2 h-4 w-4 shrink-0" aria-hidden="true" />}
+            <DSButton type="submit" disabled={sending || loading || !authUserId} aria-busy={sending} className="min-h-11 w-full min-w-0">
+              {sending ? <Loader2 className="mr-2 h-4 w-4 shrink-0 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Send className="mr-2 h-4 w-4 shrink-0" aria-hidden="true" />}
               <span className="break-words">{sending ? "Enviando solicitação..." : "Enviar solicitação"}</span>
             </DSButton>
           </form>
@@ -411,30 +464,33 @@ export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
           <DSCardContent className="min-w-0">
             {loading ? (
               <div className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground" role="status" aria-live="polite">
-                <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden="true" /> <span>Carregando...</span>
+                <Loader2 className="h-4 w-4 shrink-0 animate-spin motion-reduce:animate-none" aria-hidden="true" /> <span>Carregando...</span>
               </div>
             ) : tickets.length === 0 ? (
               <p className="break-words text-sm text-muted-foreground">Você ainda não abriu nenhum atendimento.</p>
             ) : (
               <ul className="min-w-0 space-y-2">
-                {tickets.map((t) => (
-                  <li key={t.id} className="flex min-w-0 items-start justify-between gap-3 rounded-lg border border-border bg-card/50 px-3 py-3 max-[359px]:flex-col">
-                    <div className="min-w-0 flex-1">
-                      <div className="break-words text-sm font-medium leading-5">{t.subject}</div>
-                      <div className="mt-1 text-xs leading-5 text-muted-foreground [overflow-wrap:anywhere]">
-                        {t.protocol} • {new Date(t.created_at).toLocaleString("pt-BR")} • {ticketCategoryLabel(t.category, categories)}
+                {tickets.map((t) => {
+                  const normalizedStatus = t.status?.trim().toLowerCase() || "pending";
+                  return (
+                    <li key={t.id} className="flex min-w-0 items-start justify-between gap-3 rounded-lg border border-border bg-card/50 px-3 py-3 max-[359px]:flex-col">
+                      <div className="min-w-0 flex-1">
+                        <div className="break-words text-sm font-medium leading-5">{t.subject?.trim() || "Atendimento APOIS"}</div>
+                        <div className="mt-1 text-xs leading-5 text-muted-foreground [overflow-wrap:anywhere]">
+                          {t.protocol?.trim() || "Protocolo indisponível"} • {safeDate(t.created_at)} • {ticketCategoryLabel(t.category, categories)}
+                        </div>
                       </div>
-                    </div>
-                    <DSBadge
-                      variant={
-                        t.status === "open" ? "primary" : t.status === "resolved" ? "success" : "muted"
-                      }
-                      className="max-w-full shrink-0 whitespace-normal text-center"
-                    >
-                      {TICKET_STATUS_LABELS[t.status] ?? "Em análise"}
-                    </DSBadge>
-                  </li>
-                ))}
+                      <DSBadge
+                        variant={
+                          normalizedStatus === "open" ? "primary" : normalizedStatus === "resolved" ? "success" : "muted"
+                        }
+                        className="max-w-full shrink-0 whitespace-normal text-center"
+                      >
+                        {TICKET_STATUS_LABELS[normalizedStatus] ?? "Em análise"}
+                      </DSBadge>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </DSCardContent>
@@ -462,7 +518,8 @@ export function HelpCenterView({ role, termsHref, privacyHref }: Props) {
 }
 
 function ticketCategoryLabel(value: string, cats: SupportCategory[]) {
-  return TICKET_CATEGORY_LABELS[value] ?? cats.find((c) => c.value === value)?.label ?? "Outra categoria";
+  const normalized = value?.trim().toLowerCase() || "other";
+  return TICKET_CATEGORY_LABELS[normalized] ?? cats.find((c) => c.value === normalized)?.label ?? "Outra categoria";
 }
 
 function QuickAction({
