@@ -8,18 +8,12 @@ const ITEMS = [
   { to: "/motorista/app", label: "Início", icon: House },
   { to: "/motorista/corridas", label: "Corridas", icon: CarFront },
   { to: "/motorista/carteira", label: "Carteira", icon: WalletCards },
-  { to: "/motorista/notificacoes", label: "Avisos", icon: Bell },
+  { to: "/motorista/notificacoes", label: "Notificações", icon: Bell },
   { to: "/motorista/perfil", label: "Perfil", icon: UserRound },
 ] as const;
 
 const ACTIVE_RIDE_STATUSES = ["motorista_a_caminho", "motorista_chegou", "em_viagem"] as const;
 
-/**
- * The parent hides navigation while a ride is active. This canonical-state
- * guard is deliberately redundant: after Android recreates the WebView, a
- * stale React render must never let the bottom navigation cover operational
- * actions such as CHEGUEI, INICIAR CORRIDA or FINALIZAR CORRIDA.
- */
 export function ApoisDriverBottomNav({ hidden = false }: { hidden?: boolean }) {
   const [rideActive, setRideActive] = useState(false);
 
@@ -86,17 +80,17 @@ export function ApoisDriverBottomNav({ hidden = false }: { hidden?: boolean }) {
                 key={item.to}
                 to={item.to}
                 activeOptions={{ exact: true }}
-                className="group relative flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-2xl px-1 text-zinc-500 transition-all duration-200 active:scale-[.96]"
+                className="group relative flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-2xl px-0.5 text-zinc-500 transition-all duration-200 active:scale-[.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F6BE1C]"
                 activeProps={{
                   className:
                     "driver-nav-active text-[#F6BE1C] bg-[#F6BE1C]/[.08] ring-1 ring-inset ring-[#F6BE1C]/15",
                 }}
               >
-                <span className="driver-nav-indicator absolute top-1.5 h-0.5 w-4 rounded-full bg-transparent transition-all duration-200" />
+                <span className="driver-nav-indicator absolute top-1.5 h-0.5 w-4 rounded-full bg-transparent transition-all duration-200" aria-hidden="true" />
                 <div className="driver-nav-icon relative mt-1 flex h-8 w-10 items-center justify-center rounded-xl transition-all duration-200">
-                  <item.icon className="h-[20px] w-[20px]" strokeWidth={1.9} />
+                  <item.icon className="h-[20px] w-[20px]" strokeWidth={1.9} aria-hidden="true" />
                 </div>
-                <span className="max-w-full truncate text-[9.5px] font-extrabold tracking-tight">
+                <span className="max-w-full break-words text-center text-[8.5px] font-extrabold leading-3 tracking-tight min-[390px]:text-[9.5px]">
                   {item.label}
                 </span>
               </Link>
