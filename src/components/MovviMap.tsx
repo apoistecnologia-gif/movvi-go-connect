@@ -55,7 +55,7 @@ export function MovviMap({
   }, []);
 
   const { resolved } = useMapTheme();
-  const isDriverRole = APP_ROLE === "driver" || APP_ROLE === "motorista";
+  const isDriverRole = APP_ROLE === "driver";
   const theme: "light" | "dark" = themeOverride ?? (isDriverRole ? "dark" : resolved);
 
   const { isLoaded, loadError } = useJsApiLoader({
