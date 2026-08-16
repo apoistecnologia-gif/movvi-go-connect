@@ -9,7 +9,7 @@ export function SettingsToggleRow({
   hint,
   checked,
   onChange,
-  disabled,
+  disabled = false,
 }: {
   icon?: LucideIcon;
   title: ReactNode;
@@ -19,23 +19,32 @@ export function SettingsToggleRow({
   disabled?: boolean;
 }) {
   const switchId = useId();
-  const accessibleLabel = typeof title === "string" ? title : undefined;
+  const titleId = `${switchId}-title`;
+  const hintId = `${switchId}-hint`;
+  const accessibleLabel = typeof title === "string" ? title.trim() || "Opção" : undefined;
 
   return (
     <SettingsRow
       icon={icon}
       title={title}
       hint={hint}
+      titleId={titleId}
+      hintId={hint ? hintId : undefined}
+      disabled={disabled}
       right={
-        <label htmlFor={switchId} className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl">
+        <div className="flex min-h-12 min-w-12 items-center justify-center rounded-xl">
           <Switch
             id={switchId}
             aria-label={accessibleLabel}
-            checked={checked}
-            onCheckedChange={onChange}
+            aria-labelledby={accessibleLabel ? undefined : titleId}
+            aria-describedby={hint ? hintId : undefined}
+            checked={Boolean(checked)}
+            onCheckedChange={(next) => {
+              if (!disabled) onChange(next);
+            }}
             disabled={disabled}
           />
-        </label>
+        </div>
       }
     />
   );
