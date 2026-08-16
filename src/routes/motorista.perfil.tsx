@@ -1,6 +1,6 @@
 /**
- * APOISR — Profile screen (UI redesign only — Design System pass).
- * Preserves all logic: uploads, personal-info edits, subscription, documents, auth.
+ * APOIS — Profile screen.
+ * Preserves uploads, personal-info edits, subscription, documents and auth flows.
  */
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -80,6 +80,30 @@ function maskPlate(p: string | null | undefined) {
   return `${clean.slice(0, 3)}•${clean.slice(-2)}`;
 }
 
+function categoryLabel(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const labels: Record<string, string> = {
+    carros: "Carro",
+    carro: "Carro",
+    motos: "Moto",
+    moto: "Moto",
+    fretes: "Fretes e Mudanças",
+    frete: "Fretes e Mudanças",
+    guincho: "Guincho",
+    envios: "Envios",
+    envio: "Envios",
+  };
+  return labels[value.trim().toLowerCase()] ?? "Categoria cadastrada";
+}
+
+function ratingLabel(value: number, fractionDigits = 1): string {
+  if (!Number.isFinite(value) || value <= 0) return "—";
+  return value.toLocaleString("pt-BR", {
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
+  });
+}
+
 function DriverProfilePage() {
   const navigate = useNavigate();
   const [userId, setUserId] = useState<string | null>(null);
@@ -141,6 +165,7 @@ function DriverProfilePage() {
   const rating = Number(driver?.average_rating ?? driver?.rating ?? 0);
   const completed = Number(driver?.completed_rides ?? totalRides);
   const totalRatings = Number(driver?.total_ratings ?? 0);
+  const category = categoryLabel(driver?.category);
   const subStatus = (driver?.subscription_status ?? "").toLowerCase();
   const subActive = subStatus === "active" || subStatus === "ativa" || subStatus === "teste";
   const approval = (driver?.approval_status ?? "").toLowerCase();
@@ -213,17 +238,17 @@ function DriverProfilePage() {
               <HeadingL className="max-w-full break-words leading-tight">{name}</HeadingL>
 
               <div className="flex min-w-0 flex-wrap items-center justify-center gap-x-3 gap-y-1 text-muted-foreground">
-                <span className="inline-flex items-center gap-1 text-foreground">
+                <span className="inline-flex items-center gap-1 text-foreground" aria-label={rating > 0 ? `Avaliação ${ratingLabel(rating, 1)} de 5` : "Sem avaliações ainda"}>
                   <Star aria-hidden="true" className="h-4 w-4 shrink-0 fill-primary text-primary" />
-                  <Body className="font-semibold">{rating > 0 ? rating.toFixed(2) : "—"}</Body>
+                  <Body className="font-semibold">{ratingLabel(rating, 1)}</Body>
                   {totalRatings > 0 && <Caption>({totalRatings})</Caption>}
                 </span>
                 <span aria-hidden="true" className="h-3 w-px shrink-0 bg-border" />
                 <Caption>{completed} viagens</Caption>
-                {driver?.category && (
+                {category && (
                   <>
                     <span aria-hidden="true" className="h-3 w-px shrink-0 bg-border" />
-                    <Caption className="max-w-full break-words capitalize">{driver.category}</Caption>
+                    <Caption className="max-w-full break-words">{category}</Caption>
                   </>
                 )}
               </div>
@@ -257,7 +282,7 @@ function DriverProfilePage() {
             className="grid grid-cols-3 gap-2 animate-fade-in sm:gap-3 max-[339px]:grid-cols-1"
           >
             <StatCard label="Corridas" value={String(completed)} />
-            <StatCard label="Avaliação" value={rating > 0 ? rating.toFixed(1) : "—"} highlight />
+            <StatCard label="Avaliação" value={ratingLabel(rating, 1)} highlight />
             <StatCard label="Avaliações" value={String(totalRatings)} />
           </section>
 
