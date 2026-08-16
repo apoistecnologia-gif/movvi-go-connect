@@ -22,22 +22,30 @@ const LOCAL_PREFIX = "apois:notification-local:";
 
 type LocalPreferences = Pick<NotificationPreferences, "sound" | "vibration">;
 
+function booleanOrDefault(value: unknown, fallback: boolean): boolean {
+  return typeof value === "boolean" ? value : fallback;
+}
+
 function readLocal(userId: string): LocalPreferences {
   try {
     const raw = localStorage.getItem(`${LOCAL_PREFIX}${userId}`);
     if (!raw) return { sound: DEFAULT_PREFERENCES.sound, vibration: DEFAULT_PREFERENCES.vibration };
     const parsed = JSON.parse(raw) as Partial<LocalPreferences>;
     return {
-      sound: typeof parsed.sound === "boolean" ? parsed.sound : DEFAULT_PREFERENCES.sound,
-      vibration: typeof parsed.vibration === "boolean" ? parsed.vibration : DEFAULT_PREFERENCES.vibration,
+      sound: booleanOrDefault(parsed.sound, DEFAULT_PREFERENCES.sound),
+      vibration: booleanOrDefault(parsed.vibration, DEFAULT_PREFERENCES.vibration),
     };
   } catch {
     return { sound: DEFAULT_PREFERENCES.sound, vibration: DEFAULT_PREFERENCES.vibration };
   }
 }
 
-function writeLocal(userId: string, prefs: LocalPreferences) {
-  localStorage.setItem(`${LOCAL_PREFIX}${userId}`, JSON.stringify(prefs));
+function writeLocal(userId: string, prefs: LocalPreferences): void {
+  try {
+    localStorage.setItem(`${LOCAL_PREFIX}${userId}`, JSON.stringify(prefs));
+  } catch (error) {
+    console.warn("[APOIS notifications] local preference storage unavailable", error);
+  }
 }
 
 /**
@@ -45,9 +53,10 @@ function writeLocal(userId: string, prefs: LocalPreferences) {
  * Som e vibração são características do aparelho e ficam locais.
  */
 export async function fetchPreferences(): Promise<NotificationPreferences> {
-  const { data: auth } = await supabase.auth.getUser();
+  const { data: auth, error: authError } = await supabase.auth.getUser();
+  if (authError) throw authError;
   const userId = auth?.user?.id;
-  if (!userId) return DEFAULT_PREFERENCES;
+  if (!userId) throw new Error("notification_preferences_no_session");
 
   const local = readLocal(userId);
   const { data, error } = await supabase
@@ -56,24 +65,33 @@ export async function fetchPreferences(): Promise<NotificationPreferences> {
     .eq("user_id", userId)
     .maybeSingle();
 
-  if (error || !data) return { ...DEFAULT_PREFERENCES, ...local };
+  if (error) throw error;
+  if (!data) return { ...DEFAULT_PREFERENCES, ...local };
+
   return {
-    ride_updates: data.ride_updates,
-    ride_requests: data.ride_requests,
-    payment_reminders: data.payment_updates,
-    promotions: data.promotions,
+    ride_updates: booleanOrDefault(data.ride_updates, DEFAULT_PREFERENCES.ride_updates),
+    ride_requests: booleanOrDefault(data.ride_requests, DEFAULT_PREFERENCES.ride_requests),
+    payment_reminders: booleanOrDefault(data.payment_updates, DEFAULT_PREFERENCES.payment_reminders),
+    promotions: booleanOrDefault(data.promotions, DEFAULT_PREFERENCES.promotions),
     ...local,
   };
 }
 
 export async function savePreferences(prefs: Partial<NotificationPreferences>): Promise<void> {
-  const { data: auth } = await supabase.auth.getUser();
+  const { data: auth, error: authError } = await supabase.auth.getUser();
+  if (authError) throw authError;
   const userId = auth?.user?.id;
-  if (!userId) return;
+  if (!userId) throw new Error("notification_preferences_no_session");
 
   const current = await fetchPreferences();
-  const merged = { ...current, ...prefs };
-  writeLocal(userId, { sound: merged.sound, vibration: merged.vibration });
+  const merged: NotificationPreferences = {
+    ride_updates: booleanOrDefault(prefs.ride_updates, current.ride_updates),
+    ride_requests: booleanOrDefault(prefs.ride_requests, current.ride_requests),
+    payment_reminders: booleanOrDefault(prefs.payment_reminders, current.payment_reminders),
+    promotions: booleanOrDefault(prefs.promotions, current.promotions),
+    sound: booleanOrDefault(prefs.sound, current.sound),
+    vibration: booleanOrDefault(prefs.vibration, current.vibration),
+  };
 
   const { error } = await supabase
     .from("user_notification_preferences")
@@ -86,4 +104,5 @@ export async function savePreferences(prefs: Partial<NotificationPreferences>): 
     }, { onConflict: "user_id" });
 
   if (error) throw error;
+  writeLocal(userId, { sound: merged.sound, vibration: merged.vibration });
 }
