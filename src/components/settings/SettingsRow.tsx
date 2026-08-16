@@ -29,12 +29,12 @@ export function SettingsRow({
   const interactive = as === "button" || !!onClick;
   const driver = useSettingsVisual() === "driver";
   const rowClassName = cn(
-    "flex w-full items-center gap-3 px-4 py-3.5 text-left transition",
+    "flex min-h-11 w-full min-w-0 items-center gap-3 px-4 py-3.5 text-left transition",
     driver && "max-[359px]:flex-wrap",
     interactive &&
       (driver
-        ? "active:bg-white/5 disabled:pointer-events-none disabled:opacity-60"
-        : "active:bg-[#F7F9F7] disabled:pointer-events-none disabled:opacity-60"),
+        ? "active:bg-white/5 disabled:pointer-events-none disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#F6BE1C]"
+        : "active:bg-[#F7F9F7] disabled:pointer-events-none disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#76C139]"),
     className,
   );
 
@@ -42,6 +42,7 @@ export function SettingsRow({
     <>
       {Icon ? (
         <div
+          aria-hidden="true"
           className={cn(
             "flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl",
             destructive
@@ -57,7 +58,7 @@ export function SettingsRow({
       <div className="min-w-0 flex-1">
         <div
           className={cn(
-            "text-[14px] font-semibold",
+            "break-words text-[14px] font-semibold leading-5",
             destructive ? "text-red-400" : driver ? "text-zinc-100" : "text-[#1B1B1B]",
           )}
         >
@@ -67,8 +68,8 @@ export function SettingsRow({
           <div
             className={
               driver
-                ? "text-[11.5px] leading-4 text-zinc-600 [overflow-wrap:anywhere]"
-                : "truncate text-[12.5px] text-[#707070]"
+                ? "break-words text-[11.5px] leading-4 text-zinc-600"
+                : "break-words text-[12.5px] leading-5 text-[#707070]"
             }
           >
             {hint}
@@ -76,14 +77,14 @@ export function SettingsRow({
         ) : null}
       </div>
       {right ? (
-        <div className={cn("shrink-0", driver && "max-[359px]:ml-[52px] max-[359px]:max-w-[calc(100%-52px)] max-[359px]:shrink max-[359px]:basis-full")}>
+        <div className={cn("min-w-0 shrink-0", driver && "max-[359px]:ml-[52px] max-[359px]:max-w-[calc(100%-52px)] max-[359px]:shrink max-[359px]:basis-full")}>
           {right}
         </div>
       ) : null}
     </>
   );
 
-  if (as === "button") {
+  if (interactive) {
     return (
       <button type="button" onClick={onClick} disabled={disabled} className={rowClassName}>
         {content}
@@ -91,9 +92,5 @@ export function SettingsRow({
     );
   }
 
-  return (
-    <div onClick={onClick} className={rowClassName}>
-      {content}
-    </div>
-  );
+  return <div className={rowClassName}>{content}</div>;
 }
