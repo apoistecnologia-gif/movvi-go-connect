@@ -1,0 +1,297 @@
+/* APOIS Corridas — hardening adicional de UI para Motorista/Admin em telas compactas. */
+
+html[data-app-role="motorista"],
+.apois-admin-theme {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+html[data-app-role="motorista"] body,
+html[data-app-role="motorista"] #root,
+.apois-admin-theme .admin-page-main {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+html[data-app-role="motorista"] img,
+html[data-app-role="motorista"] svg,
+html[data-app-role="motorista"] video,
+.apois-admin-theme img,
+.apois-admin-theme svg,
+.apois-admin-theme video {
+  max-width: 100%;
+}
+
+/* Flex children com conteúdo dinâmico precisam realmente poder encolher. */
+html[data-app-role="motorista"] main .flex > .flex-1,
+html[data-app-role="motorista"] main .flex > .min-w-0,
+.apois-admin-theme .admin-page-main .flex > .flex-1,
+.apois-admin-theme .admin-page-main .flex > .min-w-0 {
+  min-width: 0;
+}
+
+/* E-mail, IDs, Pix, endereços e mensagens de backend não alargam a viewport. */
+html[data-app-role="motorista"] main input,
+html[data-app-role="motorista"] main textarea,
+html[data-app-role="motorista"] main select,
+.apois-admin-theme .admin-page-main input,
+.apois-admin-theme .admin-page-main textarea,
+.apois-admin-theme .admin-page-main select {
+  max-width: 100%;
+  min-width: 0;
+}
+
+/* Evita zoom involuntário do WebView ao focar campos pequenos. */
+@media (max-width: 767px) {
+  html[data-app-role="motorista"] input,
+  html[data-app-role="motorista"] textarea,
+  html[data-app-role="motorista"] select,
+  .apois-admin-theme input,
+  .apois-admin-theme textarea,
+  .apois-admin-theme select {
+    font-size: max(16px, 1em);
+  }
+}
+
+/* Valores monetários grandes se adaptam ao cartão. */
+html[data-app-role="motorista"] main [class~="text-[34px]"],
+html[data-app-role="motorista"] main [class~="text-[32px]"],
+html[data-app-role="motorista"] main [class~="text-[30px]"] {
+  font-size: clamp(1.7rem, 8vw, 2.125rem);
+  overflow-wrap: anywhere;
+}
+
+/* Pílulas de status vindas do banco não podem sair da tela. */
+html[data-app-role="motorista"] main span[class*="rounded-full"][class*="uppercase"],
+.apois-admin-theme .admin-page-main span[class*="rounded-full"][class*="uppercase"] {
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+/* Ícones de linhas operacionais não encolhem quando o texto é longo. */
+html[data-app-role="motorista"] main .flex svg,
+.apois-admin-theme .admin-page-main .flex svg {
+  flex-shrink: 0;
+}
+
+/* Tabelas administrativas permanecem navegáveis sem estourar a página. */
+.apois-admin-theme .admin-page-main table {
+  width: 100%;
+}
+
+.apois-admin-theme .admin-page-main [class*="overflow-x-auto"] {
+  max-width: 100%;
+  overscroll-behavior-x: contain;
+}
+
+/* Dialogs e alert dialogs ganham espaço para o close sem cobrir títulos. */
+html[data-app-role="motorista"] [role="dialog"] > [class*="header"],
+.apois-admin-theme[role="dialog"] > [class*="header"],
+.apois-admin-theme [role="dialog"] > [class*="header"],
+.apois-admin-theme[role="alertdialog"] > [class*="header"],
+.apois-admin-theme [role="alertdialog"] > [class*="header"] {
+  padding-right: 3rem;
+}
+
+/* Conteúdo de modal nunca fica mais largo que o próprio modal. */
+html[data-app-role="motorista"] [role="dialog"] > *,
+.apois-admin-theme [role="dialog"] > *,
+.apois-admin-theme [role="alertdialog"] > * {
+  max-width: 100%;
+  min-width: 0;
+}
+
+/* Toasts no APK respeitam notch e laterais. */
+html[data-app-role="motorista"] [data-sonner-toaster] {
+  top: calc(env(safe-area-inset-top) + 8px) !important;
+  left: 8px !important;
+  right: 8px !important;
+  width: auto !important;
+}
+
+html[data-app-role="motorista"] [data-sonner-toast] {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+/* Navegação inferior não deixa labels escaparem da célula. */
+html[data-app-role="motorista"] nav[aria-label="Navegação principal do motorista"] a {
+  min-width: 0;
+  overflow: hidden;
+  text-align: center;
+}
+
+html[data-app-role="motorista"] nav[aria-label="Navegação principal do motorista"] a > span:last-child {
+  max-width: 100%;
+}
+
+/* Perfil editável: botões e dados do contato ocupam a largura disponível. */
+html[data-app-role="motorista"] form .flex.flex-wrap.gap-2 > input,
+html[data-app-role="motorista"] form .flex.flex-wrap.gap-2 > [data-slot="input"] {
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+
+/* Cabeçalhos sticky com título longo não empurram ações para fora. */
+html[data-app-role="motorista"] header .min-w-0.flex-1,
+.apois-admin-theme .admin-page-header .min-w-0.flex-1 {
+  min-width: 0;
+}
+
+/* Carteira: resumo inferior e linhas financeiras podem quebrar. */
+html[data-app-role="motorista"] main section .flex.items-center.justify-between.border-t,
+html[data-app-role="motorista"] main article.flex.items-center.gap-3 {
+  flex-wrap: wrap;
+}
+
+html[data-app-role="motorista"] main article.flex.items-center.gap-3 > .min-w-0.flex-1 {
+  flex: 1 1 12rem;
+}
+
+html[data-app-role="motorista"] main article.flex.items-center.gap-3 > .shrink-0.text-right,
+html[data-app-role="motorista"] main article.flex.items-center.gap-3 > p[class*="font-black"] {
+  margin-left: auto;
+  max-width: 100%;
+}
+
+/* Saque: input e CTA empilham antes de ficarem estreitos demais. */
+@media (max-width: 390px) {
+  html[data-app-role="motorista"] main .flex.gap-2 > input.flex-1 {
+    flex-basis: 100%;
+  }
+
+  html[data-app-role="motorista"] main .flex.gap-2 > button[class*="min-w-28"] {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+/* Timeline de corrida deixa de depender da largura fixa de 80 px. */
+@media (max-width: 430px) {
+  html[data-app-role="motorista"] main ol.space-y-2 > li.flex.items-center.gap-3 {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    gap: 0.35rem 0.65rem;
+  }
+
+  html[data-app-role="motorista"] main ol.space-y-2 > li.flex.items-center.gap-3 > span[class~="w-20"] {
+    width: auto;
+    min-width: 0;
+  }
+
+  html[data-app-role="motorista"] main ol.space-y-2 > li.flex.items-center.gap-3 > span:last-child {
+    grid-column: 2;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  /* Cabeçalho passageiro/status no detalhe de corrida pode quebrar. */
+  html[data-app-role="motorista"] main [class*="space-y-4"] > .flex.items-center.gap-3 {
+    flex-wrap: wrap;
+  }
+
+  html[data-app-role="motorista"] main [class*="space-y-4"] > .flex.items-center.gap-3 > span[class*="rounded-full"] {
+    margin-left: auto;
+  }
+
+  /* Perfil: nome completo em vez de ellipsis quando houver duas linhas. */
+  html[data-app-role="motorista"] main h1.truncate,
+  html[data-app-role="motorista"] main h2.truncate,
+  html[data-app-role="motorista"] main [class*="HeadingL"].truncate {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  /* Status cadastral: documento + selo não comprimem descrição. */
+  html[data-app-role="motorista"] main [class*="min-h-14"].flex.items-center.gap-3 {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  html[data-app-role="motorista"] main [class*="min-h-14"].flex.items-center.gap-3 > span:last-child {
+    margin-left: auto;
+  }
+
+  /* Card de plano: descrição e preço podem ocupar linhas independentes. */
+  html[data-app-role="motorista"] main .flex.items-center.justify-between.gap-3 > .text-right {
+    max-width: 100%;
+  }
+
+  /* Pix mensalidade: valor não esmaga descrição. */
+  html[data-app-role="motorista"] main .flex.items-center.justify-between.gap-3 > span[class*="text-[13px]"] {
+    white-space: normal;
+  }
+
+  /* Cards de ajuda/configuração preservam texto antes da ação. */
+  html[data-app-role="motorista"] main .flex.flex-wrap.items-center.justify-between.gap-3 > .flex-1 {
+    flex-basis: 14rem;
+  }
+
+  /* Admin: filtros e ações passam para nova linha quando necessário. */
+  .apois-admin-theme .admin-page-main .flex.items-center.gap-2,
+  .apois-admin-theme .admin-page-main .flex.items-center.gap-3 {
+    flex-wrap: wrap;
+  }
+
+  .apois-admin-theme .admin-page-main .flex.items-center.gap-2 > input,
+  .apois-admin-theme .admin-page-main .flex.items-center.gap-2 > button[role="combobox"],
+  .apois-admin-theme .admin-page-main .flex.items-center.gap-3 > input,
+  .apois-admin-theme .admin-page-main .flex.items-center.gap-3 > button[role="combobox"] {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  /* Admin: badges e botões não competem com nomes longos. */
+  .apois-admin-theme .admin-page-main .flex.items-start.gap-3 > .min-w-0,
+  .apois-admin-theme .admin-page-main .flex.items-center.gap-3 > .min-w-0 {
+    flex: 1 1 12rem;
+  }
+}
+
+@media (max-width: 359px) {
+  /* Timeline e infos viram blocos estáveis em 320 px. */
+  html[data-app-role="motorista"] main ol.space-y-2 > li.flex.items-center.gap-3 {
+    grid-template-columns: 20px minmax(0, 1fr);
+  }
+
+  /* Carteira: ícone, texto e valor não ficam três colunas comprimidas. */
+  html[data-app-role="motorista"] main article.flex.items-center.gap-3 > p[class*="font-black"] {
+    width: 100%;
+    margin-left: 0;
+    padding-left: 52px;
+  }
+
+  /* Status de cadastro: benefícios empilhados não mantêm divisórias verticais. */
+  html[data-app-role="motorista"] main .grid.grid-cols-3.divide-x > * {
+    border-left-width: 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  html[data-app-role="motorista"] main .grid.grid-cols-3.divide-x > :first-child {
+    border-top-width: 0;
+  }
+
+  /* Admin: tabs e filtros ocupam largura integral. */
+  .apois-admin-theme .admin-page-main [role="tablist"] {
+    width: 100%;
+  }
+
+  .apois-admin-theme .admin-page-main [role="tab"] {
+    flex: 1 1 100%;
+    white-space: normal;
+  }
+
+  .apois-admin-theme .admin-page-main button[role="combobox"] {
+    width: 100%;
+  }
+
+  .apois-admin-theme .admin-page-main .flex.items-center.gap-2 > button,
+  .apois-admin-theme .admin-page-main .flex.items-center.gap-3 > button {
+    max-width: 100%;
+  }
+}
