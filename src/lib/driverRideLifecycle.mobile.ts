@@ -28,6 +28,13 @@ type DriverRedispatchResponse = {
 };
 
 const rpcClient = supabase as unknown as DynamicRpcClient;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function assertRideId(rideId: string) {
+  if (!UUID_RE.test(String(rideId ?? "").trim())) {
+    throw new Error("Não foi possível identificar esta corrida. Atualize a tela e tente novamente.");
+  }
+}
 
 function isStructuredRpcFailure(value: unknown): value is StructuredRpcFailure {
   if (!value || typeof value !== "object") return false;
@@ -65,7 +72,8 @@ function readableDriverRpcError(message: string, details?: StructuredRpcFailure)
   if (/driver_cancel_reason_required/i.test(raw)) return "Escolha ou informe o motivo do cancelamento.";
   if (/rating_unavailable/i.test(raw)) return "Esta corrida já foi avaliada ou ainda não pode ser avaliada.";
   if (/driver_profile_missing/i.test(raw)) return "Cadastro de motorista não encontrado.";
-  return raw || "Não foi possível concluir a ação.";
+  if (/jwt|unauthorized|auth|session/i.test(raw)) return "Sua sessão expirou. Entre novamente para continuar.";
+  return "Não foi possível concluir a ação. Atualize a tela e tente novamente.";
 }
 
 async function callRpc<T = unknown>(name: string, args: Record<string, unknown>) {
@@ -111,6 +119,7 @@ function notifyPassenger(rideId: string, event: DriverRidePushEvent) {
 }
 
 export async function aceitarCorridaMobile({ data }: { data: { rideId: string } }) {
+  assertRideId(data.rideId);
   const ride = await callRpc("driver_accept_ride", { _ride_id: data.rideId });
   notifyPassenger(data.rideId, "ride.accepted");
   return ride;
@@ -123,21 +132,28 @@ export async function aceitarCorridaMobile({ data }: { data: { rideId: string } 
  * quando o último motorista rejeita, o próximo lote é formado imediatamente.
  */
 export async function recusarCorridaMobile({ data }: { data: { rideId: string } }) {
+  assertRideId(data.rideId);
   return callDriverRedispatchFunction("driver-reject-redispatch", {
     ride_id: data.rideId,
   });
 }
 
 export async function informarChegadaMobile({ data }: { data: { rideId: string } }) {
+  assertRideId(data.rideId);
   const ride = await callRpc("driver_mark_arrived", { _ride_id: data.rideId });
   notifyPassenger(data.rideId, "ride.driver_arrived");
   return ride;
 }
 
 export async function iniciarCorridaMobile({ data }: { data: { rideId: string; safety_code: string } }) {
+  assertRideId(data.rideId);
+  const safetyCode = String(data.safety_code ?? "").trim();
+  if (!/^\d{4}$/.test(safetyCode)) {
+    throw new Error("Digite os 4 dígitos do PIN informado pelo passageiro.");
+  }
   const ride = await callRpc("driver_start_ride", {
     _ride_id: data.rideId,
-    _security_code: data.safety_code,
+    _security_code: safetyCode,
   });
   notifyPassenger(data.rideId, "ride.started");
   return ride;
@@ -150,6 +166,7 @@ export async function iniciarCorridaMobile({ data }: { data: { rideId: string; s
  */
 export async function finalizarCorridaMobile<T extends { rideId: string }>({ data }: { data: T }) {
   const rideId = data.rideId;
+  assertRideId(rideId);
   const ride = await callDriverRedispatchFunction("driver-finish-redispatch", {
     ride_id: rideId,
   });
@@ -164,9 +181,11 @@ export async function finalizarCorridaMobile<T extends { rideId: string }>({ dat
  * a dependência do app do passageiro estar aberto para a busca continuar.
  */
 export async function cancelarPeloMotoristaMobile({ data }: { data: { rideId: string; motivo?: string } }) {
+  assertRideId(data.rideId);
+  const reason = String(data.motivo ?? "").trim().slice(0, 240);
   return callDriverRedispatchFunction("driver-cancel-redispatch", {
     ride_id: data.rideId,
-    reason: data.motivo ?? null,
+    reason: reason || null,
   });
 }
 
@@ -175,10 +194,16 @@ export async function avaliarPassageiroMobile({
 }: {
   data: { rideId: string; stars: number; comment?: string | null };
 }) {
+  assertRideId(data.rideId);
+  const stars = Number(data.stars);
+  if (!Number.isInteger(stars) || stars < 1 || stars > 5) {
+    throw new Error("Escolha uma nota de 1 a 5 estrelas.");
+  }
+  const comment = String(data.comment ?? "").trim().slice(0, 800);
   await callRpc("driver_rate_passenger", {
     _ride_id: data.rideId,
-    _stars: data.stars,
-    _comment: data.comment ?? null,
+    _stars: stars,
+    _comment: comment || null,
   });
   return { ok: true as const };
 }
