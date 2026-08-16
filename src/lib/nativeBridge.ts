@@ -12,7 +12,7 @@
 import { registerDeviceToken } from "@/lib/notifications/deviceTokenService";
 
 const ENABLE_NATIVE_PUSH = import.meta.env.VITE_ENABLE_NATIVE_PUSH === "true";
-const APP_ROLE = import.meta.env.VITE_APP_ROLE;
+const APP_ROLE = String(import.meta.env.VITE_APP_ROLE ?? "").trim().toLowerCase();
 const DRIVER_RIDE_CHANNEL_ID = "apois_rides";
 
 type CapacitorGlobal = {
@@ -28,34 +28,64 @@ type PushData = {
 
 export function isNative(): boolean {
   if (typeof window === "undefined") return false;
-  const cap = (window as unknown as { Capacitor?: CapacitorGlobal }).Capacitor;
-  return cap?.isNativePlatform?.() === true;
+  try {
+    const cap = (window as unknown as { Capacitor?: CapacitorGlobal }).Capacitor;
+    return cap?.isNativePlatform?.() === true;
+  } catch {
+    return false;
+  }
 }
 
 function nativePlatform(): string {
   if (typeof window === "undefined") return "web";
-  const cap = (window as unknown as { Capacitor?: CapacitorGlobal }).Capacitor;
-  return cap?.getPlatform?.() ?? "web";
+  try {
+    const cap = (window as unknown as { Capacitor?: CapacitorGlobal }).Capacitor;
+    const platform = String(cap?.getPlatform?.() ?? "web").trim().toLowerCase();
+    return platform || "web";
+  } catch {
+    return "web";
+  }
 }
 
 let initStarted = false;
 let postAuthInFlight: Promise<void> | null = null;
 
+function safeInternalPath(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const path = value.trim();
+  if (!path.startsWith("/") || path.startsWith("//") || path.includes("\\")) return null;
+  if (/^[\u0000-\u001f\u007f]/.test(path) || /[\u0000-\u001f\u007f]/.test(path)) return null;
+  try {
+    const parsed = new URL(path, "https://apois.invalid");
+    if (parsed.origin !== "https://apois.invalid") return null;
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch {
+    return null;
+  }
+}
+
 function resolvePushTarget(data: PushData | undefined): string | null {
-  const rawUrl = typeof data?.url === "string" && data.url.startsWith("/") ? data.url : null;
+  const rawUrl = safeInternalPath(data?.url);
+  const event = typeof data?.event === "string" ? data.event.trim().toLowerCase().slice(0, 100) : "";
 
   // A mesma Edge Function atende Passageiro e Motorista. Eventos de corrida
-  // destinados ao APK do Motorista nunca podem abrir uma rota do Passageiro
-  // como /corrida/:id ou /corridas. O app ressincroniza a oferta/corrida pelo
-  // backend ao abrir /motorista/app.
+  // destinados ao APK do Motorista nunca podem abrir uma rota do Passageiro.
   if (APP_ROLE === "motorista" || APP_ROLE === "driver") {
-    if (rawUrl?.startsWith("/motorista/")) return rawUrl;
-    const event = typeof data?.event === "string" ? data.event : "";
+    if (rawUrl === "/motorista" || rawUrl?.startsWith("/motorista/")) return rawUrl;
     if (event.startsWith("driver.") || event.startsWith("ride.")) return "/motorista/app";
     if (rawUrl === "/corridas" || rawUrl?.startsWith("/corrida/")) return "/motorista/app";
-    return rawUrl ?? "/motorista/app";
+    return "/motorista/app";
   }
 
+  if (APP_ROLE === "passageiro" || APP_ROLE === "passenger") {
+    if (rawUrl === "/passageiro" || rawUrl?.startsWith("/passageiro/")) return rawUrl;
+    if (rawUrl === "/corridas" || rawUrl?.startsWith("/corrida/")) return rawUrl;
+    return rawUrl ? "/passageiro/app" : null;
+  }
+
+  // O bundle web não deve transformar payload push em redirecionamento para
+  // áreas administrativas. Apenas rotas não administrativas são aceitas.
+  if (rawUrl?.startsWith("/admin")) return null;
   return rawUrl;
 }
 
@@ -64,61 +94,67 @@ function resolvePushTarget(data: PushData | undefined): string | null {
  * Segura para rodar antes do primeiro render.
  */
 export function initNativeBridge(): void {
-  if (initStarted) return;
+  if (initStarted || !isNative()) return;
   initStarted = true;
-  if (!isNative()) return;
-  // Anexa listener de clique em notificação assim que o plugin permitir,
-  // sem forçar registro/permissão agora.
+
   if (ENABLE_NATIVE_PUSH) {
-    void attachPushListenersOnly().catch((err) =>
-      console.warn("[native] attachPushListenersOnly falhou (ignorado)", err),
-    );
-  } else {
+    void attachPushListenersOnly().catch((error) => {
+      initStarted = false;
+      if (import.meta.env.DEV) console.warn("[native] falha ao anexar listeners de push", error);
+    });
+  } else if (import.meta.env.DEV) {
     console.info("[native] push nativo desativado neste build.");
   }
 }
 
 /**
  * Pede/sincroniza permissões nativas somente depois da autenticação e com a UI
- * já visível. Pode ser chamado novamente depois de troca/restauração de sessão:
- * PushNotifications.register() devolve o token atual e a RPC canônica reassocia
- * esse token ao public.users.id correto. Chamadas concorrentes são colapsadas.
+ * já visível. Chamadas concorrentes são colapsadas.
  */
-export function requestPostAuthPermissions(): void {
-  if (!isNative() || postAuthInFlight) return;
+export function requestPostAuthPermissions(): Promise<void> {
+  if (!isNative()) return Promise.resolve();
+  if (postAuthInFlight) return postAuthInFlight;
 
   postAuthInFlight = (async () => {
     try {
       await setupGeolocation();
-    } catch (err) {
-      console.warn("[native] geolocation warmup falhou", err);
+    } catch (error) {
+      if (import.meta.env.DEV) console.warn("[native] geolocation warmup falhou", error);
     }
 
     if (ENABLE_NATIVE_PUSH) {
       try {
         await setupPush();
-      } catch (err) {
-        console.warn("[native] push setup falhou", err);
+      } catch (error) {
+        if (import.meta.env.DEV) console.warn("[native] push setup falhou", error);
       }
     }
   })().finally(() => {
     postAuthInFlight = null;
   });
+  return postAuthInFlight;
 }
 
 async function attachPushListenersOnly(): Promise<void> {
   const { PushNotifications } = await import("@capacitor/push-notifications");
-  PushNotifications.addListener("registration", (token) => {
-    void registerDeviceToken({ token: token.value }).catch((err) =>
-      console.warn("[native] registerDeviceToken falhou", err),
-    );
+  await PushNotifications.addListener("registration", (token) => {
+    const value = String(token?.value ?? "").trim();
+    if (!value) return;
+    void registerDeviceToken({ token: value }).catch((error) => {
+      if (import.meta.env.DEV) console.warn("[native] registerDeviceToken falhou", error);
+    });
   });
-  PushNotifications.addListener("registrationError", (err) => {
-    console.warn("[native] registrationError", err);
+  await PushNotifications.addListener("registrationError", (error) => {
+    if (import.meta.env.DEV) console.warn("[native] registrationError", error);
   });
-  PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
+  await PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
     const target = resolvePushTarget(action.notification?.data as PushData | undefined);
-    if (target) window.location.assign(target);
+    if (!target) return;
+    try {
+      window.location.assign(target);
+    } catch (error) {
+      if (import.meta.env.DEV) console.warn("[native] falha ao abrir destino do push", error);
+    }
   });
 }
 
@@ -149,18 +185,20 @@ async function setupPush(): Promise<void> {
 
   try {
     await PushNotifications.register();
-  } catch (err) {
-    console.warn(
-      "[native] PushNotifications.register falhou (Firebase ausente? app segue sem push)",
-      err,
-    );
+  } catch (error) {
+    if (import.meta.env.DEV) {
+      console.warn("[native] PushNotifications.register falhou; app segue sem push", error);
+    }
   }
 }
 
 async function setupGeolocation(): Promise<void> {
   const { Geolocation } = await import("@capacitor/geolocation");
-  const perm = await Geolocation.checkPermissions();
+  let perm = await Geolocation.checkPermissions();
   if (perm.location === "prompt" || perm.location === "prompt-with-rationale") {
-    await Geolocation.requestPermissions({ permissions: ["location"] });
+    perm = await Geolocation.requestPermissions({ permissions: ["location"] });
+  }
+  if (perm.location !== "granted" && import.meta.env.DEV) {
+    console.info("[native] localização não autorizada pelo usuário.");
   }
 }
