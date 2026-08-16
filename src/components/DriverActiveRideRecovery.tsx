@@ -58,15 +58,6 @@ function usablePoint(lat: unknown, lng: unknown, lastLocationAt?: unknown): Poin
   return { lat: parsedLat, lng: parsedLng };
 }
 
-/**
- * Safety layer for Android WebView recreation.
- *
- * The native Foreground Service can continue writing driver_set_presence while
- * React is recreated. If the JS geolocation state comes back empty, the legacy
- * active-ride screen used to show dashes and no route. This component rehydrates
- * navigation directly from the canonical Driver presence and draws the route on
- * the already-mounted APOIS map until the normal ride screen catches up.
- */
 export function DriverActiveRideRecovery() {
   const [driverId, setDriverId] = useState<string | null>(null);
   const [ride, setRide] = useState<ActiveRide | null>(null);
@@ -220,25 +211,26 @@ export function DriverActiveRideRecovery() {
 
   return (
     <div
-      className="pointer-events-none fixed left-1/2 z-[50] w-full max-w-md -translate-x-1/2 px-4"
+      className="pointer-events-none fixed left-1/2 z-[50] w-full max-w-md -translate-x-1/2 px-3 sm:px-4"
       style={{ top: "calc(env(safe-area-inset-top) + 76px)" }}
       aria-live="polite"
+      role="status"
     >
-      <div className="mx-auto flex items-center justify-center gap-4 rounded-2xl border border-white/70 bg-white/92 px-4 py-2 text-black shadow-xl backdrop-blur-md">
+      <div className="mx-auto flex min-w-0 flex-wrap items-center justify-center gap-x-4 gap-y-1.5 rounded-2xl border border-white/70 bg-white/92 px-3 py-2 text-center text-black shadow-xl backdrop-blur-md sm:px-4">
         {routeUnavailable ? (
-          <span className="text-xs font-semibold text-red-700">
+          <span className="min-w-0 break-words text-xs font-semibold leading-5 text-red-700">
             Rota indisponível — mantenha o GPS e a internet ativos
           </span>
         ) : (
           <>
-            <span className="inline-flex items-center gap-1.5 text-xs font-bold">
-              <Clock3 className="h-4 w-4 text-[#C99100]" />
-              {Math.max(1, Math.round((etaSeconds ?? 0) / 60))} min
+            <span className="inline-flex min-w-0 items-center gap-1.5 text-xs font-bold">
+              <Clock3 className="h-4 w-4 shrink-0 text-[#C99100]" aria-hidden="true" />
+              <span className="break-words">{Math.max(1, Math.round((etaSeconds ?? 0) / 60))} min</span>
             </span>
-            <span className="h-5 w-px bg-black/10" />
-            <span className="inline-flex items-center gap-1.5 text-xs font-bold">
-              <RouteIcon className="h-4 w-4 text-[#C99100]" />
-              {((distanceMeters ?? 0) / 1000).toFixed(1)} km
+            <span className="h-5 w-px shrink-0 bg-black/10 max-[339px]:hidden" aria-hidden="true" />
+            <span className="inline-flex min-w-0 items-center gap-1.5 text-xs font-bold">
+              <RouteIcon className="h-4 w-4 shrink-0 text-[#C99100]" aria-hidden="true" />
+              <span className="break-words">{((distanceMeters ?? 0) / 1000).toFixed(1).replace(".", ",")} km</span>
             </span>
           </>
         )}
