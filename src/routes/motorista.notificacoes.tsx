@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
-import { Bell, Check, CheckCheck, Loader2, Sparkles, Trash2 } from "lucide-react";
+import { Bell, Check, CheckCheck, Loader2, RefreshCw, Sparkles, Trash2 } from "lucide-react";
 import { MovviHeader } from "@/components/MovviHeader";
 import { ApoisDriverBottomNav } from "@/components/ApoisDriverBottomNav";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,14 +20,24 @@ type Notif = {
   created_at: string;
 };
 
+function formatNotificationDate(value: string): string {
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return "Data indisponível";
+  return date.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+}
+
 function DriverNotificationsPage() {
   const navigate = useNavigate();
   const [mobilityUserId, setMobilityUserId] = useState<string | null>(null);
   const [items, setItems] = useState<Notif[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [itemBusy, setItemBusy] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState(false);
 
-  const load = useCallback(async (userId: string) => {
+  const load = useCallback(async (userId: string, showLoading = false) => {
+    if (showLoading) setLoading(true);
+    setLoadError(false);
     const { data, error } = await supabase
       .from("notifications")
       .select("id,title,body,read_at,created_at")
@@ -36,7 +46,7 @@ function DriverNotificationsPage() {
       .limit(100);
     if (error) {
       console.error("[APOIS Motorista] notificações:", error);
-      toast.error("Não foi possível carregar as notificações.");
+      setLoadError(true);
     } else {
       setItems((data ?? []) as Notif[]);
     }
@@ -51,6 +61,7 @@ function DriverNotificationsPage() {
       if (!profile.ok) {
         await navigate({
           to: profile.reason === "no_session" ? "/motorista/login" : "/motorista/status",
+          replace: true,
         });
         return;
       }
@@ -79,9 +90,15 @@ function DriverNotificationsPage() {
   }, [load, mobilityUserId]);
 
   async function markRead(id: string) {
+    if (itemBusy) return;
+    setItemBusy(id);
     const now = new Date().toISOString();
     const { error } = await supabase.from("notifications").update({ read_at: now }).eq("id", id);
-    if (error) return toast.error("Não foi possível marcar como lida.");
+    setItemBusy(null);
+    if (error) {
+      toast.error("Não foi possível marcar como lida.");
+      return;
+    }
     setItems((prev) => prev.map((item) => (item.id === id ? { ...item, read_at: now } : item)));
   }
 
@@ -95,14 +112,24 @@ function DriverNotificationsPage() {
       .eq("user_id", mobilityUserId)
       .is("read_at", null);
     setBusy(false);
-    if (error) return toast.error("Não foi possível atualizar as notificações.");
+    if (error) {
+      toast.error("Não foi possível atualizar as notificações.");
+      return;
+    }
     setItems((prev) => prev.map((item) => ({ ...item, read_at: item.read_at ?? now })));
     toast.success("Todas marcadas como lidas.");
   }
 
   async function remove(id: string) {
+    if (itemBusy) return;
+    if (!window.confirm("Excluir esta notificação?")) return;
+    setItemBusy(id);
     const { error } = await supabase.from("notifications").delete().eq("id", id);
-    if (error) return toast.error("Não foi possível excluir a notificação.");
+    setItemBusy(null);
+    if (error) {
+      toast.error("Não foi possível excluir a notificação.");
+      return;
+    }
     setItems((prev) => prev.filter((item) => item.id !== id));
   }
 
@@ -123,11 +150,11 @@ function DriverNotificationsPage() {
                 <Bell className="h-5 w-5" aria-hidden="true" />
               </div>
               <div className="min-w-0 flex-1">
-                <div className="flex min-w-0 items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.18em] text-[#F6BE1C]">
+                <div className="flex min-w-0 items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-[#F6BE1C]">
                   <Sparkles className="h-3 w-3 shrink-0" aria-hidden="true" /> <span className="min-w-0 break-words">Central APOIS</span>
                 </div>
                 <h1 className="mt-1 break-words text-[22px] font-black leading-tight tracking-[-0.035em]">Notificações</h1>
-                <div className="mt-1 flex min-w-0 items-center gap-2">
+                <div className="mt-1 flex min-w-0 items-center gap-2" aria-live="polite">
                   <span className={`h-2 w-2 shrink-0 rounded-full ${unread > 0 ? "bg-[#F6BE1C] shadow-[0_0_14px_rgba(246,190,28,.9)]" : "bg-emerald-400"}`} aria-hidden="true" />
                   <p className="min-w-0 break-words text-[11px] font-semibold leading-4 text-zinc-500">
                     {unread === 0 ? "Tudo em dia" : `${unread} ${unread === 1 ? "não lida" : "não lidas"}`}
@@ -142,9 +169,9 @@ function DriverNotificationsPage() {
                 disabled={busy || unread === 0}
                 aria-busy={busy}
                 onClick={() => void markAll()}
-                className="press-scale flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-2xl border border-[#F6BE1C]/25 bg-[#F6BE1C]/10 px-3 py-2 text-center text-[10px] font-black leading-4 text-[#F6BE1C] shadow-[0_10px_26px_-18px_rgba(246,190,28,.9)] transition hover:bg-[#F6BE1C]/15 disabled:opacity-35 max-[339px]:w-full"
+                className="press-scale flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-2xl border border-[#F6BE1C]/25 bg-[#F6BE1C]/10 px-3 py-2 text-center text-[11px] font-black leading-4 text-[#F6BE1C] shadow-[0_10px_26px_-18px_rgba(246,190,28,.9)] transition hover:bg-[#F6BE1C]/15 disabled:opacity-35 max-[339px]:w-full motion-reduce:transition-none"
               >
-                {busy ? <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden="true" /> : <CheckCheck className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />}
+                {busy ? <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <CheckCheck className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />}
                 {busy ? "Atualizando..." : "Marcar todas como lidas"}
               </button>
             ) : null}
@@ -154,10 +181,18 @@ function DriverNotificationsPage() {
         {loading ? (
           <div className="flex min-h-[45vh] items-center justify-center" role="status" aria-live="polite">
             <div className="flex items-center gap-2 text-sm text-zinc-500">
-              <Loader2 className="h-7 w-7 shrink-0 animate-spin text-[#F6BE1C]" aria-hidden="true" />
+              <Loader2 className="h-7 w-7 shrink-0 animate-spin text-[#F6BE1C] motion-reduce:animate-none" aria-hidden="true" />
               <span>Carregando notificações...</span>
             </div>
           </div>
+        ) : loadError ? (
+          <section className="min-w-0 rounded-[28px] border border-red-400/15 bg-red-400/[0.06] p-5 text-center" role="alert">
+            <p className="break-words text-sm font-black text-red-300">Não foi possível carregar suas notificações.</p>
+            <p className="mt-1 break-words text-xs leading-5 text-zinc-500">Verifique sua conexão e tente novamente.</p>
+            <button type="button" disabled={!mobilityUserId} onClick={() => mobilityUserId && void load(mobilityUserId, true)} className="mt-4 inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-[#F6BE1C] px-4 text-xs font-black text-black disabled:opacity-40">
+              <RefreshCw className="h-4 w-4" aria-hidden="true" /> Tentar novamente
+            </button>
+          </section>
         ) : items.length === 0 ? (
           <section className="min-w-0 rounded-[30px] border border-white/[0.06] bg-[#0D0F11]/95 px-5 py-14 text-center shadow-[0_24px_70px_-42px_rgba(0,0,0,.95)] backdrop-blur-xl sm:px-6">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[22px] border border-[#F6BE1C]/20 bg-[#F6BE1C]/10 text-[#F6BE1C] shadow-[0_12px_34px_-20px_rgba(246,190,28,.8)]">
@@ -170,49 +205,57 @@ function DriverNotificationsPage() {
           </section>
         ) : (
           <ul className="min-w-0 space-y-2.5" aria-label="Notificações do motorista">
-            {items.map((item) => (
-              <li
-                key={item.id}
-                className={`min-w-0 rounded-[24px] border p-4 shadow-[0_18px_46px_-34px_rgba(0,0,0,.98)] backdrop-blur-sm transition ${
-                  item.read_at
-                    ? "border-white/[0.06] bg-[#0D0F11]/95"
-                    : "border-[#F6BE1C]/22 bg-gradient-to-br from-[#1B1607] via-[#111315] to-[#0D0F11] shadow-[0_20px_52px_-34px_rgba(246,190,28,.42)]"
-                }`}
-              >
-                <div className="flex min-w-0 items-start gap-3">
-                  <div className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${item.read_at ? "bg-zinc-700" : "bg-[#F6BE1C] shadow-[0_0_12px_rgba(246,190,28,.75)]"}`} aria-hidden="true" />
-                  <div className="min-w-0 flex-1">
-                    <p className="break-words text-[13px] font-black leading-5 text-white [overflow-wrap:anywhere]">{item.title}</p>
-                    {item.body ? (
-                      <p className="mt-1.5 break-words text-[11px] font-medium leading-5 text-zinc-500 [overflow-wrap:anywhere]">{item.body}</p>
-                    ) : null}
-                    <p className="mt-2 break-words text-[9px] font-bold leading-4 text-zinc-700">
-                      {new Date(item.created_at).toLocaleString("pt-BR")}
-                    </p>
-                  </div>
-                  <div className="flex shrink-0 flex-col gap-1.5">
-                    {!item.read_at ? (
+            {items.map((item) => {
+              const pending = itemBusy === item.id;
+              const title = item.title?.trim() || "Atualização APOIS";
+              const body = item.body?.trim() || null;
+              return (
+                <li
+                  key={item.id}
+                  aria-busy={pending}
+                  className={`min-w-0 rounded-[24px] border p-4 shadow-[0_18px_46px_-34px_rgba(0,0,0,.98)] backdrop-blur-sm transition motion-reduce:transition-none ${
+                    item.read_at
+                      ? "border-white/[0.06] bg-[#0D0F11]/95"
+                      : "border-[#F6BE1C]/22 bg-gradient-to-br from-[#1B1607] via-[#111315] to-[#0D0F11] shadow-[0_20px_52px_-34px_rgba(246,190,28,.42)]"
+                  }`}
+                >
+                  <div className="flex min-w-0 items-start gap-3">
+                    <div className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${item.read_at ? "bg-zinc-700" : "bg-[#F6BE1C] shadow-[0_0_12px_rgba(246,190,28,.75)]"}`} aria-hidden="true" />
+                    <div className="min-w-0 flex-1">
+                      <p className="break-words text-[13px] font-black leading-5 text-white [overflow-wrap:anywhere]">{title}</p>
+                      {body ? (
+                        <p className="mt-1.5 break-words text-[11px] font-medium leading-5 text-zinc-500 [overflow-wrap:anywhere]">{body}</p>
+                      ) : null}
+                      <p className="mt-2 break-words text-[10px] font-bold leading-4 text-zinc-600">
+                        {formatNotificationDate(item.created_at)}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 flex-col gap-1.5">
+                      {!item.read_at ? (
+                        <button
+                          type="button"
+                          disabled={pending}
+                          onClick={() => void markRead(item.id)}
+                          className="press-scale flex h-11 w-11 items-center justify-center rounded-xl border border-[#F6BE1C]/20 bg-[#F6BE1C]/10 text-[#F6BE1C] transition hover:bg-[#F6BE1C]/15 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F6BE1C] motion-reduce:transition-none"
+                          aria-label={`Marcar ${title} como lida`}
+                        >
+                          {pending ? <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Check className="h-4 w-4" aria-hidden="true" />}
+                        </button>
+                      ) : null}
                       <button
                         type="button"
-                        onClick={() => void markRead(item.id)}
-                        className="press-scale flex h-11 w-11 items-center justify-center rounded-xl border border-[#F6BE1C]/20 bg-[#F6BE1C]/10 text-[#F6BE1C] transition hover:bg-[#F6BE1C]/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F6BE1C]"
-                        aria-label="Marcar notificação como lida"
+                        disabled={pending}
+                        onClick={() => void remove(item.id)}
+                        className="press-scale flex h-11 w-11 items-center justify-center rounded-xl border border-red-400/10 bg-red-400/8 text-red-400 transition hover:bg-red-400/12 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 motion-reduce:transition-none"
+                        aria-label={`Excluir ${title}`}
                       >
-                        <Check className="h-4 w-4" aria-hidden="true" />
+                        <Trash2 className="h-4 w-4" aria-hidden="true" />
                       </button>
-                    ) : null}
-                    <button
-                      type="button"
-                      onClick={() => void remove(item.id)}
-                      className="press-scale flex h-11 w-11 items-center justify-center rounded-xl border border-red-400/10 bg-red-400/8 text-red-400 transition hover:bg-red-400/12 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
-                      aria-label="Excluir notificação"
-                    >
-                      <Trash2 className="h-4 w-4" aria-hidden="true" />
-                    </button>
+                    </div>
                   </div>
-                </div>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
         )}
       </main>
