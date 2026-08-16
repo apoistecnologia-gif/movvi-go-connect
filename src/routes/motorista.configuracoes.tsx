@@ -9,6 +9,7 @@ import {
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { requestPushPermission } from "@/lib/pushNotifications";
+import { unregisterAllDevices, unregisterCurrentDevice } from "@/lib/notifications/deviceTokenService";
 import {
   DEFAULT_DRIVER_PREFS, loadDriverPrefs, saveDriverPrefs, type DriverPrefs,
 } from "@/lib/driverPrefs";
@@ -178,6 +179,12 @@ function DriverSettingsPage() {
     if (signingOut || deleting) return;
     setSigningOut(true);
     try {
+      // O token FCM pertence ao usuário no backend. Ele precisa ser desativado
+      // enquanto o JWT ainda existe; fazer isso depois de signOut deixava o
+      // aparelho apto a receber notificações da conta já encerrada.
+      if (scope === "global") await unregisterAllDevices();
+      else await unregisterCurrentDevice();
+
       const { error } = await supabase.auth.signOut({ scope });
       if (error) throw error;
       if (scope === "global") toast.success("Sessão encerrada em todos os dispositivos.");
