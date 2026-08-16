@@ -14,10 +14,13 @@ interface Props {
   onOpenContacts?: () => void;
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 function normalizePhone(value: string | null | undefined) {
   const digits = String(value ?? "").replace(/\D/g, "");
-  if (digits.length < 10 || digits.length > 13) return null;
-  return digits;
+  const normalized = digits.startsWith("55") && digits.length >= 12 ? digits.slice(2) : digits;
+  if (normalized.length < 10 || normalized.length > 11) return null;
+  return normalized;
 }
 
 export function SosSheet({ open, onClose, role, rideId, counterpartLabel, onOpenContacts }: Props) {
@@ -27,14 +30,17 @@ export function SosSheet({ open, onClose, role, rideId, counterpartLabel, onOpen
   const [contactLoading, setContactLoading] = useState(false);
   const [alertError, setAlertError] = useState<string | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
-  const safeCounterpartLabel = String(counterpartLabel ?? "").trim().slice(0, 160);
-  const safeRideId = String(rideId ?? "").trim() || null;
+  const focusTimerRef = useRef<number | null>(null);
+  const safeCounterpartLabel = String(counterpartLabel ?? "").trim().replace(/\s+/g, " ").slice(0, 160);
+  const rideIdCandidate = String(rideId ?? "").trim();
+  const safeRideId = UUID_RE.test(rideIdCandidate) ? rideIdCandidate : null;
   const contactPhone = useMemo(() => normalizePhone(contact?.phone), [contact?.phone]);
 
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
     setSent(false);
+    setSending(false);
     setAlertError(null);
     setContact(null);
     setContactLoading(true);
@@ -44,10 +50,21 @@ export function SosSheet({ open, onClose, role, rideId, counterpartLabel, onOpen
         const { data, error } = await supabase.auth.getUser();
         if (error) throw error;
         if (!data?.user) return;
-        const c = await getPrimaryContact(role, data.user.id);
-        if (!cancelled) setContact(c);
-      } catch {
+
+        const { data: domainUser, error: domainUserError } = await supabase
+          .from("users")
+          .select("id")
+          .eq("auth_user_id", data.user.id)
+          .maybeSingle();
+        if (domainUserError) throw domainUserError;
+        const domainUserId = String(domainUser?.id ?? "").trim();
+        if (!UUID_RE.test(domainUserId)) return;
+
+        const primaryContact = await getPrimaryContact(role, domainUserId);
+        if (!cancelled) setContact(primaryContact);
+      } catch (error) {
         if (!cancelled) setContact(null);
+        if (import.meta.env.DEV) console.warn("[APOIS Safety] contato de emergência indisponível", error);
       } finally {
         if (!cancelled) setContactLoading(false);
       }
@@ -55,10 +72,14 @@ export function SosSheet({ open, onClose, role, rideId, counterpartLabel, onOpen
 
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    window.setTimeout(() => closeButtonRef.current?.focus(), 0);
+    focusTimerRef.current = window.setTimeout(() => closeButtonRef.current?.focus(), 0);
 
     return () => {
       cancelled = true;
+      if (focusTimerRef.current != null) {
+        window.clearTimeout(focusTimerRef.current);
+        focusTimerRef.current = null;
+      }
       document.body.style.overflow = previousOverflow;
     };
   }, [open, role]);
@@ -74,6 +95,11 @@ export function SosSheet({ open, onClose, role, rideId, counterpartLabel, onOpen
 
   async function sendAlert() {
     if (sending || sent) return;
+    if (role === "passenger" && !safeRideId) {
+      setAlertError("Não foi possível identificar a corrida ativa para enviar o SOS.");
+      return;
+    }
+
     setSending(true);
     setAlertError(null);
     try {
@@ -82,23 +108,36 @@ export function SosSheet({ open, onClose, role, rideId, counterpartLabel, onOpen
         setAlertError("Sua sessão expirou. Entre novamente para enviar o alerta à central.");
         return;
       }
+
       const pos = await getApproxLocation();
-      const lat = Number(pos?.lat);
-      const lng = Number(pos?.lng);
-      const hasValidPosition = Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
-      const { error } = await supabase.from("sos_alerts").insert({
-        user_id: auth.user.id,
-        ride_id: safeRideId,
-        lat: hasValidPosition ? lat : null,
-        lng: hasValidPosition ? lng : null,
-        message: `Alerta SOS (${role}) ${safeCounterpartLabel}`.trim().slice(0, 240),
-      });
-      if (error) throw error;
+      const lat = typeof pos?.lat === "number" && Number.isFinite(pos.lat) && Math.abs(pos.lat) <= 90 ? pos.lat : null;
+      const lng = typeof pos?.lng === "number" && Number.isFinite(pos.lng) && Math.abs(pos.lng) <= 180 ? pos.lng : null;
+      const message = `Alerta SOS (${role})${safeCounterpartLabel ? ` — ${safeCounterpartLabel}` : ""}`.slice(0, 240);
+
+      if (role === "driver") {
+        const { error } = await supabase.rpc("create_driver_sos", {
+          _lat: lat ?? undefined,
+          _lng: lng ?? undefined,
+          _severity: "critical",
+          _message: message,
+        });
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.rpc("create_passenger_sos", {
+          _ride_id: safeRideId as string,
+          _lat: lat ?? undefined,
+          _lng: lng ?? undefined,
+          _severity: "critical",
+          _message: message,
+        });
+        if (error) throw error;
+      }
+
       setSent(true);
       toast.success("Alerta SOS enviado à central APOIS");
     } catch (err) {
       if (import.meta.env.DEV) console.error("[APOIS] SOS", err);
-      setAlertError("Não foi possível enviar o alerta à central. Em risco imediato, ligue 190.");
+      setAlertError("Não foi possível enviar o alerta à central. Em risco imediato, use o serviço de emergência local.");
     } finally {
       setSending(false);
     }
@@ -188,6 +227,7 @@ export function SosSheet({ open, onClose, role, rideId, counterpartLabel, onOpen
               type="button"
               disabled={sending}
               onClick={() => void sendAlert()}
+              aria-busy={sending}
               className="flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-destructive/50 bg-destructive/10 px-4 py-3 text-[14px] font-bold text-destructive active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive motion-reduce:transform-none"
             >
               {sending ? <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Shield className="h-4 w-4" aria-hidden="true" />}
@@ -218,7 +258,7 @@ export function SosSheet({ open, onClose, role, rideId, counterpartLabel, onOpen
         </div>
 
         <p className="mt-3 text-center text-xs leading-4 text-muted-foreground">
-          A APOIS não substitui os serviços de emergência. Em risco imediato, ligue 190.
+          A APOIS não substitui os serviços de emergência. Em risco imediato, procure o serviço de emergência local.
         </p>
       </div>
     </div>
