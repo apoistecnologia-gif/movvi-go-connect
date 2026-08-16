@@ -101,11 +101,13 @@ function AdminCategoriasPage() {
       return;
     }
 
-    const incoming = (data ?? []).map(normalizeRow).filter((row): row is Row => Boolean(row));
+    const incoming = ((data ?? []) as unknown[])
+      .map(normalizeRow)
+      .filter((row: Row | null): row is Row => Boolean(row));
     setRows((current) => {
       if (!preserveDirty || dirtyIdsRef.current.size === 0) return incoming;
-      const currentById = new Map(current.map((row) => [row.id, row]));
-      return incoming.map((row) =>
+      const currentById = new Map(current.map((row: Row) => [row.id, row]));
+      return incoming.map((row: Row) =>
         dirtyIdsRef.current.has(row.id) ? (currentById.get(row.id) ?? row) : row,
       );
     });
