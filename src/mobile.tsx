@@ -8,6 +8,7 @@ import "./apois-motorista-theme.css";
 import "./apois-ui-hardening-round4.css";
 import "./apois-ui-hardening-round5.css";
 import "./apois-ui-hardening-round6.css";
+import "./apois-ui-hardening-round7.css";
 import { routeTree } from "virtual:mobile-route-tree";
 import { startInstance } from "./start";
 import { installMobileFetchProxy } from "./lib/mobileFetchProxy";
