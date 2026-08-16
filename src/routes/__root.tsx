@@ -11,6 +11,7 @@ import { useEffect, type ReactNode } from "react";
 import { Toaster } from "sonner";
 
 import appCss from "../styles.css?url";
+import "../apois-ui-hardening-round3.css";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { ThemeProvider, THEME_INIT_SCRIPT } from "../lib/theme";
 import { MapThemeProvider } from "../lib/mapTheme";
@@ -23,9 +24,6 @@ import { DriverNativePermissionsSync } from "../components/DriverNativePermissio
 import { DriverPasswordRecoveryBridge } from "../components/DriverPasswordRecoveryBridge";
 import { supabase } from "../integrations/supabase/client";
 
-// Ativa o proxy de rede quando rodando dentro do APK (Capacitor).
-// No build web isso é no-op. Precisa rodar antes de qualquer serverFn
-// disparar — por isso é executado em module scope, com guarda de window.
 if (typeof window !== "undefined") {
   installMobileFetchProxy();
   initNativeBridge();
@@ -122,8 +120,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 function RootShell({ children }: { children: ReactNode }) {
-  // O build mobile já possui <html>, <head> e <body> em index.mobile.html.
-  // A shell documental completa é necessária apenas no build web/SSR.
   if (APP_ROLE !== "web") return <>{children}</>;
 
   return (
@@ -144,10 +140,6 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
 
-  // Fase 1 — guarda de bundle por papel (VITE_APP_ROLE).
-  // No build "passenger" e "driver", qualquer tentativa de navegar para
-  // áreas fora do escopo do app (ex.: /motorista/*, /admin/*) é redirecionada
-  // para a landing padrão daquele bundle. No build "web" (padrão) nada muda.
   useEffect(() => {
     if (APP_ROLE === "web") return;
     const unsub = router.subscribe("onBeforeNavigate", ({ toLocation }) => {
@@ -155,16 +147,12 @@ function RootComponent() {
         router.navigate({ to: defaultLandingPath(), replace: true });
       }
     });
-    // Checa também a rota inicial (deep-link direto).
     if (isForbiddenPath(router.state.location.pathname)) {
       router.navigate({ to: defaultLandingPath(), replace: true });
     }
     return () => unsub();
   }, [router]);
 
-  // O Supabase persiste a sessão no localStorage. No APK do Motorista,
-  // restaura a navegação a partir da sessão real em vez de depender da
-  // landing visual. Também reage a INITIAL_SESSION/SIGNED_IN após cold start.
   useEffect(() => {
     if (APP_ROLE !== "driver") return;
     let cancelled = false;
