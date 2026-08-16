@@ -16,22 +16,14 @@ type Props = {
   helper?: string;
   file: File | null;
   onChange: (file: File | null) => void;
-  /** Include camera capture button. */
   camera?: boolean;
-  /** Facing mode for camera capture. */
   facing?: "user" | "environment";
-  /** Accepts JPG/PNG/WEBP. PDFs also accepted (skipped from compression). */
   accept?: string;
 };
 
 const DEFAULT_ACCEPT = "image/jpeg,image/jpg,image/png,image/webp,application/pdf";
-const MAX_BYTES = 8 * 1024 * 1024; // 8MB pre-compression
+const MAX_BYTES = 8 * 1024 * 1024;
 
-/**
- * Registration-time document picker (no upload yet).
- * Supports camera + gallery, preview, replace and remove.
- * Compresses images (keeps aspect ratio) before final submit.
- */
 export function DriverDocumentField({
   id,
   label,
@@ -85,44 +77,42 @@ export function DriverDocumentField({
   const done = !!file && !processing;
 
   return (
-    <div
-      className={`rounded-xl border p-3 transition ${done ? "border-primary/40 bg-primary/5" : "border-dashed border-border bg-muted/20"}`}
-    >
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-foreground">
-            {label} <span className="text-destructive">*</span>
+    <div className={`min-w-0 rounded-xl border p-3 transition ${done ? "border-primary/40 bg-primary/5" : "border-dashed border-border bg-muted/20"}`} aria-busy={processing}>
+      <div className="mb-2 flex min-w-0 items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <p className="break-words text-sm font-semibold leading-5 text-foreground">
+            {label} <span className="text-destructive" aria-hidden="true">*</span>
           </p>
-          {helper && <p className="text-[11px] text-muted-foreground">{helper}</p>}
+          {helper && <p className="mt-0.5 break-words text-[11px] leading-4 text-muted-foreground">{helper}</p>}
         </div>
-        {done && <CheckCircle2 className="h-5 w-5 shrink-0 text-primary" />}
+        {done && <CheckCircle2 className="h-5 w-5 shrink-0 text-primary" aria-label="Documento selecionado" />}
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex min-w-0 items-start gap-3 max-[339px]:flex-col">
         <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted ring-1 ring-border">
           {preview ? (
-            <img src={preview} alt={label} className="h-full w-full object-cover" />
+            <img src={preview} alt={`Prévia de ${label}`} className="h-full w-full object-cover" />
           ) : file?.type === "application/pdf" ? (
-            <FileText className="h-8 w-8 text-primary" />
+            <FileText className="h-8 w-8 text-primary" aria-hidden="true" />
           ) : (
-            <ImageIcon className="h-7 w-7 text-muted-foreground" />
+            <ImageIcon className="h-7 w-7 text-muted-foreground" aria-hidden="true" />
           )}
           {processing && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/60">
-              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+            <div className="absolute inset-0 flex items-center justify-center bg-black/60" role="status" aria-label="Processando arquivo">
+              <Loader2 className="h-5 w-5 animate-spin text-primary" aria-hidden="true" />
             </div>
           )}
         </div>
 
-        <div className="flex flex-1 flex-wrap gap-2">
+        <div className="flex min-w-0 flex-1 flex-wrap gap-2 max-[339px]:w-full">
           {camera && (
             <button
               type="button"
               onClick={() => cameraRef.current?.click()}
               disabled={processing}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-sm transition hover:brightness-110 disabled:opacity-60"
+              className="inline-flex min-h-11 max-w-full items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-center text-xs font-medium leading-4 text-primary-foreground shadow-sm transition hover:brightness-110 disabled:opacity-60 max-[339px]:flex-1"
             >
-              <Camera className="h-3.5 w-3.5" />
+              <Camera className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
               {file ? "Nova foto" : "Câmera"}
             </button>
           )}
@@ -130,9 +120,9 @@ export function DriverDocumentField({
             type="button"
             onClick={() => galleryRef.current?.click()}
             disabled={processing}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-muted disabled:opacity-60"
+            className="inline-flex min-h-11 max-w-full items-center justify-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-center text-xs font-medium leading-4 text-foreground transition hover:bg-muted disabled:opacity-60 max-[339px]:flex-1"
           >
-            <ImageIcon className="h-3.5 w-3.5" />
+            <ImageIcon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             Galeria
           </button>
           {file && (
@@ -141,9 +131,9 @@ export function DriverDocumentField({
                 type="button"
                 onClick={() => galleryRef.current?.click()}
                 disabled={processing}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-muted disabled:opacity-60"
+                className="inline-flex min-h-11 max-w-full items-center justify-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-center text-xs font-medium leading-4 text-foreground transition hover:bg-muted disabled:opacity-60 max-[339px]:flex-1"
               >
-                <RotateCcw className="h-3.5 w-3.5" />
+                <RotateCcw className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                 Trocar
               </button>
               <button
@@ -153,9 +143,9 @@ export function DriverDocumentField({
                   setError(null);
                 }}
                 disabled={processing}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-1.5 text-xs font-medium text-destructive transition hover:bg-destructive/15 disabled:opacity-60"
+                className="inline-flex min-h-11 max-w-full items-center justify-center gap-1.5 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-center text-xs font-medium leading-4 text-destructive transition hover:bg-destructive/15 disabled:opacity-60 max-[339px]:flex-1"
               >
-                <Trash2 className="h-3.5 w-3.5" />
+                <Trash2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                 Remover
               </button>
             </>
@@ -169,7 +159,9 @@ export function DriverDocumentField({
         type="file"
         accept="image/*"
         capture={facing}
-        className="hidden"
+        className="sr-only"
+        aria-label={`Tirar foto para ${label}`}
+        disabled={processing}
         onChange={(e) => void handle(e.target.files?.[0])}
       />
       <input
@@ -177,12 +169,14 @@ export function DriverDocumentField({
         id={id}
         type="file"
         accept={accept}
-        className="hidden"
+        className="sr-only"
+        aria-label={`Selecionar arquivo para ${label}`}
+        disabled={processing}
         onChange={(e) => void handle(e.target.files?.[0])}
       />
 
       {error && (
-        <p className="mt-2 rounded-md bg-destructive/15 px-2 py-1 text-[11px] text-destructive ring-1 ring-destructive/30">
+        <p role="alert" className="mt-2 break-words rounded-md bg-destructive/15 px-2 py-2 text-[11px] leading-4 text-destructive ring-1 ring-destructive/30">
           {error}
         </p>
       )}
