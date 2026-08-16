@@ -10,6 +10,7 @@ import "./apois-ui-hardening-round5.css";
 import "./apois-ui-hardening-round6.css";
 import "./apois-ui-hardening-round7.css";
 import "./apois-ui-hardening-round8.css";
+import "./apois-ui-hardening-round9.css";
 import { routeTree } from "virtual:mobile-route-tree";
 import { startInstance } from "./start";
 import { installMobileFetchProxy } from "./lib/mobileFetchProxy";
