@@ -46,15 +46,13 @@ function validPermissionStatus(value: unknown): DevicePermissionStatus {
 
 function validToken(value: unknown): string {
   const token = clean(value, MAX_TOKEN_LENGTH);
-  if (!token || /[\u0000-\u001f\u007f]/.test(token)) return "";
+  if (!token || token.length < 20 || /[\u0000-\u001f\u007f]/.test(token)) return "";
   return token;
 }
 
 function randomId(): string {
   try {
-    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-      return crypto.randomUUID();
-    }
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID();
   } catch {
     // cai para fallback abaixo
   }
@@ -103,8 +101,7 @@ function readRememberedToken(): { token: string; platform: DevicePlatform } | nu
       localStorage.removeItem(PLATFORM_STORAGE_KEY);
       return null;
     }
-    const platform = validPlatform(localStorage.getItem(PLATFORM_STORAGE_KEY));
-    return { token, platform };
+    return { token, platform: validPlatform(localStorage.getItem(PLATFORM_STORAGE_KEY)) };
   } catch {
     return null;
   }
@@ -121,8 +118,15 @@ function forgetRememberedToken(): void {
 
 async function hasSession(): Promise<boolean> {
   const { data, error } = await supabase.auth.getSession();
-  if (error) throw error;
+  if (error) throw new Error("notification_session_unavailable");
   return Boolean(data.session);
+}
+
+async function deactivateToken(token: string): Promise<void> {
+  const safeToken = validToken(token);
+  if (!safeToken) return;
+  const { error } = await rpcClient.rpc("deactivate_notification_token", { _token: safeToken });
+  if (error) throw new Error("notification_token_deactivation_failed");
 }
 
 export async function registerDeviceToken(input?: Partial<DeviceToken>): Promise<void> {
@@ -144,6 +148,15 @@ export async function registerDeviceToken(input?: Partial<DeviceToken>): Promise
   if (!token) return;
 
   const permissionStatus = validPermissionStatus(input?.permission_status);
+  if (permissionStatus === "denied") {
+    // O RPC canônico aceita somente granted/provisional. Permissão negada não é
+    // um token registrável: desativa um token já conhecido e remove o cache local.
+    await deactivateToken(token);
+    const remembered = readRememberedToken();
+    if (remembered?.token === token) forgetRememberedToken();
+    return;
+  }
+
   const deviceId = clean(input?.device_id, MAX_DEVICE_ID_LENGTH) || getDeviceId();
   if (!deviceId) return;
 
@@ -161,19 +174,20 @@ export async function registerDeviceToken(input?: Partial<DeviceToken>): Promise
 export async function unregisterCurrentDevice(): Promise<void> {
   const remembered = readRememberedToken();
   if (!remembered) return;
-  if (!(await hasSession())) return;
+  if (!(await hasSession())) {
+    // Sem sessão já não é possível autorizar a RPC; ao menos não carregamos o
+    // token de uma conta anterior para um login futuro neste WebView.
+    forgetRememberedToken();
+    return;
+  }
 
-  const { error } = await rpcClient.rpc("deactivate_notification_token", {
-    _token: remembered.token,
-  });
-  if (error) throw new Error("notification_token_deactivation_failed");
+  await deactivateToken(remembered.token);
   forgetRememberedToken();
 }
 
 export async function touchCurrentDevice(): Promise<void> {
   const remembered = readRememberedToken();
-  if (!remembered) return;
-  if (!(await hasSession())) return;
+  if (!remembered || !(await hasSession())) return;
 
   const deviceId = getDeviceId();
   if (!deviceId) return;
