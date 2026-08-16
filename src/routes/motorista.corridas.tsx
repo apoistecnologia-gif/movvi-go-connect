@@ -119,41 +119,41 @@ function RideCard({ ride, index }: { ride: RideRow; index: number }) {
       to="/motorista/corridas/$id"
       params={{ id: ride.id }}
       data-testid="ride-card"
-      className="block animate-in fade-in slide-in-from-bottom-1 fill-mode-both focus:outline-none"
+      className="block rounded-2xl animate-in fade-in slide-in-from-bottom-1 fill-mode-both focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       style={{ animationDelay: `${Math.min(index, 10) * 40}ms`, animationDuration: "320ms" }}
     >
       <DSCard className="press-scale flex flex-col gap-3 p-3 transition hover:-translate-y-[1px] sm:p-4">
-        <div className="flex items-start gap-3">
+        <div className="flex min-w-0 items-start gap-3">
           <Avatar src={ride.passenger_photo_url} name={passengerName} size={40} />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-              <Body className="truncate font-semibold">{passengerName}</Body>
+              <Body className="min-w-0 break-words font-semibold">{passengerName}</Body>
               <StatusPill status={status.key} label={status.label} pulse={false} />
             </div>
-            <Caption className="mt-0.5 block">
+            <Caption className="mt-0.5 block break-words">
               {dateStr} · {timeStr}
               {ride.category ? ` · ${ride.category}` : ""}
             </Caption>
           </div>
-          <div className="shrink-0 text-right">
+          <div className="min-w-0 max-w-[42%] shrink-0 text-right">
             {price !== null && (
-              <Metric className="text-[clamp(14px,4.4vw,17px)] leading-none text-primary">
+              <Metric className="break-words text-[clamp(14px,4.4vw,17px)] leading-tight text-primary">
                 {brl(Number(price))}
               </Metric>
             )}
-            <Caption className="mt-1 block">valor da corrida</Caption>
+            <Caption className="mt-1 block break-words">valor da corrida</Caption>
             <Icon as={ChevronRight} size="sm" className="ml-auto mt-1 text-muted-foreground/60" />
           </div>
         </div>
 
         <div className="flex flex-col gap-1.5 rounded-2xl bg-muted/40 p-2.5">
-          <div className="flex items-start gap-2">
-            <Icon as={MapPin} size="sm" className="mt-0.5 text-primary" />
-            <BodySmall className="min-w-0 truncate text-foreground">{ride.origin_name}</BodySmall>
+          <div className="flex min-w-0 items-start gap-2">
+            <Icon as={MapPin} size="sm" className="mt-0.5 shrink-0 text-primary" />
+            <BodySmall className="min-w-0 break-words leading-5 text-foreground">{ride.origin_name}</BodySmall>
           </div>
-          <div className="flex items-start gap-2">
-            <Icon as={Navigation2} size="sm" className="mt-0.5 text-primary" />
-            <BodySmall className="min-w-0 truncate text-foreground">
+          <div className="flex min-w-0 items-start gap-2">
+            <Icon as={Navigation2} size="sm" className="mt-0.5 shrink-0 text-primary" />
+            <BodySmall className="min-w-0 break-words leading-5 text-foreground">
               {ride.destination_name}
             </BodySmall>
           </div>
@@ -164,7 +164,7 @@ function RideCard({ ride, index }: { ride: RideRow; index: number }) {
           {ride.duration_min != null && (
             <Caption>{Math.round(Number(ride.duration_min))} min</Caption>
           )}
-          <Caption>{formatPayment(ride.payment_method)}</Caption>
+          <Caption className="break-words">{formatPayment(ride.payment_method)}</Caption>
         </div>
 
         {ride.status === "finalizada" &&
@@ -172,10 +172,10 @@ function RideCard({ ride, index }: { ride: RideRow; index: number }) {
           ride.passenger_rating != null && (
             <div
               data-testid="rating-info"
-              className="flex items-center gap-2 border-t border-border/50 pt-2"
+              className="flex flex-wrap items-center gap-2 border-t border-border/50 pt-2"
             >
               <StarRow value={ride.passenger_rating} />
-              <Caption>Avaliação recebida · {ride.passenger_rating}/5</Caption>
+              <Caption className="break-words">Avaliação recebida · {ride.passenger_rating}/5</Caption>
             </div>
           )}
       </DSCard>
@@ -304,7 +304,7 @@ function DriverRidesPage() {
   return (
     <div className="flex min-h-dvh flex-col bg-background">
       <MovviHeader logoutRedirect="/" />
-      <main className="flex-1 px-4 pt-4 pb-28 sm:px-5">
+      <main className="flex-1 px-4 pb-28 pt-4 sm:px-5">
         <div className="mx-auto flex w-full max-w-2xl flex-col gap-5">
           <header className="animate-in fade-in slide-in-from-top-2 duration-500">
             <HeadingXL>Histórico</HeadingXL>
@@ -315,13 +315,13 @@ function DriverRidesPage() {
             aria-label="Resumo do período"
             className="flex flex-col gap-2 animate-in fade-in slide-in-from-bottom-2 duration-500"
           >
-            <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            <div className="grid grid-cols-1 gap-2 min-[380px]:grid-cols-3 sm:gap-3">
               <SummaryCard label="Corridas" value={String(summary.total)} />
               <SummaryCard label="Valor das corridas" value={brl(summary.grossVolume)} tone="primary" />
               <SummaryCard label="Tarifa média" value={brl(summary.avgFare)} />
             </div>
             <Caption className="pl-1">Período: {FILTER_LABEL[filter]}</Caption>
-            <Caption className="pl-1">
+            <Caption className="break-words pl-1">
               Este resumo mostra o valor bruto das viagens. Seu saldo e valores realmente creditados ficam em Carteira.
             </Caption>
           </section>
@@ -337,7 +337,7 @@ function DriverRidesPage() {
             />
             <input
               id="ride-search"
-              type="text"
+              type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Buscar por endereço ou categoria"
@@ -365,7 +365,7 @@ function DriverRidesPage() {
               </FilterPill>
             </div>
             {filter === "custom" && (
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2 min-[380px]:grid-cols-2">
                 <label className="sr-only" htmlFor="ride-from">
                   Data inicial
                 </label>
@@ -374,7 +374,7 @@ function DriverRidesPage() {
                   type="date"
                   value={customFrom}
                   onChange={(e) => setCustomFrom(e.target.value)}
-                  className="h-11 rounded-[14px] border border-border/60 bg-card px-3 text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="h-11 min-w-0 rounded-[14px] border border-border/60 bg-card px-3 text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 />
                 <label className="sr-only" htmlFor="ride-to">
                   Data final
@@ -384,15 +384,15 @@ function DriverRidesPage() {
                   type="date"
                   value={customTo}
                   onChange={(e) => setCustomTo(e.target.value)}
-                  className="h-11 rounded-[14px] border border-border/60 bg-card px-3 text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="h-11 min-w-0 rounded-[14px] border border-border/60 bg-card px-3 text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 />
               </div>
             )}
           </section>
 
           {error && (
-            <DSCard className="p-3">
-              <Body className="text-destructive">{error}</Body>
+            <DSCard className="p-3" role="alert">
+              <Body className="break-words text-destructive">{error}</Body>
             </DSCard>
           )}
 
@@ -404,7 +404,7 @@ function DriverRidesPage() {
               title="Nenhuma corrida encontrada"
               description="Ajuste o filtro ou complete sua primeira viagem para construir seu histórico."
               action={
-                <Link to="/motorista/app">
+                <Link to="/motorista/app" className="inline-flex min-h-11 items-center">
                   <DSButton variant="outline" size="sm">
                     Voltar ao mapa
                   </DSButton>
@@ -439,16 +439,16 @@ function SummaryCard({
   tone?: "default" | "primary";
 }) {
   return (
-    <DSCard className="flex flex-col gap-1.5 p-3 sm:p-4">
+    <DSCard className="flex min-w-0 flex-col gap-1.5 p-3 sm:p-4">
       <Metric
         className={cn(
-          "text-[clamp(14px,4.6vw,18px)] leading-none",
+          "break-words text-[clamp(14px,4.6vw,18px)] leading-tight",
           tone === "primary" && "text-primary",
         )}
       >
         {value}
       </Metric>
-      <Label>{label}</Label>
+      <Label className="break-words">{label}</Label>
     </DSCard>
   );
 }
@@ -470,7 +470,7 @@ function FilterPill({
       size="sm"
       onClick={onClick}
       className={cn(
-        "rounded-full px-4",
+        "min-h-11 rounded-full px-4 whitespace-normal",
         !active && "bg-card text-muted-foreground hover:text-foreground",
       )}
     >
