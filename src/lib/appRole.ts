@@ -1,53 +1,70 @@
 // APOIS — App role (build-time flag).
 //
-// Fase 1 da separação dos aplicativos. Um único código-fonte, três "sabores"
-// de build controlados por `VITE_APP_ROLE`:
+// Um único código-fonte, três sabores de build controlados por `VITE_APP_ROLE`:
+//   - passenger → APOIS Passageiro
+//   - driver    → APOIS Motorista
+//   - web       → site/painel web
 //
-//   - "passenger" → build do app APOIS Passageiro (Play Store). Só expõe
-//     rotas /passageiro/*. Menus/cards de motorista e admin são ocultados
-//     e uma navegação acidental para essas áreas redireciona para o login
-//     do passageiro.
-//   - "driver"    → reservado para a Fase 2 (app do Motorista). Ainda não é
-//     usado nesta fase, mas o tipo já existe para evitar retrabalho.
-//   - "web"       → padrão. Site institucional + painel admin + fallback web.
-//     Comportamento atual do projeto, sem restrições.
-//
-// Nada aqui altera regras de negócio, banco, autenticação, corridas,
-// pagamentos ou notificações — apenas quais rotas ficam visíveis no bundle.
+// Nada aqui altera regra de negócio. Esta camada apenas impede navegação
+// acidental entre superfícies que não pertencem ao bundle atual.
 
 export type AppRole = "passenger" | "driver" | "web";
 
-const RAW = (import.meta.env.VITE_APP_ROLE as string | undefined)?.toLowerCase().trim();
+const rawRole = String(import.meta.env.VITE_APP_ROLE ?? "")
+  .trim()
+  .toLowerCase()
+  .slice(0, 32);
 
-// Aceita aliases em português ("passageiro", "motorista") além dos canônicos.
-export const APP_ROLE: AppRole =
-  RAW === "passenger" || RAW === "passageiro"
-    ? "passenger"
-    : RAW === "driver" || RAW === "motorista"
-      ? "driver"
-      : "web";
+function resolveAppRole(value: string): AppRole {
+  if (value === "passenger" || value === "passageiro") return "passenger";
+  if (value === "driver" || value === "motorista") return "driver";
+  return "web";
+}
+
+export const APP_ROLE: AppRole = resolveAppRole(rawRole);
 
 export const isPassengerBuild = () => APP_ROLE === "passenger";
 export const isDriverBuild = () => APP_ROLE === "driver";
 export const isWebBuild = () => APP_ROLE === "web";
 
+function normalizePathname(value: unknown): string {
+  const raw = String(value ?? "").trim();
+  if (!raw || !raw.startsWith("/") || raw.startsWith("//") || raw.includes("\\")) return "/";
+  if (/[\u0000-\u001f\u007f]/.test(raw)) return "/";
+  const withoutQuery = raw.split(/[?#]/, 1)[0] || "/";
+  try {
+    const parsed = new URL(withoutQuery, "https://apois.invalid");
+    return parsed.pathname.replace(/\/{2,}/g, "/") || "/";
+  } catch {
+    return "/";
+  }
+}
+
+function isPathInside(pathname: string, root: string): boolean {
+  const path = normalizePathname(pathname);
+  const normalizedRoot = normalizePathname(root).replace(/\/+$/, "") || "/";
+  return path === normalizedRoot || path.startsWith(`${normalizedRoot}/`);
+}
+
 /** Rota inicial do bundle atual. Usada pelo `/` para redirecionar. */
 export function defaultLandingPath(): string {
   if (APP_ROLE === "passenger") return "/passageiro/login";
   if (APP_ROLE === "driver") return "/motorista/login";
-  return "/"; // web: mantém a tela institucional de escolha de perfil
+  return "/";
 }
 
 /**
  * Retorna true se o pathname pertence a uma área que NÃO deve existir no
- * bundle atual. Usado como guarda de navegação no root layout.
+ * bundle atual. A verificação respeita limites de segmento: `/admin-x`, por
+ * exemplo, não é confundido com `/admin`.
  */
 export function isForbiddenPath(pathname: string): boolean {
+  const path = normalizePathname(pathname);
   if (APP_ROLE === "passenger") {
-    return pathname.startsWith("/motorista") || pathname.startsWith("/admin");
+    return isPathInside(path, "/motorista") || isPathInside(path, "/admin");
   }
   if (APP_ROLE === "driver") {
-    return pathname.startsWith("/passageiro") || pathname.startsWith("/admin");
+    return isPathInside(path, "/passageiro") || isPathInside(path, "/admin");
   }
   return false;
 }
