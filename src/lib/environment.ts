@@ -14,37 +14,41 @@ export const MODO_DESENVOLVIMENTO = DEV_MODE;
 // APOIS — Detecção de ambiente
 //
 // REGRA DE OURO:
-//   • Em DESENVOLVIMENTO/PREVIEW (editor Lovable, localhost, sandbox, iframe)
+//   • Em DESENVOLVIMENTO/PREVIEW (build DEV ou host de sandbox conhecido)
 //     o app habilita o "Modo Desenvolvedor": NUNCA dispara GPS real automático
 //     e permite definir uma origem manual de teste.
-//   • Em PRODUÇÃO (URL publicada acessada diretamente, custom domain) o app
-//     usa o fluxo real: pede permissão de localização e usa o GPS do aparelho.
+//   • Em PRODUÇÃO (URL publicada ou custom domain), inclusive quando embutida
+//     em um iframe de terceiro, o app continua em modo real.
 //
 // O modo desenvolvedor NUNCA pode substituir o GPS real em produção.
 // ────────────────────────────────────────────────────────────────────────────
 
 const DEV_HOST_REGEX =
-  /(^|\.)lovableproject\.com$|^id-preview--|^localhost$|^127\.0\.0\.1$|^0\.0\.0\.0$|stackblitz|webcontainer|bolt\.new|gitpod|codespaces|csb\.app|stackblitz\.io/;
+  /(^|\.)lovableproject\.com$|^id-preview--|^localhost$|^127\.0\.0\.1$|^0\.0\.0\.0$|(^|\.)stackblitz\.com$|(^|\.)stackblitz\.io$|(^|\.)webcontainer\.io$|(^|\.)bolt\.new$|(^|\.)gitpod\.io$|(^|\.)githubpreview\.dev$|(^|\.)app\.github\.dev$|(^|\.)csb\.app$/i;
+
+function normalizedHostname() {
+  if (typeof window === "undefined") return "";
+  return String(window.location.hostname ?? "").trim().toLowerCase().replace(/\.$/, "");
+}
 
 /**
  * Fonte única de verdade para distinguir DEV/PREVIEW vs PRODUÇÃO.
  *
- * Considera DEV quando QUALQUER uma destas condições é verdadeira:
- *   1. `import.meta.env.DEV` (build de desenvolvimento)
- *   2. Host é um sandbox/preview conhecido (lovableproject.com, id-preview--*, localhost, etc.)
- *   3. Página está sendo renderizada dentro de um iframe (preview do editor Lovable)
+ * Considera DEV somente quando uma destas condições confiáveis é verdadeira:
+ *   1. `import.meta.env.DEV` (build de desenvolvimento);
+ *   2. o hostname pertence a uma lista explícita de sandbox/preview conhecido.
  *
- * O domínio publicado (`project--<id>.lovable.app` aberto diretamente, ou um
- * custom domain) NÃO satisfaz nenhuma das condições → retorna `false` → PRODUÇÃO.
+ * Estar dentro de iframe NÃO é prova de ambiente de desenvolvimento. Um domínio
+ * de produção pode ser incorporado por terceiros, e tratá-lo como DEV abriria
+ * superfícies de diagnóstico e alteraria o comportamento de GPS indevidamente.
  */
 export function isDevelopmentEnvironment(): boolean {
   if (typeof window === "undefined") return false;
   if (import.meta.env.DEV) return true;
   try {
-    const host = window.location.hostname;
-    if (DEV_HOST_REGEX.test(host)) return true;
-    if (window.self !== window.top) return true; // preview iframe
-    return false;
+    const host = normalizedHostname();
+    if (!host) return false;
+    return DEV_HOST_REGEX.test(host);
   } catch {
     return false;
   }
@@ -83,16 +87,18 @@ export function getEnvironmentDiagnostics(): EnvironmentDiagnostics {
   try {
     inIframe = window.self !== window.top;
   } catch {
+    // Cross-origin frame access can throw. This is diagnostic metadata only and
+    // must never promote the application to development mode.
     inIframe = true;
   }
   return {
     mode: dev ? "development" : "production",
-    hostname: window.location.hostname,
-    href: window.location.href,
+    hostname: normalizedHostname(),
+    href: String(window.location.href ?? ""),
     inIframe,
-    isSecureContext: !!window.isSecureContext,
-    protocol: window.location.protocol,
-    userAgent: window.navigator.userAgent,
+    isSecureContext: window.isSecureContext === true,
+    protocol: String(window.location.protocol ?? ""),
+    userAgent: String(window.navigator?.userAgent ?? ""),
     viteDev: !!import.meta.env.DEV,
   };
 }
