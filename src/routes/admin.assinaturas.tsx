@@ -211,8 +211,9 @@ function AdminAssinaturasPage() {
           <div className="min-w-0">
             <p className="font-semibold text-foreground">Mensalidade vinculada ao backend</p>
             <p className="mt-1 break-words">
-              O status exibido vem do perfil operacional do motorista. Confirmações financeiras
-              são realizadas pelo backend e pelos webhooks do provedor configurado para mensalidade.
+              O estado canônico exibido é <strong>drivers.subscription_status</strong>. Confirmações
+              financeiras são realizadas pelo backend e pelos webhooks do provedor configurado para
+              mensalidade; esta tela não fabrica pagamento nem mantém uma verdade paralela.
             </p>
           </div>
         </DSCardContent>
