@@ -14,6 +14,8 @@ import {
   Wallet,
   ScrollText,
   Lock,
+  Loader2,
+  RefreshCw,
   type LucideIcon,
 } from "lucide-react";
 import { DSButton } from "@/design-system";
@@ -53,16 +55,22 @@ export const ADMIN_NAV: Item[] = [
   { to: "/admin/logs", label: "Auditoria", icon: ScrollText, permission: "audit.read" },
 ];
 
+function cleanLabel(value: unknown, fallback: string) {
+  const text = String(value ?? "").trim().replace(/\s+/g, " ").slice(0, 80);
+  return text || fallback;
+}
+
 function SidebarBrand() {
   return (
-    <div className="flex flex-col items-center leading-none">
+    <div className="flex flex-col items-center leading-none" role="img" aria-label="APOIS Admin">
       <svg
         width="44"
         height="44"
         viewBox="0 0 120 120"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
-        aria-label="APOIS"
+        aria-hidden="true"
+        focusable="false"
         className="drop-shadow-[0_0_12px_color-mix(in_oklab,var(--color-primary)_35%,transparent)]"
       >
         <path
@@ -91,11 +99,11 @@ function SidebarBrand() {
           fill="none"
         />
       </svg>
-      <div className="mt-2 flex flex-col items-center leading-[1.05]">
+      <div className="mt-2 flex flex-col items-center leading-[1.05]" aria-hidden="true">
         <span className="font-display text-[15px] font-bold tracking-[0.22em] text-foreground">
           APOIS
         </span>
-        <span className="font-display text-[12px] font-bold tracking-[0.22em] text-primary">
+        <span className="font-display text-xs font-bold tracking-[0.22em] text-primary">
           ADMIN
         </span>
       </div>
@@ -104,15 +112,48 @@ function SidebarBrand() {
 }
 
 export function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
   const navigate = useNavigate();
   const [access, setAccess] = useState<AdminAccessContext | null>(null);
+  const [loadingAccess, setLoadingAccess] = useState(true);
+  const [accessError, setAccessError] = useState<string | null>(null);
+  const [signingOut, setSigningOut] = useState(false);
+  const [logoutError, setLogoutError] = useState<string | null>(null);
+
+  async function refreshAccess() {
+    setLoadingAccess(true);
+    setAccessError(null);
+    try {
+      const next = await loadAdminAccess();
+      setAccess(next);
+      if (!next) setAccessError("Não foi possível confirmar as permissões administrativas.");
+    } catch (error) {
+      setAccess(null);
+      setAccessError("Não foi possível carregar suas permissões agora.");
+      if (import.meta.env.DEV) console.warn("[APOIS Admin] falha ao carregar permissões do menu", error);
+    } finally {
+      setLoadingAccess(false);
+    }
+  }
 
   useEffect(() => {
     let alive = true;
-    void loadAdminAccess().then((next) => {
-      if (alive) setAccess(next);
-    });
+    setLoadingAccess(true);
+    void loadAdminAccess()
+      .then((next) => {
+        if (!alive) return;
+        setAccess(next);
+        setAccessError(next ? null : "Não foi possível confirmar as permissões administrativas.");
+      })
+      .catch((error) => {
+        if (!alive) return;
+        setAccess(null);
+        setAccessError("Não foi possível carregar suas permissões agora.");
+        if (import.meta.env.DEV) console.warn("[APOIS Admin] falha ao carregar permissões do menu", error);
+      })
+      .finally(() => {
+        if (alive) setLoadingAccess(false);
+      });
     return () => {
       alive = false;
     };
@@ -120,68 +161,124 @@ export function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
 
   const visibleNav = useMemo(() => {
     if (!access) return [];
-    const permissionSet = new Set(access.permissions);
+    const permissionSet = new Set(access.permissions.filter(Boolean));
     return ADMIN_NAV.filter((item) => permissionSet.has(item.permission));
   }, [access]);
 
+  async function signOut() {
+    if (signingOut) return;
+    setSigningOut(true);
+    setLogoutError(null);
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      onNavigate?.();
+      await navigate({ to: "/admin/login", replace: true });
+    } catch (error) {
+      setLogoutError("Não foi possível sair da conta agora. Tente novamente.");
+      if (import.meta.env.DEV) console.warn("[APOIS Admin] falha ao encerrar sessão", error);
+    } finally {
+      setSigningOut(false);
+    }
+  }
+
   return (
-    <aside className="flex h-full w-[260px] max-w-full flex-col border-r border-border/60 bg-card text-card-foreground">
+    <aside className="flex h-full w-[260px] max-w-full min-w-0 flex-col overflow-x-hidden border-r border-border/60 bg-card text-card-foreground">
       <div className="relative px-5 pb-5 pt-6">
-        <span className="absolute right-3 top-3 rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
-          {access?.role ?? "Admin"}
+        <span className="absolute right-3 top-3 max-w-[45%] break-words rounded-full border border-primary/30 bg-primary/10 px-2 py-1 text-xs font-bold uppercase tracking-[0.12em] text-primary">
+          {loadingAccess ? "…" : cleanLabel(access?.role, "Admin")}
         </span>
         <div className="flex justify-center">
           <SidebarBrand />
         </div>
       </div>
 
-      <div className="mx-5 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+      <div className="mx-5 h-px bg-gradient-to-r from-transparent via-border to-transparent" aria-hidden="true" />
 
-      <nav className="flex-1 overflow-y-auto px-3 py-4">
-        <ul className="space-y-0.5">
-          {visibleNav.map(({ to, label, icon: Icon }) => {
-            const active = pathname === to || pathname.startsWith(`${to}/`);
-            return (
-              <li key={to}>
-                <Link
-                  to={to}
-                  onClick={onNavigate}
-                  className={[
-                    "group relative flex min-h-11 items-center gap-3 rounded-lg pl-3 pr-3 text-[13px] font-medium",
-                    "transition-all duration-200 ease-out",
-                    active
-                      ? "bg-primary/15 text-primary shadow-[0_0_0_1px_color-mix(in_oklab,var(--color-primary)_25%,transparent),0_0_20px_-6px_color-mix(in_oklab,var(--color-primary)_55%,transparent)]"
-                      : "text-muted-foreground hover:bg-muted/60 hover:text-foreground hover:translate-x-0.5",
-                  ].join(" ")}
-                >
-                  {active && (
-                    <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-primary shadow-[0_0_10px_color-mix(in_oklab,var(--color-primary)_70%,transparent)]" />
-                  )}
-                  <Icon
+      <nav className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-3 py-4" aria-label="Seções administrativas">
+        {loadingAccess ? (
+          <div className="flex items-center gap-2 px-3 py-4 text-sm text-muted-foreground" role="status" aria-live="polite">
+            <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+            Carregando menu…
+          </div>
+        ) : accessError ? (
+          <div className="space-y-3 rounded-xl border border-destructive/30 bg-destructive/5 p-3" role="alert">
+            <p className="break-words text-sm text-destructive">{accessError}</p>
+            <DSButton
+              variant="outline"
+              size="sm"
+              className="min-h-11 w-full gap-2"
+              onClick={() => void refreshAccess()}
+              disabled={loadingAccess}
+            >
+              <RefreshCw className="h-4 w-4" aria-hidden="true" />
+              Tentar novamente
+            </DSButton>
+          </div>
+        ) : visibleNav.length === 0 ? (
+          <p className="px-3 py-4 text-sm leading-6 text-muted-foreground">
+            Nenhuma seção administrativa está liberada para esta função.
+          </p>
+        ) : (
+          <ul className="space-y-1">
+            {visibleNav.map(({ to, label, icon: Icon }) => {
+              const active = pathname === to || pathname.startsWith(`${to}/`);
+              return (
+                <li key={to}>
+                  <Link
+                    to={to}
+                    onClick={onNavigate}
+                    aria-current={active ? "page" : undefined}
                     className={[
-                      "h-[18px] w-[18px] shrink-0 transition-colors",
-                      active ? "text-primary" : "text-muted-foreground group-hover:text-foreground",
+                      "group relative flex min-h-11 min-w-0 items-center gap-3 rounded-lg px-3 text-sm font-medium outline-none",
+                      "transition-all duration-200 ease-out motion-reduce:transform-none motion-reduce:transition-none focus-visible:ring-2 focus-visible:ring-primary",
+                      active
+                        ? "bg-primary/15 text-primary shadow-[0_0_0_1px_color-mix(in_oklab,var(--color-primary)_25%,transparent),0_0_20px_-6px_color-mix(in_oklab,var(--color-primary)_55%,transparent)]"
+                        : "text-muted-foreground hover:bg-muted/60 hover:text-foreground hover:translate-x-0.5 motion-reduce:hover:translate-x-0",
                     ].join(" ")}
-                  />
-                  <span className="truncate leading-none">{label}</span>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+                  >
+                    {active ? (
+                      <span
+                        className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-primary shadow-[0_0_10px_color-mix(in_oklab,var(--color-primary)_70%,transparent)]"
+                        aria-hidden="true"
+                      />
+                    ) : null}
+                    <Icon
+                      className={[
+                        "h-[18px] w-[18px] shrink-0 transition-colors motion-reduce:transition-none",
+                        active ? "text-primary" : "text-muted-foreground group-hover:text-foreground",
+                      ].join(" ")}
+                      aria-hidden="true"
+                    />
+                    <span className="min-w-0 break-words leading-5">{label}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </nav>
 
-      <div className="border-t border-border/60 p-3">
+      <div className="border-t border-border/60 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        {logoutError ? (
+          <p className="mb-2 break-words text-sm text-destructive" role="alert">
+            {logoutError}
+          </p>
+        ) : null}
         <DSButton
           variant="ghost"
           size="sm"
-          className="min-h-11 w-full justify-start px-3 text-[13px] font-medium text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-          onClick={async () => {
-            await supabase.auth.signOut();
-            navigate({ to: "/admin/login" });
-          }}
+          className="min-h-11 w-full justify-start px-3 text-sm font-medium text-muted-foreground hover:bg-muted/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary"
+          onClick={() => void signOut()}
+          disabled={signingOut}
+          aria-busy={signingOut}
         >
-          <LogOut className="mr-3 h-[18px] w-[18px]" /> Sair
+          {signingOut ? (
+            <Loader2 className="mr-3 h-[18px] w-[18px] animate-spin motion-reduce:animate-none" aria-hidden="true" />
+          ) : (
+            <LogOut className="mr-3 h-[18px] w-[18px]" aria-hidden="true" />
+          )}
+          {signingOut ? "Saindo…" : "Sair"}
         </DSButton>
       </div>
     </aside>
