@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Activity, BarChart3, RefreshCw, WalletCards } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { getAdminDashboardMetrics, type AdminDashboardMetrics } from "@/lib/adminControlPlane";
@@ -7,7 +7,6 @@ import { getAdminFinanceSummary, type AdminFinanceSummary } from "@/lib/adminFin
 import { loadAdminAccess, type AdminAccessContext } from "@/lib/adminAccess";
 import { supabase } from "@/integrations/supabase/client";
 import { DSBadge, DSButton, DSCard, DSCardContent, EmptyState, Loading } from "@/design-system";
-import { toast } from "sonner";
 
 type RideSlice = { category: string; status: string; created_at: string };
 type Period = "today" | "7d" | "30d" | "month";
@@ -30,10 +29,41 @@ function periodRange(period: Period) {
   return { from, to };
 }
 
-const money = (cents: number) =>
+function safeCount(value: unknown) {
+  const number = Number(value);
+  return Number.isFinite(number) && number >= 0 ? Math.round(number) : 0;
+}
+
+function safeCents(value: unknown) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : 0;
+}
+
+const money = (cents: unknown) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
-    Number(cents || 0) / 100,
+    safeCents(cents) / 100,
   );
+
+function normalizeLabel(value: unknown, fallback: string) {
+  const text = String(value ?? "").trim();
+  return text || fallback;
+}
+
+function humanizeStatus(status: string) {
+  const labels: Record<string, string> = {
+    finalizada: "Finalizada",
+    motorista_a_caminho: "Motorista a caminho",
+    motorista_chegou: "Motorista chegou",
+    em_viagem: "Em viagem",
+    procurando_motorista: "Procurando motorista",
+    solicitada: "Solicitada",
+    cancelada_passageiro: "Cancelada pelo passageiro",
+    cancelada_motorista: "Cancelada pelo motorista",
+    cancelada_admin: "Cancelada pelo admin",
+    expired: "Expirada",
+  };
+  return labels[status] ?? status.replaceAll("_", " ").replace(/^./, (char) => char.toUpperCase());
+}
 
 function AdminAnalyticsPage() {
   const [period, setPeriod] = useState<Period>("30d");
@@ -42,16 +72,23 @@ function AdminAnalyticsPage() {
   const [finance, setFinance] = useState<AdminFinanceSummary | null>(null);
   const [rides, setRides] = useState<RideSlice[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const requestRef = useRef(0);
 
   const range = useMemo(() => periodRange(period), [period]);
   const canReadFinance = Boolean(access?.permissions.includes("finance.read"));
 
   async function load() {
+    const requestId = ++requestRef.current;
     setLoading(true);
+    setLoadError(null);
     try {
       const nextAccess = access ?? (await loadAdminAccess());
+      if (requestId !== requestRef.current) return;
       setAccess(nextAccess);
-      if (!nextAccess?.permissions.includes("metrics.read")) throw new Error("forbidden");
+      if (!nextAccess?.permissions.includes("metrics.read")) {
+        throw new Error("metrics_forbidden");
+      }
 
       const dashboardPromise = getAdminDashboardMetrics();
       const ridesPromise = nextAccess.permissions.includes("rides.read")
@@ -72,22 +109,44 @@ function AdminAnalyticsPage() {
         financePromise,
         ridesPromise,
       ]);
+      if (requestId !== requestRef.current) return;
       if (rideResult.error) throw rideResult.error;
+
+      const safeRides = (rideResult.data ?? [])
+        .map((ride) => ({
+          category: normalizeLabel(ride.category, "Sem categoria"),
+          status: normalizeLabel(ride.status, "desconhecido"),
+          created_at: normalizeLabel(ride.created_at, ""),
+        }))
+        .filter((ride) => ride.created_at.length > 0);
+
       setDashboard(dashboardData);
       setFinance(financeData);
-      setRides((rideResult.data ?? []) as RideSlice[]);
+      setRides(safeRides);
     } catch (error) {
+      if (requestId !== requestRef.current) return;
       setDashboard(null);
       setFinance(null);
       setRides([]);
-      toast.error(error instanceof Error ? error.message : "Não foi possível carregar Analytics.");
+      const forbidden = error instanceof Error && error.message === "metrics_forbidden";
+      setLoadError(
+        forbidden
+          ? "Sua função administrativa não possui permissão para consultar Analytics."
+          : "Não foi possível carregar os indicadores agora. Tente novamente.",
+      );
+      if (import.meta.env.DEV) console.warn("[APOIS Admin] falha ao carregar Analytics", error);
     } finally {
-      setLoading(false);
+      if (requestId === requestRef.current) setLoading(false);
     }
   }
 
   useEffect(() => {
     void load();
+    return () => {
+      requestRef.current += 1;
+    };
+    // `range` is derived from `period`; `access` is intentionally reused without retriggering the effect.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [period]);
 
   const byStatus = useMemo(() => {
@@ -106,8 +165,8 @@ function AdminAnalyticsPage() {
   const cancelled = rides.filter(
     (ride) => ride.status.startsWith("cancelada") || ride.status === "expired",
   ).length;
-  const completionRate = rides.length ? (completed / rides.length) * 100 : 0;
-  const cancellationRate = rides.length ? (cancelled / rides.length) * 100 : 0;
+  const completionRate = rides.length ? Math.min(100, Math.max(0, (completed / rides.length) * 100)) : 0;
+  const cancellationRate = rides.length ? Math.min(100, Math.max(0, (cancelled / rides.length) * 100)) : 0;
 
   return (
     <AdminLayout
@@ -119,27 +178,33 @@ function AdminAnalyticsPage() {
           size="sm"
           onClick={() => void load()}
           disabled={loading}
-          className="gap-1"
+          className="min-h-11 gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          aria-busy={loading}
         >
-          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Atualizar
+          <RefreshCw
+            className={`h-4 w-4 ${loading ? "animate-spin motion-reduce:animate-none" : ""}`}
+            aria-hidden="true"
+          />
+          Atualizar
         </DSButton>
       }
     >
       <DSCard className="mb-4 border-primary/20 bg-primary/5">
-        <DSCardContent className="p-4 text-sm text-muted-foreground">
+        <DSCardContent className="p-4 text-sm leading-6 text-muted-foreground">
           Analytics legado baseado em RPCs paralelos de MRR, assinaturas e receita foi removido.
-          Métricas financeiras detalhadas só aparecem para funções com <strong>finance.read</strong>{" "}
-          e usam settlements canônicos.
+          Métricas financeiras detalhadas só aparecem para funções autorizadas e usam settlements
+          canônicos.
         </DSCardContent>
       </DSCard>
 
-      <div className="mb-4 flex flex-wrap gap-2">
+      <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label="Período dos indicadores">
         {(["today", "7d", "30d", "month"] as Period[]).map((value) => (
           <button
             key={value}
             type="button"
             onClick={() => setPeriod(value)}
-            className={`rounded-full border px-3 py-1 text-xs ${period === value ? "border-primary bg-primary/15 text-primary" : "border-border text-muted-foreground"}`}
+            aria-pressed={period === value}
+            className={`min-h-11 rounded-full border px-4 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary motion-reduce:transition-none ${period === value ? "border-primary bg-primary/15 text-primary" : "border-border text-muted-foreground hover:text-foreground"}`}
           >
             {value === "today"
               ? "Hoje"
@@ -153,19 +218,28 @@ function AdminAnalyticsPage() {
       </div>
 
       {loading ? (
-        <Loading label="Calculando indicadores..." />
-      ) : !dashboard ? (
-        <EmptyState
-          icon={BarChart3}
-          title="Analytics indisponível"
-          description="A função administrativa atual não conseguiu consultar as métricas canônicas."
-        />
+        <div aria-live="polite">
+          <Loading label="Calculando indicadores..." />
+        </div>
+      ) : loadError || !dashboard ? (
+        <div className="space-y-3" role="alert">
+          <EmptyState
+            icon={BarChart3}
+            title="Analytics indisponível"
+            description={loadError ?? "Não foi possível consultar as métricas canônicas."}
+          />
+          <div className="flex justify-center">
+            <DSButton variant="outline" onClick={() => void load()} className="min-h-11">
+              Tentar novamente
+            </DSButton>
+          </div>
+        </div>
       ) : (
         <>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <Metric label="Motoristas" value={String(dashboard.drivers.total)} />
-            <Metric label="Motoristas online" value={String(dashboard.drivers.online)} />
-            <Metric label="Passageiros" value={String(dashboard.passengers.total)} />
+            <Metric label="Motoristas" value={String(safeCount(dashboard.drivers.total))} />
+            <Metric label="Motoristas online" value={String(safeCount(dashboard.drivers.online))} />
+            <Metric label="Passageiros" value={String(safeCount(dashboard.passengers.total))} />
             <Metric label="Corridas no período" value={String(rides.length)} />
             <Metric label="Taxa de conclusão" value={`${completionRate.toFixed(1)}%`} />
             <Metric label="Taxa de cancelamento" value={`${cancellationRate.toFixed(1)}%`} />
@@ -192,15 +266,15 @@ function AdminAnalyticsPage() {
           </div>
 
           {!canReadFinance && (
-            <p className="mt-3 text-xs text-muted-foreground">
-              Indicadores financeiros detalhados foram ocultados porque sua função não possui
-              finance.read.
+            <p className="mt-3 text-sm leading-5 text-muted-foreground">
+              Indicadores financeiros detalhados foram ocultados porque sua função não possui essa
+              permissão.
             </p>
           )}
 
           <div className="mt-5 grid gap-4 lg:grid-cols-2">
-            <Breakdown icon={Activity} title="Corridas por status" rows={byStatus} />
-            <Breakdown icon={WalletCards} title="Corridas por categoria" rows={byCategory} />
+            <Breakdown icon={Activity} title="Corridas por status" rows={byStatus} kind="status" />
+            <Breakdown icon={WalletCards} title="Corridas por categoria" rows={byCategory} kind="category" />
           </div>
         </>
       )}
@@ -219,9 +293,9 @@ function Metric({
 }) {
   return (
     <DSCard className={emphasis ? "border-primary/30 bg-primary/5" : undefined}>
-      <DSCardContent className="p-4">
-        <p className="text-xs text-muted-foreground">{label}</p>
-        <p className="mt-1 text-xl font-bold">{value}</p>
+      <DSCardContent className="min-w-0 p-4">
+        <p className="break-words text-sm text-muted-foreground">{label}</p>
+        <p className="mt-1 break-words text-xl font-bold tabular-nums">{value}</p>
       </DSCardContent>
     </DSCard>
   );
@@ -231,16 +305,19 @@ function Breakdown({
   icon: Icon,
   title,
   rows,
+  kind,
 }: {
   icon: typeof Activity;
   title: string;
   rows: Array<[string, number]>;
+  kind: "status" | "category";
 }) {
   return (
     <DSCard>
       <DSCardContent className="space-y-3 p-4">
         <h2 className="flex items-center gap-2 font-semibold">
-          <Icon className="h-4 w-4 text-primary" /> {title}
+          <Icon className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+          <span className="min-w-0 break-words">{title}</span>
         </h2>
         {rows.length === 0 ? (
           <p className="text-sm text-muted-foreground">Sem dados no período.</p>
@@ -248,10 +325,12 @@ function Breakdown({
           rows.map(([label, value]) => (
             <div
               key={label}
-              className="flex items-center justify-between gap-3 rounded-lg border border-border p-3 text-sm"
+              className="flex min-w-0 items-center justify-between gap-3 rounded-lg border border-border p-3 text-sm"
             >
-              <span>{label}</span>
-              <DSBadge variant="muted">{value}</DSBadge>
+              <span className="min-w-0 break-words">
+                {kind === "status" ? humanizeStatus(label) : normalizeLabel(label, "Sem categoria")}
+              </span>
+              <DSBadge variant="muted">{safeCount(value)}</DSBadge>
             </div>
           ))
         )}
