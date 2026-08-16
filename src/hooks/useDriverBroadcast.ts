@@ -44,16 +44,29 @@ function haversineMeters(a: { lat: number; lng: number }, b: { lat: number; lng:
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
+function normalizeHeading(value: number | null | undefined): number | null {
+  const heading = Number(value);
+  if (!Number.isFinite(heading)) return null;
+  return ((heading % 360) + 360) % 360;
+}
+
+function normalizeSpeed(value: number | null | undefined): number | null {
+  const speed = Number(value);
+  return Number.isFinite(speed) && speed >= 0 ? speed : null;
+}
+
 async function setPresence(
   online: boolean,
   position?: DriverTelemetry | null,
 ) {
+  const hasValidPosition = !!position && isBrazilCoordinate(Number(position.lat), Number(position.lng));
+  const publishOnline = online && hasValidPosition;
   const { error } = await (supabase as unknown as DriverPresenceRpcClient).rpc("driver_set_presence", {
-    _online: online,
-    _lat: online ? position?.lat ?? null : null,
-    _lng: online ? position?.lng ?? null : null,
-    _heading: online ? position?.heading ?? null : null,
-    _speed: online ? position?.speed ?? null : null,
+    _online: publishOnline,
+    _lat: publishOnline ? Number(position?.lat) : null,
+    _lng: publishOnline ? Number(position?.lng) : null,
+    _heading: publishOnline ? normalizeHeading(position?.heading) : null,
+    _speed: publishOnline ? normalizeSpeed(position?.speed) : null,
   });
   if (error) {
     console.warn("[APOIS MOTORISTA] presença não atualizada:", error.message);
@@ -76,13 +89,19 @@ export function useDriverBroadcast(
   const lastWrittenRef = useRef<{ lat: number; lng: number; at: number } | null>(null);
   const positionRef = useRef(position);
   const nativeStartPendingRef = useRef(false);
+  const nativeLifecycleVersionRef = useRef(0);
 
   useEffect(() => {
     positionRef.current = position;
   }, [position]);
 
   useEffect(() => {
-    if (!userId) return;
+    const lifecycleVersion = ++nativeLifecycleVersionRef.current;
+    if (!userId) {
+      nativeStartPendingRef.current = false;
+      void stopNativeDriverLocation().catch(() => undefined);
+      return;
+    }
 
     if (!online) {
       nativeStartPendingRef.current = false;
@@ -102,27 +121,45 @@ export function useDriverBroadcast(
 
       nativeStartPendingRef.current = true;
       void startNativeDriverLocation()
-        .then((started) => {
+        .then(async (started) => {
+          // Se o motorista ficou OFFLINE, trocou de usuário ou o efeito foi
+          // desmontado enquanto o start nativo estava aguardando permissão/
+          // sessão, o serviço que acabou de iniciar já está obsoleto e precisa
+          // ser encerrado imediatamente. Sem esta guarda ele podia continuar
+          // publicando localização em background depois do OFFLINE.
+          if (nativeLifecycleVersionRef.current !== lifecycleVersion) {
+            if (started) await stopNativeDriverLocation().catch(() => undefined);
+            return;
+          }
           if (started && import.meta.env.DEV) {
             console.log("[APOIS MOTORISTA] localização nativa em background ativa");
           }
         })
         .catch((error: unknown) => {
-          console.warn("[APOIS MOTORISTA] localização nativa em background indisponível:", error);
+          if (nativeLifecycleVersionRef.current === lifecycleVersion) {
+            console.warn("[APOIS MOTORISTA] localização nativa em background indisponível:", error);
+          }
         })
         .finally(() => {
-          nativeStartPendingRef.current = false;
+          if (nativeLifecycleVersionRef.current === lifecycleVersion) {
+            nativeStartPendingRef.current = false;
+          }
         });
     };
 
     startWhenVisible();
     document.addEventListener("visibilitychange", startWhenVisible);
-    return () => document.removeEventListener("visibilitychange", startWhenVisible);
+    return () => {
+      nativeLifecycleVersionRef.current += 1;
+      nativeStartPendingRef.current = false;
+      document.removeEventListener("visibilitychange", startWhenVisible);
+    };
   }, [userId, online]);
 
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((event) => {
       if (event !== "SIGNED_OUT") return;
+      nativeLifecycleVersionRef.current += 1;
       nativeStartPendingRef.current = false;
       lastWrittenRef.current = null;
       try {
