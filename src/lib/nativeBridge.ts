@@ -7,7 +7,8 @@
 //                                   NÃO usa Web Notifications no APK.
 //   - requestPostAuthPermissions()→ Chamada pelo app DEPOIS da UI montada e
 //                                   da sessão válida. Pede geolocalização e,
-//                                   se VITE_ENABLE_NATIVE_PUSH=true, push.
+//                                   se VITE_ENABLE_NATIVE_PUSH=true e a conta
+//                                   não optou por desativar push, registra FCM.
 
 import { registerDeviceToken } from "@/lib/notifications/deviceTokenService";
 
@@ -24,6 +25,16 @@ type PushData = {
   url?: string;
   event?: string;
   ride_id?: string;
+};
+
+export type NativePermissionState = "granted" | "denied" | "disabled" | "unavailable";
+export type NativePermissionSyncResult = {
+  location: NativePermissionState;
+  push: NativePermissionState;
+};
+
+export type PostAuthPermissionOptions = {
+  pushEnabled?: boolean;
 };
 
 export function isNative(): boolean {
@@ -48,7 +59,8 @@ function nativePlatform(): string {
 }
 
 let initStarted = false;
-let postAuthInFlight: Promise<void> | null = null;
+let postAuthInFlight: Promise<NativePermissionSyncResult> | null = null;
+let inFlightWantsPush = false;
 
 function safeInternalPath(value: unknown): string | null {
   if (typeof value !== "string") return null;
@@ -108,29 +120,42 @@ export function initNativeBridge(): void {
 }
 
 /**
- * Pede/sincroniza permissões nativas somente depois da autenticação e com a UI
- * já visível. Chamadas concorrentes são colapsadas.
+ * Sincroniza permissões nativas somente depois da autenticação e com a UI já
+ * visível. Geolocalização continua independente da preferência de push. Se o
+ * motorista desligou push no app, o FCM não é registrado novamente em cada
+ * cold start/retorno da WebView.
  */
-export function requestPostAuthPermissions(): Promise<void> {
-  if (!isNative()) return Promise.resolve();
-  if (postAuthInFlight) return postAuthInFlight;
+export function requestPostAuthPermissions(
+  options: PostAuthPermissionOptions = {},
+): Promise<NativePermissionSyncResult> {
+  if (!isNative()) {
+    return Promise.resolve({ location: "unavailable", push: "unavailable" });
+  }
 
+  const wantsPush = options.pushEnabled !== false;
+  if (postAuthInFlight) {
+    if (!wantsPush || inFlightWantsPush || !ENABLE_NATIVE_PUSH) return postAuthInFlight;
+    // Uma chamada anterior pode ter sido iniciada com push desativado. Aguarda
+    // o warmup atual e, se esta chamada explicitamente quer push, sincroniza o
+    // FCM depois sem disparar duas solicitações de localização concorrentes.
+    return postAuthInFlight.then(async (current) => ({
+      ...current,
+      push: await setupPushSafely(),
+    }));
+  }
+
+  inFlightWantsPush = wantsPush;
   postAuthInFlight = (async () => {
-    try {
-      await setupGeolocation();
-    } catch (error) {
-      if (import.meta.env.DEV) console.warn("[native] geolocation warmup falhou", error);
-    }
-
-    if (ENABLE_NATIVE_PUSH) {
-      try {
-        await setupPush();
-      } catch (error) {
-        if (import.meta.env.DEV) console.warn("[native] push setup falhou", error);
-      }
-    }
+    const location = await setupGeolocationSafely();
+    const push = !ENABLE_NATIVE_PUSH
+      ? "disabled"
+      : wantsPush
+        ? await setupPushSafely()
+        : "disabled";
+    return { location, push };
   })().finally(() => {
     postAuthInFlight = null;
+    inFlightWantsPush = false;
   });
   return postAuthInFlight;
 }
@@ -173,32 +198,52 @@ async function ensureDriverRideChannel(): Promise<void> {
   });
 }
 
-async function setupPush(): Promise<void> {
+async function setupPushSafely(): Promise<NativePermissionState> {
+  try {
+    return await setupPush();
+  } catch (error) {
+    if (import.meta.env.DEV) console.warn("[native] push setup falhou", error);
+    return "unavailable";
+  }
+}
+
+async function setupPush(): Promise<NativePermissionState> {
   const { PushNotifications } = await import("@capacitor/push-notifications");
   let perm = await PushNotifications.checkPermissions();
   if (perm.receive === "prompt" || perm.receive === "prompt-with-rationale") {
     perm = await PushNotifications.requestPermissions();
   }
-  if (perm.receive !== "granted") return;
+  if (perm.receive !== "granted") return "denied";
 
   await ensureDriverRideChannel();
 
   try {
     await PushNotifications.register();
+    return "granted";
   } catch (error) {
     if (import.meta.env.DEV) {
       console.warn("[native] PushNotifications.register falhou; app segue sem push", error);
     }
+    return "unavailable";
   }
 }
 
-async function setupGeolocation(): Promise<void> {
+async function setupGeolocationSafely(): Promise<NativePermissionState> {
+  try {
+    return await setupGeolocation();
+  } catch (error) {
+    if (import.meta.env.DEV) console.warn("[native] geolocation warmup falhou", error);
+    return "unavailable";
+  }
+}
+
+async function setupGeolocation(): Promise<NativePermissionState> {
   const { Geolocation } = await import("@capacitor/geolocation");
   let perm = await Geolocation.checkPermissions();
   if (perm.location === "prompt" || perm.location === "prompt-with-rationale") {
     perm = await Geolocation.requestPermissions({ permissions: ["location"] });
   }
-  if (perm.location !== "granted" && import.meta.env.DEV) {
-    console.info("[native] localização não autorizada pelo usuário.");
-  }
+  if (perm.location === "granted") return "granted";
+  if (import.meta.env.DEV) console.info("[native] localização não autorizada pelo usuário.");
+  return "denied";
 }
