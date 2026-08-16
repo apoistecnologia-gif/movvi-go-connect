@@ -9,6 +9,7 @@ import {
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { requestPushPermission } from "@/lib/pushNotifications";
+import { isNative, requestPostAuthPermissions } from "@/lib/nativeBridge";
 import { unregisterAllDevices, unregisterCurrentDevice } from "@/lib/notifications/deviceTokenService";
 import {
   DEFAULT_DRIVER_PREFS, loadDriverPrefs, saveDriverPrefs, type DriverPrefs,
@@ -58,6 +59,25 @@ function DriverSettingsPage() {
         const loadedPrefs = await loadDriverPrefs(data.user.id);
         if (!alive) return;
         setPrefs(loadedPrefs);
+
+        if (isNative()) {
+          const nativeState = await requestPostAuthPermissions({ pushEnabled: loadedPrefs.push });
+          if (!alive) return;
+          setNotifState(
+            nativeState.push === "granted"
+              ? "granted"
+              : nativeState.push === "denied"
+                ? "denied"
+                : "unsupported",
+          );
+          setLocState(
+            nativeState.location === "granted"
+              ? "granted"
+              : nativeState.location === "denied"
+                ? "denied"
+                : "unsupported",
+          );
+        }
       } catch (error) {
         if (import.meta.env.DEV) console.warn("[APOIS Settings] falha ao carregar configurações", error);
         if (alive) toast.error("Não foi possível carregar as configurações agora.");
@@ -66,10 +86,12 @@ function DriverSettingsPage() {
       }
     })();
 
-    if (typeof Notification !== "undefined") setNotifState(Notification.permission);
-    else setNotifState("unsupported");
+    if (!isNative()) {
+      if (typeof Notification !== "undefined") setNotifState(Notification.permission);
+      else setNotifState("unsupported");
+    }
 
-    if (typeof navigator !== "undefined" && navigator.permissions?.query) {
+    if (!isNative() && typeof navigator !== "undefined" && navigator.permissions?.query) {
       void navigator.permissions.query({ name: "geolocation" as PermissionName })
         .then((status) => {
           if (!alive) return;
@@ -82,7 +104,7 @@ function DriverSettingsPage() {
         .catch(() => {
           if (alive) setLocState(null);
         });
-    } else if (typeof navigator === "undefined" || !navigator.geolocation) {
+    } else if (!isNative() && (typeof navigator === "undefined" || !navigator.geolocation)) {
       setLocState("unsupported");
     }
 
@@ -101,8 +123,27 @@ function DriverSettingsPage() {
     if (!userId || saving) return;
     setSaving(true);
     try {
-      await saveDriverPrefs(userId, prefs);
-      toast.success("Configurações salvas neste dispositivo.");
+      let nextPrefs = prefs;
+      if (prefs.push) {
+        if (isNative()) {
+          const result = await requestPostAuthPermissions({ pushEnabled: true });
+          if (result.push !== "granted") {
+            nextPrefs = { ...prefs, push: false };
+            setPrefs(nextPrefs);
+            setNotifState(result.push === "denied" ? "denied" : "unsupported");
+          }
+        }
+      } else {
+        // Desativar no app também precisa desativar o token no backend enquanto
+        // a sessão ainda existe. Salvar somente um boolean local não impedia FCM.
+        await unregisterCurrentDevice();
+      }
+      await saveDriverPrefs(userId, nextPrefs);
+      toast.success(
+        nextPrefs.push
+          ? "Configurações salvas neste dispositivo."
+          : "Configurações salvas. Notificações push estão desativadas neste dispositivo.",
+      );
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Não foi possível salvar as configurações.");
     } finally {
@@ -114,6 +155,24 @@ function DriverSettingsPage() {
     if (requestingPush) return;
     setRequestingPush(true);
     try {
+      if (isNative()) {
+        const result = await requestPostAuthPermissions({ pushEnabled: true });
+        if (result.push === "granted") {
+          setNotifState("granted");
+          update("push", true);
+          toast.success("Notificações ativadas.");
+        } else if (result.push === "denied") {
+          setNotifState("denied");
+          update("push", false);
+          toast.error("A permissão de notificações está bloqueada nas configurações do aparelho.");
+        } else {
+          setNotifState("unsupported");
+          update("push", false);
+          toast.error("As notificações nativas não estão disponíveis neste aplicativo agora.");
+        }
+        return;
+      }
+
       const result = await requestPushPermission();
       setNotifState(result);
       if (result === "granted") {
@@ -121,13 +180,30 @@ function DriverSettingsPage() {
         toast.success("Notificações ativadas.");
       } else if (result === "denied") {
         update("push", false);
-        toast.error("A permissão de notificações está bloqueada nas configurações do aparelho.");
+        toast.error("A permissão de notificações está bloqueada nas configurações do navegador.");
       } else {
+        update("push", false);
         toast.error("Permissão de notificações não concedida.");
       }
     } catch (error) {
       if (import.meta.env.DEV) console.warn("[APOIS Settings] falha ao solicitar notificações", error);
+      update("push", false);
       toast.error("Não foi possível solicitar a permissão de notificações agora.");
+    } finally {
+      setRequestingPush(false);
+    }
+  }
+
+  async function handleDisablePush() {
+    if (requestingPush) return;
+    update("push", false);
+    setRequestingPush(true);
+    try {
+      await unregisterCurrentDevice();
+      toast.success("Notificações push desativadas neste dispositivo. Salve para manter esta preferência.");
+    } catch (error) {
+      if (import.meta.env.DEV) console.warn("[APOIS Settings] falha ao desativar push", error);
+      toast.error("Não foi possível desativar as notificações push agora.");
     } finally {
       setRequestingPush(false);
     }
@@ -289,7 +365,7 @@ function DriverSettingsPage() {
               </SettingsSection>
 
               <SettingsSection icon={Bell} title="Notificações" description="Alertas e canais de aviso deste aparelho.">
-                <SettingsToggleRow icon={Bell} title="Notificações push" checked={prefs.push} onChange={(value) => value ? void handleEnablePush() : update("push", false)} />
+                <SettingsToggleRow icon={Bell} title="Notificações push" checked={prefs.push} onChange={(value) => value ? void handleEnablePush() : void handleDisablePush()} />
                 <SettingsToggleRow title="Alertas de corrida" hint="Novas corridas, atualizações e lembretes" checked={prefs.ride_alerts} onChange={(value) => update("ride_alerts", value)} />
                 <SettingsToggleRow icon={Volume2} title="Som" checked={prefs.sound} onChange={(value) => update("sound", value)} />
                 <SettingsToggleRow icon={Vibrate} title="Vibração" checked={prefs.vibration} onChange={(value) => update("vibration", value)} />
@@ -370,7 +446,7 @@ function DriverSettingsPage() {
 
               <DSButton
                 onClick={() => void handleSave()}
-                disabled={saving || deleting || signingOut || !userId}
+                disabled={saving || deleting || signingOut || requestingPush || !userId}
                 aria-busy={saving}
                 className="min-h-14 w-full rounded-[18px] bg-[#F6BE1C] text-[13px] font-black text-black shadow-[0_20px_46px_-24px_rgba(246,190,28,.85)] hover:brightness-105 focus-visible:ring-2 focus-visible:ring-white motion-reduce:transition-none"
               >
