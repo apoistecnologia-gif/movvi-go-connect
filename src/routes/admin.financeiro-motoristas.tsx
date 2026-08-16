@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { RefreshCw, Search, Wallet, WalletCards } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,7 +13,6 @@ import {
   Loading,
 } from "@/design-system";
 import { formatDate } from "@/lib/formatters";
-import { toast } from "sonner";
 
 type Driver = {
   id: string;
@@ -47,13 +46,35 @@ export const Route = createFileRoute("/admin/financeiro-motoristas")({
   component: AdminDriverFinancePage,
 });
 
-const money = (value: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(value || 0));
+function cleanText(value: unknown, fallback = "") {
+  const text = String(value ?? "").trim().replace(/\s+/g, " ");
+  return text || fallback;
+}
+
+function safeMoneyValue(value: unknown) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+}
+
+function safeDateValue(value: unknown) {
+  const date = new Date(String(value ?? ""));
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+const money = (value: unknown) =>
+  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
+    safeMoneyValue(value),
+  );
+
+function normalizeWithdrawalStatus(status: unknown) {
+  return cleanText(status, "unknown").toLowerCase();
+}
 
 function withdrawalVariant(status: string): "success" | "warning" | "danger" | "muted" {
-  if (status === "paid") return "success";
-  if (status === "pending" || status === "approved" || status === "processing") return "warning";
-  if (status === "failed") return "danger";
+  const normalized = normalizeWithdrawalStatus(status);
+  if (normalized === "paid") return "success";
+  if (["pending", "approved", "processing"].includes(normalized)) return "warning";
+  if (["failed", "reversed", "cancelled"].includes(normalized)) return "danger";
   return "muted";
 }
 
@@ -67,7 +88,7 @@ function withdrawalLabel(status: string) {
     reversed: "Revertido",
     cancelled: "Cancelado",
   };
-  return labels[status] ?? status;
+  return labels[normalizeWithdrawalStatus(status)] ?? "Status não reconhecido";
 }
 
 function AdminDriverFinancePage() {
@@ -76,9 +97,13 @@ function AdminDriverFinancePage() {
   const [withdrawals, setWithdrawals] = useState<WithdrawalRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const requestRef = useRef(0);
 
   async function load() {
+    const requestId = ++requestRef.current;
     setLoading(true);
+    setLoadError(null);
     try {
       const [driverResult, walletResult, withdrawalResult] = await Promise.all([
         supabase
@@ -94,42 +119,87 @@ function AdminDriverFinancePage() {
           .order("requested_at", { ascending: false })
           .limit(100),
       ]);
+      if (requestId !== requestRef.current) return;
       if (driverResult.error) throw driverResult.error;
       if (walletResult.error) throw walletResult.error;
       if (withdrawalResult.error) throw withdrawalResult.error;
-      setDrivers((driverResult.data ?? []) as Driver[]);
-      setWallets((walletResult.data ?? []) as WalletRow[]);
-      setWithdrawals((withdrawalResult.data ?? []) as WithdrawalRow[]);
+
+      const normalizedDrivers = ((driverResult.data ?? []) as Driver[])
+        .filter((row) => Boolean(cleanText(row.id)))
+        .map((row) => ({
+          ...row,
+          id: cleanText(row.id),
+          name: cleanText(row.name) || null,
+          email: cleanText(row.email) || null,
+          phone: cleanText(row.phone) || null,
+          city: cleanText(row.city) || null,
+        }));
+      const normalizedWallets = ((walletResult.data ?? []) as WalletRow[])
+        .filter((row) => Boolean(cleanText(row.driver_id)))
+        .map((row) => ({
+          ...row,
+          driver_id: cleanText(row.driver_id),
+          balance: safeMoneyValue(row.balance),
+          available_balance: safeMoneyValue(row.available_balance),
+          updated_at: safeDateValue(row.updated_at)?.toISOString() ?? "",
+        }));
+      const normalizedWithdrawals = ((withdrawalResult.data ?? []) as WithdrawalRow[])
+        .filter((row) => Boolean(cleanText(row.id)) && Boolean(cleanText(row.driver_id)))
+        .map((row) => ({
+          ...row,
+          id: cleanText(row.id),
+          driver_id: cleanText(row.driver_id),
+          amount: safeMoneyValue(row.amount),
+          status: normalizeWithdrawalStatus(row.status),
+          provider: cleanText(row.provider) || null,
+          provider_transfer_id: cleanText(row.provider_transfer_id) || null,
+          failure_reason: cleanText(row.failure_reason) || null,
+          requested_at: safeDateValue(row.requested_at)?.toISOString() ?? "",
+          processed_at: safeDateValue(row.processed_at)?.toISOString() ?? null,
+        }));
+      setDrivers(normalizedDrivers);
+      setWallets(normalizedWallets);
+      setWithdrawals(normalizedWithdrawals);
     } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Não foi possível carregar o financeiro dos motoristas.",
-      );
+      if (requestId !== requestRef.current) return;
       setDrivers([]);
       setWallets([]);
       setWithdrawals([]);
+      setLoadError("Não foi possível carregar o financeiro dos motoristas agora. Tente novamente.");
+      if (import.meta.env.DEV) console.warn("[APOIS Admin] falha no financeiro dos motoristas", error);
     } finally {
-      setLoading(false);
+      if (requestId === requestRef.current) setLoading(false);
     }
   }
 
   useEffect(() => {
     void load();
+    let refreshTimer: number | null = null;
+    const scheduleRefresh = () => {
+      if (refreshTimer != null) window.clearTimeout(refreshTimer);
+      refreshTimer = window.setTimeout(() => void load(), 250);
+    };
     const channel = supabase
       .channel("admin-driver-finance")
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "driver_wallets" },
-        () => void load(),
+        scheduleRefresh,
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "driver_withdrawals" },
-        () => void load(),
+        scheduleRefresh,
       )
       .subscribe();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") scheduleRefresh();
+    };
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
+      requestRef.current += 1;
+      if (refreshTimer != null) window.clearTimeout(refreshTimer);
+      document.removeEventListener("visibilitychange", onVisible);
       void supabase.removeChannel(channel);
     };
   }, []);
@@ -144,22 +214,22 @@ function AdminDriverFinancePage() {
   );
 
   const filteredDrivers = useMemo(() => {
-    const needle = query.trim().toLowerCase();
+    const needle = query.trim().toLocaleLowerCase("pt-BR");
     if (!needle) return drivers;
     return drivers.filter((driver) =>
       [driver.name, driver.email, driver.phone, driver.city]
         .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(needle)),
+        .some((value) => String(value).toLocaleLowerCase("pt-BR").includes(needle)),
     );
   }, [drivers, query]);
 
   const totals = useMemo(
     () => ({
-      balance: wallets.reduce((sum, row) => sum + Number(row.balance || 0), 0),
-      available: wallets.reduce((sum, row) => sum + Number(row.available_balance || 0), 0),
+      balance: wallets.reduce((sum, row) => sum + safeMoneyValue(row.balance), 0),
+      available: wallets.reduce((sum, row) => sum + safeMoneyValue(row.available_balance), 0),
       pending: withdrawals
-        .filter((row) => ["pending", "approved", "processing"].includes(row.status))
-        .reduce((sum, row) => sum + Number(row.amount || 0), 0),
+        .filter((row) => ["pending", "approved", "processing"].includes(normalizeWithdrawalStatus(row.status)))
+        .reduce((sum, row) => sum + safeMoneyValue(row.amount), 0),
     }),
     [wallets, withdrawals],
   );
@@ -174,19 +244,24 @@ function AdminDriverFinancePage() {
           size="sm"
           onClick={() => void load()}
           disabled={loading}
-          className="gap-1"
+          className="min-h-11 gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          aria-busy={loading}
         >
-          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Atualizar
+          <RefreshCw
+            className={`h-4 w-4 ${loading ? "animate-spin motion-reduce:animate-none" : ""}`}
+            aria-hidden="true"
+          />
+          {loading ? "Atualizando…" : "Atualizar"}
         </DSButton>
       }
     >
       <DSCard className="mb-4 border-primary/20 bg-primary/5">
-        <DSCardContent className="p-4 text-sm text-muted-foreground">
+        <DSCardContent className="p-4 text-sm leading-6 text-muted-foreground">
           Fonte de verdade: <strong>driver_wallets</strong>,{" "}
           <strong>driver_wallet_transactions</strong> e <strong>driver_withdrawals</strong>. Esta
           tela é de acompanhamento: o navegador não aprova, reprova nem confirma transferências.
-          Mudanças financeiras de saque pertencem ao fluxo autenticado do backend e ao provedor
-          homologado.
+          Mudanças financeiras de saque pertencem ao fluxo autenticado do backend, ao provedor
+          homologado e ao gate financeiro. Um provedor informado não significa payout habilitado.
         </DSCardContent>
       </DSCard>
 
@@ -197,22 +272,38 @@ function AdminDriverFinancePage() {
       </div>
 
       <div className="relative mb-4">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Search
+          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+          aria-hidden="true"
+        />
         <DSInput
-          className="pl-9"
+          className="min-h-11 pl-9 text-base"
           placeholder="Buscar motorista"
           value={query}
+          maxLength={120}
+          aria-label="Buscar motorista por nome, contato ou cidade"
           onChange={(event) => setQuery(event.target.value)}
         />
       </div>
 
       {loading ? (
-        <Loading label="Carregando carteiras..." />
+        <div role="status" aria-live="polite">
+          <Loading label="Carregando carteiras..." />
+        </div>
+      ) : loadError ? (
+        <DSCard className="border-destructive/30 bg-destructive/5">
+          <DSCardContent className="space-y-3 p-4" role="alert">
+            <p className="text-sm font-medium text-destructive">{loadError}</p>
+            <DSButton variant="outline" className="min-h-11" onClick={() => void load()}>
+              Tentar novamente
+            </DSButton>
+          </DSCardContent>
+        </DSCard>
       ) : filteredDrivers.length === 0 ? (
         <EmptyState
           icon={WalletCards}
-          title="Nenhum motorista encontrado"
-          description="As carteiras serão exibidas quando existirem perfis de motorista."
+          title={query.trim() ? "Nenhum motorista corresponde à busca" : "Nenhum motorista encontrado"}
+          description={query.trim() ? "Revise o termo pesquisado." : "As carteiras serão exibidas quando existirem perfis de motorista."}
         />
       ) : (
         <div className="space-y-2">
@@ -220,24 +311,20 @@ function AdminDriverFinancePage() {
             const wallet = walletByDriver.get(driver.id);
             return (
               <DSCard key={driver.id}>
-                <DSCardContent className="grid gap-3 p-4 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center">
+                <DSCardContent className="grid min-w-0 gap-3 p-4 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center">
                   <div className="min-w-0">
-                    <p className="truncate font-semibold">{driver.name || "Motorista sem nome"}</p>
-                    <p className="truncate text-xs text-muted-foreground">
+                    <p className="break-words font-semibold">{driver.name || "Motorista sem nome"}</p>
+                    <p className="break-all text-sm text-muted-foreground">
                       {driver.email || driver.phone || driver.city || "Sem contato"}
                     </p>
                   </div>
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                      Saldo
-                    </p>
-                    <p className="font-semibold">{money(wallet?.balance ?? 0)}</p>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Saldo</p>
+                    <p className="break-words font-semibold tabular-nums">{money(wallet?.balance ?? 0)}</p>
                   </div>
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                      Disponível
-                    </p>
-                    <p className="font-semibold text-primary">
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Disponível</p>
+                    <p className="break-words font-semibold tabular-nums text-primary">
                       {money(wallet?.available_balance ?? 0)}
                     </p>
                   </div>
@@ -248,11 +335,11 @@ function AdminDriverFinancePage() {
         </div>
       )}
 
-      <section className="mt-6">
-        <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold">
-          <Wallet className="h-4 w-4 text-primary" /> Saques recentes
+      <section className="mt-6" aria-labelledby="recent-withdrawals-title">
+        <h2 id="recent-withdrawals-title" className="mb-2 flex items-center gap-2 text-sm font-semibold">
+          <Wallet className="h-4 w-4 text-primary" aria-hidden="true" /> Saques recentes
         </h2>
-        {withdrawals.length === 0 ? (
+        {!loading && withdrawals.length === 0 ? (
           <EmptyState
             icon={Wallet}
             title="Nenhum saque registrado"
@@ -262,43 +349,46 @@ function AdminDriverFinancePage() {
           <div className="space-y-2">
             {withdrawals.map((row) => {
               const driver = driverById.get(row.driver_id);
+              const status = normalizeWithdrawalStatus(row.status);
               return (
                 <DSCard key={row.id}>
-                  <DSCardContent className="flex flex-wrap items-center gap-2 p-3 text-xs">
-                    <strong>{driver?.name || row.driver_id.slice(0, 8)}</strong>
-                    <DSBadge variant={withdrawalVariant(row.status)}>
-                      {withdrawalLabel(row.status)}
-                    </DSBadge>
-                    <span>{money(row.amount)}</span>
-                    <span className="text-muted-foreground">
-                      {row.provider || "provedor ainda não atribuído"}
+                  <DSCardContent className="flex min-w-0 flex-wrap items-center gap-2 p-3 text-sm">
+                    <strong className="min-w-0 break-words">{driver?.name || row.driver_id.slice(0, 8)}</strong>
+                    <DSBadge variant={withdrawalVariant(status)}>{withdrawalLabel(status)}</DSBadge>
+                    <span className="font-semibold tabular-nums">{money(row.amount)}</span>
+                    <span className="break-words text-muted-foreground">
+                      {row.provider || "Provedor ainda não atribuído"}
                     </span>
-                    <span className="ml-auto text-muted-foreground">
-                      {formatDate(row.processed_at ?? row.requested_at)}
+                    <span className="ml-auto break-words text-muted-foreground">
+                      {row.processed_at || row.requested_at
+                        ? formatDate(row.processed_at ?? row.requested_at)
+                        : "Data não informada"}
                     </span>
-                    {row.status === "pending" && (
+                    {status === "pending" && (
                       <p className="w-full border-t pt-2 text-muted-foreground">
                         Solicitação registrada. O backend decidirá o próximo estado conforme a
-                        homologação e o provedor configurado.
+                        homologação, o gate de saques e o provedor configurado.
                       </p>
                     )}
-                    {row.status === "approved" && (
+                    {status === "approved" && (
                       <p className="w-full text-muted-foreground">
                         Estado legado de aprovação. Nenhuma ação manual é oferecida nesta tela.
                       </p>
                     )}
-                    {row.status === "processing" && (
+                    {status === "processing" && (
                       <p className="w-full text-muted-foreground">
                         Transferência em processamento pelo fluxo financeiro seguro.
                       </p>
                     )}
                     {row.provider_transfer_id && (
-                      <p className="w-full text-muted-foreground">
+                      <p className="w-full break-all text-muted-foreground">
                         Transferência: {row.provider_transfer_id}
                       </p>
                     )}
-                    {row.failure_reason && (
-                      <p className="w-full text-destructive">{row.failure_reason}</p>
+                    {row.failure_reason && status === "failed" && (
+                      <p className="w-full text-destructive" role="alert">
+                        O saque falhou. Consulte a auditoria financeira para o detalhe técnico.
+                      </p>
                     )}
                   </DSCardContent>
                 </DSCard>
@@ -314,9 +404,9 @@ function AdminDriverFinancePage() {
 function Metric({ label, value }: { label: string; value: string }) {
   return (
     <DSCard>
-      <DSCardContent className="p-4">
-        <p className="text-xs text-muted-foreground">{label}</p>
-        <p className="mt-1 text-xl font-bold">{value}</p>
+      <DSCardContent className="min-w-0 p-4">
+        <p className="break-words text-sm text-muted-foreground">{label}</p>
+        <p className="mt-1 break-words text-xl font-bold tabular-nums">{value}</p>
       </DSCardContent>
     </DSCard>
   );
