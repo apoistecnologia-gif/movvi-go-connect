@@ -25,7 +25,8 @@ export const DEFAULT_DRIVER_PREFS: DriverPrefs = {
   navigation_app: "internal",
 };
 
-const CACHE_KEY = (uid: string) => `apois:driver:prefs:${uid}`;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const CACHE_KEY = (uid: string) => `apois:driver:prefs:${UUID_RE.test(uid.trim()) ? uid.trim() : "anonymous"}`;
 
 function isTheme(value: unknown): value is DriverPrefs["theme"] {
   return value === "light" || value === "dark" || value === "system";
@@ -53,6 +54,23 @@ function sanitizePrefs(value: unknown): DriverPrefs {
   };
 }
 
+function validCoordinate(value: { lat: number; lng: number } | null | undefined): value is { lat: number; lng: number } {
+  return Boolean(
+    value &&
+      Number.isFinite(value.lat) &&
+      Number.isFinite(value.lng) &&
+      value.lat >= -90 &&
+      value.lat <= 90 &&
+      value.lng >= -180 &&
+      value.lng <= 180,
+  );
+}
+
+function openExternal(url: string) {
+  const popup = window.open(url, "_blank", "noopener,noreferrer");
+  if (popup) popup.opener = null;
+}
+
 export async function loadDriverPrefs(userId: string): Promise<DriverPrefs> {
   try {
     const cached = localStorage.getItem(CACHE_KEY(userId));
@@ -64,15 +82,13 @@ export async function loadDriverPrefs(userId: string): Promise<DriverPrefs> {
 }
 
 export async function saveDriverPrefs(userId: string, prefs: DriverPrefs): Promise<void> {
+  const normalizedUserId = userId.trim();
+  if (!UUID_RE.test(normalizedUserId)) throw new Error("Não foi possível identificar a conta para salvar as configurações.");
   const normalized = sanitizePrefs(prefs);
   try {
-    localStorage.setItem(CACHE_KEY(userId), JSON.stringify(normalized));
-  } catch (error) {
-    throw new Error(
-      error instanceof Error
-        ? `Não foi possível salvar as configurações neste dispositivo: ${error.message}`
-        : "Não foi possível salvar as configurações neste dispositivo.",
-    );
+    localStorage.setItem(CACHE_KEY(normalizedUserId), JSON.stringify(normalized));
+  } catch {
+    throw new Error("Não foi possível salvar as configurações neste dispositivo.");
   }
 }
 
@@ -81,18 +97,22 @@ export function openNavigationApp(
   origin: { lat: number; lng: number } | null,
   destination: { lat: number; lng: number },
 ) {
-  const d = `${destination.lat},${destination.lng}`;
+  if (app === "internal") return;
+  if (!validCoordinate(destination)) throw new Error("navigation_destination_invalid");
+
+  const destinationValue = `${destination.lat},${destination.lng}`;
   if (app === "waze") {
-    window.open(`https://www.waze.com/ul?ll=${d}&navigate=yes`, "_blank");
+    openExternal(`https://www.waze.com/ul?ll=${encodeURIComponent(destinationValue)}&navigate=yes`);
     return;
   }
+
   if (app === "google") {
-    const o = origin ? `&origin=${origin.lat},${origin.lng}` : "";
-    window.open(
-      `https://www.google.com/maps/dir/?api=1${o}&destination=${d}&travelmode=driving`,
-      "_blank",
-    );
-    return;
+    const params = new URLSearchParams({
+      api: "1",
+      destination: destinationValue,
+      travelmode: "driving",
+    });
+    if (validCoordinate(origin)) params.set("origin", `${origin.lat},${origin.lng}`);
+    openExternal(`https://www.google.com/maps/dir/?${params.toString()}`);
   }
-  // Navegação interna: a tela da corrida mantém o mapa no próprio app.
 }
