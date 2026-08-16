@@ -5,6 +5,7 @@ import { createRouter, RouterProvider } from "@tanstack/react-router";
 
 import "./styles.css";
 import "./apois-motorista-theme.css";
+import "./apois-ui-hardening-round4.css";
 import { routeTree } from "virtual:mobile-route-tree";
 import { startInstance } from "./start";
 import { installMobileFetchProxy } from "./lib/mobileFetchProxy";
@@ -18,15 +19,9 @@ if (typeof document !== "undefined") {
   document.documentElement.dataset.appRole = import.meta.env.VITE_APP_ROLE ?? "";
 }
 
-// Flags de ciclo de vida do bootstrap. Enquanto React não montou, qualquer erro
-// global é considerado FATAL (tela branca real). Depois que a UI já montou,
-// erros globais são apenas registrados — o React Error Boundary do próprio
-// TanStack cuida de falhas em componentes; falhas de recursos, imagens ou
-// network transitórias não devem substituir a aplicação inteira.
 let reactMounted = false;
 let fatalRendered = false;
 
-/** Tela de recuperação — SEMPRE substitui tela branca. */
 function renderFatalBootstrapError(error: unknown) {
   if (fatalRendered) return;
   fatalRendered = true;
@@ -61,7 +56,6 @@ function renderFatalBootstrapError(error: unknown) {
   `;
 }
 
-/** Distingue erro de recurso/imagem/rede recuperável de erro fatal de JS. */
 function isRecoverableResourceEvent(ev: Event): boolean {
   const target = ev.target as EventTarget | null;
   if (target && target !== window && target instanceof Element) {
