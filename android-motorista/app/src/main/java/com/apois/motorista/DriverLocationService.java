@@ -52,6 +52,11 @@ public class DriverLocationService extends Service {
     private static final int NOTIFICATION_ID = 41021;
     private static final long HEARTBEAT_MS = 15_000L;
     private static final long MAX_PENDING_LOCATION_AGE_MS = 120_000L;
+    private static final long MAX_LOCATION_FUTURE_SKEW_MS = 30_000L;
+    private static final double BRAZIL_MIN_LAT = -34d;
+    private static final double BRAZIL_MAX_LAT = 6d;
+    private static final double BRAZIL_MIN_LNG = -74d;
+    private static final double BRAZIL_MAX_LNG = -32d;
     private static final String LOCATION_PREFS = "apois_driver_location_buffer";
     private static final String PREF_LAT = "lat";
     private static final String PREF_LNG = "lng";
@@ -79,10 +84,14 @@ public class DriverLocationService extends Service {
     private final Runnable heartbeat = new Runnable() {
         @Override
         public void run() {
-            if (tracking && latestLocation != null) {
+            if (!tracking) return;
+            if (isUsableLocation(latestLocation)) {
                 queuePresenceSync(true, latestLocation);
-                mainHandler.postDelayed(this, HEARTBEAT_MS);
             }
+            // Continue o heartbeat mesmo antes do primeiro fix de GPS. Antes,
+            // se os primeiros 15 s passassem sem localização, o runnable não
+            // era reagendado e a presença perdia o heartbeat até novo callback.
+            mainHandler.postDelayed(this, HEARTBEAT_MS);
         }
     };
 
@@ -94,7 +103,7 @@ public class DriverLocationService extends Service {
             @Override
             public void onLocationResult(LocationResult result) {
                 Location location = result.getLastLocation();
-                if (location == null) return;
+                if (!isUsableLocation(location)) return;
                 latestLocation = location;
                 rememberPendingLocation(location);
                 queuePresenceSync(true, location);
@@ -212,9 +221,31 @@ public class DriverLocationService extends Service {
         }
     }
 
+    private static long capturedAt(Location location) {
+        if (location == null) return 0L;
+        long timestamp = location.getTime();
+        return timestamp > 0L ? timestamp : System.currentTimeMillis();
+    }
+
+    private static boolean isBrazilCoordinate(double lat, double lng) {
+        if (Double.isNaN(lat) || Double.isInfinite(lat) || Double.isNaN(lng) || Double.isInfinite(lng)) {
+            return false;
+        }
+        return lat >= BRAZIL_MIN_LAT && lat <= BRAZIL_MAX_LAT && lng >= BRAZIL_MIN_LNG && lng <= BRAZIL_MAX_LNG;
+    }
+
+    private static boolean isUsableLocation(@Nullable Location location) {
+        if (location == null || !isBrazilCoordinate(location.getLatitude(), location.getLongitude())) return false;
+        long now = System.currentTimeMillis();
+        long timestamp = capturedAt(location);
+        if (timestamp > now + MAX_LOCATION_FUTURE_SKEW_MS) return false;
+        long age = Math.max(0L, now - timestamp);
+        return age <= MAX_PENDING_LOCATION_AGE_MS;
+    }
+
     private void rememberPendingLocation(Location location) {
-        if (location == null) return;
-        long capturedAt = location.getTime() > 0 ? location.getTime() : System.currentTimeMillis();
+        if (!isUsableLocation(location)) return;
+        long capturedAt = capturedAt(location);
         SharedPreferences.Editor editor = getSharedPreferences(LOCATION_PREFS, MODE_PRIVATE)
             .edit()
             .putString(PREF_LAT, Double.toString(location.getLatitude()))
@@ -233,10 +264,15 @@ public class DriverLocationService extends Service {
         SharedPreferences prefs = getSharedPreferences(LOCATION_PREFS, MODE_PRIVATE);
         String latRaw = prefs.getString(PREF_LAT, null);
         String lngRaw = prefs.getString(PREF_LNG, null);
-        long capturedAt = prefs.getLong(PREF_CAPTURED_AT, 0L);
-        if (latRaw == null || lngRaw == null || capturedAt <= 0L) return null;
+        long storedCapturedAt = prefs.getLong(PREF_CAPTURED_AT, 0L);
+        if (latRaw == null || lngRaw == null || storedCapturedAt <= 0L) return null;
 
-        long age = Math.max(0L, System.currentTimeMillis() - capturedAt);
+        long now = System.currentTimeMillis();
+        if (storedCapturedAt > now + MAX_LOCATION_FUTURE_SKEW_MS) {
+            clearPendingLocation();
+            return null;
+        }
+        long age = Math.max(0L, now - storedCapturedAt);
         if (age > MAX_PENDING_LOCATION_AGE_MS) {
             clearPendingLocation();
             return null;
@@ -245,21 +281,23 @@ public class DriverLocationService extends Service {
         try {
             double lat = Double.parseDouble(latRaw);
             double lng = Double.parseDouble(lngRaw);
-            if (lat < -90d || lat > 90d || lng < -180d || lng > 180d) {
+            if (!isBrazilCoordinate(lat, lng)) {
                 clearPendingLocation();
                 return null;
             }
             Location pending = new Location("apois-buffer");
             pending.setLatitude(lat);
             pending.setLongitude(lng);
-            pending.setTime(capturedAt);
+            pending.setTime(storedCapturedAt);
             float accuracy = prefs.getFloat(PREF_ACCURACY, -1f);
-            if (accuracy >= 0f) pending.setAccuracy(accuracy);
+            if (accuracy >= 0f && !Float.isNaN(accuracy) && !Float.isInfinite(accuracy)) pending.setAccuracy(accuracy);
             if (prefs.getBoolean(PREF_HAS_BEARING, false)) {
-                pending.setBearing(prefs.getFloat(PREF_BEARING, 0f));
+                float bearing = prefs.getFloat(PREF_BEARING, 0f);
+                if (!Float.isNaN(bearing) && !Float.isInfinite(bearing)) pending.setBearing(bearing);
             }
             if (prefs.getBoolean(PREF_HAS_SPEED, false)) {
-                pending.setSpeed(prefs.getFloat(PREF_SPEED, 0f));
+                float speed = prefs.getFloat(PREF_SPEED, 0f);
+                if (!Float.isNaN(speed) && !Float.isInfinite(speed) && speed >= 0f) pending.setSpeed(speed);
             }
             return pending;
         } catch (NumberFormatException invalidBuffer) {
@@ -282,7 +320,9 @@ public class DriverLocationService extends Service {
 
     private void stopFromDriverAction() {
         tracking = false;
+        latestLocation = null;
         mainHandler.removeCallbacks(heartbeat);
+        clearPendingLocation();
         try {
             fusedLocationClient.removeLocationUpdates(locationCallback);
         } catch (Exception ignored) {
@@ -306,6 +346,7 @@ public class DriverLocationService extends Service {
     }
 
     private void queuePresenceSync(boolean online, @Nullable Location location) {
+        if (online && !isUsableLocation(location)) return;
         if (!syncQueued.compareAndSet(false, true)) return;
         networkExecutor.execute(() -> {
             try {
@@ -320,6 +361,7 @@ public class DriverLocationService extends Service {
         if (supabaseUrl == null || supabaseUrl.isEmpty() || accessToken == null || accessToken.isEmpty()) {
             return false;
         }
+        if (online && !isUsableLocation(location)) return false;
 
         HttpURLConnection connection = null;
         try {
@@ -340,7 +382,7 @@ public class DriverLocationService extends Service {
                 body.put("_lat", location.getLatitude());
                 body.put("_lng", location.getLongitude());
                 body.put("_heading", location.hasBearing() ? location.getBearing() : JSONObject.NULL);
-                body.put("_speed", location.hasSpeed() ? location.getSpeed() : JSONObject.NULL);
+                body.put("_speed", location.hasSpeed() && location.getSpeed() >= 0f ? location.getSpeed() : JSONObject.NULL);
             } else {
                 body.put("_lat", JSONObject.NULL);
                 body.put("_lng", JSONObject.NULL);
@@ -357,8 +399,7 @@ public class DriverLocationService extends Service {
             consumeResponse(connection, status);
             if (status >= 200 && status < 300) {
                 if (online && location != null) {
-                    long capturedAt = location.getTime() > 0 ? location.getTime() : System.currentTimeMillis();
-                    clearPendingLocationIfSynced(capturedAt);
+                    clearPendingLocationIfSynced(capturedAt(location));
                 }
                 return true;
             }
@@ -443,6 +484,7 @@ public class DriverLocationService extends Service {
     @Override
     public void onDestroy() {
         tracking = false;
+        latestLocation = null;
         mainHandler.removeCallbacks(heartbeat);
         try {
             if (fusedLocationClient != null && locationCallback != null) {
