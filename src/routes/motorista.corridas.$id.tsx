@@ -104,29 +104,53 @@ function brl(v: number | null | undefined) {
   return Number(v ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
+function categoryLabel(category: string | null | undefined): string {
+  if (!category) return "Categoria não informada";
+  const labels: Record<string, string> = {
+    carros: "Carro",
+    carro: "Carro",
+    motos: "Moto",
+    moto: "Moto",
+    fretes: "Fretes e Mudanças",
+    frete: "Fretes e Mudanças",
+    guincho: "Guincho",
+    envios: "Envios",
+    envio: "Envios",
+  };
+  return labels[category.trim().toLowerCase()] ?? "Categoria cadastrada";
+}
+
 function rideStatusLabel(status: string): string {
   const normalized = status.toLowerCase();
   const labels: Record<string, string> = {
     solicitada: "Solicitada",
+    agendada: "Agendada",
+    aguardando_pagamento: "Aguardando pagamento",
+    procurar_motorista: "Buscando motorista",
     buscando_motorista: "Buscando motorista",
-    motorista_a_caminho: "A caminho",
+    motorista_a_caminho: "A caminho do embarque",
     motorista_chegou: "Motorista chegou",
     em_andamento: "Em andamento",
+    em_viagem: "Em andamento",
     finalizada: "Concluída",
     cancelada: "Cancelada",
     cancelado: "Cancelada",
+    cancelada_passageiro: "Cancelada pelo passageiro",
+    cancelada_motorista: "Cancelada por você",
+    expired: "Busca encerrada",
   };
-  return labels[normalized] ?? status.replaceAll("_", " ");
+  return labels[normalized] ?? "Status atualizado";
 }
 
 function paymentMethodLabel(method: string | null | undefined): string {
-  if (!method) return "—";
+  if (!method) return "Não informado";
   const normalized = method.toLowerCase();
   if (normalized.includes("pix")) return "Pix";
   if (normalized.includes("cash") || normalized.includes("dinheiro")) return "Dinheiro";
-  if (normalized.includes("credit") || normalized.includes("credito")) return "Crédito";
-  if (normalized.includes("debit") || normalized.includes("debito")) return "Débito";
-  return method.replaceAll("_", " ");
+  if (normalized.includes("credit") || normalized.includes("credito")) return "Cartão de crédito";
+  if (normalized.includes("debit") || normalized.includes("debito")) return "Cartão de débito";
+  if (normalized.includes("wallet") || normalized.includes("carteira")) return "Carteira APOIS";
+  return "Forma de pagamento registrada";
 }
 
 function paymentStatusLabel(status: string | null | undefined): string {
@@ -148,6 +172,10 @@ function paymentStatusLabel(status: string | null | undefined): string {
   }
 }
 
+function ratingLabel(value: number): string {
+  return value.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+}
+
 function RideDetailsPage() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
@@ -155,6 +183,7 @@ function RideDetailsPage() {
   const [passenger, setPassenger] = useState<PassengerSummary | null>(null);
   const [settlement, setSettlement] = useState<SettlementRow | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [receiptOpen, setReceiptOpen] = useState(false);
 
   useEffect(() => {
@@ -162,6 +191,7 @@ function RideDetailsPage() {
 
     void (async () => {
       setLoading(true);
+      setLoadError(null);
       const { data: auth, error: authError } = await supabase.auth.getUser();
       if (authError || !auth?.user) {
         if (active) await navigate({ to: "/motorista/login", replace: true });
@@ -174,7 +204,10 @@ function RideDetailsPage() {
         .eq("auth_user_id", auth.user.id)
         .maybeSingle();
       if (profileError || !profile) {
-        if (active) setLoading(false);
+        if (active) {
+          setLoadError("Não foi possível identificar seu perfil para abrir esta corrida.");
+          setLoading(false);
+        }
         return;
       }
 
@@ -184,7 +217,10 @@ function RideDetailsPage() {
         .eq("user_id", profile.id)
         .maybeSingle();
       if (driverError || !driver) {
-        if (active) setLoading(false);
+        if (active) {
+          setLoadError("Não foi possível identificar seu cadastro de motorista.");
+          setLoading(false);
+        }
         return;
       }
 
@@ -198,7 +234,13 @@ function RideDetailsPage() {
         .maybeSingle();
 
       if (!active) return;
-      if (error || !data) {
+      if (error) {
+        setLoadError("Não foi possível carregar os detalhes desta corrida agora.");
+        setLoading(false);
+        return;
+      }
+      if (!data) {
+        setLoadError("Esta corrida não foi encontrada no seu histórico.");
         setLoading(false);
         return;
       }
@@ -255,23 +297,23 @@ function RideDetailsPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-background" role="status" aria-live="polite">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="h-5 w-5 animate-spin text-primary" aria-hidden="true" />
-          Carregando detalhes da corrida…
+      <div className="flex min-h-dvh items-center justify-center bg-background px-4" role="status" aria-live="polite">
+        <div className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="h-5 w-5 shrink-0 animate-spin text-primary" aria-hidden="true" />
+          <span className="break-words">Carregando detalhes da corrida…</span>
         </div>
       </div>
     );
   }
 
-  if (!ride) {
+  if (loadError || !ride) {
     return (
       <div className="flex min-h-dvh flex-col bg-background">
         <MovviHeader logoutRedirect="/" />
-        <main className="flex-1 px-4 py-6 text-center text-sm text-muted-foreground">
-          <p role="alert">Corrida não encontrada.</p>
-          <div className="mt-4">
-            <DSButton asChild>
+        <main className="flex min-w-0 flex-1 flex-col items-center justify-center px-4 py-6 text-center text-sm text-muted-foreground">
+          <p className="max-w-sm break-words leading-6" role="alert">{loadError ?? "Esta corrida não foi encontrada."}</p>
+          <div className="mt-4 w-full max-w-xs">
+            <DSButton asChild className="min-h-11 w-full">
               <Link to="/motorista/corridas">Voltar ao histórico</Link>
             </DSButton>
           </div>
@@ -291,21 +333,21 @@ function RideDetailsPage() {
   const rideValue = settlement?.passenger_charge ?? ride.final_price ?? ride.estimated_price;
 
   return (
-    <div className="flex min-h-dvh flex-col bg-background">
+    <div className="flex min-h-dvh min-w-0 flex-col bg-background">
       <MovviHeader logoutRedirect="/" />
-      <main className="flex-1 px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-5">
-        <div className="container mx-auto max-w-xl space-y-4">
+      <main className="min-w-0 flex-1 px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-5">
+        <div className="container mx-auto min-w-0 max-w-xl space-y-4">
           <Link
             to="/motorista/corridas"
-            className="inline-flex min-h-11 items-center gap-2 rounded-xl px-2 text-sm text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="inline-flex min-h-11 max-w-full items-center gap-2 rounded-xl px-2 text-sm text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden="true" />
-            Voltar ao histórico
+            <span className="break-words">Voltar ao histórico</span>
           </Link>
 
-          <DSCard>
-            <DSCardContent className="space-y-4 p-4 max-[339px]:p-3">
-              <div className="flex flex-wrap items-start gap-3">
+          <DSCard className="min-w-0">
+            <DSCardContent className="min-w-0 space-y-4 p-4 max-[339px]:p-3">
+              <div className="flex min-w-0 flex-wrap items-start gap-3">
                 <Avatar
                   src={passenger?.avatar_url ?? null}
                   name={passenger?.name ?? "Passageiro"}
@@ -314,30 +356,30 @@ function RideDetailsPage() {
                 <div className="min-w-0 flex-1 basis-[150px]">
                   <p className="break-words text-sm font-bold">{passenger?.name ?? "Passageiro"}</p>
                   <p className="mt-0.5 break-words text-xs leading-5 text-muted-foreground">
-                    {ride.category ?? "Categoria não informada"} · ID #{ride.id.slice(0, 8)}
+                    {categoryLabel(ride.category)} · Corrida #{ride.id.slice(0, 8).toUpperCase()}
                   </p>
                 </div>
-                <span className="max-w-full shrink-0 rounded-full bg-primary/15 px-2.5 py-1 text-center text-[11px] font-semibold capitalize leading-4 text-primary">
+                <span className="max-w-full shrink-0 rounded-full bg-primary/15 px-2.5 py-1 text-center text-[11px] font-semibold leading-4 text-primary">
                   {rideStatusLabel(ride.status)}
                 </span>
               </div>
 
-              <div className="space-y-2 rounded-lg border border-border bg-card/40 p-3 text-sm">
+              <div className="min-w-0 space-y-2 rounded-lg border border-border bg-card/40 p-3 text-sm">
                 <p className="flex min-w-0 items-start gap-2">
                   <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-                  <span className="min-w-0 flex-1 break-words leading-5">{ride.pickup_label || ride.origin_name}</span>
+                  <span className="min-w-0 flex-1 break-words leading-5 [overflow-wrap:anywhere]">{ride.pickup_label || ride.origin_name || "Local de embarque"}</span>
                 </p>
                 <p className="flex min-w-0 items-start gap-2">
                   <Navigation2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-                  <span className="min-w-0 flex-1 break-words leading-5">{ride.destination_name}</span>
+                  <span className="min-w-0 flex-1 break-words leading-5 [overflow-wrap:anywhere]">{ride.destination_name || "Destino da corrida"}</span>
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 text-center sm:grid-cols-3 max-[339px]:grid-cols-1">
+              <div className="grid min-w-0 grid-cols-2 gap-2 text-center sm:grid-cols-3 max-[339px]:grid-cols-1">
                 <Mini
                   label="Distância"
                   value={
-                    ride.distance_km != null ? `${Number(ride.distance_km).toFixed(1)} km` : "—"
+                    ride.distance_km != null ? `${Number(ride.distance_km).toFixed(1).replace(".", ",")} km` : "—"
                   }
                 />
                 <Mini
@@ -349,11 +391,11 @@ function RideDetailsPage() {
                 <Mini label="Valor da corrida" value={brl(rideValue)} highlight />
               </div>
 
-              <div>
-                <h3 className="mb-2 text-xs font-semibold uppercase text-muted-foreground">
+              <div className="min-w-0">
+                <h3 className="mb-2 break-words text-xs font-semibold uppercase text-muted-foreground">
                   Linha do tempo
                 </h3>
-                <ol className="space-y-2">
+                <ol className="min-w-0 space-y-2">
                   {timeline.map((item) => (
                     <li
                       key={item.label}
@@ -365,7 +407,7 @@ function RideDetailsPage() {
                           item.at ? "text-primary" : "text-muted-foreground/40"
                         }`}
                       />
-                      <span className="text-muted-foreground">{item.label}</span>
+                      <span className="break-words text-muted-foreground">{item.label}</span>
                       <span
                         className={`${item.at ? "font-medium" : "text-muted-foreground/60"} min-w-0 break-words max-[339px]:col-start-2`}
                       >
@@ -382,8 +424,8 @@ function RideDetailsPage() {
               />
 
               {ride.status === "finalizada" ? (
-                <div className="rounded-lg border border-border bg-card/40 p-3 text-xs">
-                  <p className="text-[10px] uppercase text-muted-foreground">Situação financeira</p>
+                <div className="min-w-0 rounded-lg border border-border bg-card/40 p-3 text-xs">
+                  <p className="break-words text-[10px] uppercase text-muted-foreground">Situação financeira</p>
                   <p className="mt-1 break-words font-semibold leading-5">
                     {settlement
                       ? paymentStatusLabel(settlement.payment_status)
@@ -409,7 +451,7 @@ function RideDetailsPage() {
               {ride.status === "finalizada" &&
               ride.driver_rated_at &&
               ride.driver_to_passenger_rating != null ? (
-                <div className="space-y-2 rounded-lg border border-border bg-card/40 p-3">
+                <div className="min-w-0 space-y-2 rounded-lg border border-border bg-card/40 p-3">
                   <RatingLine
                     label="Sua avaliação do passageiro"
                     value={ride.driver_to_passenger_rating}
@@ -418,15 +460,15 @@ function RideDetailsPage() {
                 </div>
               ) : null}
 
-              <div className="grid gap-2 sm:grid-cols-2">
-                <DSButton variant="outline" className="min-h-11 w-full" onClick={() => setReceiptOpen(true)}>
+              <div className="grid min-w-0 gap-2 sm:grid-cols-2">
+                <DSButton variant="outline" className="min-h-11 w-full min-w-0" onClick={() => setReceiptOpen(true)}>
                   <ReceiptIcon className="mr-2 h-4 w-4 shrink-0" aria-hidden="true" />
-                  Ver recibo
+                  <span className="break-words">Ver recibo</span>
                 </DSButton>
                 {ride.status === "finalizada" ? (
                   <DSButton
                     variant="outline"
-                    className="min-h-11 w-full"
+                    className="min-h-11 w-full min-w-0"
                     onClick={() =>
                       downloadRideReceipt({
                         ...ride,
@@ -437,7 +479,7 @@ function RideDetailsPage() {
                     }
                   >
                     <FileText className="mr-2 h-4 w-4 shrink-0" aria-hidden="true" />
-                    Baixar PDF
+                    <span className="break-words">Baixar PDF</span>
                   </DSButton>
                 ) : null}
               </div>
@@ -484,8 +526,8 @@ function Mini({ label, value, highlight }: { label: string; value: string; highl
 function Info({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0 rounded-lg border border-border bg-card/40 p-2.5">
-      <p className="text-[10px] uppercase text-muted-foreground">{label}</p>
-      <p className="mt-0.5 break-words text-sm leading-5">{value}</p>
+      <p className="break-words text-[10px] uppercase text-muted-foreground">{label}</p>
+      <p className="mt-0.5 break-words text-sm leading-5 [overflow-wrap:anywhere]">{value}</p>
     </div>
   );
 }
@@ -502,7 +544,7 @@ function RatingLine({
   return (
     <div className="min-w-0">
       <p className="break-words text-[11px] text-muted-foreground">{label}</p>
-      <div className="mt-1 flex flex-wrap items-center gap-1" aria-label={`${label}: ${value} de 5`}>
+      <div className="mt-1 flex flex-wrap items-center gap-1" aria-label={`${label}: ${ratingLabel(value)} de 5`}>
         {[1, 2, 3, 4, 5].map((n) => (
           <Star
             key={n}
@@ -512,9 +554,9 @@ function RatingLine({
             }`}
           />
         ))}
-        <span className="ml-1 text-xs">{value}/5</span>
+        <span className="ml-1 text-xs">{ratingLabel(value)}/5</span>
       </div>
-      {comment ? <p className="mt-1 break-words text-xs italic leading-5 text-muted-foreground">“{comment}”</p> : null}
+      {comment ? <p className="mt-1 break-words text-xs italic leading-5 text-muted-foreground [overflow-wrap:anywhere]">“{comment}”</p> : null}
     </div>
   );
 }
