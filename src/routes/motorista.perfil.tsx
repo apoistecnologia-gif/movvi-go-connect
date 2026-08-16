@@ -116,12 +116,12 @@ function DriverProfilePage() {
   if (mode === "edit") {
     return (
       <div className="relative min-h-dvh bg-background">
-        <div className="fixed left-3 top-16 z-40">
+        <div className="fixed left-3 z-40" style={{ top: "calc(env(safe-area-inset-top) + 12px)" }}>
           <DSButton
             variant="outline"
             size="sm"
             onClick={() => setMode("hub")}
-            className="rounded-full bg-card/95 backdrop-blur"
+            className="min-h-11 rounded-full bg-card/95 px-4 backdrop-blur"
             aria-label="Voltar para o perfil"
           >
             <Icon as={ArrowLeft} size="sm" /> Voltar
@@ -171,7 +171,6 @@ function DriverProfilePage() {
 
   async function handlePhotoUploaded(result: { signedUrl: string; path: string }) {
     if (!userId) return;
-    // O uploader já persistiu o path pelo RPC canônico. Aqui atualizamos só a UI.
     setDriver((d) => (d ? { ...d, photo_url: result.signedUrl } : d));
     toast.success("Foto atualizada!");
   }
@@ -184,9 +183,8 @@ function DriverProfilePage() {
         className="flex-1 px-4 pt-4 sm:px-5"
         style={{ paddingBottom: "max(8rem, env(safe-area-inset-bottom))" }}
       >
-        <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
-          {/* ============ HERO ============ */}
-          <DSCard className="relative overflow-hidden p-5 sm:p-6 animate-fade-in">
+        <div className="mx-auto flex w-full min-w-0 max-w-2xl flex-col gap-4">
+          <DSCard className="relative min-w-0 overflow-hidden p-4 animate-fade-in sm:p-6">
             <div
               aria-hidden
               className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-primary/10 blur-2xl"
@@ -196,7 +194,7 @@ function DriverProfilePage() {
               className="pointer-events-none absolute -left-10 bottom-0 h-24 w-24 rounded-full bg-primary/[0.06] blur-xl"
             />
 
-            <div className="relative flex flex-col items-center gap-3 text-center">
+            <div className="relative flex min-w-0 flex-col items-center gap-3 text-center">
               {userId ? (
                 <div className="rounded-full p-1 ring-2 ring-primary/40 shadow-[0_10px_28px_-10px_color-mix(in_oklab,var(--color-primary)_55%,transparent)]">
                   <ProfilePhotoUploader
@@ -212,27 +210,25 @@ function DriverProfilePage() {
                 <Avatar name={name} size={96} />
               )}
 
-              <HeadingL className="max-w-full truncate">{name}</HeadingL>
+              <HeadingL className="max-w-full break-words leading-tight">{name}</HeadingL>
 
-              {/* Rating + trips inline metric (not a badge) */}
-              <div className="flex items-center gap-3 text-muted-foreground">
+              <div className="flex min-w-0 flex-wrap items-center justify-center gap-x-3 gap-y-1 text-muted-foreground">
                 <span className="inline-flex items-center gap-1 text-foreground">
-                  <Star aria-hidden="true" className="h-4 w-4 fill-primary text-primary" />
+                  <Star aria-hidden="true" className="h-4 w-4 shrink-0 fill-primary text-primary" />
                   <Body className="font-semibold">{rating > 0 ? rating.toFixed(2) : "—"}</Body>
                   {totalRatings > 0 && <Caption>({totalRatings})</Caption>}
                 </span>
-                <span aria-hidden="true" className="h-3 w-px bg-border" />
+                <span aria-hidden="true" className="h-3 w-px shrink-0 bg-border" />
                 <Caption>{completed} viagens</Caption>
                 {driver?.category && (
                   <>
-                    <span aria-hidden="true" className="h-3 w-px bg-border" />
-                    <Caption className="capitalize">{driver.category}</Caption>
+                    <span aria-hidden="true" className="h-3 w-px shrink-0 bg-border" />
+                    <Caption className="max-w-full break-words capitalize">{driver.category}</Caption>
                   </>
                 )}
               </div>
 
-              {/* Status pills */}
-              <div className="flex flex-wrap items-center justify-center gap-1.5">
+              <div className="flex max-w-full flex-wrap items-center justify-center gap-1.5">
                 <StatusPill
                   status={approvalPillStatus}
                   label={approvalLabel}
@@ -249,27 +245,25 @@ function DriverProfilePage() {
                 variant="outline"
                 size="sm"
                 onClick={() => setPublicProfileOpen(true)}
-                className="mt-1 rounded-full"
+                className="mt-1 min-h-11 max-w-full rounded-full px-4"
               >
                 <Icon as={Eye} size="sm" /> Ver perfil público
               </DSButton>
             </div>
           </DSCard>
 
-          {/* ============ STATISTICS ============ */}
           <section
             aria-label="Resumo do perfil"
-            className="grid grid-cols-3 gap-2 sm:gap-3 animate-fade-in"
+            className="grid grid-cols-3 gap-2 animate-fade-in sm:gap-3 max-[339px]:grid-cols-1"
           >
             <StatCard label="Corridas" value={String(completed)} />
             <StatCard label="Avaliação" value={rating > 0 ? rating.toFixed(1) : "—"} highlight />
             <StatCard label="Avaliações" value={String(totalRatings)} />
           </section>
 
-          {/* ============ VEHICLE / PERSONAL INFO ============ */}
-          <DSCard className="p-4 sm:p-5 animate-fade-in">
-            <HeadingS className="mb-3">Dados & veículo</HeadingS>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+          <DSCard className="min-w-0 p-4 animate-fade-in sm:p-5">
+            <HeadingS className="mb-3 break-words">Dados & veículo</HeadingS>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-3 max-[359px]:grid-cols-1">
               <InfoRow icon={Car} label="Veículo" value={driver?.vehicle_model || "—"} />
               <InfoRow label="Placa" value={maskPlate(driver?.vehicle_plate)} mono />
               <InfoRow icon={MapPin} label="Cidade" value={driver?.city || "—"} />
@@ -277,13 +271,12 @@ function DriverProfilePage() {
             </div>
           </DSCard>
 
-          {/* ============ SUBSCRIPTION CTA ============ */}
           <Link
             to="/motorista/assinatura"
-            className="block animate-fade-in focus:outline-none"
+            className="block min-w-0 animate-fade-in rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             aria-label="Abrir minha assinatura"
           >
-            <DSCard className="press-scale flex items-center gap-3 p-4 sm:p-5">
+            <DSCard className="press-scale flex min-w-0 items-center gap-3 p-4 max-[339px]:flex-wrap sm:p-5">
               <span
                 className={cn(
                   "grid h-11 w-11 shrink-0 place-items-center rounded-full",
@@ -292,16 +285,16 @@ function DriverProfilePage() {
               >
                 <Icon as={CreditCard} size="lg" />
               </span>
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Body className="font-semibold">APOIS Premium</Body>
+              <div className="min-w-[140px] flex-1">
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                  <Body className="break-words font-semibold">APOIS Premium</Body>
                   <StatusPill
                     status={subActive ? "accepted" : "cancelled"}
                     label={subActive ? "Ativa" : "Vencida"}
                     pulse={subActive}
                   />
                 </div>
-                <Caption className="mt-0.5 block">
+                <Caption className="mt-0.5 block break-words">
                   {subActive
                     ? expiresAt
                       ? `Renova em ${expiresAt}`
@@ -309,14 +302,13 @@ function DriverProfilePage() {
                     : "Ative para receber corridas"}
                 </Caption>
               </div>
-              <Icon as={ChevronRight} size="md" className="text-muted-foreground" />
+              <Icon as={ChevronRight} size="md" className="shrink-0 text-muted-foreground" />
             </DSCard>
           </Link>
 
-          {/* ============ ACCOUNT SECTIONS ============ */}
-          <section className="flex flex-col gap-2 animate-fade-in">
+          <section className="flex min-w-0 flex-col gap-2 animate-fade-in">
             <Label className="px-2">Conta</Label>
-            <DSCard className="overflow-hidden p-0">
+            <DSCard className="min-w-0 overflow-hidden p-0">
               <MenuRow
                 icon={User}
                 label="Informações pessoais"
@@ -363,12 +355,11 @@ function DriverProfilePage() {
                 to="/motorista/regalias"
               />
             </DSCard>
-
           </section>
 
-          <section className="flex flex-col gap-2 animate-fade-in">
+          <section className="flex min-w-0 flex-col gap-2 animate-fade-in">
             <Label className="px-2">Preferências</Label>
-            <DSCard className="overflow-hidden p-0">
+            <DSCard className="min-w-0 overflow-hidden p-0">
               <MenuRow
                 icon={LifeBuoy}
                 label="Suporte"
@@ -385,7 +376,6 @@ function DriverProfilePage() {
             </DSCard>
           </section>
 
-          {/* ============ LOGOUT ============ */}
           <div className="flex flex-col gap-3 pt-1 animate-fade-in">
             <DSButton
               variant="outline"
@@ -413,8 +403,6 @@ function DriverProfilePage() {
   );
 }
 
-/* ---------- subcomponents (DS-only) ---------- */
-
 function InfoRow({
   icon,
   label,
@@ -430,13 +418,13 @@ function InfoRow({
 }) {
   return (
     <div className="min-w-0">
-      <div className="flex items-center gap-1.5 text-muted-foreground">
-        {icon && <Icon as={icon} size="sm" className="text-primary" />}
-        <Caption>{label}</Caption>
+      <div className="flex min-w-0 items-center gap-1.5 text-muted-foreground">
+        {icon && <Icon as={icon} size="sm" className="shrink-0 text-primary" />}
+        <Caption className="break-words">{label}</Caption>
       </div>
       <Body
         className={cn(
-          "mt-0.5 truncate font-semibold text-foreground",
+          "mt-0.5 break-words font-semibold text-foreground",
           mono && "font-mono tracking-wide",
           capitalize && "capitalize",
         )}
@@ -459,16 +447,16 @@ function StatCard({
   return (
     <DSCard
       className={cn(
-        "flex flex-col items-center gap-2 p-3 text-center sm:p-4",
+        "flex min-w-0 flex-col items-center gap-2 p-3 text-center sm:p-4",
         highlight && "ring-1 ring-primary/25",
       )}
     >
       <Metric
-        className={cn("text-[clamp(18px,6vw,24px)] leading-none", highlight && "text-primary")}
+        className={cn("max-w-full break-words text-[clamp(18px,6vw,24px)] leading-none", highlight && "text-primary")}
       >
         {value}
       </Metric>
-      <Label>{label}</Label>
+      <Label className="break-words text-center">{label}</Label>
     </DSCard>
   );
 }
@@ -489,21 +477,21 @@ function MenuRow({
   trailing?: React.ReactNode;
 }) {
   const content = (
-    <div className="flex min-h-[56px] items-center gap-3 px-4 py-3 transition active:bg-muted/40">
+    <div className="flex min-h-[56px] min-w-0 items-center gap-3 px-4 py-3 transition active:bg-muted/40 max-[339px]:flex-wrap">
       <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
         <Icon as={icon} size="md" />
       </span>
-      <div className="min-w-0 flex-1">
-        <Body className="font-semibold">{label}</Body>
-        {sub && <Caption className="block truncate">{sub}</Caption>}
+      <div className="min-w-[140px] flex-1">
+        <Body className="break-words font-semibold">{label}</Body>
+        {sub && <Caption className="block break-words leading-4">{sub}</Caption>}
       </div>
-      {trailing}
+      {trailing ? <div className="shrink-0 max-[339px]:ml-[52px]">{trailing}</div> : null}
       <Icon as={ChevronRight} size="sm" className="shrink-0 text-muted-foreground" />
     </div>
   );
   if (to) {
     return (
-      <Link to={to} className="block focus:outline-none focus-visible:bg-muted/50">
+      <Link to={to} className="block min-w-0 focus:outline-none focus-visible:bg-muted/50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary">
         {content}
       </Link>
     );
@@ -512,7 +500,7 @@ function MenuRow({
     <button
       type="button"
       onClick={onClick}
-      className="w-full text-left focus:outline-none focus-visible:bg-muted/50"
+      className="w-full min-w-0 text-left focus:outline-none focus-visible:bg-muted/50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
     >
       {content}
     </button>
