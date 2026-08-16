@@ -8,7 +8,8 @@ import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { MovviHeader } from "@/components/MovviHeader";
-import { BottomNav, PASSENGER_NAV, DRIVER_NAV } from "@/components/BottomNav";
+import { BottomNav, PASSENGER_NAV } from "@/components/BottomNav";
+import { ApoisDriverBottomNav } from "@/components/ApoisDriverBottomNav";
 import { ProfilePhotoUploader } from "@/components/ProfilePhotoUploader";
 import { refreshProfilePhotoUrl } from "@/lib/profilePhoto";
 import {
@@ -250,12 +251,10 @@ export function ProfileForm({
     }
   }
 
-  const nav = role === "passenger" ? PASSENGER_NAV : DRIVER_NAV;
-
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="flex min-h-dvh flex-col bg-background">
       <MovviHeader logoutRedirect="/" />
-      <main className="flex-1 px-4 py-6 pb-28" style={{ paddingBottom: "max(7rem, env(safe-area-inset-bottom))" }}>
+      <main className="flex-1 px-4 py-6 pb-28" style={{ paddingBottom: "calc(7rem + env(safe-area-inset-bottom))" }}>
         <div className="container mx-auto max-w-2xl space-y-5 animate-fade-slide">
           {loading ? (
             <div className="flex items-center gap-2 text-muted-foreground">
@@ -267,8 +266,8 @@ export function ProfileForm({
 
               <DSCard>
                 <DSCardHeader>
-                  <DSCardTitle className="text-2xl">{title}</DSCardTitle>
-                  <DSCardDescription>{description}</DSCardDescription>
+                  <DSCardTitle className="break-words text-2xl">{title}</DSCardTitle>
+                  <DSCardDescription className="break-words">{description}</DSCardDescription>
                 </DSCardHeader>
                 <DSCardContent>
                   <form onSubmit={onSave} className="space-y-6">
@@ -294,24 +293,24 @@ export function ProfileForm({
                         placeholder="Como devemos te chamar" />
                     </div>
                     <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="space-y-1.5">
+                      <div className="min-w-0 space-y-1.5">
                         <DSLabel htmlFor="cpf">CPF</DSLabel>
                         <DSInput id="cpf" value={cpf}
                           onChange={(e) => { setCpf(e.target.value); markDirty(); }}
                           placeholder="000.000.000-00" />
                       </div>
-                      <div className="space-y-1.5">
+                      <div className="min-w-0 space-y-1.5">
                         <DSLabel htmlFor="birth_date">Data de nascimento</DSLabel>
                         <DSInput id="birth_date" type="date" value={birthDate}
                           onChange={(e) => { setBirthDate(e.target.value); markDirty(); }} />
                       </div>
                     </div>
                     <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="space-y-1.5">
+                      <div className="min-w-0 space-y-1.5">
                         <DSLabel htmlFor="gender">Gênero (opcional)</DSLabel>
                         <select id="gender" value={gender}
                           onChange={(e) => { setGender(e.target.value); markDirty(); }}
-                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm transition-colors focus-visible:outline-none focus-visible:border-primary/70 focus-visible:ring-2 focus-visible:ring-primary/25">
+                          className="flex min-h-11 w-full rounded-md border border-input bg-background px-3 text-sm transition-colors focus-visible:outline-none focus-visible:border-primary/70 focus-visible:ring-2 focus-visible:ring-primary/25">
                           <option value="">Prefiro não informar</option>
                           <option value="feminino">Feminino</option>
                           <option value="masculino">Masculino</option>
@@ -319,7 +318,7 @@ export function ProfileForm({
                           <option value="outro">Outro</option>
                         </select>
                       </div>
-                      <div className="space-y-1.5">
+                      <div className="min-w-0 space-y-1.5">
                         <DSLabel htmlFor="city">Cidade</DSLabel>
                         <DSInput id="city" value={city}
                           onChange={(e) => { setCity(e.target.value); markDirty(); }}
@@ -330,14 +329,15 @@ export function ProfileForm({
                     <SectionTitle>Contato</SectionTitle>
                     <div className="space-y-1.5">
                       <DSLabel>E-mail *</DSLabel>
-                      <div className="flex gap-2">
-                        <DSInput value={email} disabled />
+                      <div className="flex min-w-0 flex-wrap gap-2">
+                        <DSInput value={email} disabled className="min-w-0 flex-1 basis-56" />
                         <DSButton
                           type="button"
                           variant="outline"
                           size="sm"
                           onClick={handleVerifyEmail}
                           disabled={Boolean(emailVerifiedAt)}
+                          className="shrink-0"
                         >
                           {emailVerifiedAt ? (
                             <><BadgeCheck className="mr-1 h-4 w-4 text-primary" /> Verificado</>
@@ -352,20 +352,20 @@ export function ProfileForm({
                       <DSInput id="phone" required inputMode="tel" value={phone}
                         onChange={(e) => { setPhone(e.target.value); markDirty(); }}
                         placeholder="(11) 99999-9999" />
-                      <p className="text-xs text-muted-foreground">
+                      <p className="break-words text-xs text-muted-foreground">
                         A verificação por SMS só será exibida quando o fluxo OTP estiver habilitado no backend.
                       </p>
                     </div>
 
                     {role === "driver" ? (
-                      <p className="rounded-md border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                      <p className="break-words rounded-md border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
                         Contatos de emergência são gerenciados em Segurança, onde ficam armazenados no cadastro protegido do motorista.
                       </p>
                     ) : null}
 
                     <SectionTitle>Segurança</SectionTitle>
                     <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="space-y-1.5">
+                      <div className="min-w-0 space-y-1.5">
                         <DSLabel htmlFor="new_password" className="flex items-center gap-1.5 text-sm">
                           <Lock className="h-3.5 w-3.5" /> Nova senha
                         </DSLabel>
@@ -374,7 +374,7 @@ export function ProfileForm({
                           onChange={(e) => { setNewPassword(e.target.value); markDirty(); }}
                           placeholder="Mín. 6 caracteres" minLength={6} />
                       </div>
-                      <div className="space-y-1.5">
+                      <div className="min-w-0 space-y-1.5">
                         <DSLabel htmlFor="confirm_password" className="text-sm">Confirmar senha</DSLabel>
                         <DSInput id="confirm_password" type="password" autoComplete="new-password"
                           value={confirmPassword}
@@ -384,10 +384,10 @@ export function ProfileForm({
                     </div>
 
                     <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end">
-                      <DSButton type="button" variant="outline" onClick={cancelChanges} disabled={!dirty || saving}>
+                      <DSButton type="button" variant="outline" onClick={cancelChanges} disabled={!dirty || saving} className="w-full sm:w-auto">
                         <X className="mr-2 h-4 w-4" /> Cancelar
                       </DSButton>
-                      <DSButton type="submit" disabled={saving || !dirty} className="sm:min-w-[180px]">
+                      <DSButton type="submit" disabled={saving || !dirty} className="w-full sm:min-w-[180px] sm:w-auto">
                         {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                         {saving ? "Salvando..." : "Salvar alterações"}
                       </DSButton>
@@ -400,15 +400,15 @@ export function ProfileForm({
 
               <DSCard className="border-destructive/40">
                 <DSCardHeader>
-                  <DSCardTitle className="flex items-center gap-2 text-base text-destructive">
-                    <ShieldAlert className="h-5 w-5" /> Zona perigosa
+                  <DSCardTitle className="flex flex-wrap items-center gap-2 text-base text-destructive">
+                    <ShieldAlert className="h-5 w-5 shrink-0" /> Zona perigosa
                   </DSCardTitle>
-                  <DSCardDescription>
+                  <DSCardDescription className="break-words">
                     Sua conta será marcada como excluída e você perderá acesso imediato.
                   </DSCardDescription>
                 </DSCardHeader>
                 <DSCardContent>
-                  <DSButton type="button" variant="destructive" onClick={handleDeleteAccount}>
+                  <DSButton type="button" variant="destructive" onClick={handleDeleteAccount} className="w-full sm:w-auto">
                     <Trash2 className="mr-2 h-4 w-4" /> Excluir minha conta
                   </DSButton>
                 </DSCardContent>
@@ -417,14 +417,14 @@ export function ProfileForm({
           )}
         </div>
       </main>
-      {nav && <BottomNav items={nav} />}
+      {role === "driver" ? <ApoisDriverBottomNav /> : <BottomNav items={PASSENGER_NAV} />}
     </div>
   );
 }
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h3 className="border-b border-border pb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+    <h3 className="break-words border-b border-border pb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
       {children}
     </h3>
   );
