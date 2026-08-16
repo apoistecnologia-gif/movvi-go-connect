@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { AlertTriangle, ShieldAlert, MapPinned, CreditCard, MessageSquareWarning, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,6 +14,8 @@ interface Props {
 type Category = "safety" | "behavior" | "route" | "payment" | "other";
 
 const MAX_DESCRIPTION_LENGTH = 1000;
+const MIN_DESCRIPTION_LENGTH = 10;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const CATEGORIES: { id: Category; label: string; description: string; Icon: typeof AlertTriangle }[] = [
   { id: "safety", label: "Problema de segurança", description: "Situação de risco durante a corrida", Icon: ShieldAlert },
@@ -23,13 +25,32 @@ const CATEGORIES: { id: Category; label: string; description: string; Icon: type
   { id: "other", label: "Outro", description: "Descreva o que aconteceu", Icon: AlertTriangle },
 ];
 
+const PASSENGER_CATEGORY_MAP: Record<Category, "ride" | "payment" | "safety" | "other"> = {
+  safety: "safety",
+  behavior: "ride",
+  route: "ride",
+  payment: "payment",
+  other: "other",
+};
+
+type PassengerSupportResponse = {
+  ok?: boolean;
+  ticket?: { protocol?: string };
+};
+
+function categoryLabel(category: Category): string {
+  return CATEGORIES.find((item) => item.id === category)?.label ?? "Relato de corrida";
+}
+
 export function IncidentReportSheet({ open, onClose, role, rideId }: Props) {
   const [category, setCategory] = useState<Category | null>(null);
   const [description, setDescription] = useState("");
   const [sending, setSending] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
   const titleId = useId();
   const descriptionId = useId();
+  const textareaId = useId();
   const counterId = useId();
   const errorId = useId();
 
@@ -38,6 +59,7 @@ export function IncidentReportSheet({ open, onClose, role, rideId }: Props) {
     setErrorMessage(null);
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    const frame = window.requestAnimationFrame(() => closeButtonRef.current?.focus());
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape" && !sending) {
         setCategory(null);
@@ -48,6 +70,7 @@ export function IncidentReportSheet({ open, onClose, role, rideId }: Props) {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => {
+      window.cancelAnimationFrame(frame);
       window.removeEventListener("keydown", onKeyDown);
       document.body.style.overflow = previousOverflow;
     };
@@ -63,6 +86,13 @@ export function IncidentReportSheet({ open, onClose, role, rideId }: Props) {
 
   async function submit() {
     if (!category || sending) return;
+    const normalizedDescription = description.trim().replace(/\s+/g, " ");
+    if (normalizedDescription.length < MIN_DESCRIPTION_LENGTH) {
+      setErrorMessage(`Descreva o ocorrido com pelo menos ${MIN_DESCRIPTION_LENGTH} caracteres.`);
+      return;
+    }
+
+    const normalizedRideId = typeof rideId === "string" && UUID_RE.test(rideId.trim()) ? rideId.trim() : null;
     setSending(true);
     setErrorMessage(null);
     try {
@@ -71,20 +101,57 @@ export function IncidentReportSheet({ open, onClose, role, rideId }: Props) {
         setErrorMessage("Sua sessão expirou. Entre novamente para enviar o relato.");
         return;
       }
-      const client = supabase as unknown as {
-        from: (t: string) => { insert: (row: unknown) => Promise<{ error: { message: string } | null }> };
-      };
-      const normalizedRideId = typeof rideId === "string" && rideId.trim() ? rideId.trim() : null;
-      const normalizedDescription = description.trim();
-      const { error } = await client.from("incident_reports").insert({
-        user_id: auth.user.id,
-        role,
-        ride_id: normalizedRideId,
-        category,
-        description: normalizedDescription || null,
-      });
-      if (error) throw new Error(error.message);
-      toast.success("Relato registrado. Nossa equipe vai analisar.");
+
+      if (role === "passenger") {
+        const { data, error } = await supabase.functions.invoke<PassengerSupportResponse>("passenger-support", {
+          body: {
+            category: PASSENGER_CATEGORY_MAP[category],
+            subject: categoryLabel(category),
+            message: normalizedDescription,
+            rideId: normalizedRideId || undefined,
+          },
+        });
+        if (error || !data?.ok) throw error ?? new Error("passenger_support_failed");
+        toast.success(
+          data.ticket?.protocol
+            ? `Relato registrado. Protocolo ${data.ticket.protocol}.`
+            : "Relato registrado. Nossa equipe vai analisar.",
+        );
+      } else {
+        const { data: profile, error: profileError } = await supabase
+          .from("users")
+          .select("id")
+          .eq("auth_user_id", auth.user.id)
+          .maybeSingle();
+        if (profileError || !profile?.id) throw profileError ?? new Error("driver_domain_profile_missing");
+
+        const { data: driver, error: driverError } = await supabase
+          .from("drivers")
+          .select("id")
+          .eq("user_id", profile.id)
+          .maybeSingle();
+        if (driverError || !driver?.id) throw driverError ?? new Error("driver_profile_missing");
+
+        const { error } = await supabase.from("form_submissions").insert({
+          kind: "contact",
+          consent: true,
+          source: "apois-driver-app",
+          status: "new",
+          payload: {
+            channel: "driver_incident_report",
+            auth_user_id: auth.user.id,
+            domain_user_id: profile.id,
+            driver_id: driver.id,
+            ride_id: normalizedRideId,
+            category,
+            subject: categoryLabel(category),
+            message: normalizedDescription,
+          },
+        });
+        if (error) throw error;
+        toast.success("Relato registrado. Nossa equipe vai analisar.");
+      }
+
       setCategory(null);
       setDescription("");
       setErrorMessage(null);
@@ -124,6 +191,7 @@ export function IncidentReportSheet({ open, onClose, role, rideId }: Props) {
             <div id={descriptionId} className="text-[12px] text-muted-foreground">Selecione a categoria e descreva o que aconteceu.</div>
           </div>
           <button
+            ref={closeButtonRef}
             type="button"
             onClick={close}
             disabled={sending}
@@ -162,11 +230,11 @@ export function IncidentReportSheet({ open, onClose, role, rideId }: Props) {
           ))}
         </div>
 
-        <label htmlFor="incident-description" className="mt-4 block text-[12px] font-medium text-muted-foreground">
-          Detalhes (opcional)
+        <label htmlFor={textareaId} className="mt-4 block text-[12px] font-medium text-muted-foreground">
+          Detalhes
         </label>
         <textarea
-          id="incident-description"
+          id={textareaId}
           value={description}
           onChange={(e) => {
             setDescription(e.target.value.slice(0, MAX_DESCRIPTION_LENGTH));
@@ -174,8 +242,11 @@ export function IncidentReportSheet({ open, onClose, role, rideId }: Props) {
           }}
           rows={3}
           maxLength={MAX_DESCRIPTION_LENGTH}
+          minLength={MIN_DESCRIPTION_LENGTH}
+          required
           disabled={sending}
-          aria-describedby={counterId}
+          aria-describedby={errorMessage ? `${counterId} ${errorId}` : counterId}
+          aria-invalid={Boolean(errorMessage)}
           placeholder="Conte o que aconteceu…"
           className="mt-1 min-h-24 w-full resize-y rounded-2xl bg-background/70 p-3 text-[16px] leading-5 ring-1 ring-border outline-none focus:ring-2 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-60"
         />
@@ -201,7 +272,7 @@ export function IncidentReportSheet({ open, onClose, role, rideId }: Props) {
           <button
             type="button"
             onClick={() => void submit()}
-            disabled={!category || sending}
+            disabled={!category || description.trim().length < MIN_DESCRIPTION_LENGTH || sending}
             aria-busy={sending}
             className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-primary px-3 py-3 text-[13px] font-bold text-primary-foreground transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           >
@@ -211,7 +282,7 @@ export function IncidentReportSheet({ open, onClose, role, rideId }: Props) {
         </div>
 
         <p className="mt-3 text-center text-[12px] leading-4 text-muted-foreground">
-          Seu relato é confidencial. Em situação de risco imediato, ligue 190.
+          Seu relato é confidencial. Em situação de risco imediato, use o SOS ou procure o serviço de emergência local.
         </p>
       </div>
     </div>
