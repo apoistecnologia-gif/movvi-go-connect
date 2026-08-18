@@ -24,6 +24,7 @@ const rpcClient = supabase as unknown as DynamicRpcClient;
 
 const TOKEN_STORAGE_KEY = "apois.notification.device_token";
 const PLATFORM_STORAGE_KEY = "apois.notification.device_platform";
+const PERMISSION_STORAGE_KEY = "apois.notification.permission_status";
 const DEVICE_ID_KEY = "apois.notification.device_id";
 const MAX_TOKEN_LENGTH = 4096;
 const MAX_DEVICE_ID_LENGTH = 160;
@@ -42,6 +43,10 @@ function validPermissionStatus(value: unknown): DevicePermissionStatus {
   const normalized = clean(value, 30).toLowerCase();
   if (normalized === "provisional" || normalized === "denied") return normalized;
   return "granted";
+}
+
+function validRememberedPermissionStatus(value: unknown): Exclude<DevicePermissionStatus, "denied"> {
+  return validPermissionStatus(value) === "provisional" ? "provisional" : "granted";
 }
 
 function validToken(value: unknown): string {
@@ -82,26 +87,43 @@ function getDeviceId(): string {
   }
 }
 
-function rememberDeviceToken(token: string, platform: DevicePlatform): void {
+function rememberDeviceToken(
+  token: string,
+  platform: DevicePlatform,
+  permissionStatus: Exclude<DevicePermissionStatus, "denied">,
+): void {
   const safeToken = validToken(token);
   if (!safeToken) return;
   try {
     localStorage.setItem(TOKEN_STORAGE_KEY, safeToken);
     localStorage.setItem(PLATFORM_STORAGE_KEY, validPlatform(platform));
+    localStorage.setItem(PERMISSION_STORAGE_KEY, validRememberedPermissionStatus(permissionStatus));
   } catch {
     // Persistência local é apenas auxiliar para logout/touch.
   }
 }
 
-function readRememberedToken(): { token: string; platform: DevicePlatform } | null {
+function readRememberedToken(): {
+  token: string;
+  platform: DevicePlatform;
+  permissionStatus: Exclude<DevicePermissionStatus, "denied">;
+} | null {
   try {
     const token = validToken(localStorage.getItem(TOKEN_STORAGE_KEY));
     if (!token) {
       localStorage.removeItem(TOKEN_STORAGE_KEY);
       localStorage.removeItem(PLATFORM_STORAGE_KEY);
+      localStorage.removeItem(PERMISSION_STORAGE_KEY);
       return null;
     }
-    return { token, platform: validPlatform(localStorage.getItem(PLATFORM_STORAGE_KEY)) };
+    return {
+      token,
+      platform: validPlatform(localStorage.getItem(PLATFORM_STORAGE_KEY)),
+      // Tokens gravados por versões antigas não tinham esta chave; nesse caso
+      // mantemos o comportamento anterior (granted) sem transformar um valor
+      // explicitamente provisional em granted em touches futuros.
+      permissionStatus: validRememberedPermissionStatus(localStorage.getItem(PERMISSION_STORAGE_KEY)),
+    };
   } catch {
     return null;
   }
@@ -111,6 +133,7 @@ function forgetRememberedToken(): void {
   try {
     localStorage.removeItem(TOKEN_STORAGE_KEY);
     localStorage.removeItem(PLATFORM_STORAGE_KEY);
+    localStorage.removeItem(PERMISSION_STORAGE_KEY);
   } catch {
     // no-op
   }
@@ -168,7 +191,7 @@ export async function registerDeviceToken(input?: Partial<DeviceToken>): Promise
   });
 
   if (error) throw new Error("notification_token_registration_failed");
-  rememberDeviceToken(token, platform);
+  rememberDeviceToken(token, platform, permissionStatus);
 }
 
 /**
@@ -228,12 +251,13 @@ export async function touchCurrentDevice(): Promise<void> {
   const deviceId = getDeviceId();
   if (!deviceId) return;
 
-  // A RPC é idempotente e atualiza last_used_at/updated_at do token existente.
+  // A RPC é idempotente e atualiza last_used_at/updated_at do token existente
+  // sem elevar silenciosamente uma autorização provisional para granted.
   const { error } = await rpcClient.rpc("register_notification_token", {
     _token: remembered.token,
     _platform: remembered.platform,
     _device_id: deviceId,
-    _permission_status: "granted",
+    _permission_status: remembered.permissionStatus,
   });
   if (error) throw new Error("notification_token_touch_failed");
 }
