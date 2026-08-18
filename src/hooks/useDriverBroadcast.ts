@@ -90,6 +90,31 @@ export function useDriverBroadcast(
   const positionRef = useRef(position);
   const nativeStartPendingRef = useRef(false);
   const nativeLifecycleVersionRef = useRef(0);
+  const presenceLifecycleVersionRef = useRef(0);
+  const presenceWriteChainRef = useRef<Promise<void>>(Promise.resolve());
+
+  const queuePresenceWrite = (
+    desiredOnline: boolean,
+    desiredPosition: DriverTelemetry | null,
+    lifecycleVersion: number,
+  ) => {
+    presenceWriteChainRef.current = presenceWriteChainRef.current
+      .catch(() => undefined)
+      .then(async () => {
+        // Escritas ONLINE pertencentes a um ciclo anterior nunca podem rodar
+        // depois de o motorista ter ficado OFFLINE/trocado de sessão. Sem esta
+        // fila, uma RPC ONLINE lenta podia terminar depois da RPC OFFLINE e
+        // ressuscitar a presença no banco.
+        if (desiredOnline && presenceLifecycleVersionRef.current !== lifecycleVersion) return;
+        await setPresence(desiredOnline, desiredPosition);
+        // Se a mudança de lifecycle aconteceu enquanto a RPC ONLINE estava em
+        // voo, reafirma OFFLINE ao final. Isso fecha a janela de corrida entre
+        // respostas HTTP fora de ordem.
+        if (desiredOnline && presenceLifecycleVersionRef.current !== lifecycleVersion) {
+          await setPresence(false, null);
+        }
+      });
+  };
 
   useEffect(() => {
     positionRef.current = position;
@@ -160,6 +185,7 @@ export function useDriverBroadcast(
     const { data } = supabase.auth.onAuthStateChange((event) => {
       if (event !== "SIGNED_OUT") return;
       nativeLifecycleVersionRef.current += 1;
+      presenceLifecycleVersionRef.current += 1;
       nativeStartPendingRef.current = false;
       lastWrittenRef.current = null;
       try {
@@ -175,21 +201,23 @@ export function useDriverBroadcast(
   }, []);
 
   useEffect(() => {
+    const lifecycleVersion = ++presenceLifecycleVersionRef.current;
     if (!userId) return;
     if (!online) {
       lastWrittenRef.current = null;
-      void setPresence(false, null);
+      queuePresenceWrite(false, null, lifecycleVersion);
       return;
     }
 
     const current = positionRef.current;
     if (current && isBrazilCoordinate(current.lat, current.lng)) {
-      void setPresence(true, current);
+      queuePresenceWrite(true, current, lifecycleVersion);
     }
   }, [userId, online]);
 
   useEffect(() => {
     if (!userId || !online) return;
+    const lifecycleVersion = presenceLifecycleVersionRef.current;
 
     const writeNow = (force = false) => {
       const p = positionRef.current;
@@ -205,7 +233,7 @@ export function useDriverBroadcast(
       }
 
       lastWrittenRef.current = { lat: p.lat, lng: p.lng, at: now };
-      void setPresence(true, p);
+      queuePresenceWrite(true, p, lifecycleVersion);
     };
 
     writeNow(true);
