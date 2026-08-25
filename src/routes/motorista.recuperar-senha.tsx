@@ -59,7 +59,7 @@ function DriverPasswordRecoveryPage() {
               <h1 className="mt-2 break-words text-2xl font-black leading-tight">Esqueci minha senha</h1>
               <p className="mt-2 break-words text-sm leading-6 text-zinc-500">Informe o e-mail do seu cadastro de motorista. O link abrirá o APOIS Motorista para você definir uma nova senha.</p>
 
-              <form onSubmit={onSubmit} className="mt-7 min-w-0 space-y-4" aria-busy={loading}>
+              <form onSubmit={onSubmit} method="post" className="mt-7 min-w-0 space-y-4" aria-busy={loading}>
                 <label className="block min-w-0"><span className="mb-2 block text-[10px] font-black uppercase tracking-[0.16em] text-zinc-500">E-mail</span><div className="flex h-14 min-w-0 items-center gap-3 rounded-2xl border border-white/8 bg-black/30 px-4 focus-within:border-[#F6BE1C]/60 focus-within:ring-1 focus-within:ring-[#F6BE1C]/20"><Mail className="h-5 w-5 shrink-0 text-[#F6BE1C]" aria-hidden="true" /><input name="email" type="email" autoComplete="email" inputMode="email" required placeholder="seuemail@exemplo.com" className="h-full min-w-0 flex-1 bg-transparent text-base font-semibold outline-none placeholder:text-zinc-700" /></div></label>
 
                 {error ? <div role="alert" aria-live="assertive" className="flex min-w-0 items-start gap-2 rounded-2xl border border-red-400/20 bg-red-400/8 p-3 text-xs font-semibold leading-5 text-red-300"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" /><span className="min-w-0 flex-1 break-words">{error}</span></div> : null}

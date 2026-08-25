@@ -67,7 +67,7 @@ function AdminLoginPage() {
         }
         description="Acesso restrito à equipe APOIS."
       >
-        <form onSubmit={onSubmit} className="min-w-0 space-y-4" noValidate>
+        <form onSubmit={onSubmit} method="post" className="min-w-0 space-y-4" noValidate>
           <div className="min-w-0 space-y-2">
             <DSLabel htmlFor="email">E-mail</DSLabel>
             <DSInput

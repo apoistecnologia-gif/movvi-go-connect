@@ -133,7 +133,7 @@ function DriverLoginPage() {
           <p className="mt-3 break-words text-[13px] font-medium leading-5 text-zinc-500">Faça login para começar a receber corridas.</p>
         </section>
 
-        <form onSubmit={onSubmit} className="mt-6 min-w-0 space-y-4" aria-busy={loading}>
+        <form onSubmit={onSubmit} method="post" className="mt-6 min-w-0 space-y-4" aria-busy={loading}>
           <label className="block min-w-0">
             <span className="mb-2 block text-[11px] font-black uppercase tracking-[0.12em] text-zinc-400">E-mail</span>
             <div className="flex h-[58px] min-w-0 items-center gap-3 rounded-[17px] border border-white/12 bg-[#101214]/95 px-4 shadow-[inset_0_1px_0_rgba(255,255,255,.025)] focus-within:border-[#F6BE1C]/55 focus-within:ring-1 focus-within:ring-[#F6BE1C]/20">

@@ -300,7 +300,7 @@ function DriverSignUpPage() {
       </header>
 
       <main className="mx-auto w-full max-w-md min-w-0 px-4 pb-[calc(env(safe-area-inset-bottom)+24px)] pt-6">
-        <form ref={formRef} onSubmit={onSubmit} noValidate className="min-w-0">
+        <form ref={formRef} onSubmit={onSubmit} method="post" noValidate className="min-w-0">
           <section className={step === 1 ? "block min-w-0" : "hidden"}>
             <StepHeading title="Seu veículo" description="Conte qual serviço você vai oferecer pela APOIS." icon={Car} />
             <div className="space-y-4">

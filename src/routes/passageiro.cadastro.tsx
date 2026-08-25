@@ -56,7 +56,7 @@ function PassengerSignUpPage() {
         </>
       }
     >
-      <form onSubmit={onSubmit} className="space-y-3">
+      <form onSubmit={onSubmit} method="post" className="space-y-3">
         <div className="space-y-1.5">
           <DSLabel htmlFor="name" className="text-[13px]">Nome completo</DSLabel>
           <DSInput id="name" name="name" required className="h-9 text-[14px]" />
