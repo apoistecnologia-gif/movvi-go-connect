@@ -1,5 +1,5 @@
 // Edge Function: recebe webhooks do Mercado Pago.
-// Configurar no painel MP: URL = https://ekddifjpbieuainvjlbl.supabase.co/functions/v1/mercadopago-webhook
+// Configurar no painel MP: URL = https://vqtucstyduxrqjgyigfk.supabase.co/functions/v1/mercadopago-webhook
 // Eventos: payment, subscription_authorized_payment, subscription_preapproval.
 //
 // Secrets: MERCADOPAGO_ACCESS_TOKEN, MERCADOPAGO_WEBHOOK_SECRET,
