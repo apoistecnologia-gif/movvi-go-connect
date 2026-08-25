@@ -85,7 +85,15 @@ function normalizeFavorite(value: unknown, userId: string): FavoritePlace | null
   const id = clean(row.id, 100);
   const label = clean(row.label, MAX_LABEL);
   const address = clean(row.address, MAX_ADDRESS);
-  if (!id || !label || !address || !validKind(row.kind) || !validCoordinate(row.lat, row.lng)) return null;
+  if (
+    !id ||
+    !label ||
+    !address ||
+    !validKind(row.kind) ||
+    typeof row.lng !== "number" ||
+    !validCoordinate(row.lat, row.lng)
+  )
+    return null;
   const order = Number(row.sort_order);
   return {
     id,
@@ -107,7 +115,7 @@ function normalizeRecent(value: unknown, userId: string): RecentPlace | null {
   const row = value as Partial<RecentPlace>;
   const id = clean(row.id, 100);
   const address = clean(row.address, MAX_ADDRESS);
-  if (!id || !address || !validCoordinate(row.lat, row.lng)) return null;
+  if (!id || !address || typeof row.lng !== "number" || !validCoordinate(row.lat, row.lng)) return null;
   const useCount = Number(row.use_count);
   return {
     id,

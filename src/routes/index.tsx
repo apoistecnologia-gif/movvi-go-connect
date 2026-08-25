@@ -56,8 +56,8 @@ function HomePage() {
     <main className="relative min-h-dvh w-full overflow-hidden bg-white text-[#0F172A]">
       {/* Ultra-subtle decorative background */}
       <div aria-hidden className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-40 -right-32 h-[420px] w-[420px] rounded-full bg-[#22C55E]/[0.06] blur-3xl" />
-        <div className="absolute -bottom-48 -left-32 h-[460px] w-[460px] rounded-full bg-[#22C55E]/[0.05] blur-3xl" />
+        <div className="absolute -top-40 -right-32 h-[420px] w-[420px] rounded-full bg-[#F6BE1C]/[0.06] blur-3xl" />
+        <div className="absolute -bottom-48 -left-32 h-[460px] w-[460px] rounded-full bg-[#F6BE1C]/[0.05] blur-3xl" />
         {/* Ultra-light route line */}
         <svg
           className="absolute inset-0 h-full w-full opacity-[0.05]"
@@ -67,7 +67,7 @@ function HomePage() {
         >
           <path
             d="M-20 640 Q120 540 200 580 T440 480"
-            stroke="#22C55E"
+            stroke="#F6BE1C"
             strokeWidth="1.5"
             strokeDasharray="4 6"
             strokeLinecap="round"
@@ -81,9 +81,9 @@ function HomePage() {
           />
         </svg>
         {/* Faint location pins */}
-        <div className="absolute top-[18%] right-[12%] h-1.5 w-1.5 rounded-full bg-[#22C55E]/25" />
+        <div className="absolute top-[18%] right-[12%] h-1.5 w-1.5 rounded-full bg-[#F6BE1C]/25" />
         <div className="absolute top-[72%] left-[14%] h-1.5 w-1.5 rounded-full bg-[#0F172A]/15" />
-        <div className="absolute top-[40%] left-[8%] h-1 w-1 rounded-full bg-[#22C55E]/20" />
+        <div className="absolute top-[40%] left-[8%] h-1 w-1 rounded-full bg-[#F6BE1C]/20" />
       </div>
 
       <div className="relative mx-auto flex min-h-dvh w-full max-w-md flex-col px-6 pb-8 pt-14">
@@ -93,7 +93,7 @@ function HomePage() {
             className="animate-in fade-in duration-500 fill-mode-both"
             style={{ animationDelay: "0ms" }}
           >
-            <div className="rounded-3xl bg-[#0F172A] p-4 shadow-[0_18px_44px_-22px_rgba(34,197,94,0.55)]">
+            <div className="rounded-3xl bg-[#0F172A] p-4 shadow-[0_18px_44px_-22px_rgba(246,190,28,0.55)]">
               <MovviLogo size={52} />
             </div>
           </div>
@@ -102,7 +102,7 @@ function HomePage() {
             className="mt-10 text-[36px] font-bold leading-[1.05] tracking-tight text-[#0F172A] animate-in fade-in slide-in-from-bottom-2 duration-500 fill-mode-both"
             style={{ animationDelay: "80ms" }}
           >
-            Bem-vindo à <span className="text-[#22C55E]">APOIS</span>
+            Bem-vindo à <span className="text-[#F6BE1C]">APOIS</span>
           </h1>
 
           <p
@@ -254,10 +254,10 @@ function AccessCard({
   delay: number;
 }) {
   const border = primary
-    ? "border-[#22C55E]/40 ring-1 ring-[#22C55E]/10"
+    ? "border-[#F6BE1C]/40 ring-1 ring-[#F6BE1C]/10"
     : "border-[#EEF1F5]";
   const shadow = primary
-    ? "shadow-[0_18px_44px_-22px_rgba(34,197,94,0.35)]"
+    ? "shadow-[0_18px_44px_-22px_rgba(246,190,28,0.35)]"
     : "shadow-[0_10px_30px_-22px_rgba(15,23,42,0.18)]";
 
   return (
@@ -268,7 +268,7 @@ function AccessCard({
     >
       <span
         aria-hidden
-        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#22C55E]/10 text-[#16A34A]"
+        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#F6BE1C]/10 text-[#C88A08]"
       >
         {icon}
       </span>
@@ -281,7 +281,7 @@ function AccessCard({
         </div>
       </div>
       <ArrowUpRight
-        className="h-4 w-4 shrink-0 text-[#CBD5E1] transition-colors group-hover:text-[#22C55E]"
+        className="h-4 w-4 shrink-0 text-[#CBD5E1] transition-colors group-hover:text-[#F6BE1C]"
         strokeWidth={1.75}
       />
 
