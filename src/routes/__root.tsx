@@ -172,8 +172,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 function RootShell({ children }: { children: ReactNode }) {
-  if (APP_ROLE !== "web") return <>{children}</>;
-
   return (
     <html lang="pt-BR" className="dark" style={{ colorScheme: "dark" }}>
       <head>
