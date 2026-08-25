@@ -41,8 +41,10 @@ async function ensureApprovedDriverAsaasSubaccount(profile: DriverProfileRow): P
     if (data?.error) throw new Error(String(data.error));
   } catch (error) {
     // Não bloquear login/uso do app por indisponibilidade temporária do provedor.
-    // Permite nova tentativa no próximo carregamento de perfil durante a mesma sessão.
-    asaasSubaccountProvisioningAttempted = false;
+    // O flag permanece "true" pelo resto desta sessão do app para evitar repetir a
+    // chamada a cada navegação de rota (loadDriverProfile roda em ~11 telas) durante
+    // uma instabilidade do Asaas; uma nova tentativa ocorre no próximo carregamento
+    // completo do app.
     console.error("[APOIS MOTORISTA] falha ao provisionar subconta Asaas", error);
   }
 }
