@@ -185,7 +185,7 @@ export function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <aside className="flex h-full w-[260px] max-w-full min-w-0 flex-col overflow-x-hidden border-r border-border/60 bg-card text-card-foreground">
       <div className="relative px-5 pb-5 pt-6">
-        <span className="absolute right-3 top-3 max-w-[45%] break-words rounded-full border border-primary/30 bg-primary/10 px-2 py-1 text-xs font-bold uppercase tracking-[0.12em] text-primary">
+        <span className="absolute right-3 top-3 max-w-[85%] break-words rounded-lg border border-primary/30 bg-primary/10 px-2 py-1 text-xs font-bold uppercase tracking-[0.12em] text-primary">
           {loadingAccess ? "…" : cleanLabel(access?.role, "Admin")}
         </span>
         <div className="flex justify-center">
