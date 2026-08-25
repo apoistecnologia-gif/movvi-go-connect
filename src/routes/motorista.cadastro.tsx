@@ -295,7 +295,7 @@ function DriverSignUpPage() {
         <div className="mx-auto grid max-w-md min-w-0 grid-cols-[44px_minmax(0,1fr)_44px] items-center gap-2 sm:gap-3">
           <button type="button" onClick={previousStep} className="flex h-11 w-11 items-center justify-center rounded-full border border-white/8 bg-[#101214] text-zinc-300" aria-label="Voltar"><ArrowLeft className="h-4 w-4" aria-hidden="true" /></button>
           <div className="flex min-w-0 flex-col items-center gap-1.5"><ProgressSteps step={step} /><span className="break-words text-center text-[10px] font-black uppercase tracking-[0.14em] text-zinc-600">Etapa {step} de 3</span></div>
-          <div className="flex justify-end"><MovviLogo size={42} /></div>
+          <div className="flex justify-end"><MovviLogo size={42} iconOnly /></div>
         </div>
       </header>
 

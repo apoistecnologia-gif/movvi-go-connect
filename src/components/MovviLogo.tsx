@@ -5,6 +5,7 @@ interface MovviLogoProps {
   showTagline?: boolean;
   className?: string;
   productLabel?: string;
+  iconOnly?: boolean;
 }
 
 function safeLogoSize(value: number | undefined) {
@@ -26,10 +27,37 @@ export function MovviLogo({
   showTagline = false,
   className,
   productLabel,
+  iconOnly = false,
 }: MovviLogoProps) {
   const logoSize = safeLogoSize(size);
   const label = safeProductLabel(productLabel);
   const accessibleName = label ? `APOIS ${label}` : "APOIS";
+
+  const icon = (
+    <div
+      className="shrink-0 overflow-hidden rounded-full border border-[#F6BE1C]/20 bg-black shadow-[0_12px_34px_-20px_rgba(246,190,28,0.65)]"
+      style={{ width: logoSize, height: logoSize }}
+      aria-hidden="true"
+    >
+      <img
+        src={APOIS_LOGO_DATA_URL}
+        alt=""
+        width={logoSize}
+        height={logoSize}
+        className="h-full w-full object-cover"
+        draggable={false}
+        decoding="async"
+      />
+    </div>
+  );
+
+  if (iconOnly) {
+    return (
+      <div className={`shrink-0 ${className ?? ""}`} role="img" aria-label={accessibleName}>
+        {icon}
+      </div>
+    );
+  }
 
   return (
     <div
@@ -37,21 +65,7 @@ export function MovviLogo({
       role="img"
       aria-label={accessibleName}
     >
-      <div
-        className="shrink-0 overflow-hidden rounded-full border border-[#F6BE1C]/20 bg-black shadow-[0_12px_34px_-20px_rgba(246,190,28,0.65)]"
-        style={{ width: logoSize, height: logoSize }}
-        aria-hidden="true"
-      >
-        <img
-          src={APOIS_LOGO_DATA_URL}
-          alt=""
-          width={logoSize}
-          height={logoSize}
-          className="h-full w-full object-cover"
-          draggable={false}
-          decoding="async"
-        />
-      </div>
+      {icon}
 
       <div className="min-w-0 max-w-full" aria-hidden="true">
         <div className="break-words font-display text-xl font-black leading-tight tracking-[0.08em] text-white">
