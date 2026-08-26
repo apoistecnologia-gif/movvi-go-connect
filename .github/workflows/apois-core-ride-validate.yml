@@ -1,0 +1,83 @@
+name: APOIS Corridas — Core Ride validation
+
+on:
+  push:
+    branches:
+      - fix/apois-corridas-consolidacao
+    paths:
+      - "supabase/functions/_shared/**"
+      - "tests/unit/**"
+      - "tsconfig.core.json"
+      - "package.json"
+      - "bun.lock"
+      - ".github/workflows/apois-core-ride-validate.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "supabase/functions/_shared/**"
+      - "tests/unit/**"
+      - "tsconfig.core.json"
+      - "package.json"
+      - "bun.lock"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-core:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Core typecheck
+        run: npx tsc -p tsconfig.core.json --noEmit
+
+      - name: Core semantic lint
+        run: >-
+          npx eslint
+          --rule 'prettier/prettier: off'
+          supabase/functions/_shared/fare-engine.ts
+          supabase/functions/_shared/ride-state.ts
+          supabase/functions/_shared/ride-request.ts
+          tests/unit/fare-engine.test.ts
+          tests/unit/ride-state.test.ts
+          tests/unit/ride-request.test.ts
+
+      - name: Core unit tests
+        run: deno test tests/unit/fare-engine.test.ts tests/unit/ride-state.test.ts tests/unit/ride-request.test.ts
+
+      - name: Core Deno check
+        run: >-
+          deno check
+          supabase/functions/_shared/fare-engine.ts
+          supabase/functions/_shared/ride-state.ts
+          supabase/functions/_shared/ride-request.ts
+
+      - name: Build application
+        run: npm run build
+
+      - name: Core invariants
+        run: |
+          set -euo pipefail
+          grep -F 'totalCents' supabase/functions/_shared/fare-engine.ts
+          grep -F 'canTransitionRide' supabase/functions/_shared/ride-state.ts
+          grep -F 'MAX_INTERMEDIATES = 3' supabase/functions/_shared/ride-request.ts
+          grep -F 'payment_method_required' supabase/functions/_shared/ride-request.ts
+          grep -F 'expired' tests/unit/ride-state.test.ts
+          echo 'APOIS_CORE_RIDE_OK'

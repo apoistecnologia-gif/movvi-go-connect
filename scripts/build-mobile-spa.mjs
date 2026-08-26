@@ -15,17 +15,28 @@ const outputServer = resolve(root, ".output/server");
 const viteBin = resolve(root, "node_modules/vite/bin/vite.js");
 
 if (!existsSync(viteBin)) {
-  console.error("[mobile-spa] node_modules/vite/bin/vite.js não encontrado. Rode `npm install` primeiro.");
+  console.error(
+    "[mobile-spa] node_modules/vite/bin/vite.js não encontrado. Rode `npm install` primeiro.",
+  );
   process.exit(1);
 }
 
 rmSync(distClient, { recursive: true, force: true });
 rmSync(resolve(root, ".output"), { recursive: true, force: true });
 
+// Oferta de corrida em background é requisito operacional do APK Motorista.
+// A flag continua explicitamente desligada em builds web/genéricos, mas o
+// build mobile do Motorista a ativa por padrão sem embutir qualquer segredo.
+const mobileBuildEnv = {
+  ...process.env,
+  VITE_ENABLE_NATIVE_PUSH:
+    process.env.VITE_ENABLE_NATIVE_PUSH ?? (role === "motorista" ? "true" : "false"),
+};
+
 execFileSync(
   process.execPath,
   [viteBin, "build", "--config", "vite.mobile.config.ts", "--mode", "mobile"],
-  { stdio: "inherit", cwd: root, env: process.env },
+  { stdio: "inherit", cwd: root, env: mobileBuildEnv },
 );
 
 const indexHtml = resolve(distClient, "index.html");
@@ -49,8 +60,12 @@ if (!assets.some((name) => name.endsWith(".js")) || !assets.some((name) => name.
   process.exit(1);
 }
 if (existsSync(outputServer)) {
-  console.error("[mobile-spa] Falha: .output/server foi criado, o build mobile deve ser client-only.");
+  console.error(
+    "[mobile-spa] Falha: .output/server foi criado, o build mobile deve ser client-only.",
+  );
   process.exit(1);
 }
 
-console.log(`[mobile-spa] OK (${role}): dist/client/index.html + assets gerados sem .output/server.`);
+console.log(
+  `[mobile-spa] OK (${role}): dist/client/index.html + assets gerados sem .output/server.`,
+);

@@ -37,88 +37,256 @@ export interface NewFavorite {
   icon?: string | null;
 }
 
+type PlaceCache = {
+  favorites: FavoritePlace[];
+  recents: RecentPlace[];
+};
+
+const CACHE_PREFIX = "apois:legacy-passenger:places:";
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const MAX_LABEL = 80;
+const MAX_ADDRESS = 300;
+const MAX_ICON = 80;
+const MAX_PLACE_ID = 200;
+
+function clean(value: unknown, maxLength: number): string {
+  return String(value ?? "").replace(/[\u0000-\u001f\u007f]/g, " ").trim().replace(/\s+/g, " ").slice(0, maxLength);
+}
+
+function validCoordinate(lat: unknown, lng: unknown): lat is number {
+  return typeof lat === "number" && typeof lng === "number" && Number.isFinite(lat) && Number.isFinite(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+}
+
+function validKind(value: unknown): value is FavoriteKind {
+  return value === "home" || value === "work" || value === "custom";
+}
+
+function safeDate(value: unknown): string {
+  const text = clean(value, 64);
+  const time = new Date(text).getTime();
+  return Number.isFinite(time) ? new Date(time).toISOString() : new Date(0).toISOString();
+}
+
 async function uid(): Promise<string> {
-  const { data } = await supabase.auth.getUser();
-  if (!data.user) throw new Error("Não autenticado");
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data.user?.id) throw new Error("Sua sessão expirou. Entre novamente.");
   return data.user.id;
 }
 
+function cacheKey(userId: string) {
+  const normalized = userId.trim();
+  if (!UUID_RE.test(normalized)) throw new Error("Usuário inválido para preferências locais.");
+  return `${CACHE_PREFIX}${normalized}`;
+}
+
+function normalizeFavorite(value: unknown, userId: string): FavoritePlace | null {
+  if (!value || typeof value !== "object") return null;
+  const row = value as Partial<FavoritePlace>;
+  const id = clean(row.id, 100);
+  const label = clean(row.label, MAX_LABEL);
+  const address = clean(row.address, MAX_ADDRESS);
+  if (
+    !id ||
+    !label ||
+    !address ||
+    !validKind(row.kind) ||
+    typeof row.lng !== "number" ||
+    !validCoordinate(row.lat, row.lng)
+  )
+    return null;
+  const order = Number(row.sort_order);
+  return {
+    id,
+    user_id: userId,
+    label,
+    kind: row.kind,
+    address,
+    lat: row.lat,
+    lng: row.lng,
+    icon: clean(row.icon, MAX_ICON) || null,
+    sort_order: Number.isInteger(order) && order >= 0 ? Math.min(order, 9999) : 0,
+    created_at: safeDate(row.created_at),
+    updated_at: safeDate(row.updated_at),
+  };
+}
+
+function normalizeRecent(value: unknown, userId: string): RecentPlace | null {
+  if (!value || typeof value !== "object") return null;
+  const row = value as Partial<RecentPlace>;
+  const id = clean(row.id, 100);
+  const address = clean(row.address, MAX_ADDRESS);
+  if (!id || !address || typeof row.lng !== "number" || !validCoordinate(row.lat, row.lng)) return null;
+  const useCount = Number(row.use_count);
+  return {
+    id,
+    user_id: userId,
+    address,
+    lat: row.lat,
+    lng: row.lng,
+    place_id: clean(row.place_id, MAX_PLACE_ID) || null,
+    use_count: Number.isInteger(useCount) && useCount > 0 ? Math.min(useCount, 1_000_000) : 1,
+    last_used_at: safeDate(row.last_used_at),
+    created_at: safeDate(row.created_at),
+  };
+}
+
+function readCache(userId: string): PlaceCache {
+  try {
+    const raw = localStorage.getItem(cacheKey(userId));
+    if (!raw) return { favorites: [], recents: [] };
+    const parsed = JSON.parse(raw) as Partial<PlaceCache>;
+    const favorites = Array.isArray(parsed.favorites)
+      ? parsed.favorites.map((item) => normalizeFavorite(item, userId)).filter((item): item is FavoritePlace => Boolean(item)).slice(0, 100)
+      : [];
+    const recents = Array.isArray(parsed.recents)
+      ? parsed.recents.map((item) => normalizeRecent(item, userId)).filter((item): item is RecentPlace => Boolean(item)).slice(0, 20)
+      : [];
+    return { favorites, recents };
+  } catch {
+    return { favorites: [], recents: [] };
+  }
+}
+
+function writeCache(userId: string, cache: PlaceCache) {
+  try {
+    localStorage.setItem(cacheKey(userId), JSON.stringify(cache));
+  } catch {
+    throw new Error("Não foi possível salvar este local neste dispositivo.");
+  }
+}
+
+function newId() {
+  return typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function normalizeInput(fav: NewFavorite) {
+  const label = clean(fav.label, MAX_LABEL);
+  const address = clean(fav.address, MAX_ADDRESS);
+  if (!label) throw new Error("Informe um nome para o local favorito.");
+  if (!address) throw new Error("Informe um endereço válido.");
+  if (!validKind(fav.kind)) throw new Error("Tipo de local favorito inválido.");
+  if (!validCoordinate(fav.lat, fav.lng)) throw new Error("Coordenadas do local inválidas.");
+  return {
+    label,
+    kind: fav.kind,
+    address,
+    lat: fav.lat,
+    lng: fav.lng,
+    icon: clean(fav.icon, MAX_ICON) || null,
+  };
+}
+
+/**
+ * Compatibilidade para a superfície Passageiro legada deste repositório.
+ * `favorite_places` e `recent_places` não existem no schema oficial da APOIS
+ * Corridas; estes dados permanecem somente no dispositivo, isolados por usuário.
+ */
 export async function listFavorites(): Promise<FavoritePlace[]> {
-  const user_id = await uid();
-  const { data, error } = await supabase
-    .from("favorite_places")
-    .select("*")
-    .eq("user_id", user_id)
-    .order("sort_order", { ascending: true })
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return (data ?? []) as FavoritePlace[];
+  const userId = await uid();
+  return [...readCache(userId).favorites].sort((a, b) =>
+    a.sort_order - b.sort_order || b.created_at.localeCompare(a.created_at),
+  );
 }
 
 export async function createFavorite(fav: NewFavorite): Promise<FavoritePlace> {
-  const user_id = await uid();
-  const { data, error } = await supabase
-    .from("favorite_places")
-    .insert({ ...fav, user_id, icon: fav.icon ?? null })
-    .select("*")
-    .single();
-  if (error) throw error;
-  return data as FavoritePlace;
+  const userId = await uid();
+  const cache = readCache(userId);
+  if (cache.favorites.length >= 100) throw new Error("Limite de locais favoritos atingido neste dispositivo.");
+  const input = normalizeInput(fav);
+  const now = new Date().toISOString();
+  const created: FavoritePlace = {
+    id: newId(),
+    user_id: userId,
+    ...input,
+    sort_order: cache.favorites.length,
+    created_at: now,
+    updated_at: now,
+  };
+  cache.favorites.push(created);
+  writeCache(userId, cache);
+  return created;
 }
 
 export async function updateFavorite(id: string, patch: Partial<NewFavorite>): Promise<void> {
-  const { error } = await supabase.from("favorite_places").update(patch).eq("id", id);
-  if (error) throw error;
+  const userId = await uid();
+  const cache = readCache(userId);
+  const safeId = clean(id, 100);
+  const index = cache.favorites.findIndex((item) => item.id === safeId);
+  if (index < 0) return;
+  const current = cache.favorites[index];
+  const input = normalizeInput({
+    label: patch.label ?? current.label,
+    kind: patch.kind ?? current.kind,
+    address: patch.address ?? current.address,
+    lat: patch.lat ?? current.lat,
+    lng: patch.lng ?? current.lng,
+    icon: patch.icon === undefined ? current.icon : patch.icon,
+  });
+  cache.favorites[index] = { ...current, ...input, updated_at: new Date().toISOString() };
+  writeCache(userId, cache);
 }
 
 export async function deleteFavorite(id: string): Promise<void> {
-  const { error } = await supabase.from("favorite_places").delete().eq("id", id);
-  if (error) throw error;
+  const userId = await uid();
+  const cache = readCache(userId);
+  const safeId = clean(id, 100);
+  cache.favorites = cache.favorites.filter((item) => item.id !== safeId).map((item, index) => ({ ...item, sort_order: index }));
+  writeCache(userId, cache);
 }
 
 export async function listRecentPlaces(limit = 8): Promise<RecentPlace[]> {
-  const user_id = await uid();
-  const { data, error } = await supabase
-    .from("recent_places")
-    .select("*")
-    .eq("user_id", user_id)
-    .order("last_used_at", { ascending: false })
-    .limit(limit);
-  if (error) throw error;
-  return (data ?? []) as RecentPlace[];
+  const userId = await uid();
+  const safeLimit = Number.isFinite(limit) ? Math.min(20, Math.max(0, Math.floor(limit))) : 8;
+  return [...readCache(userId).recents]
+    .sort((a, b) => b.last_used_at.localeCompare(a.last_used_at))
+    .slice(0, safeLimit);
 }
 
-export async function registerRecentPlace(p: {
+export async function registerRecentPlace(input: {
   address: string;
   lat: number;
   lng: number;
   place_id?: string | null;
 }): Promise<void> {
-  const user_id = await uid();
-  // Upsert by (user_id, address). Bump counter and last_used_at.
-  const { data: existing } = await supabase
-    .from("recent_places")
-    .select("id, use_count")
-    .eq("user_id", user_id)
-    .eq("address", p.address)
-    .maybeSingle();
+  const userId = await uid();
+  const address = clean(input.address, MAX_ADDRESS);
+  if (!address || !validCoordinate(input.lat, input.lng)) return;
+  const placeId = clean(input.place_id, MAX_PLACE_ID) || null;
+  const cache = readCache(userId);
+  const now = new Date().toISOString();
+  const existing = cache.recents.find((item) => item.place_id === placeId && placeId !== null) ?? cache.recents.find((item) => item.address.toLocaleLowerCase("pt-BR") === address.toLocaleLowerCase("pt-BR"));
   if (existing) {
-    await supabase
-      .from("recent_places")
-      .update({ use_count: (existing.use_count ?? 0) + 1, last_used_at: new Date().toISOString() })
-      .eq("id", existing.id);
+    existing.address = address;
+    existing.lat = input.lat;
+    existing.lng = input.lng;
+    existing.place_id = placeId ?? existing.place_id;
+    existing.use_count = Math.min(1_000_000, existing.use_count + 1);
+    existing.last_used_at = now;
   } else {
-    await supabase.from("recent_places").insert({
-      user_id,
-      address: p.address,
-      lat: p.lat,
-      lng: p.lng,
-      place_id: p.place_id ?? null,
+    cache.recents.push({
+      id: newId(),
+      user_id: userId,
+      address,
+      lat: input.lat,
+      lng: input.lng,
+      place_id: placeId,
+      use_count: 1,
+      last_used_at: now,
+      created_at: now,
     });
   }
+  cache.recents = cache.recents
+    .sort((a, b) => b.last_used_at.localeCompare(a.last_used_at))
+    .slice(0, 20);
+  writeCache(userId, cache);
 }
 
 export async function deleteRecentPlace(id: string): Promise<void> {
-  const { error } = await supabase.from("recent_places").delete().eq("id", id);
-  if (error) throw error;
+  const userId = await uid();
+  const cache = readCache(userId);
+  const safeId = clean(id, 100);
+  cache.recents = cache.recents.filter((item) => item.id !== safeId);
+  writeCache(userId, cache);
 }

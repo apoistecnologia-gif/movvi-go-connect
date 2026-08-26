@@ -1,5 +1,5 @@
 /**
- * MOVVI — Driver Professional Profile Dialog.
+ * APOIS — Driver Professional Profile Dialog.
  * Modal that shows the driver public trust profile.
  * Used by passengers (tap driver card) and drivers (own profile preview).
  */
@@ -22,13 +22,18 @@ export function DriverProfessionalProfileDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-md bg-card">
-        <DialogHeader>
-          <DialogTitle className="text-center text-[15px] font-bold tracking-tight">
+      <DialogContent
+        className="max-h-[92dvh] w-[calc(100vw-24px)] max-w-md min-w-0 overflow-y-auto overscroll-contain bg-card p-4 sm:w-[calc(100vw-32px)] sm:p-6"
+        aria-busy={loading}
+      >
+        <DialogHeader className="min-w-0">
+          <DialogTitle className="break-words pr-8 text-center text-[15px] font-bold leading-5 tracking-tight">
             Perfil do motorista
           </DialogTitle>
         </DialogHeader>
-        <DriverProfessionalProfile profile={data} loading={loading} />
+        <div className="min-w-0">
+          <DriverProfessionalProfile profile={data} loading={loading} />
+        </div>
       </DialogContent>
     </Dialog>
   );

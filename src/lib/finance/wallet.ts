@@ -2,18 +2,30 @@ import { supabase } from "@/integrations/supabase/client";
 import type { DriverWallet } from "./types";
 
 /**
- * Read the wallet for a driver. Returns null when no wallet row exists yet.
- * No money is moved here — read-only helper for the driver UI.
+ * Read-only adapter from the canonical `driver_wallets` ledger surface to the
+ * UI shape used by the consolidated driver app.
  */
 export async function getDriverWallet(driverId: string): Promise<DriverWallet | null> {
   const { data, error } = await supabase
     .from("driver_wallets")
-    .select(
-      "id,driver_id,wallet_balance,pending_balance,available_balance,currency,wallet_status,last_transaction_at,created_at,updated_at",
-    )
+    .select("driver_id,balance,available_balance,created_at,updated_at")
     .eq("driver_id", driverId)
     .maybeSingle();
 
-  if (error) return null;
-  return (data as DriverWallet) ?? null;
+  if (error || !data) return null;
+
+  const balance = Number(data.balance ?? 0);
+  const available = Number(data.available_balance ?? 0);
+  return {
+    id: data.driver_id,
+    driver_id: data.driver_id,
+    wallet_balance: balance,
+    pending_balance: Math.max(0, balance - available),
+    available_balance: available,
+    currency: "BRL",
+    wallet_status: "active",
+    last_transaction_at: data.updated_at,
+    created_at: data.created_at,
+    updated_at: data.updated_at,
+  };
 }

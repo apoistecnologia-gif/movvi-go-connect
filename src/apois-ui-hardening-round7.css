@@ -1,0 +1,84 @@
+/* APOIS Motorista — rodada 7: 25 correções avançadas de UI/UX mobile. */
+
+/* 111 — body não dispara overscroll/pull-to-refresh durante operação do motorista. */
+html[data-app-role="motorista"],
+html[data-app-role="motorista"] body { overscroll-behavior: none; }
+
+/* 112 — áreas verticais roláveis priorizam gesto vertical. */
+html[data-app-role="motorista"] main,
+html[data-app-role="motorista"] [role="dialog"],
+html[data-app-role="motorista"] [class*="overflow-y-auto"] { touch-action: pan-y; }
+
+/* 113 — carrosséis horizontais priorizam gesto horizontal. */
+html[data-app-role="motorista"] [class*="overflow-x-auto"] { touch-action: pan-x; }
+
+/* 114 — carrosséis com snap-start mantêm snap consistente. */
+html[data-app-role="motorista"] [class*="overflow-x-auto"]:has(.snap-start) { scroll-snap-type: x proximity; }
+
+/* 115 — Radix ScrollArea não vaza para o body. */
+html[data-app-role="motorista"] [data-radix-scroll-area-viewport] { max-width: 100%; overscroll-behavior: contain; }
+
+/* 116 — conteúdo Radix posicionado nunca ultrapassa a viewport. */
+html[data-app-role="motorista"] [data-radix-popper-content-wrapper] { max-width: calc(100vw - 16px) !important; }
+
+/* 117 — Select Radix permanece rolável em aparelhos baixos. */
+html[data-app-role="motorista"] [data-radix-select-viewport] { max-height: min(55dvh, 360px); }
+
+/* 118 — itens aria-disabled têm aparência e cursor coerentes. */
+html[data-app-role="motorista"] [aria-disabled="true"] { cursor: not-allowed; opacity: 0.58; }
+
+/* 119 — toaster respeita notch/margens laterais no APK. */
+html[data-app-role="motorista"] [data-sonner-toaster] { max-width: calc(100vw - 16px); inset-inline: 8px !important; }
+
+/* 120 — toast individual não força largura maior que a tela. */
+html[data-app-role="motorista"] [data-sonner-toast] { max-width: 100%; overflow-wrap: anywhere; box-sizing: border-box; }
+
+/* 121 — ações de toast têm alvo mínimo de 44px. */
+html[data-app-role="motorista"] [data-sonner-toast] button { min-width: 44px; min-height: 44px; }
+
+/* 122 — descrições de toast longas quebram corretamente. */
+html[data-app-role="motorista"] [data-sonner-toast] [data-description] { white-space: normal; overflow-wrap: anywhere; }
+
+/* 123 — input range recebe área de toque vertical adequada. */
+html[data-app-role="motorista"] input[type="range"] { min-height: 44px; width: 100%; }
+
+/* 124 — range nativo usa o destaque dourado do Motorista. */
+html[data-app-role="motorista"] input[type="range"] { accent-color: #f6be1c; }
+
+/* 125 — thumb Radix de slider pode expandir hit-area sem mudar desenho. */
+html[data-app-role="motorista"] [role="slider"] { position: relative; }
+
+/* 126 — expansão invisível do alvo de slider. */
+html[data-app-role="motorista"] [role="slider"]::after { content: ""; position: absolute; inset: -12px; }
+
+/* 127 — busca não herda decoração nativa incompatível com o tema. */
+html[data-app-role="motorista"] input[type="search"] { -webkit-appearance: none; appearance: none; }
+
+/* 128 — botão nativo de limpar busca não fica microscópico. */
+html[data-app-role="motorista"] input[type="search"]::-webkit-search-cancel-button { width: 22px; height: 22px; cursor: pointer; }
+
+/* 129 — date/time controls respeitam o tema escuro. */
+html[data-app-role="motorista"] input[type="date"],
+html[data-app-role="motorista"] input[type="time"],
+html[data-app-role="motorista"] input[type="datetime-local"] { color-scheme: dark; }
+
+/* 130 — selects nativos usam esquema escuro no menu do sistema. */
+html[data-app-role="motorista"] select { color-scheme: dark; }
+
+/* 131 — textarea só redimensiona verticalmente e não rompe o card. */
+html[data-app-role="motorista"] textarea { resize: vertical; }
+
+/* 132 — object/embed de documento/comprovante respeitam o contêiner. */
+html[data-app-role="motorista"] object,
+html[data-app-role="motorista"] embed { max-width: 100%; }
+
+/* 133 — figures não criam largura mínima maior que o card. */
+html[data-app-role="motorista"] figure { max-width: 100%; min-width: 0; margin-inline: 0; }
+
+/* 134 — legendas longas de documento/imagem podem quebrar linha. */
+html[data-app-role="motorista"] figcaption { overflow-wrap: anywhere; }
+
+/* 135 — em 320px, poppers Radix deixam margem lateral adicional. */
+@media (max-width: 339px) {
+  html[data-app-role="motorista"] [data-radix-popper-content-wrapper] { max-width: calc(100vw - 12px) !important; }
+}

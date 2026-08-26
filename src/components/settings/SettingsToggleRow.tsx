@@ -1,5 +1,5 @@
+import { useId, type ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
-import type { ReactNode } from "react";
 import { Switch } from "@/components/ui/switch";
 import { SettingsRow } from "./SettingsRow";
 
@@ -9,7 +9,7 @@ export function SettingsToggleRow({
   hint,
   checked,
   onChange,
-  disabled,
+  disabled = false,
 }: {
   icon?: LucideIcon;
   title: ReactNode;
@@ -18,17 +18,33 @@ export function SettingsToggleRow({
   onChange: (v: boolean) => void;
   disabled?: boolean;
 }) {
+  const switchId = useId();
+  const titleId = `${switchId}-title`;
+  const hintId = `${switchId}-hint`;
+  const accessibleLabel = typeof title === "string" ? title.trim() || "Opção" : undefined;
+
   return (
     <SettingsRow
       icon={icon}
       title={title}
       hint={hint}
+      titleId={titleId}
+      hintId={hint ? hintId : undefined}
+      disabled={disabled}
       right={
-        <Switch
-          checked={checked}
-          onCheckedChange={onChange}
-          disabled={disabled}
-        />
+        <div className="flex min-h-12 min-w-12 items-center justify-center rounded-xl">
+          <Switch
+            id={switchId}
+            aria-label={accessibleLabel}
+            aria-labelledby={accessibleLabel ? undefined : titleId}
+            aria-describedby={hint ? hintId : undefined}
+            checked={Boolean(checked)}
+            onCheckedChange={(next) => {
+              if (!disabled) onChange(next);
+            }}
+            disabled={disabled}
+          />
+        </div>
       }
     />
   );

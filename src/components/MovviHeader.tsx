@@ -1,7 +1,8 @@
 import { Link, useNavigate, useRouter } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { ArrowLeft, Home, LogOut } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ArrowLeft, Home, Loader2, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { APOIS_LOGO_DATA_URL } from "@/assets/apoisLogoData";
 
 interface MovviHeaderProps {
   /** "floating" para overlay sobre mapas, "solid" para telas normais */
@@ -10,78 +11,104 @@ interface MovviHeaderProps {
   hideBack?: boolean;
   /** Sobrescreve o destino do botão Sair (default: "/") */
   logoutRedirect?: string;
+  /** Sobrescreve o destino do botão Home. */
+  homePath?: string;
 }
 
-/**
- * Cabeçalho padrão de TODA tela autenticada do MOVVI:
- * ← Voltar | Logo | Nome do usuário | Home | Sair
- *
- * Garante que nenhuma tela deixe o usuário preso.
- */
+function displayNameFromUser(user: { email?: string | null; user_metadata?: unknown } | null | undefined) {
+  if (!user) return "";
+  const meta = user.user_metadata && typeof user.user_metadata === "object"
+    ? (user.user_metadata as Record<string, unknown>)
+    : {};
+  const fullName = typeof meta.full_name === "string" ? meta.full_name.trim() : "";
+  const name = typeof meta.name === "string" ? meta.name.trim() : "";
+  const emailName = typeof user.email === "string" ? user.email.split("@")[0]?.trim() : "";
+  return (fullName || name || emailName || "Motorista").slice(0, 80);
+}
+
+/** Cabeçalho padrão de telas autenticadas APOIS. */
 export function MovviHeader({
   variant = "solid",
   hideBack = false,
   logoutRedirect = "/",
+  homePath = "/motorista/app",
 }: MovviHeaderProps) {
   const router = useRouter();
   const navigate = useNavigate();
+  const mountedRef = useRef(true);
   const [name, setName] = useState<string>("");
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [logoutError, setLogoutError] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      const u = data.user;
-      if (!u) return;
-      const meta = (u.user_metadata ?? {}) as Record<string, unknown>;
-      const fullName = (meta.full_name as string) || (meta.name as string) || "";
-      setName(fullName || u.email?.split("@")[0] || "Usuário");
-    });
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-      const u = session?.user;
-      if (!u) {
+    mountedRef.current = true;
+    let cancelled = false;
+
+    void supabase.auth.getUser().then(({ data, error }) => {
+      if (cancelled || !mountedRef.current) return;
+      if (error) {
+        if (import.meta.env.DEV) console.warn("[APOIS HEADER] falha ao carregar usuário", error);
         setName("");
         return;
       }
-      const meta = (u.user_metadata ?? {}) as Record<string, unknown>;
-      const fullName = (meta.full_name as string) || (meta.name as string) || "";
-      setName(fullName || u.email?.split("@")[0] || "Usuário");
+      setName(displayNameFromUser(data.user));
+    }).catch((error) => {
+      if (!cancelled && mountedRef.current && import.meta.env.DEV) {
+        console.warn("[APOIS HEADER] falha inesperada ao carregar usuário", error);
+      }
     });
-    return () => sub.subscription.unsubscribe();
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (cancelled || !mountedRef.current) return;
+      setName(displayNameFromUser(session?.user));
+      if (session?.user) setLogoutError(null);
+    });
+
+    return () => {
+      cancelled = true;
+      mountedRef.current = false;
+      sub.subscription.unsubscribe();
+    };
   }, []);
 
   async function handleLogout() {
-    await supabase.auth.signOut();
-    navigate({ to: logoutRedirect });
+    if (loggingOut) return;
+    setLogoutError(null);
+    setLoggingOut(true);
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      await navigate({ to: logoutRedirect as "/", replace: true });
+    } catch (error) {
+      if (import.meta.env.DEV) console.warn("[APOIS HEADER] falha ao sair", error);
+      if (mountedRef.current) setLogoutError("Não foi possível sair agora. Tente novamente.");
+    } finally {
+      if (mountedRef.current) setLoggingOut(false);
+    }
   }
 
   function handleBack() {
     if (window.history.length > 1) router.history.back();
-    else navigate({ to: "/" });
+    else void navigate({ to: homePath as "/motorista/app", replace: true });
   }
 
   const isFloating = variant === "floating";
+  const buttonClass = "active-press inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full transition motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F6BE1C] focus-visible:ring-offset-2 focus-visible:ring-offset-[#08090A]";
 
   return (
     <header
       className={
         isFloating
-          ? "absolute inset-x-0 top-0 z-30 px-3 pt-[calc(env(safe-area-inset-top)+12px)]"
-          : "sticky top-0 z-30 border-b border-border/50 bg-background/85 backdrop-blur-xl"
+          ? "absolute inset-x-0 top-0 z-30 min-w-0 px-[max(12px,env(safe-area-inset-left))] pt-[calc(env(safe-area-inset-top)+12px)] [padding-right:max(12px,env(safe-area-inset-right))]"
+          : "sticky top-0 z-30 min-w-0 border-b border-white/5 bg-[#08090A]/92 pt-[env(safe-area-inset-top)] backdrop-blur-xl"
       }
-      style={
-        isFloating
-          ? undefined
-          : {
-              // Subtle MOVVI green accent under the solid header.
-              boxShadow:
-                "inset 0 -1px 0 0 color-mix(in oklab, var(--color-primary) 22%, transparent)",
-            }
-      }
+      style={isFloating ? undefined : { boxShadow: "inset 0 -1px 0 0 rgba(246,190,28,0.10)" }}
     >
       <div
         className={
           isFloating
-            ? "mx-auto flex max-w-5xl items-center gap-2 rounded-[20px] bg-card/75 px-2.5 py-2 shadow-[0_16px_40px_-22px_rgba(0,0,0,0.55)] ring-1 ring-border/35 backdrop-blur-xl"
-            : "mx-auto flex h-12 max-w-5xl items-center gap-2 px-3"
+            ? "mx-auto flex min-w-0 max-w-5xl items-center gap-1.5 rounded-[20px] bg-[#0D0F11]/82 px-2 py-2 shadow-[0_16px_40px_-22px_rgba(0,0,0,0.75)] ring-1 ring-white/8 backdrop-blur-xl"
+            : "mx-auto flex min-h-14 min-w-0 max-w-5xl items-center gap-1.5 px-[max(12px,env(safe-area-inset-left))] py-1 [padding-right:max(12px,env(safe-area-inset-right))]"
         }
       >
         {!hideBack && (
@@ -89,62 +116,70 @@ export function MovviHeader({
             type="button"
             onClick={handleBack}
             aria-label="Voltar"
-            className="active-press inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground/75 transition hover:bg-muted/40 hover:text-foreground"
+            disabled={loggingOut}
+            className={`${buttonClass} text-zinc-300 hover:bg-white/5 hover:text-white disabled:opacity-50`}
           >
-            <ArrowLeft className="h-[16px] w-[16px]" strokeWidth={1.75} />
+            <ArrowLeft className="h-[18px] w-[18px]" strokeWidth={1.8} aria-hidden="true" />
           </button>
         )}
 
         <Link
-          to="/"
-          aria-label="Home MOVVI"
-          className="active-press flex shrink-0 items-center rounded-full px-0.5 transition hover:opacity-90"
+          to={homePath as "/motorista/app"}
+          aria-label="Ir para o início do APOIS Motorista"
+          className={`${buttonClass} p-1 transition hover:opacity-90`}
         >
-          <MovviHeaderLogo />
+          <img
+            src={APOIS_LOGO_DATA_URL}
+            alt=""
+            width={34}
+            height={34}
+            className="h-[34px] w-[34px] rounded-full border border-[#F6BE1C]/20 object-cover"
+            draggable={false}
+          />
         </Link>
 
-        <div className="min-w-0 flex-1 pl-1.5">
-          {name && (
-            <span
-              className="block truncate text-[13px] font-medium leading-tight tracking-tight text-foreground/90"
-              title={name}
-            >
+        <div className="min-w-0 flex-1 pl-1">
+          <span className="block break-words text-[11px] font-black uppercase leading-tight tracking-[0.12em] text-[#F6BE1C]">
+            APOIS Motorista
+          </span>
+          {name ? (
+            <span className="mt-0.5 block break-words text-[13px] font-semibold leading-4 text-zinc-300">
               {name}
             </span>
+          ) : (
+            <span className="sr-only">Conta do motorista</span>
           )}
         </div>
 
         <Link
-          to="/"
-          aria-label="Home"
-          className="active-press inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground/70 transition hover:bg-muted/40 hover:text-foreground"
+          to={homePath as "/motorista/app"}
+          aria-label="Voltar ao mapa"
+          className={`${buttonClass} text-zinc-400 hover:bg-white/5 hover:text-[#F6BE1C]`}
         >
-          <Home className="h-[16px] w-[16px]" strokeWidth={1.75} />
+          <Home className="h-[18px] w-[18px]" strokeWidth={1.75} aria-hidden="true" />
         </Link>
 
         <button
           type="button"
-          onClick={handleLogout}
-          aria-label="Sair"
-          className="active-press inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted-foreground/45 transition hover:bg-destructive/10 hover:text-destructive"
+          onClick={() => void handleLogout()}
+          aria-label={loggingOut ? "Saindo do aplicativo" : "Sair do aplicativo"}
+          aria-busy={loggingOut}
+          disabled={loggingOut}
+          className={`${buttonClass} text-zinc-400 hover:bg-red-500/10 hover:text-red-400 disabled:cursor-wait disabled:opacity-60`}
         >
-          <LogOut className="h-[14px] w-[14px]" strokeWidth={1.6} />
+          {loggingOut
+            ? <Loader2 className="h-[17px] w-[17px] animate-spin motion-reduce:animate-none" aria-hidden="true" />
+            : <LogOut className="h-[17px] w-[17px]" strokeWidth={1.7} aria-hidden="true" />}
         </button>
       </div>
+
+      {logoutError ? (
+        <div className="mx-auto max-w-5xl px-3 pb-2" role="alert" aria-live="assertive">
+          <p className="rounded-lg bg-red-500/10 px-3 py-2 text-center text-[12px] font-medium leading-4 text-red-300 ring-1 ring-red-500/20">
+            {logoutError}
+          </p>
+        </div>
+      ) : null}
     </header>
   );
 }
-
-function MovviHeaderLogo() {
-  return (
-    <svg width={22} height={22} viewBox="0 0 120 120" aria-hidden>
-      <path d="M18 100 L18 28 L40 28 L60 70 L60 100 Z" fill="currentColor" className="text-foreground" />
-      <path
-        d="M60 28 Q100 28 100 64 Q100 100 60 100 L60 78 Q82 78 82 64 Q82 50 60 50 Z"
-        fill="hsl(95 75% 51%)"
-      />
-    </svg>
-  );
-}
-
-

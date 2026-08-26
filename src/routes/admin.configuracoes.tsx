@@ -1,289 +1,268 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Temporary Phase 8 bridge until generated Supabase types include canonical admin RPCs. */
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import { Loader2, Save, Building2, LifeBuoy, Globe, Sliders, Bell, Shield, CreditCard } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Loader2, RefreshCw, Save, ShieldCheck, Sliders } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
-import { DSButton as Button, DSCard as Card, DSCardContent as CardContent, DSCardDescription as CardDescription, DSCardHeader as CardHeader, DSCardTitle as CardTitle, DSInput, Loading } from "@/design-system";
-import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { toast } from "sonner";
-import { logAdminAction } from "@/lib/adminAudit";
+import { getAdminSettings } from "@/lib/adminSettings";
+import { DSBadge, DSButton, DSCard, DSCardContent, DSInput, Loading } from "@/design-system";
 
 export const Route = createFileRoute("/admin/configuracoes")({
-  head: () => ({ meta: [{ title: "Configurações — Admin MOVVI" }] }),
+  head: () => ({ meta: [{ title: "Configurações — Admin APOIS" }] }),
   component: AdminConfigPage,
 });
 
-type FieldDef = {
-  key: string;
+type EditableSetting = {
+  key:
+    | "ride.cancellation_fee_amount"
+    | "ride.cancellation_free_minutes"
+    | "ride.next_offer_max_distance_km"
+    | "finance.platform_fee_percent";
   label: string;
-  type: "text" | "number" | "bool";
-  help?: string;
-  placeholder?: string;
-};
-
-type Section = {
-  id: string;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
   description: string;
-  fields: FieldDef[];
+  min: number;
+  max: number;
+  step: number;
+  suffix: string;
 };
 
-const SECTIONS: Section[] = [
+const EDITABLE_SETTINGS: EditableSetting[] = [
   {
-    id: "company",
-    label: "Empresa",
-    icon: Building2,
-    description: "Identidade legal e endereço da operação.",
-    fields: [
-      { key: "company.name", label: "Razão social", type: "text", placeholder: "MOVVI DRIVE LTDA" },
-      { key: "company.cnpj", label: "CNPJ", type: "text", placeholder: "00.000.000/0000-00" },
-      { key: "company.address", label: "Endereço completo", type: "text", placeholder: "Rua, número, cidade — UF" },
-      { key: "company.support_hours", label: "Horário de atendimento", type: "text", placeholder: "24/7 ou Seg-Sex 8h-18h" },
-      { key: "platform.name", label: "Nome exibido no app", type: "text" },
-      { key: "country.code", label: "País (ISO)", type: "text", placeholder: "BR" },
-      { key: "currency.code", label: "Moeda (ISO)", type: "text", placeholder: "BRL" },
-      { key: "timezone", label: "Fuso horário", type: "text", placeholder: "America/Sao_Paulo" },
-    ],
+    key: "ride.cancellation_fee_amount",
+    label: "Multa padrão de cancelamento",
+    description: "Valor aplicado quando a regra server-side determinar cobrança.",
+    min: 0,
+    max: 1000,
+    step: 0.01,
+    suffix: "R$",
   },
   {
-    id: "support",
-    label: "Suporte",
-    icon: LifeBuoy,
-    description: "Canais de atendimento exibidos para passageiros e motoristas.",
-    fields: [
-      { key: "support.email", label: "E-mail de suporte", type: "text" },
-      { key: "support.phone", label: "Telefone de suporte", type: "text" },
-      { key: "support.whatsapp", label: "WhatsApp", type: "text" },
-      { key: "legal.terms_url", label: "Termos de uso (URL)", type: "text" },
-      { key: "legal.privacy_url", label: "Política de privacidade (URL)", type: "text" },
-    ],
+    key: "ride.cancellation_free_minutes",
+    label: "Janela sem multa",
+    description:
+      "Minutos iniciais em que o cancelamento pode permanecer isento conforme o lifecycle.",
+    min: 0,
+    max: 60,
+    step: 1,
+    suffix: "min",
   },
   {
-    id: "integrations",
-    label: "Integrações",
-    icon: Globe,
-    description: "Conexões com Google, Firebase e Realtime. As chaves ficam em secrets — aqui apenas o nome de referência.",
-    fields: [
-      { key: "google.maps_browser_key_name", label: "Secret da chave Google (navegador)", type: "text", help: "Use a chave do conector Google Maps." },
-      { key: "google.maps_server_key_name", label: "Secret da chave Google (servidor)", type: "text" },
-      { key: "google.places_enabled", label: "Google Places habilitado", type: "bool" },
-      { key: "google.routes_enabled", label: "Google Routes habilitado", type: "bool" },
-      { key: "firebase.project_id", label: "Firebase Project ID", type: "text" },
-      { key: "realtime.enabled", label: "Realtime habilitado", type: "bool" },
-    ],
+    key: "ride.next_offer_max_distance_km",
+    label: "Raio da próxima corrida",
+    description:
+      "Distância máxima para oferecer nova corrida a motorista elegível próximo do fim da atual.",
+    min: 0.5,
+    max: 20,
+    step: 0.5,
+    suffix: "km",
   },
   {
-    id: "operations",
-    label: "Operação",
-    icon: Sliders,
-    description: "Regras de despacho, cancelamento e limites operacionais.",
-    fields: [
-      { key: "map.max_driver_distance_km", label: "Raio máximo de busca de motorista (km)", type: "number" },
-      { key: "ride.max_pickup_distance_km", label: "Distância máxima até embarque (km)", type: "number" },
-      { key: "ride.max_waiting_minutes", label: "Tempo máximo de espera (min)", type: "number" },
-      { key: "ride.driver_response_timeout_sec", label: "Timeout de aceite do motorista (s)", type: "number" },
-      { key: "ride.request_timeout_sec", label: "Timeout total da solicitação (s)", type: "number" },
-      { key: "passenger.cancellation_grace_sec", label: "Cancelamento passageiro sem multa (s)", type: "number" },
-      { key: "driver.cancellation_grace_sec", label: "Cancelamento motorista sem penalidade (s)", type: "number" },
-      { key: "ride.max_distance_km", label: "Distância máxima da corrida (km)", type: "number" },
-      { key: "ride.max_stops", label: "Paradas máximas", type: "number" },
-      { key: "ride.max_simultaneous_requests", label: "Solicitações simultâneas por passageiro", type: "number" },
-      { key: "ride.allow_scheduled", label: "Permitir corridas agendadas", type: "bool" },
-      { key: "ride.require_gps", label: "Exigir GPS ativo", type: "bool" },
-      { key: "driver.require_approval", label: "Exigir aprovação de motoristas", type: "bool" },
-      { key: "pricing.dynamic_enabled", label: "Preço dinâmico habilitado", type: "bool" },
-      { key: "promotions.enabled", label: "Promoções habilitadas", type: "bool" },
-      { key: "multiplier.night_start_hour", label: "Início tarifa noturna (h)", type: "number" },
-      { key: "multiplier.night_end_hour", label: "Fim tarifa noturna (h)", type: "number" },
-      { key: "multiplier.night_value", label: "Multiplicador noturno", type: "number" },
-      { key: "multiplier.peak_start_hour", label: "Início horário de pico (h)", type: "number" },
-      { key: "multiplier.peak_end_hour", label: "Fim horário de pico (h)", type: "number" },
-      { key: "multiplier.peak_value", label: "Multiplicador de pico", type: "number" },
-    ],
-  },
-  {
-    id: "payments",
-    label: "Pagamentos",
-    icon: CreditCard,
-    description: "Métodos aceitos e assinatura do motorista. Configure os gateways em Pagamentos.",
-    fields: [
-      { key: "payment.allow_cash", label: "Aceitar dinheiro", type: "bool" },
-      { key: "payment.allow_pix", label: "Aceitar PIX", type: "bool" },
-      { key: "payment.allow_credit_card", label: "Aceitar cartão de crédito", type: "bool" },
-      { key: "payment.allow_debit_card", label: "Aceitar cartão de débito", type: "bool" },
-      { key: "payment.allow_wallet", label: "Aceitar carteira interna", type: "bool" },
-      { key: "subscription.default_plan_price", label: "Assinatura mensal padrão (R$)", type: "number" },
-      { key: "subscription.grace_days", label: "Período de carência (dias)", type: "number" },
-      { key: "subscription.auto_suspend", label: "Suspender automaticamente vencidos", type: "bool" },
-    ],
-  },
-  {
-    id: "notifications",
-    label: "Notificações",
-    icon: Bell,
-    description: "Canais ativos. Credenciais ficam em Notificações.",
-    fields: [
-      { key: "notifications.enabled", label: "Notificações habilitadas (master)", type: "bool" },
-      { key: "notifications.push_enabled", label: "Push (Firebase)", type: "bool" },
-      { key: "notifications.sms_enabled", label: "SMS", type: "bool" },
-      { key: "notifications.whatsapp_enabled", label: "WhatsApp", type: "bool" },
-      { key: "notifications.email_enabled", label: "E-mail", type: "bool" },
-    ],
-  },
-  {
-    id: "security",
-    label: "Segurança",
-    icon: Shield,
-    description: "Resumo das políticas. Detalhes em Segurança.",
-    fields: [],
+    key: "finance.platform_fee_percent",
+    label: "Taxa da plataforma",
+    description: "Percentual server-side destinado à APOIS. A regra atual do projeto é 0%.",
+    min: 0,
+    max: 100,
+    step: 0.01,
+    suffix: "%",
   },
 ];
 
+function parseDraft(value: string) {
+  const normalized = value.trim().replace(",", ".");
+  if (!normalized) return null;
+  const number = Number(normalized);
+  return Number.isFinite(number) ? number : null;
+}
+
 function AdminConfigPage() {
-  const [map, setMap] = useState<Record<string, unknown>>({});
+  const [values, setValues] = useState<Record<string, string>>({});
+  const [persistedValues, setPersistedValues] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
-  const [savingId, setSavingId] = useState<string | null>(null);
+  const [saving, setSaving] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const requestRef = useRef(0);
+
+  async function load() {
+    const requestId = ++requestRef.current;
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const rows = await getAdminSettings(EDITABLE_SETTINGS.map((item) => item.key));
+      if (requestId !== requestRef.current) return;
+      const next: Record<string, string> = {};
+      for (const item of EDITABLE_SETTINGS) next[item.key] = "";
+      for (const row of rows) {
+        if (!EDITABLE_SETTINGS.some((item) => item.key === row.key)) continue;
+        const value = Number(row.value);
+        if (Number.isFinite(value)) next[row.key] = String(value);
+      }
+      setValues(next);
+      setPersistedValues(next);
+    } catch (error) {
+      if (requestId !== requestRef.current) return;
+      setLoadError("Não foi possível carregar as configurações agora. Tente novamente.");
+      if (import.meta.env.DEV) console.warn("[APOIS Admin] falha ao carregar configurações", error);
+    } finally {
+      if (requestId === requestRef.current) setLoading(false);
+    }
+  }
 
   useEffect(() => {
-    let alive = true;
-    (async () => {
-      const { data, error } = await supabase.from("app_settings").select("key,value");
-      if (!alive) return;
-      if (error) toast.error(error.message);
-      const m: Record<string, unknown> = {};
-      for (const r of (data ?? []) as { key: string; value: unknown }[]) m[r.key] = r.value;
-      setMap(m);
-      setLoading(false);
-    })();
-    const ch = supabase
-      .channel("admin-config-live")
-      .on("postgres_changes", { event: "*", schema: "public", table: "app_settings" }, async () => {
-        const { data } = await supabase.from("app_settings").select("key,value");
-        const m: Record<string, unknown> = {};
-        for (const r of (data ?? []) as { key: string; value: unknown }[]) m[r.key] = r.value;
-        if (alive) setMap(m);
-      })
-      .subscribe();
+    void load();
     return () => {
-      alive = false;
-      supabase.removeChannel(ch);
+      requestRef.current += 1;
     };
   }, []);
 
-  function set(key: string, value: unknown) {
-    setMap((m) => ({ ...m, [key]: value }));
-  }
+  async function save(item: EditableSetting) {
+    if (saving) return;
+    setSaveError(null);
+    const draft = values[item.key] ?? "";
+    const value = parseDraft(draft);
+    if (value === null || value < item.min || value > item.max) {
+      setSaveError(`Revise ${item.label.toLowerCase()}: use um valor entre ${item.min} e ${item.max}.`);
+      return;
+    }
+    if (draft === persistedValues[item.key]) return;
 
-  async function saveSection(section: Section) {
-    if (section.fields.length === 0) return;
-    setSavingId(section.id);
-    const { data: u } = await supabase.auth.getUser();
-    const rows = section.fields.map((f) => ({
-      key: f.key,
-      value: (map[f.key] ?? (f.type === "bool" ? false : f.type === "number" ? 0 : "")) as never,
-      updated_by: u?.user?.id ?? null,
-    }));
-    const { error } = await supabase.from("app_settings").upsert(rows, { onConflict: "key" });
-    setSavingId(null);
-    if (error) return toast.error(error.message);
-    await logAdminAction({ action: "settings.update", entity: "app_settings", after: { section: section.id, keys: rows.length } });
-    toast.success(`Seção "${section.label}" salva — aplicada em tempo real`);
+    setSaving(item.key);
+    try {
+      const { error } = await (supabase as any).rpc("admin_update_setting", {
+        _key: item.key,
+        _value: value,
+      });
+      if (error) throw error;
+      const canonical = String(value);
+      setValues((current) => ({ ...current, [item.key]: canonical }));
+      setPersistedValues((current) => ({ ...current, [item.key]: canonical }));
+    } catch (error) {
+      setSaveError(`Não foi possível salvar ${item.label.toLowerCase()} agora. Tente novamente.`);
+      if (import.meta.env.DEV) console.warn("[APOIS Admin] falha ao salvar configuração", error);
+    } finally {
+      setSaving(null);
+    }
   }
-
-  const tabs = useMemo(() => SECTIONS, []);
 
   if (loading) {
     return (
       <AdminLayout title="Configurações">
-        <Loading label="Carregando configurações..." />
+        <div aria-live="polite">
+          <Loading label="Carregando configurações canônicas..." />
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <AdminLayout title="Configurações" description="Regras operacionais do backend canônico.">
+        <DSCard className="border-destructive/30 bg-destructive/5">
+          <DSCardContent className="space-y-3 p-4" role="alert">
+            <p className="text-sm font-medium text-destructive">{loadError}</p>
+            <DSButton variant="outline" onClick={() => void load()} className="min-h-11 gap-2">
+              <RefreshCw className="h-4 w-4" aria-hidden="true" />
+              Tentar novamente
+            </DSButton>
+          </DSCardContent>
+        </DSCard>
       </AdminLayout>
     );
   }
 
   return (
     <AdminLayout
-      title="Configurações da Plataforma"
-      description="Mudanças propagam em tempo real para os apps do passageiro, do motorista e o painel."
+      title="Configurações"
+      description="Somente regras realmente ligadas ao backend canônico podem ser alteradas aqui."
     >
-      <Tabs defaultValue={tabs[0].id} className="space-y-5">
-        <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1 bg-muted/40 p-1">
-          {tabs.map((s) => (
-            <TabsTrigger key={s.id} value={s.id} className="gap-2 data-[state=active]:bg-primary/15 data-[state=active]:text-primary">
-              <s.icon className="h-3.5 w-3.5" />
-              {s.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
+      <DSCard className="mb-4 border-primary/20 bg-primary/5">
+        <DSCardContent className="flex min-w-0 gap-3 p-4 text-sm leading-6 text-muted-foreground">
+          <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+          <div className="min-w-0">
+            <p className="font-semibold text-foreground">Configuração server-side e auditada</p>
+            <p className="mt-1 break-words">
+              Chaves de Google, Firebase, provedores financeiros, payout e outros secrets não são
+              editadas nem lidas diretamente pelo navegador. O backend libera somente as chaves
+              operacionais explicitamente permitidas.
+            </p>
+          </div>
+        </DSCardContent>
+      </DSCard>
 
-        {tabs.map((section) => (
-          <TabsContent key={section.id} value={section.id} className="space-y-4">
-            <Card className="border-border bg-card/60">
-              <CardHeader className="flex flex-row items-start justify-between gap-3">
-                <div className="space-y-1">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <section.icon className="h-4 w-4 text-primary" />
-                    {section.label}
-                  </CardTitle>
-                  <CardDescription className="text-xs">{section.description}</CardDescription>
-                </div>
-                {section.fields.length > 0 && (
-                  <Button onClick={() => saveSection(section)} disabled={savingId === section.id} size="sm" className="gap-1">
-                    {savingId === section.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-                    Salvar
-                  </Button>
-                )}
-              </CardHeader>
-              <CardContent>
-                {section.fields.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    Acesse a seção dedicada no menu lateral para configurar este módulo.
-                  </p>
-                ) : (
-                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                    {section.fields.map((f) => {
-                      const raw = map[f.key];
-                      if (f.type === "bool") {
-                        return (
-                          <label key={f.key} className="flex items-start justify-between gap-3 rounded-lg border border-border bg-background/40 p-3">
-                            <div className="space-y-0.5">
-                              <span className="text-sm font-medium">{f.label}</span>
-                              {f.help && <p className="text-[11px] text-muted-foreground">{f.help}</p>}
-                            </div>
-                            <Switch checked={!!raw} onCheckedChange={(v) => set(f.key, v)} />
-                          </label>
-                        );
-                      }
-                      const display = raw == null
-                        ? ""
-                        : typeof raw === "object"
-                          ? JSON.stringify(raw)
-                          : String(raw).replace(/^"|"$/g, "");
-                      return (
-                        <label key={f.key} className="flex flex-col gap-1.5">
-                          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                            {f.label}
-                          </span>
-                          <DSInput
-                            type={f.type === "number" ? "number" : "text"}
-                            placeholder={f.placeholder}
-                            value={display}
-                            onChange={(e) =>
-                              set(f.key, f.type === "number" ? Number(e.target.value) || 0 : e.target.value)
-                            }
-                          />
-                          {f.help && <span className="text-[11px] text-muted-foreground/80">{f.help}</span>}
-                        </label>
-                      );
-                    })}
+      {saveError ? (
+        <div className="mb-4 rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive" role="alert">
+          {saveError}
+        </div>
+      ) : null}
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        {EDITABLE_SETTINGS.map((item) => {
+          const draft = values[item.key] ?? "";
+          const parsed = parseDraft(draft);
+          const invalid = parsed === null || parsed < item.min || parsed > item.max;
+          const changed = draft !== (persistedValues[item.key] ?? "");
+          const inputId = `admin-setting-${item.key.replaceAll(".", "-")}`;
+          const helpId = `${inputId}-help`;
+          return (
+            <DSCard key={item.key}>
+              <DSCardContent className="space-y-4 p-4">
+                <div className="flex min-w-0 items-start gap-3">
+                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary" aria-hidden="true">
+                    <Sliders className="h-4 w-4" />
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        ))}
-      </Tabs>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex min-w-0 flex-wrap items-center gap-2">
+                      <h2 className="min-w-0 break-words font-semibold">{item.label}</h2>
+                      <DSBadge variant="muted">Chave auditada</DSBadge>
+                    </div>
+                    <p id={helpId} className="mt-1 text-sm leading-5 text-muted-foreground">
+                      {item.description} Faixa permitida: {item.min} a {item.max} {item.suffix}.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex min-w-0 flex-wrap items-end gap-2 sm:flex-nowrap">
+                  <div className="min-w-[150px] flex-1">
+                    <label htmlFor={inputId} className="mb-1 block text-sm font-medium text-foreground">
+                      Valor
+                    </label>
+                    <DSInput
+                      id={inputId}
+                      type="text"
+                      inputMode="decimal"
+                      value={draft}
+                      onChange={(event) => {
+                        setSaveError(null);
+                        setValues((current) => ({ ...current, [item.key]: event.target.value }));
+                      }}
+                      disabled={Boolean(saving)}
+                      aria-describedby={helpId}
+                      aria-invalid={invalid}
+                      className="min-h-11 text-base"
+                    />
+                  </div>
+                  <span className="flex min-h-11 min-w-10 items-center text-sm font-semibold text-muted-foreground" aria-hidden="true">
+                    {item.suffix}
+                  </span>
+                  <DSButton
+                    onClick={() => void save(item)}
+                    disabled={Boolean(saving) || invalid || !changed}
+                    className="min-h-11 gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    aria-busy={saving === item.key}
+                  >
+                    {saving === item.key ? (
+                      <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+                    ) : (
+                      <Save className="h-4 w-4" aria-hidden="true" />
+                    )}
+                    {saving === item.key ? "Salvando…" : changed ? "Salvar" : "Salvo"}
+                  </DSButton>
+                </div>
+              </DSCardContent>
+            </DSCard>
+          );
+        })}
+      </div>
     </AdminLayout>
   );
 }

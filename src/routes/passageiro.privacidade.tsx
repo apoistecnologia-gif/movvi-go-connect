@@ -9,8 +9,8 @@ import { PASSENGER_NAV } from "@/components/BottomNav";
 export const Route = createFileRoute("/passageiro/privacidade")({
   head: () => ({
     meta: [
-      { title: "Política de Privacidade — MOVVI" },
-      { name: "description", content: "Política de Privacidade da plataforma MOVVI em conformidade com a LGPD." },
+      { title: "Política de Privacidade — APOIS" },
+      { name: "description", content: "Política de Privacidade da plataforma APOIS em conformidade com a LGPD." },
     ],
   }),
   component: PrivacidadePage,
@@ -52,8 +52,8 @@ function PrivacidadePage() {
       />
       <article className="space-y-5 rounded-[24px] bg-white p-6 text-[14px] leading-relaxed text-[#1B1B1B] shadow-[0_6px_20px_-14px_rgba(15,23,42,0.12)] ring-1 ring-black/5">
         <Section title="1. Quem somos">
-          A MOVVI Tecnologia é a controladora dos dados pessoais tratados na plataforma
-          MOVVI. Esta política descreve como coletamos, usamos, compartilhamos e
+          A APOIS Tecnologia é a controladora dos dados pessoais tratados na plataforma
+          APOIS. Esta política descreve como coletamos, usamos, compartilhamos e
           protegemos suas informações.
         </Section>
         <Section title="2. Dados que coletamos">

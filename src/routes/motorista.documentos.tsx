@@ -1,323 +1,205 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
-import { supabase } from "@/integrations/supabase/client";
-import { DriverDocumentField } from "@/components/DriverDocumentField";
-import { compressDocumentImage } from "@/lib/imageCompress";
-import { updateDriverDocument } from "@/lib/driverDocuments.functions";
-import { SettingsPageShell, SettingsHero } from "@/components/settings";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  Typography,
-  DSButton,
-  DSCard,
-  StatusPill,
-  Loading,
-  EmptyState,
-  Icon,
-  HeadingS,
-  Body,
-  BodySmall,
-  Caption,
-} from "@/design-system";
-import {
+  AlertTriangle,
+  ArrowLeft,
+  Camera,
+  CarFront,
+  CheckCircle2,
   FileText,
-  ShieldCheck,
-  ShieldAlert,
   IdCard,
-  Car,
-  UserRound,
-  UploadCloud,
-  RefreshCcw,
   Loader2,
+  RefreshCw,
+  ShieldCheck,
+  Upload,
 } from "lucide-react";
+import { toast } from "sonner";
+import { loadDriverProfile, type DriverProfileRow } from "@/lib/driverProfile";
+import {
+  uploadDriverDocument,
+  type DriverDocumentSlot,
+} from "@/lib/driverDocuments.mobile";
 
 export const Route = createFileRoute("/motorista/documentos")({
-  head: () => ({ meta: [{ title: "Meus documentos — MOVVI DRIVE" }] }),
   component: DriverDocumentsPage,
+  head: () => ({ meta: [{ title: "Documentos — APOIS Motorista" }] }),
 });
 
-type Slot = "cnh_front" | "cnh_back" | "crlv" | "selfie";
-
-type DriverRow = {
-  user_id: string;
-  selfie_url: string | null;
-  cnh_url: string | null;
-  cnh_back_url: string | null;
-  vehicle_document_url: string | null;
-  documents_status: string;
-  approval_status: string;
-};
-
-type SlotDef = {
-  slot: Slot;
-  label: string;
-  helper: string;
-  bucket: string;
+type DocConfig = {
+  slot: DriverDocumentSlot;
+  title: string;
+  description: string;
   icon: typeof IdCard;
-  facing?: "user" | "environment";
+  profileKey: keyof Pick<
+    DriverProfileRow,
+    "selfie_url" | "cnh_url" | "cnh_back_url" | "vehicle_document_url" | "vehicle_photo_url"
+  >;
+  accept: string;
+  maxBytes: number;
 };
 
-const SLOTS: SlotDef[] = [
-  { slot: "cnh_front", label: "CNH — Frente", helper: "Foto legível, sem reflexos", bucket: "driver-cnh", icon: IdCard },
-  { slot: "cnh_back", label: "CNH — Verso", helper: "Verso completo da CNH", bucket: "driver-cnh", icon: IdCard },
-  { slot: "crlv", label: "CRLV do veículo", helper: "Documento atual do veículo", bucket: "vehicle-documents", icon: Car },
-  { slot: "selfie", label: "Selfie de validação", helper: "Rosto visível, boa iluminação", bucket: "driver-selfies", icon: UserRound, facing: "user" },
+const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+const MAX_DOCUMENT_BYTES = 12 * 1024 * 1024;
+
+const documents: DocConfig[] = [
+  { slot: "selfie", title: "Selfie do motorista", description: "Foto atual, de frente e com boa iluminação.", icon: Camera, profileKey: "selfie_url", accept: "image/jpeg,image/png,image/webp", maxBytes: MAX_IMAGE_BYTES },
+  { slot: "cnh_front", title: "CNH — frente", description: "Documento legível e dentro da validade.", icon: IdCard, profileKey: "cnh_url", accept: "image/jpeg,image/png,image/webp,application/pdf", maxBytes: MAX_DOCUMENT_BYTES },
+  { slot: "cnh_back", title: "CNH — verso", description: "Envie o verso do mesmo documento.", icon: IdCard, profileKey: "cnh_back_url", accept: "image/jpeg,image/png,image/webp,application/pdf", maxBytes: MAX_DOCUMENT_BYTES },
+  { slot: "crlv", title: "Documento do veículo", description: "CRLV legível do veículo cadastrado.", icon: FileText, profileKey: "vehicle_document_url", accept: "image/jpeg,image/png,image/webp,application/pdf", maxBytes: MAX_DOCUMENT_BYTES },
+  { slot: "vehicle_photo", title: "Foto do veículo", description: "Mostre o veículo cadastrado de forma nítida.", icon: CarFront, profileKey: "vehicle_photo_url", accept: "image/jpeg,image/png,image/webp", maxBytes: MAX_IMAGE_BYTES },
 ];
 
-function slotHasValue(row: DriverRow, slot: Slot) {
-  if (slot === "cnh_front") return !!row.cnh_url;
-  if (slot === "cnh_back") return !!row.cnh_back_url;
-  if (slot === "crlv") return !!row.vehicle_document_url;
-  return !!row.selfie_url;
+function normalizeStatus(value: unknown): string {
+  return String(value ?? "").trim().toLowerCase();
 }
 
-/** Map documents_status → StatusPill token + label. */
-function overallStatusPill(status: string, complete: boolean) {
-  if (status === "approved") return <StatusPill status="finished" label="Aprovado" pulse={false} />;
-  if (status === "rejected") return <StatusPill status="cancelled" label="Reprovado" pulse={false} />;
-  if (status === "pending_review" || complete) return <StatusPill status="searching" label="Em análise" />;
-  return <StatusPill status="offline" label="Pendente" pulse={false} />;
+function statusLabel(profile: DriverProfileRow | null): string {
+  if (!profile) return "Carregando";
+  const documentsStatus = normalizeStatus(profile.documents_status);
+  const approvalStatus = normalizeStatus(profile.approval_status);
+  if (["rejected", "reprovado", "reprovada"].includes(documentsStatus) || ["rejected", "reprovado", "reprovada"].includes(approvalStatus)) return "Reenvio necessário";
+  if (["pending_review", "em_analise", "em análise"].includes(documentsStatus) || ["pending_review", "em_analise", "em análise"].includes(approvalStatus)) return "Em análise";
+  if (["approved", "aprovado", "aprovada"].includes(documentsStatus)) return "Aprovados";
+  return "Envio incompleto";
 }
 
-function slotStatusPill(overall: string, hasValue: boolean) {
-  if (!hasValue) return <StatusPill status="offline" label="Pendente" pulse={false} />;
-  if (overall === "approved") return <StatusPill status="finished" label="Aprovado" pulse={false} />;
-  if (overall === "rejected") return <StatusPill status="cancelled" label="Reprovado" pulse={false} />;
-  return <StatusPill status="searching" label="Em análise" />;
+function isAllowedFile(file: File, config: DocConfig): boolean {
+  const accepted = config.accept.split(",").map((item) => item.trim().toLowerCase());
+  return accepted.includes(file.type.toLowerCase());
+}
+
+function hasUploadedValue(value: unknown): boolean {
+  return typeof value === "string" ? value.trim().length > 0 : Boolean(value);
 }
 
 function DriverDocumentsPage() {
   const navigate = useNavigate();
-  const callUpdate = useServerFn(updateDriverDocument);
-  const [driver, setDriver] = useState<DriverRow | null>(null);
+  const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const loadRequestRef = useRef(0);
+  const [profile, setProfile] = useState<DriverProfileRow | null>(null);
   const [loading, setLoading] = useState(true);
+  const [savingSlot, setSavingSlot] = useState<DriverDocumentSlot | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [pending, setPending] = useState<Partial<Record<Slot, File | null>>>({});
-  const [saving, setSaving] = useState<Slot | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const { data: session } = await supabase.auth.getSession();
-        const userId = session.session?.user?.id;
-        if (!userId) {
-          navigate({ to: "/motorista/login" });
+  const load = useCallback(async () => {
+    const requestId = ++loadRequestRef.current;
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await loadDriverProfile();
+      if (requestId !== loadRequestRef.current) return;
+      if (!result.ok) {
+        if (result.reason === "no_session") {
+          await navigate({ to: "/motorista/login", replace: true });
           return;
         }
-        const { data, error: dbErr } = await supabase
-          .from("drivers")
-          .select("user_id, selfie_url, cnh_url, cnh_back_url, vehicle_document_url, documents_status, approval_status")
-          .eq("user_id", userId)
-          .maybeSingle();
-        if (dbErr) throw dbErr;
-        if (!cancelled) setDriver(data as DriverRow | null);
-      } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Falha ao carregar dados.");
-      } finally {
-        if (!cancelled) setLoading(false);
+        setError("Não foi possível carregar o cadastro do motorista agora.");
+        return;
       }
-    })();
-    return () => {
-      cancelled = true;
-    };
+      setProfile(result.profile);
+    } catch (caughtError: unknown) {
+      console.error("[APOIS Driver Documents] load failed", caughtError);
+      if (requestId === loadRequestRef.current) setError("Não foi possível carregar seus documentos agora.");
+    } finally {
+      if (requestId === loadRequestRef.current) setLoading(false);
+    }
   }, [navigate]);
 
-  const uploadedCount = useMemo(() => {
-    if (!driver) return 0;
-    return SLOTS.reduce((acc, s) => acc + (slotHasValue(driver, s.slot) ? 1 : 0), 0);
-  }, [driver]);
+  useEffect(() => { void load(); }, [load]);
 
-  const complete = uploadedCount === SLOTS.length;
-  const progressPct = (uploadedCount / SLOTS.length) * 100;
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible" && !savingSlot) void load();
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, [load, savingSlot]);
 
-  async function handleSave(slotDef: SlotDef) {
-    const file = pending[slotDef.slot];
-    if (!file || !driver) return;
-    setSaving(slotDef.slot);
-    setError(null);
-    setMessage(null);
-    try {
-      const compressed = await compressDocumentImage(file, { maxSize: 1600, quality: 0.85 });
-      const ext = (compressed.type.split("/")[1] || "jpg").toLowerCase();
-      const path = `${driver.user_id}/${slotDef.slot}-${Date.now()}.${ext}`;
-
-      const up = await supabase.storage
-        .from(slotDef.bucket)
-        .upload(path, compressed, { upsert: true, contentType: compressed.type });
-      if (up.error) throw up.error;
-
-      const result = await callUpdate({ data: { slot: slotDef.slot, storagePath: path } });
-
-      setDriver((prev) => {
-        if (!prev) return prev;
-        const next: DriverRow = { ...prev };
-        if (slotDef.slot === "cnh_front") next.cnh_url = path;
-        else if (slotDef.slot === "cnh_back") next.cnh_back_url = path;
-        else if (slotDef.slot === "crlv") next.vehicle_document_url = path;
-        else next.selfie_url = path;
-        next.documents_status = result.documents_status ?? next.documents_status;
-        return next;
-      });
-      setPending((prev) => ({ ...prev, [slotDef.slot]: null }));
-      setMessage(result.complete ? "Documentos enviados para análise." : "Documento salvo.");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Falha ao enviar documento.");
-    } finally {
-      setSaving(null);
+  const handleFile = async (config: DocConfig, file?: File): Promise<void> => {
+    if (savingSlot) return;
+    if (!file) {
+      setUploadError("Nenhum arquivo foi selecionado.");
+      return;
     }
-  }
+    if (!isAllowedFile(file, config)) {
+      setUploadError("Formato não aceito. Envie JPG, PNG, WEBP ou PDF quando permitido.");
+      return;
+    }
+    if (!Number.isFinite(file.size) || file.size <= 0) {
+      setUploadError("O arquivo selecionado está vazio ou inválido.");
+      return;
+    }
+    if (file.size > config.maxBytes) {
+      setUploadError(`Arquivo muito grande. Use um arquivo de até ${Math.round(config.maxBytes / 1024 / 1024)} MB.`);
+      return;
+    }
 
-  if (loading) {
-    return (
-      <SettingsPageShell>
-        <Loading label="Carregando documentos…" />
-      </SettingsPageShell>
-    );
-  }
+    const replacing = hasUploadedValue(profile?.[config.profileKey]);
+    if (replacing) {
+      const confirmed = window.confirm("Substituir este documento? Seu cadastro poderá voltar para análise antes de receber novas corridas.");
+      if (!confirmed) return;
+    }
 
-  if (!driver) {
-    return (
-      <SettingsPageShell>
-        <EmptyState
-          icon={FileText}
-          title="Cadastro não encontrado"
-          description="Complete seu cadastro de motorista para enviar os documentos."
-          action={
-            <DSButton asChild>
-              <Link to="/motorista/cadastro">Ir para cadastro</Link>
-            </DSButton>
-          }
-        />
-      </SettingsPageShell>
-    );
-  }
-
-  // Se o admin aprovou a conta, tratamos os documentos como aprovados —
-  // caso contrário o motorista vê "em análise" mesmo com a conta liberada.
-  const overall = driver.approval_status === "aprovado" ? "approved" : driver.documents_status;
+    setSavingSlot(config.slot);
+    setUploadError(null);
+    try {
+      const result = await uploadDriverDocument(config.slot, file);
+      toast.success(result.complete ? "Documento enviado. Seu cadastro voltou para análise." : "Documento enviado. Complete os demais itens para iniciar a análise.");
+      await load();
+    } catch (caughtError: unknown) {
+      console.error("[APOIS Driver Documents] upload failed", caughtError);
+      setUploadError("Não foi possível enviar o documento. Verifique o arquivo e tente novamente.");
+    } finally {
+      setSavingSlot(null);
+    }
+  };
 
   return (
-    <SettingsPageShell>
-      <SettingsHero
-        icon={FileText}
-        title="Meus documentos"
-        subtitle="Envie os documentos necessários para análise da sua conta."
-        action={overallStatusPill(overall, complete)}
-      />
-
-      {/* Progresso geral */}
-      <DSCard className="p-5 space-y-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 space-y-1">
-            <HeadingS>Progresso da verificação</HeadingS>
-            <BodySmall className="text-muted-foreground">
-              {complete
-                ? "Todos os documentos foram enviados."
-                : `Envie os ${SLOTS.length} documentos obrigatórios para liberar sua conta.`}
-            </BodySmall>
-          </div>
-          <div className="shrink-0 rounded-full bg-primary/10 px-3 py-1.5">
-            <Typography variant="metric" className="text-[clamp(14px,4.6vw,18px)] text-primary">
-              {uploadedCount}/{SLOTS.length}
-            </Typography>
-          </div>
+    <div className="min-h-[100dvh] min-w-0 bg-[#050607] text-white">
+      <header className="sticky top-0 z-30 border-b border-white/5 bg-[#08090A]/95 px-4 pb-4 pt-[calc(env(safe-area-inset-top)+12px)] backdrop-blur-xl">
+        <div className="mx-auto flex max-w-xl min-w-0 items-center gap-3">
+          <button type="button" aria-label="Voltar" disabled={Boolean(savingSlot)} onClick={() => void navigate({ to: "/motorista/perfil" })} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/8 bg-[#111315] disabled:opacity-50 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F6BE1C]"><ArrowLeft className="h-5 w-5" aria-hidden="true" /></button>
+          <div className="min-w-0 flex-1"><p className="break-words text-[11px] font-black uppercase tracking-[0.16em] text-[#F6BE1C] sm:tracking-[0.2em]">Cadastro e segurança</p><h1 className="mt-0.5 break-words text-xl font-black leading-tight tracking-tight">Meus documentos</h1></div>
+          <button type="button" aria-label={loading ? "Atualizando documentos" : "Atualizar documentos"} aria-busy={loading} disabled={loading || Boolean(savingSlot)} onClick={() => void load()} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/8 bg-[#111315] text-[#F6BE1C] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F6BE1C]"><RefreshCw aria-hidden="true" className={loading ? "h-4 w-4 animate-spin motion-reduce:animate-none" : "h-4 w-4"} /></button>
         </div>
+      </header>
 
-        <div
-          className="h-2 w-full overflow-hidden rounded-full bg-muted"
-          role="progressbar"
-          aria-valuenow={uploadedCount}
-          aria-valuemin={0}
-          aria-valuemax={SLOTS.length}
-          aria-label="Progresso do envio de documentos"
-        >
-          <div
-            className="h-full rounded-full bg-primary transition-all duration-300"
-            style={{ width: `${progressPct}%` }}
-          />
-        </div>
-
-        {error ? (
-          <div className="flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2">
-            <Icon as={ShieldAlert} size="md" className="mt-0.5 text-destructive" />
-            <BodySmall className="text-destructive">{error}</BodySmall>
+      <main className="mx-auto w-full max-w-xl min-w-0 space-y-4 px-4 py-5 pb-[calc(env(safe-area-inset-bottom)+28px)]">
+        <section className="min-w-0 rounded-[26px] border border-[#F6BE1C]/18 bg-gradient-to-br from-[#211A08] via-[#111315] to-[#08090A] p-4 sm:p-5">
+          <div className="flex min-w-0 items-start gap-3 sm:gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#F6BE1C] text-black"><ShieldCheck className="h-6 w-6" aria-hidden="true" /></div>
+            <div className="min-w-0 flex-1"><p className="break-words text-[11px] font-black uppercase tracking-[0.16em] text-[#F6BE1C] sm:tracking-[0.18em]">Status documental</p><h2 className="mt-1 break-words text-lg font-black">{statusLabel(profile)}</h2><p className="mt-2 break-words text-xs font-medium leading-5 text-zinc-500">Sempre que um documento obrigatório for substituído, o motorista sai do modo online e o cadastro volta para análise antes de receber novas corridas.</p></div>
           </div>
-        ) : null}
-        {message ? (
-          <div className="flex items-start gap-2 rounded-xl border border-primary/30 bg-primary/10 px-3 py-2">
-            <Icon as={ShieldCheck} size="md" className="mt-0.5 text-primary" />
-            <BodySmall className="text-primary">{message}</BodySmall>
-          </div>
-        ) : null}
-      </DSCard>
+        </section>
 
-      {/* Lista de documentos */}
-      <div className="grid gap-4 sm:grid-cols-2">
-        {SLOTS.map((s) => {
-          const hasValue = slotHasValue(driver, s.slot);
-          const pendingFile = pending[s.slot] ?? null;
-          const busy = saving === s.slot;
+        {error ? <section role="alert" aria-live="assertive" className="min-w-0 rounded-2xl border border-red-500/20 bg-red-500/8 p-4"><div className="flex min-w-0 items-start gap-3"><AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-red-300" aria-hidden="true" /><p className="min-w-0 flex-1 break-words text-xs font-bold leading-5 text-red-300">{error}</p></div><button type="button" onClick={() => void load()} disabled={loading} className="mt-3 min-h-11 w-full rounded-xl border border-red-300/20 px-4 text-xs font-black text-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300">Tentar novamente</button></section> : null}
+        {uploadError ? <section role="alert" aria-live="assertive" className="break-words rounded-2xl border border-amber-400/20 bg-amber-400/8 p-4 text-xs font-bold leading-5 text-amber-100">{uploadError}</section> : null}
 
-          return (
-            <DSCard key={s.slot} className="p-4 space-y-3">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex min-w-0 items-start gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                    <Icon as={s.icon} size="lg" />
+        {loading && !profile ? (
+          <div className="flex min-h-[45vh] items-center justify-center" role="status" aria-label="Carregando documentos"><Loader2 aria-hidden="true" className="h-7 w-7 animate-spin text-[#F6BE1C] motion-reduce:animate-none" /></div>
+        ) : (
+          <section className="space-y-3" aria-label="Documentos do motorista">
+            {documents.map((document) => {
+              const Icon = document.icon;
+              const hasFile = hasUploadedValue(profile?.[document.profileKey]);
+              const saving = savingSlot === document.slot;
+              const inputId = `driver-document-${document.slot}`;
+              return (
+                <article key={document.slot} className="min-w-0 rounded-[24px] border border-white/6 bg-[#0D0F11] p-4" aria-busy={saving}>
+                  <div className="flex min-w-0 items-start gap-3">
+                    <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${hasFile ? "bg-emerald-400/10 text-emerald-400" : "bg-[#F6BE1C]/10 text-[#F6BE1C]"}`} aria-hidden="true">{hasFile ? <CheckCircle2 className="h-5 w-5" /> : <Icon className="h-5 w-5" />}</div>
+                    <div className="min-w-0 flex-1"><div className="flex min-w-0 flex-wrap items-center gap-2"><h3 className="min-w-0 break-words text-sm font-black leading-5">{document.title}</h3>{hasFile ? <span className="shrink-0 rounded-full bg-emerald-400/10 px-2 py-1 text-[11px] font-black uppercase text-emerald-400">Enviado</span> : null}</div><p className="mt-1 break-words text-xs font-medium leading-4 text-zinc-500">{document.description}</p></div>
                   </div>
-                  <div className="min-w-0 space-y-0.5">
-                    <HeadingS className="truncate">{s.label}</HeadingS>
-                    <Caption className="block">{s.helper}</Caption>
-                  </div>
-                </div>
-                <div className="shrink-0">{slotStatusPill(overall, hasValue)}</div>
-              </div>
-
-              <DriverDocumentField
-                id={`doc-${s.slot}`}
-                label={s.label}
-                helper={s.helper}
-                file={pendingFile}
-                onChange={(f) => setPending((prev) => ({ ...prev, [s.slot]: f }))}
-                facing={s.facing}
-              />
-
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <Body className="text-muted-foreground">
-                  {pendingFile
-                    ? "Pronto para enviar"
-                    : hasValue
-                      ? "Documento enviado"
-                      : "Nenhum arquivo"}
-                </Body>
-                <DSButton
-                  size="sm"
-                  disabled={!pendingFile || busy}
-                  onClick={() => handleSave(s)}
-                  aria-label={hasValue ? `Reenviar ${s.label}` : `Enviar ${s.label}`}
-                >
-                  {busy ? (
-                    <Loader2 className="mr-1.5 h-4 w-4 animate-spin" aria-hidden="true" />
-                  ) : (
-                    <Icon
-                      as={hasValue ? RefreshCcw : UploadCloud}
-                      size="sm"
-                      className="mr-1.5"
-                    />
-                  )}
-                  {hasValue ? "Reenviar" : "Enviar"}
-                </DSButton>
-              </div>
-            </DSCard>
-          );
-        })}
-      </div>
-
-      <Caption className="block px-1 text-center">
-        Após enviar os {SLOTS.length} documentos, sua conta entra em análise.
-      </Caption>
-    </SettingsPageShell>
+                  <input id={inputId} ref={(node) => { inputRefs.current[document.slot] = node; }} type="file" accept={document.accept} className="sr-only" disabled={Boolean(savingSlot)} aria-label={`Selecionar arquivo para ${document.title}`} onChange={(event) => { const file = event.currentTarget.files?.[0]; event.currentTarget.value = ""; void handleFile(document, file); }} />
+                  <button type="button" disabled={Boolean(savingSlot)} aria-busy={saving} onClick={() => { setUploadError(null); inputRefs.current[document.slot]?.click(); }} className="mt-4 flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl border border-white/8 bg-[#141719] px-3 py-2 text-center text-xs font-black leading-5 text-white disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F6BE1C]">{saving ? <Loader2 className="h-4 w-4 shrink-0 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Upload className="h-4 w-4 shrink-0 text-[#F6BE1C]" aria-hidden="true" />}{saving ? "Enviando..." : hasFile ? "Substituir documento" : "Enviar documento"}</button>
+                  <p className="mt-2 break-words text-[11px] leading-4 text-zinc-600">Formatos aceitos conforme o documento. Limite: {Math.round(document.maxBytes / 1024 / 1024)} MB.</p>
+                </article>
+              );
+            })}
+          </section>
+        )}
+      </main>
+    </div>
   );
 }

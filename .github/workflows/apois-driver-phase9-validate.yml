@@ -1,0 +1,124 @@
+name: APOIS Corridas — Driver Phase 9 Validate
+
+on:
+  push:
+    branches:
+      - fix/apois-corridas-consolidacao
+    paths:
+      - "android-motorista/**"
+      - "capacitor.motorista.config.ts"
+      - "src/lib/driverBackgroundLocation.ts"
+      - "src/lib/driverNativeLocation.ts"
+      - "src/lib/nativeBridge.ts"
+      - "src/hooks/useDriverBroadcast.ts"
+      - "tests/mobile/driver-phase9-contract.mjs"
+      - "scripts/verify-mobile-native.mjs"
+      - "tsconfig.driver-phase7.json"
+      - ".github/workflows/apois-driver-phase9-validate.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: apois-driver-phase9-validate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-driver-phase9:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Phase 9 Driver contract
+        run: node tests/mobile/driver-phase9-contract.mjs
+
+      - name: TypeScript — Driver surface
+        run: npx tsc --noEmit --project tsconfig.driver-phase7.json
+
+      - name: Prepare Firebase Driver client
+        env:
+          FIREBASE_CONFIG_B64: ${{ secrets.APOIS_MOTORISTA_GOOGLE_SERVICES_JSON_BASE64 }}
+        run: |
+          set -euo pipefail
+          if [ -f android-motorista/app/google-services.json ]; then
+            echo '[firebase] using checked-in APOIS Driver config'
+          elif [ -n "$FIREBASE_CONFIG_B64" ]; then
+            printf '%s' "$FIREBASE_CONFIG_B64" | base64 --decode > android-motorista/app/google-services.json
+          else
+            echo 'Firebase client for com.apois.motorista is required.'
+            exit 1
+          fi
+
+      - name: Build and sync APOIS Driver
+        env:
+          VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY: ${{ secrets.APOIS_GOOGLE_MAPS_BROWSER_KEY }}
+          VITE_ENABLE_NATIVE_PUSH: "true"
+        run: |
+          set -euo pipefail
+          test -n "$VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY"
+          npm run android:motorista
+
+      - name: Offline-buffer hard gate
+        run: |
+          set -euo pipefail
+          source_service=android-motorista/app/src/main/java/com/apois/motorista/DriverLocationService.java
+          synced_service=android/app/src/main/java/com/apois/motorista/DriverLocationService.java
+          for service in "$source_service" "$synced_service"; do
+            test -f "$service"
+            grep -F 'SharedPreferences' "$service"
+            grep -F 'LOCATION_PREFS = "apois_driver_location_buffer"' "$service"
+            grep -F 'MAX_PENDING_LOCATION_AGE_MS = 120_000L' "$service"
+            grep -F 'rememberPendingLocation(location)' "$service"
+            grep -F 'readPendingLocation()' "$service"
+            grep -F 'location.getTime()' "$service"
+            grep -F 'location.getAccuracy()' "$service"
+            grep -F '.putLong(PREF_CAPTURED_AT, capturedAt)' "$service"
+            grep -F '.putFloat(PREF_ACCURACY' "$service"
+            grep -F 'if (age > MAX_PENDING_LOCATION_AGE_MS)' "$service"
+            grep -F 'clearPendingLocationIfSynced' "$service"
+            grep -F '.setSmallIcon(R.drawable.ic_stat_apois_notification)' "$service"
+            if grep -E 'put(String|Long|Float|Boolean)\([^\n]*(accessToken|refreshToken|EXTRA_ACCESS_TOKEN|EXTRA_REFRESH_TOKEN)' "$service"; then
+              echo "Authentication token persistence detected in $service"
+              exit 1
+            fi
+          done
+          cmp "$source_service" "$synced_service"
+          echo 'APOIS_DRIVER_OFFLINE_BUFFER_CANONICAL_OK'
+
+      - name: Verify native Driver shell
+        run: node scripts/verify-mobile-native.mjs motorista --live
+
+      - name: Compile Driver Android
+        working-directory: android
+        run: |
+          set -euo pipefail
+          chmod +x gradlew
+          ./gradlew compileDebugJavaWithJavac assembleDebug --no-daemon --stacktrace
+          test -s app/build/outputs/apk/debug/app-debug.apk
+          echo 'APOIS_DRIVER_PHASE9_ANDROID_OK'
+
+      - name: Upload validation APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: APOIS-Driver-Phase9-Validation
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7

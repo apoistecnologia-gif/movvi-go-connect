@@ -2,14 +2,21 @@
 // Triggered only when the document is hidden (app in background / minimized / other tab).
 
 const ICON = "/favicon.ico";
+const MAX_TITLE_LENGTH = 120;
+const MAX_BODY_LENGTH = 500;
+const MAX_TAG_LENGTH = 120;
 
 export function isPushSupported(): boolean {
-  return typeof window !== "undefined" && "Notification" in window;
+  return typeof window !== "undefined" && typeof Notification !== "undefined";
 }
 
 export function getPushPermission(): NotificationPermission | "unsupported" {
   if (!isPushSupported()) return "unsupported";
-  return Notification.permission;
+  try {
+    return Notification.permission;
+  } catch {
+    return "unsupported";
+  }
 }
 
 /**
@@ -18,13 +25,13 @@ export function getPushPermission(): NotificationPermission | "unsupported" {
  */
 export async function requestPushPermission(): Promise<NotificationPermission | "unsupported"> {
   if (!isPushSupported()) return "unsupported";
-  if (Notification.permission === "granted" || Notification.permission === "denied") {
-    return Notification.permission;
-  }
   try {
+    if (Notification.permission === "granted" || Notification.permission === "denied") {
+      return Notification.permission;
+    }
     return await Notification.requestPermission();
   } catch {
-    return Notification.permission;
+    return getPushPermission();
   }
 }
 
@@ -32,52 +39,73 @@ export type PushOptions = {
   title: string;
   body?: string;
   tag?: string;
-  /** URL to open/focus when the notification is clicked. */
+  /** Internal URL to open/focus when the notification is clicked. */
   url?: string;
   /** Force showing even when the document is visible (default: false). */
   force?: boolean;
 };
 
+function cleanText(value: unknown, maxLength: number) {
+  return String(value ?? "")
+    .replace(/[\u0000-\u001f\u007f]/g, " ")
+    .trim()
+    .replace(/\s+/g, " ")
+    .slice(0, maxLength);
+}
+
+function safeInternalUrl(value: unknown): string {
+  if (typeof window === "undefined") return "/";
+  const raw = String(value ?? "").trim();
+  if (!raw || !raw.startsWith("/") || raw.startsWith("//") || raw.includes("\\")) return "/";
+  if (/[\u0000-\u001f\u007f]/.test(raw)) return "/";
+  try {
+    const parsed = new URL(raw, window.location.origin);
+    if (parsed.origin !== window.location.origin) return "/";
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch {
+    return "/";
+  }
+}
+
 /**
  * Show a system notification. By default, only fires when the document is
- * hidden — in-foreground updates rely on toasts. Clicking the notification
- * focuses an existing tab on `url` (or navigates to it) and opens a new tab
- * otherwise.
+ * hidden — in-foreground updates rely on toasts. Notification clicks are
+ * restricted to same-origin internal routes.
  */
 export function showPush({ title, body, tag, url, force = false }: PushOptions): void {
   if (!isPushSupported()) return;
-  if (Notification.permission !== "granted") return;
+  if (getPushPermission() !== "granted") return;
   if (!force && typeof document !== "undefined" && document.visibilityState === "visible") return;
 
+  const safeTitle = cleanText(title, MAX_TITLE_LENGTH);
+  if (!safeTitle) return;
+  const safeBody = cleanText(body, MAX_BODY_LENGTH) || undefined;
+  const safeTag = cleanText(tag, MAX_TAG_LENGTH) || "apois-notification";
+  const target = safeInternalUrl(url);
+
   try {
-    const n = new Notification(title, {
-      body,
-      tag: tag ?? "movvi-ride",
+    const notification = new Notification(safeTitle, {
+      body: safeBody,
+      tag: safeTag,
       icon: ICON,
       badge: ICON,
       renotify: true,
-      data: { url },
+      data: { url: target },
     } as NotificationOptions);
-    n.onclick = (event) => {
+    notification.onclick = (event) => {
       event.preventDefault();
       try {
-        const target = url ?? "/";
-        const absolute = new URL(target, window.location.origin).href;
-        // If we're already on the target path, just focus the tab.
-        if (window.location.href === absolute) {
-          window.focus();
-        } else if (window.location.origin === new URL(absolute).origin) {
-          // Same-origin: focus + client-side navigate via history to avoid full reload.
-          window.focus();
-          window.location.assign(absolute);
-        } else {
-          window.open(absolute, "_blank");
-        }
+        const absolute = new URL(target, window.location.origin);
+        if (absolute.origin !== window.location.origin) return;
+        window.focus();
+        if (window.location.href !== absolute.href) window.location.assign(absolute.href);
+      } catch (error) {
+        if (import.meta.env.DEV) console.warn("[APOIS Push] destino inválido", error);
       } finally {
-        n.close();
+        notification.close();
       }
     };
-  } catch {
-    /* ignore notification errors */
+  } catch (error) {
+    if (import.meta.env.DEV) console.warn("[APOIS Push] falha ao exibir notificação", error);
   }
 }

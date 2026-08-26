@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["node", "vite/client"]
+  },
+  "include": [
+    "supabase/functions/_shared/ride-request.ts",
+    "supabase/functions/_shared/dispatch-engine.ts"
+  ],
+  "exclude": []
+}

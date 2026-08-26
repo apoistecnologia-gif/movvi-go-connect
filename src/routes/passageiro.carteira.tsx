@@ -15,7 +15,7 @@ import {
 export const Route = createFileRoute("/passageiro/carteira")({
   component: PassengerWalletPage,
   head: () => ({
-    meta: [{ title: "Carteira — MOVVI" }, { name: "description", content: "Sua carteira MOVVI e histórico de cobranças." }],
+    meta: [{ title: "Carteira — APOIS" }, { name: "description", content: "Sua carteira APOIS e histórico de cobranças." }],
   }),
 });
 

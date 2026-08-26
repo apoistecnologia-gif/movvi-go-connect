@@ -32,8 +32,8 @@ async function createMpPreference(driverId: string, mpToken: string, supabaseUrl
       items: [
         {
           id: `mensalidade-${driverId}`,
-          title: "Mensalidade Motorista MOVVI",
-          description: "Renovação mensal MOVVI",
+          title: "Mensalidade Motorista APOIS",
+          description: "Renovação mensal APOIS",
           quantity: 1,
           currency_id: "BRL",
           unit_price: MONTHLY_FEE,
@@ -173,7 +173,7 @@ export const Route = createFileRoute("/api/public/hooks/renew-driver-subscriptio
             try {
               await admin.from("notification_inbox").insert({
                 user_id: driver.user_id,
-                title: "Renovação da mensalidade MOVVI",
+                title: "Renovação da mensalidade APOIS",
                 body: "Sua mensalidade está próxima do vencimento. Clique para pagar.",
                 category: "billing",
                 data: { init_point: initPoint, kind: "monthly_fee" },

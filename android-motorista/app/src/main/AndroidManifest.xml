@@ -1,7 +1,14 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <queries>
+        <package android:name="com.google.android.tts" />
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
+    </queries>
+
     <application
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:hardwareAccelerated="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
@@ -25,9 +32,31 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="com.movvi.driver" />
+                <data android:scheme="com.apois.motorista" />
+            </intent-filter>
+            <intent-filter android:autoVerify="false">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="@string/password_recovery_scheme"
+                    android:host="auth"
+                    android:pathPrefix="/redefinir-senha" />
             </intent-filter>
         </activity>
+
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="@string/default_notification_channel_id" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_apois_notification" />
+
+        <service
+            android:name=".DriverLocationService"
+            android:exported="false"
+            android:foregroundServiceType="location"
+            android:stopWithTask="false" />
 
         <provider
             android:name="androidx.core.content.FileProvider"
@@ -38,24 +67,16 @@
         </provider>
     </application>
 
-    <!-- Rede -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-
-    <!-- Localização (foreground + background para corridas ativas) -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
-
-    <!-- Câmera / documentos -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
-        android:maxSdkVersion="32" />
-
-    <!-- Notificações e alertas de corrida -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />

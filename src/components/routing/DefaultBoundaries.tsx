@@ -72,7 +72,7 @@ export function DefaultNotFoundComponent() {
           Página não encontrada
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          O endereço solicitado não existe na plataforma MOVVI DRIVE.
+          O endereço solicitado não existe na plataforma APOIS.
         </p>
         <div className="mt-6">
           <Link

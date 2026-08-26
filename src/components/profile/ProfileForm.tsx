@@ -1,18 +1,19 @@
 /**
- * MOVVI — Shared editable profile form.
+ * APOIS — Shared editable profile form.
  * Used by both passenger and driver profile pages.
- * ❗ Purely UI + `users` table updates — NEVER touches ride tables, dispatch,
- * GPS, realtime or payment logic.
+ * Profile persistence goes through narrow self-service RPCs; ride, dispatch,
+ * GPS, realtime and payment tables are never written by this component.
  */
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { MovviHeader } from "@/components/MovviHeader";
-import { BottomNav, PASSENGER_NAV, DRIVER_NAV } from "@/components/BottomNav";
+import { BottomNav, PASSENGER_NAV } from "@/components/BottomNav";
+import { ApoisDriverBottomNav } from "@/components/ApoisDriverBottomNav";
 import { ProfilePhotoUploader } from "@/components/ProfilePhotoUploader";
 import { refreshProfilePhotoUrl } from "@/lib/profilePhoto";
 import {
-  Loader2, Save, Lock, MailCheck, PhoneCall, ShieldAlert, Trash2, BadgeCheck, X,
+  Loader2, Save, Lock, MailCheck, ShieldAlert, Trash2, BadgeCheck, X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { DSButton, DSCard, DSCardContent, DSCardDescription, DSCardHeader, DSCardTitle, DSInput, DSLabel } from "@/design-system";
@@ -45,7 +46,7 @@ export type ProfileFormProps = {
   headerSlot?: ReactNode;
   /** Rendered below the form card (driver info card, extra sections). */
   extraSlot?: ReactNode;
-  /** Called with the fresh users row after load, so parents can render extras. */
+  /** Called with the authenticated Auth UID after load. */
   onLoaded?: (ctx: { userId: string }) => void;
 };
 
@@ -60,7 +61,6 @@ export function ProfileForm({
 
   const [email, setEmail] = useState("");
   const [emailVerifiedAt, setEmailVerifiedAt] = useState<string | null>(null);
-  const [phoneVerifiedAt, setPhoneVerifiedAt] = useState<string | null>(null);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
@@ -70,8 +70,6 @@ export function ProfileForm({
   const [birthDate, setBirthDate] = useState("");
   const [phone, setPhone] = useState("");
   const [gender, setGender] = useState("");
-  const [emergencyName, setEmergencyName] = useState("");
-  const [emergencyPhone, setEmergencyPhone] = useState("");
   const [city, setCity] = useState("");
 
   // Original snapshot to support "Cancel changes".
@@ -80,28 +78,37 @@ export function ProfileForm({
   useEffect(() => {
     let alive = true;
     (async () => {
-      const { data } = await supabase.auth.getUser();
+      const { data, error: authError } = await supabase.auth.getUser();
       const u = data.user;
-      if (!u) { if (alive) setLoading(false); return; }
+      if (authError || !u) {
+        if (alive) setLoading(false);
+        return;
+      }
       if (!alive) return;
       setUserId(u.id);
       setEmail(u.email ?? "");
+      setEmailVerifiedAt(u.email_confirmed_at ?? null);
 
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from("users")
-        .select("avatar_url, name, phone, cpf, birth_date, gender, emergency_contact_name, emergency_contact_phone, city, email_verified_at, phone_verified_at")
+        .select("avatar_url, name, phone, cpf, birth_date, gender, city")
         .eq("auth_user_id", u.id)
         .maybeSingle();
 
       if (!alive) return;
+      if (profileError) {
+        console.error("[APOIS Perfil] falha ao carregar perfil", profileError);
+        toast.error("Não foi possível carregar seu perfil agora.");
+        setLoading(false);
+        return;
+      }
+
       const snap = {
         fullName: profile?.name ?? "",
         phone: profile?.phone ?? "",
         cpf: profile?.cpf ?? "",
         birthDate: profile?.birth_date ?? "",
         gender: profile?.gender ?? "",
-        emergencyName: profile?.emergency_contact_name ?? "",
-        emergencyPhone: profile?.emergency_contact_phone ?? "",
         city: profile?.city ?? "",
       };
       setPhotoUrl(await resolveStoredPhoto(profile?.avatar_url));
@@ -110,11 +117,7 @@ export function ProfileForm({
       setCpf(snap.cpf);
       setBirthDate(snap.birthDate);
       setGender(snap.gender);
-      setEmergencyName(snap.emergencyName);
-      setEmergencyPhone(snap.emergencyPhone);
       setCity(snap.city);
-      setEmailVerifiedAt(profile?.email_verified_at ?? null);
-      setPhoneVerifiedAt(profile?.phone_verified_at ?? null);
       setSnapshot(snap);
       setLoading(false);
       onLoaded?.({ userId: u.id });
@@ -131,8 +134,6 @@ export function ProfileForm({
     setCpf(snapshot.cpf);
     setBirthDate(snapshot.birthDate);
     setGender(snapshot.gender);
-    setEmergencyName(snapshot.emergencyName);
-    setEmergencyPhone(snapshot.emergencyPhone);
     setCity(snapshot.city);
     setNewPassword("");
     setConfirmPassword("");
@@ -144,53 +145,51 @@ export function ProfileForm({
     e.preventDefault();
     if (!userId) return;
 
-    // Validation
     if (!fullName.trim()) { toast.error("Informe seu nome completo."); return; }
     if (!phone.trim() || !isValidPhone(phone)) { toast.error("Telefone inválido."); return; }
     if (email && !isValidEmail(email)) { toast.error("E-mail inválido."); return; }
-    if (emergencyPhone && !isValidPhone(emergencyPhone)) {
-      toast.error("Telefone do contato de emergência inválido."); return;
-    }
     if (newPassword && newPassword !== confirmPassword) { toast.error("As senhas não coincidem."); return; }
     if (newPassword && newPassword.length < 6) { toast.error("Senha precisa ter pelo menos 6 caracteres."); return; }
 
     setSaving(true);
     try {
-      const { error: profErr } = await supabase
-        .from("users")
-        .update({
-          name: fullName.trim(),
-          phone: phone.trim(),
-          cpf: cpf || null,
-          birth_date: birthDate || null,
-          gender: gender || null,
-          emergency_contact_name: emergencyName || null,
-          emergency_contact_phone: emergencyPhone || null,
-          city: city || null,
-        })
-        .eq("auth_user_id", userId);
+      const { data: profileResult, error: profErr } = await (supabase as any).rpc("update_own_profile", {
+        _name: fullName.trim(),
+        _phone: phone.trim(),
+        _cpf: cpf || null,
+        _birth_date: birthDate || null,
+        _gender: gender || null,
+        _city: city || null,
+      });
       if (profErr) throw profErr;
 
-      // Keep driver display fields in sync for driver-side name display only —
-      // does NOT touch dispatch, GPS or ride tables.
-      if (role === "driver") {
-        await supabase.from("drivers").update({ name: fullName.trim(), phone: phone.trim(), city: city || undefined }).eq("user_id", userId);
-      }
-
       const authUpdate: { data?: Record<string, string>; password?: string } = {
-        data: { full_name: fullName, phone, city },
+        data: { full_name: fullName.trim(), phone: phone.trim(), city },
       };
       if (newPassword) authUpdate.password = newPassword;
       const { error: authErr } = await supabase.auth.updateUser(authUpdate);
       if (authErr) throw authErr;
 
-      setSnapshot({
-        fullName, phone, cpf, birthDate, gender, emergencyName, emergencyPhone, city,
-      });
+      const nextSnapshot = {
+        fullName: fullName.trim(),
+        phone: phone.trim(),
+        cpf,
+        birthDate,
+        gender,
+        city,
+      };
+      setSnapshot(nextSnapshot);
+      setFullName(nextSnapshot.fullName);
+      setPhone(nextSnapshot.phone);
       setNewPassword("");
       setConfirmPassword("");
       setDirty(false);
-      toast.success("Perfil atualizado com sucesso!");
+
+      if (role === "driver" && profileResult?.driver_review_required) {
+        toast.success("Perfil atualizado. As alterações do cadastro foram enviadas para análise.");
+      } else {
+        toast.success("Perfil atualizado com sucesso!");
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Falha ao salvar.");
     } finally {
@@ -200,30 +199,19 @@ export function ProfileForm({
 
   async function handlePhotoUploaded(result: { signedUrl: string; path: string }) {
     if (!userId) return;
-    // Preview imediato usa a signed URL curta; no banco persistimos apenas o path.
+    // ProfilePhotoUploader já vinculou o path pelo RPC canônico.
     setPhotoUrl(result.signedUrl);
-    try {
-      const { error } = await supabase.from("users").update({ avatar_url: result.path }).eq("auth_user_id", userId);
-      if (error) throw error;
-      if (role === "driver") {
-        await supabase.from("drivers").update({ photo_url: result.path }).eq("user_id", userId);
-      }
-      await supabase.auth.updateUser({ data: { avatar_url: result.path } });
-      toast.success("Foto atualizada!");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Falha ao salvar a foto.");
-    }
+    toast.success("Foto atualizada!");
   }
 
   async function handlePhotoRemoved() {
     if (!userId) return;
     try {
-      const { error } = await supabase.from("users").update({ avatar_url: null }).eq("auth_user_id", userId);
+      const { data, error } = await (supabase as any).rpc("clear_own_profile_photo");
       if (error) throw error;
-      if (role === "driver") {
-        await supabase.from("drivers").update({ photo_url: null }).eq("user_id", userId);
-      }
-      await supabase.auth.updateUser({ data: { avatar_url: "" } });
+      if (!data?.ok) throw new Error("Não foi possível remover a foto.");
+      const { error: authError } = await supabase.auth.updateUser({ data: { avatar_path: "", avatar_url: "" } });
+      if (authError) throw authError;
       setPhotoUrl(null);
       toast.success("Foto removida.");
     } catch (err) {
@@ -232,7 +220,7 @@ export function ProfileForm({
   }
 
   async function handleVerifyEmail() {
-    if (!email) return;
+    if (!email || emailVerifiedAt) return;
     try {
       const { error } = await supabase.auth.resend({ type: "signup", email });
       if (error) throw error;
@@ -242,31 +230,31 @@ export function ProfileForm({
     }
   }
 
-  async function handleVerifyPhone() {
-    if (!phone) { toast.error("Preencha o telefone antes de verificar."); return; }
-    toast.info("Verificação por SMS em breve. Seu número foi marcado como pendente.");
-  }
-
   async function handleDeleteAccount() {
     if (!userId) return;
     const ok = window.confirm("Tem certeza? Sua conta será marcada para exclusão e você será desconectado.");
     if (!ok) return;
     try {
-      await supabase.from("users").update({ deleted_at: new Date().toISOString() }).eq("auth_user_id", userId);
+      const { data, error: deleteError } = await (supabase as any).rpc("request_own_account_deletion");
+      if (deleteError) throw deleteError;
+      if (!data?.ok) throw new Error("Não foi possível solicitar a exclusão da conta.");
       await supabase.auth.signOut();
       toast.success("Conta marcada para exclusão.");
       navigate({ to: "/" });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Falha ao excluir.");
+      const message = err instanceof Error ? err.message : "Falha ao excluir.";
+      toast.error(
+        /active_ride_blocks_account_deletion/i.test(message)
+          ? "Finalize ou cancele a corrida em andamento antes de excluir sua conta."
+          : message,
+      );
     }
   }
 
-  const nav = role === "passenger" ? PASSENGER_NAV : DRIVER_NAV;
-
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="flex min-h-dvh flex-col bg-background">
       <MovviHeader logoutRedirect="/" />
-      <main className="flex-1 px-4 py-6 pb-28" style={{ paddingBottom: "max(7rem, env(safe-area-inset-bottom))" }}>
+      <main className="flex-1 px-4 py-6 pb-28" style={{ paddingBottom: "calc(7rem + env(safe-area-inset-bottom))" }}>
         <div className="container mx-auto max-w-2xl space-y-5 animate-fade-slide">
           {loading ? (
             <div className="flex items-center gap-2 text-muted-foreground">
@@ -278,8 +266,8 @@ export function ProfileForm({
 
               <DSCard>
                 <DSCardHeader>
-                  <DSCardTitle className="text-2xl">{title}</DSCardTitle>
-                  <DSCardDescription>{description}</DSCardDescription>
+                  <DSCardTitle className="break-words text-2xl">{title}</DSCardTitle>
+                  <DSCardDescription className="break-words">{description}</DSCardDescription>
                 </DSCardHeader>
                 <DSCardContent>
                   <form onSubmit={onSave} className="space-y-6">
@@ -305,24 +293,24 @@ export function ProfileForm({
                         placeholder="Como devemos te chamar" />
                     </div>
                     <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="space-y-1.5">
+                      <div className="min-w-0 space-y-1.5">
                         <DSLabel htmlFor="cpf">CPF</DSLabel>
                         <DSInput id="cpf" value={cpf}
                           onChange={(e) => { setCpf(e.target.value); markDirty(); }}
                           placeholder="000.000.000-00" />
                       </div>
-                      <div className="space-y-1.5">
+                      <div className="min-w-0 space-y-1.5">
                         <DSLabel htmlFor="birth_date">Data de nascimento</DSLabel>
                         <DSInput id="birth_date" type="date" value={birthDate}
                           onChange={(e) => { setBirthDate(e.target.value); markDirty(); }} />
                       </div>
                     </div>
                     <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="space-y-1.5">
+                      <div className="min-w-0 space-y-1.5">
                         <DSLabel htmlFor="gender">Gênero (opcional)</DSLabel>
                         <select id="gender" value={gender}
                           onChange={(e) => { setGender(e.target.value); markDirty(); }}
-                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm transition-colors focus-visible:outline-none focus-visible:border-primary/70 focus-visible:ring-2 focus-visible:ring-primary/25">
+                          className="flex min-h-11 w-full rounded-md border border-input bg-background px-3 text-sm transition-colors focus-visible:outline-none focus-visible:border-primary/70 focus-visible:ring-2 focus-visible:ring-primary/25">
                           <option value="">Prefiro não informar</option>
                           <option value="feminino">Feminino</option>
                           <option value="masculino">Masculino</option>
@@ -330,7 +318,7 @@ export function ProfileForm({
                           <option value="outro">Outro</option>
                         </select>
                       </div>
-                      <div className="space-y-1.5">
+                      <div className="min-w-0 space-y-1.5">
                         <DSLabel htmlFor="city">Cidade</DSLabel>
                         <DSInput id="city" value={city}
                           onChange={(e) => { setCity(e.target.value); markDirty(); }}
@@ -341,9 +329,16 @@ export function ProfileForm({
                     <SectionTitle>Contato</SectionTitle>
                     <div className="space-y-1.5">
                       <DSLabel>E-mail *</DSLabel>
-                      <div className="flex gap-2">
-                        <DSInput value={email} disabled />
-                        <DSButton type="button" variant="outline" size="sm" onClick={handleVerifyEmail}>
+                      <div className="flex min-w-0 flex-wrap gap-2">
+                        <DSInput value={email} disabled className="min-w-0 flex-1 basis-56" />
+                        <DSButton
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleVerifyEmail}
+                          disabled={Boolean(emailVerifiedAt)}
+                          className="shrink-0"
+                        >
                           {emailVerifiedAt ? (
                             <><BadgeCheck className="mr-1 h-4 w-4 text-primary" /> Verificado</>
                           ) : (
@@ -354,39 +349,23 @@ export function ProfileForm({
                     </div>
                     <div className="space-y-1.5">
                       <DSLabel htmlFor="phone">Telefone *</DSLabel>
-                      <div className="flex gap-2">
-                        <DSInput id="phone" required inputMode="tel" value={phone}
-                          onChange={(e) => { setPhone(e.target.value); markDirty(); }}
-                          placeholder="(11) 99999-9999" />
-                        <DSButton type="button" variant="outline" size="sm" onClick={handleVerifyPhone}>
-                          {phoneVerifiedAt ? (
-                            <><BadgeCheck className="mr-1 h-4 w-4 text-primary" /> Verificado</>
-                          ) : (
-                            <><PhoneCall className="mr-1 h-4 w-4" /> Verificar</>
-                          )}
-                        </DSButton>
-                      </div>
+                      <DSInput id="phone" required inputMode="tel" value={phone}
+                        onChange={(e) => { setPhone(e.target.value); markDirty(); }}
+                        placeholder="(11) 99999-9999" />
+                      <p className="break-words text-xs text-muted-foreground">
+                        A verificação por SMS só será exibida quando o fluxo OTP estiver habilitado no backend.
+                      </p>
                     </div>
 
-                    <SectionTitle>Contato de emergência</SectionTitle>
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="space-y-1.5">
-                        <DSLabel htmlFor="emerg_name">Nome</DSLabel>
-                        <DSInput id="emerg_name" value={emergencyName}
-                          onChange={(e) => { setEmergencyName(e.target.value); markDirty(); }}
-                          placeholder="Ex: Maria" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <DSLabel htmlFor="emerg_phone">Telefone</DSLabel>
-                        <DSInput id="emerg_phone" inputMode="tel" value={emergencyPhone}
-                          onChange={(e) => { setEmergencyPhone(e.target.value); markDirty(); }}
-                          placeholder="(11) 99999-9999" />
-                      </div>
-                    </div>
+                    {role === "driver" ? (
+                      <p className="break-words rounded-md border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                        Contatos de emergência são gerenciados em Segurança, onde ficam armazenados no cadastro protegido do motorista.
+                      </p>
+                    ) : null}
 
                     <SectionTitle>Segurança</SectionTitle>
                     <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="space-y-1.5">
+                      <div className="min-w-0 space-y-1.5">
                         <DSLabel htmlFor="new_password" className="flex items-center gap-1.5 text-sm">
                           <Lock className="h-3.5 w-3.5" /> Nova senha
                         </DSLabel>
@@ -395,7 +374,7 @@ export function ProfileForm({
                           onChange={(e) => { setNewPassword(e.target.value); markDirty(); }}
                           placeholder="Mín. 6 caracteres" minLength={6} />
                       </div>
-                      <div className="space-y-1.5">
+                      <div className="min-w-0 space-y-1.5">
                         <DSLabel htmlFor="confirm_password" className="text-sm">Confirmar senha</DSLabel>
                         <DSInput id="confirm_password" type="password" autoComplete="new-password"
                           value={confirmPassword}
@@ -405,10 +384,10 @@ export function ProfileForm({
                     </div>
 
                     <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end">
-                      <DSButton type="button" variant="outline" onClick={cancelChanges} disabled={!dirty || saving}>
+                      <DSButton type="button" variant="outline" onClick={cancelChanges} disabled={!dirty || saving} className="w-full sm:w-auto">
                         <X className="mr-2 h-4 w-4" /> Cancelar
                       </DSButton>
-                      <DSButton type="submit" disabled={saving || !dirty} className="sm:min-w-[180px]">
+                      <DSButton type="submit" disabled={saving || !dirty} className="w-full sm:min-w-[180px] sm:w-auto">
                         {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                         {saving ? "Salvando..." : "Salvar alterações"}
                       </DSButton>
@@ -421,15 +400,15 @@ export function ProfileForm({
 
               <DSCard className="border-destructive/40">
                 <DSCardHeader>
-                  <DSCardTitle className="flex items-center gap-2 text-base text-destructive">
-                    <ShieldAlert className="h-5 w-5" /> Zona perigosa
+                  <DSCardTitle className="flex flex-wrap items-center gap-2 text-base text-destructive">
+                    <ShieldAlert className="h-5 w-5 shrink-0" /> Zona perigosa
                   </DSCardTitle>
-                  <DSCardDescription>
+                  <DSCardDescription className="break-words">
                     Sua conta será marcada como excluída e você perderá acesso imediato.
                   </DSCardDescription>
                 </DSCardHeader>
                 <DSCardContent>
-                  <DSButton type="button" variant="destructive" onClick={handleDeleteAccount}>
+                  <DSButton type="button" variant="destructive" onClick={handleDeleteAccount} className="w-full sm:w-auto">
                     <Trash2 className="mr-2 h-4 w-4" /> Excluir minha conta
                   </DSButton>
                 </DSCardContent>
@@ -438,14 +417,14 @@ export function ProfileForm({
           )}
         </div>
       </main>
-      {nav && <BottomNav items={nav} />}
+      {role === "driver" ? <ApoisDriverBottomNav /> : <BottomNav items={PASSENGER_NAV} />}
     </div>
   );
 }
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h3 className="border-b border-border pb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+    <h3 className="break-words border-b border-border pb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
       {children}
     </h3>
   );

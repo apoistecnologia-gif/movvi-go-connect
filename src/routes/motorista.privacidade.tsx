@@ -1,73 +1,107 @@
-import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { ShieldCheck } from "lucide-react";
-import { DSLoading } from "@/design-system";
-import { supabase } from "@/integrations/supabase/client";
+import { createFileRoute } from "@tanstack/react-router";
+import { ExternalLink, ShieldCheck } from "lucide-react";
 import { SettingsPageShell, SettingsHero } from "@/components/settings";
 
 export const Route = createFileRoute("/motorista/privacidade")({
   head: () => ({
     meta: [
-      { title: "Política de Privacidade — MOVVI DRIVE" },
-      { name: "description", content: "Política de Privacidade da MOVVI DRIVE em conformidade com a LGPD." },
+      { title: "Política de Privacidade — APOIS Motorista" },
+      {
+        name: "description",
+        content: "Política de Privacidade do APOIS Motorista em conformidade com a LGPD.",
+      },
     ],
   }),
   component: PrivacidadeMotoristaPage,
 });
 
 function PrivacidadeMotoristaPage() {
-  const _router = useRouter();
-  const [checking, setChecking] = useState(true);
-
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      const { data } = await supabase
-        .from("app_settings")
-        .select("value")
-        .eq("key", "legal.privacy_url")
-        .maybeSingle();
-      const url = typeof data?.value === "string" ? data.value : (data?.value as { url?: string } | null)?.url;
-      if (alive && url && /^https?:\/\//i.test(url)) {
-        window.location.replace(url);
-        return;
-      }
-      if (alive) setChecking(false);
-    })();
-    return () => { alive = false; };
-  }, []);
-
-  if (checking) {
-    return (
-      <DSLoading label="Carregando..." className="min-h-dvh" />
-    );
-  }
-
   return (
-    <SettingsPageShell>
-      <SettingsHero
-        icon={ShieldCheck}
-        title="Política de Privacidade"
-        subtitle="Última atualização: 28 de junho de 2026"
-      />
-      <article className="space-y-4 rounded-[24px] bg-white p-6 text-[14px] leading-relaxed text-[#1B1B1B] shadow-[0_6px_20px_-14px_rgba(15,23,42,0.12)] ring-1 ring-black/5">
-        <p>
-          A MOVVI DRIVE trata dados pessoais em conformidade com a LGPD (Lei nº 13.709/2018).
-          Coletamos apenas os dados necessários para operar o serviço: cadastro, documentos,
-          localização em tempo real durante corridas ativas e histórico de viagens.
-        </p>
-        <p>
-          Dados sensíveis, como CNH e CPF, ficam armazenados de forma restrita e não são
-          compartilhados publicamente. Localização é usada apenas para viabilizar corridas e
-          recursos de segurança.
-        </p>
-        <p>
-          Você pode solicitar acesso, correção ou exclusão dos seus dados pelo canal de suporte.
-        </p>
-        <p className="text-[12.5px] text-[#707070]">
-          Esta é uma versão preliminar. O texto oficial será publicado pela MOVVI em breve.
-        </p>
-      </article>
-    </SettingsPageShell>
+    <div className="relative min-h-[100dvh] min-w-0 overflow-hidden bg-[#050607] text-white">
+      <div className="pointer-events-none fixed inset-x-0 top-0 h-80 bg-[radial-gradient(circle_at_50%_0%,rgba(246,190,28,0.12),transparent_62%)]" aria-hidden="true" />
+      <div className="relative min-w-0">
+        <SettingsPageShell variant="driver">
+          <div className="relative min-w-0 overflow-hidden rounded-[30px] border border-[#F6BE1C]/20 bg-gradient-to-br from-[#211A08] via-[#101214] to-[#08090A] p-1 shadow-[0_28px_78px_-42px_rgba(246,190,28,.8)]">
+            <div className="pointer-events-none absolute -right-12 -top-16 h-40 w-40 rounded-full bg-[#F6BE1C]/12 blur-3xl" aria-hidden="true" />
+            <div className="relative min-w-0">
+              <SettingsHero
+                icon={ShieldCheck}
+                title="Política de Privacidade"
+                subtitle="Última atualização: 11 de agosto de 2026"
+              />
+            </div>
+          </div>
+
+          <article className="min-w-0 space-y-5 rounded-[28px] border border-white/[0.06] bg-[#0D0F11]/95 p-4 text-[14px] leading-relaxed text-zinc-300 shadow-[0_26px_70px_-44px_rgba(0,0,0,.95)] backdrop-blur-sm sm:p-6">
+            <section className="min-w-0 rounded-[20px] border border-white/5 bg-[#101214] p-4">
+              <h2 className="mb-2 break-words text-base font-black text-white">Dados tratados</h2>
+              <p className="break-words text-zinc-400">
+                A APOIS trata os dados necessários para operar o serviço de mobilidade e o cadastro do motorista,
+                incluindo nome, e-mail, telefone, CPF, CNH, documentos, fotografia, dados do veículo, informações
+                de verificação cadastral, corridas, avaliações, notificações, suporte, ganhos, carteira, pagamentos e repasses.
+              </p>
+            </section>
+
+            <section className="min-w-0 rounded-[20px] border border-white/5 bg-[#101214] p-4">
+              <h2 className="mb-2 break-words text-base font-black text-white">Localização</h2>
+              <p className="break-words text-zinc-400">
+                A localização aproximada e/ou precisa é utilizada para disponibilidade operacional, recebimento de ofertas,
+                navegação, chegada ao embarque, acompanhamento de corridas e recursos de segurança. Quando o motorista está
+                online e disponível para receber corridas ou executando uma corrida, a localização pode continuar sendo
+                processada em segundo plano por meio do serviço de localização do Android. O rastreamento operacional é
+                encerrado quando o motorista fica offline, encerra a sessão ou deixa de existir finalidade operacional para a coleta.
+              </p>
+            </section>
+
+            <section className="min-w-0 rounded-[20px] border border-white/5 bg-[#101214] p-4">
+              <h2 className="mb-2 break-words text-base font-black text-white">Finalidades e fornecedores</h2>
+              <p className="break-words text-zinc-400">
+                Os dados são utilizados para autenticação, verificação cadastral, despacho de corridas, navegação, segurança,
+                prevenção a fraude, suporte, pagamentos e repasses. Para prestar esses serviços, a APOIS pode utilizar operadores
+                de infraestrutura, banco de dados, mapas, geolocalização, notificações e pagamentos, incluindo tecnologias como
+                Supabase, Google Maps/Google Places, Firebase Cloud Messaging e serviços nativos Android/Capacitor.
+              </p>
+            </section>
+
+            <section className="min-w-0 rounded-[20px] border border-white/5 bg-[#101214] p-4">
+              <h2 className="mb-2 break-words text-base font-black text-white">Retenção e exclusão</h2>
+              <p className="break-words text-zinc-400">
+                O motorista pode solicitar a exclusão da conta dentro do aplicativo. Após a solicitação válida, dados pessoais
+                são excluídos ou anonimizados quando possível. Registros de corridas, pagamentos, repasses, segurança, auditoria,
+                prevenção a fraude ou cumprimento de obrigação legal podem ser preservados pelo período juridicamente necessário,
+                com minimização ou anonimização quando aplicável.
+              </p>
+            </section>
+
+            <section className="min-w-0 rounded-[20px] border border-white/5 bg-[#101214] p-4">
+              <h2 className="mb-2 break-words text-base font-black text-white">Direitos do titular</h2>
+              <p className="break-words text-zinc-400">
+                O titular pode solicitar confirmação de tratamento, acesso, correção e, quando cabível, anonimização, bloqueio
+                ou exclusão dos seus dados pessoais, observadas as hipóteses legais de retenção.
+              </p>
+            </section>
+
+            <div className="min-w-0 space-y-2 border-t border-white/8 pt-4">
+              <a
+                href="https://apoisbrasil.com.br/privacidade"
+                target="_blank"
+                rel="noreferrer"
+                className="flex min-h-12 min-w-0 items-center justify-between gap-3 rounded-[18px] border border-[#F6BE1C]/18 bg-[#F6BE1C]/8 px-4 py-2 font-bold text-[#F6BE1C] transition active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F6BE1C]"
+              >
+                <span className="min-w-0 flex-1 break-words">Ver Política de Privacidade pública</span><ExternalLink className="h-4 w-4 shrink-0" aria-hidden="true" />
+              </a>
+              <a
+                href="https://apoisbrasil.com.br/excluir-conta"
+                target="_blank"
+                rel="noreferrer"
+                className="flex min-h-12 min-w-0 items-center justify-between gap-3 rounded-[18px] border border-white/8 bg-[#111315] px-4 py-2 font-bold text-zinc-200 transition active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F6BE1C]"
+              >
+                <span className="min-w-0 flex-1 break-words">Solicitar exclusão fora do aplicativo</span><ExternalLink className="h-4 w-4 shrink-0 text-[#F6BE1C]" aria-hidden="true" />
+              </a>
+            </div>
+          </article>
+        </SettingsPageShell>
+      </div>
+    </div>
   );
 }

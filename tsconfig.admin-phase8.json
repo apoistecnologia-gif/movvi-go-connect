@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "tests/admin/admin-route-types.d.ts",
+    "src/routes/admin.*.tsx",
+    "src/components/admin/**/*.tsx",
+    "src/components/AdminGuard.tsx",
+    "src/lib/admin*.ts",
+    "src/lib/admin*.tsx",
+    "src/apois-admin-theme.css"
+  ],
+  "exclude": [
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx"
+  ]
+}

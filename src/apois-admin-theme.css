@@ -1,0 +1,242 @@
+/* APOIS CORRIDAS — Admin theme
+ * Scoped intentionally: the Admin is rebranded without changing Passenger or
+ * Driver visual contracts that are validated in separate phases.
+ */
+
+.apois-admin-theme {
+  --primary: oklch(0.82 0.17 82);
+  --primary-foreground: oklch(0.12 0.018 260);
+  --primary-glow: oklch(0.88 0.15 88);
+  --secondary: oklch(0.69 0.14 78);
+  --secondary-foreground: oklch(0.12 0.018 260);
+  --accent: oklch(0.82 0.17 82);
+  --accent-foreground: oklch(0.12 0.018 260);
+  --ring: oklch(0.82 0.17 82);
+  --sidebar-primary: oklch(0.82 0.17 82);
+  --sidebar-primary-foreground: oklch(0.12 0.018 260);
+  --sidebar-ring: oklch(0.82 0.17 82);
+  --color-online: oklch(0.78 0.20 145);
+  --color-map-accent: oklch(0.82 0.17 82);
+}
+
+.apois-admin-theme ::selection {
+  background: color-mix(in oklab, var(--primary) 35%, transparent);
+}
+
+.apois-admin-theme button,
+.apois-admin-theme a {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* O painel também é usado em celulares durante a operação. Componentes antigos
+ * usam alturas de 36/40 px; elevamos a área real de toque sem alterar ações. */
+.apois-admin-theme button:not([role="switch"]):not([role="checkbox"]):not([role="radio"]),
+.apois-admin-theme a[role="button"],
+.apois-admin-theme button[role="combobox"] {
+  min-height: 44px;
+}
+
+.apois-admin-theme button[aria-label]:not([role="switch"]):not([role="checkbox"]):not([role="radio"]),
+.apois-admin-theme a[aria-label] {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* Switches/checkboxes/radios mantêm o trilho compacto, mas sua hit-area real
+ * cresce para aproximadamente 44 px via pseudo-elemento do próprio controle. */
+.apois-admin-theme button[role="switch"],
+.apois-admin-theme button[role="checkbox"],
+.apois-admin-theme button[role="radio"] {
+  position: relative;
+}
+
+.apois-admin-theme button[role="switch"]::after,
+.apois-admin-theme button[role="checkbox"]::after,
+.apois-admin-theme button[role="radio"]::after {
+  content: "";
+  position: absolute;
+  inset: -12px;
+}
+
+.apois-admin-theme input:not([type="checkbox"]):not([type="radio"]),
+.apois-admin-theme select,
+.apois-admin-theme textarea {
+  min-height: 44px;
+}
+
+/* Itens de selects e abas Radix precisam de área de toque independente. */
+.apois-admin-theme [role="option"],
+.apois-admin-theme [role="menuitem"] {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+
+.apois-admin-theme [role="tablist"] {
+  height: auto;
+  min-height: 44px;
+  flex-wrap: wrap;
+}
+
+.apois-admin-theme [role="tab"] {
+  min-height: 44px;
+}
+
+/* Viewports antigos baseados em vh podem ficar atrás das barras do navegador. */
+.apois-admin-theme .min-h-screen {
+  min-height: 100dvh;
+}
+
+.apois-admin-theme .h-screen {
+  height: 100dvh;
+}
+
+/* Links de documento/recursos externos não podem ser alvos do tamanho da fonte. */
+.apois-admin-theme .admin-page-main a[target="_blank"] {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+}
+
+/* Portal roots recebem a classe do tema no próprio elemento, portanto os dois
+ * formatos de seletor precisam estar cobertos. AlertDialog usa alertdialog. */
+.apois-admin-theme [role="dialog"] > button.absolute.right-4.top-4,
+.apois-admin-theme[role="dialog"] > button.absolute.right-4.top-4,
+.apois-admin-theme [role="alertdialog"] > button.absolute.right-4.top-4,
+.apois-admin-theme[role="alertdialog"] > button.absolute.right-4.top-4 {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.apois-admin-theme [role="dialog"],
+.apois-admin-theme[role="dialog"],
+.apois-admin-theme [role="alertdialog"],
+.apois-admin-theme[role="alertdialog"] {
+  max-width: calc(100vw - 24px);
+  max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 24px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Conteúdo vindo do backend (IDs, endereços, motivos e provedores) não deve
+ * alargar cards nem produzir scroll horizontal acidental. */
+.apois-admin-theme .admin-page-main p,
+.apois-admin-theme .admin-page-main span,
+.apois-admin-theme .admin-page-main code,
+.apois-admin-theme .admin-page-main strong,
+.apois-admin-theme .admin-page-main a,
+.apois-admin-theme [role="dialog"] p,
+.apois-admin-theme [role="alertdialog"] p {
+  overflow-wrap: anywhere;
+}
+
+.apois-admin-theme [class~="text-[9px]"] {
+  font-size: 10px;
+}
+
+.apois-admin-theme button:focus-visible,
+.apois-admin-theme a:focus-visible,
+.apois-admin-theme input:focus-visible,
+.apois-admin-theme select:focus-visible,
+.apois-admin-theme textarea:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--primary) 90%, white 10%);
+  outline-offset: 2px;
+}
+
+@media (max-width: 639px) {
+  .apois-admin-theme .admin-page-header {
+    padding-top: calc(0.75rem + env(safe-area-inset-top));
+    flex-wrap: wrap;
+  }
+
+  .apois-admin-theme .admin-page-heading {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .apois-admin-theme .admin-page-header .truncate {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .apois-admin-theme .admin-page-actions {
+    max-width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .apois-admin-theme .admin-page-actions > * {
+    max-width: 100%;
+  }
+
+  .apois-admin-theme .admin-page-main {
+    padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
+  }
+
+  /* Títulos e contatos administrativos precisam continuar identificáveis em
+   * telas estreitas; duas linhas são preferíveis a ellipsis sem contexto. */
+  .apois-admin-theme .admin-page-main .truncate {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+  }
+
+  /* Linhas status+valor/data/provider deixam de esmagar um dos lados. */
+  .apois-admin-theme .admin-page-main .flex.items-center.justify-between,
+  .apois-admin-theme .admin-page-main .flex.items-start.justify-between,
+  .apois-admin-theme .admin-page-main .flex.items-baseline.justify-between {
+    flex-wrap: wrap;
+  }
+
+  /* Datas com w-auto podiam ultrapassar a largura disponível no filtro. */
+  .apois-admin-theme .admin-page-main input.w-auto {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* Mapas operacionais não devem consumir quase toda a altura em landscape ou
+   * telas Android compactas; permanecem grandes em desktop. */
+  .apois-admin-theme .admin-page-main [class~="h-[420px]"] {
+    height: min(420px, 52dvh);
+    min-height: 260px;
+  }
+
+  .apois-admin-theme .admin-page-main [class~="h-[320px]"] {
+    height: min(320px, 48dvh);
+    min-height: 240px;
+  }
+}
+
+@media (max-width: 359px) {
+  .apois-admin-theme .admin-page-actions {
+    flex: 1 1 100%;
+    margin-left: 0;
+  }
+
+  .apois-admin-theme .admin-page-actions > button,
+  .apois-admin-theme .admin-page-actions > a {
+    flex: 1 1 100%;
+  }
+
+  /* Métricas e detalhes em 2/3/4 colunas ficam ilegíveis em 320 px. */
+  .apois-admin-theme .admin-page-main .grid.grid-cols-2,
+  .apois-admin-theme .admin-page-main .grid.grid-cols-3,
+  .apois-admin-theme .admin-page-main .grid.grid-cols-4 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* Formulários de confirmação devem permitir que ações ocupem a linha inteira. */
+  .apois-admin-theme .admin-page-main .flex.gap-2 > button,
+  .apois-admin-theme .admin-page-main .flex.gap-2 > a {
+    flex: 1 1 100%;
+  }
+
+  .apois-admin-theme .admin-page-main .flex.gap-2 {
+    flex-wrap: wrap;
+  }
+}

@@ -1,1454 +1,537 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Avatar } from "@/components/Avatar";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   CheckCircle2,
-  Loader2,
-  ShieldAlert,
-  XCircle,
   Eye,
   FileText,
-  RefreshCw,
-  CreditCard,
-  Zap,
-  Search,
-  Star,
-  MapPin,
-  Car,
-  Trash2,
-  StickyNote,
   PauseCircle,
   PlayCircle,
+  RefreshCw,
+  Search,
+  ShieldAlert,
+  XCircle,
 } from "lucide-react";
-import { logAdminAction } from "@/lib/adminAudit";
-import { supabase } from "@/integrations/supabase/client";
-import { useServerFn } from "@tanstack/react-start";
-import { getDriverDocumentUrls } from "@/lib/driverDocs.functions";
-import {
-  addDriverAdminNote,
-  deleteDriverAdminNote,
-  setDriverSuspension,
-  updateDriverApprovalStatus,
-} from "@/lib/adminDrivers.functions";
-// Aprovação chama a Edge Function Mercado Pago via fetch autenticado.
 import { AdminLayout } from "@/components/admin/AdminLayout";
-import { Caption, DSBadge, DSButton as Button, DSCard, DSCardContent, DSInput, DSLabel, DSTextarea, EmptyState, Loading, StatusPill } from "@/design-system";
+import { supabase } from "@/integrations/supabase/client";
+import { getDriverDocumentUrls } from "@/lib/driverDocs.functions";
+import { setAdminDriverApproval, setAdminDriverSuspension } from "@/lib/adminControlPlane";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+  DSBadge,
+  DSButton,
+  DSCard,
+  DSCardContent,
+  DSInput,
+  DSTextarea,
+  EmptyState,
+  Loading,
+} from "@/design-system";
 import { toast } from "sonner";
-import type { Database } from "@/integrations/supabase/types";
+
+type DriverRow = {
+  id: string;
+  user_id: string;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  category: string | null;
+  city: string | null;
+  state: string | null;
+  approval_status: string;
+  documents_status: string | null;
+  subscription_status: string;
+  is_online: boolean;
+  rating: number | null;
+  total_ratings: number;
+  vehicle_model: string | null;
+  vehicle_plate: string | null;
+  vehicle_color: string | null;
+  selfie_url: string | null;
+  cnh_url: string | null;
+  vehicle_document_url: string | null;
+  motivo_reprovacao: string | null;
+  suspended_at: string | null;
+  updated_at: string;
+};
+
+type Docs = {
+  selfie_url: string | null;
+  cnh_url: string | null;
+  vehicle_document_url: string | null;
+};
+
+type ApprovalStatus = "em_analise" | "aprovado" | "reprovado" | "bloqueado";
+type Filter = "todos" | ApprovalStatus | "online" | "suspenso";
 
 export const Route = createFileRoute("/admin/motoristas")({
-  head: () => ({ meta: [{ title: "Motoristas — Admin MOVVI" }] }),
-  component: AdminMotoristas,
+  head: () => ({ meta: [{ title: "Motoristas — Admin APOIS" }] }),
+  component: AdminMotoristasPage,
 });
 
-type Driver = Database["public"]["Tables"]["drivers"]["Row"] & {
-  suspended_at?: string | null;
-  cnh_back_url?: string | null;
-  vehicle_photo_url?: string | null;
-  insurance_url?: string | null;
-  documents_status?: string | null;
-  asaas_customer_id?: string | null;
-};
-type Status = Driver["approval_status"];
-type SubStatus = "active" | "inactive" | "pending" | "overdue" | "suspended";
-type FilterKey =
-  | "all"
-  | "em_analise"
-  | "aprovado"
-  | "reprovado"
-  | "bloqueado"
-  | "online"
-  | "offline"
-  | "sub_active"
-  | "sub_overdue"
-  | "docs_pending";
-
-type AdminNote = {
-  id: string;
-  driver_id: string;
-  admin_id: string;
-  note: string;
-  created_at: string;
-};
-
-type ApproveMercadoPagoResult = {
-  ok: boolean;
-  alreadyExists: boolean;
-  preapprovalId: string;
-  initPoint: string | null;
-  dueDate: string | null;
-  error?: string;
-};
-
-const ACTIVE_RIDE_STATUSES = [
-  "procurar_motorista",
-  "motorista_a_caminho",
-  "motorista_chegou",
-  "em_viagem",
-] as const;
-
-const SUB_STATUSES: { value: SubStatus; label: string; tone: string }[] = [
-  { value: "active", label: "Ativa", tone: "bg-primary/15 text-primary border-primary/30" },
-  { value: "pending", label: "Pendente", tone: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30" },
-  { value: "overdue", label: "Em atraso", tone: "bg-orange-500/15 text-orange-400 border-orange-500/30" },
-  { value: "inactive", label: "Inativa", tone: "bg-muted text-muted-foreground border-border" },
-  { value: "suspended", label: "Suspensa", tone: "bg-destructive/15 text-destructive border-destructive/30" },
-];
-
-function subMeta(s: string | null | undefined) {
-  return (
-    SUB_STATUSES.find((x) => x.value === s) ?? {
-      value: "inactive" as SubStatus,
-      label: "—",
-      tone: "bg-muted text-muted-foreground border-border",
-    }
-  );
+function cleanText(value: unknown, fallback = "") {
+  const text = String(value ?? "").trim().replace(/\s+/g, " ");
+  return text || fallback;
 }
 
-const STATUS_META: Record<Status, { label: string; tone: string }> = {
-  em_analise: { label: "Em análise", tone: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30" },
-  aprovado: { label: "Aprovado", tone: "bg-primary/15 text-primary border-primary/30" },
-  reprovado: { label: "Reprovado", tone: "bg-destructive/15 text-destructive border-destructive/30" },
-  bloqueado: { label: "Bloqueado", tone: "bg-destructive/15 text-destructive border-destructive/30" },
-};
-
-type PillStatus = "searching" | "finished" | "cancelled" | "online" | "offline";
-const STATUS_PILL: Record<Status, { status: PillStatus; label: string }> = {
-  em_analise: { status: "searching", label: "Em análise" },
-  aprovado: { status: "finished", label: "Aprovado" },
-  reprovado: { status: "cancelled", label: "Reprovado" },
-  bloqueado: { status: "cancelled", label: "Bloqueado" },
-};
-const SUB_PILL: Record<SubStatus, { status: PillStatus; label: string }> = {
-  active: { status: "online", label: "Assinatura ativa" },
-  pending: { status: "searching", label: "Pendente" },
-  overdue: { status: "cancelled", label: "Em atraso" },
-  inactive: { status: "offline", label: "Inativa" },
-  suspended: { status: "cancelled", label: "Suspensa" },
-};
-
-// Lightweight inline pill for non-semantic tags (docs pending, in-ride, category, suspended)
-function TagPill({ tone, children }: { tone: string; children: React.ReactNode }) {
-  return <DSBadge className={tone}>{children}</DSBadge>;
+function normalizeApproval(value: unknown): ApprovalStatus {
+  const normalized = cleanText(value).toLowerCase();
+  if (["aprovado", "approved", "ativo", "active"].includes(normalized)) return "aprovado";
+  if (["reprovado", "rejected"].includes(normalized)) return "reprovado";
+  if (["bloqueado", "blocked"].includes(normalized)) return "bloqueado";
+  return "em_analise";
 }
 
-const FILTERS: { key: FilterKey; label: string }[] = [
-  { key: "all", label: "Todos" },
-  { key: "em_analise", label: "Em análise" },
-  { key: "aprovado", label: "Aprovados" },
-  { key: "reprovado", label: "Reprovados" },
-  { key: "bloqueado", label: "Bloqueados" },
-  { key: "online", label: "Online" },
-  { key: "offline", label: "Offline" },
-  { key: "sub_active", label: "Assinatura ativa" },
-  { key: "sub_overdue", label: "Assinatura vencida" },
-  { key: "docs_pending", label: "Docs pendentes" },
-];
-
-function fmtDate(d: string | null | undefined) {
-  if (!d) return "—";
-  return new Date(d).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+function approvalLabel(status: ApprovalStatus) {
+  if (status === "aprovado") return "Aprovado";
+  if (status === "reprovado") return "Reprovado";
+  if (status === "bloqueado") return "Bloqueado";
+  return "Em análise";
 }
 
-function fmtRelative(d: string | null | undefined) {
-  if (!d) return "—";
-  const diff = Date.now() - new Date(d).getTime();
-  const s = Math.floor(diff / 1000);
-  if (s < 60) return `${s}s atrás`;
-  const m = Math.floor(s / 60);
-  if (m < 60) return `${m}min atrás`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h atrás`;
-  const d2 = Math.floor(h / 24);
-  return `${d2}d atrás`;
+function statusVariant(status: ApprovalStatus): "success" | "warning" | "danger" | "muted" {
+  if (status === "aprovado") return "success";
+  if (status === "em_analise") return "warning";
+  if (status === "reprovado" || status === "bloqueado") return "danger";
+  return "muted";
 }
 
-function docsPending(d: Driver) {
-  if (d.documents_status && d.documents_status !== "approved" && d.documents_status !== "aprovado") return true;
-  return !d.selfie_url || !d.cnh_url || !d.vehicle_document_url;
+function safeRating(value: unknown) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? Math.min(5, Math.max(0, parsed)) : null;
 }
 
-function mapAdminError(msg: string): string {
-  if (msg === "admin_session_missing" || msg === "unauthorized" || /unauthorized|authorization header/i.test(msg)) {
-    return "Sessão do admin expirada. Entre novamente no painel.";
+function safeCount(value: unknown) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? Math.floor(parsed) : 0;
+}
+
+function safeDate(value: unknown) {
+  if (!value) return null;
+  const date = new Date(String(value));
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
+function safeDocumentUrl(value: unknown) {
+  const raw = cleanText(value);
+  if (!raw) return null;
+  try {
+    const url = new URL(raw);
+    return url.protocol === "https:" ? url.toString() : null;
+  } catch {
+    return null;
   }
-  if (msg === "forbidden") return "Ação restrita a administradores.";
-  if (/^invalid_|^Required$|uuid/i.test(msg)) return "Dados inválidos.";
-  return msg;
 }
 
-async function approveDriverWithMercadoPago(driverId: string): Promise<ApproveMercadoPagoResult> {
-  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-  const accessToken = sessionData.session?.access_token;
-  if (sessionError || !accessToken) throw new Error("admin_session_missing");
-
-  const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/approve-driver-and-create-mercadopago-subscription`;
-  const response = await fetch(functionUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${accessToken}`,
-      apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-    },
-    body: JSON.stringify({ driverId }),
-  });
-
-  const payload = (await response.json().catch(() => null)) as (ApproveMercadoPagoResult & {
-    message?: string;
-    detail?: string;
-    missing?: string[];
-  }) | null;
-
-  if (!response.ok || !payload?.ok) {
-    console.error("Falha ao aprovar motorista via Mercado Pago", {
-      status: response.status,
-      payload,
-    });
-    if (payload?.error === "missing_required_fields" && Array.isArray(payload.missing)) {
-      throw new Error(`missing_required_fields:${payload.missing.join(", ")}`);
-    }
-    if (payload?.error === "mercadopago_preapproval_failed" && payload.detail) {
-      throw new Error(`mercadopago_preapproval_failed:${payload.detail.slice(0, 200)}`);
-    }
-    if (payload?.error === "mercadopago_environment_mismatch") {
-      throw new Error("mercadopago_environment_mismatch");
-    }
-    throw new Error(payload?.error || payload?.message || payload?.detail || `function_http_${response.status}`);
-  }
-
-  return payload;
-}
-
-async function regenerateDriverCharge(
-  driverId: string,
-): Promise<{ ok: true; preferenceId: string; initPoint: string | null; dueDate: string }> {
-  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-  const accessToken = sessionData.session?.access_token;
-  if (sessionError || !accessToken) throw new Error("admin_session_missing");
-
-  const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/regenerate-driver-mercadopago-charge`;
-  const response = await fetch(functionUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${accessToken}`,
-      apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-    },
-    body: JSON.stringify({ driverId }),
-  });
-  const payload = (await response.json().catch(() => null)) as
-    | { ok?: boolean; preferenceId?: string; initPoint?: string | null; dueDate?: string; error?: string; detail?: string; missing?: string[] }
-    | null;
-  if (!response.ok || !payload?.ok) {
-    if (payload?.error === "driver_not_approved") throw new Error("driver_not_approved");
-    if (payload?.error === "missing_required_fields" && Array.isArray(payload.missing)) {
-      throw new Error(`missing_required_fields:${payload.missing.join(", ")}`);
-    }
-    if (payload?.error === "mercadopago_preference_failed" && payload.detail) {
-      throw new Error(`mercadopago_preference_failed:${payload.detail.slice(0, 200)}`);
-    }
-    throw new Error(payload?.error || `function_http_${response.status}`);
-  }
-  return payload as { ok: true; preferenceId: string; initPoint: string | null; dueDate: string };
-}
-
-function AdminMotoristas() {
-  const updateApprovalFn = useServerFn(updateDriverApprovalStatus);
-  const setSuspensionFn = useServerFn(setDriverSuspension);
-  
-  const [drivers, setDrivers] = useState<Driver[] | null>(null);
-  const [activeRides, setActiveRides] = useState<Record<string, string>>({});
+function AdminMotoristasPage() {
+  const getDocs = useServerFn(getDriverDocumentUrls);
+  const [rows, setRows] = useState<DriverRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<FilterKey>("all");
-  const [search, setSearch] = useState("");
-  const [detail, setDetail] = useState<Driver | null>(null);
-  const [rejectFor, setRejectFor] = useState<Driver | null>(null);
-  const [blockFor, setBlockFor] = useState<Driver | null>(null);
-  const [unblockFor, setUnblockFor] = useState<Driver | null>(null);
-  const [suspendFor, setSuspendFor] = useState<Driver | null>(null);
-  const [subFor, setSubFor] = useState<Driver | null>(null);
-  const [rejectReason, setRejectReason] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState<Filter>("todos");
+  const [selected, setSelected] = useState<DriverRow | null>(null);
+  const [docs, setDocs] = useState<Docs | null>(null);
+  const [docsLoading, setDocsLoading] = useState(false);
+  const [docsError, setDocsError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const requestRef = useRef(0);
+  const docsRequestRef = useRef(0);
 
   async function load() {
+    const requestId = ++requestRef.current;
     setLoading(true);
-    const [{ data, error }, rides] = await Promise.all([
-      supabase.from("drivers").select("*").order("created_at", { ascending: false }),
-      supabase
-        .from("rides")
-        .select("driver_id,status")
-        .not("driver_id", "is", null)
-        .in("status", [...ACTIVE_RIDE_STATUSES] as never[]),
-    ]);
-    if (error) {
-      toast.error("Erro ao carregar motoristas: " + error.message);
-      setDrivers([]);
-    } else {
-      setDrivers((data ?? []) as Driver[]);
+    setLoadError(null);
+    try {
+      const { data, error } = await supabase
+        .from("drivers")
+        .select(
+          "id,user_id,name,email,phone,category,city,state,approval_status,documents_status,subscription_status,is_online,rating,total_ratings,vehicle_model,vehicle_plate,vehicle_color,selfie_url,cnh_url,vehicle_document_url,motivo_reprovacao,suspended_at,updated_at",
+        )
+        .order("updated_at", { ascending: false });
+      if (requestId !== requestRef.current) return;
+      if (error) throw error;
+
+      const normalizedRows = ((data ?? []) as DriverRow[])
+        .filter((row) => Boolean(cleanText(row.id)))
+        .map((row) => ({
+          ...row,
+          id: cleanText(row.id),
+          user_id: cleanText(row.user_id),
+          name: cleanText(row.name) || null,
+          email: cleanText(row.email) || null,
+          phone: cleanText(row.phone) || null,
+          category: cleanText(row.category) || null,
+          city: cleanText(row.city) || null,
+          state: cleanText(row.state) || null,
+          approval_status: normalizeApproval(row.approval_status),
+          documents_status: cleanText(row.documents_status) || null,
+          subscription_status: cleanText(row.subscription_status, "não informado").toLowerCase(),
+          is_online: row.is_online === true,
+          rating: safeRating(row.rating),
+          total_ratings: safeCount(row.total_ratings),
+          vehicle_model: cleanText(row.vehicle_model) || null,
+          vehicle_plate: cleanText(row.vehicle_plate).toUpperCase().replace(/\s+/g, "") || null,
+          vehicle_color: cleanText(row.vehicle_color) || null,
+          selfie_url: cleanText(row.selfie_url) || null,
+          cnh_url: cleanText(row.cnh_url) || null,
+          vehicle_document_url: cleanText(row.vehicle_document_url) || null,
+          motivo_reprovacao: cleanText(row.motivo_reprovacao) || null,
+          suspended_at: safeDate(row.suspended_at),
+          updated_at: safeDate(row.updated_at) ?? "",
+        }));
+      setRows(normalizedRows);
+      setSelected((current) =>
+        current ? normalizedRows.find((row) => row.id === current.id) ?? null : null,
+      );
+    } catch (error) {
+      if (requestId !== requestRef.current) return;
+      setRows([]);
+      setSelected(null);
+      setDocs(null);
+      setLoadError("Não foi possível carregar os motoristas agora. Tente novamente.");
+      if (import.meta.env.DEV) console.warn("[APOIS Admin] falha ao carregar motoristas", error);
+    } finally {
+      if (requestId === requestRef.current) setLoading(false);
     }
-    const map: Record<string, string> = {};
-    for (const r of (rides.data ?? []) as { driver_id: string; status: string }[]) {
-      if (r.driver_id) map[r.driver_id] = r.status;
-    }
-    setActiveRides(map);
-    setLoading(false);
   }
 
   useEffect(() => {
-    load();
-    const ch = supabase
-      .channel("admin-drivers")
-      .on("postgres_changes", { event: "*", schema: "public", table: "drivers" }, () => load())
-      .subscribe();
-    return () => {
-      supabase.removeChannel(ch);
+    void load();
+    let refreshTimer: number | null = null;
+    const scheduleRefresh = () => {
+      if (refreshTimer != null) window.clearTimeout(refreshTimer);
+      refreshTimer = window.setTimeout(() => void load(), 250);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const channel = supabase
+      .channel("admin-canonical-drivers")
+      .on("postgres_changes", { event: "*", schema: "public", table: "drivers" }, scheduleRefresh)
+      .subscribe();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") scheduleRefresh();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      requestRef.current += 1;
+      docsRequestRef.current += 1;
+      if (refreshTimer != null) window.clearTimeout(refreshTimer);
+      document.removeEventListener("visibilitychange", onVisible);
+      void supabase.removeChannel(channel);
+    };
   }, []);
 
   const filtered = useMemo(() => {
-    const list = drivers ?? [];
-    const q = search.trim().toLowerCase();
-    return list.filter((d) => {
-      if (filter === "em_analise" || filter === "aprovado" || filter === "reprovado" || filter === "bloqueado") {
-        if (d.approval_status !== filter) return false;
-      } else if (filter === "online") {
-        if (!d.is_online) return false;
-      } else if (filter === "offline") {
-        if (d.is_online) return false;
-      } else if (filter === "sub_active") {
-        if (d.subscription_status !== "active") return false;
-      } else if (filter === "sub_overdue") {
-        if (d.subscription_status !== "overdue") return false;
-      } else if (filter === "docs_pending") {
-        if (!docsPending(d)) return false;
-      }
-      if (!q) return true;
-      const hay = [d.name, d.phone, d.email, d.vehicle_plate, d.city]
+    const needle = query.trim().toLocaleLowerCase("pt-BR");
+    return rows.filter((row) => {
+      const approval = normalizeApproval(row.approval_status);
+      if (filter === "online" && !row.is_online) return false;
+      if (filter === "suspenso" && !row.suspended_at) return false;
+      if (["em_analise", "aprovado", "reprovado", "bloqueado"].includes(filter) && approval !== filter) return false;
+      if (!needle) return true;
+      return [row.name, row.email, row.phone, row.city, row.state, row.category, row.vehicle_plate]
         .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-      return hay.includes(q);
+        .some((value) => String(value).toLocaleLowerCase("pt-BR").includes(needle));
     });
-  }, [drivers, filter, search]);
+  }, [filter, query, rows]);
 
-  const counts = useMemo(() => {
-    const list = drivers ?? [];
-    return {
-      all: list.length,
-      em_analise: list.filter((d) => d.approval_status === "em_analise").length,
-      aprovado: list.filter((d) => d.approval_status === "aprovado").length,
-      reprovado: list.filter((d) => d.approval_status === "reprovado").length,
-      bloqueado: list.filter((d) => d.approval_status === "bloqueado").length,
-      online: list.filter((d) => d.is_online).length,
-      offline: list.filter((d) => !d.is_online).length,
-      sub_active: list.filter((d) => d.subscription_status === "active").length,
-      sub_overdue: list.filter((d) => d.subscription_status === "overdue").length,
-      docs_pending: list.filter(docsPending).length,
-    } as Record<FilterKey, number>;
-  }, [drivers]);
-
-  async function updateStatus(d: Driver, status: Status, reason?: string | null) {
-    setBusyId(d.id);
-    const toastId = status === "aprovado" ? toast.loading("Aprovando motorista e gerando link...") : undefined;
+  async function approval(driver: DriverRow, status: ApprovalStatus) {
+    if (busyId || !cleanText(driver.id)) return;
+    const reason = status === "reprovado" ? cleanText(rejectReason).slice(0, 500) : null;
+    if (status === "reprovado" && (!reason || reason.length < 3)) {
+      setActionError("Informe um motivo de reprovação com pelo menos 3 caracteres.");
+      return;
+    }
+    if (status === "bloqueado") {
+      const confirmed = window.confirm(`Confirmar bloqueio de ${driver.name || "este motorista"}?`);
+      if (!confirmed) return;
+    }
+    setBusyId(driver.id);
+    setActionError(null);
     try {
-      if (status === "aprovado") {
-        // Aprovação → cria assinatura (preapproval) no Mercado Pago via Edge Function.
-        const result = await approveDriverWithMercadoPago(d.id);
-        await logAdminAction({
-          action: "driver.aprovado",
-          entity: "drivers",
-          entity_id: d.id,
-          before: { approval_status: d.approval_status },
-          after: {
-            approval_status: "aprovado",
-            mercadopago_preapproval_id: result.preapprovalId,
-            mercadopago_init_point: result.initPoint,
-          },
-        });
-        if (result.initPoint && typeof window !== "undefined") {
-          try {
-            await navigator.clipboard.writeText(result.initPoint);
-          } catch {
-            /* ignore */
-          }
-        }
-        toast.success(
-          result.alreadyExists
-            ? "Motorista aprovado (assinatura já existia). Link copiado."
-            : "Motorista aprovado — link de pagamento gerado (copiado).",
-          {
-            id: toastId,
-            description: result.initPoint ?? undefined,
-            action: result.initPoint
-              ? {
-                  label: "Abrir",
-                  onClick: () => window.open(result.initPoint!, "_blank"),
-                }
-              : undefined,
-            duration: 10000,
-          },
-        );
-        setRejectFor(null);
-        setBlockFor(null);
-        setUnblockFor(null);
-        setRejectReason("");
-        if (detail?.id === d.id) {
-          setDetail({
-            ...d,
-            approval_status: "aprovado",
-            approved_at: new Date().toISOString(),
-          } as Driver);
-        }
-        load();
-        return;
-      }
-
-      const { patch } = await updateApprovalFn({
-        data: { id: d.id, status, reason: reason ?? null },
-      });
-      await logAdminAction({
-        action: `driver.${status}`,
-        entity: "drivers",
-        entity_id: d.id,
-        before: { approval_status: d.approval_status },
-        after: patch,
-      });
-      if (toastId) toast.dismiss(toastId);
-      if (status === "reprovado") toast.success("Motorista reprovado");
-      if (status === "bloqueado") toast.success("Motorista bloqueado");
-      if (status === "em_analise") toast.success("Cadastro reenviado para análise");
-      setRejectFor(null);
-      setBlockFor(null);
-      setUnblockFor(null);
+      await setAdminDriverApproval(driver.id, status, reason);
+      toast.success(
+        status === "aprovado"
+          ? "Motorista aprovado."
+          : status === "reprovado"
+            ? "Motorista reprovado."
+            : status === "bloqueado"
+              ? "Motorista bloqueado."
+              : "Motorista enviado para análise.",
+      );
       setRejectReason("");
-      if (detail?.id === d.id)
-        setDetail({ ...d, ...(patch as Database["public"]["Tables"]["drivers"]["Update"]) } as Driver);
-      load();
-    } catch (e) {
-      const raw = e instanceof Error ? e.message : "falha";
-      let msg = mapAdminError(raw);
-      if (raw.startsWith("missing_required_fields:")) {
-        msg = `Cadastro incompleto: faltam ${raw.split(":")[1]}`;
-      } else if (raw.startsWith("mercadopago_preapproval_failed:")) {
-        msg = "Erro no Mercado Pago ao criar assinatura: " + raw.split(":").slice(1).join(":");
-      } else if (raw === "mercadopago_environment_mismatch") {
-        msg = "Credencial do Mercado Pago em modo teste não aceita e-mail real. Atualize o token para produção ou use contas de teste do Mercado Pago.";
-      } else if (raw === "forbidden") {
-        msg = "Você não tem permissão para aprovar motoristas";
-      }
-      toast.error("Erro ao atualizar status: " + msg, { id: toastId });
+      await load();
+    } catch (error) {
+      setActionError("Não foi possível alterar a aprovação. Tente novamente.");
+      if (import.meta.env.DEV) console.warn("[APOIS Admin] falha ao alterar aprovação", error);
     } finally {
       setBusyId(null);
     }
   }
 
-  async function toggleSuspend(d: Driver, suspend: boolean) {
-    setBusyId(d.id);
+  async function suspension(driver: DriverRow, suspend: boolean) {
+    if (busyId || !cleanText(driver.id)) return;
+    if (suspend) {
+      const confirmed = window.confirm(`Confirmar suspensão operacional de ${driver.name || "este motorista"}?`);
+      if (!confirmed) return;
+    }
+    setBusyId(driver.id);
+    setActionError(null);
     try {
-      await setSuspensionFn({ data: { id: d.id, suspend } });
-      await logAdminAction({
-        action: suspend ? "driver.suspend" : "driver.unsuspend",
-        entity: "drivers",
-        entity_id: d.id,
-        before: { suspended_at: d.suspended_at ?? null },
-        after: { suspended_at: suspend ? "now" : null },
-      });
-      toast.success(suspend ? "Motorista suspenso" : "Suspensão removida");
-      setSuspendFor(null);
-      if (detail?.id === d.id) setDetail({ ...d, suspended_at: suspend ? new Date().toISOString() : null });
-      load();
-    } catch (e) {
-      toast.error("Erro: " + (e instanceof Error ? mapAdminError(e.message) : "falha"));
+      await setAdminDriverSuspension(
+        driver.id,
+        suspend,
+        suspend ? "Suspensão operacional pelo painel APOIS." : null,
+      );
+      toast.success(suspend ? "Motorista suspenso." : "Suspensão removida.");
+      await load();
+    } catch (error) {
+      setActionError("Não foi possível alterar a suspensão. Tente novamente.");
+      if (import.meta.env.DEV) console.warn("[APOIS Admin] falha ao alterar suspensão", error);
     } finally {
       setBusyId(null);
     }
   }
 
-  async function generateCharge(d: Driver) {
-    setBusyId(d.id);
-    const toastId = toast.loading("Gerando nova cobrança no Mercado Pago...");
+  async function openDetails(driver: DriverRow) {
+    if (!cleanText(driver.id)) return;
+    const requestId = ++docsRequestRef.current;
+    setSelected(driver);
+    setDocs(null);
+    setDocsError(null);
+    setRejectReason("");
+    setActionError(null);
+    setDocsLoading(true);
     try {
-      const result = await regenerateDriverCharge(d.id);
-      await logAdminAction({
-        action: "driver.charge_regenerated",
-        entity: "drivers",
-        entity_id: d.id,
-        before: { mercadopago_preapproval_id: d.mercadopago_preapproval_id ?? null },
-        after: { mercadopago_preapproval_id: result.preferenceId, mercadopago_init_point: result.initPoint },
+      const next = await getDocs({ data: { driverId: driver.id } });
+      if (requestId !== docsRequestRef.current) return;
+      setDocs({
+        selfie_url: safeDocumentUrl(next?.selfie_url),
+        cnh_url: safeDocumentUrl(next?.cnh_url),
+        vehicle_document_url: safeDocumentUrl(next?.vehicle_document_url),
       });
-      if (result.initPoint && typeof window !== "undefined") {
-        try { await navigator.clipboard.writeText(result.initPoint); } catch { /* ignore */ }
-      }
-      toast.success("Nova cobrança gerada — link copiado", {
-        id: toastId,
-        description: result.initPoint ?? undefined,
-        action: result.initPoint
-          ? { label: "Abrir", onClick: () => window.open(result.initPoint!, "_blank") }
-          : undefined,
-        duration: 10000,
-      });
-      load();
-    } catch (e) {
-      const raw = e instanceof Error ? e.message : "falha";
-      let msg = mapAdminError(raw);
-      if (raw === "driver_not_approved") msg = "Motorista precisa estar aprovado para gerar cobrança.";
-      else if (raw.startsWith("missing_required_fields:")) msg = `Cadastro incompleto: faltam ${raw.split(":")[1]}`;
-      else if (raw.startsWith("mercadopago_preference_failed:")) msg = "Erro no Mercado Pago: " + raw.split(":").slice(1).join(":");
-      toast.error("Erro ao gerar cobrança: " + msg, { id: toastId });
+    } catch (error) {
+      if (requestId !== docsRequestRef.current) return;
+      setDocs(null);
+      setDocsError("Não foi possível gerar o acesso temporário aos documentos. Tente novamente.");
+      if (import.meta.env.DEV) console.warn("[APOIS Admin] falha ao gerar URLs de documentos", error);
     } finally {
-      setBusyId(null);
+      if (requestId === docsRequestRef.current) setDocsLoading(false);
     }
+  }
+
+  function closeDetails() {
+    docsRequestRef.current += 1;
+    setSelected(null);
+    setDocs(null);
+    setDocsError(null);
+    setRejectReason("");
+    setActionError(null);
+    setDocsLoading(false);
   }
 
   return (
     <AdminLayout
-      title="Gestão de Motoristas"
-      description={`${counts.all} motoristas cadastrados • ${counts.online} online agora`}
+      title="Motoristas"
+      description="KYC, aprovação, bloqueio e suspensão sobre a identidade canônica do motorista"
       actions={
-        <Button variant="outline" size="sm" onClick={load} disabled={loading}>
-          <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-          Atualizar
-        </Button>
+        <DSButton
+          variant="outline"
+          size="sm"
+          onClick={() => void load()}
+          disabled={loading || Boolean(busyId)}
+          className="min-h-11 gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          aria-busy={loading}
+        >
+          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin motion-reduce:animate-none" : ""}`} aria-hidden="true" />
+          {loading ? "Atualizando…" : "Atualizar"}
+        </DSButton>
       }
     >
-      <div className="sticky top-0 z-10 -mx-4 mb-4 space-y-2 border-b border-border/60 bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/70">
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      <DSCard className="mb-4 border-primary/20 bg-primary/5">
+        <DSCardContent className="flex min-w-0 gap-3 p-4 text-sm leading-6 text-muted-foreground">
+          <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+          <p className="min-w-0 break-words">
+            Aprovação e suspensão são executadas por RPCs administrativas com permissão e auditoria
+            no servidor. Documentos privados são exibidos somente por URLs assinadas temporárias.
+            Aprovar motorista não fabrica pagamento nem assinatura.
+          </p>
+        </DSCardContent>
+      </DSCard>
+
+      <div className="mb-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]">
+        <div className="relative min-w-0">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
           <DSInput
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por nome, telefone, e-mail, placa ou cidade..."
-            className="h-9 pl-9"
+            className="min-h-11 pl-9 text-base"
+            placeholder="Buscar por nome, contato, cidade, categoria ou placa"
+            value={query}
+            maxLength={140}
+            aria-label="Buscar motorista"
+            onChange={(event) => setQuery(event.target.value)}
           />
         </div>
-        <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {FILTERS.map((f) => {
-            const active = filter === f.key;
+        <select
+          value={filter}
+          onChange={(event) => setFilter(event.target.value as Filter)}
+          className="min-h-11 rounded-md border border-input bg-background px-3 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          aria-label="Filtrar motoristas"
+        >
+          <option value="todos">Todos</option>
+          <option value="em_analise">Em análise</option>
+          <option value="aprovado">Aprovados</option>
+          <option value="reprovado">Reprovados</option>
+          <option value="bloqueado">Bloqueados</option>
+          <option value="online">Online</option>
+          <option value="suspenso">Suspensos</option>
+        </select>
+      </div>
+
+      {loading ? (
+        <div role="status" aria-live="polite"><Loading label="Carregando motoristas..." /></div>
+      ) : loadError ? (
+        <DSCard className="border-destructive/30 bg-destructive/5">
+          <DSCardContent className="space-y-3 p-4" role="alert">
+            <p className="text-sm font-medium text-destructive">{loadError}</p>
+            <DSButton variant="outline" className="min-h-11" onClick={() => void load()}>Tentar novamente</DSButton>
+          </DSCardContent>
+        </DSCard>
+      ) : filtered.length === 0 ? (
+        <EmptyState
+          icon={ShieldAlert}
+          title="Nenhum motorista encontrado"
+          description={query.trim() || filter !== "todos" ? "Ajuste os filtros ou a busca." : "Aguarde novos cadastros."}
+        />
+      ) : (
+        <div className="space-y-2">
+          {filtered.map((driver) => {
+            const approvalStatus = normalizeApproval(driver.approval_status);
             return (
-              <button
-                key={f.key}
-                type="button"
-                onClick={() => setFilter(f.key)}
-                className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-medium transition ${
-                  active
-                    ? "border-primary bg-primary/15 text-primary"
-                    : "border-border bg-card text-muted-foreground hover:border-primary/40"
-                }`}
-              >
-                {f.label}
-                <span className="ml-1.5 rounded-full bg-background/60 px-1.5 py-0.5 text-[10px] tabular-nums">
-                  {counts[f.key] ?? 0}
-                </span>
-              </button>
+              <DSCard key={driver.id}>
+                <DSCardContent className="space-y-3 p-4">
+                  <div className="flex min-w-0 flex-wrap items-start gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="break-words font-semibold">{driver.name || "Motorista sem nome"}</p>
+                      <p className="break-all text-sm text-muted-foreground">{driver.email || driver.phone || "Sem contato"}</p>
+                      <p className="break-words text-sm text-muted-foreground">
+                        {[driver.city, driver.state].filter(Boolean).join(" — ") || "Localidade não informada"}
+                      </p>
+                    </div>
+                    <DSBadge variant={statusVariant(approvalStatus)}>{approvalLabel(approvalStatus)}</DSBadge>
+                    <DSBadge variant={driver.is_online ? "primary" : "muted"}>{driver.is_online ? "Online" : "Offline"}</DSBadge>
+                    {driver.suspended_at && <DSBadge variant="danger">Suspenso</DSBadge>}
+                  </div>
+                  <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
+                    <span>Categoria: {driver.category || "Não informada"}</span>
+                    <span aria-hidden="true">•</span>
+                    <span className="break-words">
+                      Veículo: {[driver.vehicle_model, driver.vehicle_color, driver.vehicle_plate].filter(Boolean).join(" · ") || "Não informado"}
+                    </span>
+                    <span aria-hidden="true">•</span>
+                    <span>Assinatura: {driver.subscription_status || "não informada"}</span>
+                    <span aria-hidden="true">•</span>
+                    <span>
+                      Avaliação: {driver.rating == null ? "—" : driver.rating.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} ({driver.total_ratings})
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <DSButton variant="outline" size="sm" onClick={() => void openDetails(driver)} disabled={Boolean(busyId)} className="min-h-11 gap-2">
+                      <Eye className="h-4 w-4" aria-hidden="true" /> Detalhes
+                    </DSButton>
+                    <DSButton size="sm" onClick={() => void approval(driver, "aprovado")} disabled={Boolean(busyId) || approvalStatus === "aprovado"} className="min-h-11 gap-2">
+                      <CheckCircle2 className="h-4 w-4" aria-hidden="true" /> Aprovar
+                    </DSButton>
+                    <DSButton variant="outline" size="sm" onClick={() => void approval(driver, "bloqueado")} disabled={Boolean(busyId) || approvalStatus === "bloqueado"} className="min-h-11 gap-2">
+                      <XCircle className="h-4 w-4" aria-hidden="true" /> Bloquear
+                    </DSButton>
+                    <DSButton variant="outline" size="sm" onClick={() => void suspension(driver, !driver.suspended_at)} disabled={Boolean(busyId)} className="min-h-11 gap-2">
+                      {driver.suspended_at ? <PlayCircle className="h-4 w-4" aria-hidden="true" /> : <PauseCircle className="h-4 w-4" aria-hidden="true" />}
+                      {driver.suspended_at ? "Remover suspensão" : "Suspender"}
+                    </DSButton>
+                  </div>
+                  {busyId === driver.id ? <p className="text-sm text-muted-foreground" role="status" aria-live="polite">Aplicando alteração…</p> : null}
+                </DSCardContent>
+              </DSCard>
             );
           })}
         </div>
-      </div>
-
-      {loading && !drivers ? (
-        <Loading label="Carregando motoristas..." />
-      ) : filtered.length === 0 ? (
-        <EmptyState
-          icon={Search}
-          title="Nenhum motorista encontrado"
-          description="Ajuste a busca ou os filtros para ver resultados."
-        />
-      ) : (
-        <div className="grid gap-2">
-          {filtered.map((d) => (
-            <DriverCard
-              key={d.id}
-              driver={d}
-              activeRideStatus={activeRides[d.user_id] ?? null}
-              busy={busyId === d.id}
-              onDetails={() => setDetail(d)}
-              onApprove={() => updateStatus(d, "aprovado")}
-              onReject={() => {
-                setRejectFor(d);
-                setRejectReason(d.motivo_reprovacao ?? "");
-              }}
-              onBlock={() => setBlockFor(d)}
-              onUnblock={() => setUnblockFor(d)}
-              onSuspendToggle={() => setSuspendFor(d)}
-              onSubscription={() => setSubFor(d)}
-              onGenerateCharge={() => generateCharge(d)}
-            />
-          ))}
-        </div>
       )}
 
-      <DetailsDialog
-        driver={detail}
-        activeRideStatus={detail ? activeRides[detail.user_id] ?? null : null}
-        onClose={() => setDetail(null)}
-        onApprove={(d) => updateStatus(d, "aprovado")}
-        onReject={(d) => {
-          setRejectFor(d);
-          setRejectReason(d.motivo_reprovacao ?? "");
-        }}
-        onBlock={(d) => setBlockFor(d)}
-        onUnblock={(d) => setUnblockFor(d)}
-        onSuspendToggle={(d) => setSuspendFor(d)}
-        onSubscription={(d) => setSubFor(d)}
-        busy={!!busyId}
-      />
-
-      <SubscriptionDialog
-        driver={subFor}
-        onClose={() => setSubFor(null)}
-        onSaved={(updated) => {
-          setSubFor(null);
-          if (detail?.id === updated.id) setDetail(updated);
-          load();
-        }}
-      />
-
-      {/* Reject reason */}
-      <Dialog open={!!rejectFor} onOpenChange={(o) => !o && setRejectFor(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Reprovar motorista</DialogTitle>
-            <DialogDescription>
-              Informe o motivo da reprovação. Será exibido ao motorista.
-            </DialogDescription>
-          </DialogHeader>
-          <DSTextarea
-            value={rejectReason}
-            onChange={(e) => setRejectReason(e.target.value)}
-            placeholder="Ex.: CNH ilegível, documento do veículo vencido..."
-            rows={4}
-          />
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setRejectFor(null)}>
-              Cancelar
-            </Button>
-            <Button
-              variant="destructive"
-              disabled={!rejectReason.trim() || busyId === rejectFor?.id}
-              onClick={() => rejectFor && updateStatus(rejectFor, "reprovado", rejectReason.trim())}
-            >
-              {busyId === rejectFor?.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Confirmar reprovação
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Block confirm */}
-      <AlertDialog open={!!blockFor} onOpenChange={(o) => !o && setBlockFor(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Bloquear {blockFor?.name}?</AlertDialogTitle>
-            <AlertDialogDescription>
-              O motorista deixará de aparecer para passageiros. Você pode desbloquear depois.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => blockFor && updateStatus(blockFor, "bloqueado")}
-            >
-              Bloquear
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Unblock confirm */}
-      <AlertDialog open={!!unblockFor} onOpenChange={(o) => !o && setUnblockFor(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Desbloquear {unblockFor?.name}?</AlertDialogTitle>
-            <AlertDialogDescription>
-              O cadastro voltará para análise para nova aprovação.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={() => unblockFor && updateStatus(unblockFor, "em_analise")}>
-              Desbloquear
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Suspend / Unsuspend confirm */}
-      <AlertDialog open={!!suspendFor} onOpenChange={(o) => !o && setSuspendFor(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {suspendFor?.suspended_at ? "Reativar" : "Suspender"} {suspendFor?.name}?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {suspendFor?.suspended_at
-                ? "A suspensão será removida imediatamente."
-                : "Suspensão temporária do motorista. Pode ser desfeita a qualquer momento."}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => suspendFor && toggleSuspend(suspendFor, !suspendFor.suspended_at)}
-            >
-              Confirmar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {selected && (
+        <DSCard className="mt-6 border-primary/20" role="region" aria-labelledby="driver-review-title">
+          <DSCardContent className="space-y-4 p-4">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <h2 id="driver-review-title" className="min-w-0 break-words font-semibold">
+                Revisão — {selected.name || selected.id.slice(0, 8)}
+              </h2>
+              <DSButton variant="ghost" size="sm" className="ml-auto min-h-11" disabled={Boolean(busyId)} onClick={closeDetails}>Fechar</DSButton>
+            </div>
+            {docsError ? (
+              <div className="space-y-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3" role="alert">
+                <p className="text-sm text-destructive">{docsError}</p>
+                <DSButton variant="outline" className="min-h-11" onClick={() => void openDetails(selected)} disabled={docsLoading}>Tentar novamente</DSButton>
+              </div>
+            ) : null}
+            <div className="grid gap-3 sm:grid-cols-3">
+              <DocumentLink label="Selfie" url={docs?.selfie_url ?? null} loading={docsLoading} />
+              <DocumentLink label="CNH" url={docs?.cnh_url ?? null} loading={docsLoading} />
+              <DocumentLink label="Documento do veículo" url={docs?.vehicle_document_url ?? null} loading={docsLoading} />
+            </div>
+            {selected.motivo_reprovacao && <p className="break-words text-sm text-destructive">Motivo atual: {selected.motivo_reprovacao}</p>}
+            <div className="space-y-2">
+              <label htmlFor="driver-reject-reason" className="text-sm font-semibold text-muted-foreground">Motivo da reprovação</label>
+              <DSTextarea
+                id="driver-reject-reason"
+                value={rejectReason}
+                onChange={(event) => {
+                  setRejectReason(event.target.value);
+                  setActionError(null);
+                }}
+                maxLength={500}
+                className="min-h-28 text-base"
+                placeholder="Obrigatório para reprovar"
+                aria-describedby="driver-reject-help"
+              />
+              <p id="driver-reject-help" className="text-sm text-muted-foreground">{rejectReason.length}/500 caracteres</p>
+              {actionError ? <p className="text-sm text-destructive" role="alert">{actionError}</p> : null}
+              <DSButton
+                variant="outline"
+                onClick={() => void approval(selected, "reprovado")}
+                disabled={Boolean(busyId) || cleanText(rejectReason).length < 3}
+                className="min-h-11 gap-2"
+                aria-busy={busyId === selected.id}
+              >
+                <XCircle className="h-4 w-4" aria-hidden="true" /> {busyId === selected.id ? "Reprovando…" : "Reprovar cadastro"}
+              </DSButton>
+            </div>
+          </DSCardContent>
+        </DSCard>
+      )}
     </AdminLayout>
   );
 }
 
-function DriverCard({
-  driver,
-  activeRideStatus,
-  busy,
-  onDetails,
-  onApprove,
-  onReject,
-  onBlock,
-  onUnblock,
-  onSuspendToggle,
-  onSubscription,
-  onGenerateCharge,
-}: {
-  driver: Driver;
-  activeRideStatus: string | null;
-  busy: boolean;
-  onDetails: () => void;
-  onApprove: () => void;
-  onReject: () => void;
-  onBlock: () => void;
-  onUnblock: () => void;
-  onSuspendToggle: () => void;
-  onSubscription: () => void;
-  onGenerateCharge: () => void;
-}) {
-  const meta = STATUS_META[driver.approval_status];
-  const sm = subMeta(driver.subscription_status);
-  const online = !!driver.is_online;
-  const rating = Number(driver.average_rating ?? driver.rating ?? 0);
-  const suspended = !!driver.suspended_at;
-
+function DocumentLink({ label, url, loading }: { label: string; url: string | null; loading: boolean }) {
   return (
-    <div
-      className="group cursor-pointer rounded-xl border border-border bg-card p-3 transition hover:border-primary/50 hover:shadow-sm"
-      onClick={onDetails}
-    >
-      <div className="flex flex-wrap items-start gap-3">
-        <Avatar src={driver.photo_url ?? driver.selfie_url ?? null} name={driver.name} size={44} />
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <h3 className="text-sm font-semibold leading-tight">{driver.name}</h3>
-            <StatusPill status={STATUS_PILL[driver.approval_status].status} label={STATUS_PILL[driver.approval_status].label} pulse={false} />
-            <StatusPill
-              status={SUB_PILL[(driver.subscription_status as SubStatus) ?? "inactive"]?.status ?? "offline"}
-              label={SUB_PILL[(driver.subscription_status as SubStatus) ?? "inactive"]?.label ?? sm.label}
-              pulse={false}
-            />
-            <StatusPill status={online ? "online" : "offline"} label={online ? "Online" : "Offline"} pulse={online} />
-            {activeRideStatus && (
-              <TagPill tone="border-orange-500/30 bg-orange-500/10 text-orange-400">
-                <Car className="h-3 w-3" /> Em corrida
-              </TagPill>
-            )}
-            {suspended && (
-              <TagPill tone="border-destructive/30 bg-destructive/10 text-destructive">Suspenso</TagPill>
-            )}
-            {docsPending(driver) && (
-              <TagPill tone="border-yellow-500/30 bg-yellow-500/10 text-yellow-400">Docs pendentes</TagPill>
-            )}
-            <TagPill tone="border-border bg-muted/40 text-muted-foreground capitalize">{driver.category}</TagPill>
-          </div>
-          <div className="mt-1.5 grid gap-x-4 gap-y-0.5 text-xs text-muted-foreground sm:grid-cols-2">
-            <span className="truncate">📞 {driver.phone ?? "—"}</span>
-            <span className="truncate">✉️ {driver.email ?? "—"}</span>
-            <span className="truncate">📍 {driver.city}/{driver.state}</span>
-            <span className="truncate">
-              🚗 {driver.vehicle_model} • {driver.vehicle_plate}
-            </span>
-            <span className="flex items-center gap-1">
-              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-              {rating.toFixed(2)} ({driver.total_ratings ?? 0}) • {driver.completed_rides ?? 0} corridas
-            </span>
-            <span className="flex items-center gap-1">
-              <MapPin className="h-3 w-3" /> GPS: {fmtRelative(driver.last_location_at)}
-            </span>
-          </div>
-          {driver.approval_status === "reprovado" && driver.motivo_reprovacao && (
-            <p className="mt-2 rounded-md bg-destructive/10 px-2.5 py-1.5 text-xs text-destructive">
-              Motivo: {driver.motivo_reprovacao}
-            </p>
-          )}
-        </div>
-        <div
-          className="flex flex-wrap justify-end gap-1.5"
-          onClick={(e) => e.stopPropagation()}
+    <div className="min-w-0 rounded-xl border border-border p-3">
+      <div className="mb-2 flex min-w-0 items-center gap-2">
+        <FileText className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+        <span className="min-w-0 break-words text-sm font-medium">{label}</span>
+      </div>
+      {loading ? (
+        <p className="text-sm text-muted-foreground" role="status" aria-live="polite">Gerando acesso temporário…</p>
+      ) : url ? (
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex min-h-11 items-center break-words text-sm font-semibold text-primary underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
-          {/* Primary actions */}
-          {driver.approval_status !== "aprovado" && (
-            <Button size="sm" onClick={onApprove} disabled={busy}>
-              {busy ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-1 h-4 w-4" />} Aprovar
-            </Button>
-          )}
-          {driver.approval_status === "aprovado" && (
-            <Button size="sm" variant="outline" onClick={onGenerateCharge} disabled={busy}>
-              {busy ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <CreditCard className="mr-1 h-4 w-4" />} Cobrança
-            </Button>
-          )}
-          <Button size="sm" variant="outline" onClick={onDetails}>
-            <Eye className="mr-1 h-4 w-4" /> Detalhes
-          </Button>
-          {/* Secondary actions */}
-          <Button size="sm" variant="ghost" onClick={onSubscription} title="Assinatura">
-            <CreditCard className="h-4 w-4" />
-          </Button>
-          {driver.approval_status !== "reprovado" && (
-            <Button size="sm" variant="ghost" onClick={onReject} disabled={busy} title="Reprovar">
-              <XCircle className="h-4 w-4 text-destructive" />
-            </Button>
-          )}
-          {driver.approval_status !== "bloqueado" ? (
-            <Button size="sm" variant="ghost" onClick={onBlock} disabled={busy} title="Bloquear">
-              <ShieldAlert className="h-4 w-4" />
-            </Button>
-          ) : (
-            <Button size="sm" variant="ghost" onClick={onUnblock} disabled={busy} title="Desbloquear">
-              <ShieldAlert className="h-4 w-4 text-primary" />
-            </Button>
-          )}
-          <Button size="sm" variant="ghost" onClick={onSuspendToggle} disabled={busy} title={suspended ? "Reativar" : "Suspender"}>
-            {suspended ? <PlayCircle className="h-4 w-4" /> : <PauseCircle className="h-4 w-4" />}
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function DetailsDialog({
-  driver,
-  activeRideStatus,
-  onClose,
-  onApprove,
-  onReject,
-  onBlock,
-  onUnblock,
-  onSuspendToggle,
-  onSubscription,
-  busy,
-}: {
-  driver: Driver | null;
-  activeRideStatus: string | null;
-  onClose: () => void;
-  onApprove: (d: Driver) => void;
-  onReject: (d: Driver) => void;
-  onBlock: (d: Driver) => void;
-  onUnblock: (d: Driver) => void;
-  onSuspendToggle: (d: Driver) => void;
-  onSubscription: (d: Driver) => void;
-  busy: boolean;
-}) {
-  const addNoteFn = useServerFn(addDriverAdminNote);
-  const removeNoteFn = useServerFn(deleteDriverAdminNote);
-  const [urls, setUrls] = useState<Record<string, string | null>>({});
-  const [urlError, setUrlError] = useState<string | null>(null);
-  const [docsLoading, setDocsLoading] = useState(false);
-  const [notes, setNotes] = useState<AdminNote[]>([]);
-  const [noteDraft, setNoteDraft] = useState("");
-  const [savingNote, setSavingNote] = useState(false);
-  const [subscription, setSubscription] = useState<{
-    plan_name?: string | null;
-    period_end?: string | null;
-    monthly_fee?: number | null;
-    last_payment_at?: string | null;
-    last_payment_asaas_id?: string | null;
-  } | null>(null);
-  const fetchUrls = useServerFn(getDriverDocumentUrls);
-
-  useEffect(() => {
-    if (!driver) return;
-    let cancelled = false;
-    setUrls({});
-    setUrlError(null);
-    setDocsLoading(true);
-    (async () => {
-      try {
-        const result = await fetchUrls({ data: { driverId: driver.id } });
-        if (cancelled) return;
-        setUrls(result);
-      } catch (err) {
-        if (cancelled) return;
-        setUrlError(err instanceof Error ? err.message : "Falha ao gerar URLs.");
-      } finally {
-        if (!cancelled) setDocsLoading(false);
-      }
-    })();
-
-    (async () => {
-      const { data } = await supabase
-        .from("admin_driver_notes")
-        .select("*")
-        .eq("driver_id", driver.id)
-        .order("created_at", { ascending: false });
-      if (!cancelled) setNotes((data ?? []) as AdminNote[]);
-    })();
-
-    (async () => {
-      const { data } = await supabase
-        .from("subscriptions")
-        .select("*")
-        .eq("driver_id", driver.id)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (!cancelled) {
-        const s = data as Record<string, unknown> | null;
-        if (s) {
-          setSubscription({
-            plan_name: (s.plan_name as string) ?? null,
-            period_end: (s.period_end as string) ?? null,
-            monthly_fee: (s.amount as number) ?? (s.monthly_fee as number) ?? null,
-            last_payment_at: (s.last_payment_at as string) ?? null,
-            last_payment_asaas_id: (s.last_payment_asaas_id as string) ?? (s.asaas_payment_id as string) ?? null,
-          });
-        } else {
-          setSubscription(null);
-        }
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [driver?.id]);
-
-  if (!driver) return null;
-  
-  const suspended = !!driver.suspended_at;
-
-  async function addNote() {
-    if (!driver || !noteDraft.trim()) return;
-    setSavingNote(true);
-    try {
-      const row = await addNoteFn({ data: { driverId: driver.id, note: noteDraft.trim() } });
-      setNotes((cur) => [row as AdminNote, ...cur]);
-      setNoteDraft("");
-      toast.success("Nota adicionada");
-    } catch (e) {
-      toast.error("Erro ao salvar nota: " + (e instanceof Error ? mapAdminError(e.message) : "falha"));
-    } finally {
-      setSavingNote(false);
-    }
-  }
-
-  async function removeNote(id: string) {
-    try {
-      await removeNoteFn({ data: { id } });
-      setNotes((cur) => cur.filter((n) => n.id !== id));
-      toast.success("Nota removida");
-    } catch (e) {
-      toast.error("Erro: " + (e instanceof Error ? mapAdminError(e.message) : "falha"));
-    }
-  }
-
-  const hasLocation = driver.current_lat != null && driver.current_lng != null;
-  const mapUrl = hasLocation
-    ? `https://staticmap.openstreetmap.de/staticmap.php?center=${driver.current_lat},${driver.current_lng}&zoom=15&size=560x220&markers=${driver.current_lat},${driver.current_lng},red-pushpin`
-    : null;
-
-  return (
-    <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-3xl">
-        <DialogHeader>
-          <div className="flex items-center gap-3">
-            <Avatar src={driver.photo_url ?? driver.selfie_url ?? null} name={driver.name} size={64} />
-            <div className="min-w-0 flex-1">
-              <DialogTitle className="flex flex-wrap items-center gap-2">
-                {driver.name}
-                <StatusPill status={STATUS_PILL[driver.approval_status].status} label={STATUS_PILL[driver.approval_status].label} pulse={false} />
-                {suspended && (
-                  <TagPill tone="border-destructive/30 bg-destructive/10 text-destructive">Suspenso</TagPill>
-                )}
-              </DialogTitle>
-              <DialogDescription>
-                {driver.city}/{driver.state} • Cadastro {fmtDate(driver.created_at)}
-              </DialogDescription>
-            </div>
-          </div>
-        </DialogHeader>
-
-        <div className="max-h-[65vh] space-y-5 overflow-y-auto pr-2 text-sm">
-          <Section title="Identidade">
-            <Row label="Nome" value={driver.name} />
-            <Row label="E-mail" value={driver.email} />
-            <Row label="Telefone" value={driver.phone} />
-            <Row label="Cidade/UF" value={`${driver.city}/${driver.state}`} />
-            <Row label="Cadastro em" value={fmtDate(driver.created_at)} />
-          </Section>
-
-          <Section title="Veículo">
-            <Row label="Categoria" value={driver.category} />
-            <Row label="Modelo" value={driver.vehicle_model} />
-            <Row label="Cor" value={driver.vehicle_color} />
-            <Row label="Ano" value={String(driver.vehicle_year)} />
-            <Row label="Placa" value={driver.vehicle_plate} />
-          </Section>
-
-          <Section title="Documentos">
-            {urlError && (
-              <p className="mb-2 rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">
-                {urlError}
-              </p>
-            )}
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <DocCard label="Selfie" url={urls.selfie_url} rawPath={driver.selfie_url} loading={docsLoading} failed={!!urlError} />
-              <DocCard label="CNH" url={urls.cnh_url} rawPath={driver.cnh_url} loading={docsLoading} failed={!!urlError} />
-              <DocCard
-                label="Doc. Veículo"
-                url={urls.vehicle_document_url}
-                rawPath={driver.vehicle_document_url}
-                loading={docsLoading}
-                failed={!!urlError}
-              />
-            </div>
-            <p className="mt-2 text-[11px] text-muted-foreground">
-              Status dos documentos: {driver.documents_status ?? "não informado"}
-            </p>
-          </Section>
-
-          <Section title="Operacional">
-            <Row
-              label="Status"
-              value={driver.is_online ? "Online" : "Offline"}
-            />
-            <Row label="Em corrida" value={activeRideStatus ?? "Não"} />
-            <Row
-              label="Última localização"
-              value={
-                hasLocation
-                  ? `${driver.current_lat?.toFixed(5)}, ${driver.current_lng?.toFixed(5)}`
-                  : "—"
-              }
-            />
-            <Row label="Atualização GPS" value={fmtDate(driver.last_location_at) + " (" + fmtRelative(driver.last_location_at) + ")"} />
-            {mapUrl && (
-              <div className="mt-2 overflow-hidden rounded-lg border border-border">
-                <img src={mapUrl} alt="Localização" className="h-[220px] w-full object-cover" />
-              </div>
-            )}
-          </Section>
-
-          <Section title="Reputação">
-            <Row label="Avaliação média" value={(Number(driver.average_rating ?? driver.rating ?? 0)).toFixed(2)} />
-            <Row label="Total de avaliações" value={String(driver.total_ratings ?? 0)} />
-            <Row label="Corridas concluídas" value={String(driver.completed_rides ?? 0)} />
-            <Row
-              label="Badge"
-              value={badgeForRating(Number(driver.average_rating ?? driver.rating ?? 0))}
-            />
-          </Section>
-
-          <Section title="Assinatura">
-            <Row label="Status" value={subMeta(driver.subscription_status).label} />
-            <Row label="Plano" value={subscription?.plan_name ?? "—"} />
-            <Row
-              label="Mensalidade"
-              value={
-                subscription?.monthly_fee != null
-                  ? `R$ ${Number(subscription.monthly_fee).toFixed(2)}`
-                  : "—"
-              }
-            />
-            <Row label="Próxima renovação" value={fmtDate(subscription?.period_end ?? driver.subscription_expires_at)} />
-            <Row label="Último pagamento" value={fmtDate(subscription?.last_payment_at)} />
-            <Row label="Asaas ID" value={subscription?.last_payment_asaas_id ?? driver.asaas_customer_id ?? "—"} />
-            <Button variant="outline" size="sm" className="mt-2" onClick={() => onSubscription(driver)}>
-              <CreditCard className="mr-1 h-4 w-4" /> Gerenciar assinatura
-            </Button>
-          </Section>
-
-          <Section title="Notas internas">
-            <div className="flex gap-2">
-              <DSTextarea
-                rows={2}
-                value={noteDraft}
-                onChange={(e) => setNoteDraft(e.target.value)}
-                placeholder="Adicionar nota interna (visível apenas para administradores)..."
-              />
-              <Button onClick={addNote} disabled={!noteDraft.trim() || savingNote}>
-                {savingNote ? <Loader2 className="h-4 w-4 animate-spin" /> : <StickyNote className="h-4 w-4" />}
-              </Button>
-            </div>
-            <div className="mt-3 space-y-2">
-              {notes.length === 0 ? (
-                <p className="text-xs text-muted-foreground">Nenhuma nota registrada.</p>
-              ) : (
-                notes.map((n) => (
-                  <div key={n.id} className="flex items-start gap-2 rounded-lg border border-border bg-background/40 p-2">
-                    <StickyNote className="mt-0.5 h-4 w-4 text-primary" />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs whitespace-pre-wrap">{n.note}</p>
-                      <p className="mt-1 text-[10px] text-muted-foreground">{fmtDate(n.created_at)}</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => removeNote(n.id)}
-                      className="text-muted-foreground hover:text-destructive"
-                      aria-label="Remover"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                ))
-              )}
-            </div>
-          </Section>
-        </div>
-
-        <DialogFooter className="flex-wrap gap-2">
-          {driver.approval_status !== "aprovado" && (
-            <Button onClick={() => onApprove(driver)} disabled={busy}>
-              {busy ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-1 h-4 w-4" />} Aprovar
-            </Button>
-          )}
-          {driver.approval_status !== "reprovado" && (
-            <Button variant="destructive" onClick={() => onReject(driver)} disabled={busy}>
-              <XCircle className="mr-1 h-4 w-4" /> Reprovar
-            </Button>
-          )}
-          {driver.approval_status !== "bloqueado" ? (
-            <Button variant="outline" onClick={() => onBlock(driver)} disabled={busy}>
-              <ShieldAlert className="mr-1 h-4 w-4" /> Bloquear
-            </Button>
-          ) : (
-            <Button variant="outline" onClick={() => onUnblock(driver)} disabled={busy}>
-              Desbloquear
-            </Button>
-          )}
-          <Button variant="outline" onClick={() => onSuspendToggle(driver)} disabled={busy}>
-            {suspended ? (
-              <>
-                <PlayCircle className="mr-1 h-4 w-4" /> Reativar
-              </>
-            ) : (
-              <>
-                <PauseCircle className="mr-1 h-4 w-4" /> Suspender
-              </>
-            )}
-          </Button>
-          <Button variant="ghost" onClick={onClose}>
-            Fechar
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function badgeForRating(r: number): string {
-  if (r >= 4.8) return "Ouro";
-  if (r >= 4.5) return "Excelente";
-  if (r >= 4.0) return "Muito Bom";
-  return "—";
-}
-
-function Section({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <div>
-      <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-primary">{title}</h4>
-      <div className="space-y-1">{children}</div>
-    </div>
-  );
-}
-
-function Row({ label, value }: { label: string; value: string | null }) {
-  return (
-    <div className="flex justify-between gap-3 border-b border-border/40 py-1.5">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="text-right font-medium">{value ?? "—"}</span>
-    </div>
-  );
-}
-
-function DocCard({
-  label,
-  url,
-  rawPath,
-  loading,
-  failed,
-}: {
-  label: string;
-  url: string | null;
-  rawPath?: string | null;
-  loading?: boolean;
-  failed?: boolean;
-}) {
-  if (!url) {
-    return (
-      <div className="rounded-xl border border-dashed border-border bg-card/40 p-4 text-center text-xs text-muted-foreground">
-        {label}
-        <div className="mt-2">
-          {!rawPath ? "Não enviado" : failed ? "Falha ao carregar" : loading ? "Carregando..." : "Arquivo indisponível"}
-        </div>
-      </div>
-    );
-  }
-  const isImg = /\.(png|jpe?g|webp|gif)(\?|$)/i.test(url);
-  return (
-    <a
-      href={url}
-      target="_blank"
-      rel="noreferrer"
-      className="block rounded-xl border border-border bg-card p-2 transition hover:border-primary"
-    >
-      <div className="mb-2 text-xs font-medium text-muted-foreground">{label}</div>
-      {isImg ? (
-        <img src={url} alt={label} className="h-32 w-full rounded-md object-cover" />
+          Abrir documento
+        </a>
       ) : (
-        <div className="flex h-32 flex-col items-center justify-center gap-2 rounded-md bg-muted/30 text-xs text-muted-foreground">
-          <FileText className="h-6 w-6" />
-          Abrir arquivo
-        </div>
+        <p className="text-sm text-muted-foreground">Não enviado</p>
       )}
-    </a>
-  );
-}
-
-function toDateInput(iso: string | null | undefined): string {
-  if (!iso) return "";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  return d.toISOString().slice(0, 10);
-}
-
-function SubscriptionDialog({
-  driver,
-  onClose,
-  onSaved,
-}: {
-  driver: Driver | null;
-  onClose: () => void;
-  onSaved: (d: Driver) => void;
-}) {
-  const [status, setStatus] = useState<SubStatus>("inactive");
-  const [paymentStatus, setPaymentStatus] = useState<string>("unpaid");
-  const [expires, setExpires] = useState<string>("");
-  const [graceDays, setGraceDays] = useState<number>(0);
-  const [note, setNote] = useState<string>("");
-  const [saving, setSaving] = useState(false);
-  const [releasing, setReleasing] = useState(false);
-
-  useEffect(() => {
-    if (!driver) return;
-    setStatus(((driver.subscription_status as SubStatus) ?? "inactive") || "inactive");
-    setPaymentStatus((driver as { payment_status?: string }).payment_status ?? "unpaid");
-    setExpires(toDateInput(driver.subscription_expires_at));
-    setGraceDays(Number(driver.subscription_grace_days ?? 0));
-    setNote(driver.subscription_admin_note ?? "");
-  }, [driver?.id]);
-
-  if (!driver) return null;
-
-  async function save() {
-    if (!driver) return;
-    setSaving(true);
-    const patch = {
-      subscription_status: status,
-      payment_status: paymentStatus,
-      subscription_expires_at: expires ? new Date(`${expires}T23:59:59`).toISOString() : null,
-      subscription_grace_days: Number.isFinite(graceDays) ? graceDays : 0,
-      subscription_admin_note: note.trim() || null,
-    };
-    const { data, error } = await supabase
-      .from("drivers")
-      .update(patch as never)
-      .eq("id", driver.id)
-      .select("*")
-      .maybeSingle();
-    setSaving(false);
-    if (error) {
-      toast.error("Erro ao salvar assinatura: " + error.message);
-      return;
-    }
-    await logAdminAction({
-      action: "driver.subscription.update",
-      entity: "drivers",
-      entity_id: driver.id,
-      after: patch,
-    });
-    toast.success("Assinatura atualizada");
-    onSaved((data ?? { ...driver, ...patch }) as Driver);
-  }
-
-  async function releaseForTesting() {
-    if (!driver) return;
-    setReleasing(true);
-    const exp = new Date();
-    exp.setDate(exp.getDate() + 30);
-    const patch = {
-      approval_status: "aprovado" as Status,
-      approved_at: new Date().toISOString(),
-      blocked_at: null,
-      motivo_reprovacao: null,
-      subscription_status: "active" as SubStatus,
-      payment_status: "paid",
-      subscription_expires_at: exp.toISOString(),
-      subscription_grace_days: 0,
-      subscription_admin_note: note.trim() || "Liberado para teste pelo administrador",
-    };
-    const { data, error } = await supabase
-      .from("drivers")
-      .update(patch as never)
-      .eq("id", driver.id)
-      .select("*")
-      .maybeSingle();
-    setReleasing(false);
-    if (error) {
-      toast.error("Falha ao liberar para teste: " + error.message);
-      return;
-    }
-    await logAdminAction({
-      action: "driver.release_for_testing",
-      entity: "drivers",
-      entity_id: driver.id,
-      after: patch,
-    });
-    toast.success("Motorista liberado para teste por 30 dias");
-    onSaved((data ?? { ...driver, ...patch }) as Driver);
-  }
-
-  return (
-    <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5 text-primary" />
-            Assinatura — {driver.name}
-          </DialogTitle>
-          <DialogDescription>
-            Controle manual do status de pagamento/assinatura do motorista.
-          </DialogDescription>
-        </DialogHeader>
-
-        <button
-          type="button"
-          onClick={releaseForTesting}
-          disabled={releasing || saving}
-          className="flex w-full items-center justify-between rounded-2xl border border-primary/40 bg-primary/10 px-4 py-3 text-left transition hover:bg-primary/15 disabled:opacity-60"
-        >
-          <div>
-            <div className="flex items-center gap-2 font-semibold text-primary">
-              <Zap className="h-4 w-4" /> Liberar motorista para teste
-            </div>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              Aprova o cadastro, ativa a assinatura por 30 dias e marca pagamento como pago.
-            </p>
-          </div>
-          {releasing ? <Loader2 className="h-5 w-5 animate-spin text-primary" /> : null}
-        </button>
-
-        <div className="grid gap-3 pt-2">
-          <div className="grid gap-1.5">
-            <DSLabel>Status da assinatura</DSLabel>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {SUB_STATUSES.map((s) => (
-                <button
-                  key={s.value}
-                  type="button"
-                  onClick={() => setStatus(s.value)}
-                  className={`rounded-xl border px-3 py-2 text-xs transition ${
-                    status === s.value
-                      ? `${s.tone} border-current`
-                      : "border-border bg-card text-muted-foreground hover:border-primary/40"
-                  }`}
-                >
-                  {s.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="grid gap-1.5">
-              <DSLabel htmlFor="payment_status">Status de pagamento</DSLabel>
-              <select
-                id="payment_status"
-                value={paymentStatus}
-                onChange={(e) => setPaymentStatus(e.target.value)}
-                className="h-10 rounded-md border border-border bg-card px-3 text-sm"
-              >
-                <option value="paid">Pago</option>
-                <option value="unpaid">Não pago</option>
-                <option value="pending">Pendente</option>
-                <option value="refunded">Reembolsado</option>
-              </select>
-            </div>
-            <div className="grid gap-1.5">
-              <DSLabel htmlFor="grace">Carência (dias)</DSLabel>
-              <DSInput
-                id="grace"
-                type="number"
-                min={0}
-                value={graceDays}
-                onChange={(e) => setGraceDays(Number(e.target.value))}
-              />
-            </div>
-          </div>
-
-          <div className="grid gap-1.5">
-            <DSLabel htmlFor="expires">Validade da assinatura</DSLabel>
-            <DSInput
-              id="expires"
-              type="date"
-              value={expires}
-              onChange={(e) => setExpires(e.target.value)}
-            />
-          </div>
-
-          <div className="grid gap-1.5">
-            <DSLabel htmlFor="note">Observação do administrador</DSLabel>
-            <DSTextarea
-              id="note"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="Ex.: liberação manual para teste interno"
-              rows={3}
-            />
-          </div>
-        </div>
-
-        <DialogFooter>
-          <Button variant="ghost" onClick={onClose} disabled={saving || releasing}>
-            Cancelar
-          </Button>
-          <Button onClick={save} disabled={saving || releasing}>
-            {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            Salvar alterações
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    </div>
   );
 }

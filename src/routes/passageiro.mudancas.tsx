@@ -8,21 +8,29 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { RideFeatureUnavailable } from "@/components/RideFeatureUnavailable";
+import { useRideFeatureFlags } from "@/hooks/useRideFeatureFlags";
 
 export const Route = createFileRoute("/passageiro/mudancas")({
   head: () => ({
     meta: [
-      { title: "MOVVI Mudanças / Fretes Grandes — Solicitar" },
+      { title: "APOIS Mudanças / Fretes Grandes — Solicitar" },
       {
         name: "description",
         content:
-          "Informe os detalhes da carga para calcularmos o melhor transporte MOVVI.",
+          "Informe os detalhes da carga para calcularmos o melhor transporte APOIS.",
       },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
-  component: MudancasFlow,
+  component: MudancasFeatureRoute,
 });
+
+function MudancasFeatureRoute() {
+  const flags = useRideFeatureFlags();
+  if (!flags.feature_fretes_enabled) return <RideFeatureUnavailable title="Mudanças e Fretes" />;
+  return <MudancasFlow />;
+}
 
 type YesNo = "sim" | "nao";
 
@@ -139,7 +147,7 @@ function MudancasFlow() {
             </span>
             <div>
               <h1 className="font-display text-xl font-bold tracking-tight text-foreground">
-                Mudanças MOVVI
+                Mudanças APOIS
               </h1>
               <p className="text-[12.5px] text-muted-foreground">
                 Informe os detalhes da carga para calcularmos o melhor

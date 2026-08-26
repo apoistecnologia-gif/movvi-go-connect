@@ -1,4 +1,4 @@
-// Shared help-center content for MOVVI Support module.
+// Shared help-center content for APOIS Support module.
 // UI-only strings — no business logic, no PII.
 
 import {
@@ -30,16 +30,16 @@ export const PASSENGER_FAQ: Faq[] = [
   { q: "Como funciona o código de segurança (PIN)?", a: "Ao aceitar a corrida, o app gera um PIN de 4 dígitos. Informe-o ao motorista para que ele possa iniciar a viagem." },
   { q: "Como avalio o motorista?", a: "Ao finalizar a corrida, dê de 1 a 5 estrelas e, se quiser, deixe um comentário. A avaliação pode ser feita apenas uma vez por corrida." },
   { q: "Esqueci um objeto no carro. E agora?", a: "Abra um ticket em 'Problema com corrida' informando data, motorista (se lembrar) e descrição do item." },
-  { q: "Posso cancelar uma corrida?", a: "Sim, antes do motorista chegar. Cancelamentos após o início podem gerar cobrança simbólica conforme política da MOVVI." },
+  { q: "Posso cancelar uma corrida?", a: "Sim, antes do motorista chegar. Cancelamentos após o início podem gerar cobrança simbólica conforme política da APOIS." },
   { q: "Como funciona o pagamento?", a: "O pagamento é acertado diretamente com o motorista. O app apenas mostra o valor sugerido da corrida." },
   { q: "Como uso o botão SOS?", a: "Durante uma corrida ativa, o botão SOS aparece no painel de segurança e permite ligar para o 190 ou compartilhar sua localização." },
 ];
 
 export const DRIVER_FAQ: Faq[] = [
-  { q: "Como funciona a assinatura MOVVI?", a: "A assinatura mensal libera o recebimento de corridas. Cobranças e status são gerenciados na tela de Assinatura." },
+  { q: "Como funciona a assinatura APOIS?", a: "A assinatura mensal libera o recebimento de corridas. Cobranças e status são gerenciados na tela de Assinatura." },
   { q: "Minha assinatura venceu, o que faço?", a: "Acesse 'Assinatura' no menu, gere um novo pagamento e aguarde a confirmação para voltar a receber corridas." },
   { q: "Como envio meus documentos?", a: "Em 'Status do cadastro', envie CNH, foto do veículo e demais documentos solicitados. A análise leva até 48h úteis." },
-  { q: "Como recebo o pagamento das corridas?", a: "O pagamento é feito diretamente pelo passageiro. A MOVVI não intermedia valores de corrida." },
+  { q: "Como recebo o pagamento das corridas?", a: "O pagamento é feito diretamente pelo passageiro. A APOIS não intermedia valores de corrida." },
   { q: "Como recuso uma corrida?", a: "Na tela de oferta, toque em Recusar. Recusas excessivas podem afetar sua taxa de aceitação." },
   { q: "Como ficar online?", a: "Ative o botão 'Ficar online' na tela inicial. Você precisa estar com localização ativa e assinatura em dia." },
   { q: "Como reporto um problema com passageiro?", a: "Abra um ticket em 'Problema com passageiro' descrevendo o ocorrido. Casos graves são analisados em até 24h." },

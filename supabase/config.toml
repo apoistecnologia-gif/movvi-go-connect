@@ -1,4 +1,6 @@
-project_id = "ekddifjpbieuainvjlbl"
+# APOIS CORRIDAS — Supabase oficial.
+# Este arquivo nunca deve apontar para projetos MOVVI/APOIS legados.
+project_id = "vqtucstyduxrqjgyigfk"
 
 [functions.mercadopago-webhook]
 verify_jwt = false
@@ -13,4 +15,16 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.request-driver-payout]
+verify_jwt = true
+
+[functions.asaas-create-driver-membership]
+verify_jwt = true
+
+[functions.asaas-webhook]
+verify_jwt = false
+
+[functions.asaas-create-driver-subaccount]
+verify_jwt = true
+
+[functions.asaas-create-ride-pix]
 verify_jwt = true

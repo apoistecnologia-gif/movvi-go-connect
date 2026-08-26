@@ -1,10 +1,11 @@
 /**
- * MOVVI DRIVER — Profile screen (UI redesign only — Design System pass).
- * Preserves all logic: uploads, personal-info edits, subscription, documents, auth.
+ * APOIS — Profile screen.
+ * Preserves uploads, personal-info edits, subscription, documents and auth flows.
  */
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  AlertCircle,
   ArrowLeft,
   Calendar,
   Car,
@@ -13,8 +14,10 @@ import {
   Eye,
   FileText,
   LifeBuoy,
+  Loader2,
   LogOut,
   MapPin,
+  RefreshCw,
   ShieldCheck,
   Sparkles,
   Star,
@@ -26,7 +29,7 @@ import { ProfileForm } from "@/components/profile/ProfileForm";
 import { DriverProfessionalProfileDialog } from "@/components/profile/DriverProfessionalProfileDialog";
 import { ProfilePhotoUploader } from "@/components/ProfilePhotoUploader";
 import { MovviHeader } from "@/components/MovviHeader";
-import { BottomNav, DRIVER_NAV } from "@/components/BottomNav";
+import { ApoisDriverBottomNav } from "@/components/ApoisDriverBottomNav";
 import { toast } from "sonner";
 import {
   Avatar,
@@ -45,12 +48,13 @@ import {
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/motorista/perfil")({
-  head: () => ({ meta: [{ title: "Perfil do Motorista — MOVVI DRIVE" }] }),
+  head: () => ({ meta: [{ title: "Perfil do Motorista — APOIS" }] }),
   component: DriverProfilePage,
 });
 
 type Driver = {
   id?: string;
+  user_id?: string;
   name: string | null;
   email: string | null;
   photo_url: string | null;
@@ -64,6 +68,7 @@ type Driver = {
   total_ratings?: number | null;
   completed_rides?: number | null;
   approval_status: string | null;
+  documents_status?: string | null;
   subscription_status: string | null;
   subscription_expires_at?: string | null;
   city?: string | null;
@@ -71,11 +76,57 @@ type Driver = {
   created_at: string | null;
 };
 
+function cleanText(value: string | null | undefined): string {
+  return value?.trim() ?? "";
+}
+
+function safeCount(value: unknown): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? Math.floor(parsed) : 0;
+}
+
+function safeRating(value: unknown): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? Math.min(5, parsed) : 0;
+}
+
+function safeDateLabel(value: string | null | undefined, options?: Intl.DateTimeFormatOptions): string | null {
+  if (!value) return null;
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return null;
+  return date.toLocaleDateString("pt-BR", options);
+}
+
 function maskPlate(p: string | null | undefined) {
-  if (!p) return "—";
-  const clean = p.replace(/\s/g, "").toUpperCase();
+  const clean = cleanText(p).replace(/[^a-zA-Z0-9]/g, "").toUpperCase().slice(0, 7);
+  if (!clean) return "—";
   if (clean.length <= 4) return clean;
   return `${clean.slice(0, 3)}•${clean.slice(-2)}`;
+}
+
+function categoryLabel(value: string | null | undefined): string | null {
+  const normalized = cleanText(value).toLowerCase();
+  if (!normalized) return null;
+  const labels: Record<string, string> = {
+    carros: "Carro",
+    carro: "Carro",
+    motos: "Moto",
+    moto: "Moto",
+    fretes: "Fretes e Mudanças",
+    frete: "Fretes e Mudanças",
+    guincho: "Guincho",
+    envios: "Envios",
+    envio: "Envios",
+  };
+  return labels[normalized] ?? "Categoria cadastrada";
+}
+
+function ratingLabel(value: number, fractionDigits = 1): string {
+  if (!Number.isFinite(value) || value <= 0) return "—";
+  return value.toLocaleString("pt-BR", {
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
+  });
 }
 
 function DriverProfilePage() {
@@ -85,47 +136,75 @@ function DriverProfilePage() {
   const [totalRides, setTotalRides] = useState(0);
   const [publicProfileOpen, setPublicProfileOpen] = useState(false);
   const [mode, setMode] = useState<"hub" | "edit">("hub");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const requestRef = useRef(0);
+
+  const loadProfile = useCallback(async () => {
+    const requestId = requestRef.current + 1;
+    requestRef.current = requestId;
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { data: auth, error: authError } = await supabase.auth.getUser();
+      if (requestId !== requestRef.current) return;
+      if (authError || !auth.user) {
+        setUserId(null);
+        setDriver(null);
+        await navigate({ to: "/motorista/login", replace: true });
+        return;
+      }
+
+      setUserId(auth.user.id);
+      const { data, error: profileError } = await (supabase as any).rpc("driver_get_profile");
+      if (requestId !== requestRef.current) return;
+      if (profileError) throw profileError;
+
+      const nextDriver = (data ?? null) as Driver | null;
+      if (!nextDriver) {
+        setDriver(null);
+        setTotalRides(0);
+        setError("Seu perfil de motorista ainda não está disponível. Atualize a tela ou consulte o status do cadastro.");
+        return;
+      }
+
+      setDriver(nextDriver);
+      setTotalRides(safeCount(nextDriver.completed_rides));
+    } catch (caughtError) {
+      if (requestId !== requestRef.current) return;
+      console.error("[APOIS DRIVER PROFILE] falha ao carregar perfil", caughtError);
+      setError("Não foi possível carregar seu perfil agora. Tente novamente.");
+    } finally {
+      if (requestId === requestRef.current) setLoading(false);
+    }
+  }, [navigate]);
 
   useEffect(() => {
-    let alive = true;
-    (async () => {
-      const { data: u } = await supabase.auth.getUser();
-      if (!u.user) return;
-      if (!alive) return;
-      setUserId(u.user.id);
-
-      const { data: d } = await supabase
-        .from("drivers")
-        .select(
-          "id,name,email,photo_url,category,vehicle_model,vehicle_color,vehicle_plate,vehicle_year,rating,average_rating,total_ratings,completed_rides,approval_status,subscription_status,subscription_expires_at,city,is_online,created_at",
-        )
-        .eq("user_id", u.user.id)
-        .maybeSingle();
-      if (!alive) return;
-      setDriver((d ?? null) as Driver | null);
-
-      const { count } = await supabase
-        .from("rides")
-        .select("id", { count: "exact", head: true })
-        .eq("driver_id", u.user.id)
-        .eq("status", "finalizada");
-      if (!alive) return;
-      setTotalRides(count ?? 0);
-    })();
+    void loadProfile();
     return () => {
-      alive = false;
+      requestRef.current += 1;
     };
-  }, []);
+  }, [loadProfile]);
+
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible" && mode === "hub" && !loggingOut) void loadProfile();
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, [loadProfile, loggingOut, mode]);
 
   if (mode === "edit") {
     return (
       <div className="relative min-h-dvh bg-background">
-        <div className="fixed left-3 top-16 z-40">
+        <div className="fixed left-3 z-40" style={{ top: "calc(env(safe-area-inset-top) + 12px)" }}>
           <DSButton
             variant="outline"
             size="sm"
             onClick={() => setMode("hub")}
-            className="rounded-full bg-card/95 backdrop-blur"
+            className="min-h-11 rounded-full bg-card/95 px-4 backdrop-blur focus-visible:ring-2 focus-visible:ring-primary"
             aria-label="Voltar para o perfil"
           >
             <Icon as={ArrowLeft} size="sm" /> Voltar
@@ -141,43 +220,73 @@ function DriverProfilePage() {
     );
   }
 
-  const name = driver?.name || "Motorista MOVVI";
-  const rating = Number(driver?.average_rating ?? driver?.rating ?? 0);
-  const completed = Number(driver?.completed_rides ?? totalRides);
-  const totalRatings = Number(driver?.total_ratings ?? 0);
-  const subStatus = (driver?.subscription_status ?? "").toLowerCase();
-  const subActive = subStatus === "active" || subStatus === "ativa";
-  const approval = (driver?.approval_status ?? "").toLowerCase();
-  const approvalApproved =
-    approval === "approved" || approval === "aprovado" || approval === "active";
-  const memberSince = driver?.created_at
-    ? new Date(driver.created_at).toLocaleDateString("pt-BR", { month: "long", year: "numeric" })
-    : "—";
-  const expiresAt = driver?.subscription_expires_at
-    ? new Date(driver.subscription_expires_at).toLocaleDateString("pt-BR")
-    : null;
+  if (loading && !driver) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center bg-background px-4 text-foreground" role="status" aria-live="polite">
+        <div className="flex min-w-0 flex-col items-center gap-3 text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary motion-reduce:animate-none" aria-hidden="true" />
+          <Body className="break-words font-semibold">Carregando seu perfil...</Body>
+        </div>
+      </div>
+    );
+  }
+
+  const name = cleanText(driver?.name) || "Motorista APOIS";
+  const rating = safeRating(driver?.average_rating ?? driver?.rating);
+  const completed = safeCount(driver?.completed_rides ?? totalRides);
+  const totalRatings = safeCount(driver?.total_ratings);
+  const category = categoryLabel(driver?.category);
+  const vehicleModel = cleanText(driver?.vehicle_model);
+  const city = cleanText(driver?.city);
+  const subStatus = cleanText(driver?.subscription_status).toLowerCase();
+  const subActive = ["active", "ativa", "ativo", "paid", "pago", "teste"].includes(subStatus);
+  const subTest = subStatus === "teste";
+  const subPending = ["pending", "pendente", "processing", "processando"].includes(subStatus);
+  const approval = cleanText(driver?.approval_status).toLowerCase();
+  const approvalApproved = ["approved", "aprovado", "active", "ativo"].includes(approval);
+  const approvalSuspended = ["suspenso", "suspended"].includes(approval);
+  const approvalBlocked = ["bloqueado", "blocked"].includes(approval);
+  const approvalLabel = approvalApproved
+    ? "Conta ativa"
+    : approvalSuspended
+      ? "Conta suspensa"
+      : approvalBlocked
+        ? "Conta bloqueada"
+        : "Conta pendente";
+  const approvalPillStatus = approvalApproved ? "accepted" : approvalSuspended || approvalBlocked ? "cancelled" : "searching";
+  const documentsStatus = cleanText(driver?.documents_status).toLowerCase();
+  const documentsApproved = ["approved", "aprovado", "aprovados"].includes(documentsStatus);
+  const documentsRejected = ["rejected", "reprovado", "reprovados"].includes(documentsStatus);
+  const memberSince = safeDateLabel(driver?.created_at, { month: "long", year: "numeric" }) ?? "—";
+  const expiresAt = safeDateLabel(driver?.subscription_expires_at) ?? null;
+  const subscriptionLabel = subTest ? "Homologação ativa" : subActive ? "Mensalidade ativa" : subPending ? "Pagamento pendente" : "Mensalidade inativa";
 
   async function handleLogout() {
-    await supabase.auth.signOut();
-    toast.success("Sessão encerrada.");
-    navigate({ to: "/" });
+    if (loggingOut) return;
+    setLoggingOut(true);
+    try {
+      const { error: signOutError } = await supabase.auth.signOut();
+      if (signOutError) throw signOutError;
+      toast.success("Sessão encerrada.");
+      await navigate({ to: "/", replace: true });
+    } catch (caughtError) {
+      console.error("[APOIS DRIVER PROFILE] signOut failed", caughtError);
+      toast.error("Não foi possível sair da conta agora. Tente novamente.");
+    } finally {
+      setLoggingOut(false);
+    }
   }
 
   async function handlePhotoUploaded(result: { signedUrl: string; path: string }) {
     if (!userId) return;
-    // Exibimos a signed URL curta imediatamente; no banco persistimos apenas o path.
-    setDriver((d) => (d ? { ...d, photo_url: result.signedUrl } : d));
-    try {
-      await supabase
-        .from("users")
-        .update({ avatar_url: result.path })
-        .eq("auth_user_id", userId);
-      await supabase.from("drivers").update({ photo_url: result.path }).eq("user_id", userId);
-      await supabase.auth.updateUser({ data: { avatar_path: result.path } });
-      toast.success("Foto atualizada!");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Falha ao salvar a foto.");
+    const signedUrl = result.signedUrl.trim();
+    if (!signedUrl) {
+      toast.error("A foto foi enviada, mas não pôde ser exibida agora. Atualize o perfil.");
+      void loadProfile();
+      return;
     }
+    setDriver((current) => (current ? { ...current, photo_url: signedUrl } : current));
+    toast.success("Foto atualizada!");
   }
 
   return (
@@ -188,339 +297,187 @@ function DriverProfilePage() {
         className="flex-1 px-4 pt-4 sm:px-5"
         style={{ paddingBottom: "max(8rem, env(safe-area-inset-bottom))" }}
       >
-        <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
-          {/* ============ HERO ============ */}
-          <DSCard className="relative overflow-hidden p-5 sm:p-6 animate-fade-in">
-            <div
-              aria-hidden
-              className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-primary/10 blur-2xl"
-            />
-            <div
-              aria-hidden
-              className="pointer-events-none absolute -left-10 bottom-0 h-24 w-24 rounded-full bg-primary/[0.06] blur-xl"
-            />
+        <div className="mx-auto flex w-full min-w-0 max-w-2xl flex-col gap-4">
+          {error ? (
+            <DSCard className="min-w-0 border-destructive/25 bg-destructive/5 p-4" role="alert" aria-live="assertive">
+              <div className="flex min-w-0 items-start gap-3">
+                <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" aria-hidden="true" />
+                <div className="min-w-0 flex-1">
+                  <Body className="break-words font-semibold text-foreground">{error}</Body>
+                  <DSButton variant="outline" size="sm" onClick={() => void loadProfile()} disabled={loading} className="mt-3 min-h-11 max-w-full focus-visible:ring-2 focus-visible:ring-primary" aria-busy={loading}>
+                    <RefreshCw className={cn("mr-2 h-4 w-4", loading && "animate-spin motion-reduce:animate-none")} aria-hidden="true" />
+                    {loading ? "Atualizando..." : "Tentar novamente"}
+                  </DSButton>
+                </div>
+              </div>
+            </DSCard>
+          ) : null}
 
-            <div className="relative flex flex-col items-center gap-3 text-center">
+          <DSCard className="relative min-w-0 overflow-hidden p-4 animate-fade-in motion-reduce:animate-none sm:p-6">
+            <div aria-hidden className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-primary/10 blur-2xl" />
+            <div aria-hidden className="pointer-events-none absolute -left-10 bottom-0 h-24 w-24 rounded-full bg-primary/[0.06] blur-xl" />
+
+            <div className="relative flex min-w-0 flex-col items-center gap-3 text-center">
               {userId ? (
                 <div className="rounded-full p-1 ring-2 ring-primary/40 shadow-[0_10px_28px_-10px_color-mix(in_oklab,var(--color-primary)_55%,transparent)]">
-                  <ProfilePhotoUploader
-                    userId={userId}
-                    name={name}
-                    currentUrl={driver?.photo_url ?? null}
-                    onUploaded={handlePhotoUploaded}
-                    size={96}
-                    label=""
-                  />
+                  <ProfilePhotoUploader userId={userId} name={name} currentUrl={driver?.photo_url?.trim() || null} onUploaded={handlePhotoUploaded} size={96} label="" />
                 </div>
               ) : (
                 <Avatar name={name} size={96} />
               )}
 
-              <HeadingL className="max-w-full truncate">{name}</HeadingL>
+              <HeadingL className="max-w-full break-words leading-tight [overflow-wrap:anywhere]">{name}</HeadingL>
 
-              {/* Rating + trips inline metric (not a badge) */}
-              <div className="flex items-center gap-3 text-muted-foreground">
-                <span className="inline-flex items-center gap-1 text-foreground">
-                  <Star aria-hidden="true" className="h-4 w-4 fill-primary text-primary" />
-                  <Body className="font-semibold">{rating > 0 ? rating.toFixed(2) : "—"}</Body>
+              <div className="flex min-w-0 flex-wrap items-center justify-center gap-x-3 gap-y-1 text-muted-foreground">
+                <span className="inline-flex min-w-0 items-center gap-1 text-foreground" aria-label={rating > 0 ? `Avaliação ${ratingLabel(rating, 1)} de 5` : "Sem avaliações ainda"}>
+                  <Star aria-hidden="true" className="h-4 w-4 shrink-0 fill-primary text-primary" />
+                  <Body className="font-semibold">{ratingLabel(rating, 1)}</Body>
                   {totalRatings > 0 && <Caption>({totalRatings})</Caption>}
                 </span>
-                <span aria-hidden="true" className="h-3 w-px bg-border" />
-                <Caption>{completed} viagens</Caption>
-                {driver?.category && (
+                <span aria-hidden="true" className="h-3 w-px shrink-0 bg-border" />
+                <Caption className="break-words">{completed} {completed === 1 ? "corrida" : "corridas"}</Caption>
+                {category && (
                   <>
-                    <span aria-hidden="true" className="h-3 w-px bg-border" />
-                    <Caption className="capitalize">{driver.category}</Caption>
+                    <span aria-hidden="true" className="h-3 w-px shrink-0 bg-border" />
+                    <Caption className="max-w-full break-words">{category}</Caption>
                   </>
                 )}
               </div>
 
-              {/* Status pills */}
-              <div className="flex flex-wrap items-center justify-center gap-1.5">
-                <StatusPill
-                  status={approvalApproved ? "accepted" : "searching"}
-                  label={approvalApproved ? "Conta ativa" : "Conta pendente"}
-                  pulse={!approvalApproved}
-                />
-                <StatusPill
-                  status={subActive ? "accepted" : "cancelled"}
-                  label={subActive ? "Premium ativa" : "Premium inativa"}
-                  pulse={false}
-                />
+              <div className="flex max-w-full flex-wrap items-center justify-center gap-1.5">
+                <StatusPill status={approvalPillStatus} label={approvalLabel} pulse={!approvalApproved && !approvalSuspended && !approvalBlocked} />
+                <StatusPill status={subActive ? "accepted" : subPending ? "searching" : "cancelled"} label={subscriptionLabel} pulse={false} />
               </div>
 
               <DSButton
                 variant="outline"
                 size="sm"
                 onClick={() => setPublicProfileOpen(true)}
-                className="mt-1 rounded-full"
+                disabled={!userId}
+                className="mt-1 min-h-11 max-w-full rounded-full px-4 focus-visible:ring-2 focus-visible:ring-primary"
               >
                 <Icon as={Eye} size="sm" /> Ver perfil público
               </DSButton>
             </div>
           </DSCard>
 
-          {/* ============ STATISTICS ============ */}
-          <section
-            aria-label="Resumo do perfil"
-            className="grid grid-cols-3 gap-2 sm:gap-3 animate-fade-in"
-          >
+          <section aria-label="Resumo do perfil" className="grid grid-cols-3 gap-2 animate-fade-in motion-reduce:animate-none sm:gap-3 max-[339px]:grid-cols-1">
             <StatCard label="Corridas" value={String(completed)} />
-            <StatCard label="Avaliação" value={rating > 0 ? rating.toFixed(1) : "—"} highlight />
+            <StatCard label="Avaliação" value={ratingLabel(rating, 1)} highlight />
             <StatCard label="Avaliações" value={String(totalRatings)} />
           </section>
 
-          {/* ============ VEHICLE / PERSONAL INFO ============ */}
-          <DSCard className="p-4 sm:p-5 animate-fade-in">
-            <HeadingS className="mb-3">Dados & veículo</HeadingS>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-3">
-              <InfoRow icon={Car} label="Veículo" value={driver?.vehicle_model || "—"} />
+          <DSCard className="min-w-0 p-4 animate-fade-in motion-reduce:animate-none sm:p-5">
+            <HeadingS className="mb-3 break-words">Dados e veículo</HeadingS>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-3 max-[359px]:grid-cols-1">
+              <InfoRow icon={Car} label="Veículo" value={vehicleModel || "—"} />
               <InfoRow label="Placa" value={maskPlate(driver?.vehicle_plate)} mono />
-              <InfoRow icon={MapPin} label="Cidade" value={driver?.city || "—"} />
+              <InfoRow icon={MapPin} label="Cidade" value={city || "—"} />
               <InfoRow icon={Calendar} label="Membro desde" value={memberSince} capitalize />
             </div>
           </DSCard>
 
-          {/* ============ SUBSCRIPTION CTA ============ */}
-          <Link
-            to="/motorista/assinatura"
-            className="block animate-fade-in focus:outline-none"
-            aria-label="Abrir minha assinatura"
-          >
-            <DSCard className="press-scale flex items-center gap-3 p-4 sm:p-5">
-              <span
-                className={cn(
-                  "grid h-11 w-11 shrink-0 place-items-center rounded-full",
-                  subActive ? "bg-primary/12 text-primary" : "bg-destructive/10 text-destructive",
-                )}
-              >
+          <Link to="/motorista/assinatura" className="block min-w-0 animate-fade-in motion-reduce:animate-none rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary" aria-label="Abrir minha mensalidade">
+            <DSCard className="press-scale flex min-w-0 items-center gap-3 p-4 max-[339px]:flex-wrap sm:p-5">
+              <span className={cn("grid h-11 w-11 shrink-0 place-items-center rounded-full", subActive ? "bg-primary/12 text-primary" : subPending ? "bg-primary/10 text-primary" : "bg-destructive/10 text-destructive")} aria-hidden="true">
                 <Icon as={CreditCard} size="lg" />
               </span>
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Body className="font-semibold">MOVVI Premium</Body>
-                  <StatusPill
-                    status={subActive ? "accepted" : "cancelled"}
-                    label={subActive ? "Ativa" : "Vencida"}
-                    pulse={subActive}
-                  />
+              <div className="min-w-[140px] flex-1 max-[339px]:min-w-0">
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                  <Body className="break-words font-semibold">Mensalidade APOIS</Body>
+                  <StatusPill status={subActive ? "accepted" : subPending ? "searching" : "cancelled"} label={subTest ? "Homologação" : subActive ? "Ativa" : subPending ? "Pendente" : "Inativa"} pulse={false} />
                 </div>
-                <Caption className="mt-0.5 block">
-                  {subActive
-                    ? expiresAt
-                      ? `Renova em ${expiresAt}`
-                      : "Todos os benefícios liberados"
-                    : "Ative para receber corridas"}
+                <Caption className="mt-0.5 block break-words">
+                  {subTest ? "Acesso de homologação, sem cobrança" : subActive ? (expiresAt ? `Válida até ${expiresAt}` : "Mensalidade liberada") : subPending ? "Aguardando confirmação do pagamento" : "Regularize para receber corridas"}
                 </Caption>
               </div>
-              <Icon as={ChevronRight} size="md" className="text-muted-foreground" />
+              <Icon as={ChevronRight} size="md" className="shrink-0 text-muted-foreground" aria-hidden="true" />
             </DSCard>
           </Link>
 
-          {/* ============ ACCOUNT SECTIONS ============ */}
-          <section className="flex flex-col gap-2 animate-fade-in">
+          <section className="flex min-w-0 flex-col gap-2 animate-fade-in motion-reduce:animate-none">
             <Label className="px-2">Conta</Label>
-            <DSCard className="overflow-hidden p-0">
-              <MenuRow
-                icon={User}
-                label="Informações pessoais"
-                sub="Nome, e-mail, telefone e senha"
-                onClick={() => setMode("edit")}
-              />
+            <DSCard className="min-w-0 overflow-hidden p-0">
+              <MenuRow icon={User} label="Informações pessoais" sub="Nome, e-mail, telefone e senha" onClick={() => setMode("edit")} />
               <Divider />
-              <MenuRow
-                icon={Car}
-                label="Veículo"
-                sub={
-                  driver?.vehicle_model
-                    ? `${driver.vehicle_model} · ${maskPlate(driver?.vehicle_plate)}`
-                    : "Modelo, placa e categoria"
-                }
-                to="/motorista/documentos"
-              />
+              <MenuRow icon={Car} label="Veículo e documentos" sub={vehicleModel ? `${vehicleModel} · ${maskPlate(driver?.vehicle_plate)}` : "Modelo, placa e documentos do veículo"} to="/motorista/documentos" />
               <Divider />
               <MenuRow
                 icon={FileText}
                 label="Documentos"
                 sub="CNH, CRLV e selfie"
                 to="/motorista/documentos"
-                trailing={
-                  <StatusPill
-                    status={approvalApproved ? "accepted" : "searching"}
-                    label={approvalApproved ? "Aprovados" : "Pendentes"}
-                    pulse={false}
-                  />
-                }
+                trailing={<StatusPill status={documentsApproved ? "accepted" : documentsRejected ? "cancelled" : "searching"} label={documentsApproved ? "Aprovados" : documentsRejected ? "Reenvio" : "Pendentes"} pulse={false} />}
               />
               <Divider />
-              <MenuRow
-                icon={CreditCard}
-                label="Pagamentos e assinatura"
-                sub="Formas de pagamento e recibos"
-                to="/motorista/assinatura"
-              />
+              <MenuRow icon={CreditCard} label="Mensalidade" sub="Status, pagamento Pix e comprovante" to="/motorista/assinatura" />
               <Divider />
-              <MenuRow
-                icon={Sparkles}
-                label="Regalias a bordo"
-                sub="Escolha o que você oferece aos passageiros"
-                to="/motorista/regalias"
-              />
+              <MenuRow icon={Sparkles} label="Regalias a bordo" sub="Escolha o que você oferece aos passageiros" to="/motorista/regalias" />
             </DSCard>
-
           </section>
 
-          <section className="flex flex-col gap-2 animate-fade-in">
+          <section className="flex min-w-0 flex-col gap-2 animate-fade-in motion-reduce:animate-none">
             <Label className="px-2">Preferências</Label>
-            <DSCard className="overflow-hidden p-0">
-              <MenuRow
-                icon={LifeBuoy}
-                label="Suporte"
-                sub="Central de ajuda e contato"
-                to="/motorista/suporte"
-              />
+            <DSCard className="min-w-0 overflow-hidden p-0">
+              <MenuRow icon={LifeBuoy} label="Suporte" sub="Central de ajuda e contato" to="/motorista/suporte" />
               <Divider />
-              <MenuRow
-                icon={ShieldCheck}
-                label="Privacidade e segurança"
-                sub="Dados, permissões e conta"
-                to="/motorista/privacidade"
-              />
+              <MenuRow icon={ShieldCheck} label="Privacidade e segurança" sub="Dados, permissões e conta" to="/motorista/privacidade" />
             </DSCard>
           </section>
 
-          {/* ============ LOGOUT ============ */}
-          <div className="flex flex-col gap-3 pt-1 animate-fade-in">
-            <DSButton
-              variant="outline"
-              size="lg"
-              onClick={handleLogout}
-              className="w-full text-destructive hover:bg-destructive/5 hover:text-destructive"
-            >
-              <Icon as={LogOut} size="md" /> Sair da conta
+          <div className="flex flex-col gap-3 pt-1 animate-fade-in motion-reduce:animate-none">
+            <DSButton variant="outline" size="lg" onClick={() => void handleLogout()} disabled={loggingOut} aria-busy={loggingOut} className="min-h-12 w-full text-destructive hover:bg-destructive/5 hover:text-destructive focus-visible:ring-2 focus-visible:ring-destructive">
+              {loggingOut ? <Loader2 className="mr-2 h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Icon as={LogOut} size="md" />}
+              {loggingOut ? "Saindo..." : "Sair da conta"}
             </DSButton>
-            <BodySmall className="text-center text-muted-foreground">
-              MOVVI Driver · Versão 1.0
-            </BodySmall>
+            <BodySmall className="text-center text-muted-foreground">APOIS Motorista</BodySmall>
           </div>
         </div>
       </main>
 
-      <DriverProfessionalProfileDialog
-        open={publicProfileOpen}
-        onOpenChange={setPublicProfileOpen}
-        driverUserId={userId}
-      />
-
-      <BottomNav items={DRIVER_NAV} />
+      <DriverProfessionalProfileDialog open={publicProfileOpen} onOpenChange={setPublicProfileOpen} driverUserId={userId} />
+      <ApoisDriverBottomNav />
     </div>
   );
 }
 
-/* ---------- subcomponents (DS-only) ---------- */
-
-function InfoRow({
-  icon,
-  label,
-  value,
-  mono,
-  capitalize,
-}: {
-  icon?: React.ComponentType<React.SVGProps<SVGSVGElement>>;
-  label: string;
-  value: string;
-  mono?: boolean;
-  capitalize?: boolean;
-}) {
+function InfoRow({ icon, label, value, mono, capitalize }: { icon?: React.ComponentType<React.SVGProps<SVGSVGElement>>; label: string; value: string; mono?: boolean; capitalize?: boolean }) {
   return (
     <div className="min-w-0">
-      <div className="flex items-center gap-1.5 text-muted-foreground">
-        {icon && <Icon as={icon} size="sm" className="text-primary" />}
-        <Caption>{label}</Caption>
+      <div className="flex min-w-0 items-center gap-1.5 text-muted-foreground">
+        {icon && <Icon as={icon} size="sm" className="shrink-0 text-primary" />}
+        <Caption className="break-words">{label}</Caption>
       </div>
-      <Body
-        className={cn(
-          "mt-0.5 truncate font-semibold text-foreground",
-          mono && "font-mono tracking-wide",
-          capitalize && "capitalize",
-        )}
-      >
-        {value}
-      </Body>
+      <Body className={cn("mt-0.5 break-words font-semibold text-foreground [overflow-wrap:anywhere]", mono && "font-mono tracking-wide", capitalize && "capitalize")}>{value}</Body>
     </div>
   );
 }
 
-function StatCard({
-  label,
-  value,
-  highlight,
-}: {
-  label: string;
-  value: string;
-  highlight?: boolean;
-}) {
+function StatCard({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
   return (
-    <DSCard
-      className={cn(
-        "flex flex-col items-center gap-2 p-3 text-center sm:p-4",
-        highlight && "ring-1 ring-primary/25",
-      )}
-    >
-      <Metric
-        className={cn("text-[clamp(18px,6vw,24px)] leading-none", highlight && "text-primary")}
-      >
-        {value}
-      </Metric>
-      <Label>{label}</Label>
+    <DSCard className={cn("flex min-w-0 flex-col items-center gap-2 p-3 text-center sm:p-4", highlight && "ring-1 ring-primary/25")}>
+      <Metric className={cn("max-w-full break-words text-[clamp(18px,6vw,24px)] leading-none", highlight && "text-primary")}>{value}</Metric>
+      <Label className="break-words text-center">{label}</Label>
     </DSCard>
   );
 }
 
-function MenuRow({
-  icon,
-  label,
-  sub,
-  to,
-  onClick,
-  trailing,
-}: {
-  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
-  label: string;
-  sub?: string;
-  to?: string;
-  onClick?: () => void;
-  trailing?: React.ReactNode;
-}) {
+function MenuRow({ icon, label, sub, to, onClick, trailing }: { icon: React.ComponentType<React.SVGProps<SVGSVGElement>>; label: string; sub?: string; to?: string; onClick?: () => void; trailing?: React.ReactNode }) {
   const content = (
-    <div className="flex min-h-[56px] items-center gap-3 px-4 py-3 transition active:bg-muted/40">
-      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
-        <Icon as={icon} size="md" />
-      </span>
-      <div className="min-w-0 flex-1">
-        <Body className="font-semibold">{label}</Body>
-        {sub && <Caption className="block truncate">{sub}</Caption>}
+    <div className="flex min-h-[56px] min-w-0 items-center gap-3 px-4 py-3 transition active:bg-muted/40 max-[339px]:flex-wrap">
+      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary" aria-hidden="true"><Icon as={icon} size="md" /></span>
+      <div className="min-w-[140px] flex-1 max-[339px]:min-w-0">
+        <Body className="break-words font-semibold [overflow-wrap:anywhere]">{label}</Body>
+        {sub && <Caption className="block break-words leading-4 [overflow-wrap:anywhere]">{sub}</Caption>}
       </div>
-      {trailing}
-      <Icon as={ChevronRight} size="sm" className="shrink-0 text-muted-foreground" />
+      {trailing ? <div className="max-w-full shrink-0 max-[339px]:ml-[55px]">{trailing}</div> : null}
+      <Icon as={ChevronRight} size="sm" className="shrink-0 text-muted-foreground" aria-hidden="true" />
     </div>
   );
   if (to) {
-    return (
-      <Link to={to} className="block focus:outline-none focus-visible:bg-muted/50">
-        {content}
-      </Link>
-    );
+    return <Link to={to} className="block min-w-0 focus:outline-none focus-visible:bg-muted/50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary">{content}</Link>;
   }
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="w-full text-left focus:outline-none focus-visible:bg-muted/50"
-    >
-      {content}
-    </button>
-  );
+  return <button type="button" onClick={onClick} className="w-full min-w-0 text-left focus:outline-none focus-visible:bg-muted/50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary">{content}</button>;
 }
 
 function Divider() {

@@ -26,13 +26,15 @@ const entry = files.find((f) => /^index-.*\.js$/.test(f));
 const css = files.find((f) => /^styles-.*\.css$/.test(f));
 
 if (!entry) {
-  console.error("[postbuild-capacitor] entry client `index-*.js` não encontrado em dist/client/assets/.");
+  console.error(
+    "[postbuild-capacitor] entry client `index-*.js` não encontrado em dist/client/assets/.",
+  );
   process.exit(1);
 }
 
 const role = process.env.VITE_APP_ROLE || "web";
-const appName = role === "motorista" ? "MOVVI Motorista" : "MOVVI";
-const themeColor = role === "motorista" ? "#111827" : "#1E5CFF";
+const appName = role === "motorista" ? "APOIS Motorista" : "APOIS";
+const themeColor = role === "motorista" ? "#111827" : "#111827";
 
 const html = `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -55,4 +57,6 @@ ${css ? `    <link rel="stylesheet" href="/assets/${css}" />\n` : ""}    <style>
 `;
 
 writeFileSync(join(OUT_DIR, "index.html"), html, "utf8");
-console.log(`[postbuild-capacitor] dist/client/index.html gerado (role=${role}, entry=${entry}${css ? `, css=${css}` : ""}).`);
+console.log(
+  `[postbuild-capacitor] dist/client/index.html gerado (role=${role}, entry=${entry}${css ? `, css=${css}` : ""}).`,
+);

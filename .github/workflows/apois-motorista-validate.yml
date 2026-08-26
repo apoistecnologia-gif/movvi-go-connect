@@ -1,0 +1,122 @@
+name: APOIS Motorista — validação
+
+on:
+  push:
+    branches:
+      - feat/apois-motorista-producao-homologacao
+    paths:
+      - "src/**"
+      - "scripts/**"
+      - "package.json"
+      - "bun.lock"
+      - "vite.mobile.config.ts"
+      - "index.mobile.html"
+      - ".env.mobile"
+      - ".env.example"
+      - ".gitignore"
+      - "supabase/config.toml"
+      - "capacitor.motorista.config.ts"
+      - ".github/workflows/apois-motorista-validate.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build-mobile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Instalar dependências
+        run: npm install --no-audit --no-fund
+
+      - name: Validar ambiente canônico APOIS
+        run: |
+          test ! -f .env
+          grep -F 'project_id = "vqtucstyduxrqjgyigfk"' supabase/config.toml
+          grep -F 'VITE_SUPABASE_URL=https://vqtucstyduxrqjgyigfk.supabase.co' .env.mobile
+          grep -F 'VITE_SUPABASE_PROJECT_ID=vqtucstyduxrqjgyigfk' .env.mobile
+          if grep -RIn --exclude-dir=.git -E 'ekddifjpbieuainvjlbl|wqbtnfbvqtkyywfcqjwa|zjphbuvcapwyuynadgdt' \
+            .env.mobile supabase/config.toml .env.example; then
+            echo 'Referência de Supabase legado encontrada em configuração ativa.'
+            exit 1
+          fi
+          if grep -Ei 'service_role|SUPABASE_SERVICE_ROLE' .env.mobile; then
+            echo 'Credencial server-side proibida no arquivo mobile.'
+            exit 1
+          fi
+
+      - name: Garantir que a marca antiga não ficou no código do app
+        run: |
+          if grep -RIn --include='*.ts' --include='*.tsx' 'MOVVI' src; then
+            echo 'Marca antiga encontrada no código do APOIS Motorista.'
+            exit 1
+          fi
+          if grep -n 'MOVVI' index.mobile.html; then
+            echo 'Marca antiga encontrada no shell mobile do APOIS Motorista.'
+            exit 1
+          fi
+
+      - name: Validar requisitos do checklist do motorista
+        run: |
+          grep -F 'DriverVoiceToggle' src/routes/motorista.app.tsx
+          grep -F 'Você chegou ao ponto de embarque.' src/routes/motorista.app.tsx
+          grep -F 'Você chegou ao destino final.' src/routes/motorista.app.tsx
+          grep -F 'Próxima corrida reservada' src/routes/motorista.app.tsx
+          grep -F 'queued_after_ride_id' src/routes/motorista.app.tsx
+          grep -F 'Km total' src/routes/motorista.app.tsx
+          grep -F 'driverRecordId' src/routes/motorista.app.tsx
+          grep -F 'apois:motorista:voice-enabled' src/lib/voiceNav.ts
+          grep -F 'driver_wallet_transactions' src/routes/motorista.carteira.tsx
+          grep -F 'Saques automáticos' src/routes/motorista.carteira.tsx
+          grep -F 'aria-label="Voltar"' src/routes/motorista.status.tsx
+
+      - name: Validar retorno nas telas do menu
+        run: |
+          pages=(
+            src/routes/motorista.corridas.tsx
+            src/routes/motorista.carteira.tsx
+            src/routes/motorista.ganhos.tsx
+            src/routes/motorista.notificacoes.tsx
+            src/routes/motorista.perfil.tsx
+            src/routes/motorista.seguranca.tsx
+            src/routes/motorista.status.tsx
+            src/routes/motorista.suporte.tsx
+            src/routes/motorista.configuracoes.tsx
+          )
+          for page in "${pages[@]}"; do
+            test -f "$page"
+            if ! grep -Eq 'MovviHeader|SettingsPageShell|ArrowLeft|aria-label="Voltar|Voltar ao' "$page"; then
+              echo "Tela sem retorno explícito: $page"
+              exit 1
+            fi
+          done
+
+      - name: Impedir regressão de identidade do motorista
+        run: |
+          if grep -RIn --include='motorista*.tsx' -E '\.eq\("driver_id", (uid|userId)\)' src/routes; then
+            echo 'Consulta de rides usando auth/users id no campo driver_id. Use public.drivers.id.'
+            exit 1
+          fi
+
+      - name: Build APOIS Motorista
+        run: npm run build:motorista
+
+      - name: Verificar saída mobile final
+        run: |
+          test -f dist/client/index.html
+          test ! -d .output/server
+          if grep -RIn 'MOVVI' dist/client; then
+            echo 'Marca antiga encontrada no bundle final do APOIS Motorista.'
+            exit 1
+          fi
+          grep -F 'Período de homologação ativo' src/routes/motorista.status.tsx
+          grep -F 'Nenhum pagamento é necessário nesta etapa.' src/routes/motorista.status.tsx
+          echo "APOIS_MOTORISTA_BUILD_OK"

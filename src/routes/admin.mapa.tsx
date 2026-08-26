@@ -1,359 +1,324 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Marker } from "@react-google-maps/api";
+import { MapPin, Radio, RefreshCw } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
-import { supabase } from "@/integrations/supabase/client";
 import { MovviMap } from "@/components/MovviMap";
-import { Marker, Polyline } from "@react-google-maps/api";
-import { DSButton, DSCard, DSCardContent, DSSelect, DSSelectContent, DSSelectItem, DSSelectTrigger, DSSelectValue } from "@/design-system";
-import { Switch } from "@/components/ui/switch";
-export const Route = createFileRoute("/admin/mapa")({
-  head: () => ({ meta: [{ title: "Mapa ao Vivo — Admin MOVVI" }] }),
-  component: AdminMapaPage,
-});
+import { supabase } from "@/integrations/supabase/client";
+import { APOIS_ADMIN_MAP } from "@/lib/adminVisual";
+import { DSBadge, DSButton, DSCard, DSCardContent, EmptyState, Loading } from "@/design-system";
 
-type Driver = {
+type DriverPresence = {
   id: string;
   name: string | null;
-  is_online: boolean;
+  category: string | null;
   current_lat: number | null;
   current_lng: number | null;
-  category: string | null;
-  city: string | null;
-  state: string | null;
+  current_heading: number | null;
+  last_location_at: string | null;
+  is_online: boolean;
+  approval_status: string;
 };
-type Ride = {
+
+type ActiveRide = {
   id: string;
-  status: string;
-  category: string | null;
-  origin_name: string | null;
-  origin_lat: number | null;
-  origin_lng: number | null;
-  destination_lat: number | null;
-  destination_lng: number | null;
-  driver_lat: number | null;
-  driver_lng: number | null;
   driver_id: string | null;
+  status: string;
+  origin_name: string;
+  destination_name: string;
+  driver_latitude: number | null;
+  driver_longitude: number | null;
 };
-type RideCategory = { key: string; label: string };
 
-const ACCEPTED_STATUSES = new Set(["motorista_a_caminho", "motorista_chegou"]);
-const ALL = "__all__";
+export const Route = createFileRoute("/admin/mapa")({
+  head: () => ({ meta: [{ title: "Mapa ao vivo — Admin APOIS" }] }),
+  component: AdminLiveMapPage,
+});
 
-function AdminMapaPage() {
-  const [drivers, setDrivers] = useState<Driver[]>([]);
-  const [rides, setRides] = useState<Ride[]>([]);
-  const [categories, setCategories] = useState<RideCategory[]>([]);
-  const [categoryFilter, setCategoryFilter] = useState<string>(ALL);
-  const [cityFilter, setCityFilter] = useState<string>(ALL);
+const ACTIVE_STATUSES = [
+  "procurar_motorista",
+  "motorista_a_caminho",
+  "motorista_chegou",
+  "em_viagem",
+];
 
-  const [showOnline, setShowOnline] = useState(true);
-  const [showOffline, setShowOffline] = useState(false);
-  const [showSearching, setShowSearching] = useState(true);
-  const [showAccepted, setShowAccepted] = useState(true);
-  const [showInTrip, setShowInTrip] = useState(true);
-  const [showHeatmap, setShowHeatmap] = useState(false);
+function cleanText(value: unknown, fallback = "") {
+  const text = String(value ?? "").trim().replace(/\s+/g, " ").slice(0, 180);
+  return text || fallback;
+}
 
-  const mapRef = useRef<google.maps.Map | null>(null);
-  const heatmapRef = useRef<google.maps.visualization.HeatmapLayer | null>(null);
-
-  async function refresh() {
-    const [dr, ri] = await Promise.all([
-      supabase
-        .from("drivers")
-        .select("id,name,is_online,current_lat,current_lng,category,city,state")
-        .not("current_lat", "is", null),
-      supabase
-        .from("rides")
-        .select(
-          "id,status,category,origin_name,origin_lat,origin_lng,destination_lat,destination_lng,driver_lat,driver_lng,driver_id",
-        )
-        .in("status", ["procurar_motorista", "motorista_a_caminho", "motorista_chegou", "em_viagem"]),
-    ]);
-    setDrivers((dr.data ?? []) as Driver[]);
-    setRides((ri.data ?? []) as Ride[]);
-  }
-
-  async function loadCategories() {
-    const { data } = await supabase
-      .from("ride_categories")
-      .select("key,label")
-      .order("label");
-    setCategories((data ?? []) as RideCategory[]);
-  }
-
-  useEffect(() => {
-    refresh();
-    loadCategories();
-    const ch = supabase
-      .channel("admin-live-map")
-      .on("postgres_changes", { event: "*", schema: "public", table: "drivers" }, refresh)
-      .on("postgres_changes", { event: "*", schema: "public", table: "rides" }, refresh)
-      .on("postgres_changes", { event: "*", schema: "public", table: "ride_categories" }, loadCategories)
-      .subscribe();
-    const t = setInterval(refresh, 15000);
-    return () => {
-      supabase.removeChannel(ch);
-      clearInterval(t);
-    };
-  }, []);
-
-  // Lookup: driver_id → city (used to filter rides by city)
-  const driverCityById = useMemo(() => {
-    const m = new Map<string, string | null>();
-    for (const d of drivers) m.set(d.id, d.city);
-    return m;
-  }, [drivers]);
-
-  // Cities available (from connected drivers)
-  const availableCities = useMemo(() => {
-    const set = new Set<string>();
-    for (const d of drivers) if (d.city) set.add(d.city);
-    return Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR"));
-  }, [drivers]);
-
-  // Apply category + city filters
-  const filteredDrivers = useMemo(() => {
-    return drivers.filter((d) => {
-      if (categoryFilter !== ALL && d.category !== categoryFilter) return false;
-      if (cityFilter !== ALL && d.city !== cityFilter) return false;
-      return true;
-    });
-  }, [drivers, categoryFilter, cityFilter]);
-
-  const filteredRides = useMemo(() => {
-    return rides.filter((r) => {
-      if (categoryFilter !== ALL && r.category !== categoryFilter) return false;
-      if (cityFilter !== ALL) {
-        // Match city via driver association OR origin_name substring (fallback for unassigned rides)
-        const driverCity = r.driver_id ? driverCityById.get(r.driver_id) ?? null : null;
-        const matchesDriver = driverCity === cityFilter;
-        const matchesOrigin =
-          !!r.origin_name && r.origin_name.toLowerCase().includes(cityFilter.toLowerCase());
-        if (!matchesDriver && !matchesOrigin) return false;
-      }
-      return true;
-    });
-  }, [rides, categoryFilter, cityFilter, driverCityById]);
-
-  // Heatmap rendering — depends on map + filtered drivers + toggle
-  useEffect(() => {
-    const map = mapRef.current;
-    const g = typeof window !== "undefined" ? (window as { google?: typeof google }).google : undefined;
-    if (!map || !g?.maps?.visualization) return;
-
-    if (heatmapRef.current) {
-      heatmapRef.current.setMap(null);
-      heatmapRef.current = null;
-    }
-    if (!showHeatmap) return;
-
-    const points = filteredDrivers
-      .filter((d) => d.is_online && d.current_lat != null && d.current_lng != null)
-      .map((d) => new g.maps.LatLng(Number(d.current_lat), Number(d.current_lng)));
-
-    if (points.length === 0) return;
-
-    heatmapRef.current = new g.maps.visualization.HeatmapLayer({
-      data: points,
-      map,
-      radius: 40,
-      opacity: 0.7,
-      gradient: [
-        "rgba(141,217,43,0)",
-        "rgba(141,217,43,0.5)",
-        "rgba(141,217,43,0.85)",
-        "rgba(95,175,26,1)",
-        "rgba(251,191,36,1)",
-        "rgba(239,68,68,1)",
-      ],
-    });
-  }, [filteredDrivers, showHeatmap]);
-
-  useEffect(() => {
-    return () => {
-      if (heatmapRef.current) heatmapRef.current.setMap(null);
-    };
-  }, []);
-
-  const ready = typeof window !== "undefined" && !!(window as { google?: unknown }).google;
-  const symbol = (color: string, scale = 8, stroke = 2) =>
-    ready
-      ? {
-          path: (window as unknown as { google: { maps: { SymbolPath: { CIRCLE: number } } } }).google.maps.SymbolPath
-            .CIRCLE,
-          scale,
-          fillColor: color,
-          fillOpacity: 1,
-          strokeColor: "#05070D",
-          strokeWeight: stroke,
-        }
-      : undefined;
-
-  const visibleDrivers = useMemo(
-    () => filteredDrivers.filter((d) => (d.is_online ? showOnline : showOffline)),
-    [filteredDrivers, showOnline, showOffline],
+function validCoordinate(lat: unknown, lng: unknown) {
+  const latitude = Number(lat);
+  const longitude = Number(lng);
+  return (
+    Number.isFinite(latitude) &&
+    Number.isFinite(longitude) &&
+    latitude >= -90 &&
+    latitude <= 90 &&
+    longitude >= -180 &&
+    longitude <= 180
   );
+}
 
-  const stats = useMemo(() => {
-    const online = filteredDrivers.filter((d) => d.is_online).length;
-    const offline = filteredDrivers.length - online;
-    const searching = filteredRides.filter((r) => r.status === "procurar_motorista").length;
-    const accepted = filteredRides.filter((r) => ACCEPTED_STATUSES.has(r.status)).length;
-    const inTrip = filteredRides.filter((r) => r.status === "em_viagem").length;
-    return { online, offline, searching, accepted, inTrip };
-  }, [filteredDrivers, filteredRides]);
+function validDate(value: unknown) {
+  if (!value) return null;
+  const date = new Date(String(value));
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function rideStatusLabel(value: unknown) {
+  const status = cleanText(value).toLowerCase();
+  if (status === "procurar_motorista") return "Buscando motorista";
+  if (status === "motorista_a_caminho") return "Motorista a caminho";
+  if (status === "motorista_chegou") return "Motorista chegou";
+  if (status === "em_viagem") return "Em viagem";
+  return cleanText(value, "Status não informado").replace(/_/g, " ");
+}
+
+function AdminLiveMapPage() {
+  const [drivers, setDrivers] = useState<DriverPresence[]>([]);
+  const [rides, setRides] = useState<ActiveRide[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const requestRef = useRef(0);
+  const refreshTimerRef = useRef<number | null>(null);
+
+  async function load() {
+    const requestId = ++requestRef.current;
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const [driverResult, rideResult] = await Promise.all([
+        supabase
+          .from("drivers")
+          .select(
+            "id,name,category,current_lat,current_lng,current_heading,last_location_at,is_online,approval_status",
+          )
+          .eq("is_online", true)
+          .not("current_lat", "is", null)
+          .not("current_lng", "is", null)
+          .limit(500),
+        supabase
+          .from("rides")
+          .select(
+            "id,driver_id,status,origin_name,destination_name,driver_latitude,driver_longitude",
+          )
+          .in("status", ACTIVE_STATUSES as never[])
+          .limit(500),
+      ]);
+      if (requestId !== requestRef.current) return;
+      if (driverResult.error) throw driverResult.error;
+      if (rideResult.error) throw rideResult.error;
+
+      const nextDrivers = ((driverResult.data ?? []) as DriverPresence[])
+        .filter((row) => cleanText(row.id) && row.is_online === true && validCoordinate(row.current_lat, row.current_lng))
+        .map((row) => ({
+          ...row,
+          id: cleanText(row.id),
+          name: cleanText(row.name) || null,
+          category: cleanText(row.category) || null,
+          current_lat: Number(row.current_lat),
+          current_lng: Number(row.current_lng),
+          current_heading: Number.isFinite(Number(row.current_heading))
+            ? ((Number(row.current_heading) % 360) + 360) % 360
+            : null,
+          last_location_at: validDate(row.last_location_at)?.toISOString() ?? null,
+        }));
+
+      const nextRides = ((rideResult.data ?? []) as ActiveRide[])
+        .filter((row) => cleanText(row.id) && ACTIVE_STATUSES.includes(cleanText(row.status)))
+        .map((row) => ({
+          ...row,
+          id: cleanText(row.id),
+          driver_id: cleanText(row.driver_id) || null,
+          status: cleanText(row.status),
+          origin_name: cleanText(row.origin_name, "Origem não informada"),
+          destination_name: cleanText(row.destination_name, "Destino não informado"),
+          driver_latitude: validCoordinate(row.driver_latitude, row.driver_longitude) ? Number(row.driver_latitude) : null,
+          driver_longitude: validCoordinate(row.driver_latitude, row.driver_longitude) ? Number(row.driver_longitude) : null,
+        }));
+
+      setDrivers(nextDrivers);
+      setRides(nextRides);
+    } catch (error) {
+      if (requestId !== requestRef.current) return;
+      setDrivers([]);
+      setRides([]);
+      setLoadError("Não foi possível carregar o mapa operacional agora. Tente novamente.");
+      if (import.meta.env.DEV) console.warn("[APOIS Admin] falha no mapa operacional", error);
+    } finally {
+      if (requestId === requestRef.current) setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void load();
+    const scheduleRefresh = () => {
+      if (refreshTimerRef.current != null) window.clearTimeout(refreshTimerRef.current);
+      refreshTimerRef.current = window.setTimeout(() => void load(), 300);
+    };
+    const channel = supabase
+      .channel("admin-live-map-canonical")
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "drivers" },
+        scheduleRefresh,
+      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "rides" }, scheduleRefresh)
+      .subscribe();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") scheduleRefresh();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      requestRef.current += 1;
+      if (refreshTimerRef.current != null) window.clearTimeout(refreshTimerRef.current);
+      document.removeEventListener("visibilitychange", onVisible);
+      void supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const center = useMemo(() => {
+    const driver = drivers.find((row) => validCoordinate(row.current_lat, row.current_lng));
+    if (driver) return { lat: Number(driver.current_lat), lng: Number(driver.current_lng) };
+    const ride = rides.find((row) => validCoordinate(row.driver_latitude, row.driver_longitude));
+    return ride ? { lat: Number(ride.driver_latitude), lng: Number(ride.driver_longitude) } : null;
+  }, [drivers, rides]);
+
+  const activeByDriver = useMemo(() => {
+    const map = new Map<string, ActiveRide>();
+    for (const ride of rides) if (ride.driver_id) map.set(ride.driver_id, ride);
+    return map;
+  }, [rides]);
+
+  const visibleDrivers = drivers.slice(0, 50);
 
   return (
     <AdminLayout
-      title="Mapa Operacional ao Vivo"
-      description={`${stats.online} online · ${stats.offline} offline · ${stats.searching} solicitações · ${stats.accepted} aceitas · ${stats.inTrip} em viagem`}
+      title="Mapa ao vivo"
+      description="Presença do motorista e corridas ativas a partir das entidades canônicas"
+      actions={
+        <DSButton
+          variant="outline"
+          size="sm"
+          onClick={() => void load()}
+          disabled={loading}
+          className="min-h-11 gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          aria-busy={loading}
+        >
+          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin motion-reduce:animate-none" : ""}`} aria-hidden="true" />
+          {loading ? "Atualizando…" : "Atualizar"}
+        </DSButton>
+      }
     >
-      <DSCard className="mb-3 border-border bg-card/60">
-        <DSCardContent className="flex flex-col gap-3 p-3">
-          <div className="flex flex-wrap items-center gap-3 text-xs">
-            <div className="flex items-center gap-2">
-              <span className="text-muted-foreground">Categoria</span>
-              <DSSelect value={categoryFilter} onValueChange={setCategoryFilter}>
-                <DSSelectTrigger className="h-8 w-44 text-xs">
-                  <DSSelectValue placeholder="Todas" />
-                </DSSelectTrigger>
-                <DSSelectContent>
-                  <DSSelectItem value={ALL}>Todas as categorias</DSSelectItem>
-                  {categories.map((c) => (
-                    <DSSelectItem key={c.key} value={c.key}>
-                      {c.label}
-                    </DSSelectItem>
-                  ))}
-                </DSSelectContent>
-              </DSSelect>
+      <div className="mb-4 grid gap-3 sm:grid-cols-3">
+        <Metric label="Motoristas online com GPS" value={drivers.length} />
+        <Metric label="Corridas ativas" value={rides.length} />
+        <Metric label="Motoristas em corrida" value={activeByDriver.size} />
+      </div>
+
+      {loading ? (
+        <div aria-live="polite"><Loading label="Carregando posições..." /></div>
+      ) : loadError ? (
+        <DSCard className="border-destructive/30 bg-destructive/5">
+          <DSCardContent className="space-y-3 p-4" role="alert">
+            <p className="text-sm font-medium text-destructive">{loadError}</p>
+            <DSButton variant="outline" className="min-h-11 gap-2" onClick={() => void load()}>
+              <RefreshCw className="h-4 w-4" aria-hidden="true" /> Tentar novamente
+            </DSButton>
+          </DSCardContent>
+        </DSCard>
+      ) : !center ? (
+        <EmptyState
+          icon={MapPin}
+          title="Sem posição disponível"
+          description="Nenhum motorista online ou corrida ativa possui coordenadas válidas agora."
+        />
+      ) : (
+        <DSCard className="min-w-0 overflow-hidden">
+          <DSCardContent className="p-0">
+            <div className="h-[62dvh] min-h-[clamp(280px,45dvh,440px)] w-full min-w-0">
+              <MovviMap center={center}>
+                {drivers.map((driver) => {
+                  if (!validCoordinate(driver.current_lat, driver.current_lng)) return null;
+                  const googleApi =
+                    typeof window !== "undefined"
+                      ? (window as unknown as { google?: typeof google }).google
+                      : undefined;
+                  if (!googleApi?.maps) return null;
+                  const ride = activeByDriver.get(driver.id);
+                  return (
+                    <Marker
+                      key={driver.id}
+                      position={{ lat: Number(driver.current_lat), lng: Number(driver.current_lng) }}
+                      title={`${driver.name || "Motorista"}${ride ? ` — ${rideStatusLabel(ride.status)}` : " — disponível"}`}
+                      icon={{
+                        path: googleApi.maps.SymbolPath.CIRCLE,
+                        scale: ride ? 9 : 7,
+                        fillColor: ride ? APOIS_ADMIN_MAP.goldStrong : APOIS_ADMIN_MAP.gold,
+                        fillOpacity: 1,
+                        strokeColor: APOIS_ADMIN_MAP.black,
+                        strokeWeight: 2,
+                      }}
+                    />
+                  );
+                })}
+              </MovviMap>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-muted-foreground">Cidade</span>
-              <DSSelect value={cityFilter} onValueChange={setCityFilter}>
-                <DSSelectTrigger className="h-8 w-56 text-xs">
-                  <DSSelectValue placeholder="Todas" />
-                </DSSelectTrigger>
-                <DSSelectContent>
-                  <DSSelectItem value={ALL}>Todas as cidades</DSSelectItem>
-                  {availableCities.map((c) => (
-                    <DSSelectItem key={c} value={c}>
-                      {c}
-                    </DSSelectItem>
-                  ))}
-                </DSSelectContent>
-              </DSSelect>
-            </div>
-            {(categoryFilter !== ALL || cityFilter !== ALL) && (
-              <DSButton
-                variant="ghost"
-                size="sm"
-                className="h-8 text-xs"
-                onClick={() => {
-                  setCategoryFilter(ALL);
-                  setCityFilter(ALL);
-                }}
-              >
-                Limpar filtros
-              </DSButton>
-            )}
-          </div>
+          </DSCardContent>
+        </DSCard>
+      )}
 
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs">
-            <Toggle label={`Online (${stats.online})`} checked={showOnline} onChange={setShowOnline} color="#8DD92B" />
-            <Toggle label={`Offline (${stats.offline})`} checked={showOffline} onChange={setShowOffline} color="#6b7280" />
-            <span className="mx-1 h-4 w-px bg-border" />
-            <Toggle label={`Solicitações (${stats.searching})`} checked={showSearching} onChange={setShowSearching} color="#fbbf24" />
-            <Toggle label={`Aceitas (${stats.accepted})`} checked={showAccepted} onChange={setShowAccepted} color="#3b82f6" />
-            <Toggle label={`Em viagem (${stats.inTrip})`} checked={showInTrip} onChange={setShowInTrip} color="#a855f7" />
-            <span className="mx-1 h-4 w-px bg-border" />
-            <Toggle label="Heatmap de densidade" checked={showHeatmap} onChange={setShowHeatmap} color="#ef4444" />
-          </div>
-        </DSCardContent>
-      </DSCard>
-
-      <div className="overflow-hidden rounded-xl border border-border" style={{ height: "calc(100vh - 280px)" }}>
-        <MovviMap onLoad={(m) => { mapRef.current = m; }}>
-          {visibleDrivers.map((d) =>
-            d.current_lat && d.current_lng ? (
-              <Marker
-                key={d.id}
-                position={{ lat: Number(d.current_lat), lng: Number(d.current_lng) }}
-                icon={d.is_online ? symbol("#8DD92B", 8, 2) : symbol("#6b7280", 6, 1)}
-                title={`${d.name ?? "Motorista"} (${d.is_online ? "online" : "offline"})${d.city ? ` · ${d.city}` : ""}${d.category ? ` · ${d.category}` : ""}`}
-              />
-            ) : null,
-          )}
-
-          {filteredRides.map((r) => {
-            const searching = r.status === "procurar_motorista";
-            const accepted = ACCEPTED_STATUSES.has(r.status);
-            const inTrip = r.status === "em_viagem";
-            const visible =
-              (searching && showSearching) || (accepted && showAccepted) || (inTrip && showInTrip);
-            if (!visible || r.origin_lat == null || r.origin_lng == null) return null;
-
-            const color = searching ? "#fbbf24" : accepted ? "#3b82f6" : "#a855f7";
-            const origin = { lat: Number(r.origin_lat), lng: Number(r.origin_lng) };
-            const dest =
-              r.destination_lat != null && r.destination_lng != null
-                ? { lat: Number(r.destination_lat), lng: Number(r.destination_lng) }
-                : null;
-            const driverPos =
-              r.driver_lat != null && r.driver_lng != null
-                ? { lat: Number(r.driver_lat), lng: Number(r.driver_lng) }
-                : null;
-
+      {!loading && !loadError && drivers.length > 0 ? (
+        <div className="mt-4 space-y-2">
+          {drivers.length > visibleDrivers.length ? (
+            <p className="text-sm text-muted-foreground" role="status">
+              Exibindo os primeiros {visibleDrivers.length} de {drivers.length} motoristas online.
+            </p>
+          ) : null}
+          {visibleDrivers.map((driver) => {
+            const ride = activeByDriver.get(driver.id);
+            const lastLocation = validDate(driver.last_location_at);
             return (
-              <Fragment key={r.id}>
-                <Marker
-                  position={origin}
-                  icon={symbol(color, 11, 2)}
-                  title={`Corrida ${r.id.slice(0, 6)} · ${r.status}${r.category ? ` · ${r.category}` : ""}`}
-                />
-                {dest && (accepted || inTrip) && (
-                  <Marker
-                    position={dest}
-                    icon={symbol("#05070D", 7, 2)}
-                    title={`Destino · ${r.id.slice(0, 6)}`}
-                  />
-                )}
-                {driverPos && (accepted || inTrip) && (
-                  <Polyline
-                    path={[driverPos, origin, ...(dest ? [dest] : [])]}
-                    options={{
-                      strokeColor: color,
-                      strokeOpacity: 0.7,
-                      strokeWeight: 3,
-                      geodesic: true,
-                    }}
-                  />
-                )}
-              </Fragment>
+              <DSCard key={driver.id}>
+                <DSCardContent className="flex min-w-0 flex-wrap items-center gap-2 p-3 text-sm">
+                  <Radio className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                  <strong className="min-w-0 break-words">{driver.name || driver.id.slice(0, 8)}</strong>
+                  <DSBadge variant="primary">Online</DSBadge>
+                  <DSBadge variant={ride ? "warning" : "success"}>
+                    {ride ? rideStatusLabel(ride.status) : "Disponível"}
+                  </DSBadge>
+                  <span className="break-words text-muted-foreground">
+                    {driver.category || "Categoria não informada"}
+                  </span>
+                  {lastLocation ? (
+                    <span className="text-xs text-muted-foreground" title={lastLocation.toLocaleString("pt-BR")}>
+                      GPS {lastLocation.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                  ) : null}
+                  {ride ? (
+                    <span className="min-w-0 basis-full break-words text-muted-foreground sm:ml-auto sm:basis-auto">
+                      {ride.origin_name} → {ride.destination_name}
+                    </span>
+                  ) : null}
+                </DSCardContent>
+              </DSCard>
             );
           })}
-        </MovviMap>
-      </div>
+        </div>
+      ) : null}
     </AdminLayout>
   );
 }
 
-function Toggle({
-  label,
-  checked,
-  onChange,
-  color,
-}: {
-  label: string;
-  checked: boolean;
-  onChange: (b: boolean) => void;
-  color: string;
-}) {
+function Metric({ label, value }: { label: string; value: number }) {
+  const safeValue = Number.isFinite(value) && value >= 0 ? Math.floor(value) : 0;
   return (
-    <label className="flex items-center gap-2">
-      <span className="h-3 w-3 rounded-full" style={{ background: color }} />
-      <span>{label}</span>
-      <Switch checked={checked} onCheckedChange={onChange} />
-    </label>
+    <DSCard>
+      <DSCardContent className="min-w-0 p-4">
+        <p className="break-words text-sm text-muted-foreground">{label}</p>
+        <p className="mt-1 break-words text-xl font-bold tabular-nums">{safeValue}</p>
+      </DSCardContent>
+    </DSCard>
   );
 }

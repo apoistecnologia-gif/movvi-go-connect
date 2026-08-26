@@ -1,0 +1,93 @@
+/* APOIS Motorista — rodada 8: 25 correções residuais de UI/UX mobile. */
+
+/* 136 — controles customizados focáveis recebem outline coerente. */
+html[data-app-role="motorista"] [role="button"]:focus-visible,
+html[data-app-role="motorista"] [role="tab"]:focus-visible,
+html[data-app-role="motorista"] [role="option"]:focus-visible { outline: 2px solid rgba(246,190,28,.95); outline-offset: 2px; }
+
+/* 137 — grupos de rádio não preservam largura intrínseca maior que o card. */
+html[data-app-role="motorista"] [role="radiogroup"] { min-width: 0; max-width: 100%; }
+
+/* 138 — checkbox/radio nativos usam o dourado institucional. */
+html[data-app-role="motorista"] input[type="checkbox"],
+html[data-app-role="motorista"] input[type="radio"] { accent-color: #f6be1c; }
+
+/* 139 — botão nativo de upload recebe alvo mínimo. */
+html[data-app-role="motorista"] input[type="file"]::file-selector-button { min-height: 44px; padding-inline: .75rem; }
+
+/* 140 — links aria-disabled não permanecem aparentemente acionáveis. */
+html[data-app-role="motorista"] a[aria-disabled="true"] { pointer-events: none; text-decoration: none; }
+
+/* 141 — headings dentro de flex podem encolher. */
+html[data-app-role="motorista"] .flex > h1,
+html[data-app-role="motorista"] .flex > h2,
+html[data-app-role="motorista"] .flex > h3 { min-width: 0; }
+
+/* 142 — listas dentro de dialogs não perdem conteúdo por recuo exagerado. */
+html[data-app-role="motorista"] [role="dialog"] ul,
+html[data-app-role="motorista"] [role="dialog"] ol { max-width: 100%; padding-inline-start: 1.25rem; }
+
+/* 143 — itens de lista aceitam IDs/endereço sem espaços. */
+html[data-app-role="motorista"] li { overflow-wrap: anywhere; }
+
+/* 144 — blockquotes de termos/suporte não mantêm margem lateral excessiva. */
+html[data-app-role="motorista"] blockquote { max-width: 100%; margin-inline: 0; overflow-wrap: anywhere; }
+
+/* 145 — kbd/atalhos de suporte não forçam nowrap. */
+html[data-app-role="motorista"] kbd { white-space: normal; overflow-wrap: anywhere; }
+
+/* 146 — divisores respeitam a largura útil. */
+html[data-app-role="motorista"] hr { max-width: 100%; }
+
+/* 147 — canvas de mapas/gráficos não extrapola o contêiner. */
+html[data-app-role="motorista"] canvas { width: auto; max-width: 100%; }
+
+/* 148 — overlays absolutos não escapam lateralmente por conteúdo dinâmico. */
+html[data-app-role="motorista"] [class*="absolute"] { max-width: 100vw; box-sizing: border-box; }
+
+/* 149 — conteúdo centralizado com translate mantém margem lateral. */
+html[data-app-role="motorista"] [class*="left-1/2"][class*="-translate-x-1/2"] { max-width: calc(100vw - 16px); }
+
+/* 150 — ilhas pointer-events-auto dentro de overlay não excedem a própria tela. */
+html[data-app-role="motorista"] [class*="pointer-events-none"] > [class*="pointer-events-auto"] { max-width: 100%; }
+
+/* 151 — input dentro de flex pode encolher e preservar ações laterais. */
+html[data-app-role="motorista"] .flex input { flex-shrink: 1; }
+
+/* 152 — select dentro de flex também pode encolher. */
+html[data-app-role="motorista"] .flex select { flex-shrink: 1; }
+
+/* 153 — texto longo de botão pode quebrar sem cortar CTA. */
+html[data-app-role="motorista"] button { text-wrap: balance; }
+
+/* 154 — links longos de suporte/perfil quebram dentro do card. */
+html[data-app-role="motorista"] a { overflow-wrap: anywhere; }
+
+/* 155 — contenteditable não pode alargar editor/card. */
+html[data-app-role="motorista"] [contenteditable="true"] { max-width: 100%; min-width: 0; overflow-wrap: anywhere; }
+
+/* 156 — placeholder visual de contenteditable mantém contraste. */
+html[data-app-role="motorista"] [contenteditable="true"]:empty::before { opacity: .72; }
+
+/* 157 — dialogs em 320px reduzem padding horizontal sem perder conteúdo. */
+@media (max-width: 339px) {
+  html[data-app-role="motorista"] [role="dialog"] { padding-left: min(1rem, 4vw); padding-right: min(1rem, 4vw); }
+}
+
+/* 158 — chips/badges inline não impõem min-width no último breakpoint. */
+@media (max-width: 339px) {
+  html[data-app-role="motorista"] [class*="rounded-full"] { min-width: 0; }
+}
+
+/* 159 — landscape baixo reserva espaço de scroll para CTA/bottom nav. */
+@media (max-height: 520px) and (orientation: landscape) {
+  html[data-app-role="motorista"] main,
+  html[data-app-role="motorista"] [role="dialog"] { scroll-padding-bottom: calc(4.5rem + env(safe-area-inset-bottom)); }
+}
+
+/* 160 — coarse pointer reforça alvo mínimo de controles customizados. */
+@media (pointer: coarse) {
+  html[data-app-role="motorista"] [role="button"],
+  html[data-app-role="motorista"] [role="menuitem"],
+  html[data-app-role="motorista"] [role="option"] { min-height: 44px; }
+}

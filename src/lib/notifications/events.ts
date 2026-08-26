@@ -1,4 +1,4 @@
-// MOVVI notification event catalog. Names are stable strings used for
+// APOIS notification event catalog. Names are stable strings used for
 // preference gating, logs, and analytics — do not repurpose an existing key.
 
 export const PASSENGER_EVENTS = {

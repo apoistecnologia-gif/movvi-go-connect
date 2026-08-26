@@ -2,15 +2,16 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, Box, Send, Truck, type LucideIcon } from "lucide-react";
 import { MovviHeader } from "@/components/MovviHeader";
 import { BottomNav, PASSENGER_NAV } from "@/components/BottomNav";
+import { useRideFeatureFlags } from "@/hooks/useRideFeatureFlags";
 
 export const Route = createFileRoute("/passageiro/servicos")({
   head: () => ({
     meta: [
-      { title: "Serviços — MOVVI" },
+      { title: "Serviços — APOIS" },
       {
         name: "description",
         content:
-          "Escolha o serviço MOVVI: corridas, entregas, guincho, mudanças e fretes grandes.",
+          "Escolha o serviço APOIS: corridas, entregas, guincho, mudanças e fretes grandes.",
       },
       { name: "robots", content: "noindex, nofollow" },
     ],
@@ -19,13 +20,14 @@ export const Route = createFileRoute("/passageiro/servicos")({
 });
 
 function ServicosPage() {
+  const flags = useRideFeatureFlags();
   return (
     <div className="min-h-dvh bg-background pb-32">
       <MovviHeader />
       <main className="mx-auto w-full max-w-md space-y-5 px-4 pt-4">
         <header className="space-y-1 px-1">
           <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
-            Serviços MOVVI
+            Serviços APOIS
           </h1>
           <p className="text-[13px] text-muted-foreground">
             Escolha um atendimento especial.
@@ -35,25 +37,29 @@ function ServicosPage() {
         <section className="space-y-3">
           <ServiceFlowCard
             icon={Send}
-            title="MOVVI Envios"
+            title="APOIS Envios"
             description="Envie ou receba itens com praticidade."
             action="Enviar ou receber"
             to="/passageiro/envios"
           />
-          <ServiceFlowCard
-            icon={Truck}
-            title="MOVVI Guincho"
-            description="Solicite assistência para transportar seu veículo."
-            action="Solicitar guincho"
-            to="/passageiro/guincho"
-          />
-          <ServiceFlowCard
-            icon={Box}
-            title="Mudanças e Fretes Grandes"
-            description="Transporte móveis, cargas maiores e mudanças."
-            action="Solicitar frete"
-            to="/passageiro/mudancas"
-          />
+          {flags.feature_guincho_enabled && (
+            <ServiceFlowCard
+              icon={Truck}
+              title="APOIS Guincho"
+              description="Solicite assistência para transportar seu veículo."
+              action="Solicitar guincho"
+              to="/passageiro/guincho"
+            />
+          )}
+          {flags.feature_fretes_enabled && (
+            <ServiceFlowCard
+              icon={Box}
+              title="Mudanças e Fretes Grandes"
+              description="Transporte móveis, cargas maiores e mudanças."
+              action="Solicitar frete"
+              to="/passageiro/mudancas"
+            />
+          )}
         </section>
       </main>
       <BottomNav items={PASSENGER_NAV} floating theme="dark" />

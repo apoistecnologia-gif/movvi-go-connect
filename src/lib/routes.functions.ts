@@ -65,7 +65,7 @@ export const computeRoute = createServerFn({ method: "POST" })
     if (!res.ok) {
       const text = await res.text();
       // Log the upstream error server-side only; never leak details to clients.
-      console.error("[MOVVI ROUTE] upstream Routes API error", res.status, text.slice(0, 500));
+      console.error("[APOIS ROUTE] upstream Routes API error", res.status, text.slice(0, 500));
       throw new Error("Não foi possível calcular a rota.");
     }
 

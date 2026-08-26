@@ -1,0 +1,155 @@
+/* APOIS Motorista — rodada 4: correções residuais de UI/UX mobile. */
+
+/* 26 — telas do motorista não podem vazar horizontalmente. */
+html[data-app-role="motorista"] body,
+html[data-app-role="motorista"] #root,
+html[data-app-role="motorista"] main { max-width: 100%; overflow-x: hidden; }
+
+/* 27 — conteúdos flexíveis podem encolher sem cortar a viewport. */
+html[data-app-role="motorista"] .flex > .min-w-0 { min-width: 0; }
+
+/* 28 — títulos de tela aceitam nomes/status longos. */
+html[data-app-role="motorista"] h1,
+html[data-app-role="motorista"] h2,
+html[data-app-role="motorista"] h3 { overflow-wrap: anywhere; }
+
+/* 29 — valores monoespaçados/chaves Pix não estouram cards. */
+html[data-app-role="motorista"] [class*="font-mono"] { overflow-wrap: anywhere; word-break: break-word; }
+
+/* 30 — imagens e comprovantes ficam limitados ao contêiner. */
+html[data-app-role="motorista"] img { max-width: 100%; }
+
+/* 31 — ícones não comprimem os textos ao lado. */
+html[data-app-role="motorista"] svg { flex-shrink: 0; }
+
+/* 32 — inputs e selects respeitam a largura disponível. */
+html[data-app-role="motorista"] input,
+html[data-app-role="motorista"] select,
+html[data-app-role="motorista"] textarea { max-width: 100%; min-width: 0; }
+
+/* 33 — textareas preservam legibilidade vertical. */
+html[data-app-role="motorista"] textarea { line-height: 1.4; }
+
+/* 34 — diálogos ganham scroll-padding para ações inferiores. */
+html[data-app-role="motorista"] [role="dialog"] { scroll-padding-bottom: calc(1rem + env(safe-area-inset-bottom)); }
+
+/* 35 — último conteúdo de páginas roláveis não fica atrás da navegação. */
+html[data-app-role="motorista"] main { scroll-padding-bottom: calc(5.5rem + env(safe-area-inset-bottom)); }
+
+/* 36 — topo rolável respeita notch ao focar campos. */
+html[data-app-role="motorista"] main { scroll-padding-top: calc(0.75rem + env(safe-area-inset-top)); }
+
+/* 37 — bottom sheets fixos respeitam gesto/barra do Android. */
+html[data-app-role="motorista"] [class*="fixed"][class*="bottom-0"] { padding-bottom: max(0px, env(safe-area-inset-bottom)); }
+
+/* 38 — overlays fixos superiores respeitam notch. */
+html[data-app-role="motorista"] [class*="fixed"][class*="top-0"] { padding-top: max(0px, env(safe-area-inset-top)); }
+
+/* 39 — rótulos de navegação inferior não escapam da célula. */
+html[data-app-role="motorista"] nav button > span,
+html[data-app-role="motorista"] nav a > span { max-width: 100%; overflow-wrap: anywhere; }
+
+/* 40 — itens do bottom nav podem realmente encolher. */
+html[data-app-role="motorista"] nav button,
+html[data-app-role="motorista"] nav a { min-width: 0; }
+
+/* 41 — botões desabilitados mantêm semântica visual consistente. */
+html[data-app-role="motorista"] button:disabled { cursor: not-allowed; }
+
+/* 42 — tabelas administrativas não quebram o layout mobile. */
+html[data-app-role="motorista"] table { max-width: 100%; }
+
+/* 43 — wrappers de tabela rolam horizontalmente quando necessário. */
+html[data-app-role="motorista"] [class*="overflow-x-auto"] { overscroll-behavior-x: contain; scrollbar-width: thin; }
+
+/* 44 — badges/status não são esmagados por nomes longos. */
+html[data-app-role="motorista"] [class*="rounded-full"][class*="text-"] { overflow-wrap: anywhere; }
+
+/* 45 — valores grandes da carteira/assinatura ficam fluidos em 320px. */
+@media (max-width: 359px) {
+  html[data-app-role="motorista"] main [class~="text-3xl"],
+  html[data-app-role="motorista"] main [class~="text-4xl"],
+  html[data-app-role="motorista"] main [class~="text-[28px]"],
+  html[data-app-role="motorista"] main [class~="text-[32px]"] { font-size: clamp(22px, 8vw, 28px); line-height: 1.1; }
+}
+
+/* 46 — linha de perfil com nota/corridas/categoria pode quebrar. */
+@media (max-width: 359px) {
+  html[data-app-role="motorista"] main .flex.items-center.gap-3 { flex-wrap: wrap; }
+}
+
+/* 47 — cards de emergência/segurança empilham ações apertadas. */
+@media (max-width: 359px) {
+  html[data-app-role="motorista"] main .flex.items-center.justify-between { flex-wrap: wrap; gap: 0.75rem; }
+}
+
+/* 48 — timeline não mantém largura fixa que rouba espaço da data. */
+@media (max-width: 359px) {
+  html[data-app-role="motorista"] main .w-20 { width: auto; min-width: 0; }
+}
+
+/* 49 — datas/descrições truncadas deixam de esconder informação operacional. */
+@media (max-width: 359px) {
+  html[data-app-role="motorista"] main p.truncate,
+  html[data-app-role="motorista"] main span.truncate { overflow: visible; text-overflow: clip; white-space: normal; }
+}
+
+/* 50 — ações em duas colunas viram coluna abaixo de 340px. */
+@media (max-width: 339px) {
+  html[data-app-role="motorista"] main .grid.grid-cols-2 { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* 51 — pares rótulo/valor quebram no último degrau de largura. */
+@media (max-width: 339px) {
+  html[data-app-role="motorista"] main .flex.items-baseline.justify-between,
+  html[data-app-role="motorista"] main .flex.items-end.justify-between { flex-wrap: wrap; gap: 0.5rem; }
+}
+
+/* 52 — botões lado a lado ocupam largura total em 320–339px. */
+@media (max-width: 339px) {
+  html[data-app-role="motorista"] main .flex.gap-3 > button,
+  html[data-app-role="motorista"] main .flex.gap-3 > a { flex: 1 1 100%; }
+}
+
+/* 53 — cabeçalhos com botão de voltar + título + ação não espremem texto. */
+@media (max-width: 339px) {
+  html[data-app-role="motorista"] main header .flex.items-center.justify-between,
+  html[data-app-role="motorista"] header .flex.items-center.justify-between { flex-wrap: wrap; }
+}
+
+/* 54 — mapas fixos reduzem altura em landscape curto. */
+@media (max-height: 560px) and (orientation: landscape) {
+  html[data-app-role="motorista"] main [class~="h-[420px]"],
+  html[data-app-role="motorista"] main [class~="h-[320px]"] { height: 46dvh; min-height: 180px; }
+}
+
+/* 55 — modais nunca excedem a largura útil em 320px. */
+@media (max-width: 359px) {
+  html[data-app-role="motorista"] [role="dialog"] { max-width: calc(100vw - 16px); }
+}
+
+/* 56 — conteúdo longo de cartões usa quebra segura. */
+html[data-app-role="motorista"] main p,
+html[data-app-role="motorista"] main span,
+html[data-app-role="motorista"] main strong,
+html[data-app-role="motorista"] main a { word-break: break-word; }
+
+/* 57 — foco de teclado também cobre campos. */
+html[data-app-role="motorista"] input:focus-visible,
+html[data-app-role="motorista"] select:focus-visible,
+html[data-app-role="motorista"] textarea:focus-visible { outline: 2px solid rgba(246,190,28,.9); outline-offset: 2px; }
+
+/* 58 — campos móveis evitam zoom automático do WebView. */
+@media (max-width: 767px) {
+  html[data-app-role="motorista"] input:not([type="checkbox"]):not([type="radio"]),
+  html[data-app-role="motorista"] select,
+  html[data-app-role="motorista"] textarea { font-size: max(16px, 1em); }
+}
+
+/* 59 — controles nativos de data não criam largura extra. */
+html[data-app-role="motorista"] input[type="date"] { width: 100%; }
+
+/* 60 — preferência de movimento reduzido remove animações não essenciais. */
+@media (prefers-reduced-motion: reduce) {
+  html[data-app-role="motorista"] * { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}

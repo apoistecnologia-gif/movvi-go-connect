@@ -1,5 +1,5 @@
 /**
- * MOVVI — Live public ride tracking page.
+ * APOIS — Live public ride tracking page.
  * Anyone with the link can watch the driver moving toward the destination.
  * NO login required, NO PII exposed (only first name, vehicle, masked plate).
  * Fetched via SECURITY DEFINER RPC `get_ride_by_share_token`.
@@ -17,8 +17,8 @@ import { safeSymbol } from "@/lib/googleMaps";
 export const Route = createFileRoute("/t/$token")({
   head: ({ params }) => ({
     meta: [
-      { title: "Acompanhar viagem — MOVVI" },
-      { name: "description", content: "Acompanhe uma viagem MOVVI em tempo real." },
+      { title: "Acompanhar viagem — APOIS" },
+      { name: "description", content: "Acompanhe uma viagem APOIS em tempo real." },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
@@ -78,7 +78,7 @@ function TrackingPage() {
       if (!alive) return;
       setLoaded(true);
       if (error) {
-        if (import.meta.env.DEV) console.warn("[MOVVI TRACK]", error.message);
+        if (import.meta.env.DEV) console.warn("[APOIS TRACK]", error.message);
         return;
       }
       const first = Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
@@ -236,7 +236,7 @@ function TrackingPage() {
                 </span>
               </div>
               <div className="mt-0.5 truncate text-[15px] font-bold text-[#111418]">
-                {data.driver_first_name ?? "Motorista MOVVI"}
+                {data.driver_first_name ?? "Motorista APOIS"}
               </div>
               {(data.vehicle_model || data.vehicle_color || data.vehicle_plate_masked) && (
                 <div className="mt-0.5 truncate text-[12.5px] text-[#707070]">
@@ -258,7 +258,7 @@ function TrackingPage() {
 
           <div className="rounded-b-[24px] bg-[#F7F9F7] px-4 py-2.5 text-center text-[11px] text-[#707070]">
             {data.is_live
-              ? "Atualizando a cada segundos • MOVVI protege sua privacidade"
+              ? "Atualizando a cada segundos • APOIS protege sua privacidade"
               : "A viagem foi finalizada. Este link não mostra mais localização."}
           </div>
         </div>

@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Zap } from "lucide-react";
 
 /**
- * MOVVI RideOptionRow — linha vertical de categoria de corrida (Carros,
+ * APOIS RideOptionRow — linha vertical de categoria de corrida (Carros,
  * Motos, Frete…). Uma linha por opção, com ilustração à esquerda, título,
  * ETA e preço à direita. Estado selecionado destaca com borda verde.
  *

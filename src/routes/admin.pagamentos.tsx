@@ -1,207 +1,178 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { Save, Copy, CheckCircle2, XCircle, CreditCard, KeyRound, Loader2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { CreditCard, RefreshCw, ShieldCheck, WalletCards } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
-import { supabase } from "@/integrations/supabase/client";
-import { DSButton, DSCard, DSCardContent, DSCardDescription, DSCardHeader, DSCardTitle, DSInput, DSSelect, DSSelectContent, DSSelectItem, DSSelectTrigger, DSSelectValue, Loading } from "@/design-system";
-import { Switch } from "@/components/ui/switch";
-import { toast } from "sonner";
-import { logAdminAction } from "@/lib/adminAudit";
+import { DSBadge, DSButton, DSCard, DSCardContent, Loading } from "@/design-system";
+import { getAdminFinanceSummary, type AdminFinanceSummary } from "@/lib/adminFinance";
 
 export const Route = createFileRoute("/admin/pagamentos")({
-  head: () => ({ meta: [{ title: "Pagamentos — Admin MOVVI" }] }),
+  head: () => ({ meta: [{ title: "Pagamentos — Admin APOIS" }] }),
   component: AdminPaymentsPage,
 });
 
-type Gateway = {
-  id: string;
-  provider: string;
-  display_name: string;
-  enabled: boolean;
-  mode: "sandbox" | "live";
-  api_key_secret_name: string | null;
-  webhook_url: string | null;
-  pix_key: string | null;
-  pix_key_type: string | null;
-};
+function cleanProvider(value: unknown) {
+  const text = String(value ?? "").trim().replace(/\s+/g, " ").slice(0, 80);
+  if (!text || ["null", "undefined", "none"].includes(text.toLowerCase())) return null;
+  return text;
+}
+
+function providerLabel(value: unknown) {
+  return cleanProvider(value) ?? "Não configurado";
+}
 
 function AdminPaymentsPage() {
-  const [gateways, setGateways] = useState<Gateway[]>([]);
+  const [summary, setSummary] = useState<AdminFinanceSummary | null>(null);
   const [loading, setLoading] = useState(true);
-  const [savingId, setSavingId] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const requestRef = useRef(0);
 
-  async function refresh() {
-    const { data, error } = await supabase
-      .from("payment_gateways")
-      .select("*")
-      .order("display_name");
-    if (error) toast.error(error.message);
-    setGateways((data ?? []) as Gateway[]);
-    setLoading(false);
+  async function load() {
+    const requestId = ++requestRef.current;
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+      const next = await getAdminFinanceSummary(start, now);
+      if (requestId !== requestRef.current) return;
+      setSummary(next);
+    } catch (error) {
+      if (requestId !== requestRef.current) return;
+      setSummary(null);
+      setLoadError("Não foi possível consultar a configuração financeira agora. Tente novamente.");
+      if (import.meta.env.DEV) console.warn("[APOIS Admin] falha ao consultar provedores financeiros", error);
+    } finally {
+      if (requestId === requestRef.current) setLoading(false);
+    }
   }
 
   useEffect(() => {
-    refresh();
-    const ch = supabase
-      .channel("admin-payments")
-      .on("postgres_changes", { event: "*", schema: "public", table: "payment_gateways" }, refresh)
-      .subscribe();
+    void load();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void load();
+    };
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
-      supabase.removeChannel(ch);
+      requestRef.current += 1;
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, []);
 
-  function patch(id: string, p: Partial<Gateway>) {
-    setGateways((gs) => gs.map((g) => (g.id === id ? { ...g, ...p } : g)));
-  }
-
-  async function save(g: Gateway) {
-    setSavingId(g.id);
-    const { data: u } = await supabase.auth.getUser();
-    const { error } = await supabase
-      .from("payment_gateways")
-      .update({
-        enabled: g.enabled,
-        mode: g.mode,
-        api_key_secret_name: g.api_key_secret_name,
-        webhook_url: g.webhook_url,
-        pix_key: g.pix_key,
-        pix_key_type: g.pix_key_type,
-        updated_by: u?.user?.id ?? null,
-      })
-      .eq("id", g.id);
-    setSavingId(null);
-    if (error) return toast.error(error.message);
-    await logAdminAction({ action: "payment_gateway.update", entity: "payment_gateways", entity_id: g.id, after: { enabled: g.enabled, mode: g.mode } });
-    toast.success(`${g.display_name} atualizado`);
-  }
-
-  function copyWebhook(url: string) {
-    navigator.clipboard.writeText(url).then(() => toast.success("Webhook copiado"));
-  }
-
-  if (loading) {
-    return (
-      <AdminLayout title="Pagamentos">
-        <Loading label="Carregando gateways de pagamento..." />
-      </AdminLayout>
-    );
-  }
+  const electronicProvider = cleanProvider(summary?.providers.electronic_payment_provider);
+  const payoutProvider = cleanProvider(summary?.providers.payout_provider);
 
   return (
     <AdminLayout
       title="Pagamentos"
-      description="Conecte gateways, defina chave PIX e webhooks. Credenciais ficam protegidas em secrets."
+      description="Estado canônico dos provedores financeiros usados pelo APOIS Corridas."
+      actions={
+        <DSButton
+          variant="outline"
+          size="sm"
+          onClick={() => void load()}
+          disabled={loading}
+          className="min-h-11 gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          aria-busy={loading}
+        >
+          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin motion-reduce:animate-none" : ""}`} aria-hidden="true" />
+          {loading ? "Atualizando…" : "Atualizar"}
+        </DSButton>
+      }
     >
-      <div className="grid gap-4 lg:grid-cols-2">
-        {gateways.map((g) => {
-          const isActive = g.enabled && !!g.api_key_secret_name;
-          return (
-            <DSCard key={g.id} className="border-border bg-card/60">
-              <DSCardHeader className="flex flex-row items-start justify-between gap-3">
-                <div className="space-y-1">
-                  <DSCardTitle className="flex items-center gap-2 text-base">
-                    <CreditCard className="h-4 w-4 text-primary" />
-                    {g.display_name}
-                  </DSCardTitle>
-                  <DSCardDescription className="text-xs">
-                    {isActive ? (
-                      <span className="inline-flex items-center gap-1 text-primary">
-                        <CheckCircle2 className="h-3 w-3" /> Conectado em modo {g.mode}
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-muted-foreground">
-                        <XCircle className="h-3 w-3" /> Não configurado
-                      </span>
-                    )}
-                  </DSCardDescription>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Switch checked={g.enabled} onCheckedChange={(v) => patch(g.id, { enabled: v })} />
-                  <DSButton size="sm" onClick={() => save(g)} disabled={savingId === g.id} className="gap-1">
-                    {savingId === g.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
-                    Salvar
-                  </DSButton>
-                </div>
-              </DSCardHeader>
-              <DSCardContent className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <label className="flex flex-col gap-1">
-                    <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Modo</span>
-                    <DSSelect value={g.mode} onValueChange={(v) => patch(g.id, { mode: v as Gateway["mode"] })}>
-                      <DSSelectTrigger className="h-9">
-                        <DSSelectValue />
-                      </DSSelectTrigger>
-                      <DSSelectContent>
-                        <DSSelectItem value="sandbox">Sandbox (teste)</DSSelectItem>
-                        <DSSelectItem value="live">Produção</DSSelectItem>
-                      </DSSelectContent>
-                    </DSSelect>
-                  </label>
-                  <label className="flex flex-col gap-1">
-                    <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      <KeyRound className="mr-1 inline h-3 w-3" /> Nome da secret da API key
-                    </span>
-                    <DSInput
-                      placeholder={`${g.provider.toUpperCase()}_API_KEY`}
-                      value={g.api_key_secret_name ?? ""}
-                      onChange={(e) => patch(g.id, { api_key_secret_name: e.target.value })}
-                    />
-                  </label>
-                </div>
+      {loading ? (
+        <div aria-live="polite"><Loading label="Consultando configuração financeira..." /></div>
+      ) : loadError ? (
+        <DSCard className="border-destructive/30 bg-destructive/5">
+          <DSCardContent className="space-y-3 p-4" role="alert">
+            <p className="text-sm font-medium text-destructive">{loadError}</p>
+            <DSButton variant="outline" className="min-h-11 gap-2" onClick={() => void load()}>
+              <RefreshCw className="h-4 w-4" aria-hidden="true" /> Tentar novamente
+            </DSButton>
+          </DSCardContent>
+        </DSCard>
+      ) : (
+        <>
+          <DSCard className="mb-4 border-primary/20 bg-primary/5">
+            <DSCardContent className="flex min-w-0 gap-3 p-4 text-sm leading-6 text-muted-foreground">
+              <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+              <div className="min-w-0">
+                <p className="font-semibold text-foreground">
+                  Credenciais não são editadas pelo navegador
+                </p>
+                <p className="mt-1 break-words">
+                  API keys, webhook secrets e credenciais de payout pertencem à infraestrutura e aos
+                  Secrets. Esta tela exibe somente nomes de provedores reconhecidos pelo backend.
+                  Um provedor definido aqui <strong>não significa</strong> que payout esteja habilitado:
+                  gates e homologação do backend continuam prevalecendo.
+                </p>
+              </div>
+            </DSCardContent>
+          </DSCard>
 
-                <label className="flex flex-col gap-1">
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">URL do webhook</span>
-                  <div className="flex gap-1">
-                    <DSInput
-                      placeholder="https://seu-projeto.lovable.app/api/public/webhooks/..."
-                      value={g.webhook_url ?? ""}
-                      onChange={(e) => patch(g.id, { webhook_url: e.target.value })}
-                    />
-                    {g.webhook_url && (
-                      <DSButton variant="outline" size="icon" aria-label="Copiar URL do webhook" onClick={() => copyWebhook(g.webhook_url!)}>
-                        <Copy className="h-3.5 w-3.5" />
-                      </DSButton>
-                    )}
-                  </div>
-                </label>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <ProviderCard
+              icon={CreditCard}
+              title="Pagamento eletrônico de corridas"
+              value={electronicProvider}
+              description="Usado para Pix/cartão somente quando o backend estiver explicitamente configurado e o fluxo correspondente estiver habilitado."
+            />
+            <ProviderCard
+              icon={WalletCards}
+              title="Payout para motoristas"
+              value={payoutProvider}
+              description="Indica apenas o provedor definido pelo backend. Solicitações e processamento continuam condicionados ao gate e à homologação de payout."
+            />
+          </div>
 
-                {g.provider === "mercadopago" || g.provider === "asaas" || g.provider === "pagseguro" ? (
-                  <div className="grid grid-cols-3 gap-3">
-                    <label className="col-span-2 flex flex-col gap-1">
-                      <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Chave PIX</span>
-                      <DSInput
-                        placeholder="email, CPF, telefone ou chave aleatória"
-                        value={g.pix_key ?? ""}
-                        onChange={(e) => patch(g.id, { pix_key: e.target.value })}
-                      />
-                    </label>
-                    <label className="flex flex-col gap-1">
-                      <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Tipo</span>
-                      <DSSelect value={g.pix_key_type ?? "random"} onValueChange={(v) => patch(g.id, { pix_key_type: v })}>
-                        <DSSelectTrigger className="h-9">
-                          <DSSelectValue />
-                        </DSSelectTrigger>
-                        <DSSelectContent>
-                          <DSSelectItem value="cpf">CPF</DSSelectItem>
-                          <DSSelectItem value="cnpj">CNPJ</DSSelectItem>
-                          <DSSelectItem value="email">E-mail</DSSelectItem>
-                          <DSSelectItem value="phone">Telefone</DSSelectItem>
-                          <DSSelectItem value="random">Aleatória</DSSelectItem>
-                        </DSSelectContent>
-                      </DSSelect>
-                    </label>
-                  </div>
-                ) : null}
-
-                <span className="inline-flex items-center gap-1 self-start rounded-full border border-border bg-muted/30 px-2.5 py-0.5 text-[10px] text-muted-foreground">
-                  Provider: <span className="font-mono">{g.provider}</span>
-                </span>
+          {!electronicProvider ? (
+            <DSCard className="mt-4 border-amber-500/20 bg-amber-500/5">
+              <DSCardContent className="p-4 text-sm leading-6 text-muted-foreground" role="status">
+                Pagamento eletrônico de corridas aparece como não configurado neste resumo. O painel
+                não considera nome de secret, variável local ou registro isolado como prova de
+                integração funcional.
               </DSCardContent>
             </DSCard>
-          );
-        })}
-      </div>
+          ) : null}
+        </>
+      )}
     </AdminLayout>
+  );
+}
+
+function ProviderCard({
+  icon: Icon,
+  title,
+  value,
+  description,
+}: {
+  icon: typeof CreditCard;
+  title: string;
+  value: string | null;
+  description: string;
+}) {
+  const configured = Boolean(cleanProvider(value));
+  return (
+    <DSCard>
+      <DSCardContent className="min-w-0 space-y-3 p-4">
+        <div className="flex min-w-0 flex-wrap items-start gap-3">
+          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+            <Icon className="h-4 w-4" aria-hidden="true" />
+          </div>
+          <div className="min-w-0 flex-1 basis-48">
+            <p className="break-words font-semibold">{title}</p>
+            <p className="mt-1 break-words text-sm leading-6 text-muted-foreground">{description}</p>
+          </div>
+          <DSBadge variant={configured ? "success" : "muted"}>
+            {configured ? "Provedor definido" : "Não configurado"}
+          </DSBadge>
+        </div>
+        <div className="min-w-0 rounded-lg border border-border bg-background/40 p-3">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Provedor canônico
+          </p>
+          <p className="mt-1 break-all font-mono text-sm text-foreground">{providerLabel(value)}</p>
+        </div>
+      </DSCardContent>
+    </DSCard>
   );
 }

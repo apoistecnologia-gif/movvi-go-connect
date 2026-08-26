@@ -1,0 +1,369 @@
+/*
+ * APOIS Motorista — identidade visual oficial para o bundle mobile do motorista.
+ * O escopo por data-app-role impede que a paleta altere outros papéis do monorepo.
+ */
+html[data-app-role="motorista"],
+html[data-app-role="motorista"].dark {
+  --background: #050607;
+  --foreground: #f8fafc;
+  --surface: #0d0f11;
+  --surface-2: #15181b;
+
+  --card: #101214;
+  --card-foreground: #f8fafc;
+  --popover: #101214;
+  --popover-foreground: #f8fafc;
+
+  --primary: #f6be1c;
+  --primary-foreground: #090a0b;
+  --primary-glow: #ffd34f;
+
+  --secondary: #c88f00;
+  --secondary-foreground: #090a0b;
+
+  --muted: #1b1e21;
+  --muted-foreground: #9ca3af;
+  --accent: #f6be1c;
+  --accent-foreground: #090a0b;
+
+  --success: #38c172;
+  --warning: #f6be1c;
+  --border: #292d31;
+  --input: #171a1d;
+  --ring: #f6be1c;
+
+  --sidebar: #0b0d0f;
+  --sidebar-foreground: #f8fafc;
+  --sidebar-primary: #f6be1c;
+  --sidebar-primary-foreground: #090a0b;
+  --sidebar-accent: #171a1d;
+  --sidebar-accent-foreground: #f8fafc;
+  --sidebar-border: #292d31;
+  --sidebar-ring: #f6be1c;
+
+  --color-status-inride: #f6be1c;
+  --color-status-arrived: #f6be1c;
+  color-scheme: dark;
+}
+
+html[data-app-role="motorista"] body {
+  background:
+    radial-gradient(circle at 50% -15%, rgba(246, 190, 28, 0.06), transparent 28rem),
+    #050607;
+}
+
+html[data-app-role="motorista"] ::selection {
+  background: rgba(246, 190, 28, 0.28);
+  color: #ffffff;
+}
+
+html[data-app-role="motorista"] * {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(246, 190, 28, 0.28) transparent;
+}
+
+html[data-app-role="motorista"] *::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+html[data-app-role="motorista"] *::-webkit-scrollbar-thumb {
+  background: rgba(246, 190, 28, 0.28);
+  border-radius: 999px;
+}
+
+html[data-app-role="motorista"] *::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+html[data-app-role="motorista"] .surface-card {
+  background: linear-gradient(160deg, #121518 0%, #0d0f11 100%);
+  border-color: rgba(255, 255, 255, 0.07);
+  box-shadow: 0 20px 52px -34px rgba(0, 0, 0, 0.78);
+}
+
+html[data-app-role="motorista"] input,
+html[data-app-role="motorista"] textarea,
+html[data-app-role="motorista"] select {
+  caret-color: #f6be1c;
+}
+
+html[data-app-role="motorista"] input:focus,
+html[data-app-role="motorista"] textarea:focus,
+html[data-app-role="motorista"] select:focus {
+  outline-color: #f6be1c;
+  border-color: rgba(246, 190, 28, 0.55);
+  box-shadow: 0 0 0 3px rgba(246, 190, 28, 0.1);
+}
+
+html[data-app-role="motorista"] .driver-nav-active .driver-nav-indicator {
+  width: 24px;
+  background: #f6be1c;
+  box-shadow: 0 0 14px rgba(246, 190, 28, 0.48);
+}
+
+html[data-app-role="motorista"] .driver-nav-active .driver-nav-icon {
+  color: #f6be1c;
+  background: rgba(246, 190, 28, 0.08);
+  transform: translateY(-1px);
+}
+
+html[data-app-role="motorista"] [class*="rgba(141,217,43,0.7)"] {
+  box-shadow: 0 0 8px rgba(246, 190, 28, 0.7) !important;
+}
+
+html[data-app-role="motorista"] [class*="rgba(141,217,43,0.55)"] {
+  filter: drop-shadow(0 0 8px rgba(246, 190, 28, 0.55)) !important;
+}
+
+html[data-app-role="motorista"] .driver-menu-active .driver-menu-icon {
+  color: #090a0b;
+  background: linear-gradient(145deg, #ffd34f 0%, #f6be1c 58%, #d9a000 100%);
+  box-shadow: 0 10px 24px -14px rgba(246, 190, 28, 0.75);
+  ring-color: transparent;
+}
+
+html[data-app-role="motorista"] .driver-menu-active p:first-of-type {
+  color: #fff8df;
+}
+
+html[data-app-role="motorista"] [role="dialog"] {
+  -webkit-font-smoothing: antialiased;
+  max-width: calc(100vw - 24px);
+  max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 24px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+html[data-app-role="motorista"] [role="dialog"] > button.absolute.right-4.top-4 {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+html[data-app-role="motorista"] .gm-style .gm-style-iw-c,
+html[data-app-role="motorista"] .gm-style .gm-style-iw-d {
+  color-scheme: dark;
+}
+
+html[data-app-role="motorista"] .gm-control-active {
+  filter: saturate(0.82) contrast(1.08);
+}
+
+html[data-app-role="motorista"] button,
+html[data-app-role="motorista"] a {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+html[data-app-role="motorista"] button:not([role="switch"]):not([role="checkbox"]):not([role="radio"]) {
+  min-height: 44px;
+}
+
+html[data-app-role="motorista"] button[aria-label]:not([role="switch"]):not([role="checkbox"]):not([role="radio"]),
+html[data-app-role="motorista"] a[aria-label] {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+html[data-app-role="motorista"] button[role="switch"],
+html[data-app-role="motorista"] button[role="checkbox"],
+html[data-app-role="motorista"] button[role="radio"] {
+  position: relative;
+}
+
+html[data-app-role="motorista"] button[role="switch"]::after,
+html[data-app-role="motorista"] button[role="checkbox"]::after,
+html[data-app-role="motorista"] button[role="radio"]::after {
+  content: "";
+  position: absolute;
+  inset: -12px;
+}
+
+html[data-app-role="motorista"] button[role="combobox"],
+html[data-app-role="motorista"] [role="option"],
+html[data-app-role="motorista"] [role="menuitem"],
+html[data-app-role="motorista"] [role="tab"] {
+  min-height: 44px;
+}
+
+html[data-app-role="motorista"] [role="option"],
+html[data-app-role="motorista"] [role="menuitem"] {
+  display: flex;
+  align-items: center;
+}
+
+html[data-app-role="motorista"] [role="tablist"] {
+  height: auto;
+  min-height: 44px;
+  flex-wrap: wrap;
+}
+
+html[data-app-role="motorista"] a.min-h-8,
+html[data-app-role="motorista"] a.min-h-9,
+html[data-app-role="motorista"] a.min-h-10,
+html[data-app-role="motorista"] a.h-8,
+html[data-app-role="motorista"] a.h-9,
+html[data-app-role="motorista"] a.h-10,
+html[data-app-role="motorista"] a.inline-flex {
+  min-height: 44px;
+}
+
+html[data-app-role="motorista"] input[type="text"],
+html[data-app-role="motorista"] input[type="email"],
+html[data-app-role="motorista"] input[type="tel"],
+html[data-app-role="motorista"] input[type="password"],
+html[data-app-role="motorista"] input[type="date"],
+html[data-app-role="motorista"] input[type="number"],
+html[data-app-role="motorista"] input[type="search"],
+html[data-app-role="motorista"] select,
+html[data-app-role="motorista"] textarea {
+  min-height: 44px;
+}
+
+html[data-app-role="motorista"] [class~="text-[8px]"],
+html[data-app-role="motorista"] [class~="text-[8.5px]"],
+html[data-app-role="motorista"] [class~="text-[9px]"],
+html[data-app-role="motorista"] [class~="text-[9.5px]"] {
+  font-size: 10px;
+}
+
+html[data-app-role="motorista"] .min-h-screen {
+  min-height: 100dvh;
+}
+
+html[data-app-role="motorista"] .h-screen {
+  height: 100dvh;
+}
+
+html[data-app-role="motorista"] main.pb-28 {
+  padding-bottom: calc(7rem + env(safe-area-inset-bottom));
+}
+
+html[data-app-role="motorista"] main.pb-8 {
+  padding-bottom: calc(2rem + env(safe-area-inset-bottom));
+}
+
+html[data-app-role="motorista"] main.flex-1.px-4.py-6 {
+  padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
+}
+
+html[data-app-role="motorista"] main.max-w-xl.space-y-4.px-4.py-6 {
+  padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
+}
+
+html[data-app-role="motorista"] main[style*="max(8rem"],
+html[data-app-role="motorista"] main[style*="max(7rem"] {
+  padding-bottom: calc(7rem + env(safe-area-inset-bottom)) !important;
+}
+
+html[data-app-role="motorista"] button[aria-label="Voltar para o perfil"] {
+  margin-top: env(safe-area-inset-top);
+}
+
+html[data-app-role="motorista"] main p,
+html[data-app-role="motorista"] main span,
+html[data-app-role="motorista"] main code,
+html[data-app-role="motorista"] main strong,
+html[data-app-role="motorista"] main a {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 639px) {
+  html[data-app-role="motorista"] main .flex.items-start.justify-between.gap-3,
+  html[data-app-role="motorista"] main .flex.items-center.justify-between.gap-3,
+  html[data-app-role="motorista"] main .flex.items-baseline.justify-between.gap-3 {
+    flex-wrap: wrap;
+  }
+
+  html[data-app-role="motorista"] main .flex.items-center.gap-3.text-muted-foreground {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  html[data-app-role="motorista"] main [class~="h-[420px]"] {
+    height: min(420px, 52dvh);
+    min-height: 260px;
+  }
+
+  html[data-app-role="motorista"] main [class~="h-[320px]"] {
+    height: min(320px, 48dvh);
+    min-height: 240px;
+  }
+}
+
+@media (max-width: 359px) {
+  html[data-app-role="motorista"] [aria-label="Resumo do período"] > .grid.grid-cols-3,
+  html[data-app-role="motorista"] [aria-label="Resumo do perfil"].grid.grid-cols-3,
+  html[data-app-role="motorista"] main .grid.grid-cols-3,
+  html[data-app-role="motorista"] main .grid.grid-cols-2,
+  html[data-app-role="motorista"] main [class*="grid-cols-[120px_1fr]"],
+  html[data-app-role="motorista"] main [class*="grid-cols-[110px_1fr]"],
+  html[data-app-role="motorista"] main [class*="grid-cols-[1fr_100px]"] {
+    grid-template-columns: 1fr;
+  }
+
+  html[data-app-role="motorista"] main .flex.items-center.justify-between.gap-3,
+  html[data-app-role="motorista"] main .flex.items-baseline.justify-between.gap-3 {
+    flex-wrap: wrap;
+  }
+
+  html[data-app-role="motorista"] main .flex.items-baseline.justify-between.gap-3 {
+    align-items: flex-start;
+  }
+
+  html[data-app-role="motorista"] main .flex.gap-2 {
+    flex-wrap: wrap;
+  }
+
+  html[data-app-role="motorista"] main .flex.gap-2 > button,
+  html[data-app-role="motorista"] main .flex.gap-2 > a {
+    flex: 1 1 100%;
+  }
+
+  html[data-app-role="motorista"] main .truncate {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+  }
+
+  html[data-app-role="motorista"] main .flex.items-start.gap-3:has(> .shrink-0[class~="text-[20px]"]) {
+    flex-wrap: wrap;
+  }
+
+  html[data-app-role="motorista"] main .flex.items-start.gap-3:has(> .shrink-0[class~="text-[20px]"]) > .shrink-0[class~="text-[20px]"] {
+    width: 100%;
+    text-align: left;
+  }
+}
+
+html[data-app-role="motorista"] button[aria-label="Abrir menu"],
+html[data-app-role="motorista"] button[aria-label="Sair"] {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+html[data-app-role="motorista"] button:focus-visible,
+html[data-app-role="motorista"] a:focus-visible {
+  outline: 2px solid rgba(246, 190, 28, 0.9);
+  outline-offset: 2px;
+}
+
+html[data-app-role="motorista"] button:active,
+html[data-app-role="motorista"] a:active {
+  transition-duration: 80ms;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html[data-app-role="motorista"] .driver-nav-icon,
+  html[data-app-role="motorista"] .driver-nav-indicator,
+  html[data-app-role="motorista"] .driver-menu-icon {
+    transition:
+      transform 180ms ease,
+      background-color 180ms ease,
+      color 180ms ease,
+      box-shadow 180ms ease;
+  }
+}

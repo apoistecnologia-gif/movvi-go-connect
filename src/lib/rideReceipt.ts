@@ -14,8 +14,8 @@ export type ReceiptData = {
   durationMin?: number | null;
 };
 
-export const MOVVI_RECEIPT_DISCLAIMER =
-  "A MOVVI não recebe pagamentos de corridas; o pagamento é acertado diretamente com o motorista.";
+export const APOIS_RECEIPT_DISCLAIMER =
+  "A APOIS não recebe pagamentos de corridas; o pagamento é acertado diretamente com o motorista.";
 
 export function formatBRL(v: number | null | undefined) {
   if (v == null) return "—";
@@ -24,7 +24,7 @@ export function formatBRL(v: number | null | undefined) {
 
 export function buildReceiptText(r: ReceiptData): string {
   const lines = [
-    "🚗 MOVVI — Recibo de corrida",
+    "🚗 APOIS — Recibo de corrida",
     "",
     `ID: #${r.rideId.slice(0, 8).toUpperCase()}`,
     `Data: ${new Date(r.date).toLocaleString("pt-BR")}`,
@@ -41,13 +41,13 @@ export function buildReceiptText(r: ReceiptData): string {
   if (r.durationMin != null) lines.push(`Duração: ${Math.round(Number(r.durationMin))} min`);
   if (r.paymentMethod) lines.push(`Pagamento: ${r.paymentMethod}`);
   if (r.value != null) lines.push(`Valor: ${formatBRL(r.value)}`);
-  lines.push("", MOVVI_RECEIPT_DISCLAIMER);
+  lines.push("", APOIS_RECEIPT_DISCLAIMER);
   return lines.join("\n");
 }
 
 export async function shareReceipt(r: ReceiptData): Promise<"shared" | "copied"> {
   const text = buildReceiptText(r);
-  const title = `MOVVI — Recibo #${r.rideId.slice(0, 8).toUpperCase()}`;
+  const title = `APOIS — Recibo #${r.rideId.slice(0, 8).toUpperCase()}`;
   const nav = typeof navigator !== "undefined" ? navigator : undefined;
   if (nav && typeof nav.share === "function") {
     try {

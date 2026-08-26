@@ -1,7 +1,9 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">MOVVI Motorista</string>
-    <string name="title_activity_main">MOVVI Motorista</string>
-    <string name="package_name">com.movvi.driver</string>
-    <string name="custom_url_scheme">com.movvi.driver</string>
+    <string name="app_name">APOIS Motorista</string>
+    <string name="title_activity_main">APOIS Motorista</string>
+    <string name="package_name">com.apois.motorista</string>
+    <string name="custom_url_scheme">com.apois.motorista</string>
+    <string name="password_recovery_scheme">apoismotorista</string>
+    <string name="default_notification_channel_id">apois_rides</string>
 </resources>

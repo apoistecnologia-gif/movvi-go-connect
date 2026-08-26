@@ -133,7 +133,7 @@ export const asaasProvider: PaymentProvider & {
         billingType,
         value: input.amount,
         dueDate: isoDue,
-        description: input.description ?? "Mensalidade Motorista MOVVI",
+        description: input.description ?? "Mensalidade Motorista APOIS",
         externalReference: input.driverId,
       }),
     });
@@ -190,7 +190,7 @@ export const asaasProvider: PaymentProvider & {
         value: input.value,
         nextDueDate: input.nextDueDate,
         cycle: "MONTHLY",
-        description: input.description ?? "Mensalidade Motorista MOVVI",
+        description: input.description ?? "Mensalidade Motorista APOIS",
         externalReference: input.driverId,
       }),
     });

@@ -9,92 +9,84 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as MapTestRouteImport } from './routes/map-test'
-import { Route as DownloadRouteImport } from './routes/download'
-import { Route as DiagnosticoRouteImport } from './routes/diagnostico'
-import { Route as DevDiagnosticsRouteImport } from './routes/dev-diagnostics'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as TTokenRouteImport } from './routes/t.$token'
-import { Route as PassageiroTermosRouteImport } from './routes/passageiro.termos'
-import { Route as PassageiroSuporteRouteImport } from './routes/passageiro.suporte'
-import { Route as PassageiroSobreRouteImport } from './routes/passageiro.sobre'
-import { Route as PassageiroServicosRouteImport } from './routes/passageiro.servicos'
-import { Route as PassageiroSegurancaRouteImport } from './routes/passageiro.seguranca'
-import { Route as PassageiroPrivacidadeRouteImport } from './routes/passageiro.privacidade'
-import { Route as PassageiroPreferenciasNotificacoesRouteImport } from './routes/passageiro.preferencias-notificacoes'
-import { Route as PassageiroPerfilRouteImport } from './routes/passageiro.perfil'
-import { Route as PassageiroNotificacoesRouteImport } from './routes/passageiro.notificacoes'
-import { Route as PassageiroMudancasRouteImport } from './routes/passageiro.mudancas'
-import { Route as PassageiroLoginRouteImport } from './routes/passageiro.login'
-import { Route as PassageiroGuinchoRouteImport } from './routes/passageiro.guincho'
-import { Route as PassageiroFavoritosRouteImport } from './routes/passageiro.favoritos'
-import { Route as PassageiroEnviosRouteImport } from './routes/passageiro.envios'
-import { Route as PassageiroCorridasRouteImport } from './routes/passageiro.corridas'
-import { Route as PassageiroConfiguracoesRouteImport } from './routes/passageiro.configuracoes'
-import { Route as PassageiroCarteiraRouteImport } from './routes/passageiro.carteira'
-import { Route as PassageiroCadastroRouteImport } from './routes/passageiro.cadastro'
-import { Route as PassageiroAppRouteImport } from './routes/passageiro.app'
-import { Route as PassageiroAgendarRouteImport } from './routes/passageiro.agendar'
-import { Route as MotoristaTermosRouteImport } from './routes/motorista.termos'
-import { Route as MotoristaSuporteRouteImport } from './routes/motorista.suporte'
-import { Route as MotoristaStatusRouteImport } from './routes/motorista.status'
-import { Route as MotoristaSegurancaRouteImport } from './routes/motorista.seguranca'
-import { Route as MotoristaRegaliasRouteImport } from './routes/motorista.regalias'
-import { Route as MotoristaPrivacidadeRouteImport } from './routes/motorista.privacidade'
-import { Route as MotoristaPreferenciasNotificacoesRouteImport } from './routes/motorista.preferencias-notificacoes'
-import { Route as MotoristaPerfilRouteImport } from './routes/motorista.perfil'
-import { Route as MotoristaNotificacoesRouteImport } from './routes/motorista.notificacoes'
-import { Route as MotoristaLoginRouteImport } from './routes/motorista.login'
-import { Route as MotoristaGanhosRouteImport } from './routes/motorista.ganhos'
-import { Route as MotoristaDocumentosRouteImport } from './routes/motorista.documentos'
-import { Route as MotoristaCorridasRouteImport } from './routes/motorista.corridas'
-import { Route as MotoristaConfiguracoesRouteImport } from './routes/motorista.configuracoes'
-import { Route as MotoristaCarteiraRouteImport } from './routes/motorista.carteira'
-import { Route as MotoristaCadastroRouteImport } from './routes/motorista.cadastro'
-import { Route as MotoristaAssinaturaRouteImport } from './routes/motorista.assinatura'
-import { Route as MotoristaAppRouteImport } from './routes/motorista.app'
-import { Route as DevRatingTestRouteImport } from './routes/dev.rating-test'
-import { Route as DebugMotoristaAuthRouteImport } from './routes/debug.motorista-auth'
-import { Route as AdminSuporteRouteImport } from './routes/admin.suporte'
-import { Route as AdminSegurancaRouteImport } from './routes/admin.seguranca'
-import { Route as AdminRelatoriosRouteImport } from './routes/admin.relatorios'
-import { Route as AdminPrecosRouteImport } from './routes/admin.precos'
-import { Route as AdminPassageirosRouteImport } from './routes/admin.passageiros'
-import { Route as AdminPagamentosRouteImport } from './routes/admin.pagamentos'
-import { Route as AdminOperacoesRouteImport } from './routes/admin.operacoes'
-import { Route as AdminNotificacoesRouteImport } from './routes/admin.notificacoes'
-import { Route as AdminMotoristasRouteImport } from './routes/admin.motoristas'
-import { Route as AdminMapaRouteImport } from './routes/admin.mapa'
-import { Route as AdminLogsRouteImport } from './routes/admin.logs'
-import { Route as AdminLoginRouteImport } from './routes/admin.login'
-import { Route as AdminFinanceiroMotoristasRouteImport } from './routes/admin.financeiro-motoristas'
-import { Route as AdminFinanceiroRouteImport } from './routes/admin.financeiro'
-import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
-import { Route as AdminCuponsRouteImport } from './routes/admin.cupons'
-import { Route as AdminCorridasRouteImport } from './routes/admin.corridas'
-import { Route as AdminConfiguracoesRouteImport } from './routes/admin.configuracoes'
-import { Route as AdminCategoriasRouteImport } from './routes/admin.categorias'
-import { Route as AdminBackupsRouteImport } from './routes/admin.backups'
-import { Route as AdminAssinaturasRouteImport } from './routes/admin.assinaturas'
-import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
+import { Route as DevDiagnosticsRouteImport } from './routes/dev-diagnostics'
+import { Route as DiagnosticoRouteImport } from './routes/diagnostico'
+import { Route as DownloadRouteImport } from './routes/download'
+import { Route as MapTestRouteImport } from './routes/map-test'
 import { Route as AdminAdministradoresRouteImport } from './routes/admin.administradores'
+import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
+import { Route as AdminAssinaturasRouteImport } from './routes/admin.assinaturas'
+import { Route as AdminBackupsRouteImport } from './routes/admin.backups'
+import { Route as AdminCategoriasRouteImport } from './routes/admin.categorias'
+import { Route as AdminConfiguracoesRouteImport } from './routes/admin.configuracoes'
+import { Route as AdminCorridasRouteImport } from './routes/admin.corridas'
+import { Route as AdminCuponsRouteImport } from './routes/admin.cupons'
+import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
+import { Route as AdminFinanceiroRouteImport } from './routes/admin.financeiro'
+import { Route as AdminFinanceiroMotoristasRouteImport } from './routes/admin.financeiro-motoristas'
+import { Route as AdminLoginRouteImport } from './routes/admin.login'
+import { Route as AdminLogsRouteImport } from './routes/admin.logs'
+import { Route as AdminMapaRouteImport } from './routes/admin.mapa'
+import { Route as AdminMotoristasRouteImport } from './routes/admin.motoristas'
+import { Route as AdminNotificacoesRouteImport } from './routes/admin.notificacoes'
+import { Route as AdminOperacoesRouteImport } from './routes/admin.operacoes'
+import { Route as AdminPagamentosRouteImport } from './routes/admin.pagamentos'
+import { Route as AdminPassageirosRouteImport } from './routes/admin.passageiros'
+import { Route as AdminPrecosRouteImport } from './routes/admin.precos'
+import { Route as AdminRelatoriosRouteImport } from './routes/admin.relatorios'
+import { Route as AdminSegurancaRouteImport } from './routes/admin.seguranca'
+import { Route as AdminSuporteRouteImport } from './routes/admin.suporte'
+import { Route as DebugMotoristaAuthRouteImport } from './routes/debug.motorista-auth'
+import { Route as DevRatingTestRouteImport } from './routes/dev.rating-test'
+import { Route as MotoristaAppRouteImport } from './routes/motorista.app'
+import { Route as MotoristaAssinaturaRouteImport } from './routes/motorista.assinatura'
+import { Route as MotoristaCadastroRouteImport } from './routes/motorista.cadastro'
+import { Route as MotoristaCarteiraRouteImport } from './routes/motorista.carteira'
+import { Route as MotoristaConfiguracoesRouteImport } from './routes/motorista.configuracoes'
+import { Route as MotoristaCorridasRouteImport } from './routes/motorista.corridas'
+import { Route as MotoristaDocumentosRouteImport } from './routes/motorista.documentos'
+import { Route as MotoristaGanhosRouteImport } from './routes/motorista.ganhos'
+import { Route as MotoristaLoginRouteImport } from './routes/motorista.login'
+import { Route as MotoristaNotificacoesRouteImport } from './routes/motorista.notificacoes'
+import { Route as MotoristaPerfilRouteImport } from './routes/motorista.perfil'
+import { Route as MotoristaPreferenciasNotificacoesRouteImport } from './routes/motorista.preferencias-notificacoes'
+import { Route as MotoristaPrivacidadeRouteImport } from './routes/motorista.privacidade'
+import { Route as MotoristaRecuperarSenhaRouteImport } from './routes/motorista.recuperar-senha'
+import { Route as MotoristaRedefinirSenhaRouteImport } from './routes/motorista.redefinir-senha'
+import { Route as MotoristaRegaliasRouteImport } from './routes/motorista.regalias'
+import { Route as MotoristaSegurancaRouteImport } from './routes/motorista.seguranca'
+import { Route as MotoristaStatusRouteImport } from './routes/motorista.status'
+import { Route as MotoristaSuporteRouteImport } from './routes/motorista.suporte'
+import { Route as MotoristaTermosRouteImport } from './routes/motorista.termos'
+import { Route as PassageiroAgendarRouteImport } from './routes/passageiro.agendar'
+import { Route as PassageiroAppRouteImport } from './routes/passageiro.app'
+import { Route as PassageiroCadastroRouteImport } from './routes/passageiro.cadastro'
+import { Route as PassageiroCarteiraRouteImport } from './routes/passageiro.carteira'
+import { Route as PassageiroConfiguracoesRouteImport } from './routes/passageiro.configuracoes'
+import { Route as PassageiroCorridasRouteImport } from './routes/passageiro.corridas'
+import { Route as PassageiroEnviosRouteImport } from './routes/passageiro.envios'
+import { Route as PassageiroFavoritosRouteImport } from './routes/passageiro.favoritos'
+import { Route as PassageiroGuinchoRouteImport } from './routes/passageiro.guincho'
+import { Route as PassageiroLoginRouteImport } from './routes/passageiro.login'
+import { Route as PassageiroMudancasRouteImport } from './routes/passageiro.mudancas'
+import { Route as PassageiroNotificacoesRouteImport } from './routes/passageiro.notificacoes'
+import { Route as PassageiroPerfilRouteImport } from './routes/passageiro.perfil'
+import { Route as PassageiroPreferenciasNotificacoesRouteImport } from './routes/passageiro.preferencias-notificacoes'
+import { Route as PassageiroPrivacidadeRouteImport } from './routes/passageiro.privacidade'
+import { Route as PassageiroSegurancaRouteImport } from './routes/passageiro.seguranca'
+import { Route as PassageiroServicosRouteImport } from './routes/passageiro.servicos'
+import { Route as PassageiroSobreRouteImport } from './routes/passageiro.sobre'
+import { Route as PassageiroSuporteRouteImport } from './routes/passageiro.suporte'
+import { Route as PassageiroTermosRouteImport } from './routes/passageiro.termos'
+import { Route as TTokenRouteImport } from './routes/t.$token'
 import { Route as MotoristaCorridasIdRouteImport } from './routes/motorista.corridas.$id'
-import { Route as ApiPublicHooksRenewDriverSubscriptionsRouteImport } from './routes/api/public/hooks/renew-driver-subscriptions'
 import { Route as ApiPublicHooksActivateScheduledRidesRouteImport } from './routes/api/public/hooks/activate-scheduled-rides'
+import { Route as ApiPublicHooksRenewDriverSubscriptionsRouteImport } from './routes/api/public/hooks/renew-driver-subscriptions'
 
-const MapTestRoute = MapTestRouteImport.update({
-  id: '/map-test',
-  path: '/map-test',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DownloadRoute = DownloadRouteImport.update({
-  id: '/download',
-  path: '/download',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DiagnosticoRoute = DiagnosticoRouteImport.update({
-  id: '/diagnostico',
-  path: '/diagnostico',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DevDiagnosticsRoute = DevDiagnosticsRouteImport.update({
@@ -102,276 +94,69 @@ const DevDiagnosticsRoute = DevDiagnosticsRouteImport.update({
   path: '/dev-diagnostics',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const DiagnosticoRoute = DiagnosticoRouteImport.update({
+  id: '/diagnostico',
+  path: '/diagnostico',
   getParentRoute: () => rootRouteImport,
 } as any)
-const TTokenRoute = TTokenRouteImport.update({
-  id: '/t/$token',
-  path: '/t/$token',
+const DownloadRoute = DownloadRouteImport.update({
+  id: '/download',
+  path: '/download',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PassageiroTermosRoute = PassageiroTermosRouteImport.update({
-  id: '/passageiro/termos',
-  path: '/passageiro/termos',
+const MapTestRoute = MapTestRouteImport.update({
+  id: '/map-test',
+  path: '/map-test',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PassageiroSuporteRoute = PassageiroSuporteRouteImport.update({
-  id: '/passageiro/suporte',
-  path: '/passageiro/suporte',
+const AdminAdministradoresRoute = AdminAdministradoresRouteImport.update({
+  id: '/admin/administradores',
+  path: '/admin/administradores',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PassageiroSobreRoute = PassageiroSobreRouteImport.update({
-  id: '/passageiro/sobre',
-  path: '/passageiro/sobre',
+const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
+  id: '/admin/analytics',
+  path: '/admin/analytics',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PassageiroServicosRoute = PassageiroServicosRouteImport.update({
-  id: '/passageiro/servicos',
-  path: '/passageiro/servicos',
+const AdminAssinaturasRoute = AdminAssinaturasRouteImport.update({
+  id: '/admin/assinaturas',
+  path: '/admin/assinaturas',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PassageiroSegurancaRoute = PassageiroSegurancaRouteImport.update({
-  id: '/passageiro/seguranca',
-  path: '/passageiro/seguranca',
+const AdminBackupsRoute = AdminBackupsRouteImport.update({
+  id: '/admin/backups',
+  path: '/admin/backups',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PassageiroPrivacidadeRoute = PassageiroPrivacidadeRouteImport.update({
-  id: '/passageiro/privacidade',
-  path: '/passageiro/privacidade',
+const AdminCategoriasRoute = AdminCategoriasRouteImport.update({
+  id: '/admin/categorias',
+  path: '/admin/categorias',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PassageiroPreferenciasNotificacoesRoute =
-  PassageiroPreferenciasNotificacoesRouteImport.update({
-    id: '/passageiro/preferencias-notificacoes',
-    path: '/passageiro/preferencias-notificacoes',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const PassageiroPerfilRoute = PassageiroPerfilRouteImport.update({
-  id: '/passageiro/perfil',
-  path: '/passageiro/perfil',
+const AdminConfiguracoesRoute = AdminConfiguracoesRouteImport.update({
+  id: '/admin/configuracoes',
+  path: '/admin/configuracoes',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PassageiroNotificacoesRoute = PassageiroNotificacoesRouteImport.update({
-  id: '/passageiro/notificacoes',
-  path: '/passageiro/notificacoes',
+const AdminCorridasRoute = AdminCorridasRouteImport.update({
+  id: '/admin/corridas',
+  path: '/admin/corridas',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PassageiroMudancasRoute = PassageiroMudancasRouteImport.update({
-  id: '/passageiro/mudancas',
-  path: '/passageiro/mudancas',
+const AdminCuponsRoute = AdminCuponsRouteImport.update({
+  id: '/admin/cupons',
+  path: '/admin/cupons',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PassageiroLoginRoute = PassageiroLoginRouteImport.update({
-  id: '/passageiro/login',
-  path: '/passageiro/login',
+const AdminDashboardRoute = AdminDashboardRouteImport.update({
+  id: '/admin/dashboard',
+  path: '/admin/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PassageiroGuinchoRoute = PassageiroGuinchoRouteImport.update({
-  id: '/passageiro/guincho',
-  path: '/passageiro/guincho',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PassageiroFavoritosRoute = PassageiroFavoritosRouteImport.update({
-  id: '/passageiro/favoritos',
-  path: '/passageiro/favoritos',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PassageiroEnviosRoute = PassageiroEnviosRouteImport.update({
-  id: '/passageiro/envios',
-  path: '/passageiro/envios',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PassageiroCorridasRoute = PassageiroCorridasRouteImport.update({
-  id: '/passageiro/corridas',
-  path: '/passageiro/corridas',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PassageiroConfiguracoesRoute = PassageiroConfiguracoesRouteImport.update({
-  id: '/passageiro/configuracoes',
-  path: '/passageiro/configuracoes',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PassageiroCarteiraRoute = PassageiroCarteiraRouteImport.update({
-  id: '/passageiro/carteira',
-  path: '/passageiro/carteira',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PassageiroCadastroRoute = PassageiroCadastroRouteImport.update({
-  id: '/passageiro/cadastro',
-  path: '/passageiro/cadastro',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PassageiroAppRoute = PassageiroAppRouteImport.update({
-  id: '/passageiro/app',
-  path: '/passageiro/app',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PassageiroAgendarRoute = PassageiroAgendarRouteImport.update({
-  id: '/passageiro/agendar',
-  path: '/passageiro/agendar',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MotoristaTermosRoute = MotoristaTermosRouteImport.update({
-  id: '/motorista/termos',
-  path: '/motorista/termos',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MotoristaSuporteRoute = MotoristaSuporteRouteImport.update({
-  id: '/motorista/suporte',
-  path: '/motorista/suporte',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MotoristaStatusRoute = MotoristaStatusRouteImport.update({
-  id: '/motorista/status',
-  path: '/motorista/status',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MotoristaSegurancaRoute = MotoristaSegurancaRouteImport.update({
-  id: '/motorista/seguranca',
-  path: '/motorista/seguranca',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MotoristaRegaliasRoute = MotoristaRegaliasRouteImport.update({
-  id: '/motorista/regalias',
-  path: '/motorista/regalias',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MotoristaPrivacidadeRoute = MotoristaPrivacidadeRouteImport.update({
-  id: '/motorista/privacidade',
-  path: '/motorista/privacidade',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MotoristaPreferenciasNotificacoesRoute =
-  MotoristaPreferenciasNotificacoesRouteImport.update({
-    id: '/motorista/preferencias-notificacoes',
-    path: '/motorista/preferencias-notificacoes',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const MotoristaPerfilRoute = MotoristaPerfilRouteImport.update({
-  id: '/motorista/perfil',
-  path: '/motorista/perfil',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MotoristaNotificacoesRoute = MotoristaNotificacoesRouteImport.update({
-  id: '/motorista/notificacoes',
-  path: '/motorista/notificacoes',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MotoristaLoginRoute = MotoristaLoginRouteImport.update({
-  id: '/motorista/login',
-  path: '/motorista/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MotoristaGanhosRoute = MotoristaGanhosRouteImport.update({
-  id: '/motorista/ganhos',
-  path: '/motorista/ganhos',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MotoristaDocumentosRoute = MotoristaDocumentosRouteImport.update({
-  id: '/motorista/documentos',
-  path: '/motorista/documentos',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MotoristaCorridasRoute = MotoristaCorridasRouteImport.update({
-  id: '/motorista/corridas',
-  path: '/motorista/corridas',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MotoristaConfiguracoesRoute = MotoristaConfiguracoesRouteImport.update({
-  id: '/motorista/configuracoes',
-  path: '/motorista/configuracoes',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MotoristaCarteiraRoute = MotoristaCarteiraRouteImport.update({
-  id: '/motorista/carteira',
-  path: '/motorista/carteira',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MotoristaCadastroRoute = MotoristaCadastroRouteImport.update({
-  id: '/motorista/cadastro',
-  path: '/motorista/cadastro',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MotoristaAssinaturaRoute = MotoristaAssinaturaRouteImport.update({
-  id: '/motorista/assinatura',
-  path: '/motorista/assinatura',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MotoristaAppRoute = MotoristaAppRouteImport.update({
-  id: '/motorista/app',
-  path: '/motorista/app',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DevRatingTestRoute = DevRatingTestRouteImport.update({
-  id: '/dev/rating-test',
-  path: '/dev/rating-test',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DebugMotoristaAuthRoute = DebugMotoristaAuthRouteImport.update({
-  id: '/debug/motorista-auth',
-  path: '/debug/motorista-auth',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminSuporteRoute = AdminSuporteRouteImport.update({
-  id: '/admin/suporte',
-  path: '/admin/suporte',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminSegurancaRoute = AdminSegurancaRouteImport.update({
-  id: '/admin/seguranca',
-  path: '/admin/seguranca',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminRelatoriosRoute = AdminRelatoriosRouteImport.update({
-  id: '/admin/relatorios',
-  path: '/admin/relatorios',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminPrecosRoute = AdminPrecosRouteImport.update({
-  id: '/admin/precos',
-  path: '/admin/precos',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminPassageirosRoute = AdminPassageirosRouteImport.update({
-  id: '/admin/passageiros',
-  path: '/admin/passageiros',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminPagamentosRoute = AdminPagamentosRouteImport.update({
-  id: '/admin/pagamentos',
-  path: '/admin/pagamentos',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminOperacoesRoute = AdminOperacoesRouteImport.update({
-  id: '/admin/operacoes',
-  path: '/admin/operacoes',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminNotificacoesRoute = AdminNotificacoesRouteImport.update({
-  id: '/admin/notificacoes',
-  path: '/admin/notificacoes',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminMotoristasRoute = AdminMotoristasRouteImport.update({
-  id: '/admin/motoristas',
-  path: '/admin/motoristas',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminMapaRoute = AdminMapaRouteImport.update({
-  id: '/admin/mapa',
-  path: '/admin/mapa',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminLogsRoute = AdminLogsRouteImport.update({
-  id: '/admin/logs',
-  path: '/admin/logs',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminLoginRoute = AdminLoginRouteImport.update({
-  id: '/admin/login',
-  path: '/admin/login',
+const AdminFinanceiroRoute = AdminFinanceiroRouteImport.update({
+  id: '/admin/financeiro',
+  path: '/admin/financeiro',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminFinanceiroMotoristasRoute =
@@ -380,54 +165,281 @@ const AdminFinanceiroMotoristasRoute =
     path: '/admin/financeiro-motoristas',
     getParentRoute: () => rootRouteImport,
   } as any)
-const AdminFinanceiroRoute = AdminFinanceiroRouteImport.update({
-  id: '/admin/financeiro',
-  path: '/admin/financeiro',
+const AdminLoginRoute = AdminLoginRouteImport.update({
+  id: '/admin/login',
+  path: '/admin/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminDashboardRoute = AdminDashboardRouteImport.update({
-  id: '/admin/dashboard',
-  path: '/admin/dashboard',
+const AdminLogsRoute = AdminLogsRouteImport.update({
+  id: '/admin/logs',
+  path: '/admin/logs',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminCuponsRoute = AdminCuponsRouteImport.update({
-  id: '/admin/cupons',
-  path: '/admin/cupons',
+const AdminMapaRoute = AdminMapaRouteImport.update({
+  id: '/admin/mapa',
+  path: '/admin/mapa',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminCorridasRoute = AdminCorridasRouteImport.update({
-  id: '/admin/corridas',
-  path: '/admin/corridas',
+const AdminMotoristasRoute = AdminMotoristasRouteImport.update({
+  id: '/admin/motoristas',
+  path: '/admin/motoristas',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminConfiguracoesRoute = AdminConfiguracoesRouteImport.update({
-  id: '/admin/configuracoes',
-  path: '/admin/configuracoes',
+const AdminNotificacoesRoute = AdminNotificacoesRouteImport.update({
+  id: '/admin/notificacoes',
+  path: '/admin/notificacoes',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminCategoriasRoute = AdminCategoriasRouteImport.update({
-  id: '/admin/categorias',
-  path: '/admin/categorias',
+const AdminOperacoesRoute = AdminOperacoesRouteImport.update({
+  id: '/admin/operacoes',
+  path: '/admin/operacoes',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminBackupsRoute = AdminBackupsRouteImport.update({
-  id: '/admin/backups',
-  path: '/admin/backups',
+const AdminPagamentosRoute = AdminPagamentosRouteImport.update({
+  id: '/admin/pagamentos',
+  path: '/admin/pagamentos',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminAssinaturasRoute = AdminAssinaturasRouteImport.update({
-  id: '/admin/assinaturas',
-  path: '/admin/assinaturas',
+const AdminPassageirosRoute = AdminPassageirosRouteImport.update({
+  id: '/admin/passageiros',
+  path: '/admin/passageiros',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
-  id: '/admin/analytics',
-  path: '/admin/analytics',
+const AdminPrecosRoute = AdminPrecosRouteImport.update({
+  id: '/admin/precos',
+  path: '/admin/precos',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminAdministradoresRoute = AdminAdministradoresRouteImport.update({
-  id: '/admin/administradores',
-  path: '/admin/administradores',
+const AdminRelatoriosRoute = AdminRelatoriosRouteImport.update({
+  id: '/admin/relatorios',
+  path: '/admin/relatorios',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminSegurancaRoute = AdminSegurancaRouteImport.update({
+  id: '/admin/seguranca',
+  path: '/admin/seguranca',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminSuporteRoute = AdminSuporteRouteImport.update({
+  id: '/admin/suporte',
+  path: '/admin/suporte',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DebugMotoristaAuthRoute = DebugMotoristaAuthRouteImport.update({
+  id: '/debug/motorista-auth',
+  path: '/debug/motorista-auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DevRatingTestRoute = DevRatingTestRouteImport.update({
+  id: '/dev/rating-test',
+  path: '/dev/rating-test',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MotoristaAppRoute = MotoristaAppRouteImport.update({
+  id: '/motorista/app',
+  path: '/motorista/app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MotoristaAssinaturaRoute = MotoristaAssinaturaRouteImport.update({
+  id: '/motorista/assinatura',
+  path: '/motorista/assinatura',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MotoristaCadastroRoute = MotoristaCadastroRouteImport.update({
+  id: '/motorista/cadastro',
+  path: '/motorista/cadastro',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MotoristaCarteiraRoute = MotoristaCarteiraRouteImport.update({
+  id: '/motorista/carteira',
+  path: '/motorista/carteira',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MotoristaConfiguracoesRoute = MotoristaConfiguracoesRouteImport.update({
+  id: '/motorista/configuracoes',
+  path: '/motorista/configuracoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MotoristaCorridasRoute = MotoristaCorridasRouteImport.update({
+  id: '/motorista/corridas',
+  path: '/motorista/corridas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MotoristaDocumentosRoute = MotoristaDocumentosRouteImport.update({
+  id: '/motorista/documentos',
+  path: '/motorista/documentos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MotoristaGanhosRoute = MotoristaGanhosRouteImport.update({
+  id: '/motorista/ganhos',
+  path: '/motorista/ganhos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MotoristaLoginRoute = MotoristaLoginRouteImport.update({
+  id: '/motorista/login',
+  path: '/motorista/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MotoristaNotificacoesRoute = MotoristaNotificacoesRouteImport.update({
+  id: '/motorista/notificacoes',
+  path: '/motorista/notificacoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MotoristaPerfilRoute = MotoristaPerfilRouteImport.update({
+  id: '/motorista/perfil',
+  path: '/motorista/perfil',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MotoristaPreferenciasNotificacoesRoute =
+  MotoristaPreferenciasNotificacoesRouteImport.update({
+    id: '/motorista/preferencias-notificacoes',
+    path: '/motorista/preferencias-notificacoes',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const MotoristaPrivacidadeRoute = MotoristaPrivacidadeRouteImport.update({
+  id: '/motorista/privacidade',
+  path: '/motorista/privacidade',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MotoristaRecuperarSenhaRoute = MotoristaRecuperarSenhaRouteImport.update({
+  id: '/motorista/recuperar-senha',
+  path: '/motorista/recuperar-senha',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MotoristaRedefinirSenhaRoute = MotoristaRedefinirSenhaRouteImport.update({
+  id: '/motorista/redefinir-senha',
+  path: '/motorista/redefinir-senha',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MotoristaRegaliasRoute = MotoristaRegaliasRouteImport.update({
+  id: '/motorista/regalias',
+  path: '/motorista/regalias',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MotoristaSegurancaRoute = MotoristaSegurancaRouteImport.update({
+  id: '/motorista/seguranca',
+  path: '/motorista/seguranca',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MotoristaStatusRoute = MotoristaStatusRouteImport.update({
+  id: '/motorista/status',
+  path: '/motorista/status',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MotoristaSuporteRoute = MotoristaSuporteRouteImport.update({
+  id: '/motorista/suporte',
+  path: '/motorista/suporte',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MotoristaTermosRoute = MotoristaTermosRouteImport.update({
+  id: '/motorista/termos',
+  path: '/motorista/termos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PassageiroAgendarRoute = PassageiroAgendarRouteImport.update({
+  id: '/passageiro/agendar',
+  path: '/passageiro/agendar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PassageiroAppRoute = PassageiroAppRouteImport.update({
+  id: '/passageiro/app',
+  path: '/passageiro/app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PassageiroCadastroRoute = PassageiroCadastroRouteImport.update({
+  id: '/passageiro/cadastro',
+  path: '/passageiro/cadastro',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PassageiroCarteiraRoute = PassageiroCarteiraRouteImport.update({
+  id: '/passageiro/carteira',
+  path: '/passageiro/carteira',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PassageiroConfiguracoesRoute = PassageiroConfiguracoesRouteImport.update({
+  id: '/passageiro/configuracoes',
+  path: '/passageiro/configuracoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PassageiroCorridasRoute = PassageiroCorridasRouteImport.update({
+  id: '/passageiro/corridas',
+  path: '/passageiro/corridas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PassageiroEnviosRoute = PassageiroEnviosRouteImport.update({
+  id: '/passageiro/envios',
+  path: '/passageiro/envios',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PassageiroFavoritosRoute = PassageiroFavoritosRouteImport.update({
+  id: '/passageiro/favoritos',
+  path: '/passageiro/favoritos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PassageiroGuinchoRoute = PassageiroGuinchoRouteImport.update({
+  id: '/passageiro/guincho',
+  path: '/passageiro/guincho',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PassageiroLoginRoute = PassageiroLoginRouteImport.update({
+  id: '/passageiro/login',
+  path: '/passageiro/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PassageiroMudancasRoute = PassageiroMudancasRouteImport.update({
+  id: '/passageiro/mudancas',
+  path: '/passageiro/mudancas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PassageiroNotificacoesRoute = PassageiroNotificacoesRouteImport.update({
+  id: '/passageiro/notificacoes',
+  path: '/passageiro/notificacoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PassageiroPerfilRoute = PassageiroPerfilRouteImport.update({
+  id: '/passageiro/perfil',
+  path: '/passageiro/perfil',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PassageiroPreferenciasNotificacoesRoute =
+  PassageiroPreferenciasNotificacoesRouteImport.update({
+    id: '/passageiro/preferencias-notificacoes',
+    path: '/passageiro/preferencias-notificacoes',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const PassageiroPrivacidadeRoute = PassageiroPrivacidadeRouteImport.update({
+  id: '/passageiro/privacidade',
+  path: '/passageiro/privacidade',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PassageiroSegurancaRoute = PassageiroSegurancaRouteImport.update({
+  id: '/passageiro/seguranca',
+  path: '/passageiro/seguranca',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PassageiroServicosRoute = PassageiroServicosRouteImport.update({
+  id: '/passageiro/servicos',
+  path: '/passageiro/servicos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PassageiroSobreRoute = PassageiroSobreRouteImport.update({
+  id: '/passageiro/sobre',
+  path: '/passageiro/sobre',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PassageiroSuporteRoute = PassageiroSuporteRouteImport.update({
+  id: '/passageiro/suporte',
+  path: '/passageiro/suporte',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PassageiroTermosRoute = PassageiroTermosRouteImport.update({
+  id: '/passageiro/termos',
+  path: '/passageiro/termos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TTokenRoute = TTokenRouteImport.update({
+  id: '/t/$token',
+  path: '/t/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MotoristaCorridasIdRoute = MotoristaCorridasIdRouteImport.update({
@@ -435,16 +447,16 @@ const MotoristaCorridasIdRoute = MotoristaCorridasIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => MotoristaCorridasRoute,
 } as any)
-const ApiPublicHooksRenewDriverSubscriptionsRoute =
-  ApiPublicHooksRenewDriverSubscriptionsRouteImport.update({
-    id: '/api/public/hooks/renew-driver-subscriptions',
-    path: '/api/public/hooks/renew-driver-subscriptions',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiPublicHooksActivateScheduledRidesRoute =
   ApiPublicHooksActivateScheduledRidesRouteImport.update({
     id: '/api/public/hooks/activate-scheduled-rides',
     path: '/api/public/hooks/activate-scheduled-rides',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksRenewDriverSubscriptionsRoute =
+  ApiPublicHooksRenewDriverSubscriptionsRouteImport.update({
+    id: '/api/public/hooks/renew-driver-subscriptions',
+    path: '/api/public/hooks/renew-driver-subscriptions',
     getParentRoute: () => rootRouteImport,
   } as any)
 
@@ -492,6 +504,8 @@ export interface FileRoutesByFullPath {
   '/motorista/perfil': typeof MotoristaPerfilRoute
   '/motorista/preferencias-notificacoes': typeof MotoristaPreferenciasNotificacoesRoute
   '/motorista/privacidade': typeof MotoristaPrivacidadeRoute
+  '/motorista/recuperar-senha': typeof MotoristaRecuperarSenhaRoute
+  '/motorista/redefinir-senha': typeof MotoristaRedefinirSenhaRoute
   '/motorista/regalias': typeof MotoristaRegaliasRoute
   '/motorista/seguranca': typeof MotoristaSegurancaRoute
   '/motorista/status': typeof MotoristaStatusRoute
@@ -566,6 +580,8 @@ export interface FileRoutesByTo {
   '/motorista/perfil': typeof MotoristaPerfilRoute
   '/motorista/preferencias-notificacoes': typeof MotoristaPreferenciasNotificacoesRoute
   '/motorista/privacidade': typeof MotoristaPrivacidadeRoute
+  '/motorista/recuperar-senha': typeof MotoristaRecuperarSenhaRoute
+  '/motorista/redefinir-senha': typeof MotoristaRedefinirSenhaRoute
   '/motorista/regalias': typeof MotoristaRegaliasRoute
   '/motorista/seguranca': typeof MotoristaSegurancaRoute
   '/motorista/status': typeof MotoristaStatusRoute
@@ -641,6 +657,8 @@ export interface FileRoutesById {
   '/motorista/perfil': typeof MotoristaPerfilRoute
   '/motorista/preferencias-notificacoes': typeof MotoristaPreferenciasNotificacoesRoute
   '/motorista/privacidade': typeof MotoristaPrivacidadeRoute
+  '/motorista/recuperar-senha': typeof MotoristaRecuperarSenhaRoute
+  '/motorista/redefinir-senha': typeof MotoristaRedefinirSenhaRoute
   '/motorista/regalias': typeof MotoristaRegaliasRoute
   '/motorista/seguranca': typeof MotoristaSegurancaRoute
   '/motorista/status': typeof MotoristaStatusRoute
@@ -717,6 +735,8 @@ export interface FileRouteTypes {
     | '/motorista/perfil'
     | '/motorista/preferencias-notificacoes'
     | '/motorista/privacidade'
+    | '/motorista/recuperar-senha'
+    | '/motorista/redefinir-senha'
     | '/motorista/regalias'
     | '/motorista/seguranca'
     | '/motorista/status'
@@ -791,6 +811,8 @@ export interface FileRouteTypes {
     | '/motorista/perfil'
     | '/motorista/preferencias-notificacoes'
     | '/motorista/privacidade'
+    | '/motorista/recuperar-senha'
+    | '/motorista/redefinir-senha'
     | '/motorista/regalias'
     | '/motorista/seguranca'
     | '/motorista/status'
@@ -865,6 +887,8 @@ export interface FileRouteTypes {
     | '/motorista/perfil'
     | '/motorista/preferencias-notificacoes'
     | '/motorista/privacidade'
+    | '/motorista/recuperar-senha'
+    | '/motorista/redefinir-senha'
     | '/motorista/regalias'
     | '/motorista/seguranca'
     | '/motorista/status'
@@ -940,6 +964,8 @@ export interface RootRouteChildren {
   MotoristaPerfilRoute: typeof MotoristaPerfilRoute
   MotoristaPreferenciasNotificacoesRoute: typeof MotoristaPreferenciasNotificacoesRoute
   MotoristaPrivacidadeRoute: typeof MotoristaPrivacidadeRoute
+  MotoristaRecuperarSenhaRoute: typeof MotoristaRecuperarSenhaRoute
+  MotoristaRedefinirSenhaRoute: typeof MotoristaRedefinirSenhaRoute
   MotoristaRegaliasRoute: typeof MotoristaRegaliasRoute
   MotoristaSegurancaRoute: typeof MotoristaSegurancaRoute
   MotoristaStatusRoute: typeof MotoristaStatusRoute
@@ -972,25 +998,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/map-test': {
-      id: '/map-test'
-      path: '/map-test'
-      fullPath: '/map-test'
-      preLoaderRoute: typeof MapTestRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/download': {
-      id: '/download'
-      path: '/download'
-      fullPath: '/download'
-      preLoaderRoute: typeof DownloadRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/diagnostico': {
-      id: '/diagnostico'
-      path: '/diagnostico'
-      fullPath: '/diagnostico'
-      preLoaderRoute: typeof DiagnosticoRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dev-diagnostics': {
@@ -1000,452 +1012,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DevDiagnosticsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/diagnostico': {
+      id: '/diagnostico'
+      path: '/diagnostico'
+      fullPath: '/diagnostico'
+      preLoaderRoute: typeof DiagnosticoRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/t/$token': {
-      id: '/t/$token'
-      path: '/t/$token'
-      fullPath: '/t/$token'
-      preLoaderRoute: typeof TTokenRouteImport
+    '/download': {
+      id: '/download'
+      path: '/download'
+      fullPath: '/download'
+      preLoaderRoute: typeof DownloadRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/passageiro/termos': {
-      id: '/passageiro/termos'
-      path: '/passageiro/termos'
-      fullPath: '/passageiro/termos'
-      preLoaderRoute: typeof PassageiroTermosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/passageiro/suporte': {
-      id: '/passageiro/suporte'
-      path: '/passageiro/suporte'
-      fullPath: '/passageiro/suporte'
-      preLoaderRoute: typeof PassageiroSuporteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/passageiro/sobre': {
-      id: '/passageiro/sobre'
-      path: '/passageiro/sobre'
-      fullPath: '/passageiro/sobre'
-      preLoaderRoute: typeof PassageiroSobreRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/passageiro/servicos': {
-      id: '/passageiro/servicos'
-      path: '/passageiro/servicos'
-      fullPath: '/passageiro/servicos'
-      preLoaderRoute: typeof PassageiroServicosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/passageiro/seguranca': {
-      id: '/passageiro/seguranca'
-      path: '/passageiro/seguranca'
-      fullPath: '/passageiro/seguranca'
-      preLoaderRoute: typeof PassageiroSegurancaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/passageiro/privacidade': {
-      id: '/passageiro/privacidade'
-      path: '/passageiro/privacidade'
-      fullPath: '/passageiro/privacidade'
-      preLoaderRoute: typeof PassageiroPrivacidadeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/passageiro/preferencias-notificacoes': {
-      id: '/passageiro/preferencias-notificacoes'
-      path: '/passageiro/preferencias-notificacoes'
-      fullPath: '/passageiro/preferencias-notificacoes'
-      preLoaderRoute: typeof PassageiroPreferenciasNotificacoesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/passageiro/perfil': {
-      id: '/passageiro/perfil'
-      path: '/passageiro/perfil'
-      fullPath: '/passageiro/perfil'
-      preLoaderRoute: typeof PassageiroPerfilRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/passageiro/notificacoes': {
-      id: '/passageiro/notificacoes'
-      path: '/passageiro/notificacoes'
-      fullPath: '/passageiro/notificacoes'
-      preLoaderRoute: typeof PassageiroNotificacoesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/passageiro/mudancas': {
-      id: '/passageiro/mudancas'
-      path: '/passageiro/mudancas'
-      fullPath: '/passageiro/mudancas'
-      preLoaderRoute: typeof PassageiroMudancasRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/passageiro/login': {
-      id: '/passageiro/login'
-      path: '/passageiro/login'
-      fullPath: '/passageiro/login'
-      preLoaderRoute: typeof PassageiroLoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/passageiro/guincho': {
-      id: '/passageiro/guincho'
-      path: '/passageiro/guincho'
-      fullPath: '/passageiro/guincho'
-      preLoaderRoute: typeof PassageiroGuinchoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/passageiro/favoritos': {
-      id: '/passageiro/favoritos'
-      path: '/passageiro/favoritos'
-      fullPath: '/passageiro/favoritos'
-      preLoaderRoute: typeof PassageiroFavoritosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/passageiro/envios': {
-      id: '/passageiro/envios'
-      path: '/passageiro/envios'
-      fullPath: '/passageiro/envios'
-      preLoaderRoute: typeof PassageiroEnviosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/passageiro/corridas': {
-      id: '/passageiro/corridas'
-      path: '/passageiro/corridas'
-      fullPath: '/passageiro/corridas'
-      preLoaderRoute: typeof PassageiroCorridasRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/passageiro/configuracoes': {
-      id: '/passageiro/configuracoes'
-      path: '/passageiro/configuracoes'
-      fullPath: '/passageiro/configuracoes'
-      preLoaderRoute: typeof PassageiroConfiguracoesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/passageiro/carteira': {
-      id: '/passageiro/carteira'
-      path: '/passageiro/carteira'
-      fullPath: '/passageiro/carteira'
-      preLoaderRoute: typeof PassageiroCarteiraRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/passageiro/cadastro': {
-      id: '/passageiro/cadastro'
-      path: '/passageiro/cadastro'
-      fullPath: '/passageiro/cadastro'
-      preLoaderRoute: typeof PassageiroCadastroRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/passageiro/app': {
-      id: '/passageiro/app'
-      path: '/passageiro/app'
-      fullPath: '/passageiro/app'
-      preLoaderRoute: typeof PassageiroAppRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/passageiro/agendar': {
-      id: '/passageiro/agendar'
-      path: '/passageiro/agendar'
-      fullPath: '/passageiro/agendar'
-      preLoaderRoute: typeof PassageiroAgendarRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/motorista/termos': {
-      id: '/motorista/termos'
-      path: '/motorista/termos'
-      fullPath: '/motorista/termos'
-      preLoaderRoute: typeof MotoristaTermosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/motorista/suporte': {
-      id: '/motorista/suporte'
-      path: '/motorista/suporte'
-      fullPath: '/motorista/suporte'
-      preLoaderRoute: typeof MotoristaSuporteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/motorista/status': {
-      id: '/motorista/status'
-      path: '/motorista/status'
-      fullPath: '/motorista/status'
-      preLoaderRoute: typeof MotoristaStatusRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/motorista/seguranca': {
-      id: '/motorista/seguranca'
-      path: '/motorista/seguranca'
-      fullPath: '/motorista/seguranca'
-      preLoaderRoute: typeof MotoristaSegurancaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/motorista/regalias': {
-      id: '/motorista/regalias'
-      path: '/motorista/regalias'
-      fullPath: '/motorista/regalias'
-      preLoaderRoute: typeof MotoristaRegaliasRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/motorista/privacidade': {
-      id: '/motorista/privacidade'
-      path: '/motorista/privacidade'
-      fullPath: '/motorista/privacidade'
-      preLoaderRoute: typeof MotoristaPrivacidadeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/motorista/preferencias-notificacoes': {
-      id: '/motorista/preferencias-notificacoes'
-      path: '/motorista/preferencias-notificacoes'
-      fullPath: '/motorista/preferencias-notificacoes'
-      preLoaderRoute: typeof MotoristaPreferenciasNotificacoesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/motorista/perfil': {
-      id: '/motorista/perfil'
-      path: '/motorista/perfil'
-      fullPath: '/motorista/perfil'
-      preLoaderRoute: typeof MotoristaPerfilRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/motorista/notificacoes': {
-      id: '/motorista/notificacoes'
-      path: '/motorista/notificacoes'
-      fullPath: '/motorista/notificacoes'
-      preLoaderRoute: typeof MotoristaNotificacoesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/motorista/login': {
-      id: '/motorista/login'
-      path: '/motorista/login'
-      fullPath: '/motorista/login'
-      preLoaderRoute: typeof MotoristaLoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/motorista/ganhos': {
-      id: '/motorista/ganhos'
-      path: '/motorista/ganhos'
-      fullPath: '/motorista/ganhos'
-      preLoaderRoute: typeof MotoristaGanhosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/motorista/documentos': {
-      id: '/motorista/documentos'
-      path: '/motorista/documentos'
-      fullPath: '/motorista/documentos'
-      preLoaderRoute: typeof MotoristaDocumentosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/motorista/corridas': {
-      id: '/motorista/corridas'
-      path: '/motorista/corridas'
-      fullPath: '/motorista/corridas'
-      preLoaderRoute: typeof MotoristaCorridasRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/motorista/configuracoes': {
-      id: '/motorista/configuracoes'
-      path: '/motorista/configuracoes'
-      fullPath: '/motorista/configuracoes'
-      preLoaderRoute: typeof MotoristaConfiguracoesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/motorista/carteira': {
-      id: '/motorista/carteira'
-      path: '/motorista/carteira'
-      fullPath: '/motorista/carteira'
-      preLoaderRoute: typeof MotoristaCarteiraRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/motorista/cadastro': {
-      id: '/motorista/cadastro'
-      path: '/motorista/cadastro'
-      fullPath: '/motorista/cadastro'
-      preLoaderRoute: typeof MotoristaCadastroRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/motorista/assinatura': {
-      id: '/motorista/assinatura'
-      path: '/motorista/assinatura'
-      fullPath: '/motorista/assinatura'
-      preLoaderRoute: typeof MotoristaAssinaturaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/motorista/app': {
-      id: '/motorista/app'
-      path: '/motorista/app'
-      fullPath: '/motorista/app'
-      preLoaderRoute: typeof MotoristaAppRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dev/rating-test': {
-      id: '/dev/rating-test'
-      path: '/dev/rating-test'
-      fullPath: '/dev/rating-test'
-      preLoaderRoute: typeof DevRatingTestRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/debug/motorista-auth': {
-      id: '/debug/motorista-auth'
-      path: '/debug/motorista-auth'
-      fullPath: '/debug/motorista-auth'
-      preLoaderRoute: typeof DebugMotoristaAuthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/suporte': {
-      id: '/admin/suporte'
-      path: '/admin/suporte'
-      fullPath: '/admin/suporte'
-      preLoaderRoute: typeof AdminSuporteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/seguranca': {
-      id: '/admin/seguranca'
-      path: '/admin/seguranca'
-      fullPath: '/admin/seguranca'
-      preLoaderRoute: typeof AdminSegurancaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/relatorios': {
-      id: '/admin/relatorios'
-      path: '/admin/relatorios'
-      fullPath: '/admin/relatorios'
-      preLoaderRoute: typeof AdminRelatoriosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/precos': {
-      id: '/admin/precos'
-      path: '/admin/precos'
-      fullPath: '/admin/precos'
-      preLoaderRoute: typeof AdminPrecosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/passageiros': {
-      id: '/admin/passageiros'
-      path: '/admin/passageiros'
-      fullPath: '/admin/passageiros'
-      preLoaderRoute: typeof AdminPassageirosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/pagamentos': {
-      id: '/admin/pagamentos'
-      path: '/admin/pagamentos'
-      fullPath: '/admin/pagamentos'
-      preLoaderRoute: typeof AdminPagamentosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/operacoes': {
-      id: '/admin/operacoes'
-      path: '/admin/operacoes'
-      fullPath: '/admin/operacoes'
-      preLoaderRoute: typeof AdminOperacoesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/notificacoes': {
-      id: '/admin/notificacoes'
-      path: '/admin/notificacoes'
-      fullPath: '/admin/notificacoes'
-      preLoaderRoute: typeof AdminNotificacoesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/motoristas': {
-      id: '/admin/motoristas'
-      path: '/admin/motoristas'
-      fullPath: '/admin/motoristas'
-      preLoaderRoute: typeof AdminMotoristasRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/mapa': {
-      id: '/admin/mapa'
-      path: '/admin/mapa'
-      fullPath: '/admin/mapa'
-      preLoaderRoute: typeof AdminMapaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/logs': {
-      id: '/admin/logs'
-      path: '/admin/logs'
-      fullPath: '/admin/logs'
-      preLoaderRoute: typeof AdminLogsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/login': {
-      id: '/admin/login'
-      path: '/admin/login'
-      fullPath: '/admin/login'
-      preLoaderRoute: typeof AdminLoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/financeiro-motoristas': {
-      id: '/admin/financeiro-motoristas'
-      path: '/admin/financeiro-motoristas'
-      fullPath: '/admin/financeiro-motoristas'
-      preLoaderRoute: typeof AdminFinanceiroMotoristasRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/financeiro': {
-      id: '/admin/financeiro'
-      path: '/admin/financeiro'
-      fullPath: '/admin/financeiro'
-      preLoaderRoute: typeof AdminFinanceiroRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/dashboard': {
-      id: '/admin/dashboard'
-      path: '/admin/dashboard'
-      fullPath: '/admin/dashboard'
-      preLoaderRoute: typeof AdminDashboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/cupons': {
-      id: '/admin/cupons'
-      path: '/admin/cupons'
-      fullPath: '/admin/cupons'
-      preLoaderRoute: typeof AdminCuponsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/corridas': {
-      id: '/admin/corridas'
-      path: '/admin/corridas'
-      fullPath: '/admin/corridas'
-      preLoaderRoute: typeof AdminCorridasRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/configuracoes': {
-      id: '/admin/configuracoes'
-      path: '/admin/configuracoes'
-      fullPath: '/admin/configuracoes'
-      preLoaderRoute: typeof AdminConfiguracoesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/categorias': {
-      id: '/admin/categorias'
-      path: '/admin/categorias'
-      fullPath: '/admin/categorias'
-      preLoaderRoute: typeof AdminCategoriasRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/backups': {
-      id: '/admin/backups'
-      path: '/admin/backups'
-      fullPath: '/admin/backups'
-      preLoaderRoute: typeof AdminBackupsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/assinaturas': {
-      id: '/admin/assinaturas'
-      path: '/admin/assinaturas'
-      fullPath: '/admin/assinaturas'
-      preLoaderRoute: typeof AdminAssinaturasRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/analytics': {
-      id: '/admin/analytics'
-      path: '/admin/analytics'
-      fullPath: '/admin/analytics'
-      preLoaderRoute: typeof AdminAnalyticsRouteImport
+    '/map-test': {
+      id: '/map-test'
+      path: '/map-test'
+      fullPath: '/map-test'
+      preLoaderRoute: typeof MapTestRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/administradores': {
@@ -1455,6 +1040,461 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAdministradoresRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/analytics': {
+      id: '/admin/analytics'
+      path: '/admin/analytics'
+      fullPath: '/admin/analytics'
+      preLoaderRoute: typeof AdminAnalyticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/assinaturas': {
+      id: '/admin/assinaturas'
+      path: '/admin/assinaturas'
+      fullPath: '/admin/assinaturas'
+      preLoaderRoute: typeof AdminAssinaturasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/backups': {
+      id: '/admin/backups'
+      path: '/admin/backups'
+      fullPath: '/admin/backups'
+      preLoaderRoute: typeof AdminBackupsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/categorias': {
+      id: '/admin/categorias'
+      path: '/admin/categorias'
+      fullPath: '/admin/categorias'
+      preLoaderRoute: typeof AdminCategoriasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/configuracoes': {
+      id: '/admin/configuracoes'
+      path: '/admin/configuracoes'
+      fullPath: '/admin/configuracoes'
+      preLoaderRoute: typeof AdminConfiguracoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/corridas': {
+      id: '/admin/corridas'
+      path: '/admin/corridas'
+      fullPath: '/admin/corridas'
+      preLoaderRoute: typeof AdminCorridasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/cupons': {
+      id: '/admin/cupons'
+      path: '/admin/cupons'
+      fullPath: '/admin/cupons'
+      preLoaderRoute: typeof AdminCuponsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/dashboard': {
+      id: '/admin/dashboard'
+      path: '/admin/dashboard'
+      fullPath: '/admin/dashboard'
+      preLoaderRoute: typeof AdminDashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/financeiro': {
+      id: '/admin/financeiro'
+      path: '/admin/financeiro'
+      fullPath: '/admin/financeiro'
+      preLoaderRoute: typeof AdminFinanceiroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/financeiro-motoristas': {
+      id: '/admin/financeiro-motoristas'
+      path: '/admin/financeiro-motoristas'
+      fullPath: '/admin/financeiro-motoristas'
+      preLoaderRoute: typeof AdminFinanceiroMotoristasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/login': {
+      id: '/admin/login'
+      path: '/admin/login'
+      fullPath: '/admin/login'
+      preLoaderRoute: typeof AdminLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/logs': {
+      id: '/admin/logs'
+      path: '/admin/logs'
+      fullPath: '/admin/logs'
+      preLoaderRoute: typeof AdminLogsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/mapa': {
+      id: '/admin/mapa'
+      path: '/admin/mapa'
+      fullPath: '/admin/mapa'
+      preLoaderRoute: typeof AdminMapaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/motoristas': {
+      id: '/admin/motoristas'
+      path: '/admin/motoristas'
+      fullPath: '/admin/motoristas'
+      preLoaderRoute: typeof AdminMotoristasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/notificacoes': {
+      id: '/admin/notificacoes'
+      path: '/admin/notificacoes'
+      fullPath: '/admin/notificacoes'
+      preLoaderRoute: typeof AdminNotificacoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/operacoes': {
+      id: '/admin/operacoes'
+      path: '/admin/operacoes'
+      fullPath: '/admin/operacoes'
+      preLoaderRoute: typeof AdminOperacoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/pagamentos': {
+      id: '/admin/pagamentos'
+      path: '/admin/pagamentos'
+      fullPath: '/admin/pagamentos'
+      preLoaderRoute: typeof AdminPagamentosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/passageiros': {
+      id: '/admin/passageiros'
+      path: '/admin/passageiros'
+      fullPath: '/admin/passageiros'
+      preLoaderRoute: typeof AdminPassageirosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/precos': {
+      id: '/admin/precos'
+      path: '/admin/precos'
+      fullPath: '/admin/precos'
+      preLoaderRoute: typeof AdminPrecosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/relatorios': {
+      id: '/admin/relatorios'
+      path: '/admin/relatorios'
+      fullPath: '/admin/relatorios'
+      preLoaderRoute: typeof AdminRelatoriosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/seguranca': {
+      id: '/admin/seguranca'
+      path: '/admin/seguranca'
+      fullPath: '/admin/seguranca'
+      preLoaderRoute: typeof AdminSegurancaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/suporte': {
+      id: '/admin/suporte'
+      path: '/admin/suporte'
+      fullPath: '/admin/suporte'
+      preLoaderRoute: typeof AdminSuporteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/debug/motorista-auth': {
+      id: '/debug/motorista-auth'
+      path: '/debug/motorista-auth'
+      fullPath: '/debug/motorista-auth'
+      preLoaderRoute: typeof DebugMotoristaAuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dev/rating-test': {
+      id: '/dev/rating-test'
+      path: '/dev/rating-test'
+      fullPath: '/dev/rating-test'
+      preLoaderRoute: typeof DevRatingTestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/motorista/app': {
+      id: '/motorista/app'
+      path: '/motorista/app'
+      fullPath: '/motorista/app'
+      preLoaderRoute: typeof MotoristaAppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/motorista/assinatura': {
+      id: '/motorista/assinatura'
+      path: '/motorista/assinatura'
+      fullPath: '/motorista/assinatura'
+      preLoaderRoute: typeof MotoristaAssinaturaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/motorista/cadastro': {
+      id: '/motorista/cadastro'
+      path: '/motorista/cadastro'
+      fullPath: '/motorista/cadastro'
+      preLoaderRoute: typeof MotoristaCadastroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/motorista/carteira': {
+      id: '/motorista/carteira'
+      path: '/motorista/carteira'
+      fullPath: '/motorista/carteira'
+      preLoaderRoute: typeof MotoristaCarteiraRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/motorista/configuracoes': {
+      id: '/motorista/configuracoes'
+      path: '/motorista/configuracoes'
+      fullPath: '/motorista/configuracoes'
+      preLoaderRoute: typeof MotoristaConfiguracoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/motorista/corridas': {
+      id: '/motorista/corridas'
+      path: '/motorista/corridas'
+      fullPath: '/motorista/corridas'
+      preLoaderRoute: typeof MotoristaCorridasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/motorista/documentos': {
+      id: '/motorista/documentos'
+      path: '/motorista/documentos'
+      fullPath: '/motorista/documentos'
+      preLoaderRoute: typeof MotoristaDocumentosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/motorista/ganhos': {
+      id: '/motorista/ganhos'
+      path: '/motorista/ganhos'
+      fullPath: '/motorista/ganhos'
+      preLoaderRoute: typeof MotoristaGanhosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/motorista/login': {
+      id: '/motorista/login'
+      path: '/motorista/login'
+      fullPath: '/motorista/login'
+      preLoaderRoute: typeof MotoristaLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/motorista/notificacoes': {
+      id: '/motorista/notificacoes'
+      path: '/motorista/notificacoes'
+      fullPath: '/motorista/notificacoes'
+      preLoaderRoute: typeof MotoristaNotificacoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/motorista/perfil': {
+      id: '/motorista/perfil'
+      path: '/motorista/perfil'
+      fullPath: '/motorista/perfil'
+      preLoaderRoute: typeof MotoristaPerfilRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/motorista/preferencias-notificacoes': {
+      id: '/motorista/preferencias-notificacoes'
+      path: '/motorista/preferencias-notificacoes'
+      fullPath: '/motorista/preferencias-notificacoes'
+      preLoaderRoute: typeof MotoristaPreferenciasNotificacoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/motorista/privacidade': {
+      id: '/motorista/privacidade'
+      path: '/motorista/privacidade'
+      fullPath: '/motorista/privacidade'
+      preLoaderRoute: typeof MotoristaPrivacidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/motorista/recuperar-senha': {
+      id: '/motorista/recuperar-senha'
+      path: '/motorista/recuperar-senha'
+      fullPath: '/motorista/recuperar-senha'
+      preLoaderRoute: typeof MotoristaRecuperarSenhaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/motorista/redefinir-senha': {
+      id: '/motorista/redefinir-senha'
+      path: '/motorista/redefinir-senha'
+      fullPath: '/motorista/redefinir-senha'
+      preLoaderRoute: typeof MotoristaRedefinirSenhaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/motorista/regalias': {
+      id: '/motorista/regalias'
+      path: '/motorista/regalias'
+      fullPath: '/motorista/regalias'
+      preLoaderRoute: typeof MotoristaRegaliasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/motorista/seguranca': {
+      id: '/motorista/seguranca'
+      path: '/motorista/seguranca'
+      fullPath: '/motorista/seguranca'
+      preLoaderRoute: typeof MotoristaSegurancaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/motorista/status': {
+      id: '/motorista/status'
+      path: '/motorista/status'
+      fullPath: '/motorista/status'
+      preLoaderRoute: typeof MotoristaStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/motorista/suporte': {
+      id: '/motorista/suporte'
+      path: '/motorista/suporte'
+      fullPath: '/motorista/suporte'
+      preLoaderRoute: typeof MotoristaSuporteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/motorista/termos': {
+      id: '/motorista/termos'
+      path: '/motorista/termos'
+      fullPath: '/motorista/termos'
+      preLoaderRoute: typeof MotoristaTermosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/passageiro/agendar': {
+      id: '/passageiro/agendar'
+      path: '/passageiro/agendar'
+      fullPath: '/passageiro/agendar'
+      preLoaderRoute: typeof PassageiroAgendarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/passageiro/app': {
+      id: '/passageiro/app'
+      path: '/passageiro/app'
+      fullPath: '/passageiro/app'
+      preLoaderRoute: typeof PassageiroAppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/passageiro/cadastro': {
+      id: '/passageiro/cadastro'
+      path: '/passageiro/cadastro'
+      fullPath: '/passageiro/cadastro'
+      preLoaderRoute: typeof PassageiroCadastroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/passageiro/carteira': {
+      id: '/passageiro/carteira'
+      path: '/passageiro/carteira'
+      fullPath: '/passageiro/carteira'
+      preLoaderRoute: typeof PassageiroCarteiraRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/passageiro/configuracoes': {
+      id: '/passageiro/configuracoes'
+      path: '/passageiro/configuracoes'
+      fullPath: '/passageiro/configuracoes'
+      preLoaderRoute: typeof PassageiroConfiguracoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/passageiro/corridas': {
+      id: '/passageiro/corridas'
+      path: '/passageiro/corridas'
+      fullPath: '/passageiro/corridas'
+      preLoaderRoute: typeof PassageiroCorridasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/passageiro/envios': {
+      id: '/passageiro/envios'
+      path: '/passageiro/envios'
+      fullPath: '/passageiro/envios'
+      preLoaderRoute: typeof PassageiroEnviosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/passageiro/favoritos': {
+      id: '/passageiro/favoritos'
+      path: '/passageiro/favoritos'
+      fullPath: '/passageiro/favoritos'
+      preLoaderRoute: typeof PassageiroFavoritosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/passageiro/guincho': {
+      id: '/passageiro/guincho'
+      path: '/passageiro/guincho'
+      fullPath: '/passageiro/guincho'
+      preLoaderRoute: typeof PassageiroGuinchoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/passageiro/login': {
+      id: '/passageiro/login'
+      path: '/passageiro/login'
+      fullPath: '/passageiro/login'
+      preLoaderRoute: typeof PassageiroLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/passageiro/mudancas': {
+      id: '/passageiro/mudancas'
+      path: '/passageiro/mudancas'
+      fullPath: '/passageiro/mudancas'
+      preLoaderRoute: typeof PassageiroMudancasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/passageiro/notificacoes': {
+      id: '/passageiro/notificacoes'
+      path: '/passageiro/notificacoes'
+      fullPath: '/passageiro/notificacoes'
+      preLoaderRoute: typeof PassageiroNotificacoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/passageiro/perfil': {
+      id: '/passageiro/perfil'
+      path: '/passageiro/perfil'
+      fullPath: '/passageiro/perfil'
+      preLoaderRoute: typeof PassageiroPerfilRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/passageiro/preferencias-notificacoes': {
+      id: '/passageiro/preferencias-notificacoes'
+      path: '/passageiro/preferencias-notificacoes'
+      fullPath: '/passageiro/preferencias-notificacoes'
+      preLoaderRoute: typeof PassageiroPreferenciasNotificacoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/passageiro/privacidade': {
+      id: '/passageiro/privacidade'
+      path: '/passageiro/privacidade'
+      fullPath: '/passageiro/privacidade'
+      preLoaderRoute: typeof PassageiroPrivacidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/passageiro/seguranca': {
+      id: '/passageiro/seguranca'
+      path: '/passageiro/seguranca'
+      fullPath: '/passageiro/seguranca'
+      preLoaderRoute: typeof PassageiroSegurancaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/passageiro/servicos': {
+      id: '/passageiro/servicos'
+      path: '/passageiro/servicos'
+      fullPath: '/passageiro/servicos'
+      preLoaderRoute: typeof PassageiroServicosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/passageiro/sobre': {
+      id: '/passageiro/sobre'
+      path: '/passageiro/sobre'
+      fullPath: '/passageiro/sobre'
+      preLoaderRoute: typeof PassageiroSobreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/passageiro/suporte': {
+      id: '/passageiro/suporte'
+      path: '/passageiro/suporte'
+      fullPath: '/passageiro/suporte'
+      preLoaderRoute: typeof PassageiroSuporteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/passageiro/termos': {
+      id: '/passageiro/termos'
+      path: '/passageiro/termos'
+      fullPath: '/passageiro/termos'
+      preLoaderRoute: typeof PassageiroTermosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/t/$token': {
+      id: '/t/$token'
+      path: '/t/$token'
+      fullPath: '/t/$token'
+      preLoaderRoute: typeof TTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/motorista/corridas/$id': {
       id: '/motorista/corridas/$id'
       path: '/$id'
@@ -1462,18 +1502,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MotoristaCorridasIdRouteImport
       parentRoute: typeof MotoristaCorridasRoute
     }
-    '/api/public/hooks/renew-driver-subscriptions': {
-      id: '/api/public/hooks/renew-driver-subscriptions'
-      path: '/api/public/hooks/renew-driver-subscriptions'
-      fullPath: '/api/public/hooks/renew-driver-subscriptions'
-      preLoaderRoute: typeof ApiPublicHooksRenewDriverSubscriptionsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/public/hooks/activate-scheduled-rides': {
       id: '/api/public/hooks/activate-scheduled-rides'
       path: '/api/public/hooks/activate-scheduled-rides'
       fullPath: '/api/public/hooks/activate-scheduled-rides'
       preLoaderRoute: typeof ApiPublicHooksActivateScheduledRidesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/renew-driver-subscriptions': {
+      id: '/api/public/hooks/renew-driver-subscriptions'
+      path: '/api/public/hooks/renew-driver-subscriptions'
+      fullPath: '/api/public/hooks/renew-driver-subscriptions'
+      preLoaderRoute: typeof ApiPublicHooksRenewDriverSubscriptionsRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -1535,6 +1575,8 @@ const rootRouteChildren: RootRouteChildren = {
   MotoristaPreferenciasNotificacoesRoute:
     MotoristaPreferenciasNotificacoesRoute,
   MotoristaPrivacidadeRoute: MotoristaPrivacidadeRoute,
+  MotoristaRecuperarSenhaRoute: MotoristaRecuperarSenhaRoute,
+  MotoristaRedefinirSenhaRoute: MotoristaRedefinirSenhaRoute,
   MotoristaRegaliasRoute: MotoristaRegaliasRoute,
   MotoristaSegurancaRoute: MotoristaSegurancaRoute,
   MotoristaStatusRoute: MotoristaStatusRoute,

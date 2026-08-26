@@ -9,14 +9,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const ROLES = [
-  "super_admin",
-  "admin",
-  "financial",
-  "operations",
-  "support",
-  "readonly",
-] as const;
+const ROLES = ["super_admin", "admin", "financial", "operations", "support", "readonly"] as const;
 type AdminRole = (typeof ROLES)[number];
 
 function parseRole(role: unknown): AdminRole {
@@ -34,7 +27,9 @@ function parseUserId(userId: unknown): string {
 }
 
 async function assertCallerIsAdmin(ctx: {
-  supabase: { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }> };
+  supabase: {
+    rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>;
+  };
   userId: string;
 }) {
   const { data, error } = await ctx.supabase.rpc("has_role", {
@@ -53,7 +48,15 @@ export const grantAdminRole = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data, context }) => {
     await assertCallerIsAdmin(
-      context as unknown as { supabase: { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }> }; userId: string },
+      context as unknown as {
+        supabase: {
+          rpc: (
+            fn: string,
+            args: Record<string, unknown>,
+          ) => Promise<{ data: unknown; error: unknown }>;
+        };
+        userId: string;
+      },
     );
     const { supabase } = context;
     // Idempotent: unique(user_id, role) prevents duplicates.
@@ -75,7 +78,15 @@ export const revokeAdminRole = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data, context }) => {
     await assertCallerIsAdmin(
-      context as unknown as { supabase: { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }> }; userId: string },
+      context as unknown as {
+        supabase: {
+          rpc: (
+            fn: string,
+            args: Record<string, unknown>,
+          ) => Promise<{ data: unknown; error: unknown }>;
+        };
+        userId: string;
+      },
     );
     const { supabase, userId } = context;
     // Guard: never let an admin revoke their own last `admin` role,

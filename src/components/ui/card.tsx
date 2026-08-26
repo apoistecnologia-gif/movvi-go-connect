@@ -2,7 +2,7 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
-// MOVVI DS — unified card (24px radius, soft elevation, hairline border).
+// APOIS DS — unified card (24px radius, soft elevation, hairline border).
 const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
     <div

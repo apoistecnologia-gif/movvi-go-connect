@@ -1,0 +1,131 @@
+name: APOIS Corridas — Dispatch validation
+
+on:
+  push:
+    branches:
+      - fix/apois-corridas-consolidacao
+    paths:
+      - "supabase/functions/_shared/dispatch-engine.ts"
+      - "supabase/functions/dispatch-ride/**"
+      - "supabase/functions/process-ride-dispatch/**"
+      - "supabase/functions/send-ride-push/**"
+      - "supabase/baseline/006_dispatch_atomic_accept.sql"
+      - "tests/unit/dispatch-engine.test.ts"
+      - "tests/unit/driver-mobile-push-contract.test.ts"
+      - "tests/database/dispatch_concurrency.sh"
+      - "tsconfig.dispatch.json"
+      - ".github/workflows/apois-dispatch-validate.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "supabase/functions/_shared/dispatch-engine.ts"
+      - "supabase/functions/dispatch-ride/**"
+      - "supabase/functions/process-ride-dispatch/**"
+      - "supabase/functions/send-ride-push/**"
+      - "supabase/baseline/006_dispatch_atomic_accept.sql"
+      - "tests/unit/dispatch-engine.test.ts"
+      - "tests/unit/driver-mobile-push-contract.test.ts"
+      - "tests/database/dispatch_concurrency.sh"
+      - "tsconfig.dispatch.json"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-dispatch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: apois_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d apois_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGPASSWORD: postgres
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGDATABASE: apois_test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Dispatch typecheck
+        run: npx tsc -p tsconfig.dispatch.json --noEmit
+
+      - name: Dispatch semantic lint
+        run: >-
+          npx eslint
+          --rule 'prettier/prettier: off'
+          supabase/functions/_shared/dispatch-engine.ts
+          tests/unit/dispatch-engine.test.ts
+          tests/unit/driver-mobile-push-contract.test.ts
+
+      - name: Dispatch unit tests
+        run: deno test --allow-read tests/unit/dispatch-engine.test.ts tests/unit/driver-mobile-push-contract.test.ts
+
+      - name: Deno check dispatch Edge Functions
+        run: |
+          deno check --node-modules-dir=auto supabase/functions/dispatch-ride/index.ts
+          deno check --node-modules-dir=auto supabase/functions/process-ride-dispatch/index.ts
+          deno check --node-modules-dir=auto supabase/functions/send-ride-push/index.ts
+
+      - name: Apply canonical baseline through Phase 4
+        run: |
+          set -euo pipefail
+          psql -v ON_ERROR_STOP=1 -f supabase/baseline/000_ci_prelude.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/baseline/001_canonical_schema.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/baseline/002_functions.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/baseline/003_rls.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/baseline/004_storage_triggers_seed.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/baseline/005_security_hardening.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/baseline/006_dispatch_atomic_accept.sql
+
+      - name: Atomic acceptance concurrency test
+        run: bash tests/database/dispatch_concurrency.sh
+
+      - name: SQL dispatch invariants
+        run: |
+          set -euo pipefail
+          offered_guard=$(psql -Atqc "select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='driver_accept_ride' and pg_get_functiondef(p.oid) like '%offered_driver_ids%'")
+          category_guard=$(psql -Atqc "select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='driver_accept_ride' and pg_get_functiondef(p.oid) like '%driver_category_mismatch%'")
+          gps_guard=$(psql -Atqc "select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='driver_accept_ride' and pg_get_functiondef(p.oid) like '%driver_location_stale%'")
+          test "$offered_guard" = "1"
+          test "$category_guard" = "1"
+          test "$gps_guard" = "1"
+
+      - name: Build application
+        run: npm run build
+
+      - name: Dispatch invariants
+        run: |
+          set -euo pipefail
+          grep -F 'findEligibleDriversForRide' supabase/functions/_shared/dispatch-engine.ts
+          grep -F 'remainingCandidateUserIds' supabase/functions/_shared/dispatch-engine.ts
+          grep -F 'status: "expired"' supabase/functions/dispatch-ride/index.ts
+          grep -F 'const OFFER_SECONDS = 30;' supabase/functions/dispatch-ride/index.ts
+          grep -F '"/motorista/app",' supabase/functions/send-ride-push/index.ts
+          grep -F '/functions/v1/dispatch-ride' supabase/functions/process-ride-dispatch/index.ts
+          echo 'APOIS_DISPATCH_PHASE_OK'

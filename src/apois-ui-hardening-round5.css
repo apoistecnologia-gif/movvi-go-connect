@@ -1,0 +1,111 @@
+/* APOIS Motorista — rodada 5: 25 correções residuais de UI/UX mobile. */
+
+/* 61 — elementos semânticos com role=button recebem alvo mínimo real. */
+html[data-app-role="motorista"] [role="button"] { min-height: 44px; }
+
+/* 62 — gatilhos de menu/dialog não ficam menores que 44px. */
+html[data-app-role="motorista"] [aria-haspopup="menu"],
+html[data-app-role="motorista"] [aria-haspopup="dialog"] { min-height: 44px; min-width: 44px; }
+
+/* 63 — opções de autocomplete/listbox preservam área tocável. */
+html[data-app-role="motorista"] [role="listbox"] [role="option"] { min-height: 44px; }
+
+/* 64 — headings dentro de dialog reservam área do botão fechar. */
+html[data-app-role="motorista"] [role="dialog"] > h2:first-of-type,
+html[data-app-role="motorista"] [role="dialog"] > h3:first-of-type { padding-right: 2.75rem; }
+
+/* 65 — títulos de modal longos quebram sem invadir ações. */
+html[data-app-role="motorista"] [role="dialog"] h1,
+html[data-app-role="motorista"] [role="dialog"] h2,
+html[data-app-role="motorista"] [role="dialog"] h3 { overflow-wrap: anywhere; min-width: 0; }
+
+/* 66 — status/alerts dinâmicos não expandem cards. */
+html[data-app-role="motorista"] [aria-live],
+html[data-app-role="motorista"] [role="status"],
+html[data-app-role="motorista"] [role="alert"] { overflow-wrap: anywhere; max-width: 100%; }
+
+/* 67 — filhos de grid podem encolher de verdade. */
+html[data-app-role="motorista"] .grid > * { min-width: 0; }
+
+/* 68 — filhos flex nunca geram largura invisível além do contêiner. */
+html[data-app-role="motorista"] .flex > * { max-width: 100%; }
+
+/* 69 — foco em input rola para longe de header/notch. */
+html[data-app-role="motorista"] input,
+html[data-app-role="motorista"] select,
+html[data-app-role="motorista"] textarea { scroll-margin-top: calc(4.5rem + env(safe-area-inset-top)); }
+
+/* 70 — foco em input não fica atrás do bottom nav/teclado. */
+html[data-app-role="motorista"] input,
+html[data-app-role="motorista"] select,
+html[data-app-role="motorista"] textarea { scroll-margin-bottom: calc(6rem + env(safe-area-inset-bottom)); }
+
+/* 71 — números monetários permanecem alinhados visualmente. */
+html[data-app-role="motorista"] [class*="font-black"],
+html[data-app-role="motorista"] input[type="number"] { font-variant-numeric: tabular-nums; }
+
+/* 72 — wrappers fixed/sticky respeitam box sizing e viewport. */
+html[data-app-role="motorista"] [class*="fixed"],
+html[data-app-role="motorista"] [class*="sticky"] { box-sizing: border-box; max-width: 100vw; }
+
+/* 73 — áreas roláveis usam scrolling táctil com momentum quando suportado. */
+html[data-app-role="motorista"] main,
+html[data-app-role="motorista"] [role="dialog"],
+html[data-app-role="motorista"] [class*="overflow-y-auto"] { -webkit-overflow-scrolling: touch; }
+
+/* 74 — células de tabela com IDs/status longos podem quebrar. */
+html[data-app-role="motorista"] th,
+html[data-app-role="motorista"] td { overflow-wrap: anywhere; }
+
+/* 75 — wrappers diretos de tabela rolam localmente, não no body. */
+html[data-app-role="motorista"] :has(> table) { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+/* 76 — badges/status deixam nowrap quando o conteúdo é maior que a tela. */
+html[data-app-role="motorista"] [class*="rounded-full"][class*="text-[10px]"] { white-space: normal; text-align: center; }
+
+/* 77 — ícones dentro de botões não capturam toque e não atrapalham hit target. */
+html[data-app-role="motorista"] button > svg { pointer-events: none; }
+
+/* 78 — placeholders no tema escuro não ficam apagados demais. */
+html[data-app-role="motorista"] input::placeholder,
+html[data-app-role="motorista"] textarea::placeholder { opacity: 0.72; }
+
+/* 79 — controles desabilitados mantêm contraste mínimo perceptível. */
+html[data-app-role="motorista"] button:disabled,
+html[data-app-role="motorista"] input:disabled,
+html[data-app-role="motorista"] select:disabled,
+html[data-app-role="motorista"] textarea:disabled { opacity: 0.58; }
+
+/* 80 — elementos focáveis em carrosséis recebem margem de scroll lateral. */
+html[data-app-role="motorista"] [class*="overflow-x-auto"] button,
+html[data-app-role="motorista"] [class*="overflow-x-auto"] a { scroll-margin-inline: 12px; }
+
+/* 81 — grupos de ações param de exigir linha única em 320–359px. */
+@media (max-width: 359px) {
+  html[data-app-role="motorista"] main button,
+  html[data-app-role="motorista"] [role="dialog"] button { white-space: normal; }
+}
+
+/* 82 — definition lists/metadados de duas colunas empilham em 320–339px. */
+@media (max-width: 339px) {
+  html[data-app-role="motorista"] main dl.grid.grid-cols-2 { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* 83 — headers em landscape baixo reduzem padding mantendo safe-area. */
+@media (max-height: 520px) and (orientation: landscape) {
+  html[data-app-role="motorista"] header { padding-top: max(0.375rem, env(safe-area-inset-top)); padding-bottom: 0.375rem; }
+}
+
+/* 84 — bottom navigation em telas de 320px reduz gap sem reduzir área tocável. */
+@media (max-width: 339px) {
+  html[data-app-role="motorista"] nav { gap: 0; }
+  html[data-app-role="motorista"] nav a,
+  html[data-app-role="motorista"] nav button { padding-inline: 2px; }
+}
+
+/* 85 — alto contraste forçado mantém foco e contorno dos controles. */
+@media (forced-colors: active) {
+  html[data-app-role="motorista"] button,
+  html[data-app-role="motorista"] a { forced-color-adjust: auto; }
+  html[data-app-role="motorista"] :focus-visible { outline: 2px solid CanvasText; }
+}

@@ -1,9 +1,11 @@
+import { Capacitor, registerPlugin } from "@capacitor/core";
+
 /**
- * MOVVI — Voz de navegação para o motorista.
+ * APOIS — voz de navegação para o motorista.
  *
- * Usa a Web Speech API nativa (SpeechSynthesis). Preferimos vozes pt-BR
- * da Google (femininas por padrão no Android/Chrome), com fallback para
- * qualquer voz pt-BR disponível. Sem dependência de rede.
+ * No APK Android usa o plugin nativo DriverVoice, que prioriza o mecanismo
+ * Speech Services by Google (com.google.android.tts) em pt-BR quando instalado.
+ * No navegador mantém a Web Speech API como fallback.
  */
 
 export type NavStep = {
@@ -14,11 +16,35 @@ export type NavStep = {
   maneuver?: string;
 };
 
+type DriverVoicePlugin = {
+  prime(): Promise<{ ready?: boolean; engine?: string; language?: string }>;
+  speak(options: { text: string; interrupt?: boolean }): Promise<{ spoken?: boolean; engine?: string }>;
+  stop(): Promise<void>;
+};
+
+const NativeDriverVoice = registerPlugin<DriverVoicePlugin>("DriverVoice");
+
 type SpokenKey = string;
 const spoken = new Set<SpokenKey>();
+const VOICE_PREF_KEY = "apois:motorista:voice-enabled";
 let cachedVoice: SpeechSynthesisVoice | null = null;
 let voicesReadyPromise: Promise<void> | null = null;
-let enabled = true;
+
+function readStoredVoicePreference(): boolean {
+  if (typeof window === "undefined") return true;
+  try {
+    const stored = window.localStorage.getItem(VOICE_PREF_KEY);
+    return stored === null ? true : stored !== "false";
+  } catch {
+    return true;
+  }
+}
+
+let enabled = readStoredVoicePreference();
+
+function nativeVoiceAvailable(): boolean {
+  return Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android";
+}
 
 function synth(): SpeechSynthesis | null {
   if (typeof window === "undefined" || !("speechSynthesis" in window)) return null;
@@ -33,7 +59,6 @@ function loadVoices(): Promise<void> {
     const pick = () => {
       const list = s.getVoices();
       if (!list.length) return false;
-      // Preferência: Google pt-BR (feminina) → qualquer pt-BR → qualquer pt.
       cachedVoice =
         list.find((v) => /google/i.test(v.name) && /pt-BR/i.test(v.lang)) ??
         list.find((v) => /pt-BR/i.test(v.lang)) ??
@@ -43,7 +68,6 @@ function loadVoices(): Promise<void> {
     };
     if (pick()) return resolve();
     s.onvoiceschanged = () => { pick(); resolve(); };
-    // Alguns navegadores não disparam onvoiceschanged — força após timeout.
     setTimeout(() => { pick(); resolve(); }, 1200);
   });
   return voicesReadyPromise;
@@ -51,7 +75,13 @@ function loadVoices(): Promise<void> {
 
 export function setVoiceEnabled(v: boolean) {
   enabled = v;
-  if (!v) synth()?.cancel();
+  if (typeof window !== "undefined") {
+    try { window.localStorage.setItem(VOICE_PREF_KEY, String(v)); } catch { /* noop */ }
+  }
+  if (!v) {
+    synth()?.cancel();
+    if (nativeVoiceAvailable()) void NativeDriverVoice.stop().catch(() => undefined);
+  }
 }
 
 export function isVoiceEnabled(): boolean {
@@ -59,18 +89,38 @@ export function isVoiceEnabled(): boolean {
 }
 
 export async function primeVoice(): Promise<void> {
+  enabled = readStoredVoicePreference();
+  if (nativeVoiceAvailable()) {
+    try {
+      await NativeDriverVoice.prime();
+      return;
+    } catch (error) {
+      console.warn("[APOIS VOICE] TTS nativo indisponível; usando fallback web", error);
+    }
+  }
   await loadVoices();
 }
 
 export async function speak(text: string, opts?: { dedupKey?: string; interrupt?: boolean }) {
-  if (!enabled) return;
-  const s = synth();
-  if (!s || !text) return;
-  await loadVoices();
+  if (!enabled || !text) return;
+
   if (opts?.dedupKey) {
     if (spoken.has(opts.dedupKey)) return;
     spoken.add(opts.dedupKey);
   }
+
+  if (nativeVoiceAvailable()) {
+    try {
+      await NativeDriverVoice.speak({ text, interrupt: opts?.interrupt ?? false });
+      return;
+    } catch (error) {
+      console.warn("[APOIS VOICE] fala nativa falhou; tentando Web Speech", error);
+    }
+  }
+
+  const s = synth();
+  if (!s) return;
+  await loadVoices();
   const u = new SpeechSynthesisUtterance(text);
   if (cachedVoice) u.voice = cachedVoice;
   u.lang = cachedVoice?.lang ?? "pt-BR";
@@ -84,6 +134,7 @@ export async function speak(text: string, opts?: { dedupKey?: string; interrupt?
 export function resetSpokenCache() {
   spoken.clear();
   synth()?.cancel();
+  if (nativeVoiceAvailable()) void NativeDriverVoice.stop().catch(() => undefined);
 }
 
 /** Anuncia manobras conforme o motorista se aproxima. Chamar a cada update de GPS. */
@@ -103,19 +154,18 @@ export function tickNavigation(
     return 2 * R * Math.asin(Math.min(1, Math.sqrt(a)));
   };
 
-  // Procura o próximo passo dentro de 400m que ainda não foi anunciado.
   for (let i = 0; i < steps.length; i++) {
-    const s = steps[i];
-    const d = distTo(s);
+    const step = steps[i];
+    const distance = distTo(step);
     const preKey = `${rideId}:${i}:pre`;
     const nowKey = `${rideId}:${i}:now`;
-    if (d < 40 && !spoken.has(nowKey)) {
-      void speak(s.instruction, { dedupKey: nowKey });
+    if (distance < 40 && !spoken.has(nowKey)) {
+      void speak(step.instruction, { dedupKey: nowKey });
       return;
     }
-    if (d < 220 && d >= 40 && !spoken.has(preKey)) {
-      const meters = Math.round(d / 10) * 10;
-      void speak(`Em ${meters} metros, ${s.instruction}`, { dedupKey: preKey });
+    if (distance < 220 && distance >= 40 && !spoken.has(preKey)) {
+      const meters = Math.round(distance / 10) * 10;
+      void speak(`Em ${meters} metros, ${step.instruction}`, { dedupKey: preKey });
       return;
     }
   }

@@ -7,8 +7,8 @@ import { HelpCenterView } from "@/components/support/HelpCenterView";
 export const Route = createFileRoute("/passageiro/suporte")({
   head: () => ({
     meta: [
-      { title: "Central de Ajuda — MOVVI" },
-      { name: "description", content: "Suporte, FAQ e contato da MOVVI para passageiros." },
+      { title: "Central de Ajuda — APOIS" },
+      { name: "description", content: "Suporte, FAQ e contato da APOIS para passageiros." },
     ],
   }),
   component: SuportePassageiro,
@@ -20,7 +20,7 @@ function SuportePassageiro() {
       <SettingsHero
         icon={LifeBuoy}
         title="Central de ajuda"
-        subtitle="Perguntas frequentes, contato e suporte MOVVI."
+        subtitle="Perguntas frequentes, contato e suporte APOIS."
       />
       <HelpCenterView
         role="passenger"

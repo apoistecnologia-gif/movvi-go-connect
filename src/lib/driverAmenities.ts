@@ -1,6 +1,17 @@
-// MOVVI DRIVE — Regalias oferecidas pelo motorista (opt-in por item).
+// APOIS — Regalias oferecidas pelo motorista (opt-in por item).
 // Cada motorista escolhe o que quer oferecer a bordo. Passageiros veem no perfil público.
-import { Droplet, Candy, Music, Dog, Luggage, Snowflake, Wifi, Baby, VolumeX, BatteryCharging } from "lucide-react";
+import {
+  Droplet,
+  Candy,
+  Music,
+  Dog,
+  Luggage,
+  Snowflake,
+  Wifi,
+  Baby,
+  VolumeX,
+  BatteryCharging,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -32,17 +43,48 @@ export const DEFAULT_AMENITIES: DriverAmenities = {
 
 export type AmenityKey = keyof DriverAmenities;
 
-export const AMENITY_META: Record<AmenityKey, { label: string; hint: string; icon: LucideIcon }> = {
-  charger:          { label: "Carregador",         hint: "USB-C e Lightning disponíveis",     icon: BatteryCharging },
-  water:            { label: "Água",               hint: "Garrafinha cortesia",                icon: Droplet },
-  candy:            { label: "Balas / doces",      hint: "Snacks cortesia",                    icon: Candy },
-  music_on_demand:  { label: "Música sob demanda", hint: "Passageiro escolhe o estilo",        icon: Music },
-  pet_friendly:     { label: "Pet friendly",       hint: "Aceita animais com transportadora",  icon: Dog },
-  large_luggage:    { label: "Bagagem grande",     hint: "Espaço para malas grandes",          icon: Luggage },
-  air_conditioning: { label: "Ar-condicionado",    hint: "Sempre disponível",                  icon: Snowflake },
-  wifi:             { label: "Wi-Fi a bordo",      hint: "Internet no carro",                  icon: Wifi },
-  child_seat:       { label: "Cadeirinha",         hint: "Sob solicitação prévia",             icon: Baby },
-  quiet_ride:       { label: "Viagem silenciosa",  hint: "Conversa mínima se preferir",        icon: VolumeX },
+export const AMENITY_META: Record<
+  AmenityKey,
+  { label: string; hint: string; icon: LucideIcon }
+> = {
+  charger: {
+    label: "Carregador",
+    hint: "USB-C e Lightning disponíveis",
+    icon: BatteryCharging,
+  },
+  water: { label: "Água", hint: "Garrafinha cortesia", icon: Droplet },
+  candy: { label: "Balas / doces", hint: "Snacks cortesia", icon: Candy },
+  music_on_demand: {
+    label: "Música sob demanda",
+    hint: "Passageiro escolhe o estilo",
+    icon: Music,
+  },
+  pet_friendly: {
+    label: "Pet friendly",
+    hint: "Aceita animais com transportadora",
+    icon: Dog,
+  },
+  large_luggage: {
+    label: "Bagagem grande",
+    hint: "Espaço para malas grandes",
+    icon: Luggage,
+  },
+  air_conditioning: {
+    label: "Ar-condicionado",
+    hint: "Sempre disponível",
+    icon: Snowflake,
+  },
+  wifi: { label: "Wi-Fi a bordo", hint: "Internet no carro", icon: Wifi },
+  child_seat: {
+    label: "Cadeirinha",
+    hint: "Sob solicitação prévia",
+    icon: Baby,
+  },
+  quiet_ride: {
+    label: "Viagem silenciosa",
+    hint: "Conversa mínima se preferir",
+    icon: VolumeX,
+  },
 };
 
 const CACHE_KEY = (uid: string) => `movvi:driver:amenities:${uid}`;
@@ -56,46 +98,63 @@ export async function loadDriverAmenities(userId: string): Promise<DriverAmeniti
     const cached = localStorage.getItem(CACHE_KEY(userId));
     if (cached) {
       void refreshFromDb(userId);
-      return normalize(JSON.parse(cached));
+      return normalize(JSON.parse(cached) as Partial<DriverAmenities>);
     }
-  } catch {}
+  } catch {
+    // Cache local é opcional; falhas não podem impedir o carregamento pelo banco.
+  }
   return refreshFromDb(userId);
 }
 
 async function refreshFromDb(userId: string): Promise<DriverAmenities> {
-  const { data, error } = await (supabase as any)
-    .from("driver_amenities")
-    .select("*")
-    .eq("user_id", userId)
-    .maybeSingle();
+  const { data, error } = await (supabase as any).rpc("get_own_driver_amenities");
   if (error) {
-    if (import.meta.env.DEV) console.warn("[MOVVI AMENITIES] load", error.message);
+    if (import.meta.env.DEV) console.warn("[APOIS AMENITIES] load", error.message);
     return DEFAULT_AMENITIES;
   }
   const prefs = normalize(data as Partial<DriverAmenities> | null);
-  try { localStorage.setItem(CACHE_KEY(userId), JSON.stringify(prefs)); } catch {}
+  try {
+    localStorage.setItem(CACHE_KEY(userId), JSON.stringify(prefs));
+  } catch {
+    // Persistência local é apenas otimização de UX.
+  }
   return prefs;
 }
 
-export async function saveDriverAmenities(userId: string, prefs: DriverAmenities): Promise<void> {
-  try { localStorage.setItem(CACHE_KEY(userId), JSON.stringify(prefs)); } catch {}
-  const { error } = await (supabase as any)
-    .from("driver_amenities")
-    .upsert({ user_id: userId, ...prefs }, { onConflict: "user_id" });
+export async function saveDriverAmenities(
+  userId: string,
+  prefs: DriverAmenities,
+): Promise<void> {
+  const { data, error } = await (supabase as any).rpc("set_own_driver_amenities", {
+    _charger: prefs.charger,
+    _water: prefs.water,
+    _candy: prefs.candy,
+    _music_on_demand: prefs.music_on_demand,
+    _pet_friendly: prefs.pet_friendly,
+    _large_luggage: prefs.large_luggage,
+    _air_conditioning: prefs.air_conditioning,
+    _wifi: prefs.wifi,
+    _child_seat: prefs.child_seat,
+    _quiet_ride: prefs.quiet_ride,
+  });
   if (error) throw error;
+  const saved = normalize(data as Partial<DriverAmenities> | null);
+  try {
+    localStorage.setItem(CACHE_KEY(userId), JSON.stringify(saved));
+  } catch {
+    // A gravação canônica já foi concluída no Supabase.
+  }
 }
 
 export async function fetchDriverAmenitiesPublic(userId: string): Promise<DriverAmenities> {
-  // Uses SECURITY DEFINER RPC so passengers can read amenities without a broad SELECT policy.
   const { data, error } = await (supabase as any).rpc("get_driver_amenities_public", {
     target_user_id: userId,
   });
   if (error) {
-    if (import.meta.env.DEV) console.warn("[MOVVI AMENITIES] public", error.message);
+    if (import.meta.env.DEV) console.warn("[APOIS AMENITIES] public", error.message);
     return DEFAULT_AMENITIES;
   }
-  const row = Array.isArray(data) ? data[0] : data;
-  return normalize(row as Partial<DriverAmenities> | null);
+  return normalize(data as Partial<DriverAmenities> | null);
 }
 
 export function enabledAmenities(prefs: DriverAmenities): AmenityKey[] {

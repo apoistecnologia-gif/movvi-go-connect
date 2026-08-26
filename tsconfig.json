@@ -1,12 +1,16 @@
 {
   "include": ["src/**/*.ts", "src/**/*.tsx", "vite.config.ts", "eslint.config.js"],
-  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx"],
+  "exclude": [
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
+    "src/lib/rideLifecycle.ts"
+  ],
   "compilerOptions": {
     "target": "ES2022",
     "jsx": "react-jsx",
     "module": "ESNext",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "types": ["vite/client"],
+    "types": ["vite/client", "node"],
 
     /* Bundler mode */
     "moduleResolution": "Bundler",
@@ -22,6 +26,7 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
     "paths": {
+      "@/lib/rideLifecycle": ["./src/lib/rideLifecycle.canonical.ts"],
       "@/*": ["./src/*"]
     }
   }
