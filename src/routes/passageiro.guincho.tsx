@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { RideFeatureUnavailable } from "@/components/RideFeatureUnavailable";
+import { useRideFeatureFlags } from "@/hooks/useRideFeatureFlags";
 
 export const Route = createFileRoute("/passageiro/guincho")({
   head: () => ({
@@ -21,8 +23,14 @@ export const Route = createFileRoute("/passageiro/guincho")({
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
-  component: GuinchoFlow,
+  component: GuinchoFeatureRoute,
 });
+
+function GuinchoFeatureRoute() {
+  const flags = useRideFeatureFlags();
+  if (!flags.feature_guincho_enabled) return <RideFeatureUnavailable title="Guincho APOIS" />;
+  return <GuinchoFlow />;
+}
 
 type YesNo = "sim" | "nao";
 type YesNoUnknown = YesNo | "nao_sei";

@@ -33,6 +33,8 @@ import {
   DSSelectTrigger,
   DSSelectValue,
 } from "@/design-system";
+import { useRideFeatureFlags } from "@/hooks/useRideFeatureFlags";
+import { isRideCategoryEnabled } from "@/lib/rideFeatureFlags";
 
 export const Route = createFileRoute("/motorista/cadastro")({
   head: () => ({
@@ -185,6 +187,8 @@ function SuccessScreen() {
 
 function DriverSignUpPage() {
   const navigate = useNavigate();
+  const flags = useRideFeatureFlags();
+  const availableCategories = CATEGORIES.filter((category) => isRideCategoryEnabled(category, flags));
   const formRef = useRef<HTMLFormElement>(null);
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [loading, setLoading] = useState(false);
@@ -305,7 +309,7 @@ function DriverSignUpPage() {
             <StepHeading title="Seu veículo" description="Conte qual serviço você vai oferecer pela APOIS." icon={Car} />
             <div className="space-y-4">
               <FieldShell label="Categoria" icon={Car}>
-                <DSSelect name="category" defaultValue="carros"><DSSelectTrigger className="h-12 min-w-0 rounded-xl border-white/10 bg-[#0D0F11]"><DSSelectValue /></DSSelectTrigger><DSSelectContent>{CATEGORIES.map((category) => <DSSelectItem key={category} value={category}>{category.charAt(0).toUpperCase() + category.slice(1)}</DSSelectItem>)}</DSSelectContent></DSSelect>
+                <DSSelect name="category" defaultValue="carros"><DSSelectTrigger className="h-12 min-w-0 rounded-xl border-white/10 bg-[#0D0F11]"><DSSelectValue /></DSSelectTrigger><DSSelectContent>{availableCategories.map((category) => <DSSelectItem key={category} value={category}>{category.charAt(0).toUpperCase() + category.slice(1)}</DSSelectItem>)}</DSSelectContent></DSSelect>
               </FieldShell>
               <FieldShell label="Modelo do veículo" icon={Car}><DSInput name="vehicle_model" required placeholder="Ex.: Chevrolet Onix" className="h-12 min-w-0 bg-[#0D0F11]" /></FieldShell>
               <div className="grid grid-cols-2 gap-3 max-[359px]:grid-cols-1"><FieldShell label="Placa" icon={Car}><DSInput name="vehicle_plate" required placeholder="ABC1D23" className="h-12 min-w-0 bg-[#0D0F11] uppercase" /></FieldShell><FieldShell label="Ano" icon={Car}><DSInput name="vehicle_year" type="number" inputMode="numeric" required placeholder="2022" className="h-12 min-w-0 bg-[#0D0F11]" /></FieldShell></div>

@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { RideFeatureUnavailable } from "@/components/RideFeatureUnavailable";
+import { useRideFeatureFlags } from "@/hooks/useRideFeatureFlags";
 
 export const Route = createFileRoute("/passageiro/mudancas")({
   head: () => ({
@@ -21,8 +23,14 @@ export const Route = createFileRoute("/passageiro/mudancas")({
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
-  component: MudancasFlow,
+  component: MudancasFeatureRoute,
 });
+
+function MudancasFeatureRoute() {
+  const flags = useRideFeatureFlags();
+  if (!flags.feature_fretes_enabled) return <RideFeatureUnavailable title="Mudanças e Fretes" />;
+  return <MudancasFlow />;
+}
 
 type YesNo = "sim" | "nao";
 

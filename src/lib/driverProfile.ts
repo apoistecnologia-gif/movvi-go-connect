@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 export type DriverProfileRow = {
   id: string;
   user_id: string;
+  category: string | null;
   approval_status: "pendente" | "em_analise" | "aprovado" | "reprovado" | "bloqueado" | "suspenso";
   motivo_reprovacao: string | null;
   name: string | null;

@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Bike, Box, Car, Send, Truck, type LucideIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useRideFeatureFlags } from "@/hooks/useRideFeatureFlags";
+import { isRideCategoryEnabled } from "@/lib/rideFeatureFlags";
 
 export type RideCategoryCode = "carros" | "motos" | "fretes" | "guincho" | "envios";
 
@@ -42,11 +44,14 @@ type RideCategoryRow = {
   sort_order: number;
 };
 
-const UiCategoriesContext = createContext<UiCategory[]>(UI_CATEGORY_DEFAULTS);
+const UiCategoriesContext = createContext<UiCategory[]>(
+  UI_CATEGORY_DEFAULTS.filter((category) => category.backend !== "guincho" && category.backend !== "fretes"),
+);
 
 /** Fonte de verdade visual do app: `public.ride_categories` canônico em realtime. */
 export function UiCategoriesProvider({ children }: { children: ReactNode }) {
   const [rows, setRows] = useState<RideCategoryRow[] | null>(null);
+  const flags = useRideFeatureFlags();
 
   useEffect(() => {
     let alive = true;
@@ -75,11 +80,12 @@ export function UiCategoriesProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const merged = useMemo<UiCategory[]>(() => {
-    if (!rows) return UI_CATEGORY_DEFAULTS;
+    if (!rows) return UI_CATEGORY_DEFAULTS.filter((category) => isRideCategoryEnabled(category.backend, flags));
     const byCode = new Map(rows.map((row) => [row.code, row]));
     const output: UiCategory[] = [];
 
     for (const fallback of UI_CATEGORY_DEFAULTS) {
+      if (!isRideCategoryEnabled(fallback.backend, flags)) continue;
       const row = byCode.get(fallback.backend);
       if (!row) {
         output.push(fallback);
@@ -100,7 +106,7 @@ export function UiCategoriesProvider({ children }: { children: ReactNode }) {
       return aOrder - bOrder;
     });
     return output;
-  }, [rows]);
+  }, [flags, rows]);
 
   return <UiCategoriesContext.Provider value={merged}>{children}</UiCategoriesContext.Provider>;
 }

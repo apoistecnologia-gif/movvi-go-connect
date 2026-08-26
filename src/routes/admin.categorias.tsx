@@ -16,6 +16,8 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { ICON_REGISTRY } from "@/lib/uiCategories";
 import { updateAdminRideCategory } from "@/lib/adminControlPlane";
+import { useRideFeatureFlags } from "@/hooks/useRideFeatureFlags";
+import { isRideCategoryEnabled } from "@/lib/rideFeatureFlags";
 
 export const Route = createFileRoute("/admin/categorias")({
   head: () => ({ meta: [{ title: "Categorias — Admin APOIS" }] }),
@@ -76,6 +78,7 @@ function normalizeRow(value: unknown): Row | null {
 }
 
 function AdminCategoriasPage() {
+  const flags = useRideFeatureFlags();
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -225,6 +228,7 @@ function AdminCategoriasPage() {
                 const dirty = dirtyIdsRef.current.has(row.id);
                 const busy = savingId === row.id;
                 const error = rowError?.id === row.id ? rowError.message : null;
+                const featureDisabled = !isRideCategoryEnabled(row.code, flags);
                 return (
                   <Card key={row.id} className="border-border bg-card/60">
                     <CardContent className="space-y-4 p-4" aria-busy={busy}>
@@ -234,6 +238,9 @@ function AdminCategoriasPage() {
                             Código canônico
                           </p>
                           <p className="break-words font-mono text-sm font-semibold text-primary">{row.code}</p>
+                          {featureDisabled && (
+                            <p className="mt-1 text-xs font-semibold text-amber-400">Em breve • flag desativada</p>
+                          )}
                         </div>
                         <label className="flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm font-medium focus-within:ring-2 focus-within:ring-primary">
                           <Switch

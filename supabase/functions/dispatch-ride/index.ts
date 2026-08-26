@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { getCorsHeaders } from "../_shared/cors.ts";
+import { disabledRideFeatureError } from "../_shared/ride-feature-flags.ts";
 import {
   findEligibleDriversForRide,
   type DispatchActiveRide,
@@ -87,6 +88,10 @@ Deno.serve(async (req) => {
       .maybeSingle();
     if (rideError) return json(req, { error: "ride_lookup_failed", detail: rideError.message }, 500);
     if (!rawRide) return json(req, { error: "ride_not_found" }, 404);
+    const featureError = await disabledRideFeatureError(admin, rawRide.category);
+    if (featureError) {
+      return json(req, { error: featureError, message: "Serviço temporariamente indisponível." }, 403);
+    }
 
     if (rawRide.status !== "procurar_motorista" || rawRide.driver_id || rawRide.accepted_driver_id) {
       return json(req, { ok: true, status: rawRide.status, action: "not_dispatchable", offered: 0 });

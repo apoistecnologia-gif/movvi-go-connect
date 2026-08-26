@@ -65,6 +65,8 @@ import { showPush } from "@/lib/pushNotifications";
 import { formatBRL } from "@/lib/rideCategories";
 import type { Database } from "@/integrations/supabase/types";
 import { DSButton } from "@/design-system";
+import { useRideFeatureFlags } from "@/hooks/useRideFeatureFlags";
+import { isRideCategoryEnabled } from "@/lib/rideFeatureFlags";
 
 const TEST_DRIVER_LOCATION = {
   lat: -7.446,
@@ -313,6 +315,7 @@ function subscriptionBlockIsPayable(status: string): boolean {
 
 function MotoristaApp() {
   const navigate = useNavigate();
+  const featureFlags = useRideFeatureFlags();
   const callAccept   = aceitarCorridaMobile;
   const callReject   = recusarCorridaMobile;
   const callArrive   = informarChegadaMobile;
@@ -327,6 +330,7 @@ function MotoristaApp() {
   const [userId, setUserId] = useState<string | null>(null);
   const [driverId, setDriverId] = useState<string | null>(null);
   const [driverName, setDriverName] = useState<string>("");
+  const [driverCategory, setDriverCategory] = useState<string | null>(null);
   const [sideMenuOpen, setSideMenuOpen] = useState(false);
 
   async function handleLogout() {
@@ -364,6 +368,10 @@ function MotoristaApp() {
   const [passenger, setPassenger] = useState<Passenger | null>(null);
   const [countdown, setCountdown] = useState(RIDE_OFFER_TIMEOUT_SECONDS);
   const [profilePassengerId, setProfilePassengerId] = useState<string | null>(null);
+  const featureStatusBlock = driverCategory && !isRideCategoryEnabled(driverCategory, featureFlags)
+    ? "A operação desta categoria está temporariamente indisponível."
+    : null;
+  const effectiveStatusBlock = statusBlock ?? featureStatusBlock;
 
   const [polyline, setPolyline] = useState<LatLng[]>([]);
   const [routeSteps, setRouteSteps] = useState<NavStep[]>([]);
@@ -430,7 +438,11 @@ function MotoristaApp() {
   }, [active?.status]);
 
 
-  useDriverBroadcast(userId, online, position);
+  useEffect(() => {
+    if (featureStatusBlock && !active) setDesiredOnline(false);
+  }, [active, featureStatusBlock, setDesiredOnline]);
+
+  useDriverBroadcast(userId, online && (!featureStatusBlock || Boolean(active)), position);
 
   // sessão + aprovação + perfil
   useEffect(() => {
@@ -445,6 +457,7 @@ function MotoristaApp() {
         const d = result.profile;
         setUserId(d.user_id);
         setDriverId(d.id);
+        setDriverCategory(d.category ?? null);
         if (d.name) setDriverName(d.name.trim().split(/\s+/)[0] || d.name);
         if (d.approval_status !== "aprovado") {
           setStatusBlock(
@@ -485,7 +498,9 @@ function MotoristaApp() {
             approval_status?: string;
             subscription_status?: string | null;
             motivo_reprovacao?: string | null;
+            category?: string | null;
           };
+          if (row.category !== undefined) setDriverCategory(row.category);
           if (row.approval_status && row.approval_status !== "aprovado") {
             const msg =
               row.approval_status === "reprovado"
@@ -702,7 +717,7 @@ function MotoristaApp() {
       setShowTestLocationButton(isDevelopmentEnvironment());
       return;
     }
-    if (statusBlock) return;
+    if (effectiveStatusBlock) return;
     setGpsStatus("loading");
     setGpsMessage("Obtendo sua localização...");
     setShowTestLocationButton(false);
@@ -773,13 +788,18 @@ function MotoristaApp() {
     } else {
       requestFastLocation();
     }
-  }, [online, statusBlock, activateOnlineWithCoords]);
+  }, [online, effectiveStatusBlock, activateOnlineWithCoords]);
 
   // realtime: ofertas (broadcast) + corrida ativa — canal estável
   useEffect(() => {
     if (!userId) return;
 
     const presentOffer = (r: RideRow) => {
+      if (!isRideCategoryEnabled(r.category, featureFlags)) {
+        if (incomingRef.current?.id === r.id) setIncoming(null);
+        handledRidesRef.current.add(r.id);
+        return;
+      }
       const candidates: string[] = Array.isArray((r as any).candidate_driver_ids) ? (r as any).candidate_driver_ids : [];
       const rejected: string[] = Array.isArray((r as any).rejected_driver_ids) ? (r as any).rejected_driver_ids : [];
       const acceptedDriverId = (r as any).accepted_driver_id ?? r.driver_id ?? null;
@@ -993,7 +1013,7 @@ function MotoristaApp() {
       window.removeEventListener("online", onFocus);
       window.clearInterval(poll);
     };
-  }, [userId, driverId, loadTodayStats]);
+  }, [userId, driverId, loadTodayStats, featureFlags]);
 
 
 
@@ -1488,19 +1508,23 @@ function MotoristaApp() {
       {/* (status de GPS é mostrado dentro do painel inferior) */}
 
       {/* Bloqueio aprovação */}
-      {statusBlock && !hasRideUI && (
+      {effectiveStatusBlock && !hasRideUI && (
         <div className="absolute left-1/2 top-24 z-20 -translate-x-1/2 max-w-xs rounded-2xl bg-card/95 px-4 py-3 text-center shadow-2xl ring-1 ring-border backdrop-blur-md">
           <div className="flex items-center justify-center gap-2 text-yellow-400">
             <AlertTriangle className="h-4 w-4" />
-            <span className="text-xs font-semibold uppercase tracking-wide">Mensalidade</span>
+            <span className="text-xs font-semibold uppercase tracking-wide">
+              {featureStatusBlock ? "Operação indisponível" : "Mensalidade"}
+            </span>
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">{statusBlock}</p>
-          <button
-            onClick={() => navigate({ to: "/motorista/assinatura" })}
-            className="mt-2 inline-flex items-center justify-center rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow hover:brightness-110"
-          >
-            Pagar mensalidade
-          </button>
+          <p className="mt-1 text-xs text-muted-foreground">{effectiveStatusBlock}</p>
+          {!featureStatusBlock && (
+            <button
+              onClick={() => navigate({ to: "/motorista/assinatura" })}
+              className="mt-2 inline-flex items-center justify-center rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow hover:brightness-110"
+            >
+              Pagar mensalidade
+            </button>
+          )}
         </div>
       )}
 
@@ -1601,7 +1625,7 @@ function MotoristaApp() {
         <IdleBottomPanel
           driverName={driverName}
           online={online}
-          disabled={!!statusBlock || gpsStatus === "loading"}
+          disabled={!!effectiveStatusBlock || gpsStatus === "loading"}
           toggleOnline={toggleOnline}
           stats={todayStats}
           gpsMessage={gpsMessage}
