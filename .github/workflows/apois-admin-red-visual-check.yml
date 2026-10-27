@@ -3,9 +3,11 @@ on:
   push:
     branches:
       - fix/apois-admin-visual-red-20261027
+      - fix/apois-admin-desktop-login-logo-20261027
     paths:
       - .github/workflows/apois-admin-red-visual-check.yml
       - src/**
+      - public/apois-official-circular-2026.webp
       - scripts/verify-apois-admin-red-brand.mjs
   workflow_dispatch:
 
@@ -27,6 +29,15 @@ jobs:
         run: bun install --frozen-lockfile
       - name: Visual brand and functional-preservation guards
         run: node scripts/verify-apois-admin-red-brand.mjs
+      - name: Verify the public user-supplied APOIS logo and desktop-only Admin login
+        run: |
+          set -euo pipefail
+          test -s public/apois-official-circular-2026.webp
+          grep -Fq "data-apois-admin-desktop-login" src/routes/admin.login.tsx
+          grep -Fq '/apois-official-circular-2026.webp' src/routes/admin.login.tsx
+          grep -Fq '/apois-official-circular-2026.webp' src/components/admin/AdminSidebar.tsx
+          if grep -Fq "<AuthShell" src/routes/admin.login.tsx; then exit 1; fi
+          echo "[OK] Official uploaded circular brand and corporate web login present"
       - name: Typecheck
         run: bun run typecheck
       - name: Build web panel
