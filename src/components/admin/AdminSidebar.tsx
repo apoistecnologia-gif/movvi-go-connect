@@ -19,7 +19,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { DSButton } from "@/design-system";
-import { APOIS_LOGO_DATA_URL } from "@/assets/apoisLogoData";
+
 import { supabase } from "@/integrations/supabase/client";
 import { loadAdminAccess, type AdminAccessContext } from "@/lib/adminAccess";
 
@@ -65,11 +65,11 @@ function SidebarBrand() {
   return (
     <div className="flex flex-col items-center gap-2" role="img" aria-label="APOIS Corridas — Administração">
       <img
-        src={APOIS_LOGO_DATA_URL}
+        src="/apois-official-circular-2026.webp"
         alt=""
         aria-hidden="true"
         decoding="async"
-        className="h-16 w-16 rounded-full border-2 border-[#E51B23]/15 bg-white object-cover shadow-[0_8px_22px_rgba(229,27,35,0.15)]"
+        className="h-16 w-16 rounded-full bg-white object-contain shadow-[0_8px_22px_rgba(229,27,35,0.15)]"
       />
       <span className="font-display text-sm font-black tracking-[0.14em] text-foreground" aria-hidden="true">
         APOIS <span className="text-primary">CORRIDAS</span>
