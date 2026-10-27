@@ -19,6 +19,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { DSButton } from "@/design-system";
+import { APOIS_LOGO_DATA_URL } from "@/assets/apoisLogoData";
 import { supabase } from "@/integrations/supabase/client";
 import { loadAdminAccess, type AdminAccessContext } from "@/lib/adminAccess";
 
@@ -62,51 +63,18 @@ function cleanLabel(value: unknown, fallback: string) {
 
 function SidebarBrand() {
   return (
-    <div className="flex flex-col items-center leading-none" role="img" aria-label="APOIS Admin">
-      <svg
-        width="44"
-        height="44"
-        viewBox="0 0 120 120"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
+    <div className="flex flex-col items-center gap-2" role="img" aria-label="APOIS Corridas — Administração">
+      <img
+        src={APOIS_LOGO_DATA_URL}
+        alt=""
         aria-hidden="true"
-        focusable="false"
-        className="drop-shadow-[0_0_12px_color-mix(in_oklab,var(--color-primary)_35%,transparent)]"
-      >
-        <path
-          d="M18 100 L18 28 L40 28 L60 70 L60 100 Z"
-          fill="currentColor"
-          className="text-foreground"
-        />
-        <path
-          d="M60 28 Q100 28 100 64 Q100 100 60 100 L60 78 Q82 78 82 64 Q82 50 60 50 Z"
-          fill="currentColor"
-          className="text-primary"
-        />
-        <path
-          d="M28 82 Q60 60 95 82"
-          stroke="hsl(220 30% 8%)"
-          strokeWidth="8"
-          strokeLinecap="round"
-          fill="none"
-        />
-        <path
-          d="M28 82 Q60 60 95 82"
-          stroke="currentColor"
-          className="text-foreground"
-          strokeWidth="1.5"
-          strokeDasharray="4 5"
-          fill="none"
-        />
-      </svg>
-      <div className="mt-2 flex flex-col items-center leading-[1.05]" aria-hidden="true">
-        <span className="font-display text-[15px] font-bold tracking-[0.22em] text-foreground">
-          APOIS
-        </span>
-        <span className="font-display text-xs font-bold tracking-[0.22em] text-primary">
-          ADMIN
-        </span>
-      </div>
+        decoding="async"
+        className="h-16 w-16 rounded-full border-2 border-[#E51B23]/15 bg-white object-cover shadow-[0_8px_22px_rgba(229,27,35,0.15)]"
+      />
+      <span className="font-display text-sm font-black tracking-[0.14em] text-foreground" aria-hidden="true">
+        APOIS <span className="text-primary">CORRIDAS</span>
+      </span>
+      <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground" aria-hidden="true">Administração</span>
     </div>
   );
 }
