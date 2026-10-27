@@ -1,3 +1,4 @@
+import { APOIS_LOGO_DATA_URL } from "@/assets/apoisLogoData";
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -65,7 +66,7 @@ function SidebarBrand() {
   return (
     <div className="flex flex-col items-center gap-2" role="img" aria-label="APOIS Corridas — Administração">
       <img
-        src="/apois-official-circular-2026.webp"
+        src={APOIS_LOGO_DATA_URL}
         alt=""
         aria-hidden="true"
         decoding="async"
