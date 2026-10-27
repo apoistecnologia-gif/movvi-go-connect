@@ -1,4 +1,4 @@
-import { APOIS_LOGO_DATA_URL } from "@/assets/apoisLogoData";
+import { APOIS_OFFICIAL_RED_LOGO_URL } from "@/assets/apoisOfficial2026";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabase } from "@/lib/supabaseClient";
@@ -63,7 +63,7 @@ function AdminLoginPage() {
           <div className="pointer-events-none absolute -left-32 bottom-[-270px] h-[560px] w-[560px] rounded-full border-[90px] border-[#E51B23]/15" aria-hidden="true" />
           <div className="pointer-events-none absolute -right-40 top-[-220px] h-[550px] w-[550px] rounded-full bg-[#E51B23]/10 blur-3xl" aria-hidden="true" />
           <div className="relative z-10 flex items-center gap-3">
-            <img src={APOIS_LOGO_DATA_URL} alt="APOIS" className="h-16 w-16 rounded-full bg-white object-contain" width="64" height="64" />
+            <img src={APOIS_OFFICIAL_RED_LOGO_URL} alt="APOIS" className="h-16 w-16 rounded-full bg-white object-contain" width="64" height="64" />
             <div>
               <div className="text-xl font-black tracking-[0.10em]">APOIS</div>
               <div className="text-xs font-bold uppercase tracking-[0.19em] text-[#FF777B]">Corridas · Administração</div>
@@ -88,7 +88,7 @@ function AdminLoginPage() {
           <div className="w-full max-w-[460px]">
             <div className="mb-10 flex items-center gap-3 lg:mb-12">
               <img
-                src={APOIS_LOGO_DATA_URL}
+                src={APOIS_OFFICIAL_RED_LOGO_URL}
                 alt="Logomarca APOIS"
                 className="h-16 w-16 shrink-0 rounded-full bg-white object-contain shadow-[0_8px_24px_rgba(229,27,35,0.10)]"
                 width="64"
