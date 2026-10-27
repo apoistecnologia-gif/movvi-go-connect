@@ -5,6 +5,7 @@ on:
       - fix/apois-corridas-admin-secure-deploy-20261027
     paths:
       - .github/workflows/apois-corridas-admin-secure-lockfile.yml
+      - package.json
   workflow_dispatch:
 
 permissions:
