@@ -1,0 +1,35 @@
+name: APOIS Corridas Admin - Visual Brand Gate
+on:
+  push:
+    branches:
+      - fix/apois-admin-visual-red-20261027
+    paths:
+      - .github/workflows/apois-admin-red-visual-check.yml
+      - src/**
+      - scripts/verify-apois-admin-red-brand.mjs
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  visual:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - name: Pinned patched dependencies
+        run: bun install --frozen-lockfile
+      - name: Visual brand and functional-preservation guards
+        run: node scripts/verify-apois-admin-red-brand.mjs
+      - name: Typecheck
+        run: bun run typecheck
+      - name: Build web panel
+        run: bun run build
+      - name: No production changes
+        run: echo "[OK] Admin visual migration tested in isolated branch."
