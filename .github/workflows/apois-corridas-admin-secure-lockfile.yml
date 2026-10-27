@@ -6,6 +6,8 @@ on:
     paths:
       - .github/workflows/apois-corridas-admin-secure-lockfile.yml
       - package.json
+      - src/components/routing/DefaultBoundaries.tsx
+      - src/routes/__root.tsx
   workflow_dispatch:
 
 permissions:
