@@ -35,7 +35,7 @@ export function MovviLogo({
 
   const icon = (
     <div
-      className="shrink-0 overflow-hidden rounded-full border border-[#F6BE1C]/20 bg-black shadow-[0_12px_34px_-20px_rgba(246,190,28,0.65)]"
+      className="shrink-0 overflow-hidden rounded-full border border-[#E51B23]/20 bg-white shadow-[0_12px_34px_-20px_rgba(229,27,35,0.32)]"
       style={{ width: logoSize, height: logoSize }}
       aria-hidden="true"
     >
@@ -68,17 +68,17 @@ export function MovviLogo({
       {icon}
 
       <div className="min-w-0 max-w-full" aria-hidden="true">
-        <div className="break-words font-display text-xl font-black leading-tight tracking-[0.08em] text-white">
+        <div className="break-words font-display text-xl font-black leading-tight tracking-[0.08em] text-foreground">
           APOIS
           {label ? (
             <>
               {" "}
-              <span className="text-[#F6BE1C]">{label}</span>
+              <span className="text-[#E51B23]">{label}</span>
             </>
           ) : null}
         </div>
         {showTagline ? (
-          <div className="mt-1 break-words text-xs font-bold uppercase leading-4 tracking-[0.22em] text-[#F6BE1C]">
+          <div className="mt-1 break-words text-xs font-bold uppercase leading-4 tracking-[0.22em] text-[#C9141B]">
             Apois, vamos?
           </div>
         ) : null}
