@@ -32,10 +32,10 @@ jobs:
       - name: Verify the public user-supplied APOIS logo and desktop-only Admin login
         run: |
           set -euo pipefail
-          test -s public/apois-official-circular-2026.webp
+          grep -Fq "data:image/png;base64,iVBORw0KGgo" src/assets/apoisOfficial2026.ts
           grep -Fq "data-apois-admin-desktop-login" src/routes/admin.login.tsx
-          grep -Fq 'src={APOIS_LOGO_DATA_URL}' src/routes/admin.login.tsx
-          grep -Fq 'src={APOIS_LOGO_DATA_URL}' src/components/admin/AdminSidebar.tsx
+          grep -Fq 'src={APOIS_OFFICIAL_RED_LOGO_URL}' src/routes/admin.login.tsx
+          grep -Fq 'src={APOIS_OFFICIAL_RED_LOGO_URL}' src/components/admin/AdminSidebar.tsx
           if grep -Fq "<AuthShell" src/routes/admin.login.tsx; then exit 1; fi
           echo "[OK] Official uploaded circular brand and corporate web login present"
       - name: Typecheck
