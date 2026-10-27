@@ -1,4 +1,4 @@
-import { Link, useRouter } from "@tanstack/react-router";
+import { Link, useRouter, type ErrorComponentProps } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { AlertTriangle, Home, RotateCcw } from "lucide-react";
 import { reportLovableError } from "@/lib/lovable-error-reporting";
@@ -12,13 +12,7 @@ import { reportLovableError } from "@/lib/lovable-error-reporting";
  * ever renders a blank screen on a thrown error or unmatched deep path.
  */
 
-export function DefaultErrorComponent({
-  error,
-  reset,
-}: {
-  error: Error;
-  reset: () => void;
-}) {
+export function DefaultErrorComponent({ error, reset }: ErrorComponentProps) {
   const router = useRouter();
 
   useEffect(() => {
