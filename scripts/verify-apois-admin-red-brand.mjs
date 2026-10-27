@@ -11,10 +11,13 @@ assert(theme.includes("APOIS_ADMIN_RED_2026") && theme.includes("#E51B23") && th
 assert(theme.includes("--background: #F6F7F9") && theme.includes("--card: #FFFFFF"),"All Admin semantic surfaces use light APOIS backgrounds");
 assert(theme.includes("--primary-foreground: #FFFFFF") && theme.includes("color-scheme: light"),"Red buttons and inputs have readable foreground");
 assert(layout.includes("apois-admin-theme") && layout.includes("<AdminGuard>"),"Admin layout keeps RBAC and scoped theme");
-assert(sidebar.includes("APOIS_LOGO_DATA_URL") && sidebar.includes("ADMIN_NAV") && sidebar.includes("loadAdminAccess"),"Official logo and permission-aware navigation retained");
+assert(sidebar.includes("/apois-official-circular-2026.webp") && sidebar.includes("ADMIN_NAV") && sidebar.includes("loadAdminAccess"),"Official logo and permission-aware navigation retained");
 assert(logo.includes("data:image/webp;base64,"),"Circular official logo remains embedded offline");
 assert(map.includes('gold: "#E51B23"') && map.includes('goldStrong: "#C9141B"'),"Admin Google map markers match current red brand");
 assert(login.includes("signInWithPassword") && login.includes("loadAdminAccess"),"Login and authorization unchanged");
 const routes=readdirSync("src/routes").filter((f)=>/^admin\..+\.tsx$/.test(f));
 assert(routes.length>=20,"All existing Admin route modules remain present");
 for(const file of routes){const s=read("src/routes/"+file);assert(s.includes("createFileRoute"),file+" route remains operational");}
+
+assert(login.includes("data-apois-admin-desktop-login") && !login.includes("<AuthShell") && !login.includes("Voltar") && !login.includes("Início"),"Admin uses corporate desktop login without app navigation");
+assert(login.includes("/apois-official-circular-2026.webp") && sidebar.includes("/apois-official-circular-2026.webp"),"Official uploaded APOIS emblem used at login and nav");
