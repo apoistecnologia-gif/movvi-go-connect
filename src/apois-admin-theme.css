@@ -4,19 +4,44 @@
  */
 
 .apois-admin-theme {
-  --primary: oklch(0.82 0.17 82);
-  --primary-foreground: oklch(0.12 0.018 260);
-  --primary-glow: oklch(0.88 0.15 88);
-  --secondary: oklch(0.69 0.14 78);
-  --secondary-foreground: oklch(0.12 0.018 260);
-  --accent: oklch(0.82 0.17 82);
-  --accent-foreground: oklch(0.12 0.018 260);
-  --ring: oklch(0.82 0.17 82);
-  --sidebar-primary: oklch(0.82 0.17 82);
-  --sidebar-primary-foreground: oklch(0.12 0.018 260);
-  --sidebar-ring: oklch(0.82 0.17 82);
-  --color-online: oklch(0.78 0.20 145);
-  --color-map-accent: oklch(0.82 0.17 82);
+  /* APOIS_ADMIN_RED_2026 — brand tokens from the current APOIS apps.
+     Only the admin tree is affected; Ride Driver/Passenger themes stay intact. */
+  --background: #F6F7F9;
+  --foreground: #181F2B;
+  --surface: #FFFFFF;
+  --surface-2: #F2F3F5;
+  --card: #FFFFFF;
+  --card-foreground: #181F2B;
+  --popover: #FFFFFF;
+  --popover-foreground: #181F2B;
+  --primary: #E51B23;
+  --primary-foreground: #FFFFFF;
+  --primary-glow: #F04B50;
+  --secondary: #F4F5F7;
+  --secondary-foreground: #293241;
+  --accent: #FDEBED;
+  --accent-foreground: #B91C24;
+  --muted: #F0F2F5;
+  --muted-foreground: #596273;
+  --border: #E1E4EA;
+  --input: #E5E8EE;
+  --ring: #E51B23;
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #181F2B;
+  --sidebar-primary: #E51B23;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #FDEBED;
+  --sidebar-accent-foreground: #B91C24;
+  --sidebar-border: #E1E4EA;
+  --sidebar-ring: #E51B23;
+  --chart-1: #E51B23;
+  --chart-2: #C9141B;
+  --chart-3: #323F50;
+  --chart-4: #7C8CA0;
+  --chart-5: #F39B9D;
+  --color-online: #16834A;
+  --color-map-accent: #E51B23;
+  color-scheme: light;
 }
 
 .apois-admin-theme ::selection {
@@ -239,4 +264,33 @@
   .apois-admin-theme .admin-page-main .flex.gap-2 {
     flex-wrap: wrap;
   }
+}
+
+/* Accessible red/white backoffice: cards, dialogs and navigation share brand
+   values. Functional danger/warning/success statuses retain their semantics. */
+.apois-admin-theme .admin-page-header {
+  background: rgb(255 255 255 / .96);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 3px 14px rgb(24 31 43 / .035);
+}
+.apois-admin-theme .admin-page-main [class*="rounded-2xl"],
+.apois-admin-theme .admin-page-main [class*="rounded-xl"] {
+  --tw-shadow-color: rgb(24 31 43 / .06);
+}
+.apois-admin-theme :is(input,textarea,select,[role="combobox"]) {
+  background-color: #FFFFFF;
+  color: #181F2B;
+  border-color: #DDE1E8;
+}
+.apois-admin-theme :is(input,textarea,select,[role="combobox"]):focus-visible {
+  border-color: #C9141B;
+  outline-color: #E51B23;
+}
+.apois-admin-theme [data-state="active"][role="tab"],
+.apois-admin-theme [data-state="checked"][role="switch"] {
+  accent-color: #E51B23;
+}
+.apois-admin-theme a:focus-visible,
+.apois-admin-theme button:focus-visible {
+  outline-color: #C9141B;
 }
