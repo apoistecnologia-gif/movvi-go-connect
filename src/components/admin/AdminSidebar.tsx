@@ -153,13 +153,14 @@ export function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <aside className="flex h-full w-[260px] max-w-full min-w-0 flex-col overflow-x-hidden border-r border-border/60 bg-card text-card-foreground">
-      <div className="relative px-5 pb-5 pt-6">
-        <span className="absolute right-3 top-3 max-w-[85%] break-words rounded-lg border border-primary/30 bg-primary/10 px-2 py-1 text-xs font-bold uppercase tracking-[0.12em] text-primary">
+      <div className="flex flex-col items-center px-5 pb-5 pt-6">
+        <SidebarBrand />
+        <span
+          className="mt-4 inline-flex max-w-full items-center justify-center break-words rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-center text-[10px] font-bold uppercase tracking-[0.08em] leading-4 text-primary"
+          aria-label="Nível de acesso administrativo"
+        >
           {loadingAccess ? "…" : cleanLabel(access?.role, "Admin")}
         </span>
-        <div className="flex justify-center">
-          <SidebarBrand />
-        </div>
       </div>
 
       <div className="mx-5 h-px bg-gradient-to-r from-transparent via-border to-transparent" aria-hidden="true" />
