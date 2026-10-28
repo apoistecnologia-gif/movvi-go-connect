@@ -316,13 +316,13 @@ function AdminDashboardPage() {
       </div>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-3">
-        <DSCard className="min-w-0 overflow-hidden lg:col-span-2">
+        <DSCard className="flex min-w-0 flex-col overflow-hidden lg:col-span-2">
           <DSCardHeader className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
             <DSCardTitle className="min-w-0 break-words text-base">Motoristas online no mapa</DSCardTitle>
             <StatusPill status="online" label={`${online.length} online`} pulse={false} />
           </DSCardHeader>
-          <DSCardContent className="p-0">
-            <div className="h-[clamp(280px,48dvh,420px)] w-full min-w-0">
+          <DSCardContent className="relative min-h-[360px] flex-1 p-0 sm:min-h-[420px]">
+            <div className="absolute inset-0 min-h-0 min-w-0">
               <MovviMap center={mapCenter} missingApiKeyMessage="Google Maps não configurado neste painel. Adicione VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY nas variáveis de ambiente da Vercel e gere uma nova implantação.">
                 {online.map((driver) => {
                   if (!validCoordinate(driver.current_lat, driver.current_lng)) return null;
