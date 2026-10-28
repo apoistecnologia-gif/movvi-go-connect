@@ -31,3 +31,14 @@ assert(reset.includes("exchangeCodeForSession") && reset.includes('type: "recove
 assert(reset.includes('supabase.auth.updateUser({ password: newPassword })') && reset.includes("supabase.auth.signOut()"), "Recovery changes only the linked user password and clears the session");
 assert(reset.includes('if (status !== "valid" || submitting) return'), "Invalid recovery links cannot submit a password");
 assert(login.includes("loadAdminAccess()"), "Admin permissions remain server-backed and separate from password recovery");
+
+// Regression: no role badge over the circular brand; all Admin map surfaces
+// diagnose the missing Maps browser key without changing driver/client behavior.
+const mapComponent = read("src/components/MovviMap.tsx");
+const dashboard = read("src/routes/admin.dashboard.tsx");
+const liveMap = read("src/routes/admin.mapa.tsx");
+assert(!sidebar.includes('className="absolute right-3 top-3') && sidebar.includes('className="mt-4 inline-flex'), "Administrator role badge sits below the logo and cannot overlap it");
+assert(sidebar.includes("SidebarBrand />") && sidebar.includes('cleanLabel(access?.role, "Admin")'), "Official logo, role badge and RBAC role remain present");
+assert(mapComponent.includes("missingApiKeyMessage?: string") && mapComponent.includes('missingApiKeyMessage ??'), "Optional Admin-only Google Maps configuration diagnosis is supported");
+assert(dashboard.includes("missingApiKeyMessage=") && liveMap.includes("missingApiKeyMessage="), "Dashboard and live map explain missing Google Maps browser configuration");
+assert(mapComponent.includes('if (!GOOGLE_MAPS_API_KEY)') && mapComponent.includes("useJsApiLoader"), "Maps still uses the original Google API and fails closed when no key is set");
