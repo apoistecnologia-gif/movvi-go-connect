@@ -20,6 +20,9 @@ interface MovviMapProps {
   className?: string;
   onLoad?: (map: google.maps.Map) => void;
   children?: ReactNode;
+  /** Optional message when no Maps browser key was configured. Admin-only callers
+   * may show a concrete configuration hint; existing client/driver UX is unchanged. */
+  missingApiKeyMessage?: string;
   /** Override theme; defaults to global theme. */
   themeOverride?: "light" | "dark";
 }
@@ -49,6 +52,7 @@ export function MovviMap({
   onLoad,
   children,
   themeOverride,
+  missingApiKeyMessage,
 }: MovviMapProps) {
   useEffect(() => {
     purgeForeignMapCache();
@@ -114,7 +118,7 @@ export function MovviMap({
     return (
       <div className={`flex items-center justify-center bg-surface p-6 text-center text-foreground ${shellClass}`} style={containerStyle} role="alert">
         <p className="max-w-sm break-words text-sm leading-5">
-          O mapa está temporariamente indisponível. Tente novamente mais tarde.
+          {missingApiKeyMessage ?? "O mapa está temporariamente indisponível. Tente novamente mais tarde."}
         </p>
       </div>
     );
