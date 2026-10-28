@@ -5,6 +5,7 @@ on:
       - fix/apois-admin-visual-red-20261027
       - fix/apois-admin-desktop-login-logo-20261027
       - fix/apois-admin-recovery-20261028
+      - fix/apois-corridas-admin-sidebar-map-20261028
     paths:
       - .github/workflows/apois-admin-red-visual-check.yml
       - src/**
