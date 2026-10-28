@@ -1,5 +1,5 @@
 import { APOIS_OFFICIAL_RED_LOGO_URL } from "@/assets/apoisOfficial2026";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabase } from "@/lib/supabaseClient";
 import { loadAdminAccess } from "@/lib/adminAccess";
@@ -138,6 +138,9 @@ function AdminLoginPage() {
                   className="min-h-12 rounded-xl border-[#DCE1E8] bg-white px-4 text-base text-[#182130] shadow-sm"
                   disabled={loading}
                 />
+              </div>
+              <div className="flex justify-end">
+                <Link to="/admin/recuperar-senha" className="text-sm font-semibold text-[#C9141B] underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-[#E51B23]">Esqueci minha senha</Link>
               </div>
               {error ? (
                 <Alert variant="destructive" role="alert" aria-live="polite">
