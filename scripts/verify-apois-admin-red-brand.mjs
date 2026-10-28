@@ -21,3 +21,13 @@ for(const file of routes){const s=read("src/routes/"+file);assert(s.includes("cr
 
 assert(login.includes("data-apois-admin-desktop-login") && !login.includes("<AuthShell") && !login.includes("Voltar") && !login.includes("Início"),"Admin uses corporate desktop login without app navigation");
 assert(login.includes("APOIS_OFFICIAL_RED_LOGO_URL") && sidebar.includes("APOIS_OFFICIAL_RED_LOGO_URL"),"Official uploaded APOIS emblem used at login and nav");
+
+const recovery = read("src/routes/admin.recuperar-senha.tsx");
+const reset = read("src/routes/admin.redefinir-senha.tsx");
+assert(login.includes('to="/admin/recuperar-senha"'), "Admin login visibly links password recovery");
+assert(recovery.includes("supabase.auth.resetPasswordForEmail") && recovery.includes("/admin/redefinir-senha"), "Recovery email uses the same admin portal origin");
+assert(recovery.includes("Se este e-mail estiver cadastrado"), "Recovery does not disclose whether an account exists");
+assert(reset.includes("exchangeCodeForSession") && reset.includes('type: "recovery"') && reset.includes("PASSWORD_RECOVERY"), "PKCE, hashed-token and implicit recovery links are supported");
+assert(reset.includes('supabase.auth.updateUser({ password: newPassword })') && reset.includes("supabase.auth.signOut()"), "Recovery changes only the linked user password and clears the session");
+assert(reset.includes('if (status !== "valid" || submitting) return'), "Invalid recovery links cannot submit a password");
+assert(login.includes("loadAdminAccess()"), "Admin permissions remain server-backed and separate from password recovery");
