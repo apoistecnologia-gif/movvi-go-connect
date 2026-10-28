@@ -25,7 +25,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { formatBRL, formatNumber, formatDate } from "@/lib/formatters";
 import { getAdminDashboardMetrics, type AdminDashboardMetrics } from "@/lib/adminControlPlane";
-import { APOIS_ADMIN_MAP } from "@/lib/adminVisual";
 import {
   DSButton,
   DSCard,
@@ -315,14 +314,14 @@ function AdminDashboardPage() {
         <Kpi icon={DollarSign} label="Taxas do provedor hoje" value={centsToBrl(metrics.finance.today.provider_fees_cents)} loading={loading} />
       </div>
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-3">
-        <DSCard className="flex min-w-0 flex-col overflow-hidden lg:col-span-2">
+      <div className="mt-6 flex min-w-0 flex-col gap-4">
+        <DSCard className="min-w-0 overflow-hidden">
           <DSCardHeader className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
             <DSCardTitle className="min-w-0 break-words text-base">Motoristas online no mapa</DSCardTitle>
             <StatusPill status="online" label={`${online.length} online`} pulse={false} />
           </DSCardHeader>
-          <DSCardContent className="relative min-h-[360px] flex-1 p-0 sm:min-h-[420px]">
-            <div className="absolute inset-0 min-h-0 min-w-0">
+          <DSCardContent className="p-0">
+            <div className="h-[min(72dvh,720px)] min-h-[420px] w-full min-w-0 sm:min-h-[520px]">
               <MovviMap center={mapCenter} missingApiKeyMessage="Google Maps não configurado neste painel. Adicione VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY nas variáveis de ambiente da Vercel e gere uma nova implantação.">
                 {online.map((driver) => {
                   if (!validCoordinate(driver.current_lat, driver.current_lng)) return null;
@@ -337,12 +336,9 @@ function AdminDashboardPage() {
                       position={{ lat: Number(driver.current_lat), lng: Number(driver.current_lng) }}
                       title={driver.name || "Motorista online"}
                       icon={{
-                        path: googleApi.maps.SymbolPath.CIRCLE,
-                        scale: 7,
-                        fillColor: APOIS_ADMIN_MAP.gold,
-                        fillOpacity: 1,
-                        strokeColor: APOIS_ADMIN_MAP.black,
-                        strokeWeight: 2,
+                        url: "data:image/svg+xml;charset=UTF-8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"><circle cx="24" cy="24" r="21" fill="#C91425" stroke="#FFFFFF" stroke-width="3"/><path d="m13 26 3-10h16l3 10v9h-4v-3H17v3h-4v-9zm6-7-2 7h14l-2-7H19zm0 10a2 2 0 1 0 0 .01zm12 0a2 2 0 1 0 0 .01z" fill="#FFFFFF"/></svg>'),
+                        scaledSize: new googleApi.maps.Size(44, 44),
+                        anchor: new googleApi.maps.Point(22, 22),
                       }}
                     />
                   );
@@ -357,7 +353,7 @@ function AdminDashboardPage() {
             <DSCardTitle className="min-w-0 break-words text-base">Últimas solicitações</DSCardTitle>
             <Caption>tempo real</Caption>
           </DSCardHeader>
-          <DSCardContent className="min-w-0 space-y-2 p-3">
+          <DSCardContent className="grid min-w-0 gap-3 p-3 md:grid-cols-2 2xl:grid-cols-3">
             {loading && recent.length === 0 ? <div aria-live="polite"><Loading label="Carregando…" /></div> : null}
             {!loading && recent.length === 0 ? (
               <EmptyState icon={Inbox} title="Sem corridas recentes" description="Novas solicitações aparecerão aqui em tempo real." />
