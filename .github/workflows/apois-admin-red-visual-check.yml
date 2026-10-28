@@ -39,9 +39,9 @@ jobs:
           grep -Fq 'src={APOIS_OFFICIAL_RED_LOGO_URL}' src/components/admin/AdminSidebar.tsx
           if grep -Fq "<AuthShell" src/routes/admin.login.tsx; then exit 1; fi
           echo "[OK] Official uploaded circular brand and corporate web login present"
-      - name: Typecheck
-        run: bun run typecheck
-      - name: Build web panel
+      - name: Build and generate TanStack typed routes
         run: bun run build
+      - name: Typecheck generated route paths
+        run: bun run typecheck
       - name: No production changes
         run: echo "[OK] Admin visual migration tested in isolated branch."
