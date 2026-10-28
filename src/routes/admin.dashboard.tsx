@@ -323,7 +323,7 @@ function AdminDashboardPage() {
           </DSCardHeader>
           <DSCardContent className="p-0">
             <div className="h-[clamp(280px,48dvh,420px)] w-full min-w-0">
-              <MovviMap center={mapCenter}>
+              <MovviMap center={mapCenter} missingApiKeyMessage="Google Maps não configurado neste painel. Adicione VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY nas variáveis de ambiente da Vercel e gere uma nova implantação.">
                 {online.map((driver) => {
                   if (!validCoordinate(driver.current_lat, driver.current_lng)) return null;
                   const googleApi =
