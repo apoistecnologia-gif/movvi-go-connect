@@ -158,6 +158,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
+      ...(APP_ROLE === "web" ? [{ rel: "icon", href: "/apois-official-circular-2026.webp", type: "image/webp" }] : []),
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
