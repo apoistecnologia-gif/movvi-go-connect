@@ -855,6 +855,7 @@ function MotoristaApp() {
 
       if (r.status === "finalizada") {
         setActive(null); setPolyline([]);
+        setRouteSteps([]); setEtaSeconds(null); setLegKm(null);
         if (ratedRidesRef.current.has(r.id)) {
           if (ratingRef.current?.id === r.id && !ratingSubmitted) setRatingRide(null);
         } else if (!r.driver_rated_at && !ratingRef.current) {
@@ -895,6 +896,7 @@ function MotoristaApp() {
         setIncoming(null);
         setActive(null);
         setPolyline([]);
+        setRouteSteps([]); setEtaSeconds(null); setLegKm(null);
       } else if (r.status === "motorista_a_caminho" || r.status === "motorista_chegou" || r.status === "em_viagem") {
         if (incomingRef.current?.id === r.id) setIncoming(null);
         if (queuedRideRef.current?.id === r.id) setQueuedRide(null);
@@ -1059,6 +1061,7 @@ function MotoristaApp() {
       handledRidesRef.current.add(ride.id);
       setActive(null);
       setPolyline([]);
+      setRouteSteps([]);
       setEtaSeconds(null);
       setLegKm(null);
       toast.success("Corrida cancelada", {
@@ -1097,6 +1100,7 @@ function MotoristaApp() {
   const stableMapZoom = useMemo(() => (initialMapCenter ? 16 : 13), [initialMapCenter]);
 
   const autoFollowRef = useRef(true);
+  const userDraggedMapRef = useRef(false);
   const lastFollowAtRef = useRef(0);
   const lastFitKeyRef = useRef<string | null>(null);
   const lastRouteRequestKeyRef = useRef<string | null>(null);
@@ -1123,7 +1127,9 @@ function MotoristaApp() {
     const map = mapRef.current;
     if (!map) return;
     const onDragStart = () => {
-      if (!isNavigationRideStatus(activeRef.current?.status)) autoFollowRef.current = false;
+      // Manual inspection must not be overridden by the next GPS tick.
+      userDraggedMapRef.current = true;
+      autoFollowRef.current = false;
     };
     const listener = google.maps.event.addListener(map, "dragstart", onDragStart);
     return () => { google.maps.event.removeListener(listener); };
@@ -1192,13 +1198,16 @@ function MotoristaApp() {
   useEffect(() => {
     if (!active) {
       setPolyline([]);
+      setRouteSteps([]);
       setEtaSeconds(null);
       setLegKm(null);
       lastFitKeyRef.current = null;
       lastRouteRequestKeyRef.current = null;
       return;
     }
-    const pos = position;
+    // Read the most recent GPS without re-running (and aborting) an in-flight
+    // Routes API request on every watchPosition update.
+    const pos = positionRef.current;
     if (!pos) return;
     const toPickup = active.status === "motorista_a_caminho" || active.status === "motorista_chegou";
     const dest = toPickup
@@ -1227,7 +1236,11 @@ function MotoristaApp() {
       b.extend(dest);
       points.forEach((p) => b.extend(p));
       map.fitBounds(b, { top: 110, bottom: Math.round(window.innerHeight * 0.62), left: 56, right: 56 });
-      window.setTimeout(() => { autoFollowRef.current = true; }, 1200);
+      window.setTimeout(() => {
+        if (!userDraggedMapRef.current && activeRef.current?.id === active.id) {
+          autoFollowRef.current = true;
+        }
+      }, 1200);
     };
 
     if (lastRouteRequestKeyRef.current === routeRequestKey) {
@@ -1273,7 +1286,7 @@ function MotoristaApp() {
         }
       });
     return () => { cancelled = true; };
-  }, [active?.id, active?.status, position?.lat, position?.lng, mapReadyNonce]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [active?.id, active?.status, Boolean(position), mapReadyNonce]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Voz de navegação curva a curva — usa vozes nativas do navegador (pt-BR).
   useEffect(() => { void primeVoice(); }, []);
@@ -1335,6 +1348,7 @@ function MotoristaApp() {
 
 
   function recenter() {
+    userDraggedMapRef.current = false;
     autoFollowRef.current = true;
     lastFollowAtRef.current = 0;
     const pos = positionRef.current;
@@ -1419,7 +1433,7 @@ function MotoristaApp() {
               />
             </>
           )}
-          {polyline.length > 0 && (
+          {active && polyline.length > 0 && (
             <>
               {/* sombra difusa — profundidade sutil */}
               <Polyline path={polyline} options={{
