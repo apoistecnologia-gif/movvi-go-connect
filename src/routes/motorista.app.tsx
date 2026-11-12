@@ -2056,11 +2056,20 @@ function ActiveRidePanel({
 }) {
   const [pinOpen, setPinOpen] = useState(false);
   const [pinCode, setPinCode] = useState("");
+  const [pinFocused, setPinFocused] = useState(false);
+  const pinInputRef = useRef<HTMLInputElement>(null);
   const [pinError, setPinError] = useState<string | null>(null);
   const [pinBusy, setPinBusy] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelBusy, setCancelBusy] = useState(false);
   const [cancelReason, setCancelReason] = useState("Passageiro não apareceu");
+
+  useEffect(() => {
+    if (!pinOpen) return;
+    // Android WebView may not focus an input that only appeared this render.
+    const timeout = window.setTimeout(() => pinInputRef.current?.focus(), 60);
+    return () => window.clearTimeout(timeout);
+  }, [pinOpen]);
 
   const cancelReasons = [
     "Passageiro não apareceu",
@@ -2203,7 +2212,7 @@ function ActiveRidePanel({
           className="fixed left-1/2 z-40 -translate-x-1/2 px-4 w-full max-w-md pointer-events-none"
           style={{ top: "calc(env(safe-area-inset-top) + 12px)" }}
         >
-          <div className="pointer-events-auto flex items-center justify-between gap-2 rounded-[22px] border border-white/70 bg-white/85 px-4 py-3 shadow-[0_12px_36px_-16px_rgba(0,0,0,0.35)] backdrop-blur-md backdrop-saturate-150 animate-in fade-in slide-in-from-top-3 duration-300">
+          <div className="pointer-events-auto flex items-center justify-between gap-2 rounded-[22px] border border-white/15 bg-[#111418]/95 px-4 py-3 shadow-[0_12px_36px_-16px_rgba(0,0,0,0.35)] backdrop-blur-md backdrop-saturate-150 animate-in fade-in slide-in-from-top-3 duration-300">
             <TopStat icon={<Clock className="h-[15px] w-[15px]" strokeWidth={1.75} />} value={minutes != null ? String(minutes) : "—"} unit="min" label="ETA" highlight />
             <div className="h-9 w-px bg-black/10" />
             <TopStat icon={<RouteIcon className="h-[15px] w-[15px]" strokeWidth={1.75} />} value={legKm != null ? legKm.toFixed(1) : "—"} unit="km" label="Distância" />
@@ -2367,7 +2376,7 @@ function ActiveRidePanel({
           className="fixed left-1/2 z-40 -translate-x-1/2 px-4 w-full max-w-md pointer-events-none"
           style={{ top: "calc(env(safe-area-inset-top) + 12px)" }}
         >
-          <div className="pointer-events-auto flex items-center justify-between gap-2 rounded-[22px] bg-white/85 border border-white/70 backdrop-blur-md backdrop-saturate-150 px-4 py-3 shadow-[0_12px_36px_-16px_rgba(0,0,0,0.35)] animate-in fade-in slide-in-from-top-3 duration-300">
+          <div className="pointer-events-auto flex items-center justify-between gap-2 rounded-[22px] bg-[#111418]/95 border border-white/15 backdrop-blur-md backdrop-saturate-150 px-4 py-3 shadow-[0_12px_36px_-16px_rgba(0,0,0,0.35)] animate-in fade-in slide-in-from-top-3 duration-300">
             <TopStat icon={<Clock className="h-[15px] w-[15px]" strokeWidth={1.75} />} value={minutes != null ? String(minutes) : "—"} unit="min" label="ETA" highlight />
             <div className="h-9 w-px bg-black/10" />
             <TopStat icon={<RouteIcon className="h-[15px] w-[15px]" strokeWidth={1.75} />} value={legKm != null ? legKm.toFixed(1) : "—"} unit="km" label="Restante" />
@@ -2676,39 +2685,50 @@ function ActiveRidePanel({
                 </p>
               </div>
 
-              {/* PIN input — herói visual */}
-              <div className="relative mt-5">
+              {/* Quatro células visíveis e um único campo real para teclado,
+                  colagem, Backspace e validação existente no backend. */}
+              <div className="relative mt-5" role="group" aria-label="Digite o PIN de quatro dígitos">
+                <div aria-hidden="true" className="grid grid-cols-4 gap-2.5">
+                  {[0, 1, 2, 3].map((index) => {
+                    const current = pinFocused && !pinBusy && pinCode.length === index;
+                    return (
+                      <span key={index}
+                        className={`flex h-[68px] items-center justify-center rounded-2xl border-2 bg-background/70 text-[28px] font-black tabular-nums text-foreground transition-colors ${
+                          pinError ? "border-destructive/70" :
+                          current ? "border-primary bg-primary/10 ring-2 ring-primary/30" :
+                          pinCode.length > index ? "border-primary/60" : "border-border"
+                        }`}>
+                        {pinCode[index] || (current ? <span className="h-7 w-0.5 animate-pulse bg-primary" /> : null)}
+                      </span>
+                    );
+                  })}
+                </div>
                 <input
+                  ref={pinInputRef}
                   autoFocus
+                  type="text"
                   inputMode="numeric"
+                  autoComplete="one-time-code"
                   pattern="[0-9]*"
                   maxLength={4}
                   value={pinCode}
+                  onFocus={() => setPinFocused(true)}
+                  onBlur={() => setPinFocused(false)}
                   onChange={(e) => {
                     const v = e.target.value.replace(/\D/g, "").slice(0, 4);
                     setPinCode(v);
                     setPinError(null);
                   }}
-                  onKeyDown={(e) => { if (e.key === "Enter") submitPin(); }}
+                  onKeyDown={(e) => { if (e.key === "Enter" && pinCode.length === 4) void submitPin(); }}
                   aria-label="PIN de 4 dígitos"
-                  className={`w-full rounded-[22px] bg-background/70 px-4 py-5 text-center text-[40px] font-black tracking-[0.55em] tabular-nums text-foreground caret-primary outline-none ring-2 transition ${
-                    pinError
-                      ? "ring-destructive/60 focus:ring-destructive"
-                      : "ring-border/70 focus:ring-primary"
-                  }`}
-                  placeholder="————"
+                  aria-invalid={!!pinError}
+                  aria-describedby="apois-pin-help"
+                  disabled={pinBusy}
+                  className="absolute inset-0 z-10 h-full w-full cursor-text opacity-0"
                 />
-                {/* Underlines dos 4 dígitos como affordance visual */}
-                <div className="pointer-events-none absolute inset-x-0 bottom-3 flex items-center justify-center gap-[14%] px-8">
-                  {[0, 1, 2, 3].map((i) => (
-                    <span
-                      key={i}
-                      className={`h-[3px] w-[14%] rounded-full transition ${
-                        pinCode.length > i ? "bg-primary" : "bg-border"
-                      }`}
-                    />
-                  ))}
-                </div>
+                <p id="apois-pin-help" className="mt-2 text-center text-xs text-muted-foreground">
+                  Toque nos quadrados para digitar. Use apagar para corrigir.
+                </p>
               </div>
 
               {pinError && (
@@ -3039,7 +3059,7 @@ function PickupNavOverlay({
   return (
     <>
       <div className="fixed left-1/2 z-40 w-full max-w-md -translate-x-1/2 px-4 pointer-events-none" style={{ top: "calc(env(safe-area-inset-top) + 12px)" }}>
-        <div className="pointer-events-auto rounded-[22px] border border-white/70 bg-white/90 px-4 py-3 shadow-[0_12px_36px_-16px_rgba(0,0,0,0.35)] backdrop-blur-md backdrop-saturate-150 animate-in fade-in slide-in-from-top-3 duration-300">
+        <div className="pointer-events-auto rounded-[22px] border border-white/15 bg-[#111418]/95 px-4 py-3 shadow-[0_12px_36px_-16px_rgba(0,0,0,0.35)] backdrop-blur-md backdrop-saturate-150 animate-in fade-in slide-in-from-top-3 duration-300">
           <div className="mb-2 flex items-center justify-between gap-2">
             <div className="flex min-w-0 items-center gap-2">
               <span className="relative flex h-2 w-2 shrink-0">
@@ -3167,7 +3187,7 @@ function ActiveTripNavOverlay({
         className="fixed left-1/2 z-40 -translate-x-1/2 px-4 w-full max-w-md pointer-events-none"
         style={{ top: "calc(env(safe-area-inset-top) + 12px)" }}
       >
-        <div className="pointer-events-auto rounded-[22px] border border-white/70 bg-white/90 px-4 py-3 shadow-[0_12px_36px_-16px_rgba(0,0,0,0.35)] backdrop-blur-md backdrop-saturate-150 animate-in fade-in slide-in-from-top-3 duration-300">
+        <div className="pointer-events-auto rounded-[22px] border border-white/15 bg-[#111418]/95 px-4 py-3 shadow-[0_12px_36px_-16px_rgba(0,0,0,0.35)] backdrop-blur-md backdrop-saturate-150 animate-in fade-in slide-in-from-top-3 duration-300">
           <div className="mb-2 flex items-center gap-2">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-70" />
