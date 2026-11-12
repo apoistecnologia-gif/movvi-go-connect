@@ -1,0 +1,66 @@
+name: APOIS Motorista - APK de Homologacao (P1-P3)
+
+on:
+  push:
+    branches:
+      - fix/p1-motorista-navigation-stability-20261112
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: apois-motorista-apk-homologacao-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apk-motorista:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Instalar dependencias
+        run: npm ci
+      - name: TypeScript
+        run: npm run typecheck
+      - name: Validar configuracao nativa do motorista
+        run: npm run verify:native:motorista
+      - name: Compilar bundle exclusivo do motorista
+        shell: bash
+        env:
+          GOOGLE_MAPS_WEB_API_KEY: ${{ secrets.GOOGLE_MAPS_WEB_API_KEY }}
+        run: |
+          if [ -n "$GOOGLE_MAPS_WEB_API_KEY" ]; then
+            export VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY="$GOOGLE_MAPS_WEB_API_KEY"
+          fi
+          npm run build:motorista
+          test -s dist/client/index.html
+      - name: Sincronizar Capacitor Motorola Android
+        run: npm run sync:motorista
+      - name: Confirmar projeto Android empacotado
+        shell: bash
+        run: |
+          test "$(cat android/.movvi-role)" = "motorista"
+          node scripts/verify-mobile-native.mjs motorista --live
+      - name: Compilar somente APK debug
+        working-directory: android
+        shell: bash
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon --stacktrace
+          test -s app/build/outputs/apk/debug/app-debug.apk
+      - name: Disponibilizar APK do motorista
+        uses: actions/upload-artifact@v4
+        with:
+          name: APOIS-Motorista-P1-P3-Homologacao-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
