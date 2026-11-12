@@ -1,0 +1,19 @@
+name: Diagnose GitHub Runner Availability
+
+on:
+  push:
+    branches:
+      - diagnostic/github-actions-runner-20261112
+
+permissions:
+  contents: read
+
+jobs:
+  runner-diagnostic:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Confirmar runner ativo
+        run: |
+          echo "APOIS_RUNNER_ACTIVE"
+          uname -a
