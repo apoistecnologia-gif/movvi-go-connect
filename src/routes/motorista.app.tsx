@@ -1119,7 +1119,7 @@ function MotoristaApp() {
       return { lat: active.destination_lat, lng: active.destination_lng };
     }
     return null;
-  }, [active]);
+  }, [active?.id, active?.status, active?.origin_lat, active?.origin_lng, active?.destination_lat, active?.destination_lng]);
   const cameraPolyline = activeRouteKey && lastFitKeyRef.current === activeRouteKey ? polyline : EMPTY_ROUTE;
 
   // Detecta arrasto manual → desliga follow.
@@ -1133,7 +1133,7 @@ function MotoristaApp() {
     };
     const listener = google.maps.event.addListener(map, "dragstart", onDragStart);
     return () => { google.maps.event.removeListener(listener); };
-  }, [initialMapCenter]); // re-anexa quando o mapa fica disponível
+  }, [initialMapCenter, mapReadyNonce]); // re-anexa também após o onLoad do Google Maps
 
   // Follow do motorista. Durante a viagem ativa vira câmera de navegação:
   // zoom próximo, carro no terço inferior e orientação pela rota/movimento.
