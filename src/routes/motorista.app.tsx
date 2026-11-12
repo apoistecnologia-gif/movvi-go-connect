@@ -198,11 +198,18 @@ function routeHeadingFrom(position: LatLng, route: LatLng[], destination?: LatLn
 }
 
 function navigationHeadingFor(
-  position: LatLng & { heading?: number | null },
+  position: LatLng & { heading?: number | null; speed?: number | null },
   route: LatLng[],
   destination?: LatLng | null,
 ) {
-  return normalizeHeading(position.heading) ?? routeHeadingFrom(position, route, destination);
+  const sensorHeading = normalizeHeading(position.heading);
+  const routeHeading = routeHeadingFrom(position, route, destination);
+  // At walking/stationary speeds Android heading frequently swings wildly.
+  // Follow the route bearing instead; retain the sensor at driving speed.
+  if (typeof position.speed === "number" && Number.isFinite(position.speed) && position.speed < 1.2) {
+    return routeHeading ?? sensorHeading;
+  }
+  return sensorHeading ?? routeHeading;
 }
 
 function applyNavigationCamera(
