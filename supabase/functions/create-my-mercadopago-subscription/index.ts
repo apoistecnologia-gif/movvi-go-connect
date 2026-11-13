@@ -24,7 +24,7 @@ function resolveBase(v: string | undefined): string {
 }
 const MP_BASE_URL = resolveBase(Deno.env.get("MERCADOPAGO_BASE_URL"));
 
-const MONTHLY_FEE = 49.9;
+const MONTHLY_FEE = 59.9;
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
