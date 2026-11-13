@@ -98,4 +98,4 @@ export function toUiStatus(db: string | null | undefined): SubscriptionUiStatus 
   }
 }
 
-export const APOIS_MONTHLY_FEE_BRL = 49.9;
+export const APOIS_MONTHLY_FEE_BRL = 59.9;
