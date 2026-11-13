@@ -80,7 +80,7 @@ export interface FinanceSettings {
 }
 
 export const DEFAULT_FINANCE_SETTINGS: FinanceSettings = {
-  monthly_fee: 49.9,
+  monthly_fee: 59.9,
   currency: "BRL",
   default_payment_method: "pix",
   wallet_enabled: true,
