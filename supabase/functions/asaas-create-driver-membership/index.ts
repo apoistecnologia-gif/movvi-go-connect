@@ -11,8 +11,8 @@ import {
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
-const MONTHLY_FEE = 49.90;
-const MONTHLY_FEE_CENTS = 4990;
+const MONTHLY_FEE = 59.90;
+const MONTHLY_FEE_CENTS = 5990;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
