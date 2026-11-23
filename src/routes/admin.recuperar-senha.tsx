@@ -17,6 +17,13 @@ function AdminPasswordRecovery() {
   const [submitting, setSubmitting] = useState(false);
   const [requested, setRequested] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [recoveryCode, setRecoveryCode] = useState("");
+  const [verifyingCode, setVerifyingCode] = useState(false);
+  const [verifiedUserId, setVerifiedUserId] = useState<string | null>(null);
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [savingPassword, setSavingPassword] = useState(false);
+  const [completed, setCompleted] = useState(false);
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -38,10 +45,82 @@ function AdminPasswordRecovery() {
         return;
       }
       setRequested(true);
+      setRecoveryCode("");
+      setVerifiedUserId(null);
     } catch {
       setMessage("Falha de conexão. Verifique sua internet e tente novamente.");
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function onVerifyCode(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (verifyingCode) return;
+    if (!/^\d{6,8}$/.test(recoveryCode)) {
+      setMessage("Digite o código numérico completo recebido no e-mail.");
+      return;
+    }
+
+    setVerifyingCode(true);
+    setMessage(null);
+    try {
+      const { data, error } = await supabase.auth.verifyOtp({
+        email: email.trim().toLowerCase(),
+        token: recoveryCode,
+        type: "recovery",
+      });
+      // The recovery OTP must establish an authenticated session for the same
+      // email; an existing ordinary session does not unlock this form.
+      if (error || !data.session || !data.user ||
+          data.user.email?.toLowerCase() !== email.trim().toLowerCase()) {
+        setMessage("Código inválido ou expirado. Confira o e-mail e tente novamente.");
+        return;
+      }
+      setVerifiedUserId(data.user.id);
+      setRecoveryCode("");
+    } catch {
+      setMessage("Não foi possível verificar o código. Confira sua conexão.");
+    } finally {
+      setVerifyingCode(false);
+    }
+  }
+
+  async function onSavePassword(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!verifiedUserId || savingPassword) return;
+    if (password.length < 10 || !/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+      setMessage("Use pelo menos 10 caracteres, incluindo letras e números.");
+      return;
+    }
+    if (password !== confirmPassword) {
+      setMessage("As senhas não coincidem.");
+      return;
+    }
+
+    setSavingPassword(true);
+    setMessage(null);
+    try {
+      const { data: identity, error: identityError } = await supabase.auth.getUser();
+      if (identityError || identity.user?.id !== verifiedUserId) {
+        setMessage("A sessão de recuperação expirou. Solicite outro código.");
+        setVerifiedUserId(null);
+        return;
+      }
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) {
+        setMessage("Não foi possível atualizar a senha. Escolha outra senha ou solicite novo código.");
+        return;
+      }
+      setCompleted(true);
+      setVerifiedUserId(null);
+      setPassword("");
+      setConfirmPassword("");
+      await supabase.auth.signOut();
+    } catch {
+      setMessage("Não foi possível concluir a operação. Confira sua conexão.");
+    } finally {
+      setSavingPassword(false);
     }
   }
 
@@ -52,11 +131,63 @@ function AdminPasswordRecovery() {
         <p className="mt-6 text-xs font-extrabold uppercase tracking-[.15em] text-[#C9141B]">APOIS Corridas · Administração</p>
         <h1 className="mt-2 text-3xl font-black tracking-tight">Recuperar senha</h1>
         <p className="mt-3 text-sm leading-6 text-[#606B7A]">
-          Informe o e-mail cadastrado. Enviaremos um link seguro para criar uma nova senha.
+          Informe o e-mail cadastrado. Enviaremos um código ou link seguro para criar uma nova senha.
         </p>
-        {requested ? (
-          <div role="status" className="mt-7 rounded-xl border border-[#E1E4EA] bg-[#F6F7F9] p-4 text-sm leading-6">
-            Se este e-mail estiver cadastrado, você receberá o link de recuperação. Confira também a caixa de spam.
+        {completed ? (
+          <div role="status" className="mt-7 rounded-xl border border-green-200 bg-green-50 p-4 text-sm leading-6 text-green-900">
+            Senha atualizada com sucesso. Entre novamente no painel usando sua nova senha.
+          </div>
+        ) : verifiedUserId ? (
+          <form onSubmit={onSavePassword} className="mt-7 space-y-4">
+            <div role="status" className="rounded-xl bg-[#F6F7F9] p-3 text-sm">
+              Código confirmado. Agora defina sua nova senha.
+            </div>
+            <div className="space-y-2">
+              <DSLabel htmlFor="new-password">Nova senha</DSLabel>
+              <DSInput id="new-password" type="password" autoComplete="new-password"
+                minLength={10} maxLength={256} required disabled={savingPassword}
+                value={password} onChange={(event) => setPassword(event.target.value)}
+                className="min-h-12 rounded-xl border-[#DCE1E8] bg-white px-4" />
+            </div>
+            <div className="space-y-2">
+              <DSLabel htmlFor="confirm-password">Confirmar nova senha</DSLabel>
+              <DSInput id="confirm-password" type="password" autoComplete="new-password"
+                minLength={10} maxLength={256} required disabled={savingPassword}
+                value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)}
+                className="min-h-12 rounded-xl border-[#DCE1E8] bg-white px-4" />
+            </div>
+            {message && <p role="alert" className="text-sm text-[#C9141B]">{message}</p>}
+            <DSButton type="submit" disabled={savingPassword}
+              className="min-h-12 w-full rounded-xl bg-[#E51B23] font-bold text-white hover:bg-[#C9141B]">
+              {savingPassword ? "Salvando..." : "Salvar nova senha"}
+            </DSButton>
+          </form>
+        ) : requested ? (
+          <div className="mt-7 space-y-4">
+            <div role="status" className="rounded-xl border border-[#E1E4EA] bg-[#F6F7F9] p-4 text-sm leading-6">
+              Se este e-mail estiver cadastrado, você receberá um código ou link de recuperação.
+              Digite o código recebido abaixo. Confira também a caixa de spam.
+            </div>
+            <form onSubmit={onVerifyCode} className="space-y-4">
+              <div className="space-y-2">
+                <DSLabel htmlFor="recovery-code">Código recebido no e-mail</DSLabel>
+                <DSInput id="recovery-code" type="text" inputMode="numeric"
+                  autoComplete="one-time-code" pattern="[0-9]{6,8}" maxLength={8}
+                  placeholder="Digite o código" required disabled={verifyingCode}
+                  value={recoveryCode}
+                  onChange={(event) => setRecoveryCode(event.target.value.replace(/\D/g, "").slice(0, 8))}
+                  className="min-h-12 rounded-xl border-[#DCE1E8] bg-white px-4 text-center tracking-widest" />
+              </div>
+              {message && <p role="alert" className="text-sm text-[#C9141B]">{message}</p>}
+              <DSButton type="submit" disabled={verifyingCode || recoveryCode.length < 6}
+                className="min-h-12 w-full rounded-xl bg-[#E51B23] font-bold text-white hover:bg-[#C9141B]">
+                {verifyingCode ? "Verificando..." : "Verificar código"}
+              </DSButton>
+            </form>
+            <button type="button" onClick={() => { setRequested(false); setRecoveryCode(""); setMessage(null); }}
+              className="text-sm font-semibold text-[#C9141B] hover:underline">
+              Solicitar novo código
+            </button>
           </div>
         ) : (
           <form onSubmit={onSubmit} className="mt-7 space-y-4">
@@ -69,7 +200,7 @@ function AdminPasswordRecovery() {
             {message && <p role="alert" className="text-sm text-[#C9141B]">{message}</p>}
             <DSButton type="submit" disabled={submitting} className="min-h-12 w-full rounded-xl bg-[#E51B23] font-bold text-white hover:bg-[#C9141B]">
               {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" /> : <Mail className="mr-2 h-4 w-4" aria-hidden="true" />}
-              {submitting ? "Enviando..." : "Enviar link de recuperação"}
+              {submitting ? "Enviando..." : "Enviar código de recuperação"}
             </DSButton>
           </form>
         )}
