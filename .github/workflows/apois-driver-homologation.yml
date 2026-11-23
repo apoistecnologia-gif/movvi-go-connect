@@ -39,6 +39,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      APOIS_MOBILE_BUILD_TIER: homologation
     steps:
       - name: Checkout
         uses: actions/checkout@v4
