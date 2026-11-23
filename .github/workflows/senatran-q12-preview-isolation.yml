@@ -22,3 +22,6 @@ jobs:
           node-version: "22"
       - name: Verify allowed and forbidden deployment environments
         run: node --test scripts/assert-q12-build-environment.test.mjs scripts/assert-q12-mobile-environment.test.mjs
+
+      - name: Verify official Supabase project and Q19 source controls
+        run: node scripts/verify-senatran-security-sources.mjs
