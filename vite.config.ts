@@ -1,6 +1,9 @@
 // @lovable.dev/vite-tanstack-config already includes tanstackStart, viteReact, tailwindcss,
 // tsConfigPaths, nitro, componentTagger (dev-only), etc. — do NOT add them manually.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import { assertQ12BuildEnvironment } from "./scripts/assert-q12-build-environment.mjs";
+
+assertQ12BuildEnvironment(process.env);
 
 export default defineConfig({
   tanstackStart: {
