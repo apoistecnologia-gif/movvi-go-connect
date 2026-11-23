@@ -7,6 +7,7 @@ import {
   HeadContent,
   Scripts,
   type ErrorComponentProps,
+  useRouterState,
 } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Loader2 } from "lucide-react";
@@ -191,6 +192,7 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
 
   useEffect(() => {
     if (APP_ROLE === "web") return;
@@ -270,7 +272,7 @@ function RootComponent() {
           {APP_ROLE === "driver" ? <DriverPresenceKeeper /> : null}
           {APP_ROLE === "driver" ? <DriverPasswordRecoveryBridge /> : null}
           <Outlet />
-          {APP_ROLE === "web" ? <NotificationPermissionPrompt /> : null}
+          {APP_ROLE === "web" && !pathname.startsWith("/admin") ? <NotificationPermissionPrompt /> : null}
           <Toaster richColors position="top-right" closeButton />
         </MapThemeProvider>
       </ThemeProvider>
