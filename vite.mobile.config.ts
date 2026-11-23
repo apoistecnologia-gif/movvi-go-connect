@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { resolve } from "node:path";
+import { assertQ12MobileEnvironment } from "./scripts/assert-q12-mobile-environment.mjs";
 import { startCompilerPlugin } from "./node_modules/@tanstack/start-plugin-core/dist/esm/vite/start-compiler-plugin/plugin.js";
 
 const REMOTE_SERVER_FN_BASE = "https://movvi-go-connect.lovable.app/_serverFn/";
@@ -24,6 +25,8 @@ export default defineConfig(({ mode }) => {
   // O terceiro argumento "" desativa o filtro de prefixo, para conseguirmos ler
   // também variáveis do processo se estiverem presentes.
   const env = loadEnv(mode, process.cwd(), "");
+  const resolvedServerFnBase = String(env.VITE_TSS_SERVER_FN_BASE || REMOTE_SERVER_FN_BASE).trim();
+  assertQ12MobileEnvironment({ ...env, ...process.env, APOIS_Q12_RESOLVED_SERVER_FN_BASE: resolvedServerFnBase });
 
   // Validação obrigatória: sem essas chaves o APK não consegue falar com o
   // backend e a tela fica em branco no primeiro launch. NÃO imprimimos valores.
@@ -71,8 +74,8 @@ export default defineConfig(({ mode }) => {
       },
     },
     define: {
-      "process.env.TSS_SERVER_FN_BASE": JSON.stringify(REMOTE_SERVER_FN_BASE),
-      "import.meta.env.TSS_SERVER_FN_BASE": JSON.stringify(REMOTE_SERVER_FN_BASE),
+      "process.env.TSS_SERVER_FN_BASE": JSON.stringify(resolvedServerFnBase),
+      "import.meta.env.TSS_SERVER_FN_BASE": JSON.stringify(resolvedServerFnBase),
     },
   };
 });
