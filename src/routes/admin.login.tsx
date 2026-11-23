@@ -2,7 +2,6 @@ import { APOIS_OFFICIAL_RED_LOGO_URL } from "@/assets/apoisOfficial2026";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabase } from "@/lib/supabaseClient";
-import { loadAdminAccess } from "@/lib/adminAccess";
 import { useAuthForm } from "@/components/AuthShell";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, ShieldCheck } from "lucide-react";
@@ -41,18 +40,18 @@ function AdminLoginPage() {
       return;
     }
 
+    if (!data.session) {
+      setError("Não foi possível estabelecer sua sessão. Tente entrar novamente.");
+      return;
+    }
+
+    // Primeiro encaminhar à proteção do painel, que exige AAL2 antes do RBAC.
+    // Consultar permissões aqui bloquearia o primeiro cadastro de MFA assim
+    // que o banco passasse a exigir sessões com dois fatores.
     try {
-      const access = await loadAdminAccess();
-      if (!access?.authorized) {
-        await supabase.auth.signOut();
-        setError("Esta conta não possui acesso administrativo ativo.");
-        return;
-      }
-      await navigate({ to: "/admin/dashboard" });
-    } catch (accessError) {
-      await supabase.auth.signOut().catch(() => undefined);
-      setError("Não foi possível validar o acesso administrativo agora. Entre novamente em alguns instantes.");
-      if (import.meta.env.DEV) console.warn("[APOIS Admin] falha ao validar RBAC após login", accessError);
+      await navigate({ to: "/admin/dashboard", replace: true });
+    } catch {
+      setError("Não foi possível abrir o painel. Tente novamente.");
     }
   });
 
