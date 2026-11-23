@@ -40,3 +40,11 @@
 - Obter testes de CI efetivamente concluídos e evidências de runtime antes de integrar a branch à versão oficial.
 
 **Resultado provisório:** isolamento preventivo do Preview melhorado em branch de segurança, homologação funcional independente ainda pendente. **Não marcar Q12 como Sim** e não assinar a declaração do formulário com base apenas nessas evidências.
+
+## 23/11/2026 — Proteção de homologação móvel
+
+- `vite.mobile.config.ts` agora rejeita builds com `APOIS_MOBILE_BUILD_TIER=homologation` se Supabase ou endpoint de funções usar IDs/domínios de produção/legados.
+- O endpoint `VITE_TSS_SERVER_FN_BASE` passa a exigir configuração explícita na homologação, em vez de usar silenciosamente o fallback antigo `movvi-go-connect.lovable.app`.
+- As duas workflows de homologação Motorista receberam a marcação de tier. Esses builds falham de forma controlada enquanto não houver backend de teste separado; o empacotamento de produção permanece inalterado.
+- Nove novos testes negativos e de compatibilidade do script `assert-q12-mobile-environment.mjs` passaram localmente, junto aos oito testes Web Q12 (17/17 no total). A execução GitHub Actions continua falhando antes de fornecer steps/logs; não há aprovação de CI.
+- **Não afirmar Q12=Sim:** Preview segue usando URL inerte e não existe ambiente Supabase funcional, persistente e segregado comprovado, nem homologação integral do app.
