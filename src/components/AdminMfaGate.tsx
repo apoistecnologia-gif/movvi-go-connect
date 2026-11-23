@@ -13,9 +13,11 @@ type Step = "checking" | "enroll" | "challenge" | "verified" | "error";
 export function AdminMfaGate({
   children,
   loginPath = "/login",
+  onVerified,
 }: {
   children: ReactNode;
   loginPath?: string;
+  onVerified?: () => void;
 }) {
   const [step, setStep] = useState<Step>("checking");
   const [factorId, setFactorId] = useState<string | null>(null);
@@ -34,6 +36,7 @@ export function AdminMfaGate({
       if (levelError || !level) throw levelError ?? new Error("Não foi possível verificar o MFA.");
       if (level.currentLevel === "aal2") {
         setStep("verified");
+        onVerified?.();
         return;
       }
       const { data: factors, error: factorsError } = await supabase.auth.mfa.listFactors();
@@ -100,6 +103,7 @@ export function AdminMfaGate({
       setSecret("");
       setQrCode("");
       setStep("verified");
+      onVerified?.();
     } catch {
       setMessage("Código inválido ou expirado. Gere outro código e tente novamente.");
       setCode("");
