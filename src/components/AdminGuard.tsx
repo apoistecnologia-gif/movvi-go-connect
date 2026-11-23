@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { ShieldAlert } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { DSButton, Loading } from "@/design-system";
+import { AdminMfaGate } from "@/components/AdminMfaGate";
 
 type State = "loading" | "ok" | "no-session" | "no-admin";
 
@@ -79,5 +80,5 @@ export function AdminGuard({ children }: { children: ReactNode }) {
     );
   }
 
-  return <>{children}</>;
+  return <AdminMfaGate loginPath="/admin/login">{children}</AdminMfaGate>;
 }
