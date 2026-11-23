@@ -24,8 +24,7 @@
     "android:motorista": "npm run build:motorista && npm run sync:motorista",
     "apk:passageiro": "npm run android:passageiro && node scripts/verify-mobile-native.mjs passageiro --live && node scripts/build-apk.mjs",
     "apk:motorista": "npm run android:motorista && node scripts/verify-mobile-native.mjs motorista --live && node scripts/build-apk.mjs",
-    "cap:open": "npx cap open android",
-    "prebuild": "node scripts/emit-patched-bun-lock-preview.mjs"
+    "cap:open": "npx cap open android"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.1",
