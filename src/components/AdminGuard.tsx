@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { loadAdminAccess } from "@/lib/adminAccess";
 import { ADMIN_NAV } from "@/components/admin/AdminSidebar";
 import { DSButton, Loading } from "@/design-system";
+import { AdminMfaGate } from "@/components/AdminMfaGate";
 
 type State = "loading" | "ok" | "no-session" | "no-admin" | "no-permission" | "error";
 
@@ -207,7 +208,7 @@ export function AdminGuard({ children }: { children: ReactNode }) {
     );
   }
 
-  return <>{children}</>;
+  return <AdminMfaGate loginPath="/admin/login">{children}</AdminMfaGate>;
 }
 
 function GuardState({
