@@ -1,0 +1,24 @@
+name: SENATRAN Q12 - Teste de isolamento preview
+
+on:
+  push:
+    branches:
+      - security/senatran-q12-guards-20261123
+  pull_request:
+    branches:
+      - fix/apois-corridas-oficial-20261113
+
+permissions:
+  contents: read
+
+jobs:
+  preview-isolation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verify allowed and forbidden deployment environments
+        run: node --test scripts/assert-q12-build-environment.test.mjs
