@@ -5,12 +5,14 @@ on:
     branches:
       - feat/apois-motorista-producao-homologacao
       - fix/apois-corridas-consolidacao
+      - fix/apois-corridas-oficial-20261113
     paths:
       - "supabase/baseline/**"
       - ".github/workflows/apois-database-baseline.yml"
   pull_request:
     branches:
       - main
+      - fix/apois-corridas-oficial-20261113
     paths:
       - "supabase/baseline/**"
       - ".github/workflows/apois-database-baseline.yml"
@@ -43,6 +45,15 @@ jobs:
       PGDATABASE: apois_test
     steps:
       - uses: actions/checkout@v4
+
+      - name: Comprovar banco de teste efemero, sem acesso a producao
+        run: |
+          set -euo pipefail
+          test "${PGHOST}" = "127.0.0.1"
+          test "${PGDATABASE}" = "apois_test"
+          test "$(psql -Atqc 'select current_database()')" = "apois_test"
+          test "$(psql -Atqc 'select inet_server_addr() is null or inet_server_addr() = inet ''127.0.0.1''::inet')" = "t"
+          echo "APOIS_SENATRAN_Q12_LOCAL_DATABASE_ISOLATED=OK"
 
       - name: Aplicar baseline em banco vazio
         run: |
