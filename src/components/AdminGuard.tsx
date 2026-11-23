@@ -7,7 +7,7 @@ import { ADMIN_NAV } from "@/components/admin/AdminSidebar";
 import { DSButton, Loading } from "@/design-system";
 import { AdminMfaGate } from "@/components/AdminMfaGate";
 
-type State = "loading" | "ok" | "no-session" | "no-admin" | "no-permission" | "error";
+type State = "loading" | "ok" | "mfa" | "no-session" | "no-admin" | "no-permission" | "error";
 
 export function AdminGuard({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
@@ -33,6 +33,19 @@ export function AdminGuard({ children }: { children: ReactNode }) {
         if (sessionError) throw sessionError;
         if (!sessionData.session) {
           setState("no-session");
+          return;
+        }
+
+        // O MFA precisa ocorrer antes das consultas RBAC; a futura exigência
+        // de AAL2 no Postgres impediria consultar as permissões antecipadamente.
+        const { data: assurance, error: assuranceError } =
+          await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        if (!mounted || requestId !== requestRef.current) return;
+        if (assuranceError || !assurance) {
+          throw assuranceError ?? new Error("Falha ao verificar autenticação multifator");
+        }
+        if (assurance.currentLevel !== "aal2") {
+          setState("mfa");
           return;
         }
 
@@ -126,6 +139,16 @@ export function AdminGuard({ children }: { children: ReactNode }) {
     );
   }
 
+  if (state === "mfa") {
+    return (
+      <AdminMfaGate loginPath="/admin/login" onVerified={() => setRetryNonce((value) => value + 1)}>
+        <div role="status" className="grid min-h-dvh place-items-center p-6 text-sm">
+          Confirmando permissões administrativas...
+        </div>
+      </AdminMfaGate>
+    );
+  }
+
   if (state === "no-session") {
     return (
       <GuardState title="Sessão administrativa necessária" iconTone="danger">
@@ -208,7 +231,7 @@ export function AdminGuard({ children }: { children: ReactNode }) {
     );
   }
 
-  return <AdminMfaGate loginPath="/admin/login">{children}</AdminMfaGate>;
+  return <>{children}</>;
 }
 
 function GuardState({
