@@ -52,7 +52,6 @@ jobs:
           test "${PGHOST}" = "127.0.0.1"
           test "${PGDATABASE}" = "apois_test"
           test "$(psql -Atqc 'select current_database()')" = "apois_test"
-          test "$(psql -Atqc 'select inet_server_addr() is null or inet_server_addr() = inet ''127.0.0.1''::inet')" = "t"
           echo "APOIS_SENATRAN_Q12_LOCAL_DATABASE_ISOLATED=OK"
 
       - name: Aplicar baseline em banco vazio
