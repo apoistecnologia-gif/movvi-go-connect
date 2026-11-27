@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { hmlDriverStage, isHmlDispatch } from "./hml-dispatch-client";
 
 type DriverRidePushEvent =
   | "ride.accepted"
@@ -134,6 +135,7 @@ export async function aceitarCorridaMobile({ data }: { data: { rideId: string } 
  */
 export async function recusarCorridaMobile({ data }: { data: { rideId: string } }) {
   assertRideId(data.rideId);
+  if (isHmlDispatch) return hmlDriverStage("reject", data.rideId);
   return callDriverRedispatchFunction("driver-reject-redispatch", {
     ride_id: data.rideId,
   });
@@ -141,6 +143,7 @@ export async function recusarCorridaMobile({ data }: { data: { rideId: string } 
 
 export async function informarChegadaMobile({ data }: { data: { rideId: string } }) {
   assertRideId(data.rideId);
+  if (isHmlDispatch) return hmlDriverStage("arrive", data.rideId);
   const ride = await callRpc("driver_mark_arrived", { _ride_id: data.rideId });
   notifyPassenger(data.rideId, "ride.driver_arrived");
   return ride;
@@ -152,6 +155,7 @@ export async function iniciarCorridaMobile({ data }: { data: { rideId: string; s
   if (!/^\d{4}$/.test(safetyCode)) {
     throw new Error("Digite os 4 dígitos do PIN informado pelo passageiro.");
   }
+  if (isHmlDispatch) return hmlDriverStage("start", data.rideId, safetyCode);
   const ride = await callRpc("driver_start_ride", {
     _ride_id: data.rideId,
     _security_code: safetyCode,
@@ -184,6 +188,7 @@ export async function finalizarCorridaMobile<T extends { rideId: string }>({ dat
 export async function cancelarPeloMotoristaMobile({ data }: { data: { rideId: string; motivo?: string } }) {
   assertRideId(data.rideId);
   const reason = String(data.motivo ?? "").trim().slice(0, 240);
+  if (isHmlDispatch) return hmlDriverStage("cancel", data.rideId, reason);
   return callDriverRedispatchFunction("driver-cancel-redispatch", {
     ride_id: data.rideId,
     reason: reason || null,
