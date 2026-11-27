@@ -26,6 +26,8 @@ import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
 import { Route as AdminFinanceiroRouteImport } from './routes/admin.financeiro'
 import { Route as AdminFinanceiroMotoristasRouteImport } from './routes/admin.financeiro-motoristas'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
+import { Route as AdminRecuperarSenhaRouteImport } from './routes/admin.recuperar-senha'
+import { Route as AdminRedefinirSenhaRouteImport } from './routes/admin.redefinir-senha'
 import { Route as AdminLogsRouteImport } from './routes/admin.logs'
 import { Route as AdminMapaRouteImport } from './routes/admin.mapa'
 import { Route as AdminMotoristasRouteImport } from './routes/admin.motoristas'
@@ -168,6 +170,16 @@ const AdminFinanceiroMotoristasRoute =
 const AdminLoginRoute = AdminLoginRouteImport.update({
   id: '/admin/login',
   path: '/admin/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRecuperarSenhaRoute = AdminRecuperarSenhaRouteImport.update({
+  id: '/admin/recuperar-senha',
+  path: '/admin/recuperar-senha',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRedefinirSenhaRoute = AdminRedefinirSenhaRouteImport.update({
+  id: '/admin/redefinir-senha',
+  path: '/admin/redefinir-senha',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminLogsRoute = AdminLogsRouteImport.update({
@@ -478,6 +490,8 @@ export interface FileRoutesByFullPath {
   '/admin/financeiro': typeof AdminFinanceiroRoute
   '/admin/financeiro-motoristas': typeof AdminFinanceiroMotoristasRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/recuperar-senha': typeof AdminRecuperarSenhaRoute
+  '/admin/redefinir-senha': typeof AdminRedefinirSenhaRoute
   '/admin/logs': typeof AdminLogsRoute
   '/admin/mapa': typeof AdminMapaRoute
   '/admin/motoristas': typeof AdminMotoristasRoute
@@ -554,6 +568,8 @@ export interface FileRoutesByTo {
   '/admin/financeiro': typeof AdminFinanceiroRoute
   '/admin/financeiro-motoristas': typeof AdminFinanceiroMotoristasRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/recuperar-senha': typeof AdminRecuperarSenhaRoute
+  '/admin/redefinir-senha': typeof AdminRedefinirSenhaRoute
   '/admin/logs': typeof AdminLogsRoute
   '/admin/mapa': typeof AdminMapaRoute
   '/admin/motoristas': typeof AdminMotoristasRoute
@@ -631,6 +647,8 @@ export interface FileRoutesById {
   '/admin/financeiro': typeof AdminFinanceiroRoute
   '/admin/financeiro-motoristas': typeof AdminFinanceiroMotoristasRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/recuperar-senha': typeof AdminRecuperarSenhaRoute
+  '/admin/redefinir-senha': typeof AdminRedefinirSenhaRoute
   '/admin/logs': typeof AdminLogsRoute
   '/admin/mapa': typeof AdminMapaRoute
   '/admin/motoristas': typeof AdminMotoristasRoute
@@ -709,6 +727,8 @@ export interface FileRouteTypes {
     | '/admin/financeiro'
     | '/admin/financeiro-motoristas'
     | '/admin/login'
+    | '/admin/recuperar-senha'
+    | '/admin/redefinir-senha'
     | '/admin/logs'
     | '/admin/mapa'
     | '/admin/motoristas'
@@ -785,6 +805,8 @@ export interface FileRouteTypes {
     | '/admin/financeiro'
     | '/admin/financeiro-motoristas'
     | '/admin/login'
+    | '/admin/recuperar-senha'
+    | '/admin/redefinir-senha'
     | '/admin/logs'
     | '/admin/mapa'
     | '/admin/motoristas'
@@ -861,6 +883,8 @@ export interface FileRouteTypes {
     | '/admin/financeiro'
     | '/admin/financeiro-motoristas'
     | '/admin/login'
+    | '/admin/recuperar-senha'
+    | '/admin/redefinir-senha'
     | '/admin/logs'
     | '/admin/mapa'
     | '/admin/motoristas'
@@ -938,6 +962,8 @@ export interface RootRouteChildren {
   AdminFinanceiroRoute: typeof AdminFinanceiroRoute
   AdminFinanceiroMotoristasRoute: typeof AdminFinanceiroMotoristasRoute
   AdminLoginRoute: typeof AdminLoginRoute
+  AdminRecuperarSenhaRoute: typeof AdminRecuperarSenhaRoute
+  AdminRedefinirSenhaRoute: typeof AdminRedefinirSenhaRoute
   AdminLogsRoute: typeof AdminLogsRoute
   AdminMapaRoute: typeof AdminMapaRoute
   AdminMotoristasRoute: typeof AdminMotoristasRoute
@@ -1115,6 +1141,20 @@ declare module '@tanstack/react-router' {
       path: '/admin/login'
       fullPath: '/admin/login'
       preLoaderRoute: typeof AdminLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/recuperar-senha': {
+      id: '/admin/recuperar-senha'
+      path: '/admin/recuperar-senha'
+      fullPath: '/admin/recuperar-senha'
+      preLoaderRoute: typeof AdminRecuperarSenhaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/redefinir-senha': {
+      id: '/admin/redefinir-senha'
+      path: '/admin/redefinir-senha'
+      fullPath: '/admin/redefinir-senha'
+      preLoaderRoute: typeof AdminRedefinirSenhaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/logs': {
@@ -1548,6 +1588,8 @@ const rootRouteChildren: RootRouteChildren = {
   AdminFinanceiroRoute: AdminFinanceiroRoute,
   AdminFinanceiroMotoristasRoute: AdminFinanceiroMotoristasRoute,
   AdminLoginRoute: AdminLoginRoute,
+  AdminRecuperarSenhaRoute: AdminRecuperarSenhaRoute,
+  AdminRedefinirSenhaRoute: AdminRedefinirSenhaRoute,
   AdminLogsRoute: AdminLogsRoute,
   AdminMapaRoute: AdminMapaRoute,
   AdminMotoristasRoute: AdminMotoristasRoute,
