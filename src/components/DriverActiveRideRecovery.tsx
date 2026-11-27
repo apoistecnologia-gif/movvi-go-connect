@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Clock3, Route as RouteIcon } from "lucide-react";
+import { isHmlDispatch, listHmlDriverRides, readHmlDriverProfile } from "@/lib/hml-dispatch-client";
 import { supabase } from "@/integrations/supabase/client";
 import { computeDriverRoute } from "@/lib/driverRoutes.mobile";
 import { isBrazilCoordinate } from "@/lib/googleMaps";
@@ -97,6 +98,20 @@ export function DriverActiveRideRecovery() {
     let alive = true;
 
     const load = async () => {
+      if (isHmlDispatch) {
+        try {
+          const {data:{session}}=await supabase.auth.getSession();
+          if(!session)return;
+          const p=await readHmlDriverProfile(session.user.id);
+          const rows=await listHmlDriverRides();
+          if(!alive)return;
+          setDriverId(String(p.id));
+          setPosition(usablePoint(p.current_lat,p.current_lng,p.last_location_at));
+          const row=rows.find(r=>r.visibility==="accepted"&&r.ride.driver_id===p.id);
+          setRide(row ? row.ride as unknown as ActiveRide : null);
+        }catch{if(alive){setRide(null);setPosition(null);}}
+        return;
+      }
       const { data: profile, error: profileError } = await supabase.rpc("driver_get_profile");
       const profileRecord =
         profile && typeof profile === "object" && !Array.isArray(profile)
@@ -152,7 +167,7 @@ export function DriverActiveRideRecovery() {
   }, []);
 
   useEffect(() => {
-    if (!driverId) return;
+    if (isHmlDispatch || !driverId) return;
     const ridesChannel = supabase
       .channel(`driver-active-route-recovery-rides-${driverId}`)
       .on(
@@ -180,7 +195,7 @@ export function DriverActiveRideRecovery() {
   }, [driverId]);
 
   useEffect(() => {
-    if (!driverId) return;
+    if (isHmlDispatch || !driverId) return;
     const channel = supabase
       .channel(`driver-active-route-recovery-presence-${driverId}`)
       .on(

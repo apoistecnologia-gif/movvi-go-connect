@@ -2,6 +2,7 @@
 // O identificador operacional é public.users.id; auth.uid() nunca é usado
 // diretamente como drivers.user_id.
 
+import { isHmlDispatch, readHmlDriverProfile } from "./hml-dispatch-client";
 import { supabase } from "@/integrations/supabase/client";
 
 export type DriverProfileRow = {
@@ -59,6 +60,26 @@ export async function loadDriverProfile(): Promise<
   const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
   if (sessionError || !sessionData.session) return { ok: false, reason: "no_session" };
 
+  if (isHmlDispatch) {
+    try {
+      const p = await readHmlDriverProfile(sessionData.session.user.id);
+      const approval = p.approval_status;
+      if (!["pendente","em_analise","aprovado","reprovado","bloqueado","suspenso"].includes(String(approval))) return {ok:false,reason:"error",message:"Status de cadastro indisponível na homologação."};
+      const str = (v:unknown):string|null => typeof v==="string" ? v : null;
+      const num = (v:unknown):number|null => typeof v==="number" && Number.isFinite(v) ? v : null;
+      // Missing fields are genuinely unavailable in the reduced HML schema.
+      // Do not manufacture an approval, identity, photograph or document.
+      const profile:DriverProfileRow = {
+        id:String(p.id),user_id:String(p.user_id),category:str(p.category),
+        approval_status:approval as DriverProfileRow["approval_status"],
+        subscription_status:str(p.subscription_status) as DriverProfileRow["subscription_status"],
+        name:null,email:sessionData.session.user.email??null,phone:null,motivo_reprovacao:null,
+        photo_url:null,selfie_url:null,cnh_url:null,cnh_back_url:null,vehicle_document_url:null,vehicle_photo_url:null,documents_status:null,
+        current_lat:num(p.current_lat),current_lng:num(p.current_lng),current_heading:num(p.current_heading),current_speed:num(p.current_speed),last_location_at:str(p.last_location_at),
+      };
+      return {ok:true,profile};
+    } catch {return {ok:false,reason:"error",message:"Perfil de homologação indisponível."};}
+  }
   const { data, error } = await (supabase as any).rpc("driver_get_profile");
   if (error) {
     if (/profile_missing|driver_profile_missing/i.test(error.message ?? "")) {

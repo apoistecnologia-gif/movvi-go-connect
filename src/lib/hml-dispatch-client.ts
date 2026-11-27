@@ -25,3 +25,66 @@ export async function hmlDriverStage(action:Action,rideId:string,extra?:string){
  }
  return b;
 }
+
+type Json=Record<string,unknown>;
+type Visibility="offered"|"accepted"|"queued";
+type ReadResult={ride:Json;visibility:Visibility;generation:string|null};
+const object=(v:unknown):v is Json=>!!v&&typeof v==="object"&&!Array.isArray(v);
+export async function readHmlDriverProfile(subject:string):Promise<Json>{
+ if(!isHmlDispatch||!uuid(subject))throw Error("unauthorized");
+ const {status,body:b}=await request()("driver",{action:"profile"});
+ const p=b.profile;
+ if(status===401||status===403)throw Error("unauthorized");
+ if(status!==200||!exact(b,["ok","profile"])||b.ok!==true||!exact(p,["id","user_id","auth_user_id","category","approval_status","subscription_status","is_online","current_lat","current_lng","current_heading","current_speed","last_location_at"])||!uuid(p.id)||!uuid(p.user_id)||p.auth_user_id!==subject||typeof p.is_online!=="boolean")throw Error("profile_unavailable");
+ return p;
+}
+export async function readHmlDriverRide(rideId:string):Promise<ReadResult>{
+ if(!isHmlDispatch||!uuid(rideId))throw Error("invalid_ride");
+ const {status,body:b}=await request()("driver",{action:"ride",rideId});
+ if(status===401||status===403)throw Error("unauthorized");
+ if(status!==200||!exact(b,["ok","visibility","generation","ride"])||b.ok!==true||!object(b.ride)||b.ride.id!==rideId||
+  !["offered","accepted","queued"].includes(String(b.visibility))||
+  ["security_code","passenger_id","request_key","share_token","provider_payment_id","final_price"].some(k=>Object.prototype.hasOwnProperty.call(b.ride,k)))throw Error("ride_unavailable");
+ const r=b.ride;
+ if(r.category!=="carros"||r.payment_method!=="cash"||
+  ![r.origin_lat,r.origin_lng,r.destination_lat,r.destination_lng,r.estimated_price].every(v=>typeof v==="number"&&Number.isFinite(v))||
+  typeof r.origin_name!=="string"||typeof r.destination_name!=="string")throw Error("ride_unavailable");
+ const visibility=b.visibility as Visibility;
+ if(visibility==="offered"?(b.generation!==null||r.driver_id!==null||r.status!=="procurar_motorista"||typeof r.request_expires_at!=="string"||!Number.isFinite(Date.parse(r.request_expires_at))):
+  (!uuid(b.generation)||!uuid(r.driver_id)||(visibility==="queued"?(r.status!=="procurar_motorista"||!uuid(r.queued_after_ride_id)):!["motorista_a_caminho","motorista_chegou","em_viagem"].includes(String(r.status)))))throw Error("ride_unavailable");
+ return {ride:r,visibility,generation:typeof b.generation==="string"?b.generation:null};
+}
+export async function listHmlDriverRides():Promise<ReadResult[]>{
+ if(!isHmlDispatch)throw Error("invalid_hml");
+ const {status,body:b}=await request()("driver",{action:"discover"});
+ if(status!==200||!exact(b,["ok","rides"])||b.ok!==true||!Array.isArray(b.rides)||b.rides.length>10)throw Error("ride_unavailable");
+ const ids=b.rides.map(v=>{if(!exact(v,["rideId","state"])||!uuid(v.rideId)||!["offered","accepted","queued"].includes(String(v.state)))throw Error("ride_unavailable");return v.rideId;});
+ if(new Set(ids).size!==ids.length)throw Error("ride_unavailable");
+ // Sequential read protects the bounded backend request pool.
+ const rows:ReadResult[]=[];
+ for(const id of ids){try{rows.push(await readHmlDriverRide(id));}catch(e){if(!(e instanceof Error)||e.message!=="unauthorized")throw e;}}
+ return rows;
+}
+export async function recoverHmlDriverState(rideId:string):Promise<string|null>{
+ if(!isHmlDispatch||!uuid(rideId))throw Error("invalid_ride");
+ const {status,body:b}=await request()("driver",{action:"recover",rideId});
+ if(status!==200||!exact(b,["ok","rides"])||b.ok!==true||!Array.isArray(b.rides)||b.rides.length>1)throw Error("ride_unavailable");
+ if(!b.rides.length)return null;
+ const r=b.rides[0];
+ if(!exact(r,["rideId","state"])||r.rideId!==rideId||!["motorista_a_caminho","motorista_chegou","em_viagem","queued","finalizada","cancelada_motorista","cancelada_passageiro","released"].includes(String(r.state)))throw Error("ride_unavailable");
+ return String(r.state);
+}
+let accepting=false;
+export async function acceptHmlDriverRide(rideId:string){
+ if(!isHmlDispatch||!uuid(rideId)||accepting)throw Error("Aguarde a confirmação do aceite.");
+ accepting=true;
+ try{
+  const {status,body:b}=await request()("driver",{action:"accept",rideId});
+  if(status!==200||!exact(b,["ok","rideId","status","queued"])||b.ok!==true||b.rideId!==rideId||
+    !["motorista_a_caminho","procurar_motorista"].includes(String(b.status))||typeof b.queued!=="boolean"||b.queued!==(b.status==="procurar_motorista"))throw Error("Aceite não confirmado.");
+  const confirmed=await readHmlDriverRide(rideId);
+  if(confirmed.visibility!==(b.queued?"queued":"accepted"))throw Error("Aceite ainda em sincronização.");
+  return confirmed.ride;
+ }catch{throw Error("Confirmação pendente. Aguarde a sincronização antes de repetir o aceite.");}
+ finally{accepting=false;}
+}

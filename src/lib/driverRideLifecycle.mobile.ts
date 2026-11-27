@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { hmlDriverStage, isHmlDispatch } from "./hml-dispatch-client";
+import { acceptHmlDriverRide, hmlDriverStage, isHmlDispatch } from "./hml-dispatch-client";
 
 type DriverRidePushEvent =
   | "ride.accepted"
@@ -122,6 +122,7 @@ function notifyPassenger(rideId: string, event: DriverRidePushEvent) {
 
 export async function aceitarCorridaMobile({ data }: { data: { rideId: string } }) {
   assertRideId(data.rideId);
+  if (isHmlDispatch) return acceptHmlDriverRide(data.rideId);
   const ride = await callRpc("driver_accept_ride", { _ride_id: data.rideId });
   notifyPassenger(data.rideId, "ride.accepted");
   return ride;

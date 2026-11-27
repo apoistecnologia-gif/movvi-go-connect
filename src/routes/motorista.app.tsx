@@ -58,7 +58,7 @@ import {
   cancelarPeloMotoristaMobile,
   avaliarPassageiroMobile,
 } from "@/lib/driverRideLifecycle.mobile";
-import { isHmlDispatch } from "@/lib/hml-dispatch-client";
+import { isHmlDispatch, listHmlDriverRides, recoverHmlDriverState } from "@/lib/hml-dispatch-client";
 import { notifyRideStatus } from "@/lib/rideStatusToast";
 import { toast } from "sonner";
 
@@ -926,6 +926,51 @@ function MotoristaApp() {
       }
     };
 
+    if (isHmlDispatch) {
+      // The HML contract is scoped polling only: never query REST/realtime rides.
+      if (!driverId) return;
+      let alive = true, busy = false;
+      const pollHml = async () => {
+        if (!alive || busy || document.visibilityState !== "visible" || !navigator.onLine) return;
+        busy = true;
+        try {
+          const rows = await listHmlDriverRides();
+          if (!alive) return;
+          const assigned = rows.filter(x=>x.visibility==="accepted"||x.visibility==="queued");
+          for(const x of assigned) if(x.ride.driver_id===driverId) applyActive(x.ride as unknown as RideRow);
+          const prior = activeRef.current;
+          if(prior&&!assigned.some(x=>x.ride.id===prior.id)){
+            const state=await recoverHmlDriverState(prior.id);
+            if(!alive)return;
+            if(state==="finalizada"||state==="cancelada_motorista"||state==="cancelada_passageiro"||state==="released"){
+              if(activeRef.current?.id===prior.id){setActive(null);setPolyline([]);}
+            }
+          }
+          const queued=queuedRideRef.current;
+          if(queued&&!assigned.some(x=>x.ride.id===queued.id)){
+            const state=await recoverHmlDriverState(queued.id);
+            if(!alive)return;
+            if(["finalizada","cancelada_motorista","cancelada_passageiro","released"].includes(state??"")&&queuedRideRef.current?.id===queued.id)setQueuedRide(null);
+          }
+          const offer=rows.find(x=>x.visibility==="offered");
+          const existing=incomingRef.current;
+          if(existing&&!rows.some(x=>x.visibility==="offered"&&x.ride.id===existing.id))setIncoming(null);
+          if(offer&&!handledRidesRef.current.has(String(offer.ride.id))&&!ratingRef.current&&(!activeRef.current||activeRef.current.status==="em_viagem"&&!queuedRideRef.current)){
+            const row=offer.ride as unknown as RideRow;
+            if(isRideCategoryEnabled(row.category,featureFlags)&&computeOfferCountdown(row)>0&&(!existing||existing.id===row.id)){
+              setIncoming(row);setCountdown(computeOfferCountdown(row));
+            }
+          }
+        } catch { /* absence of a response is not confirmation that an assignment ended */ }
+        finally {busy=false;}
+      };
+      void pollHml();
+      const timer=window.setInterval(()=>void pollHml(),4000);
+      const resume=()=>void pollHml();
+      window.addEventListener("online",resume);document.addEventListener("visibilitychange",resume);
+      return()=>{alive=false;window.clearInterval(timer);window.removeEventListener("online",resume);document.removeEventListener("visibilitychange",resume);};
+    }
+
     if (import.meta.env.DEV) console.log("[APOIS MOTORISTA] escutando corridas: canal driver-rides-" + userId);
     // Sem filtro por coluna: a RLS já garante que só recebo rides em que estou
     // envolvido (passageiro/driver/candidate_driver_ids/accepted_driver_id).
@@ -1031,6 +1076,7 @@ function MotoristaApp() {
     if (!incoming) return;
     if (countdown <= 0) {
       removeIncomingRequest(incoming, "expired");
+      if (isHmlDispatch) return; // server scheduler owns offer expiry
       void callReject({ data: { rideId: incoming.id } }).catch((e) => console.error("[APOIS MOTORISTA] erro ao expirar oferta:", e));
       return;
     }
@@ -1059,6 +1105,11 @@ function MotoristaApp() {
         sheetRef.current?.snapTo(34);
       }
     } catch (e) {
+      if (isHmlDispatch) {
+        if (incomingRef.current?.id === offer.id) setIncoming(null);
+        setGpsMessage("Aceite não confirmado. Aguardando sincronização do servidor.");
+        return;
+      }
       console.error("[APOIS MOTORISTA] erro ao aceitar:", e);
       handledRidesRef.current.delete(offer.id);
       setIncoming(offer);
