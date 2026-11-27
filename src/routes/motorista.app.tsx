@@ -339,15 +339,25 @@ function MotoristaApp() {
     navigate({ to: "/" });
   }
   const [position, setPosition] = useState<(LatLng & { heading?: number | null; speed?: number | null }) | null>(null);
+  const [hmlConfirmedOnline, setHmlConfirmedOnline] = useState(false);
+  const [hmlPresencePending, setHmlPresencePending] = useState(false);
   const [online, setOnline] = useState(() => {
+    if (isHmlDispatch) return false;
     try {
       return localStorage.getItem("apois:driver:online") === "1";
     } catch {
       return false;
     }
   });
+  useEffect(() => {
+    if (!isHmlDispatch) return;
+    const listener=(e:Event)=>{const state=(e as CustomEvent<{online:boolean;pending:boolean}>).detail;setHmlConfirmedOnline(state?.online===true);setHmlPresencePending(state?.pending===true);if(!state?.online&&!state?.pending)setOnline(false);};
+    window.addEventListener("apois:hml-driver-presence-result",listener);
+    return()=>window.removeEventListener("apois:hml-driver-presence-result",listener);
+  },[]);
   const setDesiredOnline = useCallback((value: boolean) => {
     setOnline(value);
+    if(isHmlDispatch&&!value){setHmlConfirmedOnline(false);setHmlPresencePending(false);}
     try {
       localStorage.setItem("apois:driver:online", value ? "1" : "0");
       window.dispatchEvent(new CustomEvent("apois:driver-presence-change", { detail: { online: value } }));
@@ -678,7 +688,7 @@ function MotoristaApp() {
   );
 
   async function ativarLocalizacaoTesteBrasil() {
-    if (!userId) return;
+    if (!userId || isHmlDispatch) return;
 
     const lat = TEST_DRIVER_LOCATION.lat;
     const lng = TEST_DRIVER_LOCATION.lng;
@@ -728,7 +738,7 @@ function MotoristaApp() {
       const rawLat = pos.coords.latitude, rawLng = pos.coords.longitude;
       if (import.meta.env.DEV) console.log("[APOIS MOTORISTA] GPS ok:", { lat: rawLat, lng: rawLng });
       if (!isBrazilCoordinate(rawLat, rawLng)) {
-        if (isDevelopmentEnvironment()) {
+        if (!isHmlDispatch && isDevelopmentEnvironment()) {
           if (import.meta.env.DEV) console.warn("[APOIS MOTORISTA] GPS fora do Brasil — fallback automático para localização de teste (dev):", { lat: rawLat, lng: rawLng });
           setGpsMessage("GPS fora do Brasil detectado. Usando localização de teste no Brasil (modo dev).");
           activateOnlineWithCoords(TEST_DRIVER_LOCATION.lat, TEST_DRIVER_LOCATION.lng, null, null, true);
@@ -1485,7 +1495,7 @@ function MotoristaApp() {
             <InterpolatedDriverMarker
               position={position}
               heading={position.heading ?? 0}
-              color={online ? "#F6BE1C" : "#94a3b8"}
+              color={(isHmlDispatch ? hmlConfirmedOnline : online) ? "#F6BE1C" : "#94a3b8"}
             />
           )}
           {active && (
@@ -1686,8 +1696,8 @@ function MotoristaApp() {
       {!incoming && !ratingRide && !active && (
         <IdleBottomPanel
           driverName={driverName}
-          online={online}
-          disabled={!!effectiveStatusBlock || gpsStatus === "loading"}
+          online={isHmlDispatch ? hmlConfirmedOnline : online}
+          disabled={!!effectiveStatusBlock || gpsStatus === "loading" || (isHmlDispatch && hmlPresencePending)}
           toggleOnline={toggleOnline}
           stats={todayStats}
           gpsMessage={gpsMessage}

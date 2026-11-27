@@ -24,12 +24,17 @@ public class DriverLocationPlugin extends Plugin {
             return;
         }
 
-        Intent intent = new Intent(getContext(), DriverLocationService.class);
+        boolean hml = getContext().getPackageName().equals("com.apois.motorista.hml");
+        if (hml != HmlDriverLocationService.ORIGIN.equals(supabaseUrl)) {
+            call.reject("Ambiente incompatível com o pacote Android.");
+            return;
+        }
+        Intent intent = new Intent(getContext(), hml ? HmlDriverLocationService.class : DriverLocationService.class);
         intent.setAction(DriverLocationService.ACTION_START);
         intent.putExtra(DriverLocationService.EXTRA_SUPABASE_URL, supabaseUrl);
         intent.putExtra(DriverLocationService.EXTRA_PUBLISHABLE_KEY, publishableKey);
         intent.putExtra(DriverLocationService.EXTRA_ACCESS_TOKEN, accessToken);
-        intent.putExtra(DriverLocationService.EXTRA_REFRESH_TOKEN, refreshToken);
+        if (!hml) intent.putExtra(DriverLocationService.EXTRA_REFRESH_TOKEN, refreshToken);
         ContextCompat.startForegroundService(getContext(), intent);
 
         JSObject result = new JSObject();
@@ -38,8 +43,21 @@ public class DriverLocationPlugin extends Plugin {
     }
 
     @PluginMethod
+    public void updateHmlToken(PluginCall call) {
+        if (!getContext().getPackageName().equals("com.apois.motorista.hml")) { call.reject("HML only"); return; }
+        String token=call.getString("accessToken","");
+        if(HmlDriverLocationService.identity(token)==null){call.reject("Sessão inválida");return;}
+        Intent intent=new Intent(getContext(),HmlDriverLocationService.class);
+        intent.setAction(HmlDriverLocationService.UPDATE);
+        intent.putExtra(DriverLocationService.EXTRA_ACCESS_TOKEN,token);
+        getContext().startService(intent);
+        call.resolve();
+    }
+
+    @PluginMethod
     public void stop(PluginCall call) {
-        Intent intent = new Intent(getContext(), DriverLocationService.class);
+        boolean hml = getContext().getPackageName().equals("com.apois.motorista.hml");
+        Intent intent = new Intent(getContext(), hml ? HmlDriverLocationService.class : DriverLocationService.class);
         intent.setAction(DriverLocationService.ACTION_STOP);
         getContext().startService(intent);
         JSObject result = new JSObject();

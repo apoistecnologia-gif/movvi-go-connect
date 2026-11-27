@@ -1,5 +1,7 @@
 import { Capacitor, registerPlugin } from "@capacitor/core";
 import { supabase } from "@/integrations/supabase/client";
+import { HML_ORIGIN } from "./hml-mobile-transport";
+const hml = import.meta.env.VITE_SUPABASE_URL === HML_ORIGIN;
 
 type StartResult = { started?: boolean };
 type StopResult = { stopped?: boolean };
@@ -12,6 +14,7 @@ interface DriverLocationPlugin {
     refreshToken: string;
   }): Promise<StartResult>;
   stop(): Promise<StopResult>;
+  updateHmlToken(options:{accessToken:string}):Promise<void>;
 }
 
 const DriverLocation = registerPlugin<DriverLocationPlugin>("DriverLocation");
@@ -39,8 +42,8 @@ async function ensureForegroundLocationPermission(): Promise<boolean> {
   return permission.location === "granted" || permission.coarseLocation === "granted";
 }
 
-export async function startNativeDriverLocation(): Promise<boolean> {
-  if (!isNativeAndroidDriverLocation()) return false;
+export async function startNativeDriverLocation(hmlExplicit=false): Promise<boolean> {
+  if (!isNativeAndroidDriverLocation() || (hml && !hmlExplicit)) return false;
 
   // Não inicia o Foreground Service enquanto o diálogo de permissão ainda está
   // pendente. Sem isso, o Android pode encerrar o serviço e o JS acreditar que
@@ -70,7 +73,7 @@ export async function startNativeDriverLocation(): Promise<boolean> {
     supabaseUrl,
     publishableKey,
     accessToken: data.session.access_token,
-    refreshToken: data.session.refresh_token,
+    refreshToken: hml ? "" : data.session.refresh_token,
   });
   return result.started === true;
 }
@@ -78,4 +81,8 @@ export async function startNativeDriverLocation(): Promise<boolean> {
 export async function stopNativeDriverLocation(): Promise<void> {
   if (!isNativeAndroidDriverLocation()) return;
   await DriverLocation.stop();
+}
+
+export async function updateHmlNativeToken(accessToken:string):Promise<void>{
+ if(hml&&isNativeAndroidDriverLocation()) await DriverLocation.updateHmlToken({accessToken});
 }

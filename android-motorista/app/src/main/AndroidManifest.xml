@@ -58,6 +58,9 @@
             android:foregroundServiceType="location"
             android:stopWithTask="false" />
 
+        <service android:name=".HmlDriverLocationService" android:exported="false"
+            android:foregroundServiceType="location" android:stopWithTask="false" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

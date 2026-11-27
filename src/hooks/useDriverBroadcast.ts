@@ -1,6 +1,8 @@
 import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { isBrazilCoordinate } from "@/lib/googleMaps";
+import { HML_ORIGIN } from "@/lib/hml-mobile-transport";
+const hmlPresence = import.meta.env.VITE_SUPABASE_URL === HML_ORIGIN;
 import {
   startNativeDriverLocation,
   stopNativeDriverLocation,
@@ -86,6 +88,7 @@ export function useDriverBroadcast(
   online: boolean,
   position: DriverTelemetry | null,
 ) {
+  // HML has one native writer owned by the root keeper, never the legacy RPC.
   const lastWrittenRef = useRef<{ lat: number; lng: number; at: number } | null>(null);
   const positionRef = useRef(position);
   const nativeStartPendingRef = useRef(false);
@@ -121,6 +124,7 @@ export function useDriverBroadcast(
   }, [position]);
 
   useEffect(() => {
+    if (hmlPresence) return;
     const lifecycleVersion = ++nativeLifecycleVersionRef.current;
     if (!userId) {
       nativeStartPendingRef.current = false;
@@ -182,6 +186,7 @@ export function useDriverBroadcast(
   }, [userId, online]);
 
   useEffect(() => {
+    if (hmlPresence) return;
     const { data } = supabase.auth.onAuthStateChange((event) => {
       if (event !== "SIGNED_OUT") return;
       nativeLifecycleVersionRef.current += 1;
@@ -201,6 +206,7 @@ export function useDriverBroadcast(
   }, []);
 
   useEffect(() => {
+    if (hmlPresence) return;
     const lifecycleVersion = ++presenceLifecycleVersionRef.current;
     if (!userId) return;
     if (!online) {
@@ -216,7 +222,7 @@ export function useDriverBroadcast(
   }, [userId, online]);
 
   useEffect(() => {
-    if (!userId || !online) return;
+    if (hmlPresence || !userId || !online) return;
     const lifecycleVersion = presenceLifecycleVersionRef.current;
 
     const writeNow = (force = false) => {

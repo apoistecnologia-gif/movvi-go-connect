@@ -23,6 +23,8 @@ import { APP_ROLE, isForbiddenPath, defaultLandingPath } from "../lib/appRole";
 import { installMobileFetchProxy } from "../lib/mobileFetchProxy";
 import { initNativeBridge } from "../lib/nativeBridge";
 import { DriverPresenceKeeper } from "../components/DriverPresenceKeeper";
+import { HmlDriverPresenceKeeper } from "../components/HmlDriverPresenceKeeper";
+import { HML_ORIGIN } from "../lib/hml-mobile-transport";
 import { DriverNativePermissionsSync } from "../components/DriverNativePermissionsSync";
 import { DriverPasswordRecoveryBridge } from "../components/DriverPasswordRecoveryBridge";
 import { supabase } from "../integrations/supabase/client";
@@ -269,7 +271,7 @@ function RootComponent() {
       <ThemeProvider>
         <MapThemeProvider>
           {APP_ROLE === "driver" ? <DriverNativePermissionsSync /> : null}
-          {APP_ROLE === "driver" ? <DriverPresenceKeeper /> : null}
+          {APP_ROLE === "driver" ? (import.meta.env.VITE_SUPABASE_URL === HML_ORIGIN ? <HmlDriverPresenceKeeper /> : <DriverPresenceKeeper />) : null}
           {APP_ROLE === "driver" ? <DriverPasswordRecoveryBridge /> : null}
           <Outlet />
           {APP_ROLE === "web" && !pathname.startsWith("/admin") ? <NotificationPermissionPrompt /> : null}
