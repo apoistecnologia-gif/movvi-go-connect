@@ -37,6 +37,10 @@ android {
         }
     }
     buildTypes {
+        debug {
+            applicationIdSuffix ".hml"
+            versionNameSuffix "-hml"
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
@@ -68,11 +72,6 @@ dependencies {
 
 apply from: 'capacitor.build.gradle'
 
-try {
-    def servicesJSON = file('google-services.json')
-    if (servicesJSON.text) {
-        apply plugin: 'com.google.gms.google-services'
-    }
-} catch(Exception e) {
-    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
-}
+// HML pilot: no Firebase project is authorized for device registration yet.
+// Do not process the tracked production google-services.json on this branch.
+logger.lifecycle("APOIS HML: Firebase push disabled for isolated pilot")

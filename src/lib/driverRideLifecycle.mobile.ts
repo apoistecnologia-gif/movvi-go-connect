@@ -103,6 +103,7 @@ async function callDriverRedispatchFunction(
  * só porque o aparelho do passageiro está sem token ou o FCM está indisponível.
  */
 function notifyPassenger(rideId: string, event: DriverRidePushEvent) {
+  if (import.meta.env.VITE_ENABLE_NATIVE_PUSH !== "true") return;
   void supabase.functions
     .invoke("send-ride-push", {
       body: {

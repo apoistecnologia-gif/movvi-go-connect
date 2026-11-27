@@ -29,6 +29,8 @@ function requireOpenShiftMobileEnvironment() {
   }
   process.env.VITE_SUPABASE_URL = origin.origin;
   process.env.VITE_SUPABASE_PUBLISHABLE_KEY = key;
+  // No device registration or real push during the restricted HML pilot.
+  process.env["VITE_ENABLE_NATIVE_PUSH"] = "false";
   return origin.origin;
 }
 
