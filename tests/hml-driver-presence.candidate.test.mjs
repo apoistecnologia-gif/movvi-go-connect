@@ -43,5 +43,21 @@ describe("HML driver presence client",()=>{
   expect(f.calls.filter(c=>c.action==="presence_offline").length).toBe(0);
   f.client.invalidate();
   await expect(f.client.fix(fresh)).rejects.toThrow();
+  await expect(f.client.offline()).rejects.toThrow("presence_client_invalidated");
+  await expect(f.client.begin()).rejects.toThrow("presence_client_invalidated");
+ });
+ test("logout during status cannot issue a mutation",async()=>{
+  let release;const gate=new Promise(r=>{release=r;});const calls=[];
+  const client=createHmlPresenceClient(async(_,body)=>{calls.push(body);await gate;return {status:200,body:empty};},()=>now);
+  const pending=client.begin();client.invalidate();release();
+  await expect(pending).rejects.toThrow("presence_client_invalidated");
+  expect(calls.map(c=>c.action)).toEqual(["presence_status"]);
+ });
+ test("logout during begin mutation never revives the client",async()=>{
+  let release,entered;const gate=new Promise(r=>{release=r;}),sent=new Promise(r=>{entered=r;});
+  const client=createHmlPresenceClient(async(_,body)=>{if(body.action==="presence_status")return {status:200,body:empty};entered();await gate;return {status:200,body:{ok:true,generation:g,sequence:0,online:false}};},()=>now);
+  const pending=client.begin();await sent;client.invalidate();release();
+  await expect(pending).rejects.toThrow("presence_client_invalidated");
+  await expect(client.fix(fresh)).rejects.toThrow("presence_client_invalidated");
  });
 });
