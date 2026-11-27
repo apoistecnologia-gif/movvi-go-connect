@@ -31,6 +31,8 @@ export type DriverProfileRow = {
 let asaasSubaccountProvisioningAttempted = false;
 
 async function ensureApprovedDriverAsaasSubaccount(profile: DriverProfileRow): Promise<void> {
+  // HML is an isolated cash-only test environment; never call payment provisioning.
+  if (import.meta.env.VITE_SUPABASE_URL === "https://apois-mobile-hml-apoistecnologia-dev.apps.rm3.7wse.p1.openshiftapps.com") return;
   if (profile.approval_status !== "aprovado" || asaasSubaccountProvisioningAttempted) return;
 
   asaasSubaccountProvisioningAttempted = true;
