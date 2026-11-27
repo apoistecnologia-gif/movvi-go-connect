@@ -5,7 +5,33 @@ import tsconfigPaths from "vite-tsconfig-paths";
 import { resolve } from "node:path";
 import { startCompilerPlugin } from "./node_modules/@tanstack/start-plugin-core/dist/esm/vite/start-compiler-plugin/plugin.js";
 
-const REMOTE_SERVER_FN_BASE = "https://movvi-go-connect.lovable.app/_serverFn/";
+
+function requireOpenShiftMobileEnvironment() {
+  const rawOrigin = process.env.APOIS_HML_GATEWAY_ORIGIN?.trim() ?? "";
+  const key = process.env.APOIS_HML_PUBLIC_KEY?.trim() ?? "";
+  const origin = new URL(rawOrigin);
+  if (origin.origin !== rawOrigin || !/^https:\/\/apois-[a-z0-9-]+-apoistecnologia-dev\.apps\.rm3\.7wse\.p1\.openshiftapps\.com$/.test(origin.origin)) {
+    throw new Error("O build HML exige a origem HTTPS do Gateway no namespace apoistecnologia-dev.");
+  }
+
+  let validPublicKey = /^sb_publishable_[A-Za-z0-9_-]+$/.test(key);
+  const parts = key.split(".");
+  if (parts.length === 3 && /^[A-Za-z0-9_-]+$/.test(parts[1])) {
+    try {
+      const claims = JSON.parse(Buffer.from(parts[1], "base64url").toString("utf8"));
+      validPublicKey = claims.role === "anon" && claims.ref !== "vqtucstyduxrqjgyigfk";
+    } catch {
+      validPublicKey = false;
+    }
+  }
+  if (!validPublicKey) {
+    throw new Error("O build HML exige uma chave pública de homologação.");
+  }
+  process.env.VITE_SUPABASE_URL = origin.origin;
+  process.env.VITE_SUPABASE_PUBLISHABLE_KEY = key;
+  return origin.origin;
+}
+
 
 // VITE_APP_ROLE define QUAL bundle está sendo gerado.
 // - "passageiro" → só carrega src/mobile-route-tree.passageiro.ts (ZERO rotas /motorista/*)
@@ -23,6 +49,7 @@ export default defineConfig(({ mode }) => {
   // loadEnv carrega .env, .env.mobile, .env.mobile.local etc. de acordo com --mode.
   // O terceiro argumento "" desativa o filtro de prefixo, para conseguirmos ler
   // também variáveis do processo se estiverem presentes.
+  const hmlOrigin = requireOpenShiftMobileEnvironment();
   const env = loadEnv(mode, process.cwd(), "");
 
   // Validação obrigatória: sem essas chaves o APK não consegue falar com o
@@ -71,8 +98,8 @@ export default defineConfig(({ mode }) => {
       },
     },
     define: {
-      "process.env.TSS_SERVER_FN_BASE": JSON.stringify(REMOTE_SERVER_FN_BASE),
-      "import.meta.env.TSS_SERVER_FN_BASE": JSON.stringify(REMOTE_SERVER_FN_BASE),
+      "process.env.TSS_SERVER_FN_BASE": JSON.stringify(hmlOrigin + "/_serverFn/"),
+      "import.meta.env.TSS_SERVER_FN_BASE": JSON.stringify(hmlOrigin + "/_serverFn/"),
     },
   };
 });
