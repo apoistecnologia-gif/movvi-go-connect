@@ -58,6 +58,7 @@ import {
   cancelarPeloMotoristaMobile,
   avaliarPassageiroMobile,
 } from "@/lib/driverRideLifecycle.mobile";
+import { isHmlDispatch } from "@/lib/hml-dispatch-client";
 import { notifyRideStatus } from "@/lib/rideStatusToast";
 import { toast } from "sonner";
 
@@ -1067,6 +1068,15 @@ function MotoristaApp() {
   async function handleReject() {
     const offer = incomingRef.current;
     if (!offer) return;
+    if (isHmlDispatch) {
+      try {
+        await callReject({ data: { rideId: offer.id } });
+        if (incomingRef.current?.id === offer.id) removeIncomingRequest(offer, "driver_rejected");
+      } catch {
+        toast.error("Recusa não confirmada", { description: "Atualize a corrida antes de repetir a ação." });
+      }
+      return;
+    }
     removeIncomingRequest(offer, "driver_rejected");
     if (import.meta.env.DEV) console.log("[APOIS MOTORISTA] corrida recusada:", offer.id);
     try { await callReject({ data: { rideId: offer.id } }); }
@@ -1567,8 +1577,9 @@ function MotoristaApp() {
             // Fala sincronamente dentro do gesto do clique — alguns navegadores
             // móveis bloqueiam SpeechSynthesis.speak depois de um await.
             resetSpokenCache();
-            void speak("Você chegou ao ponto de embarque. Aguarde o passageiro.", { interrupt: true });
+            if (!isHmlDispatch) void speak("Você chegou ao ponto de embarque. Aguarde o passageiro.", { interrupt: true });
             await callArrive({ data: { rideId: active.id } });
+            if (isHmlDispatch && activeRef.current?.id === active.id) void speak("Você chegou ao ponto de embarque. Aguarde o passageiro.", { interrupt: true });
             setActive((prev) => (prev && prev.id === active.id ? { ...prev, status: "motorista_chegou" } : prev));
           }}
           onCancel={async () => { await handleDriverCancelRide("Cancelado pelo motorista"); }}
