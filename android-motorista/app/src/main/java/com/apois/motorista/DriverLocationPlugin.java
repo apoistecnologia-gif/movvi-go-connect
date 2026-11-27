@@ -43,6 +43,15 @@ public class DriverLocationPlugin extends Plugin {
     }
 
     @PluginMethod
+    public void hmlGeneration(PluginCall call) {
+        if (!getContext().getPackageName().equals("com.apois.motorista.hml")) { call.reject("HML only"); return; }
+        JSObject result = new JSObject();
+        String generation=HmlDriverLocationService.localGeneration();
+        if(generation!=null)result.put("generation",generation);
+        call.resolve(result);
+    }
+
+    @PluginMethod
     public void updateHmlToken(PluginCall call) {
         if (!getContext().getPackageName().equals("com.apois.motorista.hml")) { call.reject("HML only"); return; }
         String token=call.getString("accessToken","");

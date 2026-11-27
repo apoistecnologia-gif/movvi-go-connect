@@ -1697,13 +1697,14 @@ function MotoristaApp() {
         <IdleBottomPanel
           driverName={driverName}
           online={isHmlDispatch ? hmlConfirmedOnline : online}
-          disabled={!!effectiveStatusBlock || gpsStatus === "loading" || (isHmlDispatch && hmlPresencePending)}
+          disabled={(!online && !!effectiveStatusBlock) || gpsStatus === "loading"}
+          presencePending={isHmlDispatch && hmlPresencePending}
           toggleOnline={toggleOnline}
           stats={todayStats}
           gpsMessage={gpsMessage}
           loading={gpsStatus === "loading"}
           canUseTestLocation={
-            !online &&
+            !isHmlDispatch && !online &&
             isDevelopmentEnvironment() &&
             showTestLocationButton &&
             (gpsStatus === "error" || gpsStatus === "denied" || gpsStatus === "timeout" || gpsStatus === "unavailable")
@@ -1791,10 +1792,10 @@ function greetingForNow(): string {
 }
 
 function IdleBottomPanel({
-  driverName, online, disabled, toggleOnline, stats, gpsMessage, loading,
+  driverName, online, disabled, toggleOnline, stats, gpsMessage, loading, presencePending = false,
   canUseTestLocation, onUseTestLocation,
 }: {
-  driverName: string; online: boolean; disabled: boolean;
+  driverName: string; online: boolean; disabled: boolean; presencePending?: boolean;
   toggleOnline: () => void; stats: { rides: number; earnings: number };
   gpsMessage: string | null;
   loading: boolean;
@@ -1823,7 +1824,7 @@ function IdleBottomPanel({
               Olá, {firstName}
             </div>
             <div className="text-[12px] font-medium text-muted-foreground">
-              {online ? "Recebendo solicitações" : "Toque para ativar"}
+              {online ? "Recebendo solicitações" : presencePending ? "Aguardando confirmação do servidor" : "Toque para ativar"}
             </div>
           </div>
           <div
@@ -1838,7 +1839,7 @@ function IdleBottomPanel({
               {online && <span className="absolute inset-0 animate-ping rounded-full bg-primary/60" />}
               <span className={`relative h-2 w-2 rounded-full ${online ? "bg-primary" : "bg-muted-foreground/60"}`} />
             </span>
-            {online ? "Online" : "Offline"}
+            {online ? "Online" : presencePending ? "Sincronizando" : "Offline"}
           </div>
         </div>
 
@@ -1886,7 +1887,7 @@ function IdleBottomPanel({
               : { border: "1px solid color-mix(in oklab, var(--color-primary) 40%, transparent)" }
           }
         >
-          {loading ? "Obtendo localização..." : online ? "Ficar offline" : "Ficar online"}
+          {loading ? "Obtendo localização..." : presencePending ? "Cancelar disponibilidade" : online ? "Ficar offline" : "Ficar online"}
         </button>
       </div>
     </div>

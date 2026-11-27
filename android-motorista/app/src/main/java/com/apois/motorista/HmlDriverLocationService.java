@@ -36,6 +36,8 @@ public final class HmlDriverLocationService extends Service {
     private volatile String token;
     private String identity;
     private String generation; // worker only
+    private static volatile String localGeneration;
+    static String localGeneration(){return localGeneration;}
     private long sequence, lastAttempt;
     private boolean uncertain;
     private FusedLocationProviderClient fused;
@@ -61,13 +63,14 @@ public final class HmlDriverLocationService extends Service {
         String who=identity(supplied);
         if(UPDATE.equals(action)){
             if(active&&!stopping&&who!=null&&who.equals(identity))token=supplied;
+            else if(!active&&!stopping)stopSelf();
             return START_NOT_STICKY;
         }
         if(!DriverLocationService.ACTION_START.equals(action)||!ORIGIN.equals(intent.getStringExtra(DriverLocationService.EXTRA_SUPABASE_URL))||who==null){
             if(!active&&!stopping)stopSelf();return START_NOT_STICKY;
         }
         if(active||stopping)return START_NOT_STICKY;
-        identity=who;token=supplied;active=true;
+        identity=who;token=supplied;active=true;localGeneration=null;
         NotificationManager manager=getSystemService(NotificationManager.class);
         if(Build.VERSION.SDK_INT>=26&&manager!=null)manager.createNotificationChannel(new NotificationChannel(CHANNEL,"Localização APOIS HML",NotificationManager.IMPORTANCE_LOW));
         Intent open=new Intent(this,MainActivity.class).setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP);
@@ -84,7 +87,7 @@ public final class HmlDriverLocationService extends Service {
                 String next=res==null?"":res.optString("generation","");
                 if(res==null||res.length()!=4||!res.getBoolean("ok")||!uuid(next)||next.equals(before.optString("generation"))||res.getLong("sequence")!=0||res.getBoolean("online"))throw new IOException();
                 generation=next;sequence=0;lastAttempt=0;
-                main.post(()->{if(active&&!stopping)startGps();});
+                main.post(()->{if(active&&!stopping){localGeneration=next;startGps();}});
             }catch(Exception ignored){main.post(()->stopTracking(startId));}
         });
         return START_NOT_STICKY;
@@ -139,7 +142,7 @@ public final class HmlDriverLocationService extends Service {
     }
     private void stopTracking(int startId){
         if(stopping)return;
-        stopping=true;active=false;
+        stopping=true;active=false;localGeneration=null;
         if(fused!=null&&callback!=null)fused.removeLocationUpdates(callback);
         worker.execute(()->{
             try{
@@ -151,7 +154,7 @@ public final class HmlDriverLocationService extends Service {
                     }
                 }
             }catch(Exception ignored){} // Server lease expires if offline is unconfirmed.
-            finally{token=null;generation=null;main.post(()->{stopForeground(STOP_FOREGROUND_REMOVE);stopSelf();});}
+            finally{token=null;generation=null;main.post(()->{if(Build.VERSION.SDK_INT>=24)stopForeground(STOP_FOREGROUND_REMOVE);else stopForeground(true);stopSelf();});}
         });
     }
     private JSONObject post(JSONObject body)throws Exception{
@@ -170,6 +173,6 @@ public final class HmlDriverLocationService extends Service {
             }
         }finally{c.disconnect();}
     }
-    @Override public void onDestroy(){active=false;stopping=true;token=null;if(fused!=null&&callback!=null)fused.removeLocationUpdates(callback);worker.shutdownNow();super.onDestroy();}
+    @Override public void onDestroy(){active=false;stopping=true;token=null;localGeneration=null;if(fused!=null&&callback!=null)fused.removeLocationUpdates(callback);worker.shutdownNow();super.onDestroy();}
     @Nullable @Override public IBinder onBind(Intent intent){return null;}
 }

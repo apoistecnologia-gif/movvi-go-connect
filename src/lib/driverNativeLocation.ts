@@ -15,6 +15,7 @@ interface DriverLocationPlugin {
   }): Promise<StartResult>;
   stop(): Promise<StopResult>;
   updateHmlToken(options:{accessToken:string}):Promise<void>;
+  hmlGeneration():Promise<{generation?:string}>;
 }
 
 const DriverLocation = registerPlugin<DriverLocationPlugin>("DriverLocation");
@@ -85,4 +86,9 @@ export async function stopNativeDriverLocation(): Promise<void> {
 
 export async function updateHmlNativeToken(accessToken:string):Promise<void>{
  if(hml&&isNativeAndroidDriverLocation()) await DriverLocation.updateHmlToken({accessToken});
+}
+
+export async function readHmlNativeGeneration():Promise<string|null>{
+ if(!hml||!isNativeAndroidDriverLocation())return null;
+ const result=await DriverLocation.hmlGeneration();return typeof result.generation==="string"?result.generation:null;
 }
