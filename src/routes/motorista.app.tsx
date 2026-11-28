@@ -3273,6 +3273,8 @@ function ActiveTripNavOverlay({
     setBusy(true);
     try {
       await onComplete();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível finalizar a corrida.");
     } finally {
       setBusy(false);
     }

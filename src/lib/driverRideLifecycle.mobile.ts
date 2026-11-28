@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { acceptHmlDriverRide, hmlDriverStage, isHmlDispatch } from "./hml-dispatch-client";
+import { acceptHmlDriverRide, finishHmlDriverRide, hmlDriverStage, isHmlDispatch } from "./hml-dispatch-client";
 
 type DriverRidePushEvent =
   | "ride.accepted"
@@ -173,6 +173,7 @@ export async function iniciarCorridaMobile({ data }: { data: { rideId: string; s
 export async function finalizarCorridaMobile<T extends { rideId: string }>({ data }: { data: T }) {
   const rideId = data.rideId;
   assertRideId(rideId);
+  if (isHmlDispatch) return finishHmlDriverRide(rideId);
   const ride = await callDriverRedispatchFunction("driver-finish-redispatch", {
     ride_id: rideId,
   });
@@ -202,6 +203,7 @@ export async function avaliarPassageiroMobile({
   data: { rideId: string; stars: number; comment?: string | null };
 }) {
   assertRideId(data.rideId);
+  if (isHmlDispatch) throw new Error("Avaliação indisponível nesta homologação.");
   const stars = Number(data.stars);
   if (!Number.isInteger(stars) || stars < 1 || stars > 5) {
     throw new Error("Escolha uma nota de 1 a 5 estrelas.");
