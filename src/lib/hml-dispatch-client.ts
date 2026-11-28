@@ -1,3 +1,4 @@
+import {createHmlFinishClient} from "./hml-driver-finish";
 import {supabase} from "@/integrations/supabase/client";
 import {createHmlMobileTransport,HML_ORIGIN,uuid,exact} from "./hml-mobile-transport";
 export const isHmlDispatch = import.meta.env.VITE_SUPABASE_URL === HML_ORIGIN;
@@ -89,19 +90,8 @@ export async function acceptHmlDriverRide(rideId:string){
  finally{accepting=false;}
 }
 
-let finishingRide:string|null=null;
+const finish=createHmlFinishClient(rideId=>request()("driver",{action:"finish_operational",rideId}),recoverHmlDriverState);
 export async function finishHmlDriverRide(rideId:string){
- if(!isHmlDispatch||!uuid(rideId)||finishingRide!==null)throw Error("Aguarde a confirmação da finalização.");
- finishingRide=rideId;
- try{
-  const state=await recoverHmlDriverState(rideId);
-  if(state==="finalizada")return;
-  if(state!=="em_viagem")throw Error("Corrida não disponível para finalização.");
-  try{
-   const {status,body:b}=await request()("driver",{action:"finish_operational",rideId});
-   if(status===200&&exact(b,["ok","rideId","state","queueAction","queueRideId"])&&b.ok===true&&b.rideId===rideId&&b.state==="finalizada"&&["none","promoted","released"].includes(String(b.queueAction))&&(b.queueAction==="none"?b.queueRideId===null:uuid(b.queueRideId)&&b.queueRideId!==rideId))return;
-  }catch{/* reconcile; never repeat an uncertain mutation automatically */}
-  if(await recoverHmlDriverState(rideId)==="finalizada")return;
-  throw Error("Finalização não confirmada. Atualize a corrida antes de tentar novamente.");
- }finally{finishingRide=null;}
+ if(!isHmlDispatch)throw Error("Ambiente de homologação indisponível.");
+ return finish(rideId);
 }
