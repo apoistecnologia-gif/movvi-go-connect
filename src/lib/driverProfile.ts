@@ -27,6 +27,8 @@ export type DriverProfileRow = {
   current_heading: number | string | null;
   current_speed: number | string | null;
   last_location_at: string | null;
+  // Explicit synthetic HML enrollment; never represents KYC approval.
+  hml_test_presence_authorized?: boolean;
 };
 
 let asaasSubaccountProvisioningAttempted = false;
@@ -73,6 +75,7 @@ export async function loadDriverProfile(): Promise<
         id:String(p.id),user_id:String(p.user_id),category:str(p.category),
         approval_status:approval as DriverProfileRow["approval_status"],
         subscription_status:str(p.subscription_status) as DriverProfileRow["subscription_status"],
+        hml_test_presence_authorized:p.hml_test_presence_authorized===true,
         name:null,email:sessionData.session.user.email??null,phone:null,motivo_reprovacao:null,
         photo_url:null,selfie_url:null,cnh_url:null,cnh_back_url:null,vehicle_document_url:null,vehicle_photo_url:null,documents_status:null,
         current_lat:num(p.current_lat),current_lng:num(p.current_lng),current_heading:num(p.current_heading),current_speed:num(p.current_speed),last_location_at:str(p.last_location_at),

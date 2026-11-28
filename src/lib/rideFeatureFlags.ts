@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { HML_ORIGIN } from "./hml-mobile-transport";
 import {
   DISABLED_RIDE_FEATURE_FLAGS,
   parseRideFeatureFlags,
@@ -19,6 +20,7 @@ type FeatureFlagRpcClient = {
 };
 
 export async function fetchRideFeatureFlags(): Promise<RideFeatureFlags> {
+  if(import.meta.env.VITE_SUPABASE_URL===HML_ORIGIN)return {...DISABLED_RIDE_FEATURE_FLAGS};
   const { data, error } = await (supabase as unknown as FeatureFlagRpcClient).rpc(
     "get_ride_feature_flags",
   );

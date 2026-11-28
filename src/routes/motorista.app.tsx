@@ -332,9 +332,11 @@ function MotoristaApp() {
   const [driverId, setDriverId] = useState<string | null>(null);
   const [driverName, setDriverName] = useState<string>("");
   const [driverCategory, setDriverCategory] = useState<string | null>(null);
+  const [hmlTestAuthorized, setHmlTestAuthorized] = useState(false);
   const [sideMenuOpen, setSideMenuOpen] = useState(false);
 
   async function handleLogout() {
+    if(isHmlDispatch)window.dispatchEvent(new CustomEvent("apois:driver-presence-change",{detail:{online:false}}));
     await supabase.auth.signOut();
     navigate({ to: "/" });
   }
@@ -360,10 +362,10 @@ function MotoristaApp() {
     if(isHmlDispatch&&!value){setHmlConfirmedOnline(false);setHmlPresencePending(false);}
     try {
       localStorage.setItem("apois:driver:online", value ? "1" : "0");
-      window.dispatchEvent(new CustomEvent("apois:driver-presence-change", { detail: { online: value } }));
     } catch {
       // armazenamento indisponível não pode bloquear a operação do motorista
     }
+    window.dispatchEvent(new CustomEvent("apois:driver-presence-change", { detail: { online: value } }));
   }, []);
   const [statusBlock, setStatusBlock] = useState<string | null>(null);
   type GpsStatus = "prompt" | "loading" | "granted" | "denied" | "timeout" | "unavailable" | "error";
@@ -379,9 +381,11 @@ function MotoristaApp() {
   const [passenger, setPassenger] = useState<Passenger | null>(null);
   const [countdown, setCountdown] = useState(RIDE_OFFER_TIMEOUT_SECONDS);
   const [profilePassengerId, setProfilePassengerId] = useState<string | null>(null);
-  const featureStatusBlock = driverCategory && !isRideCategoryEnabled(driverCategory, featureFlags)
-    ? "A operação desta categoria está temporariamente indisponível."
-    : null;
+  const featureStatusBlock = isHmlDispatch
+    ? (hmlTestAuthorized && ["carro","carros","car"].includes(String(driverCategory)) ? null : "Homologação restrita: aguarde a autorização temporária do servidor.")
+    : driverCategory && !isRideCategoryEnabled(driverCategory, featureFlags)
+      ? "A operação desta categoria está temporariamente indisponível."
+      : null;
   const effectiveStatusBlock = statusBlock ?? featureStatusBlock;
 
   const [polyline, setPolyline] = useState<LatLng[]>([]);
@@ -469,6 +473,7 @@ function MotoristaApp() {
         setUserId(d.user_id);
         setDriverId(d.id);
         setDriverCategory(d.category ?? null);
+        if(isHmlDispatch)setHmlTestAuthorized(d.hml_test_presence_authorized===true);
         if (d.name) setDriverName(d.name.trim().split(/\s+/)[0] || d.name);
         if (d.approval_status !== "aprovado") {
           setStatusBlock(
@@ -480,6 +485,8 @@ function MotoristaApp() {
           );
         } else if (d.subscription_status && !["active", "ativa", "teste"].includes(d.subscription_status)) {
           setStatusBlock(subscriptionBlockMessage(d.subscription_status));
+        } else if(isHmlDispatch) {
+          setStatusBlock(d.hml_test_presence_authorized===true?null:"Aguardando autorização exclusiva para teste. Documentação real não validada neste ambiente.");
         } else {
           const issues = driverProfileCompletionIssues(d);
           if (!issues.complete && issues.message) {
@@ -498,7 +505,7 @@ function MotoristaApp() {
   // Realtime: reage a mudanças no próprio cadastro (admin aprova/bloqueia,
   // assinatura vira inativa, etc.) sem precisar de reload.
   useEffect(() => {
-    if (!userId) return;
+    if (!userId || isHmlDispatch) return;
     const channel = supabase
       .channel(`driver-self-${userId}`)
       .on(
@@ -545,8 +552,33 @@ function MotoristaApp() {
     };
   }, [userId]);
 
+  // Restricted profile polling in HML, never broad REST or Realtime.
+  useEffect(()=>{
+    if(!isHmlDispatch||!userId)return;
+    let alive=true,pending=false;
+    const refresh=async()=>{
+      if(!alive||pending)return;
+      pending=true;
+      try{
+        const result=await loadDriverProfile();
+        if(!alive)return;
+        const valid=result.ok&&result.profile.user_id===userId&&result.profile.hml_test_presence_authorized===true&&
+          result.profile.approval_status==="aprovado"&&["active","ativa","teste"].includes(String(result.profile.subscription_status));
+        setHmlTestAuthorized(valid);
+        if(result.ok&&result.profile.user_id===userId)setDriverCategory(result.profile.category??null);
+        setStatusBlock(valid?null:"Autorização de teste indisponível. Nenhuma aprovação documental foi presumida.");
+      }catch{if(alive){setHmlTestAuthorized(false);setStatusBlock("Não foi possível confirmar a autorização de teste.");}}
+      finally{pending=false;}
+    };
+    void refresh();const timer=window.setInterval(()=>void refresh(),15000);
+    const resume=()=>{if(document.visibilityState==="visible")void refresh();};
+    document.addEventListener("visibilitychange",resume);
+    return()=>{alive=false;window.clearInterval(timer);document.removeEventListener("visibilitychange",resume);};
+  },[userId]);
+
   // estatísticas do dia
   const loadTodayStats = useCallback(async (driverRecordId: string) => {
+    if(isHmlDispatch)return; // financial data not part of the isolated pilot
     const start = new Date(); start.setHours(0, 0, 0, 0);
     const { data } = await supabase.from("rides")
       .select("final_price, estimated_price")
@@ -1576,6 +1608,7 @@ function MotoristaApp() {
         onLogout={handleLogout}
       />
 
+      {isHmlDispatch && <div className="absolute left-1/2 top-16 z-20 -translate-x-1/2 rounded-full bg-card/95 px-3 py-1 text-[11px] font-semibold text-muted-foreground">HOMOLOGAÇÃO — SOMENTE TESTES</div>}
       {/* (status de GPS é mostrado dentro do painel inferior) */}
 
       {/* Bloqueio aprovação */}
@@ -1584,11 +1617,11 @@ function MotoristaApp() {
           <div className="flex items-center justify-center gap-2 text-yellow-400">
             <AlertTriangle className="h-4 w-4" />
             <span className="text-xs font-semibold uppercase tracking-wide">
-              {featureStatusBlock ? "Operação indisponível" : "Mensalidade"}
+              {isHmlDispatch ? "Homologação restrita" : featureStatusBlock ? "Operação indisponível" : "Mensalidade"}
             </span>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">{effectiveStatusBlock}</p>
-          {!featureStatusBlock && (
+          {!isHmlDispatch && !featureStatusBlock && (
             <button
               onClick={() => navigate({ to: "/motorista/assinatura" })}
               className="mt-2 inline-flex items-center justify-center rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow hover:brightness-110"

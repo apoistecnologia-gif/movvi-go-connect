@@ -35,7 +35,7 @@ export async function readHmlDriverProfile(subject:string):Promise<Json>{
  const {status,body:b}=await request()("driver",{action:"profile"});
  const p=b.profile;
  if(status===401||status===403)throw Error("unauthorized");
- if(status!==200||!exact(b,["ok","profile"])||b.ok!==true||!exact(p,["id","user_id","auth_user_id","category","approval_status","subscription_status","is_online","current_lat","current_lng","current_heading","current_speed","last_location_at"])||!uuid(p.id)||!uuid(p.user_id)||p.auth_user_id!==subject||typeof p.is_online!=="boolean")throw Error("profile_unavailable");
+ if(status!==200||!exact(b,["ok","profile"])||b.ok!==true||!exact(p,["id","user_id","auth_user_id","category","approval_status","subscription_status","hml_test_presence_authorized","is_online","current_lat","current_lng","current_heading","current_speed","last_location_at"])||!uuid(p.id)||!uuid(p.user_id)||p.auth_user_id!==subject||typeof p.is_online!=="boolean"||typeof p.hml_test_presence_authorized!=="boolean")throw Error("profile_unavailable");
  return p;
 }
 export async function readHmlDriverRide(rideId:string):Promise<ReadResult>{
